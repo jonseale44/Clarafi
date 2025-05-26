@@ -7,6 +7,7 @@ import { EncountersTab } from "@/components/patient/encounters-tab";
 import { VoiceRecordingModal } from "@/components/voice/voice-recording-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Patient, Vitals } from "@shared/schema";
 
@@ -33,6 +34,23 @@ export default function Dashboard() {
         if (!patient) return <div className="text-center py-8">Select a patient to view dashboard</div>;
         return (
           <>
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h2 className="text-lg font-semibold text-blue-900">
+                Current Patient: {patient.firstName} {patient.lastName}
+              </h2>
+              <p className="text-blue-700">
+                MRN: {patient.mrn} | DOB: {new Date(patient.dateOfBirth).toLocaleDateString()} | 
+                {encounters.length > 0 ? ` Active Encounter: ${encounters[0]?.encounterType}` : ' No Active Encounter'}
+              </p>
+              {encounters.length === 0 && (
+                <Button 
+                  onClick={() => console.log('Creating new encounter for patient:', selectedPatientId)}
+                  className="mt-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  Start New Encounter
+                </Button>
+              )}
+            </div>
             <PatientHeader patient={patient} allergies={allergies} />
             {latestVitals && <QuickStats vitals={latestVitals} />}
           </>
