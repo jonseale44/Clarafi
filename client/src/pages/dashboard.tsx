@@ -31,29 +31,26 @@ export default function Dashboard() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
-        if (!patient) return <div className="text-center py-8">Select a patient to view dashboard</div>;
         return (
-          <>
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h2 className="text-lg font-semibold text-blue-900">
-                Current Patient: {patient.firstName} {patient.lastName}
-              </h2>
-              <p className="text-blue-700">
-                MRN: {patient.mrn} | DOB: {new Date(patient.dateOfBirth).toLocaleDateString()} | 
-                {encounters.length > 0 ? ` Active Encounter: ${encounters[0]?.encounterType}` : ' No Active Encounter'}
-              </p>
-              {encounters.length === 0 && (
-                <Button 
-                  onClick={() => console.log('Creating new encounter for patient:', selectedPatientId)}
-                  className="mt-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  Start New Encounter
-                </Button>
-              )}
-            </div>
-            <PatientHeader patient={patient} allergies={allergies} />
-            {latestVitals && <QuickStats vitals={latestVitals} />}
-          </>
+          <div className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-4">Provider Dashboard</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-yellow-800">Pending Encounters</h3>
+                  <p className="text-2xl font-bold text-yellow-600">3</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-800">Lab Orders to Review</h3>
+                  <p className="text-2xl font-bold text-blue-600">7</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-800">Completed Today</h3>
+                  <p className="text-2xl font-bold text-green-600">12</p>
+                </div>
+              </div>
+            </Card>
+          </div>
         );
       
       case "patients":
@@ -83,6 +80,21 @@ export default function Dashboard() {
         if (!patient) return <div className="text-center py-8">Select a patient to view encounters</div>;
         return (
           <>
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h2 className="text-lg font-semibold text-blue-900">
+                Current Patient: {patient?.firstName || 'Unknown'} {patient?.lastName || 'Patient'}
+              </h2>
+              <p className="text-blue-700">
+                MRN: {patient?.mrn || 'N/A'} | DOB: {patient?.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'Unknown'} | 
+                {encounters && encounters.length > 0 ? ` Active Encounter: ${encounters[0]?.encounterType}` : ' No Active Encounter'}
+              </p>
+              <Button 
+                onClick={() => console.log('Creating new encounter for patient:', selectedPatientId)}
+                className="mt-2 bg-blue-600 hover:bg-blue-700"
+              >
+                Start New Encounter
+              </Button>
+            </div>
             <PatientHeader patient={patient} allergies={allergies} />
             <EncountersTab encounters={encounters} patientId={selectedPatientId!} onStartVoiceNote={() => setIsVoiceModalOpen(true)} />
           </>
