@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 import { PatientHeader } from "@/components/patient/patient-header";
 import { QuickStats } from "@/components/patient/quick-stats";
 import { EncountersTab } from "@/components/patient/encounters-tab";
 import { VoiceRecordingModal } from "@/components/voice/voice-recording-modal";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -23,10 +20,34 @@ export default function Dashboard() {
 
   // Auto-select first patient when patients are loaded
   useEffect(() => {
-    if (allPatients.length > 0 && !selectedPatientId) {
+    if (Array.isArray(allPatients) && allPatients.length > 0 && !selectedPatientId) {
       setSelectedPatientId(allPatients[0].id);
     }
   }, [allPatients, selectedPatientId]);
+
+  // Fetch patient data
+  const { data: patient, isLoading: patientLoading } = useQuery<Patient>({
+    queryKey: ["/api/patients", selectedPatientId],
+    enabled: !!selectedPatientId,
+  });
+
+  // Fetch latest vitals
+  const { data: latestVitals } = useQuery<Vitals>({
+    queryKey: ["/api/patients", selectedPatientId, "vitals", "latest"],
+    enabled: !!selectedPatientId,
+  });
+
+  // Fetch encounters
+  const { data: encounters = [] } = useQuery({
+    queryKey: ["/api/patients", selectedPatientId, "encounters"],
+    enabled: !!selectedPatientId,
+  });
+
+  // Fetch allergies for critical alerts
+  const { data: allergies = [] } = useQuery({
+    queryKey: ["/api/patients", selectedPatientId, "allergies"],
+    enabled: !!selectedPatientId,
+  });
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -58,7 +79,7 @@ export default function Dashboard() {
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4">Patient Directory</h2>
             <div className="space-y-4">
-              {(allPatients as any[]).map((p: any) => (
+              {Array.isArray(allPatients) && allPatients.map((p: any) => (
                 <div key={p.id} className="border p-4 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => {
                   setSelectedPatientId(p.id);
                   setActiveTab("encounters");
@@ -86,17 +107,17 @@ export default function Dashboard() {
               </h2>
               <p className="text-blue-700">
                 MRN: {patient?.mrn || 'N/A'} | DOB: {patient?.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'Unknown'} | 
-                {encounters && encounters.length > 0 ? ` Active Encounter: ${encounters[0]?.encounterType}` : ' No Active Encounter'}
+                {Array.isArray(encounters) && encounters.length > 0 ? ` Active Encounter: ${encounters[0]?.encounterType}` : ' No Active Encounter'}
               </p>
-              <Button 
+              <Button
                 onClick={() => console.log('Creating new encounter for patient:', selectedPatientId)}
                 className="mt-2 bg-blue-600 hover:bg-blue-700"
               >
                 Start New Encounter
               </Button>
             </div>
-            <PatientHeader patient={patient} allergies={allergies} />
-            <EncountersTab encounters={encounters} patientId={selectedPatientId!} onStartVoiceNote={() => setIsVoiceModalOpen(true)} />
+            <PatientHeader patient={patient} allergies={Array.isArray(allergies) ? allergies : []} />
+            <EncountersTab encounters={Array.isArray(encounters) ? encounters : []} patientId={selectedPatientId!} onStartVoiceNote={() => setIsVoiceModalOpen(true)} />
           </>
         );
       
@@ -128,33 +149,9 @@ export default function Dashboard() {
         );
       
       default:
-        return <div>Select a tab to view content</div>;
+        return <div>Content not found</div>;
     }
   };
-
-  // Fetch patient data
-  const { data: patient, isLoading: patientLoading } = useQuery<Patient>({
-    queryKey: ["/api/patients", selectedPatientId],
-    enabled: !!selectedPatientId,
-  });
-
-  // Fetch latest vitals
-  const { data: latestVitals } = useQuery<Vitals>({
-    queryKey: ["/api/patients", selectedPatientId, "vitals", "latest"],
-    enabled: !!selectedPatientId,
-  });
-
-  // Fetch encounters
-  const { data: encounters = [] } = useQuery({
-    queryKey: ["/api/patients", selectedPatientId, "encounters"],
-    enabled: !!selectedPatientId,
-  });
-
-  // Fetch allergies for critical alerts
-  const { data: allergies = [] } = useQuery({
-    queryKey: ["/api/patients", selectedPatientId, "allergies"],
-    enabled: !!selectedPatientId,
-  });
 
   if (patientLoading) {
     return (
@@ -167,120 +164,108 @@ export default function Dashboard() {
     );
   }
 
-  if (!patient) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">No patient selected</p>
+  return (
+    <div className="h-screen bg-background flex flex-col">
+      {/* Top Navigation Bar */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3">
+        <div className="flex items-center justify-between">
+          {/* Left side - Brand and Navigation */}
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">M</span>
+              </div>
+              <span className="font-bold text-xl text-primary">MediFlow</span>
+            </div>
+            
+            {/* Main Navigation */}
+            <nav className="flex items-center space-x-6">
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "dashboard" 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab("patients")}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "patients" 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Patients
+              </button>
+              <button
+                onClick={() => setActiveTab("encounters")}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "encounters" 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Encounters
+              </button>
+              <button
+                onClick={() => setActiveTab("voice-recording")}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "voice-recording" 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Voice Recording
+              </button>
+              <button
+                onClick={() => setActiveTab("lab-orders")}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "lab-orders" 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Lab Orders
+              </button>
+              <button
+                onClick={() => setActiveTab("imaging")}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === "imaging" 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Imaging
+              </button>
+            </nav>
+          </div>
+          
+          {/* Right side - User info and actions */}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsVoiceModalOpen(true)}
+              className="bg-green-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
+            >
+              Start Voice Note
+            </button>
+            <div className="text-sm text-gray-600">
+              Jonathan Seale
+            </div>
+          </div>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex h-screen bg-background">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          onStartVoiceRecording={() => setIsVoiceModalOpen(true)}
-          onPatientSearch={setSelectedPatientId}
-        />
-        
-        <div className="flex-1 overflow-auto p-6">
-          {renderTabContent()}
-          
-          <Card className="mt-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <div className="border-b border-gray-200">
-                <TabsList className="h-auto p-0 bg-transparent">
-                  <div className="flex space-x-8 px-6">
-                    <TabsTrigger 
-                      value="encounters" 
-                      className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary py-4 px-1 rounded-none bg-transparent"
-                    >
-                      Encounters
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="medical-history" 
-                      className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary py-4 px-1 rounded-none bg-transparent"
-                    >
-                      Medical History
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="medications" 
-                      className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary py-4 px-1 rounded-none bg-transparent"
-                    >
-                      Medications
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="lab-results" 
-                      className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary py-4 px-1 rounded-none bg-transparent"
-                    >
-                      Lab Results
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="imaging" 
-                      className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary py-4 px-1 rounded-none bg-transparent"
-                    >
-                      Imaging
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="family-history" 
-                      className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary py-4 px-1 rounded-none bg-transparent"
-                    >
-                      Family History
-                    </TabsTrigger>
-                  </div>
-                </TabsList>
-              </div>
-              
-              <TabsContent value="encounters" className="p-6">
-                <EncountersTab 
-                  encounters={encounters} 
-                  patientId={selectedPatientId}
-                  onStartVoiceNote={() => setIsVoiceModalOpen(true)}
-                />
-              </TabsContent>
-              
-              <TabsContent value="medical-history" className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Medical history management coming soon</p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="medications" className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Medication management coming soon</p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="lab-results" className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Lab results management coming soon</p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="imaging" className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Imaging management coming soon</p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="family-history" className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Family history management coming soon</p>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
-        </div>
+      <main className="flex-1 overflow-auto p-6">
+        {renderTabContent()}
       </main>
       
       <VoiceRecordingModal 
-        isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        patientId={selectedPatientId}
+        isOpen={isVoiceModalOpen} 
+        onClose={() => setIsVoiceModalOpen(false)} 
+        selectedPatientId={selectedPatientId}
       />
     </div>
   );
