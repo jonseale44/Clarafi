@@ -1,0 +1,255 @@
+import { useState, useRef, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Mic, Square, Pause, Play, X, Brain, Loader2 } from "lucide-react";
+
+interface VoiceRecordingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  patientId: number;
+}
+
+export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordingModalProps) {
+  const { user } = useAuth();
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [liveTranscription, setLiveTranscription] = useState("");
+  const [aiSuggestions, setAiSuggestions] = useState<any>(null);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const transcribeMutation = useMutation({
+    mutationFn: async (audioBlob: Blob) => {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
+      formData.append("patientId", patientId.toString());
+      formData.append("userRole", user?.role || "provider");
+      
+      const response = await apiRequest("POST", "/api/voice/transcribe", formData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setLiveTranscription(data.transcription);
+      setAiSuggestions(data.aiSuggestions);
+    },
+  });
+
+  useEffect(() => {
+    if (isRecording && !isPaused) {
+      intervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isRecording, isPaused]);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        transcribeMutation.mutate(audioBlob);
+        
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      setIsPaused(false);
+      setRecordingDuration(0);
+      setLiveTranscription("");
+      setAiSuggestions(null);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsPaused(false);
+    }
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      if (isPaused) {
+        mediaRecorderRef.current.resume();
+        setIsPaused(false);
+      } else {
+        mediaRecorderRef.current.pause();
+        setIsPaused(true);
+      }
+    }
+  };
+
+  const handleClose = () => {
+    if (isRecording) {
+      stopRecording();
+    }
+    setRecordingDuration(0);
+    setLiveTranscription("");
+    setAiSuggestions(null);
+    onClose();
+  };
+
+  const getUserRolePrompts = () => {
+    if (!aiSuggestions) return [];
+    return user?.role === "nurse" ? aiSuggestions.nursePrompts : aiSuggestions.providerPrompts;
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>AI-Assisted Voice Recording</DialogTitle>
+            <Button variant="ghost" size="icon" onClick={handleClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Recording Status */}
+          <div className="text-center">
+            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mic className={`h-8 w-8 text-red-600 ${isRecording && !isPaused ? 'animate-pulse' : ''}`} />
+            </div>
+            <p className="text-lg font-medium text-gray-900">
+              {isRecording ? (isPaused ? "Recording paused" : "Recording in progress...") : "Ready to record"}
+            </p>
+            <p className="text-sm text-gray-500">
+              Duration: {formatDuration(recordingDuration)}
+            </p>
+          </div>
+          
+          {/* Live Transcription */}
+          {(liveTranscription || transcribeMutation.isPending) && (
+            <Card className="p-4">
+              <h4 className="font-medium text-gray-900 mb-2">Live Transcription</h4>
+              {transcribeMutation.isPending ? (
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Processing audio...</span>
+                </div>
+              ) : (
+                <p className="text-gray-700 text-sm">{liveTranscription}</p>
+              )}
+            </Card>
+          )}
+          
+          {/* AI Suggestions */}
+          {aiSuggestions && (
+            <Card className="p-4">
+              <h4 className="font-medium text-blue-900 mb-2 flex items-center">
+                <Brain className="h-4 w-4 mr-2" />
+                AI {user?.role === "nurse" ? "Nurse" : "Provider"} Suggestions
+              </h4>
+              {getUserRolePrompts()?.length > 0 ? (
+                <ul className="text-sm text-blue-800 space-y-1">
+                  {getUserRolePrompts().map((suggestion: string, index: number) => (
+                    <li key={index}>• {suggestion}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-blue-800">No specific suggestions at this time.</p>
+              )}
+              
+              {aiSuggestions.draftOrders?.length > 0 && (
+                <div className="mt-3">
+                  <h5 className="text-sm font-medium text-blue-900">Suggested Orders:</h5>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    {aiSuggestions.draftOrders.map((order: string, index: number) => (
+                      <li key={index}>• {order}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {aiSuggestions.clinicalNotes && (
+                <div className="mt-3">
+                  <h5 className="text-sm font-medium text-blue-900">Clinical Notes:</h5>
+                  <p className="text-sm text-blue-800">{aiSuggestions.clinicalNotes}</p>
+                </div>
+              )}
+            </Card>
+          )}
+          
+          {/* Recording Controls */}
+          <div className="flex items-center justify-center space-x-4">
+            {!isRecording ? (
+              <Button onClick={startRecording} className="bg-red-600 text-white hover:bg-red-700">
+                <Mic className="h-4 w-4 mr-2" />
+                Start Recording
+              </Button>
+            ) : (
+              <>
+                <Button onClick={stopRecording} className="bg-red-600 text-white hover:bg-red-700">
+                  <Square className="h-4 w-4 mr-2" />
+                  Stop Recording
+                </Button>
+                <Button variant="outline" onClick={pauseRecording}>
+                  {isPaused ? (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Resume
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="h-4 w-4 mr-2" />
+                      Pause
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </div>
+          
+          {/* Role Badge */}
+          <div className="text-center">
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              Recording as: {user?.role} {user?.credentials && `(${user.credentials})`}
+            </Badge>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
