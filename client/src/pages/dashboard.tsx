@@ -44,9 +44,17 @@ export default function Dashboard() {
             <h2 className="text-2xl font-bold mb-4">Patient Directory</h2>
             <div className="space-y-4">
               {(allPatients as any[]).map((p: any) => (
-                <div key={p.id} className="border p-4 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => setSelectedPatientId(p.id)}>
+                <div key={p.id} className="border p-4 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => {
+                  setSelectedPatientId(p.id);
+                  setActiveTab("dashboard");
+                }}>
                   <h3 className="font-semibold">{p.firstName} {p.lastName}</h3>
                   <p className="text-gray-600">MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
+                  <div className="mt-2">
+                    <span className={`px-2 py-1 text-xs rounded ${selectedPatientId === p.id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                      {selectedPatientId === p.id ? 'Currently Selected' : 'Click to Select'}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
