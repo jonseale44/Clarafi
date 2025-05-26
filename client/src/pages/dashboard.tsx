@@ -29,6 +29,14 @@ export default function Dashboard() {
   const { data: patient, isLoading: patientLoading } = useQuery<Patient>({
     queryKey: ["/api/patients", selectedPatientId],
     enabled: !!selectedPatientId,
+    queryFn: () => {
+      console.log('Fetching patient with ID:', selectedPatientId);
+      return fetch(`/api/patients/${selectedPatientId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch patient');
+          return res.json();
+        });
+    }
   });
 
   // Fetch latest vitals
@@ -98,6 +106,14 @@ export default function Dashboard() {
         );
       
       case "encounters":
+        if (patientLoading) {
+          return (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading patient information...</p>
+            </div>
+          );
+        }
         if (!patient) return <div className="text-center py-8">Select a patient to view encounters</div>;
         return (
           <>
