@@ -61,7 +61,7 @@ export default function Dashboard() {
               {(allPatients as any[]).map((p: any) => (
                 <div key={p.id} className="border p-4 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => {
                   setSelectedPatientId(p.id);
-                  setActiveTab("dashboard");
+                  setActiveTab("encounters");
                 }}>
                   <h3 className="font-semibold">{p.firstName} {p.lastName}</h3>
                   <p className="text-gray-600">MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
