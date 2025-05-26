@@ -46,7 +46,7 @@ export function PatientHeader({ patient, allergies }: PatientHeaderProps) {
               alt={`${patient.firstName} ${patient.lastName}`}
             />
             <AvatarFallback className="text-lg">
-              {patient.firstName[0]}{patient.lastName[0]}
+              {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
             </AvatarFallback>
           </Avatar>
           

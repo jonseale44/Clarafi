@@ -11,9 +11,21 @@ import { useQuery } from "@tanstack/react-query";
 import { Patient, Vitals } from "@shared/schema";
 
 export default function Dashboard() {
-  const [selectedPatientId, setSelectedPatientId] = useState<number>(1); // Default to first patient
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("encounters");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+
+  // Fetch all patients to select the first one
+  const { data: allPatients = [] } = useQuery({
+    queryKey: ["/api/patients"],
+  });
+
+  // Auto-select first patient when patients are loaded
+  useEffect(() => {
+    if (allPatients.length > 0 && !selectedPatientId) {
+      setSelectedPatientId(allPatients[0].id);
+    }
+  }, [allPatients, selectedPatientId]);
 
   // Fetch patient data
   const { data: patient, isLoading: patientLoading } = useQuery<Patient>({

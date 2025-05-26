@@ -558,6 +558,7 @@ export const insertEncounterSchema = createInsertSchema(encounters).pick({
   providerId: true,
   encounterType: true,
   encounterSubtype: true,
+  encounterStatus: true,
   chiefComplaint: true,
   subjective: true,
   objective: true,
