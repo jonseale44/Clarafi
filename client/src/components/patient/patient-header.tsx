@@ -33,7 +33,7 @@ export function PatientHeader({ patient, allergies }: PatientHeaderProps) {
 
   const age = calculateAge(patient.dateOfBirth);
   const criticalAllergies = allergies.filter(allergy => 
-    allergy.severity === "severe" || allergy.allergen.toLowerCase().includes("penicillin")
+    allergy.severity === "severe" || allergy.allergen?.toLowerCase().includes("penicillin")
   );
 
   return (
