@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PatientHeader } from "@/components/patient/patient-header";
 import { QuickStats } from "@/components/patient/quick-stats";
 import { EncountersTab } from "@/components/patient/encounters-tab";
+import { PatientChartView } from "@/components/patient/patient-chart-view";
 import { VoiceRecordingModal } from "@/components/voice/voice-recording-modal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -167,27 +168,7 @@ export default function Dashboard() {
           );
         }
         if (!patient) return <div className="text-center py-8">Select a patient to view encounters</div>;
-        return (
-          <>
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h2 className="text-lg font-semibold text-blue-900">
-                Current Patient: {patient?.firstName || 'Unknown'} {patient?.lastName || 'Patient'}
-              </h2>
-              <p className="text-blue-700">
-                MRN: {patient?.mrn || 'N/A'} | DOB: {patient?.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'Unknown'} | 
-                {Array.isArray(encounters) && encounters.length > 0 ? ` Active Encounter: ${encounters[0]?.encounterType}` : ' No Active Encounter'}
-              </p>
-              <Button
-                onClick={handleStartNewEncounter}
-                className="mt-2 bg-blue-600 hover:bg-blue-700"
-              >
-                Start New Encounter
-              </Button>
-            </div>
-            <PatientHeader patient={patient} allergies={Array.isArray(allergies) ? allergies : []} />
-            <EncountersTab encounters={Array.isArray(encounters) ? encounters : []} patientId={selectedPatientId!} onStartVoiceNote={() => setIsVoiceModalOpen(true)} />
-          </>
-        );
+        return <PatientChartView patient={patient} patientId={selectedPatientId!} onStartVoiceNote={() => setIsVoiceModalOpen(true)} />;
       
       case "voice-recording":
         return (
