@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ChevronRight, Plus, Search, Star } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { EncountersTab } from "./encounters-tab";
+import { EncounterDetailView } from "./encounter-detail-view";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +35,8 @@ const chartSections = [
 export function PatientChartView({ patient, patientId, onStartVoiceNote }: PatientChartViewProps) {
   const [activeSection, setActiveSection] = useState("encounters");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["encounters"]));
+  const [currentEncounterId, setCurrentEncounterId] = useState<number | null>(null);
+  const [showEncounterDetail, setShowEncounterDetail] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -92,7 +95,17 @@ export function PatientChartView({ patient, patientId, onStartVoiceNote }: Patie
       providerNotes: "",
     };
 
-    createEncounterMutation.mutate(encounterData);
+    createEncounterMutation.mutate(encounterData, {
+      onSuccess: (newEncounter) => {
+        setCurrentEncounterId(newEncounter.id);
+        setShowEncounterDetail(true);
+      }
+    });
+  };
+
+  const handleBackToChart = () => {
+    setShowEncounterDetail(false);
+    setCurrentEncounterId(null);
   };
 
   const toggleSection = (sectionId: string) => {
@@ -223,6 +236,17 @@ export function PatientChartView({ patient, patientId, onStartVoiceNote }: Patie
         return <div>Section not found</div>;
     }
   };
+
+  // Show encounter detail view if in encounter mode
+  if (showEncounterDetail && currentEncounterId) {
+    return (
+      <EncounterDetailView 
+        patient={patient} 
+        encounterId={currentEncounterId} 
+        onBackToChart={handleBackToChart}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full">
