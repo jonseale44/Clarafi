@@ -5,13 +5,16 @@ import { EncountersTab } from "@/components/patient/encounters-tab";
 import { VoiceRecordingModal } from "@/components/voice/voice-recording-modal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Patient, Vitals } from "@shared/schema";
 
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch all patients to select the first one
   const { data: allPatients = [] } = useQuery({
@@ -56,6 +59,55 @@ export default function Dashboard() {
     queryKey: ["/api/patients", selectedPatientId, "allergies"],
     enabled: !!selectedPatientId,
   });
+
+  // Mutation to create new encounter
+  const createEncounterMutation = useMutation({
+    mutationFn: async (encounterData: any) => {
+      const response = await fetch('/api/encounters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(encounterData),
+      });
+      if (!response.ok) throw new Error('Failed to create encounter');
+      return response.json();
+    },
+    onSuccess: () => {
+      // Refresh encounters data
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", selectedPatientId, "encounters"] });
+      toast({
+        title: "Success",
+        description: "New encounter created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleStartNewEncounter = async () => {
+    if (!selectedPatientId) return;
+    
+    const encounterData = {
+      patientId: selectedPatientId,
+      providerId: 1, // Assuming current user is provider
+      encounterType: "Office Visit",
+      encounterSubtype: "Routine",
+      startTime: new Date().toISOString(),
+      status: "In Progress",
+      chiefComplaint: "",
+      presentIllness: "",
+      assessmentPlan: "",
+      providerNotes: "",
+    };
+
+    createEncounterMutation.mutate(encounterData);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -126,7 +178,7 @@ export default function Dashboard() {
                 {Array.isArray(encounters) && encounters.length > 0 ? ` Active Encounter: ${encounters[0]?.encounterType}` : ' No Active Encounter'}
               </p>
               <Button
-                onClick={() => console.log('Creating new encounter for patient:', selectedPatientId)}
+                onClick={handleStartNewEncounter}
                 className="mt-2 bg-blue-600 hover:bg-blue-700"
               >
                 Start New Encounter
