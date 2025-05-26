@@ -16,9 +16,10 @@ import {
 
 interface SidebarProps {
   activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-export function Sidebar({ activeTab }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const { user, logoutMutation } = useAuth();
 
   const menuItems = [
@@ -78,6 +79,7 @@ export function Sidebar({ activeTab }: SidebarProps) {
           return (
             <button
               key={item.id}
+              onClick={() => onTabChange(item.id)}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
                 isActive
                   ? "bg-blue-50 text-primary font-medium"

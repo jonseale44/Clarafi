@@ -12,7 +12,7 @@ import { Patient, Vitals } from "@shared/schema";
 
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState("encounters");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   // Fetch all patients to select the first one
@@ -26,6 +26,73 @@ export default function Dashboard() {
       setSelectedPatientId(allPatients[0].id);
     }
   }, [allPatients, selectedPatientId]);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        if (!patient) return <div className="text-center py-8">Select a patient to view dashboard</div>;
+        return (
+          <>
+            <PatientHeader patient={patient} allergies={allergies} />
+            {latestVitals && <QuickStats vitals={latestVitals} />}
+          </>
+        );
+      
+      case "patients":
+        return (
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4">Patient Directory</h2>
+            <div className="space-y-4">
+              {(allPatients as any[]).map((p: any) => (
+                <div key={p.id} className="border p-4 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => setSelectedPatientId(p.id)}>
+                  <h3 className="font-semibold">{p.firstName} {p.lastName}</h3>
+                  <p className="text-gray-600">MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        );
+      
+      case "encounters":
+        if (!patient) return <div className="text-center py-8">Select a patient to view encounters</div>;
+        return (
+          <>
+            <PatientHeader patient={patient} allergies={allergies} />
+            <EncountersTab encounters={encounters} patientId={selectedPatientId!} onStartVoiceNote={() => setIsVoiceModalOpen(true)} />
+          </>
+        );
+      
+      case "voice-recording":
+        return (
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4">AI Voice Recording</h2>
+            <p className="text-gray-600 mb-4">Start voice recording to generate clinical notes with AI assistance.</p>
+            <Button onClick={() => setIsVoiceModalOpen(true)} className="bg-primary">
+              Start Voice Recording
+            </Button>
+          </Card>
+        );
+      
+      case "lab-orders":
+        return (
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4">Laboratory Orders</h2>
+            <p className="text-gray-600">Lab order management and results tracking.</p>
+          </Card>
+        );
+      
+      case "imaging":
+        return (
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4">Imaging Orders</h2>
+            <p className="text-gray-600">Radiology and imaging order management.</p>
+          </Card>
+        );
+      
+      default:
+        return <div>Select a tab to view content</div>;
+    }
+  };
 
   // Fetch patient data
   const { data: patient, isLoading: patientLoading } = useQuery<Patient>({
@@ -74,7 +141,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar activeTab="dashboard" />
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header 
@@ -83,9 +150,7 @@ export default function Dashboard() {
         />
         
         <div className="flex-1 overflow-auto p-6">
-          <PatientHeader patient={patient} allergies={allergies} />
-          
-          {latestVitals && <QuickStats vitals={latestVitals} />}
+          {renderTabContent()}
           
           <Card className="mt-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
