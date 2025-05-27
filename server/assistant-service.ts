@@ -189,7 +189,17 @@ Please process this voice recording and provide structured medical documentation
         console.log('📄 [AssistantService] Response preview:', responseText.substring(0, 200) + '...');
         
         try {
-          const parsedResponse = JSON.parse(responseText);
+          // Strip markdown code blocks if present
+          let cleanedResponse = responseText;
+          if (responseText.startsWith('```json') && responseText.endsWith('```')) {
+            cleanedResponse = responseText.slice(7, -3).trim();
+            console.log('🧹 [AssistantService] Stripped markdown code blocks from response');
+          } else if (responseText.startsWith('```') && responseText.endsWith('```')) {
+            cleanedResponse = responseText.slice(3, -3).trim();
+            console.log('🧹 [AssistantService] Stripped generic code blocks from response');
+          }
+          
+          const parsedResponse = JSON.parse(cleanedResponse);
           console.log('✅ [AssistantService] Successfully parsed JSON response');
           console.log('📊 [AssistantService] Response structure:', Object.keys(parsedResponse));
           return parsedResponse;

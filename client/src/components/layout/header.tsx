@@ -5,11 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Mic, Bell } from "lucide-react";
 
 interface HeaderProps {
-  onStartVoiceRecording: () => void;
   onPatientSearch: (patientId: number) => void;
 }
 
-export function Header({ onStartVoiceRecording, onPatientSearch }: HeaderProps) {
+export function Header({ onPatientSearch }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -61,14 +60,7 @@ export function Header({ onStartVoiceRecording, onPatientSearch }: HeaderProps) 
             />
           </form>
           
-          {/* Voice Recording Quick Access */}
-          <Button 
-            onClick={onStartVoiceRecording}
-            className="bg-primary text-white hover:bg-blue-700"
-          >
-            <Mic className="h-4 w-4 mr-2" />
-            Start Recording
-          </Button>
+
           
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">

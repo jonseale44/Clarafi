@@ -79,10 +79,6 @@ export function EncountersTab({ encounters, patientId, onStartVoiceNote }: Encou
       <div className="flex items-center justify-between mb-6">
         <h4 className="text-lg font-semibold text-gray-900">Recent Encounters</h4>
         <div className="flex items-center space-x-3">
-          <Button onClick={handleNewEncounter} className="bg-primary text-white hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            New Encounter
-          </Button>
           <Button variant="outline" onClick={onStartVoiceNote}>
             <Mic className="h-4 w-4 mr-2" />
             Voice Note

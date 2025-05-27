@@ -294,12 +294,6 @@ export default function Dashboard() {
           
           {/* Right side - User info and actions */}
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setIsVoiceModalOpen(true)}
-              className="bg-green-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
-            >
-              Start Voice Note
-            </button>
             <div className="text-sm text-gray-600">
               Jonathan Seale
             </div>
