@@ -79,8 +79,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           throw new Error('OpenAI API key not available in environment');
         }
         
-        // Connect exactly like your working code
-        realtimeWs = new WebSocket("wss://api.openai.com/v1/realtime", [
+        // Connect exactly like your working code with authentication
+        realtimeWs = new WebSocket(`wss://api.openai.com/v1/realtime?authorization=Bearer ${apiKey}&openai-beta=realtime%3Dv1`, [
           "realtime", 
           "openai-beta.realtime-v1"
         ]);
@@ -189,48 +189,79 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       };
       
       mediaRecorder.onstop = async () => {
-        console.log('🎤 [EncounterView] Recording stopped, processing with enhanced AI...');
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        console.log('🎤 [EncounterView] Recording stopped, cleaning up real-time connection...');
         
-        // Send to enhanced transcription API
-        const formData = new FormData();
-        formData.append("audio", audioBlob, "recording.webm");
-        formData.append("patientId", patient.id.toString());
-        formData.append("userRole", "provider");
+        // Close the real-time WebSocket connection
+        if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+          realtimeWs.close();
+          console.log('🌐 [EncounterView] Real-time WebSocket connection closed');
+        }
         
-        try {
-          const response = await fetch("/api/voice/transcribe-enhanced", {
-            method: "POST",
-            body: formData,
-          });
-          
-          const data = await response.json();
-          console.log('🎤 [EncounterView] Enhanced AI response:', data);
-          
-          // Update with enhanced results
-          setTranscription(data.transcription || "Complete transcription: Patient presents with acute chest pain, crushing quality, radiating to left arm, onset this morning. Associated symptoms include nausea, diaphoresis, and dyspnea. Pain scale 8/10.");
-          
-          if (data.soapNote) {
-            setSoapNote(data.soapNote);
-          } else {
-            setSoapNote({
-              subjective: "Patient presents with acute onset chest pain starting this morning. Describes crushing sensation, 8/10 severity, radiating to left arm. Associated with nausea and diaphoresis.",
-              objective: "Patient appears uncomfortable, diaphoretic. Vital signs pending. Known history of hypertension per chart review.",
-              assessment: "Acute chest pain, concerning for acute coronary syndrome given presentation and cardiac risk factors.",
-              plan: "12-lead EKG STAT, cardiac enzymes (troponin, CK-MB), aspirin 325mg if no contraindications, cardiology consult, continuous cardiac monitoring."
+        // Clean up audio processing
+        if (processor) {
+          processor.disconnect();
+          source.disconnect();
+          audioContext.close();
+        }
+        
+        console.log('🎤 [EncounterView] Now processing with Assistants API for AI suggestions...');
+        
+        // Use the real-time transcription for AI analysis via Assistants API
+        if (transcriptionBuffer.trim()) {
+          try {
+            // Send transcription to Assistants API for comprehensive analysis  
+            const formData = new FormData();
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            formData.append("audio", audioBlob, "recording.webm");
+            formData.append("patientId", patient.id.toString());
+            formData.append("userRole", "provider");
+            formData.append("isLiveChunk", "false");
+            formData.append("transcriptionOverride", transcriptionBuffer);
+
+            const response = await fetch("/api/voice/transcribe-enhanced", {
+              method: "POST", 
+              body: formData,
             });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log('🤖 [EncounterView] Assistants API response:', data);
+              
+              // Use AI suggestions from Assistants API
+              if (data.aiSuggestions?.clinicalGuidance) {
+                setGptSuggestions(`🧠 AI ANALYSIS:\n${data.aiSuggestions.clinicalGuidance}`);
+              }
+              
+              // Use SOAP note from Assistants API
+              if (data.soapNote) {
+                setSoapNote(data.soapNote);
+              }
+              
+              // Use draft orders from Assistants API  
+              if (data.draftOrders) {
+                setDraftOrders(data.draftOrders);
+              }
+              
+              // Use CPT codes from Assistants API
+              if (data.cptCodes) {
+                setCptCodes(data.cptCodes);
+              }
+
+              toast({
+                title: "AI Analysis Complete",
+                description: "Real-time transcription + AI suggestions ready"
+              });
+
+            } else {
+              throw new Error(`Server responded with ${response.status}`);
+            }
+          } catch (error) {
+            console.error('❌ [EncounterView] Assistants API processing failed:', error);
+            setGptSuggestions('Failed to get AI suggestions');
           }
-          
-          setGptSuggestions(data.aiSuggestions?.clinicalGuidance || "✅ ENHANCED AI ANALYSIS COMPLETE:\n• STEMI protocol initiated\n• Cardiology consulted\n• Orders placed: EKG, troponin, aspirin\n• Consider cath lab activation\n• Patient history reviewed and integrated");
-          
-          toast({
-            title: "Enhanced Processing Complete",
-            description: "Voice processed with AI using patient context"
-          });
-          
-        } catch (error) {
-          console.error('❌ [EncounterView] Enhanced transcription failed:', error);
-          setTranscription("Error processing audio");
+        } else {
+          console.log('⚠️ [EncounterView] No transcription available for AI analysis');
+          setGptSuggestions('No transcription available for AI analysis');
         }
         
         stream.getTracks().forEach(track => track.stop());
