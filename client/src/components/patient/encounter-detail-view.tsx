@@ -71,9 +71,9 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       let transcriptionBuffer = '';
       
       try {
-        console.log('🌐 [EncounterView] Connecting directly to OpenAI Realtime API...');
+        console.log('🌐 [EncounterView] Creating session with OpenAI like your working code...');
         
-        // First, get the API key from environment (since this is client-side)
+        // First, get the API key from environment
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
         console.log('🔑 [EncounterView] API key check:', {
           hasApiKey: !!apiKey,
@@ -84,9 +84,63 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         if (!apiKey) {
           throw new Error('OpenAI API key not available in environment');
         }
-        
-        // Connect exactly like your working code with authentication
-        realtimeWs = new WebSocket(`wss://api.openai.com/v1/realtime?authorization=Bearer ${apiKey}&openai-beta=realtime%3Dv1`, [
+
+        // Create session exactly like your working code
+        const sessionConfig = {
+          model: "gpt-4o-mini-realtime-preview-2024-12-17",
+          modalities: ["text"],
+          instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+          input_audio_format: "pcm16",
+          input_audio_transcription: {
+            model: "whisper-1",
+            language: "en"
+          },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 500,
+            create_response: false
+          },
+          tools: [],
+          tool_choice: "none",
+          temperature: 1,
+          max_response_output_tokens: "inf"
+        };
+
+        console.log('🔧 [EncounterView] Creating session with config:', sessionConfig);
+
+        // Create session like your working code
+        const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "OpenAI-Beta": "realtime=v1"
+          },
+          body: JSON.stringify(sessionConfig)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(`Failed to create session: ${error.message || 'Unknown error'}`);
+        }
+
+        const session = await response.json();
+        console.log('✅ [EncounterView] Session created:', session);
+
+        // Validate session like your working code
+        if (!session.client_secret?.value || !session.id) {
+          throw new Error('Invalid session response');
+        }
+
+        const sessionToken = session.client_secret.value;
+        const sessionId = session.id;
+
+        console.log('🔗 [EncounterView] Connecting to WebSocket with session token...');
+
+        // Connect to WebSocket with session token like your working code
+        realtimeWs = new WebSocket(`wss://api.openai.com/v1/realtime?authorization=Bearer ${sessionToken}&openai-beta=realtime%3Dv1`, [
           "realtime", 
           "openai-beta.realtime-v1"
         ]);
