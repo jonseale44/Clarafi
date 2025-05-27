@@ -75,6 +75,12 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         
         // First, get the API key from environment (since this is client-side)
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        console.log('🔑 [EncounterView] API key check:', {
+          hasApiKey: !!apiKey,
+          keyLength: apiKey?.length || 0,
+          keyPrefix: apiKey?.substring(0, 7) || 'none'
+        });
+        
         if (!apiKey) {
           throw new Error('OpenAI API key not available in environment');
         }
@@ -114,10 +120,20 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log('📨 [EncounterView] OpenAI message:', message.type);
+          console.log('📨 [EncounterView] OpenAI message type:', message.type);
+          console.log('📨 [EncounterView] Full OpenAI message:', message);
           
-          // Handle transcription events like your working code
-          if (message.type === 'conversation.item.input_audio_transcription.delta') {
+          // Handle different message types
+          if (message.type === 'error') {
+            console.error('❌ [EncounterView] OpenAI Realtime API Error:', message);
+            console.error('❌ [EncounterView] Error details:', {
+              code: message.error?.code,
+              message: message.error?.message,
+              type: message.error?.type
+            });
+          } else if (message.type === 'session.created') {
+            console.log('✅ [EncounterView] Session created successfully:', message.session?.id);
+          } else if (message.type === 'conversation.item.input_audio_transcription.delta') {
             const deltaText = message.transcript || message.delta || '';
             console.log('📝 [EncounterView] Transcription delta:', deltaText);
             transcriptionBuffer += deltaText;
@@ -127,6 +143,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             console.log('✅ [EncounterView] Transcription completed:', finalText);
             transcriptionBuffer += finalText;
             setTranscription(transcriptionBuffer);
+          } else {
+            console.log('ℹ️ [EncounterView] Unhandled message type:', message.type, message);
           }
         };
         
