@@ -63,15 +63,98 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
     });
   };
 
-  const startRecording = () => {
-    setIsRecording(true);
-    toast({
-      title: "Recording Started",
-      description: "Voice recording has begun",
-    });
+  const startRecording = async () => {
+    console.log('🎤 [EncounterView] Starting voice recording for patient:', patient.id);
+    try {
+      console.log('🎤 [EncounterView] Requesting microphone access...');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('🎤 [EncounterView] ✅ Microphone access granted');
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      console.log('🎤 [EncounterView] MediaRecorder created, MIME type:', mediaRecorder.mimeType);
+      
+      const audioChunks: Blob[] = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        console.log('🎤 [EncounterView] Audio data available, size:', event.data.size);
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        console.log('🎤 [EncounterView] Recording stopped, processing audio...');
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        console.log('🎤 [EncounterView] Audio blob created:', {
+          size: audioBlob.size,
+          type: audioBlob.type,
+          patientId: patient.id,
+          encounterId
+        });
+        
+        // Send to enhanced transcription API
+        console.log('🎤 [EncounterView] Sending to enhanced transcription API...');
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
+        formData.append("patientId", patient.id.toString());
+        formData.append("userRole", "provider");
+        
+        try {
+          const response = await fetch("/api/voice/transcribe-enhanced", {
+            method: "POST",
+            body: formData,
+          });
+          
+          console.log('🎤 [EncounterView] Response received, status:', response.status);
+          const data = await response.json();
+          console.log('🎤 [EncounterView] Transcription response:', data);
+          
+          setTranscription(data.transcription || "No transcription received");
+          if (data.soapNote) {
+            setSoapNote(data.soapNote);
+          }
+          if (data.aiSuggestions) {
+            setGptSuggestions(data.aiSuggestions.clinicalGuidance || "AI suggestions received");
+          }
+          
+        } catch (error) {
+          console.error('❌ [EncounterView] Transcription failed:', error);
+          setTranscription("Error processing audio");
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+        console.log('🎤 [EncounterView] Microphone released');
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      console.log('🎤 [EncounterView] ✅ Recording started successfully');
+      
+      // Store mediaRecorder reference for stopping
+      (window as any).currentMediaRecorder = mediaRecorder;
+      
+      toast({
+        title: "Recording Started",
+        description: "Voice recording has begun",
+      });
+    } catch (error) {
+      console.error("❌ [EncounterView] Error starting recording:", error);
+      toast({
+        title: "Recording Failed",
+        description: "Could not access microphone",
+        variant: "destructive"
+      });
+    }
   };
 
   const stopRecording = () => {
+    console.log('🎤 [EncounterView] Stopping recording...');
+    const mediaRecorder = (window as any).currentMediaRecorder;
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      console.log('🎤 [EncounterView] MediaRecorder stopped');
+    }
+    
     setIsRecording(false);
     toast({
       title: "Recording Stopped",
@@ -201,13 +284,13 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         {/* Top Navigation */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Nurse Notes</h1>
+            <h1 className="text-xl font-semibold">Provider Documentation</h1>
             <div className="text-sm text-gray-600">
               Encounter ID: {encounterId}
             </div>
           </div>
           <div className="text-sm text-gray-500 mt-1">
-            No nurse notes are available for this encounter yet.
+            Clinical documentation and voice notes for this encounter.
           </div>
         </div>
 
