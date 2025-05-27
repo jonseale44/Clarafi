@@ -314,7 +314,7 @@ export default function Dashboard() {
       <VoiceRecordingModal 
         isOpen={isVoiceModalOpen} 
         onClose={() => setIsVoiceModalOpen(false)} 
-        selectedPatientId={selectedPatientId}
+        patientId={selectedPatientId || 0}
       />
     </div>
   );
