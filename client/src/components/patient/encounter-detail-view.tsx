@@ -64,7 +64,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
   };
 
   const startRecording = async () => {
-    console.log('🎤 [EncounterView] Starting ENHANCED voice recording for patient:', patient.id);
+    console.log('🎤 [EncounterView] Starting LIVE voice recording for patient:', patient.id);
     try {
       console.log('🎤 [EncounterView] Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -77,27 +77,55 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       console.log('🎤 [EncounterView] ✅ Microphone access granted');
       
       const mediaRecorder = new MediaRecorder(stream);
-      console.log('🎤 [EncounterView] MediaRecorder created, MIME type:', mediaRecorder.mimeType);
-      
       const audioChunks: Blob[] = [];
-      let transcriptionUpdates = 0;
+      let chunkCounter = 0;
       
-      mediaRecorder.ondataavailable = (event) => {
-        console.log('🎤 [EncounterView] Audio data available, size:', event.data.size);
+      // Set up live transcription with chunked audio processing
+      mediaRecorder.ondataavailable = async (event) => {
+        console.log('🎤 [EncounterView] Audio chunk available, size:', event.data.size);
         if (event.data.size > 0) {
           audioChunks.push(event.data);
+          chunkCounter++;
           
-          // Simulate enhanced real-time updates with patient context
-          transcriptionUpdates++;
-          if (transcriptionUpdates === 1) {
-            setTranscription("Patient reports...");
-            setGptSuggestions("🔄 Analyzing with enhanced AI and patient history...");
-          } else if (transcriptionUpdates === 2) {
-            setTranscription("Patient reports chest pain that started this morning...");
-            setGptSuggestions("• Consider EKG based on symptoms\n• Check vitals immediately\n• Review cardiac history from chart");
-          } else if (transcriptionUpdates === 3) {
-            setTranscription("Patient reports chest pain that started this morning, describes it as crushing sensation radiating to left arm...");
-            setGptSuggestions("⚠️ HIGH PRIORITY:\n• Possible acute coronary syndrome\n• Order troponin, CK-MB levels\n• Consider aspirin 325mg\n• Patient has HTN history - monitor BP");
+          // Process chunks for live transcription every 3 seconds
+          if (chunkCounter % 3 === 0 && event.data.size > 1000) {
+            try {
+              console.log('📡 [EncounterView] Sending chunk for live transcription...');
+              
+              const formData = new FormData();
+              formData.append("audio", event.data, "chunk.webm");
+              formData.append("patientId", patient.id.toString());
+              formData.append("userRole", "provider");
+              formData.append("isLiveChunk", "true");
+              
+              const response = await fetch("/api/voice/transcribe-enhanced", {
+                method: "POST",
+                body: formData,
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                console.log('📝 [EncounterView] Live transcription received:', data.transcription);
+                
+                // Update live transcription (append to existing)
+                if (data.transcription) {
+                  setTranscription(prev => {
+                    const newText = prev + " " + data.transcription;
+                    return newText.trim();
+                  });
+                }
+                
+                // Update live AI suggestions
+                if (data.aiSuggestions?.realTimePrompts?.length > 0) {
+                  const suggestions = data.aiSuggestions.realTimePrompts.join('\n• ');
+                  setGptSuggestions(`🔄 LIVE AI ANALYSIS:\n• ${suggestions}`);
+                } else if (data.aiSuggestions?.clinicalGuidance) {
+                  setGptSuggestions(`🧠 LIVE INSIGHTS:\n${data.aiSuggestions.clinicalGuidance}`);
+                }
+              }
+            } catch (liveError) {
+              console.error('❌ [EncounterView] Live transcription error:', liveError);
+            }
           }
         }
       };

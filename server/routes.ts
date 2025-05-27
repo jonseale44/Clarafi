@@ -474,5 +474,16 @@ export function registerRoutes(app: Express): Server {
   });
 
   const httpServer = createServer(app);
+  
+  // Initialize real-time transcription WebSocket service
+  try {
+    const { RealtimeTranscriptionService } = require('./realtime-transcription-service.js');
+    const realtimeService = new RealtimeTranscriptionService();
+    realtimeService.initialize(httpServer);
+    console.log('✅ [Routes] Real-time transcription service initialized');
+  } catch (error) {
+    console.log('⚠️ [Routes] Real-time transcription service initialization skipped - module not ready');
+  }
+  
   return httpServer;
 }
