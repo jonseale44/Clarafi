@@ -79,8 +79,8 @@ export class RealtimeTranscriptionService {
       await this.assistantService.initializeAssistant();
       const threadId = await this.assistantService.getOrCreateThread(patientId);
 
-      // Create OpenAI Realtime connection
-      const openaiWs = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01', {
+      // Create OpenAI Realtime connection using the correct format from your working code
+      const openaiWs = new WebSocket('wss://api.openai.com/v1/realtime', {
         headers: {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           'OpenAI-Beta': 'realtime=v1'
@@ -100,13 +100,13 @@ export class RealtimeTranscriptionService {
       openaiWs.on('open', () => {
         console.log('🌐 [RealtimeTranscription] Connected to OpenAI Realtime API');
         
-        // Configure session for transcription - using correct format from working example
+        // Configure session using the exact format from your working code
         openaiWs.send(JSON.stringify({
           type: 'session.update',
-          data: {
+          session: {
             model: 'gpt-4o-mini-realtime-preview-2024-12-17',
             modalities: ['text'], // Text only to reduce token usage
-            instructions: 'You are a medical transcription assistant. Provide brief clinical insights based on the conversation.',
+            instructions: 'You are a medical transcription assistant. Provide accurate transcription of medical conversations.',
             input_audio_format: 'pcm16',
             input_audio_sampling_rate: 16000,
             input_audio_transcription: {
