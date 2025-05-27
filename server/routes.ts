@@ -477,6 +477,62 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Real-time provider suggestions during recording
+  app.post("/api/voice/realtime-suggestions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { transcriptionText, patientId } = req.body;
+      
+      if (!transcriptionText || !patientId) {
+        return res.status(400).json({ message: "Transcription text and patient ID are required" });
+      }
+
+      console.log('🧠 [Routes] Getting real-time provider suggestions...', {
+        transcriptionLength: transcriptionText.length,
+        patientId
+      });
+
+      // Import and use the AssistantContextService
+      const { AssistantContextService } = await import('./assistant-context-service.js');
+      const assistantService = new AssistantContextService();
+      
+      // Initialize assistant and get thread
+      await assistantService.initializeAssistant();
+      const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
+      
+      // Get intelligent suggestions with patient context
+      const suggestions = await assistantService.getRealtimeSuggestions(
+        threadId,
+        transcriptionText,
+        "provider", // Always provider for this endpoint
+        parseInt(patientId)
+      );
+
+      console.log('🧠 [Routes] ✅ Real-time suggestions generated:', {
+        suggestionsCount: suggestions.suggestions?.length || 0,
+        clinicalFlagsCount: suggestions.clinicalFlags?.length || 0,
+        hasContextualReminders: !!suggestions.contextualReminders?.length
+      });
+
+      res.json({
+        suggestions: suggestions.suggestions || [],
+        clinicalFlags: suggestions.clinicalFlags || [],
+        contextualReminders: suggestions.contextualReminders || [],
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('❌ [Routes] Real-time suggestions failed:', error);
+      res.status(500).json({ 
+        message: "Failed to generate suggestions",
+        suggestions: [],
+        clinicalFlags: [],
+        contextualReminders: []
+      });
+    }
+  });
+
   // NEW: Enhanced voice processing with real-time transcription and AI suggestions  
   app.post("/api/voice/process-realtime", upload.single("audio"), async (req, res) => {
     try {

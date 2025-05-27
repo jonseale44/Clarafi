@@ -30,18 +30,38 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
   const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSuggestionTextRef = useRef<string>("");
 
+  // Real-time suggestions mutation for providers
+  const realtimeSuggestionsMutation = useMutation({
+    mutationFn: async (transcriptionText: string) => {
+      const response = await apiRequest("POST", "/api/voice/realtime-suggestions", {
+        transcriptionText,
+        patientId: patientId.toString()
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      console.log('🧠 [VoiceModal] Real-time suggestions received:', data);
+      setRealtimeSuggestions(prev => [...prev, data]);
+      setIsGettingSuggestions(false);
+    },
+    onError: (error) => {
+      console.error('❌ [VoiceModal] Real-time suggestions failed:', error);
+      setIsGettingSuggestions(false);
+    }
+  });
+
   const transcribeMutation = useMutation({
     mutationFn: async (audioBlob: Blob) => {
       console.log('📡 [VoiceModal] Starting API request to transcribe-enhanced...');
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
       formData.append("patientId", patientId.toString());
-      formData.append("userRole", user?.role || "provider");
+      formData.append("userRole", "provider");
       
       console.log('📡 [VoiceModal] FormData prepared:', {
         audioSize: audioBlob.size,
         patientId: patientId.toString(),
-        userRole: user?.role || "provider"
+        userRole: "provider"
       });
       
       console.log('📡 [VoiceModal] Sending POST request to /api/voice/transcribe-enhanced...');
@@ -72,10 +92,61 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
     }
   });
 
+  // Smart trigger detection for provider suggestions
+  const detectClinicalTriggers = (text: string): boolean => {
+    const clinicalKeywords = [
+      // Medication-related
+      'prescribe', 'medication', 'dose', 'dosage', 'mg', 'tablet', 'pill', 'antibiotic', 'metformin', 'insulin', 'warfarin', 'statin',
+      // Symptom-related
+      'pain', 'chest pain', 'shortness of breath', 'headache', 'nausea', 'fever', 'cough', 'fatigue', 'dizzy',
+      // Diagnosis-related
+      'diagnosis', 'condition', 'disease', 'syndrome', 'disorder', 'hypertension', 'diabetes', 'copd', 'asthma',
+      // Lab/test-related
+      'lab', 'test', 'result', 'blood', 'urine', 'x-ray', 'ct', 'mri', 'ekg', 'ecg', 'a1c', 'glucose', 'creatinine',
+      // Treatment-related
+      'treatment', 'therapy', 'surgery', 'procedure', 'follow-up', 'referral'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    return clinicalKeywords.some(keyword => lowerText.includes(keyword));
+  };
+
+  // Intelligent suggestion trigger system
+  const triggerSmartSuggestions = (currentText: string) => {
+    // Don't trigger if already getting suggestions or text is too short
+    if (isGettingSuggestions || currentText.length < 20) return;
+    
+    // Don't trigger if text hasn't changed significantly
+    const textDiff = currentText.length - lastSuggestionTextRef.current.length;
+    if (textDiff < 15) return;
+    
+    // Check for clinical triggers
+    if (detectClinicalTriggers(currentText)) {
+      console.log('🎯 [VoiceModal] Clinical trigger detected, getting suggestions...');
+      setIsGettingSuggestions(true);
+      lastSuggestionTextRef.current = currentText;
+      
+      // Clear any existing timeout
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+      
+      // Debounce suggestions to avoid rapid-fire calls
+      suggestionTimeoutRef.current = setTimeout(() => {
+        realtimeSuggestionsMutation.mutate(currentText);
+      }, 1500); // Wait 1.5 seconds after last trigger
+    }
+  };
+
   useEffect(() => {
     if (isRecording && !isPaused) {
       intervalRef.current = setInterval(() => {
         setRecordingDuration(prev => prev + 1);
+        
+        // Trigger suggestions based on live transcription if available
+        if (liveTranscription) {
+          triggerSmartSuggestions(liveTranscription);
+        }
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -87,8 +158,11 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
     };
-  }, [isRecording, isPaused]);
+  }, [isRecording, isPaused, liveTranscription]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -217,6 +291,77 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
                 </div>
               ) : (
                 <p className="text-gray-700 text-sm">{liveTranscription}</p>
+              )}
+            </Card>
+          )}
+
+          {/* Real-time Provider Suggestions */}
+          {(realtimeSuggestions.length > 0 || isGettingSuggestions) && (
+            <Card className="p-4 border-green-200 bg-green-50">
+              <h4 className="font-medium text-green-900 mb-2 flex items-center">
+                <Brain className="h-4 w-4 mr-2" />
+                Real-time Clinical Insights
+                {isGettingSuggestions && <Loader2 className="h-3 w-3 ml-2 animate-spin" />}
+              </h4>
+              
+              {realtimeSuggestions.length > 0 && (
+                <div className="space-y-3">
+                  {realtimeSuggestions.slice(-2).map((suggestion, index) => (
+                    <div key={index} className="space-y-2">
+                      {/* Clinical Suggestions */}
+                      {suggestion.suggestions?.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium text-green-800">Clinical Guidance:</h5>
+                          <ul className="text-sm text-green-700 space-y-1">
+                            {suggestion.suggestions.map((item: string, idx: number) => (
+                              <li key={idx} className="flex items-start">
+                                <span className="text-green-600 mr-2">•</span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* Clinical Flags */}
+                      {suggestion.clinicalFlags?.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium text-red-800">⚠️ Clinical Alerts:</h5>
+                          <ul className="text-sm text-red-700 space-y-1">
+                            {suggestion.clinicalFlags.map((flag: string, idx: number) => (
+                              <li key={idx} className="flex items-start">
+                                <span className="text-red-600 mr-2">•</span>
+                                <span className="font-medium">{flag}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* Contextual Reminders */}
+                      {suggestion.contextualReminders?.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium text-blue-800">📋 Historical Context:</h5>
+                          <ul className="text-sm text-blue-700 space-y-1">
+                            {suggestion.contextualReminders.map((reminder: string, idx: number) => (
+                              <li key={idx} className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span className="italic">{reminder}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {isGettingSuggestions && realtimeSuggestions.length === 0 && (
+                <div className="flex items-center space-x-2 text-green-600">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Analyzing clinical context...</span>
+                </div>
               )}
             </Card>
           )}
