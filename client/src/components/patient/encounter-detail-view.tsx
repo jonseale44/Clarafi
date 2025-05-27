@@ -64,69 +64,127 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
   };
 
   const startRecording = async () => {
-    console.log('🎤 [EncounterView] Starting LIVE voice recording for patient:', patient.id);
+    console.log('🎤 [EncounterView] Starting REAL-TIME voice recording for patient:', patient.id);
     try {
+      // Create direct WebSocket connection to OpenAI like your working code
+      let realtimeWs: WebSocket | null = null;
+      let transcriptionBuffer = '';
+      
+      try {
+        console.log('🌐 [EncounterView] Connecting directly to OpenAI Realtime API...');
+        
+        // First, get the API key from environment (since this is client-side)
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (!apiKey) {
+          throw new Error('OpenAI API key not available in environment');
+        }
+        
+        // Connect exactly like your working code
+        realtimeWs = new WebSocket("wss://api.openai.com/v1/realtime", [
+          "realtime", 
+          "openai-beta.realtime-v1"
+        ]);
+        
+        // Set up event handlers like your working implementation
+        realtimeWs.onopen = () => {
+          console.log('🌐 [EncounterView] ✅ Connected to OpenAI Realtime API');
+          
+          // Configure session exactly like your working code
+          realtimeWs!.send(JSON.stringify({
+            type: "session.update",
+            data: {
+              model: "gpt-4o-mini-realtime-preview-2024-12-17",
+              modalities: ["text"],
+              instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+              input_audio_format: "pcm16",
+              input_audio_sampling_rate: 16000,
+              input_audio_transcription: {
+                model: "whisper-1"
+              },
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.6,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 800,
+                create_response: false
+              }
+            }
+          }));
+        };
+        
+        realtimeWs.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          console.log('📨 [EncounterView] OpenAI message:', message.type);
+          
+          // Handle transcription events like your working code
+          if (message.type === 'conversation.item.input_audio_transcription.delta') {
+            const deltaText = message.transcript || message.delta || '';
+            console.log('📝 [EncounterView] Transcription delta:', deltaText);
+            transcriptionBuffer += deltaText;
+            setTranscription(transcriptionBuffer);
+          } else if (message.type === 'conversation.item.input_audio_transcription.completed') {
+            const finalText = message.transcript || '';
+            console.log('✅ [EncounterView] Transcription completed:', finalText);
+            transcriptionBuffer += finalText;
+            setTranscription(transcriptionBuffer);
+          }
+        };
+        
+        realtimeWs.onerror = (error) => {
+          console.error('❌ [EncounterView] OpenAI WebSocket error:', error);
+        };
+        
+      } catch (wsError) {
+        console.error('❌ [EncounterView] Failed to connect to OpenAI Realtime API:', wsError);
+        // Fall back to chunked processing if direct connection fails
+      }
+
       console.log('🎤 [EncounterView] Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          sampleRate: 16000,
         }
       });
       console.log('🎤 [EncounterView] ✅ Microphone access granted');
       
+      // Set up audio processing for real-time streaming
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      
+      processor.onaudioprocess = (e) => {
+        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
+        
+        const inputData = e.inputBuffer.getChannelData(0);
+        
+        // Convert to PCM16 exactly like your working code
+        const pcm16Data = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const sample = Math.max(-1, Math.min(1, inputData[i]));
+          pcm16Data[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+        }
+        
+        // Send to OpenAI like your working code
+        realtimeWs.send(JSON.stringify({
+          type: "audio.data",
+          data: {
+            audio: Array.from(pcm16Data)
+          }
+        }));
+      };
+      
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+      
       const mediaRecorder = new MediaRecorder(stream);
       const audioChunks: Blob[] = [];
-      let chunkCounter = 0;
       
-      // Set up live transcription with faster chunking for real-time feel
-      mediaRecorder.ondataavailable = async (event) => {
-        console.log('🎤 [EncounterView] Audio chunk available, size:', event.data.size);
+      mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunks.push(event.data);
-          chunkCounter++;
-          
-          // Process chunks for live transcription every 2 seconds for faster feedback
-          if (chunkCounter % 2 === 0 && event.data.size > 1000) {
-            try {
-              console.log('📡 [EncounterView] Sending chunk for live transcription...');
-              
-              const formData = new FormData();
-              formData.append("audio", event.data, "chunk.webm");
-              formData.append("patientId", patient.id.toString());
-              formData.append("userRole", "provider");
-              formData.append("isLiveChunk", "true");
-              
-              const response = await fetch("/api/voice/transcribe-enhanced", {
-                method: "POST",
-                body: formData,
-              });
-              
-              if (response.ok) {
-                const data = await response.json();
-                console.log('📝 [EncounterView] Live transcription received:', data.transcription);
-                
-                // Update live transcription (append to existing)
-                if (data.transcription && data.transcription.trim()) {
-                  setTranscription(prev => {
-                    const newText = prev + " " + data.transcription;
-                    return newText.trim();
-                  });
-                }
-                
-                // Update live AI suggestions
-                if (data.aiSuggestions?.suggestions?.length > 0) {
-                  const suggestions = data.aiSuggestions.suggestions.join('\n• ');
-                  setGptSuggestions(`🔄 LIVE AI ANALYSIS:\n• ${suggestions}`);
-                } else if (data.aiSuggestions?.clinicalGuidance) {
-                  setGptSuggestions(`🧠 LIVE INSIGHTS:\n${data.aiSuggestions.clinicalGuidance}`);
-                }
-              }
-            } catch (liveError) {
-              console.error('❌ [EncounterView] Live transcription error:', liveError);
-            }
-          }
         }
       };
       
