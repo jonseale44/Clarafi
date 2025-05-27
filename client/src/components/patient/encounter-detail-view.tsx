@@ -170,17 +170,16 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           console.log('📨 [EncounterView] OpenAI message type:', message.type);
           console.log('📨 [EncounterView] Full OpenAI message:', message);
           
-          // Handle transcription events exactly like your working code
+          // Handle transcription events - only use delta for live updates
           if (message.type === 'conversation.item.input_audio_transcription.delta') {
             const deltaText = message.transcript || message.delta || '';
             console.log('📝 [EncounterView] Transcription delta:', deltaText);
             transcriptionBuffer += deltaText;
             setTranscription(transcriptionBuffer);
           } else if (message.type === 'conversation.item.input_audio_transcription.completed') {
+            // Log completion but don't add to buffer (already added via deltas)
             const finalText = message.transcript || '';
-            console.log('✅ [EncounterView] Transcription completed:', finalText);
-            transcriptionBuffer += finalText;
-            setTranscription(transcriptionBuffer);
+            console.log('✅ [EncounterView] Transcription completed (not adding to buffer):', finalText);
           } else if (message.type === 'error') {
             console.error('❌ [EncounterView] OpenAI Realtime API Error:', message);
             console.error('❌ [EncounterView] Error details:', message.error);
