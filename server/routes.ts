@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema } from "@shared/schema";
-import { processVoiceRecording, AIAssistantParams } from "./openai";
+import { processVoiceRecording, processVoiceRecordingEnhanced, AIAssistantParams } from "./openai";
 import multer from "multer";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -323,6 +323,55 @@ export function registerRoutes(app: Express): Server {
 
       const result = await processVoiceRecording(req.file.buffer, assistantParams);
       res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Enhanced voice processing with OpenAI Assistants
+  app.post("/api/voice/transcribe-enhanced", upload.single("audio"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No audio file provided" });
+      }
+
+      const patientId = parseInt(req.body.patientId);
+      const userRole = req.body.userRole;
+
+      if (!patientId || !userRole) {
+        return res.status(400).json({ message: "Missing patientId or userRole" });
+      }
+
+      // Get patient data for context
+      const patient = await storage.getPatient(patientId);
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      // Create a new encounter for this voice recording
+      const encounter = await storage.createEncounter({
+        patientId,
+        providerId: req.user?.id || 1,
+        encounterType: "voice_note",
+        chiefComplaint: "Voice-generated documentation"
+      });
+
+      // Process with enhanced OpenAI Assistants workflow
+      const result = await processVoiceRecordingEnhanced(
+        req.file.buffer,
+        patientId,
+        encounter.id,
+        userRole
+      );
+
+      res.json({
+        transcription: result.transcription,
+        aiSuggestions: result.aiResponse.suggestions,
+        soapNote: result.aiResponse.soapNote,
+        draftOrders: result.aiResponse.draftOrders,
+        cptCodes: result.aiResponse.cptCodes,
+        encounterId: encounter.id
+      });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

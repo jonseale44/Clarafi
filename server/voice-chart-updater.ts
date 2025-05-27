@@ -48,33 +48,38 @@ export class VoiceChartUpdater {
   }
   
   private async getCurrentChartData(patientId: number) {
-    const [
-      patientData,
-      familyHistoryData,
-      socialHistoryData,
-      allergiesData,
-      vitalsData,
-      medicationsData,
-      diagnosesData
-    ] = await Promise.all([
-      db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
-      db.select().from(familyHistory).where(eq(familyHistory.patientId, patientId)),
-      db.select().from(socialHistory).where(eq(socialHistory.patientId, patientId)),
-      db.select().from(allergies).where(eq(allergies.patientId, patientId)),
-      db.select().from(vitals).where(eq(vitals.patientId, patientId)).orderBy(desc(vitals.measuredAt)).limit(10),
-      db.select().from(medications).where(eq(medications.patientId, patientId)),
-      db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId))
-    ]);
-    
-    return {
-      patient: patientData[0],
-      familyHistory: familyHistoryData,
-      socialHistory: socialHistoryData,
-      allergies: allergiesData,
-      recentVitals: vitalsData,
-      currentMedications: medicationsData,
-      activeDiagnoses: diagnosesData
-    };
+    try {
+      const [
+        patientData,
+        familyHistoryData,
+        socialHistoryData,
+        allergiesData,
+        vitalsData,
+        medicationsData,
+        diagnosesData
+      ] = await Promise.all([
+        db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
+        db.select().from(familyHistory).where(eq(familyHistory.patientId, patientId)),
+        db.select().from(socialHistory).where(eq(socialHistory.patientId, patientId)),
+        db.select().from(allergies).where(eq(allergies.patientId, patientId)),
+        db.select().from(vitals).where(eq(vitals.patientId, patientId)).orderBy(desc(vitals.measuredAt)).limit(10),
+        db.select().from(medications).where(eq(medications.patientId, patientId)),
+        db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId))
+      ]);
+      
+      return {
+        patient: patientData[0],
+        familyHistory: familyHistoryData,
+        socialHistory: socialHistoryData,
+        allergies: allergiesData,
+        recentVitals: vitalsData,
+        currentMedications: medicationsData.filter(m => m.status === 'active'),
+        activeDiagnoses: diagnosesData.filter(d => d.status === 'active')
+      };
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+      throw new Error('Failed to fetch patient chart data');
+    }
   }
   
   private async applyChartUpdates(aiResponse: any, patientId: number, encounterId: number) {
@@ -183,14 +188,14 @@ export class VoiceChartUpdater {
     if (appends.medications && Array.isArray(appends.medications)) {
       for (const med of appends.medications) {
         await db.insert(medications).values({
-          patientId,
-          encounterId,
+          patientId: patientId,
+          encounterId: encounterId,
           medicationName: med.medicationName,
           dosage: med.dosage,
           frequency: med.frequency,
           route: med.route,
-          startDate: new Date(med.startDate),
-          endDate: med.endDate ? new Date(med.endDate) : null,
+          startDate: med.startDate,
+          endDate: med.endDate || null,
           status: med.status || 'active',
           prescriber: 'AI Assistant',
           medicalProblem: med.medicalProblem || ''
@@ -202,11 +207,11 @@ export class VoiceChartUpdater {
     if (appends.diagnoses && Array.isArray(appends.diagnoses)) {
       for (const diagnosis of appends.diagnoses) {
         await db.insert(diagnoses).values({
-          patientId,
-          encounterId,
+          patientId: patientId,
+          encounterId: encounterId,
           diagnosis: diagnosis.diagnosis,
           icd10Code: diagnosis.icd10Code,
-          diagnosisDate: new Date(),
+          diagnosisDate: new Date().toISOString().split('T')[0],
           status: diagnosis.status || 'active',
           notes: diagnosis.notes || ''
         });
@@ -223,9 +228,10 @@ export class VoiceChartUpdater {
         objective: soapNote.objective || '',
         assessment: soapNote.assessment || '',
         plan: soapNote.plan || '',
-        transcription: transcription,
-        aiProcessed: true,
-        lastUpdated: new Date()
+        transcriptionRaw: transcription,
+        aiSuggestions: aiResponse,
+        draftOrders: aiResponse.draftOrders || [],
+        draftDiagnoses: aiResponse.chartUpdates?.factualAppends?.diagnoses || []
       })
       .where(eq(encounters.id, encounterId));
   }

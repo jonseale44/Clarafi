@@ -33,12 +33,21 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
       formData.append("patientId", patientId.toString());
       formData.append("userRole", user?.role || "provider");
       
-      const response = await apiRequest("POST", "/api/voice/transcribe", formData);
+      const response = await apiRequest("POST", "/api/voice/transcribe-enhanced", formData);
       return response.json();
     },
     onSuccess: (data) => {
       setLiveTranscription(data.transcription);
       setAiSuggestions(data.aiSuggestions);
+      // Store enhanced AI response data
+      if (data.soapNote || data.draftOrders || data.cptCodes) {
+        console.log('📝 Enhanced AI Processing Complete:', {
+          soapNote: data.soapNote,
+          draftOrders: data.draftOrders,
+          cptCodes: data.cptCodes,
+          encounterId: data.encounterId
+        });
+      }
     },
   });
 
