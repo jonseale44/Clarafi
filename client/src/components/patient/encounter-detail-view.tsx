@@ -5,11 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Plus, Search, Mic, MicOff, ArrowLeft, FileText, Activity } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Search, Mic, MicOff, ArrowLeft, FileText } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { EnhancedVoiceModal } from "@/components/voice/enhanced-voice-modal";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -44,28 +43,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
   });
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [isTextMode, setIsTextMode] = useState(false);
-  const [showEnhancedVoice, setShowEnhancedVoice] = useState(false);
   const { toast } = useToast();
-
-  const handleVoiceComplete = (data: any) => {
-    console.log('🎉 Voice processing complete:', data);
-    
-    // Update SOAP note with AI-generated content
-    if (data.soapNote) {
-      setSoapNote(data.soapNote);
-    }
-    
-    // Update transcription
-    if (data.transcription) {
-      setTranscription(data.transcription);
-    }
-    
-    // Show success message
-    toast({
-      title: "Voice Documentation Complete",
-      description: `SOAP note generated for encounter ${data.encounterId || encounterId}`,
-    });
-  };
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -242,15 +220,6 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
                 >
                   <ArrowLeft className="h-3 w-3 mr-1" />
                   Back to Patient Chart
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="text-xs bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setShowEnhancedVoice(true)}
-                >
-                  <Activity className="h-3 w-3 mr-1" />
-                  Real-time Voice
                 </Button>
               </div>
             </div>
@@ -458,15 +427,6 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           </Card>
         </div>
       </div>
-      
-      {/* Enhanced Voice Modal */}
-      <EnhancedVoiceModal
-        isOpen={showEnhancedVoice}
-        onClose={() => setShowEnhancedVoice(false)}
-        patientId={patient.id}
-        patientName={`${patient.firstName} ${patient.lastName}`}
-        onComplete={handleVoiceComplete}
-      />
     </div>
   );
 }
