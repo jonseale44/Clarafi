@@ -90,17 +90,20 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          channelCount: 1,
-          sampleRate: 24000, // OpenAI Realtime API requirement
-          sampleSize: 16,
         },
       });
       console.log('🎤 [EncounterView] ✅ Microphone access granted');
       
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
-      console.log('🎤 [EncounterView] MediaRecorder created for hybrid processing');
+      // Create MediaRecorder with fallback MIME types for better compatibility
+      let mediaRecorder;
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      } else {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+      console.log('🎤 [EncounterView] MediaRecorder created for hybrid processing, MIME:', mediaRecorder.mimeType);
       
       const audioChunks: Blob[] = [];
       let chunkCount = 0;
