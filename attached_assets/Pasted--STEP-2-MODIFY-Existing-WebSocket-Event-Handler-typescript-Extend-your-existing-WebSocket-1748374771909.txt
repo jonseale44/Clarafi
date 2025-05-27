@@ -1,0 +1,163 @@
+
+## STEP 2: MODIFY Existing WebSocket Event Handler
+
+```typescript
+// Extend your existing WebSocketEventHandler.ts
+import { AssistantContextService } from './assistant-context-service.js';
+
+export class WebSocketEventHandler {
+  private assistantService: AssistantContextService;
+  private currentThreadId: string | null = null;
+  private patientId: number | null = null;
+  private userRole: string = 'provider';
+  
+  constructor() {
+    this.assistantService = new AssistantContextService();
+    // Keep all your existing modules and initialization
+  }
+  
+  async initializePatientContext(patientId: number, userRole: string) {
+    this.patientId = patientId;
+    this.userRole = userRole;
+    this.currentThreadId = await this.assistantService.getOrCreateThread(patientId);
+    console.log(`Assistant thread initialized for patient ${patientId}: ${this.currentThreadId}`);
+  }
+  
+  // Keep your existing handleTranscriptionDelta but add Assistant suggestions
+  handleTranscriptionDelta(event: any) {
+    // Your existing transcription handling code stays the same
+    const delta = event.delta;
+    if (delta) {
+      this.currentTranscription += delta;
+      
+      // Update UI with live transcription (existing code)
+      this.updateTranscriptionDisplay(this.currentTranscription);
+      
+      // NEW: Get Assistant suggestions for longer transcription chunks
+      if (this.currentTranscription.length > 50 && this.currentTranscription.length % 100 === 0) {
+        this.getAssistantSuggestions(this.currentTranscription);
+      }
+    }
+  }
+  
+  private async getAssistantSuggestions(partialTranscription: string) {
+    if (!this.currentThreadId || !this.patientId) return;
+    
+    try {
+      const suggestions = await this.assistantService.getRealtimeSuggestions(
+        this.currentThreadId,
+        partialTranscription,
+        this.userRole,
+        this.patientId
+      );
+      
+      // Update suggestions display
+      this.updateSuggestionsDisplay(suggestions);
+    } catch (error) {
+      console.error('Error getting Assistant suggestions:', error);
+    }
+  }
+  
+  // Keep your existing handleResponseDone but add Assistant processing
+  async handleResponseDone(event: any) {
+    // Your existing response handling
+    console.log("Response completed:", event);
+    
+    // NEW: Process complete transcription with Assistant
+    if (this.currentTranscription && this.currentThreadId && this.patientId) {
+      try {
+        const completeResults = await this.assistantService.processCompleteTranscription(
+          this.currentThreadId,
+          this.currentTranscription,
+          this.userRole,
+          this.patientId,
+          this.currentEncounterId
+        );
+        
+        // Apply results to your new schema
+        await this.applyCompleteResults(completeResults);
+      } catch (error) {
+        console.error('Error processing complete transcription:', error);
+      }
+    }
+  }
+  
+  private async applyCompleteResults(results: any) {
+    // Update encounter with SOAP note
+    await db.update(encounters)
+      .set({
+        subjective: results.soapNote.subjective,
+        objective: results.soapNote.objective,
+        assessment: results.soapNote.assessment,
+        plan: results.soapNote.plan,
+        draftOrders: results.draftOrders,
+        cptCodes: results.cptCodes,
+        lastChartUpdate: new Date()
+      })
+      .where(eq(encounters.id, this.currentEncounterId));
+    
+    // Apply chart updates using smart update strategy
+    if (results.chartUpdates) {
+      await this.applySmartChartUpdates(results.chartUpdates);
+    }
+  }
+}
+```
+
+---
+
+## STEP 3: ENHANCED Audio Recorder Component
+
+```tsx
+// Enhanced AudioRecorder.tsx with Assistant integration
+import { AssistantContextService } from '@/services/assistant-context-service';
+
+export function AudioRecorder({ patientId, encounterId, userRole, onSuggestionsUpdate }) {
+  const [assistantService] = useState(new AssistantContextService());
+  const [threadId, setThreadId] = useState<string | null>(null);
+  
+  // Keep ALL your existing audio recording logic
+  // Add Assistant initialization when recording starts
+  
+  const handleStartRecording = async () => {
+    // Your existing recording start logic stays exactly the same
+    // ADD: Initialize Assistant context
+    try {
+      const newThreadId = await assistantService.getOrCreateThread(patientId);
+      setThreadId(newThreadId);
+      
+      // Initialize WebSocket event handler with Assistant context
+      if (client?.eventHandler) {
+        await client.eventHandler.initializePatientContext(patientId, userRole);
+      }
+    } catch (error) {
+      console.error('Error initializing Assistant context:', error);
+    }
+    
+    // Continue with your existing recording logic...
+  };
+  
+  // Keep all your existing recording, audio processing, and UI logic
+}
+```
+
+---
+
+## IMPLEMENTATION PRIORITIES FOR THE NEW AGENT
+
+1. **ANALYZE** the current voice workflow implementation in the medical platform
+2. **REPLACE** existing transcription system with OpenAI Realtime API integration
+3. **UPGRADE** current GPT processing to use OpenAI Assistants with patient context
+4. **MAINTAIN** all existing UI components and user workflows exactly as they are
+5. **INTEGRATE** both APIs to work seamlessly with the existing medical record system
+
+## CRITICAL SUCCESS CRITERIA
+
+- The "Start Recording" button must continue to work exactly as shown in the interface
+- Real-time transcription must continue to appear in the same text area
+- "GPT Suggestions" must appear during recording with improved patient context
+- SOAP note generation must occur automatically after recording stops
+- "Draft Orders" and "CPT Codes & Diagnoses" must populate automatically
+- **The user experience must remain identical while gaining modern API capabilities**
+
+This hybrid approach will give the medical platform significantly improved accuracy and intelligent patient context while preserving the familiar workflow that healthcare providers already know.ry!

@@ -408,6 +408,75 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // NEW: Hybrid Realtime + Assistant voice processing endpoint
+  app.post("/api/voice/hybrid-session", async (req, res) => {
+    try {
+      const { patientId, userRole } = req.body;
+      
+      if (!patientId) {
+        return res.status(400).json({ error: "Patient ID is required" });
+      }
+
+      console.log('🔥 [Routes] Initializing hybrid voice session:', { patientId, userRole });
+      
+      // Import and initialize our new services
+      const { RealtimeVoiceService } = await import('./realtime-voice-service.js');
+      const realtimeService = new RealtimeVoiceService();
+      
+      // Store service instance for this session (in production you'd use Redis/session store)
+      (global as any).voiceSessions = (global as any).voiceSessions || new Map();
+      const sessionId = `${patientId}_${Date.now()}`;
+      (global as any).voiceSessions.set(sessionId, realtimeService);
+      
+      res.json({ 
+        status: "success", 
+        message: "Hybrid Realtime + Assistant session ready",
+        sessionId,
+        patientId,
+        userRole: userRole || "provider"
+      });
+    } catch (error: any) {
+      console.error('❌ [Routes] Error initializing hybrid session:', error);
+      res.status(500).json({ error: "Failed to initialize session" });
+    }
+  });
+
+  // NEW: Enhanced voice processing with real-time transcription and AI suggestions  
+  app.post("/api/voice/process-realtime", upload.single("audio"), async (req, res) => {
+    try {
+      const { patientId, userRole, sessionId } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "No audio file provided" });
+      }
+
+      console.log('🎯 [Routes] Processing realtime voice with hybrid approach:', {
+        patientId,
+        userRole,
+        sessionId,
+        audioSize: req.file.buffer.length
+      });
+
+      // Get the voice service instance
+      const voiceService = (global as any).voiceSessions?.get(sessionId);
+      if (!voiceService) {
+        return res.status(400).json({ error: "Session not found. Please initialize session first." });
+      }
+
+      // This endpoint will be called to send audio chunks to the realtime service
+      // The actual transcription and suggestions will come through WebSocket events
+      
+      res.json({
+        status: "processing",
+        message: "Audio chunk received and being processed"
+      });
+      
+    } catch (error: any) {
+      console.error('❌ [Routes] Realtime voice processing failed:', error);
+      res.status(500).json({ error: "Failed to process voice recording" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
