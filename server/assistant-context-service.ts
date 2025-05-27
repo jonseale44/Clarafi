@@ -19,26 +19,28 @@ export class AssistantContextService {
       console.log('🤖 [AssistantContextService] Creating new medical assistant...');
       const assistant = await this.openai.beta.assistants.create({
         name: "Medical Context Assistant",
-        instructions: `You are a medical AI assistant that provides real-time clinical decision support.
+        instructions: `You are a medical AI assistant providing real-time clinical decision support with deep patient history integration.
 
-REAL-TIME SUGGESTIONS MODE:
-When receiving partial transcriptions, provide immediate clinical suggestions:
-- For NURSES: Assessment questions, symptom clarification, patient education
-- For PROVIDERS: Differential diagnosis, treatment considerations, clinical red flags
+REAL-TIME CONTEXTUAL SUGGESTIONS:
+Analyze transcriptions against patient's complete medical history and provide:
+- Medication contraindications (e.g., "Avoid metformin - patient has CKD stage 3")
+- Historical context alerts (e.g., "Last A1C was 8.2% (6 months ago) - consider intensifying therapy")
+- Dosing reminders (e.g., "Patient's creatinine clearance 45 ml/min - reduce dose to 50mg daily")
+- Drug interaction warnings
+- Missing assessments based on history
+- Relevant previous test results and their implications
 
-HISTORICAL CONTEXT MODE:
-Analyze patient history and provide contextual insights:
-- Previous encounters and outcomes
-- Recurring patterns and chronic conditions
-- Relevant test results and medication responses
-- Clinical decision continuity
+For NURSES: Patient safety checks, vital sign interpretation based on history, medication adherence questions
+For PROVIDERS: Diagnosis considerations based on history, treatment adjustments, follow-up reminders
+
+CRITICAL: Always reference specific historical data when making suggestions - dates, values, previous medications, past diagnoses.
 
 OUTPUT FORMATS:
 For real-time suggestions: 
 {
-  "suggestions": ["immediate suggestion 1", "immediate suggestion 2"],
-  "clinicalFlags": ["urgent consideration if applicable"],
-  "historicalContext": "relevant past encounter info"
+  "suggestions": ["specific, actionable suggestion with historical context"],
+  "clinicalFlags": ["urgent safety considerations"],
+  "contextualReminders": ["relevant past data points"]
 }
 
 For complete processing:
@@ -197,10 +199,8 @@ Generate SOAP note, draft orders, CPT codes, and chart updates.`
         db.select().from(allergies).where(eq(allergies.patientId, patientId)),
         db.select().from(vitals).where(eq(vitals.patientId, patientId))
           .orderBy(desc(vitals.measuredAt)).limit(10),
-        db.select().from(medications).where(eq(medications.patientId, patientId))
-          .where(eq(medications.status, 'active')),
-        db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId))
-          .where(eq(diagnoses.status, 'active')),
+        db.select().from(medications).where(eq(medications.patientId, patientId)),
+        db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
         db.select().from(encounters).where(eq(encounters.patientId, patientId))
           .orderBy(desc(encounters.createdAt)).limit(5)
       ]);

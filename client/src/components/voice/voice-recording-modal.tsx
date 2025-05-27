@@ -21,10 +21,14 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [liveTranscription, setLiveTranscription] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
+  const [realtimeSuggestions, setRealtimeSuggestions] = useState<any[]>([]);
+  const [isGettingSuggestions, setIsGettingSuggestions] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSuggestionTextRef = useRef<string>("");
 
   const transcribeMutation = useMutation({
     mutationFn: async (audioBlob: Blob) => {
