@@ -100,23 +100,24 @@ export class RealtimeTranscriptionService {
       openaiWs.on('open', () => {
         console.log('🌐 [RealtimeTranscription] Connected to OpenAI Realtime API');
         
-        // Configure session for transcription
+        // Configure session for transcription - using correct format from working example
         openaiWs.send(JSON.stringify({
           type: 'session.update',
-          session: {
-            modalities: ['text', 'audio'],
-            instructions: 'You are a medical transcription assistant. Transcribe speech accurately for clinical documentation.',
-            voice: 'alloy',
+          data: {
+            model: 'gpt-4o-mini-realtime-preview-2024-12-17',
+            modalities: ['text'], // Text only to reduce token usage
+            instructions: 'You are a medical transcription assistant. Provide brief clinical insights based on the conversation.',
             input_audio_format: 'pcm16',
-            output_audio_format: 'pcm16',
+            input_audio_sampling_rate: 16000,
             input_audio_transcription: {
               model: 'whisper-1'
             },
             turn_detection: {
               type: 'server_vad',
-              threshold: 0.5,
+              threshold: 0.6,
               prefix_padding_ms: 300,
-              silence_duration_ms: 500
+              silence_duration_ms: 800,
+              create_response: false
             }
           }
         }));
@@ -152,6 +153,8 @@ export class RealtimeTranscriptionService {
   private async handleOpenAIMessage(connectionId: string, message: any) {
     const connection = this.activeConnections.get(connectionId);
     if (!connection) return;
+
+    console.log('📨 [RealtimeTranscription] OpenAI message:', message.type);
 
     switch (message.type) {
       case 'session.created':
@@ -189,6 +192,14 @@ export class RealtimeTranscriptionService {
       case 'conversation.item.input_audio_transcription.failed':
         console.error('❌ [RealtimeTranscription] Transcription failed:', message.error);
         break;
+
+      case 'response.done':
+        console.log('✅ [RealtimeTranscription] Response completed');
+        break;
+
+      default:
+        // Log other events for debugging
+        console.log('📋 [RealtimeTranscription] Unhandled event:', message.type);
     }
   }
 
@@ -216,13 +227,22 @@ export class RealtimeTranscriptionService {
 
   private async handleAudioChunk(connectionId: string, message: any) {
     const connection = this.activeConnections.get(connectionId);
-    if (!connection?.openaiWs) return;
+    if (!connection?.openaiWs || connection.openaiWs.readyState !== WebSocket.OPEN) return;
 
     try {
-      // Send audio chunk to OpenAI Realtime API
+      // Convert comma-separated string back to ArrayBuffer if needed
+      let audioData = message.audio;
+      if (typeof audioData === 'string') {
+        const pcm16Array = audioData.split(',').map(x => parseInt(x));
+        audioData = new Int16Array(pcm16Array).buffer;
+      }
+
+      // Send audio chunk to OpenAI Realtime API with correct format
       connection.openaiWs.send(JSON.stringify({
         type: 'input_audio_buffer.append',
-        audio: message.audio
+        data: {
+          audio: audioData
+        }
       }));
     } catch (error) {
       console.error('❌ [RealtimeTranscription] Error sending audio chunk:', error);
