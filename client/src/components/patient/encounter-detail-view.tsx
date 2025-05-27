@@ -71,41 +71,94 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       let transcriptionBuffer = '';
       
       try {
-        console.log('🌐 [EncounterView] Connecting directly to OpenAI Realtime API...');
+        console.log('🌐 [EncounterView] Connecting to OpenAI Realtime API like working implementation...');
         
-        // First, get the API key from environment (since this is client-side)
+        // Get API key from environment
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        console.log('🔑 [EncounterView] API key check:', {
+          hasApiKey: !!apiKey,
+          keyLength: apiKey?.length || 0,
+          keyPrefix: apiKey?.substring(0, 7) || 'none'
+        });
+        
         if (!apiKey) {
           throw new Error('OpenAI API key not available in environment');
         }
         
-        // Connect exactly like your working code with authentication
-        realtimeWs = new WebSocket(`wss://api.openai.com/v1/realtime?authorization=Bearer ${apiKey}&openai-beta=realtime%3Dv1`, [
-          "realtime", 
-          "openai-beta.realtime-v1"
-        ]);
+        // Step 1: Create session exactly like your working code
+        console.log('🔧 [EncounterView] Creating OpenAI session...');
+        const sessionConfig = {
+          model: "gpt-4o-mini-realtime-preview-2024-12-17",
+          modalities: ["text"],
+          instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+          input_audio_format: "pcm16",
+          input_audio_transcription: {
+            model: "whisper-1",
+            language: "en"
+          },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 500,
+            create_response: false
+          }
+        };
+
+        const sessionResponse = await fetch("https://api.openai.com/v1/realtime/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "OpenAI-Beta": "realtime=v1",
+          },
+          body: JSON.stringify(sessionConfig),
+        });
+
+        if (!sessionResponse.ok) {
+          const error = await sessionResponse.json();
+          throw new Error(`Failed to create session: ${error.message || 'Unknown error'}`);
+        }
+
+        const session = await sessionResponse.json();
+        console.log('✅ [EncounterView] Session created:', session.id);
+
+        // Step 2: Connect via WebSocket with session token like your working code
+        const protocols = [
+          "realtime",
+          `openai-insecure-api-key.${apiKey}`,
+          "openai-beta.realtime-v1",
+        ];
+
+        const params = new URLSearchParams({
+          model: "gpt-4o-mini-realtime-preview-2024-12-17",
+        });
+
+        realtimeWs = new WebSocket(
+          `wss://api.openai.com/v1/realtime?${params.toString()}`,
+          protocols
+        );
         
-        // Set up event handlers like your working implementation
         realtimeWs.onopen = () => {
           console.log('🌐 [EncounterView] ✅ Connected to OpenAI Realtime API');
           
-          // Configure session exactly like your working code
+          // Update session configuration like your working code
           realtimeWs!.send(JSON.stringify({
             type: "session.update",
-            data: {
+            session: {
+              instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
               model: "gpt-4o-mini-realtime-preview-2024-12-17",
               modalities: ["text"],
-              instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
               input_audio_format: "pcm16",
-              input_audio_sampling_rate: 16000,
               input_audio_transcription: {
-                model: "whisper-1"
+                model: "whisper-1",
+                language: "en"
               },
               turn_detection: {
                 type: "server_vad",
-                threshold: 0.6,
+                threshold: 0.3,
                 prefix_padding_ms: 300,
-                silence_duration_ms: 800,
+                silence_duration_ms: 500,
                 create_response: false
               }
             }
@@ -114,9 +167,10 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log('📨 [EncounterView] OpenAI message:', message.type);
+          console.log('📨 [EncounterView] OpenAI message type:', message.type);
+          console.log('📨 [EncounterView] Full OpenAI message:', message);
           
-          // Handle transcription events like your working code
+          // Handle transcription events exactly like your working code
           if (message.type === 'conversation.item.input_audio_transcription.delta') {
             const deltaText = message.transcript || message.delta || '';
             console.log('📝 [EncounterView] Transcription delta:', deltaText);
@@ -127,6 +181,9 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             console.log('✅ [EncounterView] Transcription completed:', finalText);
             transcriptionBuffer += finalText;
             setTranscription(transcriptionBuffer);
+          } else if (message.type === 'error') {
+            console.error('❌ [EncounterView] OpenAI Realtime API Error:', message);
+            console.error('❌ [EncounterView] Error details:', message.error);
           }
         };
         

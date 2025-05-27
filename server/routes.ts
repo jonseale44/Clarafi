@@ -515,16 +515,8 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
   
-  // Initialize real-time transcription WebSocket service
-  try {
-    console.log('🔧 [Routes] Attempting to initialize real-time transcription service...');
-    const realtimeModule = await import('./realtime-transcription-service.js');
-    const realtimeService = new realtimeModule.RealtimeTranscriptionService();
-    realtimeService.initialize(httpServer);
-    console.log('✅ [Routes] Real-time transcription WebSocket service initialized on /ws/realtime-transcription');
-  } catch (error) {
-    console.error('❌ [Routes] Failed to initialize real-time transcription service:', error);
-  }
+  // Real-time transcription service initialization commented out for now
+  console.log('🔧 [Routes] Real-time transcription service will be client-side only');
   
   return httpServer;
 }
