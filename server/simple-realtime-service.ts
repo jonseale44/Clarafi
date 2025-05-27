@@ -19,13 +19,22 @@ export class SimpleRealtimeService {
     console.log('⚡ [SimpleRealtime] Processing live audio chunk, size:', audioBuffer.length);
     
     try {
-      // Add timeout and retry logic for transcription
-      const transcription = await Promise.race([
-        transcribeAudio(audioBuffer),
-        new Promise<string>((_, reject) => 
-          setTimeout(() => reject(new Error('Transcription timeout')), 8000)
-        )
-      ]);
+      // For live chunks, try transcription with fallback to prevent blocking
+      let transcription = '';
+      try {
+        // Quick transcription attempt for live chunks
+        transcription = await Promise.race([
+          transcribeAudio(audioBuffer),
+          new Promise<string>((_, reject) => 
+            setTimeout(() => reject(new Error('Transcription timeout')), 5000)
+          )
+        ]);
+        console.log('📝 [SimpleRealtime] ✅ Transcription successful:', transcription?.length || 0, 'characters');
+      } catch (transcriptionError) {
+        console.warn('⚠️ [SimpleRealtime] Transcription failed, using processing indicator:', transcriptionError.message);
+        // Return a processing indicator to keep the UI responsive
+        transcription = '[Processing audio...]';
+      }
       
       console.log('📝 [SimpleRealtime] Transcription success:', transcription?.substring(0, 50) + '...');
 

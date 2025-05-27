@@ -64,109 +64,69 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
   };
 
   const startRecording = async () => {
-    console.log('🎤 [EncounterView] Starting REAL-TIME voice recording for patient:', patient.id);
+    console.log('🎤 [EncounterView] Starting LIVE voice recording for patient:', patient.id);
     try {
-      // Connect to the real-time transcription WebSocket that actually works
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws/realtime-transcription`;
-      const realtimeWs = new WebSocket(wsUrl);
-      
-      realtimeWs.onopen = () => {
-        console.log('🌐 [EncounterView] ✅ Connected to real-time transcription service');
-        
-        // Start transcription session
-        realtimeWs.send(JSON.stringify({
-          type: 'start_session',
-          patientId: patient.id,
-          userRole: 'provider'
-        }));
-      };
-
-      realtimeWs.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        console.log('📨 [EncounterView] Real-time message:', message.type);
-
-        switch (message.type) {
-          case 'session_started':
-            console.log('✅ [EncounterView] Real-time session started');
-            break;
-            
-          case 'live_transcription':
-            console.log('📝 [EncounterView] Live transcription:', message.transcription);
-            // Append to existing transcription for live update
-            setTranscription(prev => (prev + " " + message.transcription).trim());
-            break;
-            
-          case 'live_suggestions':
-            console.log('🧠 [EncounterView] Live AI suggestions:', message.suggestions);
-            const suggestions = message.suggestions;
-            if (suggestions.suggestions?.length > 0) {
-              let suggestionText = suggestions.suggestions.join('\n• ');
-              if (suggestions.clinicalFlags?.length > 0) {
-                suggestionText += '\n\n⚠️ CLINICAL FLAGS:\n• ' + suggestions.clinicalFlags.join('\n• ');
-              }
-              setGptSuggestions(suggestionText);
-            }
-            break;
-            
-          case 'speech_started':
-            console.log('🎙️ [EncounterView] Speech detected');
-            break;
-            
-          case 'speech_stopped':
-            console.log('🔇 [EncounterView] Speech stopped');
-            break;
-            
-          case 'error':
-            console.error('❌ [EncounterView] Real-time error:', message.message);
-            break;
-        }
-      };
-
       console.log('🎤 [EncounterView] Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 16000,
         }
       });
       console.log('🎤 [EncounterView] ✅ Microphone access granted');
       
-      // Create AudioContext for real-time PCM16 audio processing
-      const audioContext = new AudioContext({ sampleRate: 16000 });
-      const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
-      
-      processor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        
-        // Convert to PCM16 format for OpenAI Realtime API
-        const pcm16Data = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          const sample = Math.max(-1, Math.min(1, inputData[i]));
-          pcm16Data[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
-        }
-        
-        // Send real-time audio to WebSocket
-        if (realtimeWs.readyState === WebSocket.OPEN) {
-          realtimeWs.send(JSON.stringify({
-            type: 'audio_chunk',
-            audio: Array.from(pcm16Data)
-          }));
-        }
-      };
-      
-      source.connect(processor);
-      processor.connect(audioContext.destination);
-      
       const mediaRecorder = new MediaRecorder(stream);
       const audioChunks: Blob[] = [];
+      let chunkCounter = 0;
       
-      mediaRecorder.ondataavailable = (event) => {
+      // Set up live transcription with faster chunking for real-time feel
+      mediaRecorder.ondataavailable = async (event) => {
+        console.log('🎤 [EncounterView] Audio chunk available, size:', event.data.size);
         if (event.data.size > 0) {
           audioChunks.push(event.data);
+          chunkCounter++;
+          
+          // Process chunks for live transcription every 2 seconds for faster feedback
+          if (chunkCounter % 2 === 0 && event.data.size > 1000) {
+            try {
+              console.log('📡 [EncounterView] Sending chunk for live transcription...');
+              
+              const formData = new FormData();
+              formData.append("audio", event.data, "chunk.webm");
+              formData.append("patientId", patient.id.toString());
+              formData.append("userRole", "provider");
+              formData.append("isLiveChunk", "true");
+              
+              const response = await fetch("/api/voice/transcribe-enhanced", {
+                method: "POST",
+                body: formData,
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                console.log('📝 [EncounterView] Live transcription received:', data.transcription);
+                
+                // Update live transcription (append to existing)
+                if (data.transcription && data.transcription.trim()) {
+                  setTranscription(prev => {
+                    const newText = prev + " " + data.transcription;
+                    return newText.trim();
+                  });
+                }
+                
+                // Update live AI suggestions
+                if (data.aiSuggestions?.suggestions?.length > 0) {
+                  const suggestions = data.aiSuggestions.suggestions.join('\n• ');
+                  setGptSuggestions(`🔄 LIVE AI ANALYSIS:\n• ${suggestions}`);
+                } else if (data.aiSuggestions?.clinicalGuidance) {
+                  setGptSuggestions(`🧠 LIVE INSIGHTS:\n${data.aiSuggestions.clinicalGuidance}`);
+                }
+              }
+            } catch (liveError) {
+              console.error('❌ [EncounterView] Live transcription error:', liveError);
+            }
+          }
         }
       };
       

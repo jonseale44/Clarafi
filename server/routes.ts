@@ -517,12 +517,13 @@ export function registerRoutes(app: Express): Server {
   
   // Initialize real-time transcription WebSocket service
   try {
-    const { RealtimeTranscriptionService } = require('./realtime-transcription-service.js');
-    const realtimeService = new RealtimeTranscriptionService();
+    console.log('🔧 [Routes] Attempting to initialize real-time transcription service...');
+    const realtimeModule = await import('./realtime-transcription-service.js');
+    const realtimeService = new realtimeModule.RealtimeTranscriptionService();
     realtimeService.initialize(httpServer);
-    console.log('✅ [Routes] Real-time transcription service initialized');
+    console.log('✅ [Routes] Real-time transcription WebSocket service initialized on /ws/realtime-transcription');
   } catch (error) {
-    console.log('⚠️ [Routes] Real-time transcription service initialization skipped - module not ready');
+    console.error('❌ [Routes] Failed to initialize real-time transcription service:', error);
   }
   
   return httpServer;
