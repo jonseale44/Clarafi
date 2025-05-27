@@ -28,20 +28,34 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
 
   const transcribeMutation = useMutation({
     mutationFn: async (audioBlob: Blob) => {
+      console.log('📡 [VoiceModal] Starting API request to transcribe-enhanced...');
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
       formData.append("patientId", patientId.toString());
       formData.append("userRole", user?.role || "provider");
       
+      console.log('📡 [VoiceModal] FormData prepared:', {
+        audioSize: audioBlob.size,
+        patientId: patientId.toString(),
+        userRole: user?.role || "provider"
+      });
+      
+      console.log('📡 [VoiceModal] Sending POST request to /api/voice/transcribe-enhanced...');
       const response = await apiRequest("POST", "/api/voice/transcribe-enhanced", formData);
-      return response.json();
+      console.log('📡 [VoiceModal] Response received, status:', response.status);
+      
+      const data = await response.json();
+      console.log('📡 [VoiceModal] Response data:', data);
+      return data;
     },
     onSuccess: (data) => {
+      console.log('✅ [VoiceModal] Transcription successful:', data);
       setLiveTranscription(data.transcription);
       setAiSuggestions(data.aiSuggestions);
+      
       // Store enhanced AI response data
       if (data.soapNote || data.draftOrders || data.cptCodes) {
-        console.log('📝 Enhanced AI Processing Complete:', {
+        console.log('📝 [VoiceModal] Enhanced AI Processing Complete:', {
           soapNote: data.soapNote,
           draftOrders: data.draftOrders,
           cptCodes: data.cptCodes,
@@ -49,6 +63,9 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
         });
       }
     },
+    onError: (error) => {
+      console.error('❌ [VoiceModal] Transcription failed:', error);
+    }
   });
 
   useEffect(() => {
@@ -76,25 +93,40 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
   };
 
   const startRecording = async () => {
+    console.log('🎤 [VoiceModal] Starting recording for patient:', patientId);
     try {
+      console.log('🎤 [VoiceModal] Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('🎤 [VoiceModal] ✅ Microphone access granted');
+      
       const mediaRecorder = new MediaRecorder(stream);
+      console.log('🎤 [VoiceModal] MediaRecorder created, MIME type:', mediaRecorder.mimeType);
       
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       
       mediaRecorder.ondataavailable = (event) => {
+        console.log('🎤 [VoiceModal] Audio data available, size:', event.data.size);
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
       
       mediaRecorder.onstop = async () => {
+        console.log('🎤 [VoiceModal] Recording stopped, chunks:', audioChunksRef.current.length);
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        console.log('🎤 [VoiceModal] Audio blob created:', {
+          size: audioBlob.size,
+          type: audioBlob.type,
+          patientId,
+          userRole: user?.role
+        });
+        console.log('🎤 [VoiceModal] Sending to enhanced transcription API...');
         transcribeMutation.mutate(audioBlob);
         
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
+        console.log('🎤 [VoiceModal] Microphone released');
       };
       
       mediaRecorder.start();
@@ -103,8 +135,9 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
       setRecordingDuration(0);
       setLiveTranscription("");
       setAiSuggestions(null);
+      console.log('🎤 [VoiceModal] ✅ Recording started successfully');
     } catch (error) {
-      console.error("Error starting recording:", error);
+      console.error("❌ [VoiceModal] Error starting recording:", error);
     }
   };
 
