@@ -67,7 +67,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
     console.log('🔥 [EncounterView] Starting HYBRID voice recording for patient:', patient.id);
     try {
       // Initialize hybrid session first
-      console.log('🔥 [EncounterView] Initializing Realtime + Assistant session...');
+      console.log('🔥 [EncounterView] Step 1: Initializing Realtime + Assistant session...');
       const sessionResponse = await fetch("/api/voice/hybrid-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,14 +77,21 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         })
       });
 
+      console.log('🔥 [EncounterView] Session response status:', sessionResponse.status);
+      
       if (!sessionResponse.ok) {
-        throw new Error('Failed to initialize hybrid session');
+        const errorText = await sessionResponse.text();
+        console.error('❌ [EncounterView] Session initialization failed:', errorText);
+        throw new Error(`Failed to initialize hybrid session: ${sessionResponse.status} - ${errorText}`);
       }
 
       const sessionData = await sessionResponse.json();
-      console.log('🔥 [EncounterView] ✅ Hybrid session initialized:', sessionData.sessionId);
+      console.log('🔥 [EncounterView] ✅ Step 1 Complete - Hybrid session initialized:', sessionData);
 
-      console.log('🎤 [EncounterView] Requesting microphone access...');
+      console.log('🎤 [EncounterView] Step 2: Requesting microphone access...');
+      console.log('🎤 [EncounterView] navigator.mediaDevices available:', !!navigator.mediaDevices);
+      console.log('🎤 [EncounterView] getUserMedia available:', !!navigator.mediaDevices?.getUserMedia);
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -92,18 +99,42 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           autoGainControl: true,
         },
       });
-      console.log('🎤 [EncounterView] ✅ Microphone access granted');
+      console.log('🎤 [EncounterView] ✅ Step 2 Complete - Microphone access granted');
+      console.log('🎤 [EncounterView] Stream details:', {
+        active: stream.active,
+        id: stream.id,
+        tracks: stream.getAudioTracks().length
+      });
+      
+      console.log('🎤 [EncounterView] Step 3: Creating MediaRecorder...');
+      console.log('🎤 [EncounterView] MediaRecorder available:', !!window.MediaRecorder);
+      
+      // Check MIME type support
+      const opusSupported = MediaRecorder.isTypeSupported('audio/webm;codecs=opus');
+      const webmSupported = MediaRecorder.isTypeSupported('audio/webm');
+      console.log('🎤 [EncounterView] MIME type support:', {
+        'audio/webm;codecs=opus': opusSupported,
+        'audio/webm': webmSupported
+      });
       
       // Create MediaRecorder with fallback MIME types for better compatibility
       let mediaRecorder;
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      } else {
-        mediaRecorder = new MediaRecorder(stream);
+      try {
+        if (opusSupported) {
+          mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+          console.log('🎤 [EncounterView] Using audio/webm;codecs=opus');
+        } else if (webmSupported) {
+          mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          console.log('🎤 [EncounterView] Using audio/webm');
+        } else {
+          mediaRecorder = new MediaRecorder(stream);
+          console.log('🎤 [EncounterView] Using default MIME type');
+        }
+        console.log('🎤 [EncounterView] ✅ Step 3 Complete - MediaRecorder created, MIME:', mediaRecorder.mimeType);
+      } catch (recorderError) {
+        console.error('❌ [EncounterView] MediaRecorder creation failed:', recorderError);
+        throw new Error(`MediaRecorder creation failed: ${recorderError.message}`);
       }
-      console.log('🎤 [EncounterView] MediaRecorder created for hybrid processing, MIME:', mediaRecorder.mimeType);
       
       const audioChunks: Blob[] = [];
       let chunkCount = 0;
@@ -229,10 +260,24 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         description: "Real-time transcription and AI suggestions with patient context"
       });
     } catch (error) {
-      console.error("❌ [EncounterView] Error starting hybrid recording:", error);
+      console.error("❌ [EncounterView] DETAILED ERROR in hybrid recording:", {
+        error,
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack,
+        patientId: patient.id
+      });
+      
+      let errorMessage = "Unknown error occurred";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
         title: "Recording Failed",
-        description: "Could not start enhanced recording. Check microphone permissions.",
+        description: `Enhanced recording error: ${errorMessage}`,
         variant: "destructive"
       });
     }
