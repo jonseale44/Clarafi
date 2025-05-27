@@ -15,7 +15,9 @@ export class AssistantService {
   }
   
   async initializeAssistant() {
+    console.log('🤖 [AssistantService] Initializing OpenAI Assistant...');
     if (!this.assistantId) {
+      console.log('🤖 [AssistantService] No existing assistant ID, creating new assistant...');
       const assistant = await openai.beta.assistants.create({
         name: "Medical Documentation Assistant",
         instructions: `You are an expert medical AI assistant that processes voice recordings from healthcare providers.
@@ -81,24 +83,39 @@ OUTPUT FORMAT: Always respond with valid JSON containing:
         tools: []
       });
       this.assistantId = assistant.id;
+      console.log('🤖 [AssistantService] ✅ New assistant created with ID:', this.assistantId);
+    } else {
+      console.log('🤖 [AssistantService] ✅ Using existing assistant ID:', this.assistantId);
     }
   }
   
   async getOrCreateThread(patientId: number): Promise<string> {
+    console.log('🧵 [AssistantService] Getting or creating thread for patient ID:', patientId);
+    
     // Check if patient already has a thread
     const patient = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
+    console.log('🧵 [AssistantService] Patient data retrieved:', { 
+      patientId, 
+      hasExistingThread: !!patient[0]?.assistantThreadId,
+      threadId: patient[0]?.assistantThreadId 
+    });
     
     if (patient[0]?.assistantThreadId) {
+      console.log('🧵 [AssistantService] ✅ Using existing thread:', patient[0].assistantThreadId);
       return patient[0].assistantThreadId;
     }
     
     // Create new thread
+    console.log('🧵 [AssistantService] Creating new OpenAI thread...');
     const thread = await openai.beta.threads.create();
+    console.log('🧵 [AssistantService] ✅ New thread created:', thread.id);
     
     // Save thread ID to patient record
+    console.log('🧵 [AssistantService] Saving thread ID to patient record...');
     await db.update(patients)
       .set({ assistantThreadId: thread.id })
       .where(eq(patients.id, patientId));
+    console.log('🧵 [AssistantService] ✅ Thread ID saved to patient record');
     
     return thread.id;
   }
@@ -111,43 +128,84 @@ OUTPUT FORMAT: Always respond with valid JSON containing:
     userRole: string,
     currentChartData: any
   ) {
+    console.log('🎯 [AssistantService] Processing voice recording...', {
+      threadId,
+      patientId,
+      encounterId,
+      userRole,
+      transcriptionLength: transcription.length,
+      chartDataKeys: Object.keys(currentChartData)
+    });
+
     // Add message to thread with full context
-    await openai.beta.threads.messages.create(threadId, {
-      role: "user",
-      content: `
+    console.log('💬 [AssistantService] Adding message to thread...');
+    const messageContent = `
 VOICE RECORDING TRANSCRIPTION: ${transcription}
 
-CURRENT PATIENT CHART: ${JSON.stringify(currentChartData)}
+CURRENT PATIENT CHART: ${JSON.stringify(currentChartData, null, 2)}
 
 USER ROLE: ${userRole}
 
 ENCOUNTER ID: ${encounterId}
 
 Please process this voice recording and provide structured medical documentation following the output format specified in your instructions.
-      `
+    `;
+    
+    await openai.beta.threads.messages.create(threadId, {
+      role: "user",
+      content: messageContent
     });
+    console.log('💬 [AssistantService] ✅ Message added to thread');
     
     // Run assistant
+    console.log('🚀 [AssistantService] Starting assistant run...');
     const run = await openai.beta.threads.runs.create(threadId, {
       assistant_id: this.assistantId
     });
+    console.log('🚀 [AssistantService] ✅ Assistant run started:', run.id);
     
     // Wait for completion
+    console.log('⏳ [AssistantService] Waiting for assistant completion...');
     let runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
+    let pollCount = 0;
+    
     while (runStatus.status === 'in_progress' || runStatus.status === 'queued') {
+      pollCount++;
+      console.log(`⏳ [AssistantService] Poll ${pollCount}: Status = ${runStatus.status}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
     }
     
+    console.log('🏁 [AssistantService] Assistant run completed with status:', runStatus.status);
+    
     if (runStatus.status === 'completed') {
+      console.log('📥 [AssistantService] Retrieving assistant response...');
       const messages = await openai.beta.threads.messages.list(threadId);
       const lastMessage = messages.data[0];
       
       if (lastMessage.content[0].type === 'text') {
-        return JSON.parse(lastMessage.content[0].text.value);
+        const responseText = lastMessage.content[0].text.value;
+        console.log('📄 [AssistantService] Raw response length:', responseText.length);
+        console.log('📄 [AssistantService] Response preview:', responseText.substring(0, 200) + '...');
+        
+        try {
+          const parsedResponse = JSON.parse(responseText);
+          console.log('✅ [AssistantService] Successfully parsed JSON response');
+          console.log('📊 [AssistantService] Response structure:', Object.keys(parsedResponse));
+          return parsedResponse;
+        } catch (parseError) {
+          console.error('❌ [AssistantService] Failed to parse JSON response:', parseError);
+          console.log('📄 [AssistantService] Full response text:', responseText);
+          throw new Error('Assistant response was not valid JSON');
+        }
+      }
+    } else {
+      console.error('❌ [AssistantService] Assistant run failed with status:', runStatus.status);
+      if (runStatus.last_error) {
+        console.error('❌ [AssistantService] Error details:', runStatus.last_error);
       }
     }
     
-    throw new Error('Assistant processing failed');
+    throw new Error(`Assistant processing failed with status: ${runStatus.status}`);
   }
 }

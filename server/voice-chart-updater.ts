@@ -16,35 +16,75 @@ export class VoiceChartUpdater {
     encounterId: number,
     userRole: string
   ) {
-    console.log('🎤 Processing voice recording for patient', patientId);
-    
-    // Initialize assistant if needed
-    await this.assistantService.initializeAssistant();
-    
-    // Get current chart data
-    const currentChart = await this.getCurrentChartData(patientId);
-    
-    // Get or create assistant thread
-    const threadId = await this.assistantService.getOrCreateThread(patientId);
-    
-    // Process with AI Assistant
-    const aiResponse = await this.assistantService.processVoiceRecording(
-      threadId,
-      transcription,
+    const startTime = Date.now();
+    console.log('🎤 [VoiceChartUpdater] Starting voice recording processing...', {
       patientId,
       encounterId,
       userRole,
-      currentChart
-    );
+      transcriptionLength: transcription.length,
+      timestamp: new Date().toISOString()
+    });
     
-    // Apply all updates to database
-    await this.applyChartUpdates(aiResponse, patientId, encounterId);
-    
-    // Update encounter with processed data
-    await this.updateEncounter(encounterId, aiResponse, transcription);
-    
-    console.log('✅ Voice processing complete');
-    return aiResponse;
+    try {
+      // Initialize assistant if needed
+      console.log('🤖 [VoiceChartUpdater] Initializing OpenAI Assistant...');
+      await this.assistantService.initializeAssistant();
+      
+      // Get current chart data
+      console.log('📋 [VoiceChartUpdater] Fetching current patient chart data...');
+      const currentChart = await this.getCurrentChartData(patientId);
+      console.log('📋 [VoiceChartUpdater] Chart data retrieved:', {
+        hasPatient: !!currentChart.patient,
+        familyHistoryCount: currentChart.familyHistory?.length || 0,
+        socialHistoryCount: currentChart.socialHistory?.length || 0,
+        allergiesCount: currentChart.allergies?.length || 0,
+        vitalsCount: currentChart.recentVitals?.length || 0,
+        medicationsCount: currentChart.currentMedications?.length || 0,
+        diagnosesCount: currentChart.activeDiagnoses?.length || 0
+      });
+      
+      // Get or create assistant thread
+      console.log('🧵 [VoiceChartUpdater] Getting or creating AI thread...');
+      const threadId = await this.assistantService.getOrCreateThread(patientId);
+      
+      // Process with AI Assistant
+      console.log('🎯 [VoiceChartUpdater] Starting AI processing...');
+      const aiResponse = await this.assistantService.processVoiceRecording(
+        threadId,
+        transcription,
+        patientId,
+        encounterId,
+        userRole,
+        currentChart
+      );
+      console.log('🎯 [VoiceChartUpdater] AI processing completed');
+      
+      // Apply all updates to database
+      console.log('💾 [VoiceChartUpdater] Applying chart updates to database...');
+      await this.applyChartUpdates(aiResponse, patientId, encounterId);
+      
+      // Update encounter with processed data
+      console.log('📝 [VoiceChartUpdater] Updating encounter record...');
+      await this.updateEncounter(encounterId, aiResponse, transcription);
+      
+      const processingTime = Date.now() - startTime;
+      console.log('✅ [VoiceChartUpdater] Voice processing completed successfully!', {
+        processingTimeMs: processingTime,
+        processingTimeSec: (processingTime / 1000).toFixed(2)
+      });
+      
+      return aiResponse;
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error('❌ [VoiceChartUpdater] Voice processing failed:', {
+        error: error.message,
+        processingTimeMs: processingTime,
+        patientId,
+        encounterId,
+        userRole
+      });
+      throw error;
+    }
   }
   
   private async getCurrentChartData(patientId: number) {
@@ -83,17 +123,34 @@ export class VoiceChartUpdater {
   }
   
   private async applyChartUpdates(aiResponse: any, patientId: number, encounterId: number) {
+    console.log('💾 [VoiceChartUpdater] Starting chart updates...', {
+      hasChartUpdates: !!aiResponse.chartUpdates,
+      hasHistoricalUpdates: !!aiResponse.chartUpdates?.historicalUpdates,
+      hasFactualAppends: !!aiResponse.chartUpdates?.factualAppends
+    });
+
     const { chartUpdates } = aiResponse;
+    
+    if (!chartUpdates) {
+      console.log('💾 [VoiceChartUpdater] No chart updates to apply');
+      return;
+    }
     
     // HISTORICAL UPDATES (can modify existing records)
     if (chartUpdates?.historicalUpdates) {
+      console.log('📚 [VoiceChartUpdater] Applying historical updates...');
       await this.updateHistoricalData(chartUpdates.historicalUpdates, patientId, encounterId);
+      console.log('📚 [VoiceChartUpdater] ✅ Historical updates completed');
     }
     
     // FACTUAL APPENDS (always create new records)
     if (chartUpdates?.factualAppends) {
+      console.log('📊 [VoiceChartUpdater] Applying factual appends...');
       await this.appendFactualData(chartUpdates.factualAppends, patientId, encounterId);
+      console.log('📊 [VoiceChartUpdater] ✅ Factual appends completed');
     }
+    
+    console.log('💾 [VoiceChartUpdater] ✅ All chart updates applied successfully');
   }
   
   private async updateHistoricalData(updates: any, patientId: number, encounterId: number) {

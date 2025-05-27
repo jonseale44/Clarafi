@@ -30,18 +30,32 @@ export interface AIAssistantParams {
 }
 
 export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
+  console.log('🎙️ [OpenAI] Starting audio transcription...', {
+    audioBufferSize: audioBuffer.length,
+    timestamp: new Date().toISOString()
+  });
+  
   try {
     // Convert buffer to a readable stream-like object
+    console.log('🎙️ [OpenAI] Converting audio buffer to file...');
     const audioFile = new File([audioBuffer], "audio.webm", { type: "audio/webm" });
+    console.log('🎙️ [OpenAI] File created, size:', audioFile.size);
     
+    console.log('🎙️ [OpenAI] Sending to OpenAI Whisper API...');
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: "whisper-1",
     });
 
+    console.log('🎙️ [OpenAI] ✅ Transcription completed:', {
+      textLength: transcription.text.length,
+      preview: transcription.text.substring(0, 100) + (transcription.text.length > 100 ? '...' : '')
+    });
+
     return transcription.text;
   } catch (error) {
-    throw new Error("Failed to transcribe audio: " + error.message);
+    console.error('❌ [OpenAI] Transcription failed:', error);
+    throw new Error("Failed to transcribe audio: " + (error as Error).message);
   }
 }
 

@@ -330,8 +330,19 @@ export function registerRoutes(app: Express): Server {
 
   // Enhanced voice processing with OpenAI Assistants
   app.post("/api/voice/transcribe-enhanced", upload.single("audio"), async (req, res) => {
+    console.log('🎯 [Routes] Enhanced voice transcribe request received');
+    console.log('🎯 [Routes] Request details:', {
+      hasFile: !!req.file,
+      fileSize: req.file?.size,
+      patientId: req.body.patientId,
+      userRole: req.body.userRole,
+      userId: req.user?.id,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       if (!req.file) {
+        console.error('❌ [Routes] No audio file provided');
         return res.status(400).json({ message: "No audio file provided" });
       }
 
@@ -339,15 +350,20 @@ export function registerRoutes(app: Express): Server {
       const userRole = req.body.userRole;
 
       if (!patientId || !userRole) {
+        console.error('❌ [Routes] Missing required parameters:', { patientId, userRole });
         return res.status(400).json({ message: "Missing patientId or userRole" });
       }
 
+      console.log('👤 [Routes] Getting patient data...');
       // Get patient data for context
       const patient = await storage.getPatient(patientId);
       if (!patient) {
+        console.error('❌ [Routes] Patient not found:', patientId);
         return res.status(404).json({ message: "Patient not found" });
       }
+      console.log('👤 [Routes] ✅ Patient found:', patient.firstName, patient.lastName);
 
+      console.log('📝 [Routes] Creating new encounter...');
       // Create a new encounter for this voice recording
       const encounter = await storage.createEncounter({
         patientId,
@@ -355,7 +371,9 @@ export function registerRoutes(app: Express): Server {
         encounterType: "voice_note",
         chiefComplaint: "Voice-generated documentation"
       });
+      console.log('📝 [Routes] ✅ Encounter created:', encounter.id);
 
+      console.log('🚀 [Routes] Starting enhanced voice processing...');
       // Process with enhanced OpenAI Assistants workflow
       const result = await processVoiceRecordingEnhanced(
         req.file.buffer,
@@ -363,17 +381,30 @@ export function registerRoutes(app: Express): Server {
         encounter.id,
         userRole
       );
+      console.log('🚀 [Routes] ✅ Enhanced processing completed');
 
-      res.json({
+      const response = {
         transcription: result.transcription,
         aiSuggestions: result.aiResponse.suggestions,
         soapNote: result.aiResponse.soapNote,
         draftOrders: result.aiResponse.draftOrders,
         cptCodes: result.aiResponse.cptCodes,
         encounterId: encounter.id
+      };
+
+      console.log('📤 [Routes] Sending response:', {
+        hasTranscription: !!response.transcription,
+        transcriptionLength: response.transcription?.length,
+        hasSuggestions: !!response.aiSuggestions,
+        hasSoapNote: !!response.soapNote,
+        draftOrdersCount: response.draftOrders?.length || 0,
+        cptCodesCount: response.cptCodes?.length || 0
       });
+
+      res.json(response);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error('❌ [Routes] Enhanced voice processing failed:', error);
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
