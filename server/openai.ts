@@ -36,15 +36,18 @@ export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   });
   
   try {
-    // Convert buffer to a readable stream-like object
-    console.log('🎙️ [OpenAI] Converting audio buffer to file...');
-    const audioFile = new File([audioBuffer], "audio.webm", { type: "audio/webm" });
-    console.log('🎙️ [OpenAI] File created, size:', audioFile.size);
+    // Convert buffer to a properly formatted webm file for OpenAI
+    console.log('🎙️ [OpenAI] Converting audio buffer to proper webm file...');
+    const audioFile = new File([audioBuffer], "recording.webm", { 
+      type: "audio/webm;codecs=opus" 
+    });
+    console.log('🎙️ [OpenAI] WebM file created, size:', audioFile.size);
     
     console.log('🎙️ [OpenAI] Sending to OpenAI Whisper API...');
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: "whisper-1",
+      language: "en", // Specify English for better accuracy
     });
 
     console.log('🎙️ [OpenAI] ✅ Transcription completed:', {

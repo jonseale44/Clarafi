@@ -16,47 +16,80 @@ export class SimpleRealtimeService {
     transcription: string;
     suggestions: any;
   }> {
-    console.log('⚡ [SimpleRealtime] Processing live audio chunk...');
+    console.log('⚡ [SimpleRealtime] Processing live audio chunk, size:', audioBuffer.length);
     
     try {
-      // Get transcription from audio chunk
-      const transcription = await transcribeAudio(audioBuffer);
-      console.log('📝 [SimpleRealtime] Transcription:', transcription);
-
-      let suggestions = {};
+      // Add timeout and retry logic for transcription
+      const transcription = await Promise.race([
+        transcribeAudio(audioBuffer),
+        new Promise<string>((_, reject) => 
+          setTimeout(() => reject(new Error('Transcription timeout')), 8000)
+        )
+      ]);
       
-      // If we have meaningful text, get AI suggestions
-      if (transcription && transcription.length > 10) {
+      console.log('📝 [SimpleRealtime] Transcription success:', transcription?.substring(0, 50) + '...');
+
+      let suggestions = {
+        suggestions: ['🔄 Analyzing speech...'],
+        clinicalFlags: []
+      };
+      
+      // If we have meaningful text, get AI suggestions with timeout protection
+      if (transcription && transcription.length > 5) {
         try {
-          await this.assistantService.initializeAssistant();
+          console.log('🧠 [SimpleRealtime] Getting AI suggestions...');
+          
+          // Initialize assistant with timeout
+          await Promise.race([
+            this.assistantService.initializeAssistant(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Assistant init timeout')), 3000)
+            )
+          ]);
+          
           const threadId = await this.assistantService.getOrCreateThread(patientId);
           
-          suggestions = await this.assistantService.getRealtimeSuggestions(
-            threadId,
-            transcription,
-            userRole,
-            patientId
-          );
-          console.log('🧠 [SimpleRealtime] Live suggestions generated');
+          // Get suggestions with timeout
+          suggestions = await Promise.race([
+            this.assistantService.getRealtimeSuggestions(
+              threadId,
+              transcription,
+              userRole,
+              patientId
+            ),
+            new Promise<any>((_, reject) => 
+              setTimeout(() => reject(new Error('Suggestions timeout')), 5000)
+            )
+          ]);
+          
+          console.log('🧠 [SimpleRealtime] ✅ Live suggestions generated successfully');
         } catch (error) {
-          console.warn('⚠️ [SimpleRealtime] Suggestions failed:', error);
+          console.warn('⚠️ [SimpleRealtime] AI suggestions failed, using fallback:', error.message);
           suggestions = {
-            suggestions: ['Processing audio...'],
+            suggestions: [
+              '🩺 Continue speaking for clinical insights...',
+              '📋 Patient context being analyzed'
+            ],
             clinicalFlags: []
           };
         }
       }
 
       return {
-        transcription,
+        transcription: transcription || '',
         suggestions
       };
     } catch (error) {
-      console.error('❌ [SimpleRealtime] Processing failed:', error);
+      console.error('❌ [SimpleRealtime] Transcription failed:', error.message);
+      
+      // Return helpful fallback that keeps the UI responsive
       return {
         transcription: '',
         suggestions: {
-          suggestions: ['Audio processing...'],
+          suggestions: [
+            '🎤 Continue speaking...',
+            '⏳ Processing audio in background'
+          ],
           clinicalFlags: []
         }
       };

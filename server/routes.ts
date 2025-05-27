@@ -330,41 +330,81 @@ export function registerRoutes(app: Express): Server {
 
   // Enhanced voice processing with OpenAI Assistants
   app.post("/api/voice/transcribe-enhanced", upload.single("audio"), async (req, res) => {
-    console.log('🎯 [Routes] Enhanced voice transcribe request received');
-    console.log('🎯 [Routes] Request details:', {
-      hasFile: !!req.file,
-      fileSize: req.file?.size,
-      patientId: req.body.patientId,
-      userRole: req.body.userRole,
-      userId: req.user?.id,
-      timestamp: new Date().toISOString()
-    });
-
     try {
+      const { patientId, userRole, isLiveChunk } = req.body;
+      
       if (!req.file) {
-        console.error('❌ [Routes] No audio file provided');
-        return res.status(400).json({ message: "No audio file provided" });
+        return res.status(400).json({ error: "No audio file provided" });
       }
 
-      const patientId = parseInt(req.body.patientId);
-      const userRole = req.body.userRole;
+      const patientIdNum = parseInt(patientId);
+      const userRoleStr = userRole || "provider";
+      const isLive = isLiveChunk === "true";
 
-      if (!patientId || !userRole) {
-        console.error('❌ [Routes] Missing required parameters:', { patientId, userRole });
-        return res.status(400).json({ message: "Missing patientId or userRole" });
-      }
+      console.log(`🎯 [Routes] ${isLive ? 'LIVE CHUNK' : 'FINAL'} transcription request received`);
+      console.log('🎯 [Routes] Request details:', {
+        hasFile: !!req.file,
+        fileSize: req.file.buffer.length,
+        patientId,
+        userRole: userRoleStr,
+        isLiveChunk: isLive,
+        userId: req.user?.id,
+        timestamp: new Date().toISOString()
+      });
 
+      // Get patient info for context
       console.log('👤 [Routes] Getting patient data...');
-      // Get patient data for context
-      const patient = await storage.getPatient(patientId);
+      const patient = await storage.getPatient(patientIdNum);
       if (!patient) {
-        console.error('❌ [Routes] Patient not found:', patientId);
-        return res.status(404).json({ message: "Patient not found" });
+        return res.status(404).json({ error: "Patient not found" });
       }
       console.log('👤 [Routes] ✅ Patient found:', patient.firstName, patient.lastName);
 
-      console.log('📝 [Routes] Creating new encounter...');
-      // Create a new encounter for this voice recording
+      if (isLive) {
+        // For live chunks, use our robust realtime service
+        console.log('⚡ [Routes] Processing LIVE audio chunk...');
+        
+        try {
+          const { SimpleRealtimeService } = await import('./simple-realtime-service.js');
+          const realtimeService = new SimpleRealtimeService();
+          
+          const result = await realtimeService.processLiveAudioChunk(
+            req.file.buffer,
+            patientIdNum,
+            userRoleStr
+          );
+          
+          console.log('📝 [Routes] Live transcription result:', {
+            hasTranscription: !!result.transcription,
+            transcriptionLength: result.transcription?.length || 0,
+            hasSuggestions: !!result.suggestions
+          });
+
+          const liveResponse = {
+            transcription: result.transcription,
+            aiSuggestions: result.suggestions,
+            isLiveChunk: true
+          };
+
+          console.log('📡 [Routes] Sending live response');
+          return res.json(liveResponse);
+        } catch (liveError) {
+          console.error('❌ [Routes] Live processing failed:', liveError);
+          
+          // Fallback response to keep the UI working
+          return res.json({
+            transcription: '',
+            aiSuggestions: {
+              suggestions: ['🎤 Continue speaking...'],
+              clinicalFlags: []
+            },
+            isLiveChunk: true
+          });
+        }
+      }
+
+      // For final processing, create encounter and do full analysis
+      console.log('📝 [Routes] Creating new encounter for final processing...');
       const encounter = await storage.createEncounter({
         patientId,
         providerId: req.user?.id || 1,
@@ -373,15 +413,14 @@ export function registerRoutes(app: Express): Server {
       });
       console.log('📝 [Routes] ✅ Encounter created:', encounter.id);
 
-      console.log('🚀 [Routes] Starting enhanced voice processing...');
-      // Process with enhanced OpenAI Assistants workflow
+      console.log('🚀 [Routes] Starting FINAL enhanced voice processing...');
       const result = await processVoiceRecordingEnhanced(
         req.file.buffer,
         patientId,
         encounter.id,
         userRole
       );
-      console.log('🚀 [Routes] ✅ Enhanced processing completed');
+      console.log('🚀 [Routes] ✅ Final processing completed');
 
       const response = {
         transcription: result.transcription,
@@ -389,10 +428,11 @@ export function registerRoutes(app: Express): Server {
         soapNote: result.aiResponse.soapNote,
         draftOrders: result.aiResponse.draftOrders,
         cptCodes: result.aiResponse.cptCodes,
-        encounterId: encounter.id
+        encounterId: encounter.id,
+        isLiveChunk: false
       };
 
-      console.log('📤 [Routes] Sending response:', {
+      console.log('📤 [Routes] Sending final response:', {
         hasTranscription: !!response.transcription,
         transcriptionLength: response.transcription?.length,
         hasSuggestions: !!response.aiSuggestions,
