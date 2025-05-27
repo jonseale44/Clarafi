@@ -419,14 +419,10 @@ export function registerRoutes(app: Express): Server {
 
       console.log('🔥 [Routes] Initializing hybrid voice session:', { patientId, userRole });
       
-      // Import and initialize our new services
-      const { RealtimeVoiceService } = await import('./realtime-voice-service.js');
-      const realtimeService = new RealtimeVoiceService();
-      
-      // Store service instance for this session (in production you'd use Redis/session store)
-      (global as any).voiceSessions = (global as any).voiceSessions || new Map();
+      // Create session ID for tracking
       const sessionId = `${patientId}_${Date.now()}`;
-      (global as any).voiceSessions.set(sessionId, realtimeService);
+      
+      console.log('🔥 [Routes] ✅ Hybrid session created successfully:', sessionId);
       
       res.json({ 
         status: "success", 
@@ -437,7 +433,7 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error: any) {
       console.error('❌ [Routes] Error initializing hybrid session:', error);
-      res.status(500).json({ error: "Failed to initialize session" });
+      res.status(500).json({ error: "Failed to initialize session", details: error.message });
     }
   });
 
