@@ -119,6 +119,40 @@ export async function processVoiceRecording(
   }
 }
 
+// Enhanced voice processing with Assistant API
+export async function processVoiceRecordingEnhanced(
+  audioBuffer: Buffer,
+  patientId: number,
+  encounterId: number,
+  userRole: string
+): Promise<{
+  transcription: string;
+  aiResponse: any;
+}> {
+  try {
+    const { VoiceChartUpdater } = await import('./voice-chart-updater.js');
+    const updater = new VoiceChartUpdater();
+    
+    // First transcribe the audio
+    const transcription = await transcribeAudio(audioBuffer);
+    
+    // Process with enhanced AI Assistant
+    const aiResponse = await updater.processVoiceRecording(
+      transcription,
+      patientId,
+      encounterId,
+      userRole
+    );
+
+    return {
+      transcription,
+      aiResponse
+    };
+  } catch (error) {
+    throw new Error("Failed to process enhanced voice recording: " + error.message);
+  }
+}
+
 export async function updatePatientChart(
   patientData: any,
   transcription: string,
