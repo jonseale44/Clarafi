@@ -1,0 +1,106 @@
+
+## STEP 2: MODIFY Existing WebSocket Event Handler
+
+```typescript
+// Extend your existing WebSocketEventHandler.ts
+import { AssistantContextService } from './assistant-context-service.js';
+
+export class WebSocketEventHandler {
+  private assistantService: AssistantContextService;
+  private currentThreadId: string | null = null;
+  private patientId: number | null = null;
+  private userRole: string = 'provider';
+  
+  constructor() {
+    this.assistantService = new AssistantContextService();
+    // Keep all your existing modules and initialization
+  }
+  
+  async initializePatientContext(patientId: number, userRole: string) {
+    this.patientId = patientId;
+    this.userRole = userRole;
+    this.currentThreadId = await this.assistantService.getOrCreateThread(patientId);
+    console.log(`Assistant thread initialized for patient ${patientId}: ${this.currentThreadId}`);
+  }
+  
+  // Keep your existing handleTranscriptionDelta but add Assistant suggestions
+  handleTranscriptionDelta(event: any) {
+    // Your existing transcription handling code stays the same
+    const delta = event.delta;
+    if (delta) {
+      this.currentTranscription += delta;
+      
+      // Update UI with live transcription (existing code)
+      this.updateTranscriptionDisplay(this.currentTranscription);
+      
+      // NEW: Get Assistant suggestions for longer transcription chunks
+      if (this.currentTranscription.length > 50 && this.currentTranscription.length % 100 === 0) {
+        this.getAssistantSuggestions(this.currentTranscription);
+      }
+    }
+  }
+  
+  private async getAssistantSuggestions(partialTranscription: string) {
+    if (!this.currentThreadId || !this.patientId) return;
+    
+    try {
+      const suggestions = await this.assistantService.getRealtimeSuggestions(
+        this.currentThreadId,
+        partialTranscription,
+        this.userRole,
+        this.patientId
+      );
+      
+      // Update suggestions display
+      this.updateSuggestionsDisplay(suggestions);
+    } catch (error) {
+      console.error('Error getting Assistant suggestions:', error);
+    }
+  }
+  
+  // Keep your existing handleResponseDone but add Assistant processing
+  async handleResponseDone(event: any) {
+    // Your existing response handling
+    console.log("Response completed:", event);
+    
+    // NEW: Process complete transcription with Assistant
+    if (this.currentTranscription && this.currentThreadId && this.patientId) {
+      try {
+        const completeResults = await this.assistantService.processCompleteTranscription(
+          this.currentThreadId,
+          this.currentTranscription,
+          this.userRole,
+          this.patientId,
+          this.currentEncounterId
+        );
+        
+        // Apply results to your new schema
+        await this.applyCompleteResults(completeResults);
+      } catch (error) {
+        console.error('Error processing complete transcription:', error);
+      }
+    }
+  }
+  
+  private async applyCompleteResults(results: any) {
+    // Update encounter with SOAP note
+    await db.update(encounters)
+      .set({
+        subjective: results.soapNote.subjective,
+        objective: results.soapNote.objective,
+        assessment: results.soapNote.assessment,
+        plan: results.soapNote.plan,
+        draftOrders: results.draftOrders,
+        cptCodes: results.cptCodes,
+        lastChartUpdate: new Date()
+      })
+      .where(eq(encounters.id, this.currentEncounterId));
+    
+    // Apply chart updates using smart update strategy
+    if (results.chartUpdates) {
+      await this.applySmartChartUpdates(results.chartUpdates);
+    }
+  }
+}
+```
+

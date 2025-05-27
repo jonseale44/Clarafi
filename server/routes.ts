@@ -328,6 +328,123 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Realtime transcription API routes
+  app.post("/api/realtime/connect", async (req, res) => {
+    console.log('🔗 [Routes] Realtime connection request');
+    
+    try {
+      const { patientId, userRole } = req.body;
+      
+      if (!patientId || !userRole) {
+        return res.status(400).json({ message: "Missing patientId or userRole" });
+      }
+
+      // For OpenAI Realtime API, we'll use a WebSocket proxy approach
+      // Return connection details for the client
+      const websocketUrl = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01";
+      const authToken = process.env.OPENAI_API_KEY;
+
+      if (!authToken) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+
+      console.log('🔗 [Routes] ✅ Returning connection details for patient:', patientId);
+      res.json({
+        websocketUrl,
+        authToken,
+        patientId,
+        userRole
+      });
+
+    } catch (error) {
+      console.error('❌ [Routes] Realtime connection error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/realtime/suggestions", async (req, res) => {
+    console.log('💡 [Routes] Realtime suggestions request');
+    
+    try {
+      const { patientId, userRole, partialTranscription } = req.body;
+      
+      if (!patientId || !userRole || !partialTranscription) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const { AssistantContextService } = await import('./assistant-context-service.js');
+      const assistantService = new AssistantContextService();
+      
+      await assistantService.initializeAssistant();
+      const threadId = await assistantService.getOrCreateThread(patientId);
+      
+      const suggestions = await assistantService.getRealtimeSuggestions(
+        threadId,
+        partialTranscription,
+        userRole,
+        patientId
+      );
+
+      console.log('💡 [Routes] ✅ Suggestions generated');
+      res.json(suggestions);
+
+    } catch (error) {
+      console.error('❌ [Routes] Suggestions error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/realtime/complete", async (req, res) => {
+    console.log('📋 [Routes] Complete transcription processing request');
+    
+    try {
+      const { patientId, userRole, transcription } = req.body;
+      
+      if (!patientId || !userRole || !transcription) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      // Get patient data
+      const patient = await storage.getPatient(patientId);
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      // Create encounter for this transcription
+      const encounter = await storage.createEncounter({
+        patientId,
+        providerId: req.user?.id || 1,
+        encounterType: "realtime_voice_note",
+        chiefComplaint: "Real-time voice transcription"
+      });
+
+      const { AssistantContextService } = await import('./assistant-context-service.js');
+      const assistantService = new AssistantContextService();
+      
+      await assistantService.initializeAssistant();
+      const threadId = await assistantService.getOrCreateThread(patientId);
+      
+      const result = await assistantService.processCompleteTranscription(
+        threadId,
+        transcription,
+        userRole,
+        patientId,
+        encounter.id
+      );
+
+      console.log('📋 [Routes] ✅ Complete processing finished');
+      res.json({
+        ...result,
+        encounterId: encounter.id,
+        transcription
+      });
+
+    } catch (error) {
+      console.error('❌ [Routes] Complete processing error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Enhanced voice processing with OpenAI Assistants
   app.post("/api/voice/transcribe-enhanced", upload.single("audio"), async (req, res) => {
     console.log('🎯 [Routes] Enhanced voice transcribe request received');
