@@ -305,7 +305,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               const data = await response.json();
               console.log('🤖 [EncounterView] Assistants API response:', data);
               
-              // Use AI suggestions from Assistants API
+              // Keep the real-time transcription, don't overwrite it
+              // Only update AI suggestions from Assistants API
               if (data.aiSuggestions?.clinicalGuidance) {
                 setGptSuggestions(`🧠 AI ANALYSIS:\n${data.aiSuggestions.clinicalGuidance}`);
               }
@@ -324,6 +325,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               if (data.cptCodes) {
                 setCptCodes(data.cptCodes);
               }
+              
+              // Note: We keep the real-time transcription and don't overwrite with data.transcription
 
               toast({
                 title: "AI Analysis Complete",
