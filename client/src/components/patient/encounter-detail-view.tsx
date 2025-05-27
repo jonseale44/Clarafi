@@ -71,76 +71,16 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       let transcriptionBuffer = '';
       
       try {
-        console.log('🌐 [EncounterView] Creating session with OpenAI like your working code...');
+        console.log('🌐 [EncounterView] Connecting directly to OpenAI Realtime API...');
         
-        // First, get the API key from environment
+        // First, get the API key from environment (since this is client-side)
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        console.log('🔑 [EncounterView] API key check:', {
-          hasApiKey: !!apiKey,
-          keyLength: apiKey?.length || 0,
-          keyPrefix: apiKey?.substring(0, 7) || 'none'
-        });
-        
         if (!apiKey) {
           throw new Error('OpenAI API key not available in environment');
         }
-
-        // Create session exactly like your working code
-        const sessionConfig = {
-          model: "gpt-4o-mini-realtime-preview-2024-12-17",
-          modalities: ["text"],
-          instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
-          input_audio_format: "pcm16",
-          input_audio_transcription: {
-            model: "whisper-1",
-            language: "en"
-          },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 500,
-            create_response: false
-          },
-          tools: [],
-          tool_choice: "none",
-          temperature: 1,
-          max_response_output_tokens: "inf"
-        };
-
-        console.log('🔧 [EncounterView] Creating session with config:', sessionConfig);
-
-        // Create session like your working code
-        const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-            "OpenAI-Beta": "realtime=v1"
-          },
-          body: JSON.stringify(sessionConfig)
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(`Failed to create session: ${error.message || 'Unknown error'}`);
-        }
-
-        const session = await response.json();
-        console.log('✅ [EncounterView] Session created:', session);
-
-        // Validate session like your working code
-        if (!session.client_secret?.value || !session.id) {
-          throw new Error('Invalid session response');
-        }
-
-        const sessionToken = session.client_secret.value;
-        const sessionId = session.id;
-
-        console.log('🔗 [EncounterView] Connecting to WebSocket with session token...');
-
-        // Connect to WebSocket with session token like your working code
-        realtimeWs = new WebSocket(`wss://api.openai.com/v1/realtime?authorization=Bearer ${sessionToken}&openai-beta=realtime%3Dv1`, [
+        
+        // Connect exactly like your working code with authentication
+        realtimeWs = new WebSocket(`wss://api.openai.com/v1/realtime?authorization=Bearer ${apiKey}&openai-beta=realtime%3Dv1`, [
           "realtime", 
           "openai-beta.realtime-v1"
         ]);
@@ -174,20 +114,10 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log('📨 [EncounterView] OpenAI message type:', message.type);
-          console.log('📨 [EncounterView] Full OpenAI message:', message);
+          console.log('📨 [EncounterView] OpenAI message:', message.type);
           
-          // Handle different message types
-          if (message.type === 'error') {
-            console.error('❌ [EncounterView] OpenAI Realtime API Error:', message);
-            console.error('❌ [EncounterView] Error details:', {
-              code: message.error?.code,
-              message: message.error?.message,
-              type: message.error?.type
-            });
-          } else if (message.type === 'session.created') {
-            console.log('✅ [EncounterView] Session created successfully:', message.session?.id);
-          } else if (message.type === 'conversation.item.input_audio_transcription.delta') {
+          // Handle transcription events like your working code
+          if (message.type === 'conversation.item.input_audio_transcription.delta') {
             const deltaText = message.transcript || message.delta || '';
             console.log('📝 [EncounterView] Transcription delta:', deltaText);
             transcriptionBuffer += deltaText;
@@ -197,8 +127,6 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             console.log('✅ [EncounterView] Transcription completed:', finalText);
             transcriptionBuffer += finalText;
             setTranscription(transcriptionBuffer);
-          } else {
-            console.log('ℹ️ [EncounterView] Unhandled message type:', message.type, message);
           }
         };
         
