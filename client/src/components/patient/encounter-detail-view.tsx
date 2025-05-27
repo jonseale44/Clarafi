@@ -207,30 +207,51 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       });
       console.log('🎤 [EncounterView] ✅ Microphone access granted');
       
-      // Set up audio processing for real-time streaming
+      // Set up audio processing exactly like your working AudioRecorder
       const audioContext = new AudioContext({ sampleRate: 16000 });
       const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      const bufferSize = 4096; // Same as your working code
+      const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
       
-      processor.onaudioprocess = (e) => {
+      processor.onaudioprocess = async (e) => {
         if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
         
         const inputData = e.inputBuffer.getChannelData(0);
         
-        // Convert to PCM16 exactly like your working code
+        // Convert to PCM16 and create blob exactly like your working code
         const pcm16Data = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           const sample = Math.max(-1, Math.min(1, inputData[i]));
           pcm16Data[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
         }
         
-        // Send to OpenAI like your working code
-        realtimeWs.send(JSON.stringify({
-          type: "audio.data",
-          data: {
-            audio: Array.from(pcm16Data)
+        // Create audio blob and send exactly like your working appendAudio method
+        const audioBlob = new Blob([pcm16Data], { type: 'audio/pcm' });
+        
+        // Convert to base64 exactly like your working code
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binary = "";
+            for (let i = 0; i < uint8Array.length; i++) {
+              binary += String.fromCharCode(uint8Array[i]);
+            }
+            const base64Audio = btoa(binary);
+
+            // Send audio buffer exactly like your working code
+            realtimeWs!.send(JSON.stringify({
+              type: "input_audio_buffer.append",
+              audio: base64Audio,
+            }));
+            
+            console.log("🎵 [EncounterView] Sent audio buffer:", base64Audio.length, "bytes");
+          } catch (error) {
+            console.error("❌ [EncounterView] Error processing audio:", error);
           }
-        }));
+        };
+        reader.readAsArrayBuffer(audioBlob);
       };
       
       source.connect(processor);
