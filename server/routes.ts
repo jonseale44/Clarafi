@@ -357,14 +357,19 @@ export function registerRoutes(app: Express): Server {
           parseInt(patientId)
         );
 
-        console.log('🧠 [Routes] Live suggestions generated:', {
-          hasRealTimePrompts: !!suggestions.realTimePrompts?.length,
-          hasClinicalGuidance: !!suggestions.clinicalGuidance,
-          promptCount: suggestions.realTimePrompts?.length || 0
-        });
+        console.log('🧠 [Routes] Raw suggestions from assistant:', suggestions);
+        
+        // Format suggestions for the UI
+        const formattedSuggestions = {
+          realTimePrompts: suggestions.suggestions || suggestions.realTimePrompts || [],
+          clinicalGuidance: suggestions.clinicalGuidance || suggestions.guidance || suggestions.summary || "AI analysis in progress...",
+          clinicalFlags: suggestions.clinicalFlags || []
+        };
+        
+        console.log('🧠 [Routes] Formatted suggestions for UI:', formattedSuggestions);
 
         const response = {
-          aiSuggestions: suggestions,
+          aiSuggestions: formattedSuggestions,
           isLive: true
         };
 
