@@ -52,6 +52,9 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
     },
     onSuccess: (data) => {
       console.log('✅ [VoiceModal] Transcription successful:', data);
+      console.log('🧠 [VoiceModal] AI Suggestions received:', data.aiSuggestions);
+      console.log('🧠 [VoiceModal] AI Suggestions structure:', data.aiSuggestions ? Object.keys(data.aiSuggestions) : 'No suggestions');
+      
       setLiveTranscription(data.transcription);
       setAiSuggestions(data.aiSuggestions);
       
@@ -176,8 +179,23 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
   };
 
   const getUserRolePrompts = () => {
-    if (!aiSuggestions) return [];
-    return user?.role === "nurse" ? aiSuggestions.nursePrompts : aiSuggestions.providerPrompts;
+    if (!aiSuggestions) {
+      console.log('🧠 [VoiceModal] No aiSuggestions available');
+      return [];
+    }
+    
+    console.log('🧠 [VoiceModal] Getting prompts for role:', user?.role);
+    console.log('🧠 [VoiceModal] Available suggestion fields:', Object.keys(aiSuggestions));
+    
+    // Try different possible field names based on what the API might return
+    const prompts = aiSuggestions.realTimePrompts || 
+                   aiSuggestions.providerPrompts || 
+                   aiSuggestions.nursePrompts || 
+                   aiSuggestions.suggestions || 
+                   [];
+                   
+    console.log('🧠 [VoiceModal] Found prompts:', prompts);
+    return prompts;
   };
 
   return (
@@ -240,6 +258,13 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
                     </ul>
                   ) : (
                     <p className="text-sm text-blue-800">No specific suggestions at this time.</p>
+                  )}
+                  
+                  {aiSuggestions.clinicalGuidance && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-blue-900">Clinical Guidance:</h5>
+                      <p className="text-sm text-blue-800">{aiSuggestions.clinicalGuidance}</p>
+                    </div>
                   )}
                   
                   {aiSuggestions.draftOrders?.length > 0 && (
