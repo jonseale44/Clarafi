@@ -357,16 +357,16 @@ export function registerRoutes(app: Express): Server {
           parseInt(patientId)
         );
 
-        console.log('🧠 [Routes] Raw suggestions from assistant:', suggestions);
+        console.log('🧠 [Routes] Raw suggestions from assistant:', JSON.stringify(suggestions, null, 2));
         
-        // Format suggestions for the UI
+        // Format suggestions for the UI - handle multiple possible response formats
         const formattedSuggestions = {
-          realTimePrompts: suggestions.suggestions || suggestions.realTimePrompts || [],
-          clinicalGuidance: suggestions.clinicalGuidance || suggestions.guidance || suggestions.summary || "AI analysis in progress...",
-          clinicalFlags: suggestions.clinicalFlags || []
+          realTimePrompts: suggestions.suggestions || suggestions.realTimePrompts || suggestions.prompts || [],
+          clinicalGuidance: suggestions.clinicalGuidance || suggestions.guidance || suggestions.summary || suggestions.analysis || "AI analysis in progress...",
+          clinicalFlags: suggestions.clinicalFlags || suggestions.flags || []
         };
         
-        console.log('🧠 [Routes] Formatted suggestions for UI:', formattedSuggestions);
+        console.log('🧠 [Routes] Formatted suggestions for UI:', JSON.stringify(formattedSuggestions, null, 2));
 
         const response = {
           aiSuggestions: formattedSuggestions,
