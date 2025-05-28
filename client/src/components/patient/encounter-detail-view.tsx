@@ -78,10 +78,15 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       formData.append('isLiveChunk', 'true');
       formData.append('transcription', transcription);
       
+      console.log('🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions');
+      
       const response = await fetch('/api/voice/live-suggestions', {
         method: 'POST',
         body: formData,
       });
+      
+      console.log('🧠 [EncounterView] Live suggestions response status:', response.status);
+      console.log('🧠 [EncounterView] Live suggestions response headers:', Object.fromEntries(response.headers.entries()));
       
       if (response.ok) {
         const data = await response.json();
@@ -103,9 +108,18 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           
           setGptSuggestions(suggestionsText);
         }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ [EncounterView] Live suggestions HTTP error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
       }
     } catch (error) {
       console.error('❌ [EncounterView] Live suggestions failed:', error);
+      console.error('❌ [EncounterView] Error details:', {
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack
+      });
     }
   };
 

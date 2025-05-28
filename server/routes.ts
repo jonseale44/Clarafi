@@ -282,7 +282,7 @@ export function registerRoutes(app: Express): Server {
   // Voice recording routes
   
   // Live AI suggestions endpoint for real-time transcription
-  app.post("/api/voice/live-suggestions", async (req, res) => {
+  app.post("/api/voice/live-suggestions", upload.none(), async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
       
