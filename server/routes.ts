@@ -345,11 +345,16 @@ export function registerRoutes(app: Express): Server {
         
         await assistantService.initializeAssistant();
         
+        // Get or create proper thread for live suggestions
+        const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
+        console.log('🧵 [Routes] Live suggestions using thread:', threadId);
+        
         // Get live suggestions based on transcription
         const suggestions = await assistantService.getRealtimeSuggestions(
-          parseInt(patientId),
+          threadId,
           transcription,
-          userRole as "nurse" | "provider"
+          userRole as "nurse" | "provider",
+          parseInt(patientId)
         );
 
         console.log('🧠 [Routes] Live suggestions generated:', {
