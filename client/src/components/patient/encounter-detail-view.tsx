@@ -72,17 +72,22 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
     try {
       console.log('🧠 [EncounterView] Getting live AI suggestions for transcription:', transcription.substring(0, 100) + '...');
       
-      const formData = new FormData();
-      formData.append('patientId', patient.id.toString());
-      formData.append('userRole', 'provider');
-      formData.append('isLiveChunk', 'true');
-      formData.append('transcription', transcription);
+      const requestBody = {
+        patientId: patient.id.toString(),
+        userRole: 'provider',
+        isLiveChunk: 'true',
+        transcription: transcription
+      };
       
       console.log('🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions');
+      console.log('🧠 [EncounterView] Request body:', requestBody);
       
       const response = await fetch('/api/voice/live-suggestions', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
       });
       
       console.log('🧠 [EncounterView] Live suggestions response status:', response.status);

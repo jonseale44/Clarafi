@@ -1,0 +1,35 @@
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "input_audio_buffer.speech_started", event_id: "event_Bc0LBlh6RWmnZafmcFBz9", audio_start_ms: 1524, item_id: "item_Bc0LB1BxR6Q39JjJlGcag"}
+🎵 [EncounterView] Sent audio buffer: 10924 bytes
+🎙️ [VoiceModal] Component mounted, isOpen: false patientId: 2
+🎵 [EncounterView] Sent audio buffer: 10924 bytes
+📨 [EncounterView] OpenAI message type: input_audio_buffer.speech_stopped
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "input_audio_buffer.speech_stopped", event_id: "event_Bc0LKCqRTlhA1HAIC58Pg", audio_end_ms: 8224, item_id: "item_Bc0LB1BxR6Q39JjJlGcag"}
+📨 [EncounterView] OpenAI message type: input_audio_buffer.committed
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "input_audio_buffer.committed", event_id: "event_Bc0LKIISOagEdmRsZknmV", previous_item_id: null, item_id: "item_Bc0LB1BxR6Q39JjJlGcag"}
+📨 [EncounterView] OpenAI message type: conversation.item.created
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "conversation.item.created", event_id: "event_Bc0LKpuzitYPRsFkdTBJU", previous_item_id: null, item: {…}}
+🎵 [EncounterView] Sent audio buffer: 10924 bytes
+📨 [EncounterView] OpenAI message type: conversation.item.input_audio_transcription.delta
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "conversation.item.input_audio_transcription.delta", event_id: "event_Bc0LMnbdUDmfmJ8enlri4", item_id: "item_Bc0LB1BxR6Q39JjJlGcag", content_index: 0, delta: "Chest pain, wheezing, shortness of breath for five days, diagnosis asthma exacerbation, diagnosis…"}
+📝 [EncounterView] Transcription delta: Chest pain, wheezing, shortness of breath for five days, diagnosis asthma exacerbation, diagnosis hypertension, start glycemic drill at 10 milligrams daily.
+🧠 [EncounterView] Triggering live AI suggestions for buffer length: 157
+🧠 [EncounterView] Getting live AI suggestions for transcription: Chest pain, wheezing, shortness of breath for five days, diagnosis asthma exacerbation, diagnosis hy...
+🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions
+📨 [EncounterView] OpenAI message type: conversation.item.input_audio_transcription.completed
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "conversation.item.input_audio_transcription.completed", event_id: "event_Bc0LMQvRjHVoLc7pM0sfL", item_id: "item_Bc0LB1BxR6Q39JjJlGcag", content_index: 0, transcript: "Chest pain, wheezing, shortness of breath for five days, diagnosis asthma exacerbation, diagnosis…"}
+✅ [EncounterView] Transcription completed (not adding to buffer): Chest pain, wheezing, shortness of breath for five days, diagnosis asthma exacerbation, diagnosis hypertension, start glycemic drill at 10 milligrams daily.
+🎵 [EncounterView] Sent audio buffer: 10924 bytes
+🧠 [EncounterView] Live suggestions response status: 200
+🧠 [EncounterView] Live suggestions response headers: 
+Object {content-type: "text/html; charset=utf-8", date: "Wed, 28 May 2025 01:58:05 GMT", replit-cluster: "spock", transfer-encoding: "chunked", vary: "Origin", …}
+❌ [EncounterView] Live suggestions failed: 
+SyntaxError {}
+
+❌ [EncounterView] Error details: 
+Object {message: "Unexpected token '<', "<!DOCTYPE "... is not valid JSON", name: "SyntaxError", stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}

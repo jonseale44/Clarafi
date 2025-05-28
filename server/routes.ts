@@ -282,13 +282,32 @@ export function registerRoutes(app: Express): Server {
   // Voice recording routes
   
   // Live AI suggestions endpoint for real-time transcription
-  app.post("/api/voice/live-suggestions", upload.none(), async (req, res) => {
+  app.post("/api/voice/live-suggestions", async (req, res) => {
+    console.log('🧠 [Routes] Live suggestions endpoint hit!', {
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+      bodyKeys: Object.keys(req.body || {}),
+      isAuthenticated: req.isAuthenticated?.()
+    });
+    
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      if (!req.isAuthenticated()) {
+        console.log('❌ [Routes] Live suggestions: User not authenticated');
+        return res.sendStatus(401);
+      }
       
       const { patientId, userRole = "provider", transcription } = req.body;
       
+      console.log('🧠 [Routes] Live suggestions parsed body:', {
+        patientId,
+        userRole,
+        hasTranscription: !!transcription,
+        transcriptionLength: transcription?.length || 0
+      });
+      
       if (!patientId || !transcription) {
+        console.log('❌ [Routes] Live suggestions: Missing required fields');
         return res.status(400).json({ message: "Patient ID and transcription are required" });
       }
 
@@ -342,7 +361,7 @@ export function registerRoutes(app: Express): Server {
       }
     } catch (error) {
       console.error('❌ [Routes] Live suggestions endpoint error:', error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
