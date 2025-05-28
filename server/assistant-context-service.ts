@@ -126,14 +126,42 @@ Provide immediate clinical suggestions based on this partial transcription.`
       const lastMessage = messages.data[0];
       
       if (lastMessage.content[0].type === 'text') {
+        const rawResponse = lastMessage.content[0].text.value;
+        console.log('🤖 [AssistantContextService] Raw assistant response:', rawResponse);
+        
         try {
-          return JSON.parse(lastMessage.content[0].text.value);
+          // Try to parse as JSON first
+          const parsed = JSON.parse(rawResponse);
+          console.log('✅ [AssistantContextService] Successfully parsed JSON response');
+          return parsed;
         } catch (error) {
-          console.error('❌ [AssistantContextService] Failed to parse suggestions:', error);
+          console.log('❌ [AssistantContextService] JSON parse failed, trying to extract suggestions from text');
+          
+          // If JSON parsing fails, try to extract meaningful suggestions from the text
+          const suggestions = [];
+          const clinicalGuidance = rawResponse.trim();
+          
+          // Look for numbered lists or bullet points
+          const lines = rawResponse.split('\n').filter(line => line.trim());
+          for (const line of lines) {
+            if (line.match(/^\d+\./) || line.match(/^[-•*]/) || line.toLowerCase().includes('consider') || line.toLowerCase().includes('recommend')) {
+              suggestions.push(line.replace(/^\d+\.\s*/, '').replace(/^[-•*]\s*/, '').trim());
+            }
+          }
+          
+          console.log('🧠 [AssistantContextService] Extracted suggestions:', suggestions);
+          console.log('🧠 [AssistantContextService] Clinical guidance:', clinicalGuidance.substring(0, 200));
+          
+          return {
+            suggestions: suggestions.slice(0, 3), // Limit to 3 suggestions
+            clinicalGuidance: clinicalGuidance.substring(0, 500), // Limit length
+            clinicalFlags: []
+          };
         }
       }
     }
     
+    console.log('❌ [AssistantContextService] Assistant run failed or no response');
     return { suggestions: [], clinicalFlags: [], historicalContext: "" };
   }
   
