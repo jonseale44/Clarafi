@@ -21,34 +21,12 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [liveTranscription, setLiveTranscription] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
-  const [realtimeSuggestions, setRealtimeSuggestions] = useState<any[]>([]);
-  const [isGettingSuggestions, setIsGettingSuggestions] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSuggestionTextRef = useRef<string>("");
 
-  // Real-time suggestions mutation for providers
-  const realtimeSuggestionsMutation = useMutation({
-    mutationFn: async (transcriptionText: string) => {
-      const response = await apiRequest("POST", "/api/voice/realtime-suggestions", {
-        transcriptionText,
-        patientId: patientId.toString()
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      console.log('🧠 [VoiceModal] Real-time suggestions received:', data);
-      setRealtimeSuggestions(prev => [...prev, data]);
-      setIsGettingSuggestions(false);
-    },
-    onError: (error) => {
-      console.error('❌ [VoiceModal] Real-time suggestions failed:', error);
-      setIsGettingSuggestions(false);
-    }
-  });
+
 
   const transcribeMutation = useMutation({
     mutationFn: async (audioBlob: Blob) => {
@@ -92,61 +70,12 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
     }
   });
 
-  // Smart trigger detection for provider suggestions
-  const detectClinicalTriggers = (text: string): boolean => {
-    const clinicalKeywords = [
-      // Medication-related
-      'prescribe', 'medication', 'dose', 'dosage', 'mg', 'tablet', 'pill', 'antibiotic', 'metformin', 'insulin', 'warfarin', 'statin',
-      // Symptom-related
-      'pain', 'chest pain', 'shortness of breath', 'headache', 'nausea', 'fever', 'cough', 'fatigue', 'dizzy',
-      // Diagnosis-related
-      'diagnosis', 'condition', 'disease', 'syndrome', 'disorder', 'hypertension', 'diabetes', 'copd', 'asthma',
-      // Lab/test-related
-      'lab', 'test', 'result', 'blood', 'urine', 'x-ray', 'ct', 'mri', 'ekg', 'ecg', 'a1c', 'glucose', 'creatinine',
-      // Treatment-related
-      'treatment', 'therapy', 'surgery', 'procedure', 'follow-up', 'referral'
-    ];
-    
-    const lowerText = text.toLowerCase();
-    return clinicalKeywords.some(keyword => lowerText.includes(keyword));
-  };
 
-  // Intelligent suggestion trigger system
-  const triggerSmartSuggestions = (currentText: string) => {
-    // Don't trigger if already getting suggestions or text is too short
-    if (isGettingSuggestions || currentText.length < 20) return;
-    
-    // Don't trigger if text hasn't changed significantly
-    const textDiff = currentText.length - lastSuggestionTextRef.current.length;
-    if (textDiff < 15) return;
-    
-    // Check for clinical triggers
-    if (detectClinicalTriggers(currentText)) {
-      console.log('🎯 [VoiceModal] Clinical trigger detected, getting suggestions...');
-      setIsGettingSuggestions(true);
-      lastSuggestionTextRef.current = currentText;
-      
-      // Clear any existing timeout
-      if (suggestionTimeoutRef.current) {
-        clearTimeout(suggestionTimeoutRef.current);
-      }
-      
-      // Debounce suggestions to avoid rapid-fire calls
-      suggestionTimeoutRef.current = setTimeout(() => {
-        realtimeSuggestionsMutation.mutate(currentText);
-      }, 1500); // Wait 1.5 seconds after last trigger
-    }
-  };
 
   useEffect(() => {
     if (isRecording && !isPaused) {
       intervalRef.current = setInterval(() => {
         setRecordingDuration(prev => prev + 1);
-        
-        // Trigger suggestions based on live transcription if available
-        if (liveTranscription) {
-          triggerSmartSuggestions(liveTranscription);
-        }
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -158,11 +87,8 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-      if (suggestionTimeoutRef.current) {
-        clearTimeout(suggestionTimeoutRef.current);
-      }
     };
-  }, [isRecording, isPaused, liveTranscription]);
+  }, [isRecording, isPaused]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -246,9 +172,6 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
     setRecordingDuration(0);
     setLiveTranscription("");
     setAiSuggestions(null);
-    setRealtimeSuggestions([]);
-    setIsGettingSuggestions(false);
-    lastSuggestionTextRef.current = "";
     onClose();
   };
 
@@ -298,78 +221,25 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
             </Card>
           )}
 
-          {/* GPT Suggestions - Enhanced with Real-time */}
-          {(aiSuggestions || realtimeSuggestions.length > 0 || isGettingSuggestions) && (
+          {/* GPT Suggestions */}
+          {aiSuggestions && (
             <Card className="p-4">
               <h4 className="font-medium text-blue-900 mb-2 flex items-center">
                 <Brain className="h-4 w-4 mr-2" />
                 GPT Suggestions
-                {isGettingSuggestions && <Loader2 className="h-3 w-3 ml-2 animate-spin" />}
               </h4>
               
-              {/* Real-time Suggestions Section */}
-              {realtimeSuggestions.length > 0 && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <h5 className="text-sm font-medium text-green-800 mb-2">🔄 Real-time Clinical Insights:</h5>
-                  <div className="space-y-2">
-                    {realtimeSuggestions.slice(-1).map((suggestion, index) => (
-                      <div key={index} className="space-y-1">
-                        {suggestion.suggestions?.length > 0 && (
-                          <ul className="text-sm text-green-700 space-y-1">
-                            {suggestion.suggestions.map((item: string, idx: number) => (
-                              <li key={idx}>• {item}</li>
-                            ))}
-                          </ul>
-                        )}
-                        {suggestion.clinicalFlags?.length > 0 && (
-                          <div className="mt-2">
-                            <span className="text-xs font-medium text-red-700">⚠️ Clinical Alerts:</span>
-                            <ul className="text-sm text-red-700 space-y-1 mt-1">
-                              {suggestion.clinicalFlags.map((flag: string, idx: number) => (
-                                <li key={idx} className="font-medium">• {flag}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {suggestion.contextualReminders?.length > 0 && (
-                          <div className="mt-2">
-                            <span className="text-xs font-medium text-blue-700">📋 Historical Context:</span>
-                            <ul className="text-sm text-blue-700 space-y-1 mt-1">
-                              {suggestion.contextualReminders.map((reminder: string, idx: number) => (
-                                <li key={idx} className="italic">• {reminder}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {isGettingSuggestions && realtimeSuggestions.length === 0 && (
-                <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">Analyzing clinical context...</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Final AI Suggestions Section */}
+              {/* AI Suggestions Section */}
               {aiSuggestions && (
                 <div>
                   {getUserRolePrompts()?.length > 0 ? (
-                    <div className="mb-3">
-                      <h5 className="text-sm font-medium text-blue-900 mb-1">✅ Final Analysis:</h5>
-                      <ul className="text-sm text-blue-800 space-y-1">
-                        {getUserRolePrompts().map((suggestion: string, index: number) => (
-                          <li key={index}>• {suggestion}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      {getUserRolePrompts().map((suggestion: string, index: number) => (
+                        <li key={index}>• {suggestion}</li>
+                      ))}
+                    </ul>
                   ) : (
-                    <p className="text-sm text-blue-800 mb-3">Processing final analysis...</p>
+                    <p className="text-sm text-blue-800">No specific suggestions at this time.</p>
                   )}
                   
                   {aiSuggestions.draftOrders?.length > 0 && (
