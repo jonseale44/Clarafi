@@ -65,12 +65,57 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
     });
   };
 
+  // Function to get real-time suggestions during recording
+  const getLiveAISuggestions = async (transcription: string) => {
+    if (transcription.length < 50) return; // Only process meaningful chunks
+    
+    try {
+      console.log('🧠 [EncounterView] Getting live AI suggestions for transcription:', transcription.substring(0, 100) + '...');
+      
+      const formData = new FormData();
+      formData.append('patientId', patient.id.toString());
+      formData.append('userRole', 'provider');
+      formData.append('isLiveChunk', 'true');
+      formData.append('transcription', transcription);
+      
+      const response = await fetch('/api/voice/live-suggestions', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🧠 [EncounterView] Live AI suggestions received:', data);
+        
+        if (data.aiSuggestions) {
+          let suggestionsText = "🧠 LIVE AI ANALYSIS:\n";
+          
+          if (data.aiSuggestions.clinicalGuidance) {
+            suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
+          }
+          
+          if (data.aiSuggestions.realTimePrompts?.length > 0) {
+            suggestionsText += "📋 Live Suggestions:\n";
+            data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
+              suggestionsText += `${index + 1}. ${prompt}\n`;
+            });
+          }
+          
+          setGptSuggestions(suggestionsText);
+        }
+      }
+    } catch (error) {
+      console.error('❌ [EncounterView] Live suggestions failed:', error);
+    }
+  };
+
   const startRecording = async () => {
     console.log('🎤 [EncounterView] Starting REAL-TIME voice recording for patient:', patient.id);
     try {
       // Create direct WebSocket connection to OpenAI like your working code
       let realtimeWs: WebSocket | null = null;
       let transcriptionBuffer = '';
+      let lastSuggestionLength = 0;
       
       try {
         console.log('🌐 [EncounterView] Connecting to OpenAI Realtime API like working implementation...');
@@ -178,10 +223,23 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             console.log('📝 [EncounterView] Transcription delta:', deltaText);
             transcriptionBuffer += deltaText;
             setTranscription(transcriptionBuffer);
+            
+            // Trigger live AI suggestions when we have enough text (every 100 chars to avoid spam)
+            if (transcriptionBuffer.length - lastSuggestionLength > 100) {
+              lastSuggestionLength = transcriptionBuffer.length;
+              console.log('🧠 [EncounterView] Triggering live AI suggestions for buffer length:', transcriptionBuffer.length);
+              getLiveAISuggestions(transcriptionBuffer);
+            }
           } else if (message.type === 'conversation.item.input_audio_transcription.completed') {
             // Log completion but don't add to buffer (already added via deltas)
             const finalText = message.transcript || '';
             console.log('✅ [EncounterView] Transcription completed (not adding to buffer):', finalText);
+            
+            // Trigger final suggestions on completion if we haven't recently
+            if (transcriptionBuffer.length - lastSuggestionLength > 50) {
+              console.log('🧠 [EncounterView] Triggering final AI suggestions on completion');
+              getLiveAISuggestions(transcriptionBuffer);
+            }
           } else if (message.type === 'error') {
             console.error('❌ [EncounterView] OpenAI Realtime API Error:', message);
             console.error('❌ [EncounterView] Error details:', message.error);

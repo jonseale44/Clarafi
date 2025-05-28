@@ -280,6 +280,72 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Voice recording routes
+  
+  // Live AI suggestions endpoint for real-time transcription
+  app.post("/api/voice/live-suggestions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { patientId, userRole = "provider", transcription } = req.body;
+      
+      if (!patientId || !transcription) {
+        return res.status(400).json({ message: "Patient ID and transcription are required" });
+      }
+
+      console.log('🧠 [Routes] Live suggestions request:', {
+        patientId,
+        userRole,
+        transcriptionLength: transcription.length,
+        transcriptionPreview: transcription.substring(0, 100) + '...'
+      });
+
+      // Get patient context
+      const patient = await storage.getPatient(parseInt(patientId));
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      try {
+        const { AssistantContextService } = await import('./assistant-context-service.js');
+        const assistantService = new AssistantContextService();
+        
+        await assistantService.initializeAssistant();
+        
+        // Get live suggestions based on transcription
+        const suggestions = await assistantService.getRealtimeSuggestions(
+          parseInt(patientId),
+          transcription,
+          userRole as "nurse" | "provider"
+        );
+
+        console.log('🧠 [Routes] Live suggestions generated:', {
+          hasRealTimePrompts: !!suggestions.realTimePrompts?.length,
+          hasClinicalGuidance: !!suggestions.clinicalGuidance,
+          promptCount: suggestions.realTimePrompts?.length || 0
+        });
+
+        const response = {
+          aiSuggestions: suggestions,
+          isLive: true
+        };
+
+        res.json(response);
+      } catch (error) {
+        console.error('❌ [Routes] Live suggestions failed:', error);
+        res.status(500).json({ 
+          message: "Failed to generate live suggestions",
+          aiSuggestions: {
+            realTimePrompts: ["Continue recording..."],
+            clinicalGuidance: "Live suggestions temporarily unavailable"
+          }
+        });
+      }
+    } catch (error) {
+      console.error('❌ [Routes] Live suggestions endpoint error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/voice/transcribe", upload.single("audio"), async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
