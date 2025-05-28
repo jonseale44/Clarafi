@@ -15,6 +15,8 @@ interface VoiceRecordingModalProps {
 }
 
 export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordingModalProps) {
+  console.log('🎙️ [VoiceModal] Component mounted, isOpen:', isOpen, 'patientId:', patientId);
+  
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);

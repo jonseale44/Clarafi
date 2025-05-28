@@ -42,6 +42,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
     plan: ""
   });
   const [gptSuggestions, setGptSuggestions] = useState("");
+  const [draftOrders, setDraftOrders] = useState<any[]>([]);
+  const [cptCodes, setCptCodes] = useState<any[]>([]);
   const [isTextMode, setIsTextMode] = useState(false);
   const { toast } = useToast();
 
@@ -303,33 +305,50 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             if (response.ok) {
               const data = await response.json();
               console.log('🤖 [EncounterView] Assistants API response:', data);
+              console.log('🧠 [EncounterView] AI Suggestions structure:', data.aiSuggestions ? Object.keys(data.aiSuggestions) : 'No suggestions');
               
-              // Keep the real-time transcription, don't overwrite it
-              // Only update AI suggestions from Assistants API
-              if (data.aiSuggestions?.clinicalGuidance) {
-                setGptSuggestions(`🧠 AI ANALYSIS:\n${data.aiSuggestions.clinicalGuidance}`);
+              // Process AI suggestions with multiple possible formats
+              if (data.aiSuggestions) {
+                let suggestionsText = "🧠 AI ANALYSIS:\n";
+                
+                // Add clinical guidance
+                if (data.aiSuggestions.clinicalGuidance) {
+                  suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
+                }
+                
+                // Add real-time prompts
+                if (data.aiSuggestions.realTimePrompts?.length > 0) {
+                  suggestionsText += "📋 Provider Suggestions:\n";
+                  data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
+                    suggestionsText += `${index + 1}. ${prompt}\n`;
+                  });
+                }
+                
+                console.log('🧠 [EncounterView] Setting GPT suggestions:', suggestionsText);
+                setGptSuggestions(suggestionsText);
               }
               
               // Use SOAP note from Assistants API
               if (data.soapNote) {
+                console.log('📝 [EncounterView] Setting SOAP note');
                 setSoapNote(data.soapNote);
               }
               
               // Use draft orders from Assistants API  
               if (data.draftOrders) {
+                console.log('📋 [EncounterView] Setting draft orders:', data.draftOrders.length);
                 setDraftOrders(data.draftOrders);
               }
               
               // Use CPT codes from Assistants API
               if (data.cptCodes) {
+                console.log('🏥 [EncounterView] Setting CPT codes:', data.cptCodes.length);
                 setCptCodes(data.cptCodes);
               }
-              
-              // Note: We keep the real-time transcription and don't overwrite with data.transcription
 
               toast({
                 title: "AI Analysis Complete",
-                description: "Real-time transcription + AI suggestions ready"
+                description: "Smart suggestions and clinical insights ready"
               });
 
             } else {
