@@ -295,109 +295,97 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
             </Card>
           )}
 
-          {/* Real-time Provider Suggestions */}
-          {(realtimeSuggestions.length > 0 || isGettingSuggestions) && (
-            <Card className="p-4 border-green-200 bg-green-50">
-              <h4 className="font-medium text-green-900 mb-2 flex items-center">
+          {/* GPT Suggestions - Enhanced with Real-time */}
+          {(aiSuggestions || realtimeSuggestions.length > 0 || isGettingSuggestions) && (
+            <Card className="p-4">
+              <h4 className="font-medium text-blue-900 mb-2 flex items-center">
                 <Brain className="h-4 w-4 mr-2" />
-                Real-time Clinical Insights
+                GPT Suggestions
                 {isGettingSuggestions && <Loader2 className="h-3 w-3 ml-2 animate-spin" />}
               </h4>
               
+              {/* Real-time Suggestions Section */}
               {realtimeSuggestions.length > 0 && (
-                <div className="space-y-3">
-                  {realtimeSuggestions.slice(-2).map((suggestion, index) => (
-                    <div key={index} className="space-y-2">
-                      {/* Clinical Suggestions */}
-                      {suggestion.suggestions?.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-green-800">Clinical Guidance:</h5>
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <h5 className="text-sm font-medium text-green-800 mb-2">🔄 Real-time Clinical Insights:</h5>
+                  <div className="space-y-2">
+                    {realtimeSuggestions.slice(-1).map((suggestion, index) => (
+                      <div key={index} className="space-y-1">
+                        {suggestion.suggestions?.length > 0 && (
                           <ul className="text-sm text-green-700 space-y-1">
                             {suggestion.suggestions.map((item: string, idx: number) => (
-                              <li key={idx} className="flex items-start">
-                                <span className="text-green-600 mr-2">•</span>
-                                <span>{item}</span>
-                              </li>
+                              <li key={idx}>• {item}</li>
                             ))}
                           </ul>
-                        </div>
-                      )}
-                      
-                      {/* Clinical Flags */}
-                      {suggestion.clinicalFlags?.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-red-800">⚠️ Clinical Alerts:</h5>
-                          <ul className="text-sm text-red-700 space-y-1">
-                            {suggestion.clinicalFlags.map((flag: string, idx: number) => (
-                              <li key={idx} className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
-                                <span className="font-medium">{flag}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {/* Contextual Reminders */}
-                      {suggestion.contextualReminders?.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-blue-800">📋 Historical Context:</h5>
-                          <ul className="text-sm text-blue-700 space-y-1">
-                            {suggestion.contextualReminders.map((reminder: string, idx: number) => (
-                              <li key={idx} className="flex items-start">
-                                <span className="text-blue-600 mr-2">•</span>
-                                <span className="italic">{reminder}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        )}
+                        {suggestion.clinicalFlags?.length > 0 && (
+                          <div className="mt-2">
+                            <span className="text-xs font-medium text-red-700">⚠️ Clinical Alerts:</span>
+                            <ul className="text-sm text-red-700 space-y-1 mt-1">
+                              {suggestion.clinicalFlags.map((flag: string, idx: number) => (
+                                <li key={idx} className="font-medium">• {flag}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {suggestion.contextualReminders?.length > 0 && (
+                          <div className="mt-2">
+                            <span className="text-xs font-medium text-blue-700">📋 Historical Context:</span>
+                            <ul className="text-sm text-blue-700 space-y-1 mt-1">
+                              {suggestion.contextualReminders.map((reminder: string, idx: number) => (
+                                <li key={idx} className="italic">• {reminder}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               
               {isGettingSuggestions && realtimeSuggestions.length === 0 && (
-                <div className="flex items-center space-x-2 text-green-600">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Analyzing clinical context...</span>
-                </div>
-              )}
-            </Card>
-          )}
-          
-          {/* AI Suggestions */}
-          {aiSuggestions && (
-            <Card className="p-4">
-              <h4 className="font-medium text-blue-900 mb-2 flex items-center">
-                <Brain className="h-4 w-4 mr-2" />
-                AI {user?.role === "nurse" ? "Nurse" : "Provider"} Suggestions
-              </h4>
-              {getUserRolePrompts()?.length > 0 ? (
-                <ul className="text-sm text-blue-800 space-y-1">
-                  {getUserRolePrompts().map((suggestion: string, index: number) => (
-                    <li key={index}>• {suggestion}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-blue-800">No specific suggestions at this time.</p>
-              )}
-              
-              {aiSuggestions.draftOrders?.length > 0 && (
-                <div className="mt-3">
-                  <h5 className="text-sm font-medium text-blue-900">Suggested Orders:</h5>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    {aiSuggestions.draftOrders.map((order: string, index: number) => (
-                      <li key={index}>• {order}</li>
-                    ))}
-                  </ul>
+                <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Analyzing clinical context...</span>
+                  </div>
                 </div>
               )}
               
-              {aiSuggestions.clinicalNotes && (
-                <div className="mt-3">
-                  <h5 className="text-sm font-medium text-blue-900">Clinical Notes:</h5>
-                  <p className="text-sm text-blue-800">{aiSuggestions.clinicalNotes}</p>
+              {/* Final AI Suggestions Section */}
+              {aiSuggestions && (
+                <div>
+                  {getUserRolePrompts()?.length > 0 ? (
+                    <div className="mb-3">
+                      <h5 className="text-sm font-medium text-blue-900 mb-1">✅ Final Analysis:</h5>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        {getUserRolePrompts().map((suggestion: string, index: number) => (
+                          <li key={index}>• {suggestion}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-blue-800 mb-3">Processing final analysis...</p>
+                  )}
+                  
+                  {aiSuggestions.draftOrders?.length > 0 && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-blue-900">Suggested Orders:</h5>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        {aiSuggestions.draftOrders.map((order: string, index: number) => (
+                          <li key={index}>• {order}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {aiSuggestions.clinicalNotes && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-blue-900">Clinical Notes:</h5>
+                      <p className="text-sm text-blue-800">{aiSuggestions.clinicalNotes}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </Card>
