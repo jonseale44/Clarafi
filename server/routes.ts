@@ -9,6 +9,21 @@ import multer from "multer";
 const upload = multer({ storage: multer.memoryStorage() });
 
 export function registerRoutes(app: Express): Server {
+  
+  // Add global middleware to log all requests to live-suggestions
+  app.use('/api/voice/live-suggestions', (req, res, next) => {
+    console.log('🌐 [MIDDLEWARE] Live suggestions route hit!', {
+      method: req.method,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      route: req.route,
+      contentType: req.headers['content-type'],
+      bodySize: JSON.stringify(req.body).length,
+      hasBody: !!req.body,
+      timestamp: new Date().toISOString()
+    });
+    next();
+  });
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
 

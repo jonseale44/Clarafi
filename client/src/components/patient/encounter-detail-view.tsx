@@ -115,7 +115,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         }
       } else {
         const errorText = await response.text();
-        console.error('❌ [EncounterView] Live suggestions HTTP error:', response.status, errorText);
+        console.error('❌ [EncounterView] Live suggestions HTTP error:', response.status);
+        console.error('❌ [EncounterView] Full HTML response:', errorText);
         throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
       }
     } catch (error) {
