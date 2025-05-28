@@ -246,6 +246,9 @@ export function VoiceRecordingModal({ isOpen, onClose, patientId }: VoiceRecordi
     setRecordingDuration(0);
     setLiveTranscription("");
     setAiSuggestions(null);
+    setRealtimeSuggestions([]);
+    setIsGettingSuggestions(false);
+    lastSuggestionTextRef.current = "";
     onClose();
   };
 
