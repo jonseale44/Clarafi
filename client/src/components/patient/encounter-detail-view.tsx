@@ -98,16 +98,27 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         console.log('🧠 [EncounterView] Live AI suggestions received:', data);
         
         if (data.aiSuggestions) {
-          let suggestionsText = "🧠 LIVE AI ANALYSIS:\n";
+          // Get existing suggestions to append to them
+          const existingSuggestions = gptSuggestions || "";
+          let suggestionsText = "";
           
-          if (data.aiSuggestions.clinicalGuidance) {
-            suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
+          // If this is the first suggestion, add the header
+          if (!existingSuggestions.includes("🧠 LIVE AI ANALYSIS:")) {
+            suggestionsText = "🧠 LIVE AI ANALYSIS:\n";
+            if (data.aiSuggestions.clinicalGuidance) {
+              suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
+            }
+            suggestionsText += "📋 Live Suggestions:\n";
+          } else {
+            suggestionsText = existingSuggestions;
           }
           
+          // Count existing numbered suggestions to continue numbering
+          const existingNumbers = (existingSuggestions.match(/\d+\./g) || []).length;
+          
           if (data.aiSuggestions.realTimePrompts?.length > 0) {
-            suggestionsText += "📋 Live Suggestions:\n";
             data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
-              suggestionsText += `${index + 1}. ${prompt}\n`;
+              suggestionsText += `${existingNumbers + index + 1}. ${prompt}\n`;
             });
           }
           
@@ -131,6 +142,11 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
 
   const startRecording = async () => {
     console.log('🎤 [EncounterView] Starting REAL-TIME voice recording for patient:', patient.id);
+    
+    // Clear previous suggestions when starting new recording
+    setGptSuggestions("");
+    setTranscription("");
+    
     try {
       // Create direct WebSocket connection to OpenAI like your working code
       let realtimeWs: WebSocket | null = null;
