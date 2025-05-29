@@ -42,6 +42,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
     plan: ""
   });
   const [gptSuggestions, setGptSuggestions] = useState("");
+  const [liveSuggestions, setLiveSuggestions] = useState(""); // Track live suggestions during recording
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodes, setCptCodes] = useState<any[]>([]);
   const [isTextMode, setIsTextMode] = useState(false);
@@ -98,15 +99,15 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         console.log('🧠 [EncounterView] Live AI suggestions received:', data);
         
         if (data.aiSuggestions) {
-          console.log('🔧 [EncounterView] Processing live suggestions, existing:', gptSuggestions?.length || 0, 'chars');
+          console.log('🔧 [EncounterView] Processing live suggestions, existing:', liveSuggestions?.length || 0, 'chars');
           console.log('🔧 [EncounterView] New suggestions count:', data.aiSuggestions.realTimePrompts?.length || 0);
           
-          // Get existing suggestions to append to them
-          const existingSuggestions = gptSuggestions || "";
+          // Get existing live suggestions to append to them
+          const existingLiveSuggestions = liveSuggestions || "";
           let suggestionsText = "";
           
           // If this is the first suggestion, add the header
-          if (!existingSuggestions.includes("🧠 LIVE AI ANALYSIS:")) {
+          if (!existingLiveSuggestions.includes("🧠 LIVE AI ANALYSIS:")) {
             suggestionsText = "🧠 LIVE AI ANALYSIS:\n";
             if (data.aiSuggestions.clinicalGuidance) {
               suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
@@ -114,12 +115,12 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             suggestionsText += "📋 Live Suggestions:\n";
             console.log('🔧 [EncounterView] First suggestion - added header');
           } else {
-            suggestionsText = existingSuggestions;
-            console.log('🔧 [EncounterView] Appending to existing suggestions');
+            suggestionsText = existingLiveSuggestions;
+            console.log('🔧 [EncounterView] Appending to existing live suggestions');
           }
           
           // Count existing numbered suggestions to continue numbering
-          const existingNumbers = (existingSuggestions.match(/\d+\./g) || []).length;
+          const existingNumbers = (existingLiveSuggestions.match(/\d+\./g) || []).length;
           console.log('🔧 [EncounterView] Found existing numbered items:', existingNumbers);
           
           if (data.aiSuggestions.realTimePrompts?.length > 0) {
@@ -130,8 +131,10 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             });
           }
           
-          console.log('🔧 [EncounterView] Final suggestions length:', suggestionsText.length);
-          setGptSuggestions(suggestionsText);
+          console.log('🔧 [EncounterView] Final live suggestions length:', suggestionsText.length);
+          setLiveSuggestions(suggestionsText);
+          setGptSuggestions(suggestionsText); // Also update the display
+          console.log('🔧 [EncounterView] Live suggestions updated, length:', suggestionsText.length);
         }
       } else {
         const errorText = await response.text();
@@ -412,11 +415,11 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               
               // Process AI suggestions - preserve existing live suggestions
               if (data.aiSuggestions) {
-                const existingSuggestions = gptSuggestions || "";
-                let suggestionsText = existingSuggestions;
+                const existingLiveSuggestions = liveSuggestions || "";
+                let suggestionsText = existingLiveSuggestions;
                 
-                // If we have existing live suggestions, append final analysis
-                if (existingSuggestions.includes("📋 Live Suggestions:")) {
+                // If we have existing live suggestions from recording, append final analysis
+                if (existingLiveSuggestions.includes("🧠 LIVE AI ANALYSIS:") || existingLiveSuggestions.includes("📋 Live Suggestions:")) {
                   suggestionsText += "\n\n🎯 FINAL ANALYSIS:\n";
                   
                   // Add clinical guidance
@@ -426,12 +429,14 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
                   
                   // Add final provider suggestions with continued numbering
                   if (data.aiSuggestions.realTimePrompts?.length > 0) {
-                    const existingNumbers = (existingSuggestions.match(/\d+\./g) || []).length;
+                    const existingNumbers = (existingLiveSuggestions.match(/\d+\./g) || []).length;
                     suggestionsText += "📋 Final Provider Suggestions:\n";
                     data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
                       suggestionsText += `${existingNumbers + index + 1}. ${prompt}\n`;
                     });
                   }
+                  
+                  console.log('🧠 [EncounterView] Preserved live suggestions and added final analysis');
                 } else {
                   // No existing live suggestions, use regular format
                   suggestionsText = "🧠 AI ANALYSIS:\n";
@@ -446,6 +451,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
                       suggestionsText += `${index + 1}. ${prompt}\n`;
                     });
                   }
+                  
+                  console.log('🧠 [EncounterView] No live suggestions found, using regular format');
                 }
                 
                 console.log('🧠 [EncounterView] Setting GPT suggestions:', suggestionsText);

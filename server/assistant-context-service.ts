@@ -76,12 +76,34 @@ export class AssistantContextService {
       patientId,
     );
 
-    // Check if patient already has thread (we'll add this field to schema later)
-    const patient = await db
+    // Check if patient already has a thread
+    const [patient] = await db
       .select()
       .from(patients)
       .where(eq(patients.id, patientId))
       .limit(1);
+
+    if (!patient) {
+      throw new Error(`Patient ${patientId} not found`);
+    }
+
+    console.log(
+      "🧵 [AssistantContextService] Patient data retrieved:",
+      {
+        patientId: patient.id.toString(),
+        hasExistingThread: !!patient.assistantThreadId,
+        threadId: patient.assistantThreadId
+      }
+    );
+
+    // If patient already has a thread, return it
+    if (patient.assistantThreadId) {
+      console.log(
+        "🧵 [AssistantContextService] ✅ Using existing thread:",
+        patient.assistantThreadId,
+      );
+      return patient.assistantThreadId;
+    }
 
     // Create new thread with patient context
     const thread = await this.openai.beta.threads.create();
@@ -90,14 +112,31 @@ export class AssistantContextService {
       thread.id,
     );
 
+    // Store thread ID in patient record
+    await db
+      .update(patients)
+      .set({ 
+        assistantThreadId: thread.id,
+        chartLastUpdated: new Date()
+      })
+      .where(eq(patients.id, patientId));
+
     // Load patient's complete medical history
     const patientHistory = await this.getPatientHistory(patientId);
 
-    // Add historical context to thread
+    // Add historical context to thread - this establishes the assistant's knowledge of the patient
     await this.openai.beta.threads.messages.create(thread.id, {
       role: "user",
-      content: `Patient Historical Context: ${JSON.stringify(patientHistory)}`,
+      content: `PATIENT BASELINE CONTEXT - This patient's complete medical history and current status:
+
+${JSON.stringify(patientHistory, null, 2)}
+
+This is ${patient.firstName} ${patient.lastName}'s persistent medical record thread. All future interactions will build upon this baseline knowledge. Remember this patient's complete medical history, medications, allergies, and diagnoses for all future conversations.`,
     });
+
+    console.log(
+      "🧵 [AssistantContextService] ✅ Thread created and patient context established"
+    );
 
     return thread.id;
   }
