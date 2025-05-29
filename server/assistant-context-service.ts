@@ -161,11 +161,22 @@ Provide immediate clinical suggestions based on this partial transcription.`,
           
           return JSON.parse(cleanedResponse);
         } catch (error) {
-          console.error(
-            "❌ [AssistantContextService] Failed to parse suggestions:",
-            error,
-          );
-          console.error("🔍 [AssistantContextService] Raw response was:", rawResponse);
+          console.log("🔧 [AssistantContextService] JSON parse failed, converting plain text to structured format");
+          
+          // If JSON parsing fails, convert plain text suggestions to structured format
+          const lines = rawResponse.split('\n').filter(line => line.trim());
+          const suggestions = lines
+            .filter(line => line.trim().startsWith('-'))
+            .map(line => line.replace(/^-\s*/, '').trim())
+            .filter(suggestion => suggestion.length > 0);
+          
+          console.log("🔧 [AssistantContextService] Converted suggestions:", suggestions);
+          
+          return {
+            suggestions: suggestions,
+            clinicalFlags: [],
+            historicalContext: ""
+          };
         }
       }
     }
