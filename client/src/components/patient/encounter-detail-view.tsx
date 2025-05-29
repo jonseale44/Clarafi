@@ -49,7 +49,7 @@ const chartSections = [
 
 function AIDebugSection({ patientId }: { patientId: number }) {
   const { data: assistantConfig, isLoading, error } = useQuery({
-    queryKey: ['/api/patients', patientId, 'assistant'],
+    queryKey: [`/api/patients/${patientId}/assistant`],
     enabled: !!patientId
   });
 

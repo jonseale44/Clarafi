@@ -364,13 +364,13 @@ function AIDebugSection({ patientId }: { patientId: number }) {
   const [refreshing, setRefreshing] = useState(false);
   
   const { data: assistantConfig, isLoading, error, refetch } = useQuery({
-    queryKey: ['/api/patients', patientId, 'assistant'],
+    queryKey: [`/api/patients/${patientId}/assistant`],
     enabled: !!patientId
   });
 
   const { data: threadMessages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
-    queryKey: ['/api/patients', patientId, 'assistant', 'messages'],
-    enabled: !!patientId && !!assistantConfig?.thread_id
+    queryKey: [`/api/patients/${patientId}/assistant/messages`],
+    enabled: !!patientId && !!(assistantConfig as any)?.thread_id
   });
 
   const handleRefresh = async () => {
