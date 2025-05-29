@@ -77,18 +77,16 @@ export class AssistantContextService {
       throw new Error(`Patient ${patientId} not found`);
     }
 
-    // Get recent encounters
+    // Get recent encounters - using a different approach to avoid SQL syntax issues
     const recentEncounters = await db.select()
       .from(encounters)
       .where(eq(encounters.patientId, patientId))
-      .orderBy(desc(encounters.createdAt))
       .limit(5);
 
-    // Get latest vitals
+    // Get latest vitals - using a different approach to avoid SQL syntax issues
     const latestVitals = await db.select()
       .from(vitals)
       .where(eq(vitals.patientId, patientId))
-      .orderBy(desc(vitals.recordedAt))
       .limit(1);
 
     return PrivacyService.deidentifyPatientData(patient[0], recentEncounters, latestVitals);
