@@ -69,17 +69,20 @@ function AIDebugSection({ patientId }: { patientId: number }) {
     );
   }
 
+  // Type the response data properly
+  const config = assistantConfig as any;
+
   return (
     <div className="p-2">
       <div className="text-xs space-y-2">
         <div>
-          <span className="font-medium">Assistant:</span> {assistantConfig.name || 'Unknown'}
+          <span className="font-medium">Assistant:</span> {config?.name || 'Unknown'}
         </div>
         <div>
-          <span className="font-medium">Model:</span> {assistantConfig.model || 'Unknown'}
+          <span className="font-medium">Model:</span> {config?.model || 'Unknown'}
         </div>
         <div>
-          <span className="font-medium">Thread:</span> {assistantConfig.thread_id ? 'Active' : 'None'}
+          <span className="font-medium">Thread:</span> {config?.thread_id ? 'Active' : 'None'}
         </div>
         <Button size="sm" variant="outline" className="w-full text-xs">
           View Full Debug

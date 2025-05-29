@@ -435,27 +435,27 @@ function AIDebugSection({ patientId }: { patientId: number }) {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Assistant Overview</span>
-                <Badge variant="secondary">{assistantConfig.model}</Badge>
+                <Badge variant="secondary">{(assistantConfig as any)?.model}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <label className="font-medium text-gray-700">Assistant ID:</label>
-                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{assistantConfig.id}</p>
+                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{(assistantConfig as any)?.id}</p>
                 </div>
                 <div>
                   <label className="font-medium text-gray-700">Thread ID:</label>
-                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{assistantConfig.thread_id || 'Not assigned'}</p>
+                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{(assistantConfig as any)?.thread_id || 'Not assigned'}</p>
                 </div>
                 <div>
                   <label className="font-medium text-gray-700">Name:</label>
-                  <p className="mt-1">{assistantConfig.name || 'Unnamed Assistant'}</p>
+                  <p className="mt-1">{(assistantConfig as any)?.name || 'Unnamed Assistant'}</p>
                 </div>
                 <div>
                   <label className="font-medium text-gray-700">Created:</label>
                   <p className="mt-1">
-                    {assistantConfig.created_at ? new Date(assistantConfig.created_at * 1000).toLocaleString() : 'Unknown'}
+                    {(assistantConfig as any)?.created_at ? new Date((assistantConfig as any).created_at * 1000).toLocaleString() : 'Unknown'}
                   </p>
                 </div>
               </div>
@@ -468,21 +468,21 @@ function AIDebugSection({ patientId }: { patientId: number }) {
             </CardHeader>
             <CardContent>
               <Textarea
-                value={assistantConfig.instructions || 'No instructions provided'}
+                value={(assistantConfig as any)?.instructions || 'No instructions provided'}
                 readOnly
                 className="min-h-[200px] font-mono text-xs"
               />
             </CardContent>
           </Card>
 
-          {threadMessages && threadMessages.length > 0 && (
+          {threadMessages && (threadMessages as any)?.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Recent Conversation History</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {threadMessages.map((message: any, index: number) => (
+                  {(threadMessages as any)?.map((message: any, index: number) => (
                     <div key={index} className={`p-3 rounded-lg ${
                       message.role === 'assistant' ? 'bg-blue-50 border-l-4 border-blue-200' : 'bg-gray-50 border-l-4 border-gray-200'
                     }`}>
