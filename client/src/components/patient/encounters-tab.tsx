@@ -2,15 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Encounter } from "@shared/schema";
-import { Plus, Mic, Eye, Edit, Clock, MapPin, User, Calendar } from "lucide-react";
+import { Plus, Eye, Edit, Clock, MapPin, User, Calendar } from "lucide-react";
 
 interface EncountersTabProps {
   encounters: Encounter[];
   patientId: number;
-  onStartVoiceNote: () => void;
 }
 
-export function EncountersTab({ encounters, patientId, onStartVoiceNote }: EncountersTabProps) {
+export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -78,12 +77,6 @@ export function EncountersTab({ encounters, patientId, onStartVoiceNote }: Encou
     <div>
       <div className="flex items-center justify-between mb-6">
         <h4 className="text-lg font-semibold text-gray-900">Recent Encounters</h4>
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" onClick={onStartVoiceNote}>
-            <Mic className="h-4 w-4 mr-2" />
-            Voice Note
-          </Button>
-        </div>
       </div>
       
       <div className="space-y-4">

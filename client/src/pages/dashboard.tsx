@@ -3,7 +3,7 @@ import { PatientHeader } from "@/components/patient/patient-header";
 import { QuickStats } from "@/components/patient/quick-stats";
 import { EncountersTab } from "@/components/patient/encounters-tab";
 import { PatientChartView } from "@/components/patient/patient-chart-view";
-import { VoiceRecordingModal } from "@/components/voice/voice-recording-modal";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 interface PatientChartViewProps {
   patient: Patient;
   patientId: number;
-  onStartVoiceNote: () => void;
 }
 
 const chartSections = [
@@ -32,7 +31,7 @@ const chartSections = [
   { id: "appointments", label: "Appointments", icon: null },
 ];
 
-export function PatientChartView({ patient, patientId, onStartVoiceNote }: PatientChartViewProps) {
+export function PatientChartView({ patient, patientId }: PatientChartViewProps) {
   const [activeSection, setActiveSection] = useState("encounters");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["encounters"]));
   const [currentEncounterId, setCurrentEncounterId] = useState<number | null>(null);
@@ -152,7 +151,7 @@ export function PatientChartView({ patient, patientId, onStartVoiceNote }: Patie
                 New Encounter
               </Button>
             </div>
-            <EncountersTab encounters={Array.isArray(encounters) ? encounters : []} patientId={patientId} onStartVoiceNote={onStartVoiceNote} />
+            <EncountersTab encounters={Array.isArray(encounters) ? encounters : []} patientId={patientId} />
           </div>
         );
       case "problems":
