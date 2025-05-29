@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,6 +18,8 @@ import {
   MicOff,
   ArrowLeft,
   FileText,
+  Bot,
+  RefreshCw,
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
@@ -42,6 +44,7 @@ const chartSections = [
   { id: "surgical-history", label: "Surgical History" },
   { id: "attachments", label: "Attachments" },
   { id: "appointments", label: "Appointments" },
+  { id: "ai-debug", label: "AI Assistant Debug" },
 ];
 
 export function EncounterDetailView({
@@ -706,6 +709,8 @@ export function EncounterDetailView({
     });
   };
 
+
+
   return (
     <div className="flex h-full">
       {/* Left Sidebar */}
@@ -807,6 +812,8 @@ export function EncounterDetailView({
                 <div className="bg-white border-b border-gray-100 p-3 text-xs text-gray-600">
                   {section.id === "encounters"
                     ? "Current encounter in progress"
+                    : section.id === "ai-debug"
+                    ? <AIDebugSection patientId={patient.id} />
                     : `${section.label} content`}
                 </div>
               </CollapsibleContent>
