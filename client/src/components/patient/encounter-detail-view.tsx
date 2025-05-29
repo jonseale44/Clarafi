@@ -244,8 +244,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             transcriptionBuffer += deltaText;
             setTranscription(transcriptionBuffer);
             
-            // Trigger live AI suggestions when we have enough text (every 100 chars to avoid spam)
-            if (transcriptionBuffer.length - lastSuggestionLength > 100) {
+            // Trigger live AI suggestions when we have enough text (every 25 chars for faster response)
+            if (transcriptionBuffer.length - lastSuggestionLength > 25) {
               lastSuggestionLength = transcriptionBuffer.length;
               console.log('🧠 [EncounterView] Triggering live AI suggestions for buffer length:', transcriptionBuffer.length);
               getLiveAISuggestions(transcriptionBuffer);
@@ -256,7 +256,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             console.log('✅ [EncounterView] Transcription completed (not adding to buffer):', finalText);
             
             // Trigger final suggestions on completion if we haven't recently
-            if (transcriptionBuffer.length - lastSuggestionLength > 50) {
+            if (transcriptionBuffer.length - lastSuggestionLength > 25) {
               console.log('🧠 [EncounterView] Triggering final AI suggestions on completion');
               getLiveAISuggestions(transcriptionBuffer);
             }
