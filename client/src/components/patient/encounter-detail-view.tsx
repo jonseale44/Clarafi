@@ -98,6 +98,9 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         console.log('🧠 [EncounterView] Live AI suggestions received:', data);
         
         if (data.aiSuggestions) {
+          console.log('🔧 [EncounterView] Processing live suggestions, existing:', gptSuggestions?.length || 0, 'chars');
+          console.log('🔧 [EncounterView] New suggestions count:', data.aiSuggestions.realTimePrompts?.length || 0);
+          
           // Get existing suggestions to append to them
           const existingSuggestions = gptSuggestions || "";
           let suggestionsText = "";
@@ -109,19 +112,25 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
             }
             suggestionsText += "📋 Live Suggestions:\n";
+            console.log('🔧 [EncounterView] First suggestion - added header');
           } else {
             suggestionsText = existingSuggestions;
+            console.log('🔧 [EncounterView] Appending to existing suggestions');
           }
           
           // Count existing numbered suggestions to continue numbering
           const existingNumbers = (existingSuggestions.match(/\d+\./g) || []).length;
+          console.log('🔧 [EncounterView] Found existing numbered items:', existingNumbers);
           
           if (data.aiSuggestions.realTimePrompts?.length > 0) {
             data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
-              suggestionsText += `${existingNumbers + index + 1}. ${prompt}\n`;
+              const itemNumber = existingNumbers + index + 1;
+              suggestionsText += `${itemNumber}. ${prompt}\n`;
+              console.log('🔧 [EncounterView] Added item', itemNumber, ':', prompt.substring(0, 50) + '...');
             });
           }
           
+          console.log('🔧 [EncounterView] Final suggestions length:', suggestionsText.length);
           setGptSuggestions(suggestionsText);
         }
       } else {
@@ -702,7 +711,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
                 Generate Suggestions
               </Button>
             </div>
-            <div className="text-gray-500 text-sm">
+            <div className="text-gray-500 text-sm whitespace-pre-line">
               {gptSuggestions || "GPT analysis will appear here..."}
             </div>
           </Card>
