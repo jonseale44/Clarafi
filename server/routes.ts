@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema } from "@shared/schema";
+import { processVoiceRecordingEnhanced, AIAssistantParams } from "./openai";
 import multer from "multer";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -267,6 +268,133 @@ export function registerRoutes(app: Express): Server {
       const patientId = parseInt(req.params.patientId);
       const imagingResults = await storage.getPatientImagingResults(patientId);
       res.json(imagingResults);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Live AI suggestions endpoint for real-time transcription (used by encounter recording)
+  app.post("/api/voice/live-suggestions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { patientId, userRole = "provider", transcription } = req.body;
+      
+      if (!patientId || !transcription) {
+        return res.status(400).json({ message: "Patient ID and transcription are required" });
+      }
+
+      // Get patient context
+      const patient = await storage.getPatient(parseInt(patientId));
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      try {
+        const { AssistantContextService } = await import('./assistant-context-service.js');
+        
+        if (!(global as any).assistantService) {
+          (global as any).assistantService = new AssistantContextService();
+          await (global as any).assistantService.initializeAssistant();
+        }
+        
+        const assistantService = (global as any).assistantService;
+        const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
+        
+        const suggestions = await assistantService.getRealtimeSuggestions(
+          threadId,
+          transcription,
+          userRole as "nurse" | "provider",
+          parseInt(patientId)
+        );
+
+        const formattedSuggestions = {
+          realTimePrompts: suggestions.suggestions || suggestions.realTimePrompts || [],
+          clinicalGuidance: suggestions.clinicalGuidance || suggestions.guidance || suggestions.summary || "AI analysis in progress...",
+          clinicalFlags: suggestions.clinicalFlags || []
+        };
+
+        const response = {
+          aiSuggestions: formattedSuggestions,
+          isLive: true
+        };
+
+        res.json(response);
+      } catch (error) {
+        res.status(500).json({ 
+          message: "Failed to generate live suggestions",
+          aiSuggestions: {
+            realTimePrompts: ["Continue recording..."],
+            clinicalGuidance: "Live suggestions temporarily unavailable"
+          }
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Enhanced voice processing for encounter recording
+  app.post("/api/voice/transcribe-enhanced", upload.single("audio"), async (req, res) => {
+    try {
+      const { patientId, userRole, isLiveChunk } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "No audio file provided" });
+      }
+
+      const patientIdNum = parseInt(patientId);
+      const userRoleStr = userRole || "provider";
+      const isLive = isLiveChunk === "true";
+
+      const patient = await storage.getPatient(patientIdNum);
+      if (!patient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+
+      if (isLive) {
+        try {
+          const { SimpleRealtimeService } = await import('./simple-realtime-service.js');
+          const realtimeService = new SimpleRealtimeService();
+          
+          const result = await realtimeService.processLiveAudioChunk(
+            req.file.buffer,
+            patientIdNum,
+            userRoleStr
+          );
+          
+          res.json(result);
+          return;
+        } catch (liveError) {
+          console.error('Live processing failed, falling back to enhanced:', liveError);
+        }
+      }
+
+      // Create a new encounter for voice documentation
+      const newEncounter = await storage.createEncounter({
+        patientId: patientIdNum,
+        providerId: req.user?.id || 1,
+        encounterType: "voice_note",
+        chiefComplaint: "Voice-generated documentation"
+      });
+
+      const result = await processVoiceRecordingEnhanced(
+        req.file.buffer,
+        {
+          userRole: userRoleStr as "nurse" | "provider", 
+          patientId: patientIdNum,
+          encounterId: newEncounter.id,
+          patientContext: {
+            firstName: patient.firstName,
+            lastName: patient.lastName,
+            age: new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear(),
+            gender: patient.gender,
+            mrn: patient.mrn
+          }
+        }
+      );
+
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
