@@ -4,8 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Plus, Search, Mic, MicOff, ArrowLeft, FileText } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Search,
+  Mic,
+  MicOff,
+  ArrowLeft,
+  FileText,
+} from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -31,15 +44,21 @@ const chartSections = [
   { id: "appointments", label: "Appointments" },
 ];
 
-export function EncounterDetailView({ patient, encounterId, onBackToChart }: EncounterDetailViewProps) {
+export function EncounterDetailView({
+  patient,
+  encounterId,
+  onBackToChart,
+}: EncounterDetailViewProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState("");
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["encounters"]));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(["encounters"]),
+  );
   const [soapNote, setSoapNote] = useState({
     subjective: "",
     objective: "",
     assessment: "",
-    plan: ""
+    plan: "",
   });
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState(""); // Track live suggestions during recording
@@ -59,53 +78,71 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   // Function to get real-time suggestions during recording
   const getLiveAISuggestions = async (transcription: string) => {
     if (transcription.length < 50) return; // Only process meaningful chunks
-    
+
     try {
-      console.log('🧠 [EncounterView] Getting live AI suggestions for transcription:', transcription.substring(0, 100) + '...');
-      
+      console.log(
+        "🧠 [EncounterView] Getting live AI suggestions for transcription:",
+        transcription.substring(0, 100) + "...",
+      );
+
       const requestBody = {
         patientId: patient.id.toString(),
-        userRole: 'provider',
-        isLiveChunk: 'true',
-        transcription: transcription
+        userRole: "provider",
+        isLiveChunk: "true",
+        transcription: transcription,
       };
-      
-      console.log('🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions');
-      console.log('🧠 [EncounterView] Request body:', requestBody);
-      
-      const response = await fetch('/api/voice/live-suggestions', {
-        method: 'POST',
+
+      console.log(
+        "🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions",
+      );
+      console.log("🧠 [EncounterView] Request body:", requestBody);
+
+      const response = await fetch("/api/voice/live-suggestions", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
       });
-      
-      console.log('🧠 [EncounterView] Live suggestions response status:', response.status);
-      console.log('🧠 [EncounterView] Live suggestions response headers:', Object.fromEntries(response.headers.entries()));
-      
+
+      console.log(
+        "🧠 [EncounterView] Live suggestions response status:",
+        response.status,
+      );
+      console.log(
+        "🧠 [EncounterView] Live suggestions response headers:",
+        Object.fromEntries(response.headers.entries()),
+      );
+
       if (response.ok) {
         const data = await response.json();
-        console.log('🧠 [EncounterView] Live AI suggestions received:', data);
-        
+        console.log("🧠 [EncounterView] Live AI suggestions received:", data);
+
         if (data.aiSuggestions) {
-          console.log('🔧 [EncounterView] Processing live suggestions, existing:', liveSuggestions?.length || 0, 'chars');
-          console.log('🔧 [EncounterView] New suggestions count:', data.aiSuggestions.realTimePrompts?.length || 0);
-          
+          console.log(
+            "🔧 [EncounterView] Processing live suggestions, existing:",
+            liveSuggestions?.length || 0,
+            "chars",
+          );
+          console.log(
+            "🔧 [EncounterView] New suggestions count:",
+            data.aiSuggestions.realTimePrompts?.length || 0,
+          );
+
           // Get existing live suggestions to append to them
           const existingLiveSuggestions = liveSuggestions || "";
           let suggestionsText = "";
-          
+
           // If this is the first suggestion, add the header
           if (!existingLiveSuggestions.includes("🧠 LIVE AI ANALYSIS:")) {
             suggestionsText = "🧠 LIVE AI ANALYSIS:\n";
@@ -113,111 +150,147 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
             }
             suggestionsText += "📋 Live Suggestions:\n";
-            console.log('🔧 [EncounterView] First suggestion - added header');
+            console.log("🔧 [EncounterView] First suggestion - added header");
           } else {
             suggestionsText = existingLiveSuggestions;
-            console.log('🔧 [EncounterView] Appending to existing live suggestions');
+            console.log(
+              "🔧 [EncounterView] Appending to existing live suggestions",
+            );
           }
-          
+
           // Count existing numbered suggestions to continue numbering
-          const existingNumbers = (existingLiveSuggestions.match(/\d+\./g) || []).length;
-          console.log('🔧 [EncounterView] Found existing numbered items:', existingNumbers);
-          
+          const existingNumbers = (
+            existingLiveSuggestions.match(/\d+\./g) || []
+          ).length;
+          console.log(
+            "🔧 [EncounterView] Found existing numbered items:",
+            existingNumbers,
+          );
+
           if (data.aiSuggestions.realTimePrompts?.length > 0) {
-            data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
-              const itemNumber = existingNumbers + index + 1;
-              suggestionsText += `${itemNumber}. ${prompt}\n`;
-              console.log('🔧 [EncounterView] Added item', itemNumber, ':', prompt.substring(0, 50) + '...');
-            });
+            data.aiSuggestions.realTimePrompts.forEach(
+              (prompt: string, index: number) => {
+                const itemNumber = existingNumbers + index + 1;
+                suggestionsText += `${itemNumber}. ${prompt}\n`;
+                console.log(
+                  "🔧 [EncounterView] Added item",
+                  itemNumber,
+                  ":",
+                  prompt.substring(0, 50) + "...",
+                );
+              },
+            );
           }
-          
-          console.log('🔧 [EncounterView] Final live suggestions length:', suggestionsText.length);
+
+          console.log(
+            "🔧 [EncounterView] Final live suggestions length:",
+            suggestionsText.length,
+          );
           setLiveSuggestions(suggestionsText);
           setGptSuggestions(suggestionsText); // Also update the display
-          console.log('🔧 [EncounterView] Live suggestions updated, length:', suggestionsText.length);
+          console.log(
+            "🔧 [EncounterView] Live suggestions updated, length:",
+            suggestionsText.length,
+          );
         }
       } else {
         const errorText = await response.text();
-        console.error('❌ [EncounterView] Live suggestions HTTP error:', response.status);
-        console.error('❌ [EncounterView] Full HTML response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+        console.error(
+          "❌ [EncounterView] Live suggestions HTTP error:",
+          response.status,
+        );
+        console.error("❌ [EncounterView] Full HTML response:", errorText);
+        throw new Error(
+          `HTTP ${response.status}: ${errorText.substring(0, 200)}`,
+        );
       }
     } catch (error) {
-      console.error('❌ [EncounterView] Live suggestions failed:', error);
-      console.error('❌ [EncounterView] Error details:', {
+      console.error("❌ [EncounterView] Live suggestions failed:", error);
+      console.error("❌ [EncounterView] Error details:", {
         message: error?.message,
         name: error?.name,
-        stack: error?.stack
+        stack: error?.stack,
       });
     }
   };
 
   const startRecording = async () => {
-    console.log('🎤 [EncounterView] Starting REAL-TIME voice recording for patient:', patient.id);
-    
+    console.log(
+      "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
+      patient.id,
+    );
+
     // Clear previous suggestions when starting new recording
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
     setTranscription("");
-    
+
     try {
       // Create direct WebSocket connection to OpenAI like your working code
       let realtimeWs: WebSocket | null = null;
-      let transcriptionBuffer = '';
+      let transcriptionBuffer = "";
       let lastSuggestionLength = 0;
-      
+
       try {
-        console.log('🌐 [EncounterView] Connecting to OpenAI Realtime API like working implementation...');
-        
+        console.log(
+          "🌐 [EncounterView] Connecting to OpenAI Realtime API like working implementation...",
+        );
+
         // Get API key from environment
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        console.log('🔑 [EncounterView] API key check:', {
+        console.log("🔑 [EncounterView] API key check:", {
           hasApiKey: !!apiKey,
           keyLength: apiKey?.length || 0,
-          keyPrefix: apiKey?.substring(0, 7) || 'none'
+          keyPrefix: apiKey?.substring(0, 7) || "none",
         });
-        
+
         if (!apiKey) {
-          throw new Error('OpenAI API key not available in environment');
+          throw new Error("OpenAI API key not available in environment");
         }
-        
+
         // Step 1: Create session exactly like your working code
-        console.log('🔧 [EncounterView] Creating OpenAI session...');
+        console.log("🔧 [EncounterView] Creating OpenAI session...");
         const sessionConfig = {
           model: "gpt-4o-mini-realtime-preview-2024-12-17",
           modalities: ["text"],
-          instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+          instructions:
+            "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
           input_audio_format: "pcm16",
           input_audio_transcription: {
             model: "whisper-1",
-            language: "en"
+            language: "en",
           },
           turn_detection: {
             type: "server_vad",
             threshold: 0.5,
             prefix_padding_ms: 300,
             silence_duration_ms: 500,
-            create_response: false
-          }
+            create_response: true,
+          },
         };
 
-        const sessionResponse = await fetch("https://api.openai.com/v1/realtime/sessions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-            "OpenAI-Beta": "realtime=v1",
+        const sessionResponse = await fetch(
+          "https://api.openai.com/v1/realtime/sessions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+              "OpenAI-Beta": "realtime=v1",
+            },
+            body: JSON.stringify(sessionConfig),
           },
-          body: JSON.stringify(sessionConfig),
-        });
+        );
 
         if (!sessionResponse.ok) {
           const error = await sessionResponse.json();
-          throw new Error(`Failed to create session: ${error.message || 'Unknown error'}`);
+          throw new Error(
+            `Failed to create session: ${error.message || "Unknown error"}`,
+          );
         }
 
         const session = await sessionResponse.json();
-        console.log('✅ [EncounterView] Session created:', session.id);
+        console.log("✅ [EncounterView] Session created:", session.id);
 
         // Step 2: Connect via WebSocket with session token like your working code
         const protocols = [
@@ -232,110 +305,131 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
 
         realtimeWs = new WebSocket(
           `wss://api.openai.com/v1/realtime?${params.toString()}`,
-          protocols
+          protocols,
         );
-        
+
         realtimeWs.onopen = () => {
-          console.log('🌐 [EncounterView] ✅ Connected to OpenAI Realtime API');
-          
+          console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
+
           // Update session configuration like your working code
-          realtimeWs!.send(JSON.stringify({
-            type: "session.update",
-            session: {
-              instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
-              model: "gpt-4o-mini-realtime-preview-2024-12-17",
-              modalities: ["text"],
-              input_audio_format: "pcm16",
-              input_audio_transcription: {
-                model: "whisper-1",
-                language: "en"
+          realtimeWs!.send(
+            JSON.stringify({
+              type: "session.update",
+              session: {
+                instructions:
+                  "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+                model: "gpt-4o-mini-realtime-preview-2024-12-17",
+                modalities: ["text"],
+                input_audio_format: "pcm16",
+                input_audio_transcription: {
+                  model: "whisper-1",
+                  language: "en",
+                },
+                turn_detection: {
+                  type: "server_vad",
+                  threshold: 0.3,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 500,
+                  create_response: true,
+                },
               },
-              turn_detection: {
-                type: "server_vad",
-                threshold: 0.3,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 500,
-                create_response: false
-              }
-            }
-          }));
+            }),
+          );
         };
-        
+
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log('📨 [EncounterView] OpenAI message type:', message.type);
-          console.log('📨 [EncounterView] Full OpenAI message:', message);
-          
+          console.log("📨 [EncounterView] OpenAI message type:", message.type);
+          console.log("📨 [EncounterView] Full OpenAI message:", message);
+
           // Handle transcription events - only use delta for live updates
-          if (message.type === 'conversation.item.input_audio_transcription.delta') {
-            const deltaText = message.transcript || message.delta || '';
-            console.log('📝 [EncounterView] Transcription delta:', deltaText);
+          if (
+            message.type === "conversation.item.input_audio_transcription.delta"
+          ) {
+            const deltaText = message.transcript || message.delta || "";
+            console.log("📝 [EncounterView] Transcription delta:", deltaText);
             transcriptionBuffer += deltaText;
             setTranscription(transcriptionBuffer);
-            
+
             // Trigger live AI suggestions when we have enough text (every 25 chars for faster response)
             if (transcriptionBuffer.length - lastSuggestionLength > 25) {
               lastSuggestionLength = transcriptionBuffer.length;
-              console.log('🧠 [EncounterView] Triggering live AI suggestions for buffer length:', transcriptionBuffer.length);
+              console.log(
+                "🧠 [EncounterView] Triggering live AI suggestions for buffer length:",
+                transcriptionBuffer.length,
+              );
               getLiveAISuggestions(transcriptionBuffer);
             }
-          } else if (message.type === 'conversation.item.input_audio_transcription.completed') {
+          } else if (
+            message.type ===
+            "conversation.item.input_audio_transcription.completed"
+          ) {
             // Log completion but don't add to buffer (already added via deltas)
-            const finalText = message.transcript || '';
-            console.log('✅ [EncounterView] Transcription completed (not adding to buffer):', finalText);
-            
+            const finalText = message.transcript || "";
+            console.log(
+              "✅ [EncounterView] Transcription completed (not adding to buffer):",
+              finalText,
+            );
+
             // Trigger final suggestions on completion if we haven't recently
             if (transcriptionBuffer.length - lastSuggestionLength > 25) {
-              console.log('🧠 [EncounterView] Triggering final AI suggestions on completion');
+              console.log(
+                "🧠 [EncounterView] Triggering final AI suggestions on completion",
+              );
               getLiveAISuggestions(transcriptionBuffer);
             }
-          } else if (message.type === 'error') {
-            console.error('❌ [EncounterView] OpenAI Realtime API Error:', message);
-            console.error('❌ [EncounterView] Error details:', message.error);
+          } else if (message.type === "error") {
+            console.error(
+              "❌ [EncounterView] OpenAI Realtime API Error:",
+              message,
+            );
+            console.error("❌ [EncounterView] Error details:", message.error);
           }
         };
-        
+
         realtimeWs.onerror = (error) => {
-          console.error('❌ [EncounterView] OpenAI WebSocket error:', error);
+          console.error("❌ [EncounterView] OpenAI WebSocket error:", error);
         };
-        
       } catch (wsError) {
-        console.error('❌ [EncounterView] Failed to connect to OpenAI Realtime API:', wsError);
+        console.error(
+          "❌ [EncounterView] Failed to connect to OpenAI Realtime API:",
+          wsError,
+        );
         // Fall back to chunked processing if direct connection fails
       }
 
-      console.log('🎤 [EncounterView] Requesting microphone access...');
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      console.log("🎤 [EncounterView] Requesting microphone access...");
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
           sampleRate: 16000,
-        }
+        },
       });
-      console.log('🎤 [EncounterView] ✅ Microphone access granted');
-      
+      console.log("🎤 [EncounterView] ✅ Microphone access granted");
+
       // Set up audio processing exactly like your working AudioRecorder
       const audioContext = new AudioContext({ sampleRate: 16000 });
       const source = audioContext.createMediaStreamSource(stream);
       const bufferSize = 4096; // Same as your working code
       const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
-      
+
       processor.onaudioprocess = async (e) => {
         if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
-        
+
         const inputData = e.inputBuffer.getChannelData(0);
-        
+
         // Convert to PCM16 and create blob exactly like your working code
         const pcm16Data = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           const sample = Math.max(-1, Math.min(1, inputData[i]));
           pcm16Data[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
         }
-        
+
         // Create audio blob and send exactly like your working appendAudio method
-        const audioBlob = new Blob([pcm16Data], { type: 'audio/pcm' });
-        
+        const audioBlob = new Blob([pcm16Data], { type: "audio/pcm" });
+
         // Convert to base64 exactly like your working code
         const reader = new FileReader();
         reader.onload = () => {
@@ -349,55 +443,67 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             const base64Audio = btoa(binary);
 
             // Send audio buffer exactly like your working code
-            realtimeWs!.send(JSON.stringify({
-              type: "input_audio_buffer.append",
-              audio: base64Audio,
-            }));
-            
-            console.log("🎵 [EncounterView] Sent audio buffer:", base64Audio.length, "bytes");
+            realtimeWs!.send(
+              JSON.stringify({
+                type: "input_audio_buffer.append",
+                audio: base64Audio,
+              }),
+            );
+
+            console.log(
+              "🎵 [EncounterView] Sent audio buffer:",
+              base64Audio.length,
+              "bytes",
+            );
           } catch (error) {
             console.error("❌ [EncounterView] Error processing audio:", error);
           }
         };
         reader.readAsArrayBuffer(audioBlob);
       };
-      
+
       source.connect(processor);
       processor.connect(audioContext.destination);
-      
+
       const mediaRecorder = new MediaRecorder(stream);
       const audioChunks: Blob[] = [];
-      
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunks.push(event.data);
         }
       };
-      
+
       mediaRecorder.onstop = async () => {
-        console.log('🎤 [EncounterView] Recording stopped, cleaning up real-time connection...');
-        
+        console.log(
+          "🎤 [EncounterView] Recording stopped, cleaning up real-time connection...",
+        );
+
         // Close the real-time WebSocket connection
         if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
           realtimeWs.close();
-          console.log('🌐 [EncounterView] Real-time WebSocket connection closed');
+          console.log(
+            "🌐 [EncounterView] Real-time WebSocket connection closed",
+          );
         }
-        
+
         // Clean up audio processing
         if (processor) {
           processor.disconnect();
           source.disconnect();
           audioContext.close();
         }
-        
-        console.log('🎤 [EncounterView] Now processing with Assistants API for AI suggestions...');
-        
+
+        console.log(
+          "🎤 [EncounterView] Now processing with Assistants API for AI suggestions...",
+        );
+
         // Use the real-time transcription for AI analysis via Assistants API
         if (transcriptionBuffer.trim()) {
           try {
-            // Send transcription to Assistants API for comprehensive analysis  
+            // Send transcription to Assistants API for comprehensive analysis
             const formData = new FormData();
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
             formData.append("audio", audioBlob, "recording.webm");
             formData.append("patientId", patient.id.toString());
             formData.append("userRole", "provider");
@@ -405,107 +511,138 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             formData.append("transcriptionOverride", transcriptionBuffer);
 
             const response = await fetch("/api/voice/transcribe-enhanced", {
-              method: "POST", 
+              method: "POST",
               body: formData,
             });
 
             if (response.ok) {
               const data = await response.json();
-              console.log('🤖 [EncounterView] Assistants API response:', data);
-              console.log('🧠 [EncounterView] AI Suggestions structure:', data.aiSuggestions ? Object.keys(data.aiSuggestions) : 'No suggestions');
-              
+              console.log("🤖 [EncounterView] Assistants API response:", data);
+              console.log(
+                "🧠 [EncounterView] AI Suggestions structure:",
+                data.aiSuggestions
+                  ? Object.keys(data.aiSuggestions)
+                  : "No suggestions",
+              );
+
               // Process AI suggestions - preserve existing live suggestions
               if (data.aiSuggestions) {
                 const existingLiveSuggestions = liveSuggestions || "";
                 let suggestionsText = existingLiveSuggestions;
-                
+
                 // If we have existing live suggestions from recording, append final analysis
-                if (existingLiveSuggestions.includes("🧠 LIVE AI ANALYSIS:") || existingLiveSuggestions.includes("📋 Live Suggestions:")) {
+                if (
+                  existingLiveSuggestions.includes("🧠 LIVE AI ANALYSIS:") ||
+                  existingLiveSuggestions.includes("📋 Live Suggestions:")
+                ) {
                   suggestionsText += "\n\n🎯 FINAL ANALYSIS:\n";
-                  
+
                   // Add clinical guidance
                   if (data.aiSuggestions.clinicalGuidance) {
                     suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
                   }
-                  
+
                   // Add final provider suggestions with continued numbering
                   if (data.aiSuggestions.realTimePrompts?.length > 0) {
-                    const existingNumbers = (existingLiveSuggestions.match(/\d+\./g) || []).length;
+                    const existingNumbers = (
+                      existingLiveSuggestions.match(/\d+\./g) || []
+                    ).length;
                     suggestionsText += "📋 Final Provider Suggestions:\n";
-                    data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
-                      suggestionsText += `${existingNumbers + index + 1}. ${prompt}\n`;
-                    });
+                    data.aiSuggestions.realTimePrompts.forEach(
+                      (prompt: string, index: number) => {
+                        suggestionsText += `${existingNumbers + index + 1}. ${prompt}\n`;
+                      },
+                    );
                   }
-                  
-                  console.log('🧠 [EncounterView] Preserved live suggestions and added final analysis');
+
+                  console.log(
+                    "🧠 [EncounterView] Preserved live suggestions and added final analysis",
+                  );
                 } else {
                   // No existing live suggestions, use regular format
                   suggestionsText = "🧠 AI ANALYSIS:\n";
-                  
+
                   if (data.aiSuggestions.clinicalGuidance) {
                     suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
                   }
-                  
+
                   if (data.aiSuggestions.realTimePrompts?.length > 0) {
                     suggestionsText += "📋 Provider Suggestions:\n";
-                    data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
-                      suggestionsText += `${index + 1}. ${prompt}\n`;
-                    });
+                    data.aiSuggestions.realTimePrompts.forEach(
+                      (prompt: string, index: number) => {
+                        suggestionsText += `${index + 1}. ${prompt}\n`;
+                      },
+                    );
                   }
-                  
-                  console.log('🧠 [EncounterView] No live suggestions found, using regular format');
+
+                  console.log(
+                    "🧠 [EncounterView] No live suggestions found, using regular format",
+                  );
                 }
-                
-                console.log('🧠 [EncounterView] Setting GPT suggestions:', suggestionsText);
+
+                console.log(
+                  "🧠 [EncounterView] Setting GPT suggestions:",
+                  suggestionsText,
+                );
                 setGptSuggestions(suggestionsText);
               }
-              
+
               // Use SOAP note from Assistants API
               if (data.soapNote) {
-                console.log('📝 [EncounterView] Setting SOAP note');
+                console.log("📝 [EncounterView] Setting SOAP note");
                 setSoapNote(data.soapNote);
               }
-              
-              // Use draft orders from Assistants API  
+
+              // Use draft orders from Assistants API
               if (data.draftOrders) {
-                console.log('📋 [EncounterView] Setting draft orders:', data.draftOrders.length);
+                console.log(
+                  "📋 [EncounterView] Setting draft orders:",
+                  data.draftOrders.length,
+                );
                 setDraftOrders(data.draftOrders);
               }
-              
+
               // Use CPT codes from Assistants API
               if (data.cptCodes) {
-                console.log('🏥 [EncounterView] Setting CPT codes:', data.cptCodes.length);
+                console.log(
+                  "🏥 [EncounterView] Setting CPT codes:",
+                  data.cptCodes.length,
+                );
                 setCptCodes(data.cptCodes);
               }
 
               toast({
                 title: "AI Analysis Complete",
-                description: "Smart suggestions and clinical insights ready"
+                description: "Smart suggestions and clinical insights ready",
               });
-
             } else {
               throw new Error(`Server responded with ${response.status}`);
             }
           } catch (error) {
-            console.error('❌ [EncounterView] Assistants API processing failed:', error);
-            setGptSuggestions('Failed to get AI suggestions');
+            console.error(
+              "❌ [EncounterView] Assistants API processing failed:",
+              error,
+            );
+            setGptSuggestions("Failed to get AI suggestions");
           }
         } else {
-          console.log('⚠️ [EncounterView] No transcription available for AI analysis');
-          setGptSuggestions('No transcription available for AI analysis');
+          console.log(
+            "⚠️ [EncounterView] No transcription available for AI analysis",
+          );
+          setGptSuggestions("No transcription available for AI analysis");
         }
-        
-        stream.getTracks().forEach(track => track.stop());
+
+        stream.getTracks().forEach((track) => track.stop());
       };
-      
+
       mediaRecorder.start(2000); // Collect chunks every 2 seconds for real-time updates
       setIsRecording(true);
-      
+
       (window as any).currentMediaRecorder = mediaRecorder;
-      
+
       toast({
-        title: "Enhanced Recording Started", 
-        description: "Real-time AI analysis with patient context active"
+        title: "Enhanced Recording Started",
+        description: "Real-time AI analysis with patient context active",
       });
     } catch (error) {
       console.error("❌ [EncounterView] DETAILED ERROR in hybrid recording:", {
@@ -513,32 +650,32 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         message: error?.message,
         name: error?.name,
         stack: error?.stack,
-        patientId: patient.id
+        patientId: patient.id,
       });
-      
+
       let errorMessage = "Unknown error occurred";
       if (error?.message) {
         errorMessage = error.message;
-      } else if (typeof error === 'string') {
+      } else if (typeof error === "string") {
         errorMessage = error;
       }
-      
+
       toast({
         title: "Recording Failed",
         description: `Enhanced recording error: ${errorMessage}`,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const stopRecording = () => {
-    console.log('🎤 [EncounterView] Stopping recording...');
+    console.log("🎤 [EncounterView] Stopping recording...");
     const mediaRecorder = (window as any).currentMediaRecorder;
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.stop();
-      console.log('🎤 [EncounterView] MediaRecorder stopped');
+      console.log("🎤 [EncounterView] MediaRecorder stopped");
     }
-    
+
     setIsRecording(false);
     toast({
       title: "Recording Stopped",
@@ -551,7 +688,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
       subjective: "Patient reports chief complaint and symptoms...",
       objective: "Vital signs and physical examination findings...",
       assessment: "Clinical assessment and diagnosis...",
-      plan: "Treatment plan and follow-up recommendations..."
+      plan: "Treatment plan and follow-up recommendations...",
     });
     toast({
       title: "SOAP Note Generated",
@@ -560,7 +697,9 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
   };
 
   const generateSmartSuggestions = () => {
-    setGptSuggestions("AI-generated clinical suggestions based on the encounter...");
+    setGptSuggestions(
+      "AI-generated clinical suggestions based on the encounter...",
+    );
     toast({
       title: "Smart Suggestions Generated",
       description: "GPT analysis complete",
@@ -575,15 +714,20 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         <div className="p-4 bg-white border-b border-gray-200">
           <div className="flex items-start space-x-3">
             <Avatar className="w-12 h-12 border-2 border-gray-200">
-              <AvatarImage 
-                src={patient.profilePhotoFilename ? `/uploads/${patient.profilePhotoFilename}` : undefined}
+              <AvatarImage
+                src={
+                  patient.profilePhotoFilename
+                    ? `/uploads/${patient.profilePhotoFilename}`
+                    : undefined
+                }
                 alt={`${patient.firstName} ${patient.lastName}`}
               />
               <AvatarFallback className="text-sm bg-gray-100">
-                {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
+                {patient.firstName?.[0] || "P"}
+                {patient.lastName?.[0] || "P"}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900">
                 {patient.firstName} {patient.lastName}
@@ -592,13 +736,14 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
                 DOB: {formatDate(patient.dateOfBirth)}
               </p>
               <p className="text-sm text-blue-600">
-                Encounter #{encounterId} - {formatDate(new Date().toISOString())}
+                Encounter #{encounterId} -{" "}
+                {formatDate(new Date().toISOString())}
               </p>
-              
+
               <div className="flex space-x-2 mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="text-xs"
                   onClick={onBackToChart}
                 >
@@ -614,9 +759,14 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         <div className="p-4 bg-blue-50 border-b border-gray-200">
           <div className="text-sm">
             <div className="font-medium text-blue-900">Office Visit</div>
-            <div className="text-blue-700">Encounter #{encounterId} - Type: Office Visit</div>
+            <div className="text-blue-700">
+              Encounter #{encounterId} - Type: Office Visit
+            </div>
             <div className="flex items-center mt-2">
-              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+              <Badge
+                variant="outline"
+                className="bg-green-100 text-green-800 border-green-300"
+              >
                 Scheduled
               </Badge>
             </div>
@@ -627,8 +777,8 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         <div className="p-4 border-b border-gray-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search patient chart..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -655,7 +805,9 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="bg-white border-b border-gray-100 p-3 text-xs text-gray-600">
-                  {section.id === "encounters" ? "Current encounter in progress" : `${section.label} content`}
+                  {section.id === "encounters"
+                    ? "Current encounter in progress"
+                    : `${section.label} content`}
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -686,10 +838,12 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               <h2 className="text-lg font-semibold">Notes</h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-green-600">● Connected</span>
-                <span className="text-xs text-gray-500">Total: 7,737 tokens (59.5%)</span>
+                <span className="text-xs text-gray-500">
+                  Total: 7,737 tokens (59.5%)
+                </span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -698,7 +852,9 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
                     <span className="text-sm">Suggestions: 0</span>
                     <span className="text-sm">SOAP: 0</span>
                   </div>
-                  <Button variant="outline" size="sm">Reset</Button>
+                  <Button variant="outline" size="sm">
+                    Reset
+                  </Button>
                 </div>
               </div>
 
@@ -712,13 +868,17 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
                   <FileText className="h-4 w-4 mr-2" />
                   Text Mode
                 </Button>
-                
+
                 <Button
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={`${isRecording ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                  className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"} text-white`}
                 >
-                  {isRecording ? <MicOff className="h-4 w-4 mr-2" /> : <Mic className="h-4 w-4 mr-2" />}
-                  {isRecording ? 'Stop Recording' : 'Start Recording'}
+                  {isRecording ? (
+                    <MicOff className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Mic className="h-4 w-4 mr-2" />
+                  )}
+                  {isRecording ? "Stop Recording" : "Start Recording"}
                 </Button>
               </div>
 
@@ -726,7 +886,10 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               <div className="space-y-2">
                 <h3 className="font-medium">Real-Time Transcription</h3>
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
-                  {transcription || (isRecording ? "Listening..." : "Transcription will appear here during recording")}
+                  {transcription ||
+                    (isRecording
+                      ? "Listening..."
+                      : "Transcription will appear here during recording")}
                 </div>
               </div>
             </div>
@@ -736,7 +899,11 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">GPT Suggestions</h2>
-              <Button onClick={generateSmartSuggestions} size="sm" variant="outline">
+              <Button
+                onClick={generateSmartSuggestions}
+                size="sm"
+                variant="outline"
+              >
                 Generate Suggestions
               </Button>
             </div>
@@ -750,21 +917,36 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">SOAP Note</h2>
               <div className="flex space-x-2">
-                <Button onClick={generateSOAPNote} size="sm" variant="outline" className="text-pink-600 border-pink-300">
+                <Button
+                  onClick={generateSOAPNote}
+                  size="sm"
+                  variant="outline"
+                  className="text-pink-600 border-pink-300"
+                >
                   Smart Suggestions
                 </Button>
-                <Button size="sm" className="bg-slate-700 hover:bg-slate-800 text-white">
+                <Button
+                  size="sm"
+                  className="bg-slate-700 hover:bg-slate-800 text-white"
+                >
                   Sign & Save
                 </Button>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">• Drug info</label>
+                <label className="block text-sm font-medium mb-2">
+                  • Drug info
+                </label>
                 <Textarea
                   value={soapNote.subjective}
-                  onChange={(e) => setSoapNote(prev => ({ ...prev, subjective: e.target.value }))}
+                  onChange={(e) =>
+                    setSoapNote((prev) => ({
+                      ...prev,
+                      subjective: e.target.value,
+                    }))
+                  }
                   placeholder="Loading existing note content..."
                   className="min-h-[100px]"
                 />
@@ -776,14 +958,19 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Draft Orders</h2>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 New Order
               </Button>
             </div>
             <div className="text-center py-8 text-gray-500">
               <div className="text-sm">No draft orders</div>
-              <div className="text-xs mt-1">Create a new order using the button above</div>
+              <div className="text-xs mt-1">
+                Create a new order using the button above
+              </div>
             </div>
           </Card>
 
@@ -795,18 +982,24 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             <div className="text-center py-8 text-gray-500">
               <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
               <div className="text-sm">No billing codes or diagnoses yet</div>
-              <div className="text-xs mt-1">Complete a recording to generate codes</div>
+              <div className="text-xs mt-1">
+                Complete a recording to generate codes
+              </div>
             </div>
-            
+
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex items-center space-x-2 text-sm">
                 <span className="text-green-600">● Connected</span>
-                <span className="text-gray-500">Total: 7,737 tokens (59.5%)</span>
+                <span className="text-gray-500">
+                  Total: 7,737 tokens (59.5%)
+                </span>
                 <span className="text-gray-500">Transcription: 0</span>
                 <span className="text-gray-500">Suggestions: 0</span>
                 <span className="text-gray-500">SOAP: 0</span>
               </div>
-              <Button variant="outline" size="sm" className="mt-2">Reset</Button>
+              <Button variant="outline" size="sm" className="mt-2">
+                Reset
+              </Button>
             </div>
           </Card>
         </div>
