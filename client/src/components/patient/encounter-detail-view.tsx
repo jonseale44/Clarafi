@@ -410,21 +410,42 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
               console.log('🤖 [EncounterView] Assistants API response:', data);
               console.log('🧠 [EncounterView] AI Suggestions structure:', data.aiSuggestions ? Object.keys(data.aiSuggestions) : 'No suggestions');
               
-              // Process AI suggestions with multiple possible formats
+              // Process AI suggestions - preserve existing live suggestions
               if (data.aiSuggestions) {
-                let suggestionsText = "🧠 AI ANALYSIS:\n";
+                const existingSuggestions = gptSuggestions || "";
+                let suggestionsText = existingSuggestions;
                 
-                // Add clinical guidance
-                if (data.aiSuggestions.clinicalGuidance) {
-                  suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
-                }
-                
-                // Add real-time prompts
-                if (data.aiSuggestions.realTimePrompts?.length > 0) {
-                  suggestionsText += "📋 Provider Suggestions:\n";
-                  data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
-                    suggestionsText += `${index + 1}. ${prompt}\n`;
-                  });
+                // If we have existing live suggestions, append final analysis
+                if (existingSuggestions.includes("📋 Live Suggestions:")) {
+                  suggestionsText += "\n\n🎯 FINAL ANALYSIS:\n";
+                  
+                  // Add clinical guidance
+                  if (data.aiSuggestions.clinicalGuidance) {
+                    suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
+                  }
+                  
+                  // Add final provider suggestions with continued numbering
+                  if (data.aiSuggestions.realTimePrompts?.length > 0) {
+                    const existingNumbers = (existingSuggestions.match(/\d+\./g) || []).length;
+                    suggestionsText += "📋 Final Provider Suggestions:\n";
+                    data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
+                      suggestionsText += `${existingNumbers + index + 1}. ${prompt}\n`;
+                    });
+                  }
+                } else {
+                  // No existing live suggestions, use regular format
+                  suggestionsText = "🧠 AI ANALYSIS:\n";
+                  
+                  if (data.aiSuggestions.clinicalGuidance) {
+                    suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
+                  }
+                  
+                  if (data.aiSuggestions.realTimePrompts?.length > 0) {
+                    suggestionsText += "📋 Provider Suggestions:\n";
+                    data.aiSuggestions.realTimePrompts.forEach((prompt: string, index: number) => {
+                      suggestionsText += `${index + 1}. ${prompt}\n`;
+                    });
+                  }
                 }
                 
                 console.log('🧠 [EncounterView] Setting GPT suggestions:', suggestionsText);
