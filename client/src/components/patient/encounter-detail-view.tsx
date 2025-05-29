@@ -157,6 +157,7 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
     
     // Clear previous suggestions when starting new recording
     setGptSuggestions("");
+    setLiveSuggestions(""); // Clear live suggestions for new encounter
     setTranscription("");
     
     try {

@@ -341,13 +341,19 @@ export function registerRoutes(app: Express): Server {
 
       try {
         const { AssistantContextService } = await import('./assistant-context-service.js');
-        const assistantService = new AssistantContextService();
         
-        await assistantService.initializeAssistant();
+        // Use a singleton pattern for assistant service to maintain consistency
+        if (!(global as any).assistantService) {
+          (global as any).assistantService = new AssistantContextService();
+          await (global as any).assistantService.initializeAssistant();
+          console.log('🤖 [Routes] Created singleton assistant service for live suggestions');
+        }
         
-        // Get or create proper thread for live suggestions
+        const assistantService = (global as any).assistantService;
+        
+        // Get or create persistent thread for this patient
         const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
-        console.log('🧵 [Routes] Live suggestions using thread:', threadId);
+        console.log('🧵 [Routes] Live suggestions using persistent thread:', threadId);
         
         // Get live suggestions based on transcription
         const suggestions = await assistantService.getRealtimeSuggestions(
