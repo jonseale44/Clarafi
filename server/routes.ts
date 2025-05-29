@@ -291,10 +291,14 @@ export function registerRoutes(app: Express): Server {
       }
 
       try {
+        console.log('🧠 [Routes] Attempting to get live suggestions...');
         const { AssistantContextService } = await import('./assistant-context-service.js');
         
         const assistantService = new AssistantContextService();
+        console.log('🧠 [Routes] AssistantContextService created');
+        
         const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
+        console.log('🧠 [Routes] Thread ID retrieved:', threadId);
         
         const suggestions = await assistantService.getRealtimeSuggestions(
           threadId,
@@ -302,6 +306,7 @@ export function registerRoutes(app: Express): Server {
           userRole as "nurse" | "provider",
           parseInt(patientId)
         );
+        console.log('🧠 [Routes] Suggestions received:', suggestions);
 
         const formattedSuggestions = {
           realTimePrompts: suggestions.suggestions || [],
@@ -316,8 +321,10 @@ export function registerRoutes(app: Express): Server {
 
         res.json(response);
       } catch (error) {
+        console.error('❌ [Routes] Live suggestions error:', error);
         res.status(500).json({ 
           message: "Failed to generate live suggestions",
+          error: error.message,
           aiSuggestions: {
             realTimePrompts: ["Continue recording..."],
             clinicalGuidance: "Live suggestions temporarily unavailable"
