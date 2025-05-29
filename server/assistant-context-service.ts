@@ -14,362 +14,301 @@ import { eq, desc } from "drizzle-orm";
 
 export class AssistantContextService {
   private openai: OpenAI;
-  private assistantId: string;
+  private patientAssistants: Map<number, string> = new Map(); // Cache patient ID -> assistant ID
 
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
-    this.assistantId = process.env.OPENAI_ASSISTANT_ID || "";
   }
 
-  async initializeAssistant() {
-    if (!this.assistantId) {
-      console.log(
-        "🤖 [AssistantContextService] Creating new medical assistant...",
-      );
-      const assistant = await this.openai.beta.assistants.create({
-        name: "Medical Context Assistant",
-        instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
-
-  Instructions:
-
-  Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Additionally, if the physician asks, provide relevant information from the patient's chart or office visits, such as past medical history, current medications, allergies, lab results, and imaging findings. Include this information concisely and accurately where appropriate. This medical information might be present in old office visit notes. Do not make anything up, it would be better to just say you don't know.
-
-  Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
-  Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. When referencing diagnostics or red flags, provide a complete list to guide the differential diagnosis (e.g., imaging-related red flags). Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per line.
-
-  Additional details for medication recommendations:
-
-  Always include typical starting dose, dose adjustment schedules, and maximum dose.
-  Output examples of good insights:
-
-  Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
-  Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
-  Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
-
-  Output examples of bad insights (to avoid):
-
-  Encourage gentle stretches and light activity to maintain mobility.
-  Suggest warm baths at night for symptomatic relief of muscle tension.
-  Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
-
-  Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-  Return each new insight on a separate line, and prefix each line with a bullet (•), dash (-), or number if appropriate. Do not combine multiple ideas on the same line. 
-  
-  Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a  user question.`,
-        model: "gpt-4o",
-        tools: [],
-      });
-      this.assistantId = assistant.id;
-      console.log(
-        "🤖 [AssistantContextService] ✅ Assistant created:",
-        this.assistantId,
-      );
+  async getOrCreatePatientAssistant(patientId: number): Promise<string> {
+    // Check if we already have an assistant for this patient in cache
+    if (this.patientAssistants.has(patientId)) {
+      return this.patientAssistants.get(patientId)!;
     }
-  }
 
-  async getOrCreateThread(patientId: number): Promise<string> {
-    console.log(
-      "🧵 [AssistantContextService] Getting thread for patient:",
-      patientId,
-    );
-
-    // Check if patient already has a thread
-    const [patient] = await db
-      .select()
-      .from(patients)
-      .where(eq(patients.id, patientId))
-      .limit(1);
-
-    if (!patient) {
+    // Check database for existing assistant ID
+    const patient = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
+    if (patient.length === 0) {
       throw new Error(`Patient ${patientId} not found`);
     }
 
-    console.log(
-      "🧵 [AssistantContextService] Patient data retrieved:",
-      {
-        patientId: patient.id.toString(),
-        hasExistingThread: !!patient.assistantThreadId,
-        threadId: patient.assistantThreadId
-      }
-    );
-
-    // If patient already has a thread, return it
-    if (patient.assistantThreadId) {
-      console.log(
-        "🧵 [AssistantContextService] ✅ Using existing thread:",
-        patient.assistantThreadId,
-      );
-      return patient.assistantThreadId;
+    // If patient already has an assistant ID stored, use it
+    if (patient[0].assistantId) {
+      this.patientAssistants.set(patientId, patient[0].assistantId);
+      return patient[0].assistantId;
     }
 
-    // Create new thread with patient context
-    const thread = await this.openai.beta.threads.create();
-    console.log(
-      "🧵 [AssistantContextService] ✅ Created new thread:",
-      thread.id,
-    );
-
-    // Store thread ID in patient record
-    await db
-      .update(patients)
-      .set({ 
-        assistantThreadId: thread.id,
-        chartLastUpdated: new Date()
-      })
-      .where(eq(patients.id, patientId));
-
-    // Load patient's complete medical history
+    // Create new patient-specific assistant
+    console.log(`🤖 [AssistantContextService] Creating new assistant for patient ${patientId} (${patient[0].firstName} ${patient[0].lastName})...`);
+    
+    // Get patient's medical history to initialize the assistant
     const patientHistory = await this.getPatientHistory(patientId);
+    
+    const assistant = await this.openai.beta.assistants.create({
+      name: `Medical Assistant - ${patient[0].firstName} ${patient[0].lastName}`,
+      instructions: `You are a medical AI assistant specifically for patient ${patient[0].firstName} ${patient[0].lastName} (MRN: ${patient[0].mrn}). 
 
-    // Add historical context to thread - this establishes the assistant's knowledge of the patient
-    await this.openai.beta.threads.messages.create(thread.id, {
-      role: "user",
-      content: `PATIENT BASELINE CONTEXT - This patient's complete medical history and current status:
+PATIENT CONTEXT:
+${patientHistory}
 
-${JSON.stringify(patientHistory, null, 2)}
+INSTRUCTIONS:
+- Always respond in English only
+- Provide concise, evidence-based medical insights for physicians
+- Focus on this specific patient's medical history and context
+- Include relevant medication dosages, red flags, and clinical guidelines
+- Build upon previous encounters and medical knowledge for this patient
+- Avoid restating obvious medical knowledge
+- Stay brief and actionable
 
-This is ${patient.firstName} ${patient.lastName}'s persistent medical record thread. All future interactions will build upon this baseline knowledge. Remember this patient's complete medical history, medications, allergies, and diagnoses for all future conversations.`,
+Return insights as bullet points, one per line.`,
+      model: "gpt-4",
+      tools: []
     });
 
-    console.log(
-      "🧵 [AssistantContextService] ✅ Thread created and patient context established"
-    );
+    // Store the assistant ID in the database
+    await db.update(patients)
+      .set({ assistantId: assistant.id })
+      .where(eq(patients.id, patientId));
 
+    // Cache the assistant ID
+    this.patientAssistants.set(patientId, assistant.id);
+    
+    console.log(`✅ [AssistantContextService] Created assistant ${assistant.id} for patient ${patientId}`);
+    return assistant.id;
+  }
+
+  async getOrCreateThread(patientId: number): Promise<string> {
+    // Get patient data
+    const patient = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
+    if (patient.length === 0) {
+      throw new Error(`Patient ${patientId} not found`);
+    }
+
+    // If patient already has a thread ID, return it
+    if (patient[0].assistantThreadId) {
+      return patient[0].assistantThreadId;
+    }
+
+    // Create new thread for this patient
+    const thread = await this.openai.beta.threads.create();
+    
+    // Store thread ID in database
+    await db.update(patients)
+      .set({ assistantThreadId: thread.id })
+      .where(eq(patients.id, patientId));
+
+    console.log(`🧵 [AssistantContextService] Created thread ${thread.id} for patient ${patientId}`);
     return thread.id;
   }
 
-  // Real-time suggestions during transcription
   async getRealtimeSuggestions(
     threadId: string,
     partialTranscription: string,
-    userRole: string,
-    patientId: number,
+    userRole: "nurse" | "provider",
+    patientId: number
   ) {
-    console.log(
-      "⚡ [AssistantContextService] Getting real-time suggestions...",
-    );
+    try {
+      // Get the patient's assistant
+      const assistantId = await this.getOrCreatePatientAssistant(patientId);
 
-    await this.openai.beta.threads.messages.create(threadId, {
-      role: "user",
-      content: `PARTIAL TRANSCRIPTION: "${partialTranscription}"
-USER ROLE: ${userRole}
-MODE: REAL_TIME_SUGGESTIONS
+      // Add the transcription to the thread
+      await this.openai.beta.threads.messages.create(threadId, {
+        role: "user",
+        content: `Live transcription from ${userRole}: ${partialTranscription}
 
-Provide immediate clinical suggestions based on this partial transcription.`,
-    });
+Please provide brief clinical insights or suggestions based on this partial transcription and the patient's medical history.`
+      });
 
-    const run = await this.openai.beta.threads.runs.create(threadId, {
-      assistant_id: this.assistantId,
-    });
+      // Run the assistant
+      const run = await this.openai.beta.threads.runs.create(threadId, {
+        assistant_id: assistantId,
+      });
 
-    // Wait for completion (should be fast for suggestions)
-    let runStatus = await this.openai.beta.threads.runs.retrieve(
-      threadId,
-      run.id,
-    );
-    let attempts = 0;
-    while (
-      (runStatus.status === "in_progress" || runStatus.status === "queued") &&
-      attempts < 20
-    ) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      runStatus = await this.openai.beta.threads.runs.retrieve(
-        threadId,
-        run.id,
-      );
-      attempts++;
-    }
+      // Wait for completion
+      let runStatus = await this.openai.beta.threads.runs.retrieve(threadId, run.id);
+      while (runStatus.status === "in_progress" || runStatus.status === "queued") {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        runStatus = await this.openai.beta.threads.runs.retrieve(threadId, run.id);
+      }
 
-    if (runStatus.status === "completed") {
-      const messages = await this.openai.beta.threads.messages.list(threadId);
-      const lastMessage = messages.data[0];
+      if (runStatus.status === "completed") {
+        // Get the latest messages
+        const messages = await this.openai.beta.threads.messages.list(threadId, {
+          limit: 1
+        });
 
-      if (lastMessage.content[0].type === "text") {
-        const rawResponse = lastMessage.content[0].text.value;
-        console.log("🔍 [AssistantContextService] Raw assistant response:", rawResponse);
-        
-        try {
-          // Try to clean the response if it has markdown code blocks
-          let cleanedResponse = rawResponse;
-          if (rawResponse.includes('```json')) {
-            cleanedResponse = rawResponse.replace(/```json\s*/, '').replace(/```\s*$/, '');
+        const lastMessage = messages.data[0];
+        if (lastMessage && lastMessage.role === "assistant") {
+          const content = lastMessage.content[0];
+          if (content.type === "text") {
+            const suggestions = content.text.value.split('\n')
+              .filter((line: string) => line.trim())
+              .map((line: string) => line.replace(/^[•\-\*]\s*/, '').trim())
+              .filter((suggestion: string) => suggestion.length > 0);
+
+            return {
+              suggestions,
+              clinicalFlags: [],
+              contextualReminders: []
+            };
           }
-          
-          return JSON.parse(cleanedResponse);
-        } catch (error) {
-          console.log("🔧 [AssistantContextService] JSON parse failed, converting plain text to structured format");
-          
-          // If JSON parsing fails, convert plain text suggestions to structured format
-          const lines = rawResponse.split('\n').filter(line => line.trim());
-          const suggestions = lines
-            .filter(line => line.trim().startsWith('-'))
-            .map(line => line.replace(/^-\s*/, '').trim())
-            .filter(suggestion => suggestion.length > 0);
-          
-          console.log("🔧 [AssistantContextService] Converted suggestions:", suggestions);
-          
-          return {
-            suggestions: suggestions,
-            clinicalFlags: [],
-            historicalContext: ""
-          };
         }
       }
-    }
 
-    return { suggestions: [], clinicalFlags: [], historicalContext: "" };
+      return {
+        suggestions: ["Continue recording for more context..."],
+        clinicalFlags: [],
+        contextualReminders: []
+      };
+    } catch (error) {
+      console.error('Error getting realtime suggestions:', error);
+      return {
+        suggestions: ["AI suggestions temporarily unavailable"],
+        clinicalFlags: [],
+        contextualReminders: []
+      };
+    }
   }
 
-  // Complete processing after recording stops
   async processCompleteTranscription(
     threadId: string,
     fullTranscription: string,
-    userRole: string,
+    userRole: "nurse" | "provider",
     patientId: number,
-    encounterId: number,
+    encounterId: number
   ) {
-    console.log(
-      "📝 [AssistantContextService] Processing complete transcription...",
-    );
+    try {
+      // Get the patient's assistant
+      const assistantId = await this.getOrCreatePatientAssistant(patientId);
 
-    await this.openai.beta.threads.messages.create(threadId, {
-      role: "user",
-      content: `COMPLETE TRANSCRIPTION: "${fullTranscription}"
-USER ROLE: ${userRole}
-ENCOUNTER_ID: ${encounterId}
-MODE: COMPLETE_PROCESSING
+      // Add the complete transcription to the thread
+      await this.openai.beta.threads.messages.create(threadId, {
+        role: "user",
+        content: `Complete encounter transcription from ${userRole} for encounter ID ${encounterId}:
 
-Generate SOAP note, draft orders, CPT codes, and chart updates.`,
-    });
+${fullTranscription}
 
-    const run = await this.openai.beta.threads.runs.create(threadId, {
-      assistant_id: this.assistantId,
-    });
+Please provide:
+1. Clinical assessment and recommendations
+2. Suggested diagnoses or differential diagnoses
+3. Recommended treatments or medications
+4. Any red flags or concerns
+5. Follow-up recommendations`
+      });
 
-    // Wait for completion
-    let runStatus = await this.openai.beta.threads.runs.retrieve(
-      threadId,
-      run.id,
-    );
-    let attempts = 0;
-    while (
-      (runStatus.status === "in_progress" || runStatus.status === "queued") &&
-      attempts < 60
-    ) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      runStatus = await this.openai.beta.threads.runs.retrieve(
-        threadId,
-        run.id,
-      );
-      attempts++;
-    }
+      // Run the assistant
+      const run = await this.openai.beta.threads.runs.create(threadId, {
+        assistant_id: assistantId,
+      });
 
-    if (runStatus.status === "completed") {
-      const messages = await this.openai.beta.threads.messages.list(threadId);
-      const lastMessage = messages.data[0];
+      // Wait for completion
+      let runStatus = await this.openai.beta.threads.runs.retrieve(threadId, run.id);
+      while (runStatus.status === "in_progress" || runStatus.status === "queued") {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        runStatus = await this.openai.beta.threads.runs.retrieve(threadId, run.id);
+      }
 
-      if (lastMessage.content[0].type === "text") {
-        try {
-          return JSON.parse(lastMessage.content[0].text.value);
-        } catch (error) {
-          console.error(
-            "❌ [AssistantContextService] Failed to parse complete response:",
-            error,
-          );
-          throw new Error("Failed to parse assistant response");
+      if (runStatus.status === "completed") {
+        // Get the latest messages
+        const messages = await this.openai.beta.threads.messages.list(threadId, {
+          limit: 1
+        });
+
+        const lastMessage = messages.data[0];
+        if (lastMessage && lastMessage.role === "assistant") {
+          const content = lastMessage.content[0];
+          if (content.type === "text") {
+            return content.text.value;
+          }
         }
       }
-    }
 
-    throw new Error("Assistant processing failed or timed out");
+      return "Analysis completed successfully";
+    } catch (error) {
+      console.error('Error processing complete transcription:', error);
+      return "Unable to process transcription at this time";
+    }
   }
 
-  private async getPatientHistory(patientId: number) {
-    console.log(
-      "📋 [AssistantContextService] Loading patient history for:",
-      patientId,
-    );
-
+  private async getPatientHistory(patientId: number): Promise<string> {
     try {
-      // Get comprehensive patient data
-      const [
-        patient,
-        familyHistoryData,
-        socialHistoryData,
-        allergiesData,
-        recentVitals,
-        currentMedications,
-        activeDiagnoses,
-        recentEncounters,
-      ] = await Promise.all([
-        db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
-        db
-          .select()
-          .from(familyHistory)
-          .where(eq(familyHistory.patientId, patientId)),
-        db
-          .select()
-          .from(socialHistory)
-          .where(eq(socialHistory.patientId, patientId)),
-        db.select().from(allergies).where(eq(allergies.patientId, patientId)),
-        db
-          .select()
-          .from(vitals)
-          .where(eq(vitals.patientId, patientId))
-          .orderBy(desc(vitals.measuredAt))
-          .limit(10),
-        db
-          .select()
-          .from(medications)
-          .where(eq(medications.patientId, patientId)),
-        db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
-        db
-          .select()
-          .from(encounters)
-          .where(eq(encounters.patientId, patientId))
-          .orderBy(desc(encounters.createdAt))
-          .limit(5),
-      ]);
+      // Get patient basic info
+      const patient = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
+      if (patient.length === 0) return "";
 
-      const history = {
-        patient: patient[0],
-        familyHistory: familyHistoryData,
-        socialHistory: socialHistoryData,
-        allergies: allergiesData,
-        recentVitals,
-        currentMedications,
-        activeDiagnoses,
-        recentEncounters,
-      };
+      const patientInfo = patient[0];
+      let history = `PATIENT: ${patientInfo.firstName} ${patientInfo.lastName}\n`;
+      history += `MRN: ${patientInfo.mrn}\n`;
+      history += `DOB: ${patientInfo.dateOfBirth}\n`;
+      history += `Gender: ${patientInfo.gender}\n\n`;
 
-      console.log("📋 [AssistantContextService] ✅ Patient history loaded:", {
-        hasPatient: !!history.patient,
-        familyHistoryCount: history.familyHistory.length,
-        allergiesCount: history.allergies.length,
-        vitalsCount: history.recentVitals.length,
-        medicationsCount: history.currentMedications.length,
-        diagnosesCount: history.activeDiagnoses.length,
-      });
+      // Get allergies
+      const allergiesList = await db.select().from(allergies).where(eq(allergies.patientId, patientId));
+      if (allergiesList.length > 0) {
+        history += "ALLERGIES:\n";
+        allergiesList.forEach(allergy => {
+          history += `- ${allergy.allergen}: ${allergy.reaction}\n`;
+        });
+        history += "\n";
+      }
+
+      // Get current medications
+      const medicationsList = await db.select().from(medications).where(eq(medications.patientId, patientId));
+      if (medicationsList.length > 0) {
+        history += "CURRENT MEDICATIONS:\n";
+        medicationsList.forEach(med => {
+          history += `- ${med.medicationName}: ${med.dosage} ${med.frequency}\n`;
+        });
+        history += "\n";
+      }
+
+      // Get diagnoses
+      const diagnosesList = await db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId));
+      if (diagnosesList.length > 0) {
+        history += "MEDICAL HISTORY:\n";
+        diagnosesList.forEach(diagnosis => {
+          history += `- ${diagnosis.diagnosisName} (${diagnosis.diagnosisDate})\n`;
+        });
+        history += "\n";
+      }
+
+      // Get recent encounters
+      const recentEncounters = await db.select().from(encounters)
+        .where(eq(encounters.patientId, patientId))
+        .orderBy(desc(encounters.startTime))
+        .limit(5);
+
+      if (recentEncounters.length > 0) {
+        history += "RECENT ENCOUNTERS:\n";
+        recentEncounters.forEach(encounter => {
+          history += `- ${encounter.startTime}: ${encounter.encounterType}\n`;
+          if (encounter.chiefComplaint) history += `  Chief Complaint: ${encounter.chiefComplaint}\n`;
+          if (encounter.assessment) history += `  Assessment: ${encounter.assessment}\n`;
+        });
+        history += "\n";
+      }
+
+      // Get latest vitals
+      const latestVitals = await db.select().from(vitals)
+        .where(eq(vitals.patientId, patientId))
+        .orderBy(desc(vitals.measuredAt))
+        .limit(1);
+
+      if (latestVitals.length > 0) {
+        const vital = latestVitals[0];
+        history += "LATEST VITALS:\n";
+        if (vital.bloodPressureSystolic) history += `- BP: ${vital.bloodPressureSystolic}/${vital.bloodPressureDiastolic}\n`;
+        if (vital.heartRate) history += `- HR: ${vital.heartRate}\n`;
+        if (vital.temperature) history += `- Temp: ${vital.temperature}°F\n`;
+        if (vital.oxygenSaturation) history += `- O2 Sat: ${vital.oxygenSaturation}%\n`;
+      }
 
       return history;
     } catch (error) {
-      console.error(
-        "❌ [AssistantContextService] Failed to load patient history:",
-        error,
-      );
-      return {
-        patient: null,
-        familyHistory: [],
-        socialHistory: [],
-        allergies: [],
-        recentVitals: [],
-        currentMedications: [],
-        activeDiagnoses: [],
-        recentEncounters: [],
-      };
+      console.error('Error getting patient history:', error);
+      return "";
     }
   }
 }

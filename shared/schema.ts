@@ -49,6 +49,7 @@ export const patients = pgTable("patients", {
   emergencyContact: text("emergency_contact"),
   
   // Voice workflow optimization
+  assistantId: text("assistant_id"), // Patient-specific OpenAI assistant ID
   assistantThreadId: text("assistant_thread_id"),
   lastChartSummary: text("last_chart_summary"),
   chartLastUpdated: timestamp("chart_last_updated"),

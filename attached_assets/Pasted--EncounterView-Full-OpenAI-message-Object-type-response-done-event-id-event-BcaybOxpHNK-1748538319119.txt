@@ -1,0 +1,35 @@
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "response.done", event_id: "event_BcaybOxpHNKqKYqpKWXNq", response: {…}}
+🎵 [EncounterView] Sent audio buffer: 10924 bytes
+📨 [EncounterView] OpenAI message type: conversation.item.input_audio_transcription.delta
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "conversation.item.input_audio_transcription.delta", event_id: "event_BcaychavYLEvJiVM8hGrl", item_id: "item_BcayYRMJgL2J4GZRN8Tf3", content_index: 0, delta: "Does the patient have any other medical problems?↵"}
+📝 [EncounterView] Transcription delta: Does the patient have any other medical problems?
+🧠 [EncounterView] Triggering live AI suggestions for buffer length: 138
+🧠 [EncounterView] Getting live AI suggestions for transcription: The patient reports chest pain, wheeze, and shortness of breath for the past five days.
+Does the pat...
+🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions
+🧠 [EncounterView] Request body: 
+Object {patientId: "2", userRole: "provider", isLiveChunk: "true", transcription: "The patient reports chest pain, wheeze, and shortness of breath for the past five days.↵Does the…"}
+📨 [EncounterView] OpenAI message type: conversation.item.input_audio_transcription.completed
+📨 [EncounterView] Full OpenAI message: 
+Object {type: "conversation.item.input_audio_transcription.completed", event_id: "event_BcaycQGClRL2rj7IDAp8Y", item_id: "item_BcayYRMJgL2J4GZRN8Tf3", content_index: 0, transcript: "Does the patient have any other medical problems?↵"}
+✅ [EncounterView] Transcription completed (not adding to buffer): Does the patient have any other medical problems?
+🎵 [EncounterView] Sent audio buffer: 10924 bytes
+🧠 [EncounterView] Live suggestions response status: 200
+🧠 [EncounterView] Live suggestions response headers: 
+Object {content-type: "text/html; charset=utf-8", date: "Thu, 29 May 2025 17:05:02 GMT", replit-cluster: "kirk", transfer-encoding: "chunked", vary: "Origin", …}
+❌ [EncounterView] Live suggestions failed: 
+SyntaxError {}
+message: "Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://7b2b0a64-3a20-4d70-82e9-1c0e54293c5f-00-1a0khn7t1clk8.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://7b2b0a64-3a20-4d70-82e9-1c0e54293c5f-00-1a0khn7t1clk8.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://7b2b0a64-3a20-4d70-82e9-1c0e54293c5f-00-1a0khn7t1clk8.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://7b2b0a64-3a20-4d70-82e9-1c0e54293c5f-00-1a0khn7t1clk8.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+❌ [EncounterView] Error details: 
+Object {message: "Unexpected token '<', "<!DOCTYPE "... is not valid JSON", name: "SyntaxError", stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON"}

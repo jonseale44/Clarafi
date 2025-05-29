@@ -293,12 +293,7 @@ export function registerRoutes(app: Express): Server {
       try {
         const { AssistantContextService } = await import('./assistant-context-service.js');
         
-        if (!(global as any).assistantService) {
-          (global as any).assistantService = new AssistantContextService();
-          await (global as any).assistantService.initializeAssistant();
-        }
-        
-        const assistantService = (global as any).assistantService;
+        const assistantService = new AssistantContextService();
         const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
         
         const suggestions = await assistantService.getRealtimeSuggestions(
