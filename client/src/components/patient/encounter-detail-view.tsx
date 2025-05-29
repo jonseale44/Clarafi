@@ -79,6 +79,9 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         transcription: transcription
       };
       
+      console.log('🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions');
+      console.log('🧠 [EncounterView] Request body:', requestBody);
+      
       const response = await fetch('/api/voice/live-suggestions', {
         method: 'POST',
         headers: {
@@ -87,12 +90,14 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
         body: JSON.stringify(requestBody),
       });
       
+      console.log('🧠 [EncounterView] Live suggestions response status:', response.status);
+      console.log('🧠 [EncounterView] Live suggestions response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (response.ok) {
         const data = await response.json();
-        console.log('🧠 [EncounterView] Live suggestions received:', data);
+        console.log('🧠 [EncounterView] Live AI suggestions received:', data);
         
         if (data.aiSuggestions) {
-          // Format suggestions for display
           let suggestionsText = "🧠 LIVE AI ANALYSIS:\n";
           
           if (data.aiSuggestions.clinicalGuidance) {
@@ -106,19 +111,21 @@ export function EncounterDetailView({ patient, encounterId, onBackToChart }: Enc
             });
           }
           
-          console.log('🧠 [EncounterView] Updating UI with suggestions:', suggestionsText);
           setGptSuggestions(suggestionsText);
-        } else {
-          console.log('🧠 [EncounterView] No suggestions in response');
-          setGptSuggestions("🧠 LIVE AI ANALYSIS:\nAnalyzing transcription...");
         }
       } else {
-        console.error('❌ [EncounterView] Live suggestions failed:', response.status);
-        setGptSuggestions("🧠 LIVE AI ANALYSIS:\nFailed to generate suggestions");
+        const errorText = await response.text();
+        console.error('❌ [EncounterView] Live suggestions HTTP error:', response.status);
+        console.error('❌ [EncounterView] Full HTML response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
       }
     } catch (error) {
-      console.error('❌ [EncounterView] Live suggestions error:', error);
-      setGptSuggestions("🧠 LIVE AI ANALYSIS:\nError generating suggestions");
+      console.error('❌ [EncounterView] Live suggestions failed:', error);
+      console.error('❌ [EncounterView] Error details:', {
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack
+      });
     }
   };
 
