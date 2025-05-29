@@ -502,14 +502,14 @@ function AIDebugSection({ patientId }: { patientId: number }) {
             </Card>
           )}
 
-          {assistantConfig.tools && assistantConfig.tools.length > 0 && (
+          {(assistantConfig as any)?.tools && (assistantConfig as any)?.tools.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Available Tools</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex gap-2 flex-wrap">
-                  {assistantConfig.tools.map((tool: any, index: number) => (
+                  {(assistantConfig as any)?.tools.map((tool: any, index: number) => (
                     <Badge key={index} variant="outline">
                       {tool.type}
                     </Badge>
