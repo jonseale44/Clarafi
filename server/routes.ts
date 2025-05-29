@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema } from "@shared/schema";
 import { processVoiceRecordingEnhanced, AIAssistantParams } from "./openai";
 import multer from "multer";
+import OpenAI from "openai";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -398,6 +399,52 @@ export function registerRoutes(app: Express): Server {
 
       res.json(result);
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get assistant configuration for a patient
+  app.get("/api/patients/:id/assistant", async (req, res) => {
+    try {
+      const patientId = parseInt(req.params.id);
+      const patient = await storage.getPatient(patientId);
+      
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      if (!patient.assistantId) {
+        return res.status(404).json({ message: "No assistant found for this patient" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      try {
+        // Retrieve the assistant configuration from OpenAI
+        const assistant = await openai.beta.assistants.retrieve(patient.assistantId);
+        
+        const assistantInfo = {
+          id: assistant.id,
+          name: assistant.name,
+          description: assistant.description,
+          instructions: assistant.instructions,
+          model: assistant.model,
+          tools: assistant.tools,
+          metadata: assistant.metadata,
+          created_at: assistant.created_at,
+          thread_id: patient.assistantThreadId
+        };
+
+        res.json(assistantInfo);
+      } catch (openaiError: any) {
+        console.error('❌ Failed to retrieve assistant from OpenAI:', openaiError);
+        res.status(500).json({ 
+          message: "Failed to retrieve assistant configuration",
+          error: openaiError.message 
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Error in assistant retrieval:', error);
       res.status(500).json({ message: error.message });
     }
   });
