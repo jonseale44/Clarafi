@@ -449,6 +449,50 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get assistant thread messages for a patient
+  app.get("/api/patients/:id/assistant/messages", async (req, res) => {
+    try {
+      const patientId = parseInt(req.params.id);
+      const patient = await storage.getPatient(patientId);
+      
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      if (!patient.assistantThreadId) {
+        return res.status(404).json({ message: "No conversation thread found for this patient" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      try {
+        // Retrieve the thread messages from OpenAI
+        const messages = await openai.beta.threads.messages.list(patient.assistantThreadId, {
+          limit: 20,
+          order: 'desc'
+        });
+        
+        const formattedMessages = messages.data.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content[0]?.text?.value || 'No text content',
+          created_at: msg.created_at
+        }));
+
+        res.json(formattedMessages);
+      } catch (openaiError: any) {
+        console.error('❌ Failed to retrieve thread messages from OpenAI:', openaiError);
+        res.status(500).json({ 
+          message: "Failed to retrieve conversation history",
+          error: openaiError.message 
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Error in thread messages retrieval:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   
   return httpServer;

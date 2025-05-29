@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Plus, Search, Star } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Search, Star, RefreshCw, Bot } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { EncountersTab } from "./encounters-tab";
 import { EncounterDetailView } from "./encounter-detail-view";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 interface PatientChartViewProps {
   patient: Patient;
@@ -29,6 +30,7 @@ const chartSections = [
   { id: "surgical-history", label: "Surgical History", icon: null },
   { id: "attachments", label: "Attachments", icon: null },
   { id: "appointments", label: "Appointments", icon: null },
+  { id: "ai-debug", label: "AI Assistant Debug", icon: null },
 ];
 
 export function PatientChartView({ patient, patientId }: PatientChartViewProps) {
@@ -231,6 +233,8 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
             <div className="text-gray-500 text-center py-8">Appointments management coming soon</div>
           </div>
         );
+      case "ai-debug":
+        return <AIDebugSection patientId={patientId} />;
       default:
         return <div>Section not found</div>;
     }
@@ -352,6 +356,170 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       <div className="flex-1 p-6 overflow-y-auto">
         {renderSectionContent()}
       </div>
+    </div>
+  );
+}
+
+function AIDebugSection({ patientId }: { patientId: number }) {
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const { data: assistantConfig, isLoading, error, refetch } = useQuery({
+    queryKey: ['/api/patients', patientId, 'assistant'],
+    enabled: !!patientId
+  });
+
+  const { data: threadMessages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
+    queryKey: ['/api/patients', patientId, 'assistant', 'messages'],
+    enabled: !!patientId && !!assistantConfig?.thread_id
+  });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetch(), refetchMessages()]);
+    setRefreshing(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            AI Assistant Debug
+          </h2>
+        </div>
+        <div className="text-center py-8 text-gray-500">Loading assistant information...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            AI Assistant Debug
+          </h2>
+        </div>
+        <Card className="border-red-200">
+          <CardContent className="pt-6">
+            <p className="text-red-600">No AI assistant found for this patient</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Bot className="h-5 w-5" />
+          AI Assistant Debug
+        </h2>
+        <Button 
+          onClick={handleRefresh} 
+          disabled={refreshing}
+          variant="outline"
+          size="sm"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {assistantConfig && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Assistant Overview</span>
+                <Badge variant="secondary">{assistantConfig.model}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <label className="font-medium text-gray-700">Assistant ID:</label>
+                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{assistantConfig.id}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-gray-700">Thread ID:</label>
+                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{assistantConfig.thread_id || 'Not assigned'}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-gray-700">Name:</label>
+                  <p className="mt-1">{assistantConfig.name || 'Unnamed Assistant'}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-gray-700">Created:</label>
+                  <p className="mt-1">
+                    {assistantConfig.created_at ? new Date(assistantConfig.created_at * 1000).toLocaleString() : 'Unknown'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Medical Context & Instructions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={assistantConfig.instructions || 'No instructions provided'}
+                readOnly
+                className="min-h-[200px] font-mono text-xs"
+              />
+            </CardContent>
+          </Card>
+
+          {threadMessages && threadMessages.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Conversation History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {threadMessages.map((message: any, index: number) => (
+                    <div key={index} className={`p-3 rounded-lg ${
+                      message.role === 'assistant' ? 'bg-blue-50 border-l-4 border-blue-200' : 'bg-gray-50 border-l-4 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant={message.role === 'assistant' ? 'default' : 'secondary'}>
+                          {message.role}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {new Date(message.created_at * 1000).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {assistantConfig.tools && assistantConfig.tools.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Tools</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2 flex-wrap">
+                  {assistantConfig.tools.map((tool: any, index: number) => (
+                    <Badge key={index} variant="outline">
+                      {tool.type}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }
