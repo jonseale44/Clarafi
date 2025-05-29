@@ -269,7 +269,7 @@ Please provide:
       if (diagnosesList.length > 0) {
         history += "MEDICAL HISTORY:\n";
         diagnosesList.forEach(diagnosis => {
-          history += `- ${diagnosis.diagnosisName} (${diagnosis.diagnosisDate})\n`;
+          history += `- ${diagnosis.diagnosis} (${diagnosis.diagnosisDate})\n`;
         });
         history += "\n";
       }
@@ -299,7 +299,7 @@ Please provide:
       if (latestVitals.length > 0) {
         const vital = latestVitals[0];
         history += "LATEST VITALS:\n";
-        if (vital.bloodPressureSystolic) history += `- BP: ${vital.bloodPressureSystolic}/${vital.bloodPressureDiastolic}\n`;
+        if (vital.systolicBp) history += `- BP: ${vital.systolicBp}/${vital.diastolicBp}\n`;
         if (vital.heartRate) history += `- HR: ${vital.heartRate}\n`;
         if (vital.temperature) history += `- Temp: ${vital.temperature}°F\n`;
         if (vital.oxygenSaturation) history += `- O2 Sat: ${vital.oxygenSaturation}%\n`;

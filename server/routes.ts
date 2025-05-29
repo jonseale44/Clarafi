@@ -304,8 +304,8 @@ export function registerRoutes(app: Express): Server {
         );
 
         const formattedSuggestions = {
-          realTimePrompts: suggestions.suggestions || suggestions.realTimePrompts || [],
-          clinicalGuidance: suggestions.clinicalGuidance || suggestions.guidance || suggestions.summary || "AI analysis in progress...",
+          realTimePrompts: suggestions.suggestions || [],
+          clinicalGuidance: "AI analysis in progress...",
           clinicalFlags: suggestions.clinicalFlags || []
         };
 
