@@ -11,6 +11,7 @@ import {
   encounters,
 } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
+import { PrivacyService } from "./privacy-service.js";
 
 export class AssistantContextService {
   private openai: OpenAI;
@@ -40,29 +41,17 @@ export class AssistantContextService {
       return patient[0].assistantId;
     }
 
-    // Create new patient-specific assistant
-    console.log(`🤖 [AssistantContextService] Creating new assistant for patient ${patientId} (${patient[0].firstName} ${patient[0].lastName})...`);
+    // Create new de-identified patient-specific assistant
+    const deidentifiedId = `P${patientId.toString().padStart(3, '0')}`;
+    console.log(`🤖 [AssistantContextService] Creating new de-identified assistant for patient ${patientId} (${deidentifiedId})...`);
     
-    // Get patient's medical history to initialize the assistant
-    const patientHistory = await this.getPatientHistory(patientId);
+    // Get de-identified patient context
+    const deidentifiedContext = await this.getDeidentifiedPatientContext(patientId);
+    const instructions = PrivacyService.createDeidentifiedInstructions(deidentifiedContext, 'provider');
     
     const assistant = await this.openai.beta.assistants.create({
-      name: `Medical Assistant - ${patient[0].firstName} ${patient[0].lastName}`,
-      instructions: `You are a medical AI assistant specifically for patient ${patient[0].firstName} ${patient[0].lastName} (MRN: ${patient[0].mrn}). 
-
-PATIENT CONTEXT:
-${patientHistory}
-
-INSTRUCTIONS:
-- Always respond in English only
-- Provide concise, evidence-based medical insights for physicians
-- Focus on this specific patient's medical history and context
-- Include relevant medication dosages, red flags, and clinical guidelines
-- Build upon previous encounters and medical knowledge for this patient
-- Avoid restating obvious medical knowledge
-- Stay brief and actionable
-
-Return insights as bullet points, one per line.`,
+      name: PrivacyService.createAssistantName(deidentifiedId),
+      instructions: instructions,
       model: "gpt-4",
       tools: []
     });
@@ -75,8 +64,34 @@ Return insights as bullet points, one per line.`,
     // Cache the assistant ID
     this.patientAssistants.set(patientId, assistant.id);
     
-    console.log(`✅ [AssistantContextService] Created assistant ${assistant.id} for patient ${patientId}`);
+    console.log(`✅ [AssistantContextService] Created de-identified assistant ${assistant.id} for patient ${deidentifiedId}`);
     return assistant.id;
+  }
+
+  /**
+   * Get de-identified patient context for assistant creation
+   */
+  private async getDeidentifiedPatientContext(patientId: number): Promise<any> {
+    const patient = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
+    if (patient.length === 0) {
+      throw new Error(`Patient ${patientId} not found`);
+    }
+
+    // Get recent encounters
+    const recentEncounters = await db.select()
+      .from(encounters)
+      .where(eq(encounters.patientId, patientId))
+      .orderBy(desc(encounters.createdAt))
+      .limit(5);
+
+    // Get latest vitals
+    const latestVitals = await db.select()
+      .from(vitals)
+      .where(eq(vitals.patientId, patientId))
+      .orderBy(desc(vitals.recordedAt))
+      .limit(1);
+
+    return PrivacyService.deidentifyPatientData(patient[0], recentEncounters, latestVitals);
   }
 
   async getOrCreateThread(patientId: number): Promise<string> {
