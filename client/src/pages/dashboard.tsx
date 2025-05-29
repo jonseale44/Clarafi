@@ -13,7 +13,7 @@ import { Patient, Vitals } from "@shared/schema";
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -168,16 +168,13 @@ export default function Dashboard() {
           );
         }
         if (!patient) return <div className="text-center py-8">Select a patient to view encounters</div>;
-        return <PatientChartView patient={patient} patientId={selectedPatientId!} onStartVoiceNote={() => setIsVoiceModalOpen(true)} />;
+        return <PatientChartView patient={patient} patientId={selectedPatientId!} />;
       
       case "voice-recording":
         return (
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4">AI Voice Recording</h2>
-            <p className="text-gray-600 mb-4">Start voice recording to generate clinical notes with AI assistance.</p>
-            <Button onClick={() => setIsVoiceModalOpen(true)} className="bg-primary">
-              Start Voice Recording
-            </Button>
+            <p className="text-gray-600 mb-4">Voice recording functionality has been removed.</p>
           </Card>
         );
       
@@ -304,12 +301,6 @@ export default function Dashboard() {
       <main className="flex-1 overflow-auto p-6">
         {renderTabContent()}
       </main>
-      
-      <VoiceRecordingModal 
-        isOpen={isVoiceModalOpen} 
-        onClose={() => setIsVoiceModalOpen(false)} 
-        patientId={selectedPatientId || 0}
-      />
     </div>
   );
 }

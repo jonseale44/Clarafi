@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema } from "@shared/schema";
-import { processVoiceRecording, processVoiceRecordingEnhanced, AIAssistantParams } from "./openai";
 import multer from "multer";
 
 const upload = multer({ storage: multer.memoryStorage() });
