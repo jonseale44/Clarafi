@@ -191,24 +191,51 @@ Please provide brief clinical insights or suggestions based on this partial tran
     userRole: "nurse" | "provider",
     patientId: number,
     encounterId: number
-  ) {
+  ): Promise<string> {
     try {
       // Get the patient's assistant
       const assistantId = await this.getOrCreatePatientAssistant(patientId);
 
-      // Add the complete transcription to the thread
-      await this.openai.beta.threads.messages.create(threadId, {
-        role: "user",
-        content: `Complete encounter transcription from ${userRole} for encounter ID ${encounterId}:
+      // Create SOAP note generation prompt based on your external implementation
+      const soapPrompt = `Based on the following encounter transcription, please generate a professional SOAP note in standard medical format:
 
+ENCOUNTER TRANSCRIPTION:
 ${fullTranscription}
 
-Please provide:
-1. Clinical assessment and recommendations
-2. Suggested diagnoses or differential diagnoses
-3. Recommended treatments or medications
-4. Any red flags or concerns
-5. Follow-up recommendations`
+INSTRUCTIONS:
+Generate a complete SOAP note with the following sections:
+
+**SUBJECTIVE:**
+- Chief complaint and history of present illness
+- Review of systems as mentioned
+- Past medical history, medications, allergies as relevant to this encounter
+- Social history if discussed
+
+**OBJECTIVE:**
+- Vital signs if mentioned
+- Physical examination findings
+- Laboratory results if discussed
+- Imaging results if mentioned
+
+**ASSESSMENT:**
+- Primary and secondary diagnoses with ICD-10 codes where appropriate
+- Clinical reasoning and differential diagnoses
+- Assessment of current conditions
+
+**PLAN:**
+- Treatment recommendations
+- Medications (new prescriptions, changes, continuations)
+- Diagnostic tests ordered
+- Referrals if mentioned
+- Follow-up instructions
+- Patient education provided
+
+Please format this as a professional medical note that could be used in an electronic health record. Use standard medical terminology and maintain clinical accuracy based on the conversation transcribed.`;
+
+      // Add the SOAP generation request to the thread
+      await this.openai.beta.threads.messages.create(threadId, {
+        role: "user",
+        content: soapPrompt
       });
 
       // Run the assistant
@@ -216,11 +243,15 @@ Please provide:
         assistant_id: assistantId,
       });
 
-      // Wait for completion
+      // Wait for completion with timeout
       let runStatus = await this.openai.beta.threads.runs.retrieve(threadId, run.id);
-      while (runStatus.status === "in_progress" || runStatus.status === "queued") {
+      let attempts = 0;
+      const maxAttempts = 60; // 60 seconds max
+      
+      while ((runStatus.status === "in_progress" || runStatus.status === "queued") && attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         runStatus = await this.openai.beta.threads.runs.retrieve(threadId, run.id);
+        attempts++;
       }
 
       if (runStatus.status === "completed") {
@@ -233,15 +264,21 @@ Please provide:
         if (lastMessage && lastMessage.role === "assistant") {
           const content = lastMessage.content[0];
           if (content.type === "text") {
+            console.log(`✅ [AssistantContextService] Generated SOAP note (${content.text.value.length} characters)`);
             return content.text.value;
           }
         }
+      } else {
+        console.error(`❌ [AssistantContextService] Assistant run failed with status: ${runStatus.status}`);
+        if (runStatus.last_error) {
+          console.error(`❌ [AssistantContextService] Error details:`, runStatus.last_error);
+        }
       }
 
-      return "Analysis completed successfully";
+      return "Unable to generate SOAP note at this time. Please try again.";
     } catch (error) {
-      console.error('Error processing complete transcription:', error);
-      return "Unable to process transcription at this time";
+      console.error('❌ [AssistantContextService] Error processing complete transcription:', error);
+      return "Unable to process transcription at this time. Please check your connection and try again.";
     }
   }
 

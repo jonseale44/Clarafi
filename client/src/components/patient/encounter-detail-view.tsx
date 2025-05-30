@@ -20,6 +20,7 @@ import {
   FileText,
   Bot,
   RefreshCw,
+  Save,
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
@@ -102,17 +103,15 @@ export function EncounterDetailView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
-  const [soapNote, setSoapNote] = useState({
-    subjective: "",
-    objective: "",
-    assessment: "",
-    plan: "",
-  });
+  const [soapNote, setSoapNote] = useState("");
+  const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
+  const [isSavingSOAP, setIsSavingSOAP] = useState(false);
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState(""); // Track live suggestions during recording
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodes, setCptCodes] = useState<any[]>([]);
   const [isTextMode, setIsTextMode] = useState(false);
+  const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
   const { toast } = useToast();
 
   const toggleSection = (sectionId: string) => {
@@ -1003,6 +1002,73 @@ export function EncounterDetailView({
                   className="min-h-[100px]"
                 />
               </div>
+            </div>
+          </Card>
+
+          {/* SOAP Note Section */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">SOAP Note</h2>
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleGenerateSOAP}
+                  disabled={isGeneratingSOAP || !transcriptionBuffer.trim()}
+                  className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                >
+                  {isGeneratingSOAP ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 mr-2 border-2 border-green-600 border-t-transparent rounded-full" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate SOAP
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSaveSOAP}
+                  disabled={!soapNote.trim() || isSavingSOAP}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                >
+                  {isSavingSOAP ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Note
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {soapNote ? (
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <SOAPNoteEditor
+                    content={soapNote}
+                    onChange={setSoapNote}
+                    placeholder="Generated SOAP note will appear here..."
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <div className="text-sm">No SOAP note generated yet</div>
+                  <div className="text-xs mt-1">
+                    Complete a recording and click "Generate SOAP" to create a note
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 
