@@ -739,6 +739,9 @@ export function EncounterDetailView({
           duration: 10000,
         });
         
+        // Add a small delay to avoid thread conflicts with live suggestions
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
         const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap`, {
           method: "POST",
           headers: {
@@ -780,18 +783,7 @@ export function EncounterDetailView({
     }
   };
 
-  const generateSOAPNote = () => {
-    setSoapNote({
-      subjective: "Patient reports chief complaint and symptoms...",
-      objective: "Vital signs and physical examination findings...",
-      assessment: "Clinical assessment and diagnosis...",
-      plan: "Treatment plan and follow-up recommendations...",
-    });
-    toast({
-      title: "SOAP Note Generated",
-      description: "Clinical documentation has been created",
-    });
-  };
+
 
   const generateSmartSuggestions = () => {
     setGptSuggestions(
@@ -1097,47 +1089,7 @@ export function EncounterDetailView({
             </div>
           </Card>
 
-          {/* SOAP Note */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">SOAP Note</h2>
-              <div className="flex space-x-2">
-                <Button
-                  onClick={generateSOAPNote}
-                  size="sm"
-                  variant="outline"
-                  className="text-pink-600 border-pink-300"
-                >
-                  Smart Suggestions
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-slate-700 hover:bg-slate-800 text-white"
-                >
-                  Sign & Save
-                </Button>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  • Drug info
-                </label>
-                <Textarea
-                  value={soapNote.subjective}
-                  onChange={(e) =>
-                    setSoapNote((prev) => ({
-                      ...prev,
-                      subjective: e.target.value,
-                    }))
-                  }
-                  placeholder="Loading existing note content..."
-                  className="min-h-[100px]"
-                />
-              </div>
-            </div>
-          </Card>
 
           {/* SOAP Note Section */}
           <Card className="p-6">
@@ -1172,15 +1124,12 @@ export function EncounterDetailView({
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="w-full min-h-[500px] pb-8 font-sans text-base leading-relaxed">
               {soapNote ? (
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <SOAPNoteEditor
-                    content={soapNote}
-                    onChange={setSoapNote}
-                    placeholder="Generated SOAP note will appear here..."
-                  />
-                </div>
+                <div 
+                  className="w-full h-full min-h-[500px] border rounded-lg p-4 bg-white soap-note prose max-w-none whitespace-pre-wrap" 
+                  dangerouslySetInnerHTML={{ __html: soapNote }} 
+                />
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />

@@ -196,6 +196,9 @@ Please provide brief clinical insights or suggestions based on this partial tran
       // Get the patient's assistant
       const assistantId = await this.getOrCreatePatientAssistant(patientId);
 
+      // Wait for any existing runs to complete before creating a new one
+      await this.waitForThreadReady(threadId);
+
       // Create SOAP note generation prompt based on your external implementation
       const soapPrompt = `Based on the following encounter transcription, please generate a professional SOAP note in standard medical format:
 
@@ -279,6 +282,46 @@ Please format this as a professional medical note that could be used in an elect
     } catch (error) {
       console.error('❌ [AssistantContextService] Error processing complete transcription:', error);
       return "Unable to process transcription at this time. Please check your connection and try again.";
+    }
+  }
+
+  private async waitForThreadReady(threadId: string): Promise<void> {
+    try {
+      // Check for any active runs on this thread
+      const runs = await this.openai.beta.threads.runs.list(threadId, {
+        limit: 10
+      });
+
+      const activeRuns = runs.data.filter(run => 
+        run.status === "in_progress" || run.status === "queued"
+      );
+
+      if (activeRuns.length > 0) {
+        console.log(`🔄 [AssistantContextService] Waiting for ${activeRuns.length} active runs to complete...`);
+        
+        // Wait for all active runs to complete
+        await Promise.all(activeRuns.map(async (run) => {
+          let attempts = 0;
+          const maxAttempts = 30; // 30 seconds max wait
+          
+          while (attempts < maxAttempts) {
+            const runStatus = await this.openai.beta.threads.runs.retrieve(threadId, run.id);
+            if (runStatus.status !== "in_progress" && runStatus.status !== "queued") {
+              console.log(`✅ [AssistantContextService] Run ${run.id} completed with status: ${runStatus.status}`);
+              break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            attempts++;
+          }
+          
+          if (attempts >= maxAttempts) {
+            console.warn(`⚠️ [AssistantContextService] Run ${run.id} did not complete within timeout`);
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('❌ [AssistantContextService] Error waiting for thread to be ready:', error);
+      // Continue anyway - we'll handle the conflict in the main function
     }
   }
 
