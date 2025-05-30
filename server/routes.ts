@@ -493,6 +493,61 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // SOAP Note Generation endpoint
+  app.post("/api/patients/:id/encounters/:encounterId/generate-soap", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const encounterId = parseInt(req.params.encounterId);
+      const { transcription, userRole = "provider" } = req.body;
+      
+      if (!transcription || !transcription.trim()) {
+        return res.status(400).json({ message: "Transcription is required" });
+      }
+
+      console.log(`🩺 [SOAP] Generating SOAP note for patient ${patientId}, encounter ${encounterId}`);
+
+      // Get patient data
+      const patient = await storage.getPatient(patientId);
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      // Get the patient's assistant context service
+      const { AssistantContextService } = await import('./assistant-context-service.js');
+      const assistantService = new AssistantContextService();
+      
+      // Get or create thread for this patient
+      const threadId = await assistantService.getOrCreateThread(patientId);
+      
+      // Generate SOAP note using the patient's assistant
+      const soapNote = await assistantService.processCompleteTranscription(
+        threadId,
+        transcription,
+        userRole as "nurse" | "provider",
+        patientId,
+        encounterId
+      );
+
+      console.log(`✅ [SOAP] Generated SOAP note (${soapNote.length} characters)`);
+      
+      res.json({ 
+        soapNote,
+        patientId,
+        encounterId,
+        generatedAt: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error('❌ [SOAP] Error generating SOAP note:', error);
+      res.status(500).json({ 
+        message: "Failed to generate SOAP note", 
+        error: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   
   return httpServer;
