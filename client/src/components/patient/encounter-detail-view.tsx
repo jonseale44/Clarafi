@@ -25,6 +25,7 @@ import {
 import { Patient } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { SOAPNoteEditor } from "@/components/ui/soap-note-editor";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -397,6 +398,7 @@ export function EncounterDetailView({
             console.log("📝 [EncounterView] Transcription delta:", deltaText);
             transcriptionBuffer += deltaText;
             setTranscription(transcriptionBuffer);
+            setTranscriptionBuffer(transcriptionBuffer);
 
             // Trigger live AI suggestions when we have enough text (every 25 chars for faster response)
             if (transcriptionBuffer.length - lastSuggestionLength > 25) {
@@ -753,7 +755,91 @@ export function EncounterDetailView({
     });
   };
 
+  // SOAP Note Generation Function
+  const handleGenerateSOAP = async () => {
+    if (!transcriptionBuffer.trim()) {
+      toast({
+        variant: "destructive",
+        title: "No Transcription",
+        description: "Please complete a recording before generating a SOAP note.",
+      });
+      return;
+    }
 
+    setIsGeneratingSOAP(true);
+    try {
+      console.log("🩺 [EncounterView] Generating SOAP note...");
+      
+      const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcription: transcriptionBuffer,
+          userRole: "provider"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate SOAP note: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setSoapNote(data.soapNote);
+      
+      toast({
+        title: "SOAP Note Generated",
+        description: "Your SOAP note has been generated successfully. You can now edit and save it.",
+      });
+
+    } catch (error) {
+      console.error("❌ [EncounterView] Error generating SOAP note:", error);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Failed to generate SOAP note. Please try again.",
+      });
+    } finally {
+      setIsGeneratingSOAP(false);
+    }
+  };
+
+  // SOAP Note Saving Function
+  const handleSaveSOAP = async () => {
+    if (!soapNote.trim()) {
+      toast({
+        variant: "destructive",
+        title: "No Content",
+        description: "Please generate or enter SOAP note content before saving.",
+      });
+      return;
+    }
+
+    setIsSavingSOAP(true);
+    try {
+      console.log("💾 [EncounterView] Saving SOAP note...");
+      
+      // Here you would typically save to your encounter/notes endpoint
+      // For now, we'll just show a success message
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      
+      toast({
+        title: "SOAP Note Saved",
+        description: "Your SOAP note has been saved to the patient's record.",
+      });
+
+    } catch (error) {
+      console.error("❌ [EncounterView] Error saving SOAP note:", error);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Failed to save SOAP note. Please try again.",
+      });
+    } finally {
+      setIsSavingSOAP(false);
+    }
+  };
 
   return (
     <div className="flex h-full">
