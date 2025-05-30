@@ -717,7 +717,7 @@ export function EncounterDetailView({
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     console.log("🎤 [EncounterView] Stopping recording...");
     const mediaRecorder = (window as any).currentMediaRecorder;
     if (mediaRecorder && mediaRecorder.state === "recording") {
@@ -726,10 +726,58 @@ export function EncounterDetailView({
     }
 
     setIsRecording(false);
-    toast({
-      title: "Recording Stopped",
-      description: "Processing audio...",
-    });
+    
+    // Automatically generate SOAP note when recording stops (like external implementation)
+    if (transcriptionBuffer && transcriptionBuffer.trim()) {
+      try {
+        console.log("🩺 [EncounterView] Auto-generating SOAP note after recording...");
+        setIsGeneratingSOAP(true);
+        
+        toast({
+          title: "Processing SOAP Note",
+          description: "Your note is being processed and saved. You can continue using the app.",
+          duration: 10000,
+        });
+        
+        const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            transcription: transcriptionBuffer,
+            userRole: "provider"
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setSoapNote(data.soapNote);
+          console.log("✅ [EncounterView] SOAP note auto-generated successfully");
+          
+          toast({
+            title: "SOAP Note Generated",
+            description: "Clinical documentation has been created automatically",
+          });
+        } else {
+          throw new Error(`Failed to generate SOAP note: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error("❌ [EncounterView] Error auto-generating SOAP note:", error);
+        toast({
+          variant: "destructive",
+          title: "SOAP Generation Failed",
+          description: "Failed to generate SOAP note automatically. You can try the generate button.",
+        });
+      } finally {
+        setIsGeneratingSOAP(false);
+      }
+    } else {
+      toast({
+        title: "Recording Stopped",
+        description: "Processing audio...",
+      });
+    }
   };
 
   const generateSOAPNote = () => {
@@ -1096,25 +1144,12 @@ export function EncounterDetailView({
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">SOAP Note</h2>
               <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleGenerateSOAP}
-                  disabled={isGeneratingSOAP || !transcriptionBuffer.trim()}
-                  className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                >
-                  {isGeneratingSOAP ? (
-                    <>
-                      <div className="animate-spin h-4 w-4 mr-2 border-2 border-green-600 border-t-transparent rounded-full" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Generate SOAP
-                    </>
-                  )}
-                </Button>
+                {isGeneratingSOAP && (
+                  <div className="flex items-center text-sm text-blue-600">
+                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
+                    Generating...
+                  </div>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
@@ -1151,7 +1186,7 @@ export function EncounterDetailView({
                   <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                   <div className="text-sm">No SOAP note generated yet</div>
                   <div className="text-xs mt-1">
-                    Complete a recording and click "Generate SOAP" to create a note
+                    Complete a recording to automatically generate a SOAP note
                   </div>
                 </div>
               )}
