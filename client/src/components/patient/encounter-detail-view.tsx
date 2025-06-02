@@ -1128,7 +1128,11 @@ export function EncounterDetailView({
               {soapNote ? (
                 <div 
                   className="w-full h-full min-h-[500px] border rounded-lg p-4 bg-white soap-note prose max-w-none whitespace-pre-wrap" 
-                  dangerouslySetInnerHTML={{ __html: soapNote }} 
+                  dangerouslySetInnerHTML={{ 
+                    __html: soapNote
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\n/g, '<br/>')
+                  }} 
                 />
               ) : (
                 <div className="text-center py-8 text-gray-500">
