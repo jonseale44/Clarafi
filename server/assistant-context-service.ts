@@ -199,41 +199,66 @@ Please provide brief clinical insights or suggestions based on this partial tran
       // Wait for any existing runs to complete before creating a new one
       await this.waitForThreadReady(threadId);
 
-      // Create SOAP note generation prompt based on your external implementation
-      const soapPrompt = `Based on the following encounter transcription, please generate a professional SOAP note in standard medical format:
+      // Create SOAP note generation prompt identical to external implementation
+      const soapPrompt = `Generate a SOAP note with the following sections, each preceded by FOUR blank lines:
+
+(preceded by FOUR blank lines)**SUBJECTIVE:**
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
+
+(preceded by FOUR blank lines)**OBJECTIVE:** Organize this section as follows:
+
+Vitals: List all vital signs in a single line, formatted as:
+
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+PHYSICAL EXAM:
+
+- If the physical exam is completely **normal**, use the following full, pre-defined template verbatim:
+
+Physical Exam:
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
+
+Modify only abnormal systems. All normal areas must remain unchanged.
+
+Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
+
+Document abnormal findings first (bolded), followed by pertinent negatives (normal font) where space allows.
+
+Use concise, structured phrases. Avoid full sentences and narrative explanations.
+
+Labs: List any lab results if available. If none, state "No labs reported today."
+
+(preceded by FOUR blank lines)**ASSESSMENT/PLAN:**
+
+[Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
+[Plan item 1]
+[Plan item 2]
+[Plan item 3 (if applicable)]
+
+(preceded by FOUR blank lines)**ORDERS:** 
+
+For all orders, follow this highly-structured format:
+
+Medications:
+
+Each medication order must follow this exact template:
+
+Medication: [name, include specific formulation and strength]
+
+Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
+
+Dispense: [quantity, clearly written in terms of formulation (e.g., "1 inhaler (200 metered doses)" or "30 tablets")]
+
+Refills: [number of refills allowed]
 
 ENCOUNTER TRANSCRIPTION:
-${fullTranscription}
-
-INSTRUCTIONS:
-Generate a complete SOAP note with the following sections:
-
-**SUBJECTIVE:**
-- Chief complaint and history of present illness
-- Review of systems as mentioned
-- Past medical history, medications, allergies as relevant to this encounter
-- Social history if discussed
-
-**OBJECTIVE:**
-- Vital signs if mentioned
-- Physical examination findings
-- Laboratory results if discussed
-- Imaging results if mentioned
-
-**ASSESSMENT:**
-- Primary and secondary diagnoses with ICD-10 codes where appropriate
-- Clinical reasoning and differential diagnoses
-- Assessment of current conditions
-
-**PLAN:**
-- Treatment recommendations
-- Medications (new prescriptions, changes, continuations)
-- Diagnostic tests ordered
-- Referrals if mentioned
-- Follow-up instructions
-- Patient education provided
-
-Please format this as a professional medical note that could be used in an electronic health record. Use standard medical terminology and maintain clinical accuracy based on the conversation transcribed.`;
+${fullTranscription}`;
 
       // Add the SOAP generation request to the thread
       await this.openai.beta.threads.messages.create(threadId, {
