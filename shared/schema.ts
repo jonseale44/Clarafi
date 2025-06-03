@@ -35,6 +35,93 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User SOAP Templates and Preferences
+export const userSoapTemplates = pgTable("user_soap_templates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  templateName: text("template_name").notNull(),
+  isDefault: boolean("is_default").default(false),
+  
+  // Template Structure
+  subjectiveTemplate: text("subjective_template").notNull(),
+  objectiveTemplate: text("objective_template").notNull(),
+  assessmentTemplate: text("assessment_template").notNull(),
+  planTemplate: text("plan_template").notNull(),
+  
+  // Formatting Preferences
+  formatPreferences: jsonb("format_preferences").$type<{
+    useBulletPoints: boolean;
+    boldDiagnoses: boolean;
+    separateAssessmentPlan: boolean;
+    vitalSignsFormat: 'inline' | 'list' | 'table';
+    physicalExamFormat: 'paragraph' | 'bullets' | 'structured';
+    abbreviationStyle: 'minimal' | 'standard' | 'extensive';
+    sectionSpacing: number;
+    customSectionOrder?: string[];
+  }>(),
+  
+  // AI Learning Settings
+  enableAiLearning: boolean("enable_ai_learning").default(true),
+  learningConfidence: decimal("learning_confidence", { precision: 3, scale: 2 }).default("0.75"),
+  lastLearningUpdate: timestamp("last_learning_update"),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User Edit Patterns (for AI learning)
+export const userEditPatterns = pgTable("user_edit_patterns", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  patientId: integer("patient_id").references(() => patients.id, { onDelete: "cascade" }),
+  encounterId: integer("encounter_id").references(() => encounters.id, { onDelete: "cascade" }),
+  
+  // Edit Analysis
+  originalText: text("original_text").notNull(),
+  editedText: text("edited_text").notNull(),
+  sectionType: text("section_type").notNull(), // 'subjective', 'objective', 'assessment', 'plan'
+  
+  // AI Classification
+  patternType: text("pattern_type").notNull(), // 'formatting', 'medical_content', 'style', 'structure'
+  isUserPreference: boolean("is_user_preference"), // true = user style, false = patient medical
+  confidenceScore: decimal("confidence_score", { precision: 3, scale: 2 }),
+  
+  // Learning Data
+  extractedPattern: jsonb("extracted_pattern").$type<{
+    type: string;
+    rule: string;
+    context: string;
+    frequency: number;
+    examples: string[];
+  }>(),
+  
+  applied: boolean("applied").default(false),
+  reviewedByUser: boolean("reviewed_by_user").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User AI Assistant Threads
+export const userAssistantThreads = pgTable("user_assistant_threads", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  threadId: text("thread_id").notNull().unique(),
+  threadType: text("thread_type").notNull(), // 'style_learning', 'template_generation'
+  
+  // Thread State
+  isActive: boolean("is_active").default(true),
+  lastInteraction: timestamp("last_interaction").defaultNow(),
+  messageCount: integer("message_count").default(0),
+  
+  // Learning Stats
+  patternsLearned: integer("patterns_learned").default(0),
+  confidenceLevel: decimal("confidence_level", { precision: 3, scale: 2 }).default("0.50"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Patients
 export const patients = pgTable("patients", {
   id: serial("id").primaryKey(),
@@ -705,6 +792,40 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   urgency: true,
   orderedBy: true,
   approvedBy: true,
+});
+
+// User preference schemas
+export const insertUserSoapTemplateSchema = createInsertSchema(userSoapTemplates).pick({
+  userId: true,
+  templateName: true,
+  isDefault: true,
+  subjectiveTemplate: true,
+  objectiveTemplate: true,
+  assessmentTemplate: true,
+  planTemplate: true,
+  formatPreferences: true,
+  enableAiLearning: true,
+  learningConfidence: true,
+});
+
+export const insertUserEditPatternSchema = createInsertSchema(userEditPatterns).pick({
+  userId: true,
+  patientId: true,
+  encounterId: true,
+  originalText: true,
+  editedText: true,
+  sectionType: true,
+  patternType: true,
+  isUserPreference: true,
+  confidenceScore: true,
+  extractedPattern: true,
+});
+
+export const insertUserAssistantThreadSchema = createInsertSchema(userAssistantThreads).pick({
+  userId: true,
+  threadId: true,
+  threadType: true,
+  isActive: true,
 });
 
 // Types
