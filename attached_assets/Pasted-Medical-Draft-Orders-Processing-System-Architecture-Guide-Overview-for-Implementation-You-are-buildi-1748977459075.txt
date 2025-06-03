@@ -1,0 +1,92 @@
+Medical Draft Orders Processing System Architecture Guide
+Overview for Implementation
+You are building an AI-powered medical draft orders system that automatically extracts and processes medication orders, lab test orders, and imaging orders from clinical text (like SOAP notes or voice transcriptions). The system parses unstructured medical text and creates structured, actionable orders for healthcare providers to review and approve.
+
+System Architecture
+Frontend Order Processing Module
+DraftOrdersModule (external_DraftOrdersModule.ts)
+
+Core client-side parsing engine that extracts orders from clinical text
+Handles three order types: medications, lab tests, and imaging studies
+Uses regex patterns and natural language processing to identify order sections
+Provides real-time parsing and validation of extracted orders
+Integrates with patient chart data for context-aware processing
+Order Processing Methods:
+
+parseMedication(): Extracts medication name, dosage, frequency, quantity, refills
+parseLab(): Identifies lab test names, priority levels, and clinical context
+parseImaging(): Processes imaging study types and urgency requirements
+parseOrdersFromText(): Main orchestrator that identifies and categorizes all order types
+Backend API Layer
+Orders Routes (external_orders.ts)
+
+REST endpoints for order creation and management
+POST /api/orders/draft/batch: Creates multiple orders simultaneously
+POST /api/orders: Single order creation endpoint
+Handles data validation and database schema mapping
+Integrates with lab order templates for standardized processing
+Database Operations (external_crud.ts)
+
+createOrder(): Inserts new orders into the database
+Handles order type-specific field validation
+Manages relationships with patients and providers
+Tracks order status progression (draft → pending → approved)
+Frontend Order Management Interface
+DraftOrders Component (external_DraftOrders.tsx)
+
+User interface for reviewing and managing extracted orders
+Displays parsed orders in categorized sections (medications, labs, imaging)
+Provides manual editing capabilities for order details
+Handles batch saving and error management
+Shows real-time parsing results from voice transcriptions
+Data Processing Flow
+Text Input: Clinical text from voice transcription or manual entry
+Pattern Recognition: Module identifies order sections using medical terminology
+Data Extraction: Parse specific order details (medication names, dosages, lab tests)
+Validation: Check for required fields and medical coding standards
+Database Storage: Save as draft orders for provider review
+Provider Review: Healthcare staff can edit, approve, or reject orders
+Order Type Processing
+Medication Orders:
+
+Extract: medication name, strength, dosage form, quantity, refills, SIG instructions
+Validate: drug name recognition, dosage appropriateness, interaction checks
+Default values: 30-day supply, 0 refills, tablet form
+Lab Test Orders:
+
+Extract: test names, priority level (STAT vs routine), clinical indication
+Map to standardized lab templates and CPT codes
+Handle common abbreviations (CBC, CMP, TSH, etc.)
+Imaging Orders:
+
+Extract: study type, body part, clinical indication, urgency
+Support modalities: X-ray, CT, MRI, ultrasound
+Priority classification for scheduling
+Integration Points
+Voice Workflow Integration:
+
+Receives parsed text from voice transcription modules
+Processes orders in real-time during clinical encounters
+Updates patient charts with new orders automatically
+Clinical Decision Support:
+
+Cross-references patient allergies and current medications
+Suggests appropriate lab tests based on diagnoses
+Flags potential drug interactions or contraindications
+Error Handling and Validation
+Input Validation:
+
+Required field checking for each order type
+Medical terminology validation against standard references
+Patient-specific safety checks (allergies, contraindications)
+Batch Processing:
+
+Handles multiple orders simultaneously with rollback capabilities
+Provides detailed error reporting for failed order creation
+Maintains data integrity across related orders
+Security and Compliance
+HIPAA-compliant order processing and storage
+Audit trails for all order modifications
+Provider authentication for order approval
+Patient consent verification for medication orders
+This architecture enables healthcare providers to dictate clinical notes and have the system automatically extract actionable orders, significantly reducing manual data entry while maintaining clinical accuracy and safety standards.
