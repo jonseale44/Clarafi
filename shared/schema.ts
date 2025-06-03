@@ -808,17 +808,9 @@ export const insertUserSoapTemplateSchema = createInsertSchema(userSoapTemplates
   learningConfidence: true,
 });
 
-export const insertUserEditPatternSchema = createInsertSchema(userEditPatterns).pick({
-  userId: true,
-  patientId: true,
-  encounterId: true,
-  originalText: true,
-  editedText: true,
-  sectionType: true,
-  patternType: true,
-  isUserPreference: true,
-  confidenceScore: true,
-  extractedPattern: true,
+export const insertUserEditPatternSchema = createInsertSchema(userEditPatterns).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertUserAssistantThreadSchema = createInsertSchema(userAssistantThreads).pick({
@@ -831,6 +823,12 @@ export const insertUserAssistantThreadSchema = createInsertSchema(userAssistantT
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type InsertUserSoapTemplate = z.infer<typeof insertUserSoapTemplateSchema>;
+export type UserSoapTemplate = typeof userSoapTemplates.$inferSelect;
+export type InsertUserEditPattern = z.infer<typeof insertUserEditPatternSchema>;
+export type UserEditPattern = typeof userEditPatterns.$inferSelect;
+export type InsertUserAssistantThread = z.infer<typeof insertUserAssistantThreadSchema>;
+export type UserAssistantThread = typeof userAssistantThreads.$inferSelect;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type Patient = typeof patients.$inferSelect;
 export type InsertEncounter = z.infer<typeof insertEncounterSchema>;
