@@ -54,6 +54,14 @@ export interface IStorage {
   getPatientImagingOrders(patientId: number): Promise<any[]>;
   getPatientImagingResults(patientId: number): Promise<any[]>;
   
+  // Unified Orders management (for draft orders processing system)
+  getOrder(id: number): Promise<Order | undefined>;
+  getPatientOrders(patientId: number): Promise<Order[]>;
+  getPatientDraftOrders(patientId: number): Promise<Order[]>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, updates: Partial<Order>): Promise<Order>;
+  deleteOrder(id: number): Promise<void>;
+  
   sessionStore: session.SessionStore;
 }
 
@@ -232,6 +240,55 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(imagingResults)
       .where(eq(imagingResults.patientId, patientId))
       .orderBy(desc(imagingResults.createdAt));
+  }
+
+  // Unified Orders management (for draft orders processing system)
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order || undefined;
+  }
+
+  async getPatientOrders(patientId: number): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(eq(orders.patientId, patientId))
+      .orderBy(desc(orders.createdAt));
+  }
+
+  async getPatientDraftOrders(patientId: number): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(and(
+        eq(orders.patientId, patientId),
+        eq(orders.orderStatus, 'draft')
+      ))
+      .orderBy(desc(orders.createdAt));
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db
+      .insert(orders)
+      .values({
+        ...insertOrder,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return order;
+  }
+
+  async updateOrder(id: number, updates: Partial<Order>): Promise<Order> {
+    const [order] = await db
+      .update(orders)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    return order;
+  }
+
+  async deleteOrder(id: number): Promise<void> {
+    await db.delete(orders).where(eq(orders.id, id));
   }
 }
 
