@@ -397,6 +397,65 @@ export const imagingResults = pgTable("imaging_results", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Unified Orders Table (for draft orders processing system)
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id),
+  
+  // Order classification
+  orderType: text("order_type").notNull(), // 'medication', 'lab', 'imaging', 'referral'
+  orderStatus: text("order_status").default("draft"), // 'draft', 'pending', 'approved', 'cancelled', 'completed'
+  
+  // Reference to specific order tables (for approved orders)
+  referenceId: integer("reference_id"), // Links to labOrders.id, imagingOrders.id, etc.
+  
+  // Common fields for all order types
+  providerNotes: text("provider_notes"),
+  priority: text("priority").default("routine"), // 'stat', 'urgent', 'routine'
+  clinicalIndication: text("clinical_indication"),
+  
+  // Medication-specific fields
+  medicationName: text("medication_name"),
+  dosage: text("dosage"),
+  quantity: integer("quantity"),
+  sig: text("sig"), // Prescription instructions
+  refills: integer("refills"),
+  form: text("form"), // 'tablet', 'capsule', 'liquid', etc.
+  routeOfAdministration: text("route_of_administration"),
+  daysSupply: integer("days_supply"),
+  diagnosisCode: text("diagnosis_code"),
+  requiresPriorAuth: boolean("requires_prior_auth").default(false),
+  priorAuthNumber: text("prior_auth_number"),
+  
+  // Lab-specific fields
+  labName: text("lab_name"),
+  testName: text("test_name"),
+  testCode: text("test_code"), // LOINC code
+  specimenType: text("specimen_type"),
+  fastingRequired: boolean("fasting_required").default(false),
+  
+  // Imaging-specific fields
+  studyType: text("study_type"), // 'X-ray', 'CT', 'MRI', 'Ultrasound'
+  region: text("region"), // Body part/region
+  laterality: text("laterality"), // 'left', 'right', 'bilateral'
+  contrastNeeded: boolean("contrast_needed").default(false),
+  
+  // Referral-specific fields
+  specialtyType: text("specialty_type"),
+  providerName: text("provider_name"),
+  urgency: text("urgency"),
+  
+  // Ordering provider and timestamps
+  orderedBy: integer("ordered_by").references(() => users.id),
+  orderedAt: timestamp("ordered_at").defaultNow(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   encounters: many(encounters),
@@ -404,6 +463,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   signatures: many(signatures),
   labOrders: many(labOrders),
   imagingOrders: many(imagingOrders),
+  orders: many(orders),
+  orderedOrders: many(orders, { relationName: "orderedBy" }),
+  approvedOrders: many(orders, { relationName: "approvedBy" }),
 }));
 
 export const patientsRelations = relations(patients, ({ many }) => ({
@@ -420,6 +482,7 @@ export const patientsRelations = relations(patients, ({ many }) => ({
   labResults: many(labResults),
   imagingOrders: many(imagingOrders),
   imagingResults: many(imagingResults),
+  orders: many(orders),
 }));
 
 export const encountersRelations = relations(encounters, ({ one, many }) => ({
@@ -444,6 +507,7 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
   diagnoses: many(diagnoses),
   labOrders: many(labOrders),
   imagingOrders: many(imagingOrders),
+  orders: many(orders),
 }));
 
 export const appointmentsRelations = relations(appointments, ({ one, many }) => ({
@@ -524,6 +588,25 @@ export const imagingResultsRelations = relations(imagingResults, ({ one }) => ({
   }),
   reviewedByUser: one(users, {
     fields: [imagingResults.reviewedBy],
+    references: [users.id],
+  }),
+}));
+
+export const ordersRelations = relations(orders, ({ one }) => ({
+  patient: one(patients, {
+    fields: [orders.patientId],
+    references: [patients.id],
+  }),
+  encounter: one(encounters, {
+    fields: [orders.encounterId],
+    references: [encounters.id],
+  }),
+  orderedByUser: one(users, {
+    fields: [orders.orderedBy],
+    references: [users.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [orders.approvedBy],
     references: [users.id],
   }),
 }));
