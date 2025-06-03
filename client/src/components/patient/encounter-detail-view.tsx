@@ -111,8 +111,8 @@ export function EncounterDetailView({
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
   
-  // Track if the content is being updated programmatically
-  const isUpdatingProgrammatically = useRef(false);
+  // Track the last generated content to avoid re-formatting user edits
+  const lastGeneratedContent = useRef<string>("");
 
   const editor = useEditor({
     extensions: [
@@ -128,47 +128,33 @@ export function EncounterDetailView({
     },
     content: "",
     onUpdate: ({ editor }) => {
-      // Only update React state if this isn't a programmatic update
-      if (!editor.isDestroyed && !isUpdatingProgrammatically.current) {
+      // Update React state when user types
+      if (!editor.isDestroyed) {
         const newContent = editor.getHTML();
         setSoapNote(newContent);
       }
     },
   });
 
-  // Function to format SOAP note content for proper display
+  // Function to format SOAP note content for initial display only
   const formatSoapNoteContent = (content: string) => {
-    if (!content) return content;
+    if (!content) return "";
     
     return content
       // Convert markdown bold to HTML
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Add proper line breaks and spacing
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br/>')
-      // Wrap in paragraph tags
-      .replace(/^/, '<p>')
-      .replace(/$/, '</p>')
-      // Fix double paragraph issues
-      .replace(/<p><\/p>/g, '')
-      // Add extra spacing after section headers
-      .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, '$1<br/>')
-      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/>$1<br/>')
-      .replace(/(<strong>ASSESSMENT\/PLAN:<\/strong>)/g, '<br/>$1<br/>')
-      .replace(/(<strong>ORDERS:<\/strong>)/g, '<br/>$1<br/>');
+      // Convert line breaks to proper HTML
+      .replace(/\n/g, '<br/>');
   };
 
-  // Effect to sync soapNote state with editor content
+  // Effect to load new SOAP note content only when it's generated
   useEffect(() => {
     if (editor && soapNote && !editor.isDestroyed) {
-      const formattedContent = formatSoapNoteContent(soapNote);
-      const currentContent = editor.getHTML();
-      if (currentContent !== formattedContent) {
-        isUpdatingProgrammatically.current = true;
+      // Only update if this is new generated content (contains markdown)
+      if (soapNote.includes('**') && soapNote !== lastGeneratedContent.current) {
+        const formattedContent = formatSoapNoteContent(soapNote);
         editor.commands.setContent(formattedContent);
-        setTimeout(() => {
-          isUpdatingProgrammatically.current = false;
-        }, 100);
+        lastGeneratedContent.current = soapNote;
       }
     }
   }, [soapNote, editor]);
