@@ -7,12 +7,14 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
+import { PatientCreation } from "@/pages/PatientCreation";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

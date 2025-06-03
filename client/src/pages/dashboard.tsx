@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Patient, Vitals } from "@shared/schema";
+import { Link } from "wouter";
+import { UserPlus } from "lucide-react";
 
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
@@ -291,6 +293,12 @@ export default function Dashboard() {
           
           {/* Right side - User info and actions */}
           <div className="flex items-center space-x-4">
+            <Link href="/patients/create">
+              <Button className="flex items-center gap-2" size="sm">
+                <UserPlus className="h-4 w-4" />
+                Create Patient
+              </Button>
+            </Link>
             <div className="text-sm text-gray-600">
               Jonathan Seale
             </div>
