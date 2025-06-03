@@ -523,6 +523,32 @@ export function registerRoutes(app: Express): Server {
 
       console.log(`✅ [SOAP] Generated SOAP note (${soapNote.length} characters)`);
       
+      // Automatically extract and create draft orders from SOAP note
+      try {
+        console.log(`🧬 [SOAP] Auto-extracting draft orders from generated SOAP note...`);
+        const { SOAPOrdersExtractor } = await import('./soap-orders-extractor.js');
+        const extractor = new SOAPOrdersExtractor();
+        
+        // Extract orders from SOAP note content
+        const extractedOrders = extractor.extractOrders(soapNote, patientId, encounterId);
+        
+        if (extractedOrders && extractedOrders.length > 0) {
+          console.log(`🧬 [SOAP] Found ${extractedOrders.length} draft orders to create`);
+          
+          // Create draft orders in the database
+          const createdOrders = await Promise.all(
+            extractedOrders.map(orderData => storage.createOrder(orderData))
+          );
+          
+          console.log(`✅ [SOAP] Created ${createdOrders.length} draft orders automatically`);
+        } else {
+          console.log(`ℹ️ [SOAP] No draft orders found in SOAP note content`);
+        }
+      } catch (orderError: any) {
+        console.error('❌ [SOAP] Error auto-extracting draft orders:', orderError);
+        // Don't fail the SOAP generation if order extraction fails
+      }
+      
       res.json({ 
         soapNote,
         patientId,
