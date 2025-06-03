@@ -293,19 +293,14 @@ export function registerRoutes(app: Express): Server {
 
       try {
         console.log('🧠 [Routes] Attempting to get live suggestions...');
-        const { AssistantContextService } = await import('./assistant-context-service.js');
+        const { HybridSOAPService } = await import('./hybrid-soap-service.js');
         
-        const assistantService = new AssistantContextService();
-        console.log('🧠 [Routes] AssistantContextService created');
+        const hybridService = new HybridSOAPService();
+        console.log('🧠 [Routes] HybridSOAPService created');
         
-        const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
-        console.log('🧠 [Routes] Thread ID retrieved:', threadId);
-        
-        const suggestions = await assistantService.getRealtimeSuggestions(
-          threadId,
-          transcription,
-          userRole as "nurse" | "provider",
-          parseInt(patientId)
+        const suggestions = await hybridService.getEnhancedSuggestions(
+          parseInt(patientId),
+          transcription
         );
         console.log('🧠 [Routes] Suggestions received:', suggestions);
 
@@ -321,11 +316,11 @@ export function registerRoutes(app: Express): Server {
         };
 
         res.json(response);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ [Routes] Live suggestions error:', error);
         res.status(500).json({ 
           message: "Failed to generate live suggestions",
-          error: error.message,
+          error: error?.message || 'Unknown error',
           aiSuggestions: {
             realTimePrompts: ["Continue recording..."],
             clinicalGuidance: "Live suggestions temporarily unavailable"
@@ -514,12 +509,12 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Use fast SOAP generation service
-      const { FastSOAPService } = await import('./fast-soap-service.js');
-      const fastSoapService = new FastSOAPService();
+      // Use hybrid SOAP generation service
+      const { HybridSOAPService } = await import('./hybrid-soap-service.js');
+      const hybridSoapService = new HybridSOAPService();
       
-      // Generate SOAP note using fast direct API call
-      const soapNote = await fastSoapService.generateSOAPNote(
+      // Generate SOAP note with fast response + background learning
+      const soapNote = await hybridSoapService.generateSOAPNote(
         patientId,
         encounterId.toString(),
         transcription
