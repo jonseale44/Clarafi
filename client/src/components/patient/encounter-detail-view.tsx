@@ -143,6 +143,9 @@ export function EncounterDetailView({
     return content
       // Convert markdown bold to HTML
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Remove extra line breaks after headers
+      .replace(/(<strong>[^<]*<\/strong>)\s*<br\/>\s*<br\/>/g, '$1<br/>')
+      .replace(/(<strong>[^<]*<\/strong>)\s*\n\s*\n/g, '$1\n')
       // Convert line breaks to proper HTML
       .replace(/\n/g, '<br/>');
   };
