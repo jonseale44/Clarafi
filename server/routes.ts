@@ -514,20 +514,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Get the patient's assistant context service
-      const { AssistantContextService } = await import('./assistant-context-service.js');
-      const assistantService = new AssistantContextService();
+      // Use fast SOAP generation service
+      const { FastSOAPService } = await import('./fast-soap-service.js');
+      const fastSoapService = new FastSOAPService();
       
-      // Get or create thread for this patient
-      const threadId = await assistantService.getOrCreateThread(patientId);
-      
-      // Generate SOAP note using the patient's assistant
-      const soapNote = await assistantService.processCompleteTranscription(
-        threadId,
-        transcription,
-        userRole as "nurse" | "provider",
+      // Generate SOAP note using fast direct API call
+      const soapNote = await fastSoapService.generateSOAPNote(
         patientId,
-        encounterId
+        encounterId.toString(),
+        transcription
       );
 
       console.log(`✅ [SOAP] Generated SOAP note (${soapNote.length} characters)`);
