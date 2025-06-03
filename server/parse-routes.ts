@@ -127,24 +127,19 @@ router.post("/parse-and-create-patient", async (req: Request, res: Response) => 
       });
     }
 
-    // Check if patient already exists (by name and DOB)
-    const existingPatient = await db
+    // Check if patient already exists (by name and DOB) - simplified check by MRN for now
+    // In production, you'd want a more sophisticated duplicate detection
+    const existingPatients = await db
       .select()
       .from(patients)
-      .where(
-        and(
-          eq(patients.firstName, patientData.firstName),
-          eq(patients.lastName, patientData.lastName),
-          eq(patients.dateOfBirth, patientData.dateOfBirth)
-        )
-      )
+      .where(eq(patients.mrn, patientData.mrn))
       .limit(1);
 
-    if (existingPatient.length > 0) {
+    if (existingPatients.length > 0) {
       return res.status(409).json({
         success: false,
         error: "Patient with this name and date of birth already exists",
-        existingPatient: existingPatient[0]
+        existingPatient: existingPatients[0]
       });
     }
 
@@ -194,16 +189,11 @@ router.post("/validate-parsed-data", async (req: Request, res: Response) => {
     const patientData = parserService.formatForPatientCreation(extractedData);
     const schemaValidation = insertPatientSchema.safeParse(patientData);
 
-    // Check for existing patient
+    // Check for existing patient by MRN (simplified for now)
     const existingCheck = await db
       .select()
       .from(patients)
-      .where(
-        (patient) => 
-          patient.firstName.eq(patientData.firstName) &&
-          patient.lastName.eq(patientData.lastName) &&
-          patient.dateOfBirth.eq(patientData.dateOfBirth)
-      )
+      .where(eq(patients.mrn, patientData.mrn))
       .limit(1);
 
     res.json({

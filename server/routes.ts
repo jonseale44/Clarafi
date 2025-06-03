@@ -539,6 +539,9 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Register patient parser routes
+  app.use("/api", parseRoutes);
+
   const httpServer = createServer(app);
   
   return httpServer;
