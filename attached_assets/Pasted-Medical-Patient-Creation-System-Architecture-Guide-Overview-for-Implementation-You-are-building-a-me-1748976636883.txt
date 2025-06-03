@@ -1,0 +1,67 @@
+Medical Patient Creation System Architecture Guide
+Overview for Implementation
+You are building a medical documentation platform that automatically creates new patients by extracting information from uploaded documents, images, or text using AI vision capabilities. The system uses GPT-4o Vision to parse medical forms, insurance cards, and EHR screenshots.
+
+System Architecture
+Backend Service Layer
+Patient Parser Service (external_patient-parser-service.ts)
+
+Core AI-powered extraction service using OpenAI GPT-4o Vision
+Handles both image data (base64) and plain text input
+Extracts structured patient demographics: first_name, last_name, date_of_birth, gender, address, contact_number
+Includes data validation, formatting, and error handling
+Uses specific medical context prompts for accurate extraction from clinical documents
+API Routes (external_parse-routes.ts)
+
+REST endpoint: POST /api/parse-patient-info
+Accepts JSON payload with imageData and isTextContent fields
+Validates input using Zod schema validation
+Returns structured patient information or error responses
+Main Routes Integration (external_routes.ts)
+
+Imports and registers the patient parser service
+Integrates with broader medical record system
+Connects to patient creation workflow
+Frontend Components
+Patient Parser Interface (external_patient-parser-test.tsx)
+
+User interface for uploading documents or pasting text
+Displays extracted patient information for review
+Handles file uploads and API communication
+Provides feedback on parsing results
+Data Processing Flow
+Input Reception: User uploads medical document image or pastes text content
+Data Preparation: Convert image to base64 or prepare text for processing
+AI Processing: Send to GPT-4o Vision with medical context instructions
+Data Extraction: Parse structured patient demographics from AI response
+Validation: Format dates, normalize gender values, validate required fields
+Patient Creation: Use extracted data to create new patient record
+Key Implementation Details
+GPT-4o Configuration:
+
+Model: gpt-4.1-nano for cost optimization
+Temperature: 0 for consistent extraction
+Response format: JSON object with structured fields
+Medical context system prompts for accurate parsing
+Supported Input Types:
+
+Medical forms and intake documents
+Insurance card images
+EHR screenshot captures
+Handwritten patient information
+Typed or pasted text content
+Data Validation:
+
+Date format standardization (YYYY-MM-DD)
+Gender normalization to lowercase
+Phone number formatting consistency
+Address field completion validation
+Security and Privacy Considerations
+HIPAA-compliant data handling throughout the pipeline
+Secure API key management for OpenAI services
+Input validation to prevent malicious data injection
+Error handling that doesn't expose sensitive information
+Integration Points
+The patient parser integrates with your broader medical record system to automatically populate new patient profiles, reducing manual data entry and improving accuracy for healthcare providers.
+
+This architecture enables healthcare staff to simply upload or photograph patient documents and have the system automatically extract and structure the demographic information needed for patient registration.
