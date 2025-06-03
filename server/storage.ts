@@ -1,9 +1,10 @@
 import { 
   users, patients, encounters, vitals, medications, diagnoses,
   familyHistory, medicalHistory, socialHistory, allergies,
-  labOrders, labResults, imagingOrders, imagingResults,
+  labOrders, labResults, imagingOrders, imagingResults, orders,
   type User, type InsertUser, type Patient, type InsertPatient,
-  type Encounter, type InsertEncounter, type Vitals, type InsertVitals
+  type Encounter, type InsertEncounter, type Vitals, type InsertVitals,
+  type Order, type InsertOrder
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";

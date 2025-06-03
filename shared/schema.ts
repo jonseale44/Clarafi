@@ -671,6 +671,42 @@ export const insertVitalsSchema = createInsertSchema(vitals).pick({
   recordedBy: true,
 });
 
+export const insertOrderSchema = createInsertSchema(orders).pick({
+  patientId: true,
+  encounterId: true,
+  orderType: true,
+  orderStatus: true,
+  referenceId: true,
+  providerNotes: true,
+  priority: true,
+  clinicalIndication: true,
+  medicationName: true,
+  dosage: true,
+  quantity: true,
+  sig: true,
+  refills: true,
+  form: true,
+  routeOfAdministration: true,
+  daysSupply: true,
+  diagnosisCode: true,
+  requiresPriorAuth: true,
+  priorAuthNumber: true,
+  labName: true,
+  testName: true,
+  testCode: true,
+  specimenType: true,
+  fastingRequired: true,
+  studyType: true,
+  region: true,
+  laterality: true,
+  contrastNeeded: true,
+  specialtyType: true,
+  providerName: true,
+  urgency: true,
+  orderedBy: true,
+  approvedBy: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -690,3 +726,5 @@ export type FamilyHistory = typeof familyHistory.$inferSelect;
 export type MedicalHistory = typeof medicalHistory.$inferSelect;
 export type SocialHistory = typeof socialHistory.$inferSelect;
 export type Allergy = typeof allergies.$inferSelect;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type Order = typeof orders.$inferSelect;

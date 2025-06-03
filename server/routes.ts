@@ -539,6 +539,108 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Unified Orders API routes for draft orders processing system
+  app.get("/api/patients/:patientId/orders/draft", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.patientId);
+      const draftOrders = await storage.getPatientDraftOrders(patientId);
+      res.json(draftOrders);
+    } catch (error: any) {
+      console.error("[Orders API] Error fetching draft orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const orderData = req.body;
+      const order = await storage.createOrder(orderData);
+      res.status(201).json(order);
+    } catch (error: any) {
+      console.error("[Orders API] Error creating order:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/orders/draft/batch", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { orders } = req.body;
+      if (!Array.isArray(orders)) {
+        return res.status(400).json({ message: "Orders must be an array" });
+      }
+
+      const createdOrders = await Promise.all(
+        orders.map(orderData => storage.createOrder(orderData))
+      );
+      
+      res.status(201).json(createdOrders);
+    } catch (error: any) {
+      console.error("[Orders API] Error creating batch orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/orders/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const orderId = parseInt(req.params.id);
+      const updateData = req.body;
+      const updatedOrder = await storage.updateOrder(orderId, updateData);
+      res.json(updatedOrder);
+    } catch (error: any) {
+      console.error("[Orders API] Error updating order:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/orders/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const orderId = parseInt(req.params.id);
+      await storage.deleteOrder(orderId);
+      res.json({ message: "Order deleted successfully" });
+    } catch (error: any) {
+      console.error("[Orders API] Error deleting order:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/orders/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getOrder(orderId);
+      if (!order) return res.status(404).json({ message: "Order not found" });
+      
+      res.json(order);
+    } catch (error: any) {
+      console.error("[Orders API] Error fetching order:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/patients/:patientId/orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.patientId);
+      const orders = await storage.getPatientOrders(patientId);
+      res.json(orders);
+    } catch (error: any) {
+      console.error("[Orders API] Error fetching patient orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Register patient parser routes
   app.use("/api", parseRoutes);
 
