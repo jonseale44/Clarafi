@@ -191,7 +191,7 @@ export default function UserSettingsPage() {
           </div>
           
           <div className="space-y-2">
-            {templates?.map((template: any) => (
+            {(templates || []).map((template: any) => (
               <div
                 key={template.id}
                 className={`p-3 rounded-lg border cursor-pointer transition-colors ${

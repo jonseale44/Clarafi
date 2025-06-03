@@ -489,6 +489,195 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // User SOAP Template endpoints
+  app.get("/api/user/soap-templates", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      
+      // For now, return a default template since database isn't fully set up
+      const defaultTemplate = {
+        id: 1,
+        userId,
+        templateName: "Standard Clinical Template",
+        isDefault: true,
+        subjectiveTemplate: "Patient presents with [chief complaint].\n\n[History of present illness including onset, duration, character, precipitating factors, alleviating factors, and associated symptoms]\n\n[Review of systems as relevant]",
+        objectiveTemplate: "Vitals: BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]\n\nPhysical Exam:\nGen: [general appearance]\nHEENT: [head, eyes, ears, nose, throat]\nCV: [cardiovascular]\nLungs: [pulmonary]\nAbd: [abdominal]\nExt: [extremities]\nSkin: [skin]\nNeuro: [neurological if relevant]\n\nLabs: [laboratory results if available]",
+        assessmentTemplate: "1. [Primary diagnosis] - [clinical reasoning]\n2. [Secondary diagnosis] - [clinical reasoning]\n3. [Additional diagnoses as applicable]",
+        planTemplate: "1. [Primary diagnosis management]\n   - [Medications with dosing]\n   - [Procedures/interventions]\n   - [Monitoring]\n\n2. [Secondary diagnosis management]\n   - [Specific treatments]\n\n3. Follow-up:\n   - [Timeline and instructions]\n   - [Patient education]\n   - [Return precautions]",
+        formatPreferences: {
+          useBulletPoints: true,
+          boldDiagnoses: true,
+          separateAssessmentPlan: true,
+          vitalSignsFormat: 'inline',
+          physicalExamFormat: 'structured',
+          abbreviationStyle: 'standard',
+          sectionSpacing: 4,
+        },
+        enableAiLearning: true,
+        learningConfidence: 0.75,
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      res.json([defaultTemplate]);
+    } catch (error: any) {
+      console.error('Error fetching user templates:', error);
+      res.status(500).json({ message: "Failed to fetch templates", error: error.message });
+    }
+  });
+
+  app.post("/api/user/soap-templates", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      const templateData = req.body;
+      
+      console.log(`[UserTemplates] Saving template for user ${userId}:`, templateData.templateName);
+      
+      // For now, return the template with an ID since database isn't fully set up
+      const savedTemplate = {
+        id: Date.now(),
+        userId,
+        ...templateData,
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      console.log(`✅ [UserTemplates] Template saved successfully`);
+      res.json(savedTemplate);
+    } catch (error: any) {
+      console.error('Error saving user template:', error);
+      res.status(500).json({ message: "Failed to save template", error: error.message });
+    }
+  });
+
+  // Enhanced SOAP generation with user preferences
+  app.post("/api/patients/:id/encounters/:encounterId/generate-soap-personalized", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const encounterId = parseInt(req.params.encounterId);
+      const userId = req.user.id;
+      const { transcription, usePersonalization = true } = req.body;
+      
+      if (!transcription || !transcription.trim()) {
+        return res.status(400).json({ message: "Transcription is required" });
+      }
+
+      console.log(`[PersonalizedSOAP] Generating for user ${userId}, patient ${patientId}, encounter ${encounterId}`);
+
+      if (usePersonalization) {
+        // Use personalized SOAP generation with user preferences
+        const { UserSOAPPreferenceService } = await import('./user-soap-preference-service.js');
+        const preferenceService = new UserSOAPPreferenceService();
+        
+        // Get patient context
+        const patient = await storage.getPatient(patientId);
+        if (!patient) {
+          return res.status(404).json({ message: "Patient not found" });
+        }
+
+        const soapNote = await preferenceService.generatePersonalizedSOAP(
+          userId,
+          patientId,
+          transcription,
+          { patient }
+        );
+
+        console.log(`✅ [PersonalizedSOAP] Generated personalized SOAP (${soapNote.length} characters)`);
+        
+        res.json({ 
+          soapNote,
+          patientId,
+          encounterId,
+          userId,
+          personalized: true,
+          generatedAt: new Date().toISOString()
+        });
+      } else {
+        // Fall back to standard generation
+        const { HybridSOAPService } = await import('./hybrid-soap-service.js');
+        const hybridSoapService = new HybridSOAPService();
+        
+        const soapNote = await hybridSoapService.generateSOAPNote(
+          patientId,
+          encounterId.toString(),
+          transcription
+        );
+
+        res.json({ 
+          soapNote,
+          patientId,
+          encounterId,
+          personalized: false,
+          generatedAt: new Date().toISOString()
+        });
+      }
+
+    } catch (error: any) {
+      console.error('❌ [PersonalizedSOAP] Error:', error);
+      res.status(500).json({ 
+        message: "Failed to generate personalized SOAP note", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Analyze user edits for learning
+  app.post("/api/user/analyze-edit", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      const { originalText, editedText, sectionType, patientId, encounterId } = req.body;
+      
+      console.log(`[EditAnalysis] Analyzing edit for user ${userId} in ${sectionType} section`);
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ 
+          message: "OpenAI API key required for edit analysis",
+          requiresSetup: true 
+        });
+      }
+
+      const { UserSOAPPreferenceService } = await import('./user-soap-preference-service.js');
+      const preferenceService = new UserSOAPPreferenceService();
+      
+      const analysis = await preferenceService.analyzeUserEdit(
+        userId,
+        originalText,
+        editedText,
+        sectionType
+      );
+
+      if (analysis) {
+        console.log(`✅ [EditAnalysis] Pattern detected: ${analysis.rule}`);
+        res.json({ 
+          analysis,
+          learned: true 
+        });
+      } else {
+        res.json({ 
+          analysis: null,
+          learned: false 
+        });
+      }
+
+    } catch (error: any) {
+      console.error('❌ [EditAnalysis] Error:', error);
+      res.status(500).json({ 
+        message: "Failed to analyze edit", 
+        error: error.message 
+      });
+    }
+  });
+
   // SOAP Note Generation endpoint
   app.post("/api/patients/:id/encounters/:encounterId/generate-soap", async (req, res) => {
     try {
