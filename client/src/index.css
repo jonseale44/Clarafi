@@ -98,6 +98,58 @@
     @apply bg-muted;
   }
 
+  /* SOAP Note Editor Styling */
+  .soap-editor {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    color: #374151;
+  }
+
+  .soap-editor p {
+    margin-bottom: 0.75rem;
+  }
+
+  .soap-editor strong {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 1.1em;
+  }
+
+  .soap-editor br + strong {
+    display: block;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .soap-note {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .soap-note .ProseMirror {
+    outline: none;
+    padding: 1.5rem;
+    min-height: 500px;
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
+
+  .soap-note .ProseMirror p {
+    margin-bottom: 0.75rem;
+  }
+
+  .soap-note .ProseMirror strong {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 1.05em;
+    display: inline-block;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .soap-note .ProseMirror p:first-child strong:first-child {
+    margin-top: 0;
+  }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-border rounded-full;
   }

@@ -123,7 +123,7 @@ export function EncounterDetailView({
     ],
     editorProps: {
       attributes: {
-        class: "outline-none min-h-[500px] prose max-w-none whitespace-pre-wrap",
+        class: "outline-none min-h-[500px] prose max-w-none whitespace-pre-wrap soap-editor",
       },
     },
     content: "",
@@ -136,13 +136,36 @@ export function EncounterDetailView({
     },
   });
 
+  // Function to format SOAP note content for proper display
+  const formatSoapNoteContent = (content: string) => {
+    if (!content) return content;
+    
+    return content
+      // Convert markdown bold to HTML
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Add proper line breaks and spacing
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br/>')
+      // Wrap in paragraph tags
+      .replace(/^/, '<p>')
+      .replace(/$/, '</p>')
+      // Fix double paragraph issues
+      .replace(/<p><\/p>/g, '')
+      // Add extra spacing after section headers
+      .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, '$1<br/>')
+      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/>$1<br/>')
+      .replace(/(<strong>ASSESSMENT\/PLAN:<\/strong>)/g, '<br/>$1<br/>')
+      .replace(/(<strong>ORDERS:<\/strong>)/g, '<br/>$1<br/>');
+  };
+
   // Effect to sync soapNote state with editor content
   useEffect(() => {
     if (editor && soapNote && !editor.isDestroyed) {
+      const formattedContent = formatSoapNoteContent(soapNote);
       const currentContent = editor.getHTML();
-      if (currentContent !== soapNote) {
+      if (currentContent !== formattedContent) {
         isUpdatingProgrammatically.current = true;
-        editor.commands.setContent(soapNote);
+        editor.commands.setContent(formattedContent);
         setTimeout(() => {
           isUpdatingProgrammatically.current = false;
         }, 100);
