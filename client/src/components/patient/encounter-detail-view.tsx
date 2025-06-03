@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -26,6 +26,9 @@ import { Patient } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { SOAPNoteEditor } from "@/components/ui/soap-note-editor";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -107,6 +110,45 @@ export function EncounterDetailView({
   const [soapNote, setSoapNote] = useState("");
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
+  
+  // Track if the content is being updated programmatically
+  const isUpdatingProgrammatically = useRef(false);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: "Generated SOAP note will appear here...",
+      }),
+    ],
+    editorProps: {
+      attributes: {
+        class: "outline-none min-h-[500px] prose max-w-none whitespace-pre-wrap",
+      },
+    },
+    content: "",
+    onUpdate: ({ editor }) => {
+      // Only update React state if this isn't a programmatic update
+      if (!editor.isDestroyed && !isUpdatingProgrammatically.current) {
+        const newContent = editor.getHTML();
+        setSoapNote(newContent);
+      }
+    },
+  });
+
+  // Effect to sync soapNote state with editor content
+  useEffect(() => {
+    if (editor && soapNote && !editor.isDestroyed) {
+      const currentContent = editor.getHTML();
+      if (currentContent !== soapNote) {
+        isUpdatingProgrammatically.current = true;
+        editor.commands.setContent(soapNote);
+        setTimeout(() => {
+          isUpdatingProgrammatically.current = false;
+        }, 100);
+      }
+    }
+  }, [soapNote, editor]);
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState(""); // Track live suggestions during recording
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
@@ -1125,24 +1167,27 @@ export function EncounterDetailView({
             </div>
 
             <div className="w-full min-h-[500px] pb-8 font-sans text-base leading-relaxed">
-              {soapNote ? (
-                <div 
-                  className="w-full h-full min-h-[500px] border rounded-lg p-4 bg-white soap-note prose max-w-none whitespace-pre-wrap" 
-                  dangerouslySetInnerHTML={{ 
-                    __html: soapNote
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\n/g, '<br/>')
-                  }} 
-                />
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <div className="text-sm">No SOAP note generated yet</div>
-                  <div className="text-xs mt-1">
-                    Complete a recording to automatically generate a SOAP note
+              <div className="w-full h-full min-h-[500px] border rounded-lg bg-white">
+                {editor && soapNote && soapNote.length > 0 ? (
+                  <EditorContent
+                    editor={editor}
+                    className="soap-note prose max-w-none p-4"
+                  />
+                ) : editor ? (
+                  <EditorContent
+                    editor={editor}
+                    className="soap-note prose max-w-none p-4"
+                  />
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <div className="text-sm">No SOAP note generated yet</div>
+                    <div className="text-xs mt-1">
+                      Complete a recording to automatically generate a SOAP note
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </Card>
 
