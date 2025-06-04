@@ -713,7 +713,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
   const [entryMode, setEntryMode] = useState<"ai" | "standard">("ai");
   const [aiText, setAiText] = useState("");
   const [isProcessingAI, setIsProcessingAI] = useState(false);
-  const [aiParsedData, setAiParsedData] = useState<Partial<Order> | null>(null);
+  const [aiParsedData, setAiParsedData] = useState<any>(null);
 
   useEffect(() => {
     setOrderData({ orderType, priority: "routine" });
@@ -723,10 +723,19 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Use AI parsed data if available, otherwise use manual data
-    const finalData = aiParsedData || orderData;
-    console.log("[NewOrderForm] Submitting order data:", finalData);
-    onSubmit(finalData);
+    
+    if (aiParsedData && aiParsedData.orders) {
+      // Submit multiple orders from AI parsing
+      console.log("[NewOrderForm] Submitting multiple AI-parsed orders:", aiParsedData.orders);
+      aiParsedData.orders.forEach((order: any) => {
+        onSubmit(order);
+      });
+    } else {
+      // Submit single manual order
+      const finalData = aiParsedData || orderData;
+      console.log("[NewOrderForm] Submitting single order:", finalData);
+      onSubmit(finalData);
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -743,48 +752,84 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: aiText,
-          orderType: orderType
+          orderType: orderType // Still send as a hint, but AI will auto-detect
         })
       });
 
       if (response.ok) {
         const parsed = await response.json();
-        // Map AI parser field names to our Order interface field names
-        const mappedData = {
-          orderType,
-          priority: orderData.priority,
-          // Medication fields
-          medicationName: parsed.medication_name,
-          dosage: parsed.dosage,
-          sig: parsed.sig,
-          quantity: parsed.quantity,
-          refills: parsed.refills,
-          form: parsed.form,
-          routeOfAdministration: parsed.route_of_administration,
-          daysSupply: parsed.days_supply,
-          // Lab fields
-          testName: parsed.test_name,
-          labName: parsed.lab_name,
-          specimenType: parsed.specimen_type,
-          fastingRequired: parsed.fasting_required,
-          // Imaging fields
-          studyType: parsed.study_type,
-          region: parsed.region,
-          laterality: parsed.laterality,
-          contrastNeeded: parsed.contrast_needed,
-          // Referral fields
-          specialtyType: parsed.specialty_type,
-          providerName: parsed.provider_name,
-          urgency: parsed.urgency,
-        };
+        console.log("[AI Parser] Raw response:", parsed);
         
-        // Remove undefined values
-        const cleanedData = Object.fromEntries(
-          Object.entries(mappedData).filter(([_, value]) => value !== undefined)
+        // Convert the multi-type response into individual orders
+        const allOrders = [];
+        
+        // Process medications
+        if (parsed.medications && parsed.medications.length > 0) {
+          for (const med of parsed.medications) {
+            allOrders.push({
+              orderType: 'medication',
+              priority: orderData.priority,
+              medicationName: med.medication_name,
+              dosage: med.dosage,
+              sig: med.sig,
+              quantity: med.quantity,
+              refills: med.refills,
+              form: med.form,
+              routeOfAdministration: med.route_of_administration,
+              daysSupply: med.days_supply,
+            });
+          }
+        }
+        
+        // Process labs
+        if (parsed.labs && parsed.labs.length > 0) {
+          for (const lab of parsed.labs) {
+            allOrders.push({
+              orderType: 'lab',
+              priority: lab.priority || orderData.priority,
+              testName: lab.test_name,
+              labName: lab.lab_name,
+              specimenType: lab.specimen_type,
+              fastingRequired: lab.fasting_required,
+            });
+          }
+        }
+        
+        // Process imaging
+        if (parsed.imaging && parsed.imaging.length > 0) {
+          for (const img of parsed.imaging) {
+            allOrders.push({
+              orderType: 'imaging',
+              priority: img.priority || orderData.priority,
+              studyType: img.study_type,
+              region: img.region,
+              laterality: img.laterality,
+              contrastNeeded: img.contrast_needed,
+            });
+          }
+        }
+        
+        // Process referrals
+        if (parsed.referrals && parsed.referrals.length > 0) {
+          for (const ref of parsed.referrals) {
+            allOrders.push({
+              orderType: 'referral',
+              urgency: ref.urgency || orderData.priority,
+              specialtyType: ref.specialty_type,
+              providerName: ref.provider_name,
+            });
+          }
+        }
+        
+        // Remove undefined values from each order
+        const cleanedOrders = allOrders.map(order => 
+          Object.fromEntries(
+            Object.entries(order).filter(([_, value]) => value !== undefined)
+          )
         );
         
-        setAiParsedData(cleanedData);
-        console.log("[AI Parser] Mapped data:", cleanedData);
+        setAiParsedData({ orders: cleanedOrders, totalCount: cleanedOrders.length });
+        console.log("[AI Parser] Processed orders:", cleanedOrders);
       } else {
         throw new Error('Failed to parse AI text');
       }
@@ -851,20 +896,12 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
             Quick Order Entry (AI-Powered)
           </Label>
           <p className="text-xs text-blue-600 mb-3">
-            Enter orders in natural language. AI will parse and structure the information.
+            Enter mixed orders in natural language. AI will automatically detect and categorize different order types.
           </p>
           <div className="space-y-3">
             <Textarea
               className="h-24 bg-white"
-              placeholder={
-                orderType === "medication" 
-                  ? "Example: Atorvastatin 40mg daily, take with dinner, 30 tablets, 2 refills"
-                  : orderType === "lab"
-                  ? "Example: CBC with differential, basic metabolic panel, fasting required"
-                  : orderType === "imaging"
-                  ? "Example: Chest X-ray PA and lateral, no contrast needed"
-                  : "Example: Cardiology consultation for chest pain evaluation"
-              }
+              placeholder="Example: Lisinopril 10mg daily, HCTZ 25mg daily, Aspirin 81mg, CMP, CBC with diff, Chest X-ray PA and lateral, Cardiology consultation for chest pain"
               value={aiText}
               onChange={(e) => setAiText(e.target.value)}
             />
@@ -878,41 +915,50 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
             </Button>
           </div>
 
-          {aiParsedData && (
+          {aiParsedData && aiParsedData.orders && (
             <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
               <Label className="font-semibold text-green-800 mb-2 block">
-                AI Parsed Information:
+                AI Parsed Orders ({aiParsedData.totalCount}):
               </Label>
-              <div className="text-sm space-y-1">
-                {orderType === "medication" && (
-                  <>
-                    <div><strong>Medication:</strong> {aiParsedData.medicationName}</div>
-                    <div><strong>Dosage:</strong> {aiParsedData.dosage}</div>
-                    <div><strong>Instructions:</strong> {aiParsedData.sig}</div>
-                    <div><strong>Quantity:</strong> {aiParsedData.quantity}</div>
-                    <div><strong>Refills:</strong> {aiParsedData.refills}</div>
-                  </>
-                )}
-                {orderType === "lab" && (
-                  <>
-                    <div><strong>Test:</strong> {aiParsedData.testName}</div>
-                    <div><strong>Lab:</strong> {aiParsedData.labName}</div>
-                    {aiParsedData.fastingRequired && <div><strong>Fasting Required:</strong> Yes</div>}
-                  </>
-                )}
-                {orderType === "imaging" && (
-                  <>
-                    <div><strong>Study:</strong> {aiParsedData.studyType}</div>
-                    <div><strong>Region:</strong> {aiParsedData.region}</div>
-                    {aiParsedData.contrastNeeded && <div><strong>Contrast:</strong> Yes</div>}
-                  </>
-                )}
-                {orderType === "referral" && (
-                  <>
-                    <div><strong>Specialty:</strong> {aiParsedData.specialtyType}</div>
-                    {aiParsedData.providerName && <div><strong>Provider:</strong> {aiParsedData.providerName}</div>}
-                  </>
-                )}
+              <div className="space-y-3 max-h-40 overflow-y-auto">
+                {aiParsedData.orders.map((order: any, index: number) => (
+                  <div key={index} className="p-2 bg-white rounded border text-sm">
+                    <div className="font-medium text-blue-800 mb-1">
+                      {order.orderType === 'medication' && '💊 Medication'}
+                      {order.orderType === 'lab' && '🧪 Lab Test'}
+                      {order.orderType === 'imaging' && '📸 Imaging'}
+                      {order.orderType === 'referral' && '👨‍⚕️ Referral'}
+                    </div>
+                    {order.orderType === 'medication' && (
+                      <div className="space-y-1">
+                        <div><strong>Name:</strong> {order.medicationName}</div>
+                        <div><strong>Dosage:</strong> {order.dosage}</div>
+                        {order.sig && <div><strong>Instructions:</strong> {order.sig}</div>}
+                        <div><strong>Quantity:</strong> {order.quantity} | <strong>Refills:</strong> {order.refills}</div>
+                      </div>
+                    )}
+                    {order.orderType === 'lab' && (
+                      <div className="space-y-1">
+                        <div><strong>Test:</strong> {order.testName}</div>
+                        {order.labName && <div><strong>Lab Panel:</strong> {order.labName}</div>}
+                        {order.fastingRequired && <div><strong>Fasting:</strong> Required</div>}
+                      </div>
+                    )}
+                    {order.orderType === 'imaging' && (
+                      <div className="space-y-1">
+                        <div><strong>Study:</strong> {order.studyType}</div>
+                        <div><strong>Region:</strong> {order.region}</div>
+                        {order.contrastNeeded && <div><strong>Contrast:</strong> Needed</div>}
+                      </div>
+                    )}
+                    {order.orderType === 'referral' && (
+                      <div className="space-y-1">
+                        <div><strong>Specialty:</strong> {order.specialtyType}</div>
+                        {order.providerName && <div><strong>Provider:</strong> {order.providerName}</div>}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -945,7 +991,10 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
       )}
 
       <Button type="submit" disabled={isSubmitting || (entryMode === "ai" && !aiParsedData)} className="w-full">
-        {isSubmitting ? "Creating..." : "Create Order"}
+        {isSubmitting ? "Creating..." : 
+         aiParsedData && aiParsedData.orders ? 
+         `Create ${aiParsedData.totalCount} Orders` : 
+         "Create Order"}
       </Button>
     </form>
   );

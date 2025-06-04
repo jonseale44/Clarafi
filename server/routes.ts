@@ -1007,8 +1007,122 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Parse natural language text into structured order data
+  // Parse natural language text into structured order data (mixed types)
   app.post("/api/orders/parse-ai-text", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { text, orderType } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ message: "Text is required" });
+      }
+
+      console.log(`[AI Parser] Parsing orders from text: "${text}"`);
+      console.log(`[AI Parser] Suggested order type: ${orderType || 'auto-detect'}`);
+
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Enhanced prompt to parse mixed order types
+      const prompt = `Parse all medical orders from this text and categorize them automatically: "${text}"
+
+Return a JSON object with arrays for each order type found:
+{
+  "medications": [
+    {
+      "medication_name": "string",
+      "dosage": "string", 
+      "sig": "string",
+      "quantity": number,
+      "refills": number,
+      "form": "string",
+      "route_of_administration": "string",
+      "days_supply": number
+    }
+  ],
+  "labs": [
+    {
+      "test_name": "string",
+      "lab_name": "string", 
+      "specimen_type": "string",
+      "fasting_required": boolean,
+      "priority": "string"
+    }
+  ],
+  "imaging": [
+    {
+      "study_type": "string",
+      "region": "string",
+      "laterality": "string or null",
+      "contrast_needed": boolean,
+      "priority": "string"
+    }
+  ],
+  "referrals": [
+    {
+      "specialty_type": "string",
+      "provider_name": "string or null", 
+      "urgency": "string"
+    }
+  ]
+}
+
+Instructions:
+- Extract ALL orders mentioned, even if there are multiple of the same type
+- For medications: Include generic and brand names, dosages, frequencies, quantities
+- For labs: Recognize common abbreviations (CMP = Comprehensive Metabolic Panel, CBC = Complete Blood Count, etc.)
+- For imaging: Recognize abbreviations (CXR = Chest X-ray, CT = Computed Tomography, etc.)
+- For referrals: Extract specialty consultations mentioned
+- Set appropriate defaults for missing information
+- Only include arrays for order types that are actually found in the text
+- Return only valid JSON without markdown formatting`;
+
+      console.log(`[AI Parser] Sending request to OpenAI for multi-type parsing`);
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a medical AI that parses natural language into structured medical orders. Always return valid JSON with arrays for each order type found."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 1500
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      if (!content) {
+        throw new Error('No response from GPT');
+      }
+
+      // Clean the response - remove markdown code blocks if present
+      let cleanedContent = content;
+      if (content.startsWith('```json')) {
+        cleanedContent = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+      } else if (content.startsWith('```')) {
+        cleanedContent = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      const parsedData = JSON.parse(cleanedContent);
+      console.log(`[AI Parser] Successfully parsed mixed orders:`, JSON.stringify(parsedData, null, 2));
+      
+      res.json(parsedData);
+
+    } catch (error: any) {
+      console.error("[AI Parser] Error parsing order text:", error);
+      res.status(500).json({ message: "Failed to parse order text" });
+    }
+  });
+
+  // Legacy single-type parser (keeping for backward compatibility)
+  app.post("/api/orders/parse-ai-text-single", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
       
