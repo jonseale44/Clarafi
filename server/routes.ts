@@ -395,10 +395,10 @@ export function registerRoutes(app: Express): Server {
 
       const encounterData = {
         patientId: parseInt(patientId),
-        chiefComplaint: chiefComplaint || 'New patient visit',
-        status: status,
-        visitType: 'office_visit',
-        providerId: req.user.id
+        providerId: req.user.id,
+        encounterType: 'office_visit',
+        encounterStatus: status,
+        chiefComplaint: chiefComplaint || 'New patient visit'
       };
 
       const encounter = await storage.createEncounter(encounterData);

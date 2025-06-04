@@ -443,33 +443,12 @@ export function PatientParser() {
             </TabsContent>
           </Tabs>
 
-          <div className="flex gap-3">
-            {isProcessing && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm">Processing...</span>
-              </div>
-            )}
-            
-            {extractedData && (
-              <Button 
-                onClick={createPatient}
-                disabled={isProcessing}
-                className="flex items-center gap-2"
-              >
-                <User className="h-4 w-4" />
-                Create Patient
-              </Button>
-            )}
-            
-            <Button 
-              onClick={resetForm}
-              variant="ghost"
-              disabled={isProcessing}
-            >
-              Reset
-            </Button>
-          </div>
+          {isProcessing && (
+            <div className="flex items-center justify-center gap-2 text-blue-600 py-4">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm">Processing...</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -540,6 +519,30 @@ export function PatientParser() {
                   {parseResult.error}
                 </AlertDescription>
               </Alert>
+            )}
+            
+            {/* Action buttons below extraction results */}
+            {parseResult && (
+              <div className="flex gap-3 pt-4 border-t">
+                {extractedData && (
+                  <Button 
+                    onClick={createPatient}
+                    disabled={isProcessing}
+                    className="flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    Create Patient
+                  </Button>
+                )}
+                
+                <Button 
+                  onClick={resetForm}
+                  variant="ghost"
+                  disabled={isProcessing}
+                >
+                  Reset
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
