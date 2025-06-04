@@ -26,6 +26,7 @@ export interface IStorage {
   createPatient(patient: InsertPatient): Promise<Patient>;
   getAllPatients(): Promise<Patient[]>;
   searchPatients(query: string): Promise<Patient[]>;
+  deletePatient(id: number): Promise<void>;
   
   // Encounter management
   getEncounter(id: number): Promise<Encounter | undefined>;
@@ -126,6 +127,10 @@ export class DatabaseStorage implements IStorage {
         eq(patients.mrn, query)
       )
       .orderBy(desc(patients.createdAt));
+  }
+
+  async deletePatient(id: number): Promise<void> {
+    await db.delete(patients).where(eq(patients.id, id));
   }
 
   // Encounter management

@@ -11,7 +11,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Patient, Vitals } from "@shared/schema";
 import { Link } from "wouter";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
@@ -93,6 +105,37 @@ export default function Dashboard() {
       });
     },
   });
+
+  const deletePatientMutation = useMutation({
+    mutationFn: async (patientId: number) => {
+      const response = await apiRequest("DELETE", `/api/patients/${patientId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      if (selectedPatientId && allPatients.length > 1) {
+        const remainingPatients = allPatients.filter((p: any) => p.id !== selectedPatientId);
+        setSelectedPatientId(remainingPatients[0]?.id || null);
+      } else {
+        setSelectedPatientId(null);
+      }
+      toast({
+        title: "Patient Deleted",
+        description: "Patient has been successfully removed from the system",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeletePatient = (patientId: number) => {
+    deletePatientMutation.mutate(patientId);
+  };
 
   const handleStartNewEncounter = async () => {
     if (!selectedPatientId) return;

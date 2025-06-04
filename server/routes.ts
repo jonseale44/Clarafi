@@ -69,6 +69,28 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.delete("/api/patients/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      if (!patientId) {
+        return res.status(400).json({ message: "Invalid patient ID" });
+      }
+
+      // Check if patient exists before deletion
+      const patient = await storage.getPatient(patientId);
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      await storage.deletePatient(patientId);
+      res.status(200).json({ message: "Patient deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Encounter routes
   app.get("/api/patients/:patientId/encounters", async (req, res) => {
     try {
