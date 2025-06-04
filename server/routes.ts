@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema } from "@shared/schema";
+import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema, insertOrderSchema } from "@shared/schema";
 import { processVoiceRecordingEnhanced, AIAssistantParams } from "./openai";
 import { parseRoutes } from "./parse-routes";
 import multer from "multer";
@@ -719,14 +719,14 @@ export function registerRoutes(app: Express): Server {
         const extractor = new SOAPOrdersExtractor();
         
         // Extract orders from SOAP note content
-        const extractedOrders = extractor.extractOrders(soapNote, patientId, encounterId);
+        const extractedOrders = await extractor.extractOrders(soapNote, patientId, encounterId);
         
         if (extractedOrders && extractedOrders.length > 0) {
           console.log(`🧬 [SOAP] Found ${extractedOrders.length} draft orders to create`);
           
           // Create draft orders in the database
           const createdOrders = await Promise.all(
-            extractedOrders.map(orderData => storage.createOrder(orderData))
+            extractedOrders.map((orderData: any) => storage.createOrder(orderData))
           );
           
           console.log(`✅ [SOAP] Created ${createdOrders.length} draft orders automatically`);
@@ -852,6 +852,68 @@ export function registerRoutes(app: Express): Server {
       res.json(orders);
     } catch (error: any) {
       console.error("[Orders API] Error fetching patient orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get draft orders for a patient
+  app.get("/api/patients/:patientId/draft-orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.patientId);
+      const draftOrders = await storage.getPatientDraftOrders(patientId);
+      res.json(draftOrders);
+    } catch (error: any) {
+      console.error("[Orders API] Error fetching patient draft orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Create a new order
+  app.post("/api/orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const orderData = req.body;
+      const order = await storage.createOrder({
+        ...orderData,
+        orderedBy: (req.user as any).id,
+      });
+      
+      res.status(201).json(order);
+    } catch (error: any) {
+      console.error("[Orders API] Error creating order:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update an order
+  app.put("/api/orders/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const orderId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const order = await storage.updateOrder(orderId, updates);
+      res.json(order);
+    } catch (error: any) {
+      console.error("[Orders API] Error updating order:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete an order
+  app.delete("/api/orders/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const orderId = parseInt(req.params.id);
+      await storage.deleteOrder(orderId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("[Orders API] Error deleting order:", error);
       res.status(500).json({ message: error.message });
     }
   });
