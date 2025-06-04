@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema, insertOrderSchema } from "@shared/schema";
 import { processVoiceRecordingEnhanced, AIAssistantParams } from "./openai";
 import { parseRoutes } from "./parse-routes";
+import dashboardRoutes from "./dashboard-routes";
 import multer from "multer";
 import OpenAI from "openai";
 
