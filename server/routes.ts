@@ -1073,10 +1073,10 @@ Instructions:
 - Extract ALL orders mentioned, even if there are multiple of the same type
 - For medications: 
   * Include generic and brand names, dosages, frequencies, quantities
-  * Default to 90-day supply unless duration is specified
-  * For once daily: 90 tablets with 2 refills
-  * For twice daily: 180 tablets with 2 refills  
-  * For three times daily: 270 tablets with 2 refills
+  * Default to 90-day TOTAL supply (including refills) unless duration is specified
+  * For once daily: 30 tablets with 2 refills (30+30+30=90 day supply)
+  * For twice daily: 60 tablets with 2 refills (60+60+60=180 tablets for 90 days)
+  * For three times daily: 90 tablets with 2 refills (90+90+90=270 tablets for 90 days)
   * If specific duration mentioned (e.g., "for 5 days", "7 day course"), calculate exact quantity with 0 refills
   * If user specifies exact quantity/refills, use those values instead of defaults
 - For labs: Recognize common abbreviations (CMP = Comprehensive Metabolic Panel, CBC = Complete Blood Count, etc.)
@@ -1156,16 +1156,18 @@ Extract the following information and return as JSON:
 - medication_name: The name of the medication
 - dosage: The strength/dose (e.g., "10mg", "500mg")
 - sig: Patient instructions (e.g., "Take twice daily with food")
-- quantity: Number of units to dispense (default to 90-day supply: once daily=90 tablets, twice daily=180 tablets, etc.)
+- quantity: Number of units to dispense (default to 90-day TOTAL supply: once daily=30 tablets, twice daily=60 tablets, etc.)
 - refills: Number of refills (default 2 for maintenance medications, 0 for short courses)
 - form: Medication form (tablet, capsule, liquid, etc. - default "tablet")
 - route_of_administration: How to take (oral, topical, injection, etc. - default "oral")
-- days_supply: Days supply (90 for maintenance, exact for short courses)
+- days_supply: Days supply (30 for initial fill, 90 total with refills for maintenance)
 
 Special rules:
 - If specific duration mentioned (e.g., "for 5 days", "7 day course"), calculate exact quantity with 0 refills
 - If user specifies exact quantity/refills, use those values instead of defaults
-- For maintenance medications without specified duration, default to 90-day supply with 2 refills
+- For maintenance medications: 30-day initial quantity with 2 refills (total 90-day supply)
+- For twice daily: 60-day initial quantity with 2 refills
+- For three times daily: 90-day initial quantity with 2 refills
 
 Return only valid JSON without markdown formatting.`;
           
