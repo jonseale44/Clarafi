@@ -130,6 +130,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePatient(id: number): Promise<void> {
+    // Delete in proper order to handle foreign key constraints
+    // Start with data that references encounters
+    await db.delete(orders).where(eq(orders.patientId, id));
+    
+    // Delete patient-related data
+    await db.delete(vitals).where(eq(vitals.patientId, id));
+    await db.delete(allergies).where(eq(allergies.patientId, id));
+    await db.delete(medications).where(eq(medications.patientId, id));
+    await db.delete(diagnoses).where(eq(diagnoses.patientId, id));
+    await db.delete(familyHistory).where(eq(familyHistory.patientId, id));
+    await db.delete(medicalHistory).where(eq(medicalHistory.patientId, id));
+    await db.delete(socialHistory).where(eq(socialHistory.patientId, id));
+    await db.delete(labResults).where(eq(labResults.patientId, id));
+    await db.delete(labOrders).where(eq(labOrders.patientId, id));
+    await db.delete(imagingResults).where(eq(imagingResults.patientId, id));
+    await db.delete(imagingOrders).where(eq(imagingOrders.patientId, id));
+    
+    // Delete encounters (main foreign key constraint)
+    await db.delete(encounters).where(eq(encounters.patientId, id));
+    
+    // Finally, delete the patient
     await db.delete(patients).where(eq(patients.id, id));
   }
 
