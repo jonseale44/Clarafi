@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Calendar, 
   Clock, 
@@ -55,24 +59,128 @@ interface LabOrderToReview {
 
 export function ProviderDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedLabResult, setSelectedLabResult] = useState<LabOrderToReview | null>(null);
+  const [reviewNote, setReviewNote] = useState("");
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch dashboard statistics
-  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Fetch pending encounters
-  const { data: pendingEncounters = [], isLoading: encountersLoading } = useQuery<PendingEncounter[]>({
+  const { data: pendingEncounters = [], isLoading: encountersLoading, refetch: refetchEncounters } = useQuery<PendingEncounter[]>({
     queryKey: ["/api/dashboard/pending-encounters"],
     refetchInterval: 30000,
   });
 
   // Fetch lab orders to review
-  const { data: labOrders = [], isLoading: labOrdersLoading } = useQuery<LabOrderToReview[]>({
+  const { data: labOrders = [], isLoading: labOrdersLoading, refetch: refetchLabOrders } = useQuery<LabOrderToReview[]>({
     queryKey: ["/api/dashboard/lab-orders-to-review"],
     refetchInterval: 30000,
   });
+
+  // Mutation for reviewing lab results
+  const reviewLabResultMutation = useMutation({
+    mutationFn: async ({ resultId, reviewNote }: { resultId: number; reviewNote: string }) => {
+      const response = await fetch(`/api/dashboard/review-lab-result/${resultId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reviewNote }),
+      });
+      if (!response.ok) throw new Error('Failed to review lab result');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Lab Result Reviewed",
+        description: "The lab result has been successfully reviewed and marked as complete.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/lab-orders-to-review"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      setIsReviewDialogOpen(false);
+      setSelectedLabResult(null);
+      setReviewNote("");
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Review Failed",
+        description: error.message || "Failed to review lab result. Please try again.",
+      });
+    },
+  });
+
+  // Mutation for signing encounters
+  const signEncounterMutation = useMutation({
+    mutationFn: async ({ encounterId, signatureNote }: { encounterId: number; signatureNote?: string }) => {
+      const response = await fetch(`/api/dashboard/sign-encounter/${encounterId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ signatureNote }),
+      });
+      if (!response.ok) throw new Error('Failed to sign encounter');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Encounter Signed",
+        description: "The encounter has been successfully signed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/pending-encounters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Signing Failed",
+        description: error.message || "Failed to sign encounter. Please try again.",
+      });
+    },
+  });
+
+  // Event handlers
+  const handleViewPatient = (patientId: number) => {
+    // Navigate to patient chart
+    window.location.href = `/patients/${patientId}`;
+  };
+
+  const handleStartEncounter = (encounterId: number) => {
+    // Navigate to encounter detail view
+    window.location.href = `/encounters/${encounterId}`;
+  };
+
+  const handleReviewLabResult = (lab: LabOrderToReview) => {
+    setSelectedLabResult(lab);
+    setReviewNote("");
+    setIsReviewDialogOpen(true);
+  };
+
+  const handleSubmitLabReview = () => {
+    if (!selectedLabResult) return;
+    reviewLabResultMutation.mutate({
+      resultId: selectedLabResult.id,
+      reviewNote: reviewNote,
+    });
+  };
+
+  const handleRefreshData = () => {
+    refetchStats();
+    refetchEncounters();
+    refetchLabOrders();
+    toast({
+      title: "Data Refreshed",
+      description: "Dashboard data has been updated.",
+    });
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -229,7 +337,11 @@ export function ProviderDashboard() {
                         <Badge variant="secondary" className={getStatusColor(encounter.status)}>
                           {encounter.status.replace("_", " ")}
                         </Badge>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleStartEncounter(encounter.id)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                       </div>
@@ -268,7 +380,11 @@ export function ProviderDashboard() {
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="destructive">
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => handleReviewLabResult(lab)}
+                        >
                           Review
                         </Button>
                       </div>
