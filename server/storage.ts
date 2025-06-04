@@ -61,6 +61,7 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, updates: Partial<Order>): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
+  deleteAllPatientDraftOrders(patientId: number): Promise<void>;
   
   sessionStore: session.SessionStore;
 }
@@ -298,6 +299,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrder(id: number): Promise<void> {
     await db.delete(orders).where(eq(orders.id, id));
+  }
+
+  async deleteAllPatientDraftOrders(patientId: number): Promise<void> {
+    await db
+      .delete(orders)
+      .where(and(eq(orders.patientId, patientId), eq(orders.orderStatus, "draft")));
   }
 }
 
