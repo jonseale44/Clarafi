@@ -49,17 +49,23 @@ export class SOAPOrdersExtractor {
   
   async extractOrders(soapNote: string, patientId: number, encounterId: number): Promise<InsertOrder[]> {
     try {
-      console.log(`[SOAPExtractor] Starting order extraction from SOAP note (${soapNote.length} chars)`);
+      console.log(`[SOAPExtractor] ========== STARTING ORDER EXTRACTION ==========`);
+      console.log(`[SOAPExtractor] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
+      console.log(`[SOAPExtractor] SOAP Note length: ${soapNote.length} characters`);
+      console.log(`[SOAPExtractor] SOAP Note preview: ${soapNote.substring(0, 200)}...`);
       
       const extractedOrders = await this.parseOrdersWithGPT(soapNote);
+      console.log(`[SOAPExtractor] Raw GPT extraction result:`, JSON.stringify(extractedOrders, null, 2));
       
       // Convert extracted orders to database format
       const orderInserts: InsertOrder[] = [];
       
       // Process medications
-      if (extractedOrders.medications) {
+      if (extractedOrders.medications && extractedOrders.medications.length > 0) {
+        console.log(`[SOAPExtractor] Processing ${extractedOrders.medications.length} medications:`);
         for (const med of extractedOrders.medications) {
-          orderInserts.push({
+          console.log(`[SOAPExtractor] Medication: ${med.medication_name} - ${med.dosage}`);
+          const medicationOrder = {
             patientId,
             encounterId,
             orderType: 'medication',
@@ -76,8 +82,12 @@ export class SOAPOrdersExtractor {
             requiresPriorAuth: med.requires_prior_auth || false,
             clinicalIndication: med.clinical_indication,
             priority: 'routine'
-          });
+          };
+          console.log(`[SOAPExtractor] Created medication order:`, medicationOrder);
+          orderInserts.push(medicationOrder);
         }
+      } else {
+        console.log(`[SOAPExtractor] No medications found in extracted orders`);
       }
       
       // Process labs

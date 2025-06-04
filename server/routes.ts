@@ -714,27 +714,48 @@ export function registerRoutes(app: Express): Server {
       
       // Automatically extract and create draft orders from SOAP note
       try {
-        console.log(`🧬 [SOAP] Auto-extracting draft orders from generated SOAP note...`);
+        console.log(`🧬 [SOAP] ========== STARTING DRAFT ORDERS EXTRACTION ==========`);
+        console.log(`🧬 [SOAP] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
+        console.log(`🧬 [SOAP] SOAP Note (${soapNote.length} chars):`);
+        console.log(`🧬 [SOAP] SOAP Note Content:\n${soapNote}`);
+        console.log(`🧬 [SOAP] ========== IMPORTING EXTRACTOR ==========`);
+        
         const { SOAPOrdersExtractor } = await import('./soap-orders-extractor.js');
         const extractor = new SOAPOrdersExtractor();
+        console.log(`🧬 [SOAP] Extractor imported successfully`);
         
         // Extract orders from SOAP note content
+        console.log(`🧬 [SOAP] Calling extractOrders...`);
         const extractedOrders = await extractor.extractOrders(soapNote, patientId, encounterId);
+        console.log(`🧬 [SOAP] Extraction completed. Result:`, extractedOrders);
         
         if (extractedOrders && extractedOrders.length > 0) {
           console.log(`🧬 [SOAP] Found ${extractedOrders.length} draft orders to create`);
+          console.log(`🧬 [SOAP] Orders to create:`, JSON.stringify(extractedOrders, null, 2));
           
           // Create draft orders in the database
+          console.log(`🧬 [SOAP] Creating orders in database...`);
           const createdOrders = await Promise.all(
-            extractedOrders.map((orderData: any) => storage.createOrder(orderData))
+            extractedOrders.map((orderData: any, index: number) => {
+              console.log(`🧬 [SOAP] Creating order ${index + 1}:`, orderData);
+              return storage.createOrder(orderData);
+            })
           );
           
           console.log(`✅ [SOAP] Created ${createdOrders.length} draft orders automatically`);
+          console.log(`✅ [SOAP] Created orders:`, JSON.stringify(createdOrders, null, 2));
         } else {
           console.log(`ℹ️ [SOAP] No draft orders found in SOAP note content`);
+          console.log(`ℹ️ [SOAP] Extracted orders object:`, extractedOrders);
         }
       } catch (orderError: any) {
         console.error('❌ [SOAP] Error auto-extracting draft orders:', orderError);
+        console.error('❌ [SOAP] Error stack:', orderError.stack);
+        console.error('❌ [SOAP] Error details:', {
+          name: orderError.name,
+          message: orderError.message,
+          cause: orderError.cause
+        });
         // Don't fail the SOAP generation if order extraction fails
       }
       
