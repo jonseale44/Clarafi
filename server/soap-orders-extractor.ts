@@ -247,8 +247,18 @@ Return only the JSON object, no additional text.`;
         throw new Error('No response from GPT');
       }
 
+      // Clean the response - remove markdown code blocks if present
+      let cleanedContent = content;
+      if (content.startsWith('```json')) {
+        cleanedContent = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+      } else if (content.startsWith('```')) {
+        cleanedContent = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      console.log(`[SOAPExtractor] Cleaned GPT response:`, cleanedContent);
+      
       // Parse the JSON response
-      const parsedOrders = JSON.parse(content);
+      const parsedOrders = JSON.parse(cleanedContent);
       console.log(`[SOAPExtractor] GPT extracted orders:`, JSON.stringify(parsedOrders, null, 2));
       
       return parsedOrders;
