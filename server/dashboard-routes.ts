@@ -158,10 +158,10 @@ router.get("/lab-orders-to-review", async (req: Request, res: Response) => {
         patientName: sql<string>`concat(${patients.firstName}, ' ', ${patients.lastName})`,
         testName: labOrders.testName,
         orderedDate: labOrders.orderedAt,
-        status: labResults.status,
+        status: labResults.resultStatus,
         priority: labOrders.priority,
-        criticalFlag: labResults.criticalFlag,
-        results: labResults.results,
+        criticalFlag: sql<boolean>`case when ${labResults.abnormalFlag} in ('HH', 'LL') then true else false end`,
+        results: labResults.resultValue,
       })
       .from(labResults)
       .innerJoin(labOrders, eq(labResults.labOrderId, labOrders.id))
