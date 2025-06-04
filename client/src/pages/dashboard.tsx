@@ -167,16 +167,55 @@ export default function Dashboard() {
             <h2 className="text-2xl font-bold mb-4">Patient Directory</h2>
             <div className="space-y-4">
               {Array.isArray(allPatients) && allPatients.map((p: any) => (
-                <div key={p.id} className="border p-4 rounded-lg cursor-pointer hover:bg-gray-50" onClick={() => {
-                  setSelectedPatientId(p.id);
-                  setActiveTab("encounters");
-                }}>
-                  <h3 className="font-semibold">{p.firstName} {p.lastName}</h3>
-                  <p className="text-gray-600">MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
-                  <div className="mt-2">
-                    <span className={`px-2 py-1 text-xs rounded ${selectedPatientId === p.id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
-                      {selectedPatientId === p.id ? 'Currently Selected' : 'Click to Select'}
-                    </span>
+                <div key={p.id} className="border p-4 rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div 
+                      className="flex-1 cursor-pointer" 
+                      onClick={() => {
+                        setSelectedPatientId(p.id);
+                        setActiveTab("encounters");
+                      }}
+                    >
+                      <h3 className="font-semibold">{p.firstName} {p.lastName}</h3>
+                      <p className="text-gray-600">MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
+                      <div className="mt-2">
+                        <span className={`px-2 py-1 text-xs rounded ${selectedPatientId === p.id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                          {selectedPatientId === p.id ? 'Currently Selected' : 'Click to Select'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Patient</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete {p.firstName} {p.lastName}? This action cannot be undone and will permanently remove all patient data including encounters, orders, and medical history.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeletePatient(p.id)}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                              disabled={deletePatientMutation.isPending}
+                            >
+                              {deletePatientMutation.isPending ? "Deleting..." : "Delete Patient"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               ))}
