@@ -276,10 +276,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateOrder(id: number, updates: Partial<Order>): Promise<Order> {
+    // Clean the updates object to remove any timestamp strings that could cause issues
+    const cleanedUpdates = { ...updates };
+    
+    // Remove any timestamp fields that might be invalid strings
+    delete cleanedUpdates.createdAt;
+    delete cleanedUpdates.updatedAt;
+    delete cleanedUpdates.orderedAt;
+    delete cleanedUpdates.approvedAt;
+    
     const [order] = await db
       .update(orders)
       .set({
-        ...updates,
+        ...cleanedUpdates,
         updatedAt: new Date()
       })
       .where(eq(orders.id, id))
