@@ -126,6 +126,25 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
     },
   });
 
+  // Delete all orders mutation
+  const deleteAllOrdersMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}/draft-orders`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete all orders");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      toast({ title: "All draft orders deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to delete all orders",
+        description: error.message,
+      });
+    },
+  });
+
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: Partial<Order>) => {
@@ -166,6 +185,12 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
     }
   };
 
+  const handleDeleteAll = () => {
+    if (confirm(`Are you sure you want to delete all ${orders.length} draft orders? This action cannot be undone.`)) {
+      deleteAllOrdersMutation.mutate();
+    }
+  };
+
   const getOrderIcon = (orderType: string) => {
     switch (orderType) {
       case "medication": return <Pill className="h-4 w-4" />;
@@ -203,14 +228,27 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
             <Badge variant="secondary">{orders.length}</Badge>
           )}
         </CardTitle>
-        <Dialog open={showNewOrderDialog} onOpenChange={setShowNewOrderDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Order
+        <div className="flex gap-2">
+          {orders.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleDeleteAll}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              disabled={deleteAllOrdersMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteAllOrdersMutation.isPending ? "Deleting..." : "Delete All"}
             </Button>
-          </DialogTrigger>
-          <DialogContent>
+          )}
+          <Dialog open={showNewOrderDialog} onOpenChange={setShowNewOrderDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Order
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Order</DialogTitle>
             </DialogHeader>
@@ -221,7 +259,8 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
               isSubmitting={createOrderMutation.isPending}
             />
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {orders.length === 0 ? (

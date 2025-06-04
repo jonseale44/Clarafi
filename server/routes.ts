@@ -891,6 +891,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Delete all draft orders for a patient
+  app.delete("/api/patients/:patientId/draft-orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.patientId);
+      console.log(`[Orders API] Deleting all draft orders for patient ${patientId}`);
+      
+      await storage.deleteAllPatientDraftOrders(patientId);
+      console.log(`[Orders API] Successfully deleted all draft orders for patient ${patientId}`);
+      
+      res.json({ message: "All draft orders deleted successfully" });
+    } catch (error: any) {
+      console.error("[Orders API] Error deleting all patient draft orders:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Create a new order
   app.post("/api/orders", async (req, res) => {
     try {
