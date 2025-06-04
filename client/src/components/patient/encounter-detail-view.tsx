@@ -29,6 +29,7 @@ import { SOAPNoteEditor } from "@/components/ui/soap-note-editor";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import { DraftOrders } from "./draft-orders";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -1204,24 +1205,7 @@ export function EncounterDetailView({
           </Card>
 
           {/* Draft Orders */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Draft Orders</h2>
-              <Button
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Order
-              </Button>
-            </div>
-            <div className="text-center py-8 text-gray-500">
-              <div className="text-sm">No draft orders</div>
-              <div className="text-xs mt-1">
-                Create a new order using the button above
-              </div>
-            </div>
-          </Card>
+          <DraftOrders patientId={patient.id} encounterId={encounterId} />
 
           {/* CPT Codes & Diagnoses */}
           <Card className="p-6">
