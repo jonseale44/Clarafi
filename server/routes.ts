@@ -107,6 +107,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/encounters/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const encounterId = parseInt(req.params.id);
+      const encounter = await storage.getEncounter(encounterId);
+      
+      if (!encounter) {
+        return res.status(404).json({ message: "Encounter not found" });
+      }
+      
+      res.json(encounter);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.patch("/api/encounters/:id", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
