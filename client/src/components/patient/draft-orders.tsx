@@ -686,6 +686,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
     e.preventDefault();
     // Use AI parsed data if available, otherwise use manual data
     const finalData = aiParsedData || orderData;
+    console.log("[NewOrderForm] Submitting order data:", finalData);
     onSubmit(finalData);
   };
 
@@ -709,7 +710,42 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
 
       if (response.ok) {
         const parsed = await response.json();
-        setAiParsedData({ ...parsed, orderType, priority: orderData.priority });
+        // Map AI parser field names to our Order interface field names
+        const mappedData = {
+          orderType,
+          priority: orderData.priority,
+          // Medication fields
+          medicationName: parsed.medication_name,
+          dosage: parsed.dosage,
+          sig: parsed.sig,
+          quantity: parsed.quantity,
+          refills: parsed.refills,
+          form: parsed.form,
+          routeOfAdministration: parsed.route_of_administration,
+          daysSupply: parsed.days_supply,
+          // Lab fields
+          testName: parsed.test_name,
+          labName: parsed.lab_name,
+          specimenType: parsed.specimen_type,
+          fastingRequired: parsed.fasting_required,
+          // Imaging fields
+          studyType: parsed.study_type,
+          region: parsed.region,
+          laterality: parsed.laterality,
+          contrastNeeded: parsed.contrast_needed,
+          // Referral fields
+          specialtyType: parsed.specialty_type,
+          providerName: parsed.provider_name,
+          urgency: parsed.urgency,
+        };
+        
+        // Remove undefined values
+        const cleanedData = Object.fromEntries(
+          Object.entries(mappedData).filter(([_, value]) => value !== undefined)
+        );
+        
+        setAiParsedData(cleanedData);
+        console.log("[AI Parser] Mapped data:", cleanedData);
       } else {
         throw new Error('Failed to parse AI text');
       }
