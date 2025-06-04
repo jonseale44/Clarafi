@@ -11,12 +11,12 @@ export function EncounterView() {
   const encounterId = parseInt(id || "0");
 
   const { data: encounter, isLoading: encounterLoading } = useQuery<Encounter>({
-    queryKey: ["/api/encounters", encounterId],
+    queryKey: [`/api/encounters/${encounterId}`],
     enabled: !!encounterId,
   });
 
   const { data: patient, isLoading: patientLoading } = useQuery<Patient>({
-    queryKey: ["/api/patients", encounter?.patientId],
+    queryKey: [`/api/patients/${encounter?.patientId}`],
     enabled: !!encounter?.patientId,
   });
 
