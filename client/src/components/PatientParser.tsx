@@ -48,22 +48,51 @@ export function PatientParser() {
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedPatient | null>(null);
   const [createdPatient, setCreatedPatient] = useState<any>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.type.startsWith('image/')) {
-        setSelectedFile(file);
-        setParseResult(null);
-        setExtractedData(null);
-      } else {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image file (JPG, PNG, etc.)",
-          variant: "destructive",
-        });
-      }
+      processFile(file);
+    }
+  };
+
+  const processFile = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      setSelectedFile(file);
+      setParseResult(null);
+      setExtractedData(null);
+    } else {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, etc.)",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(false);
+
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      processFile(file);
     }
   };
 
@@ -248,7 +277,16 @@ export function PatientParser() {
             <TabsContent value="upload" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="file-upload">Upload Medical Document</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    isDragOver 
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <Input
                     id="file-upload"
                     type="file"
@@ -258,8 +296,10 @@ export function PatientParser() {
                   />
                   <Label htmlFor="file-upload" className="cursor-pointer">
                     <div className="space-y-2">
-                      <Upload className="h-10 w-10 mx-auto text-gray-400" />
-                      <div className="text-sm text-gray-600">
+                      <Upload className={`h-10 w-10 mx-auto ${
+                        isDragOver ? 'text-blue-500' : 'text-gray-400'
+                      }`} />
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
                         {selectedFile ? (
                           <span className="font-medium text-green-600">{selectedFile.name}</span>
                         ) : (
