@@ -407,7 +407,11 @@ export function ProviderDashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Pending Encounters</CardTitle>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRefreshData}
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
                 </Button>
@@ -446,11 +450,18 @@ export function ProviderDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewPatient(encounter.patientId)}
+                          >
                             <User className="h-4 w-4 mr-1" />
                             View Patient
                           </Button>
-                          <Button size="sm">
+                          <Button 
+                            size="sm"
+                            onClick={() => handleStartEncounter(encounter.id)}
+                          >
                             <Stethoscope className="h-4 w-4 mr-1" />
                             Start Encounter
                           </Button>
@@ -476,7 +487,11 @@ export function ProviderDashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Lab Orders Requiring Review</CardTitle>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRefreshData}
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
                 </Button>
@@ -509,11 +524,19 @@ export function ProviderDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewPatient(lab.patientId)}
+                          >
                             <User className="h-4 w-4 mr-1" />
                             View Patient
                           </Button>
-                          <Button size="sm" variant={lab.criticalFlag ? "destructive" : "default"}>
+                          <Button 
+                            size="sm" 
+                            variant={lab.criticalFlag ? "destructive" : "default"}
+                            onClick={() => handleReviewLabResult(lab)}
+                          >
                             <Eye className="h-4 w-4 mr-1" />
                             Review Results
                           </Button>
@@ -549,6 +572,78 @@ export function ProviderDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Lab Result Review Dialog */}
+      <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Review Lab Result</DialogTitle>
+          </DialogHeader>
+          {selectedLabResult && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Patient</Label>
+                  <p className="text-sm">{selectedLabResult.patientName}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Test Name</Label>
+                  <p className="text-sm">{selectedLabResult.testName}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Priority</Label>
+                  <Badge className={getPriorityColor(selectedLabResult.priority)}>
+                    {selectedLabResult.priority}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <p className="text-sm">{selectedLabResult.status}</p>
+                </div>
+              </div>
+
+              {selectedLabResult.criticalFlag && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <span className="text-sm font-medium text-red-800">Critical Result</span>
+                  </div>
+                  <p className="text-sm text-red-700 mt-1">
+                    This result requires immediate attention and review.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="reviewNote">Provider Review Notes</Label>
+                <Textarea
+                  id="reviewNote"
+                  placeholder="Enter your review notes, clinical interpretation, and follow-up instructions..."
+                  value={reviewNote}
+                  onChange={(e) => setReviewNote(e.target.value)}
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsReviewDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitLabReview}
+                  disabled={reviewLabResultMutation.isPending}
+                  variant={selectedLabResult.criticalFlag ? "destructive" : "default"}
+                >
+                  {reviewLabResultMutation.isPending ? "Reviewing..." : "Complete Review"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
