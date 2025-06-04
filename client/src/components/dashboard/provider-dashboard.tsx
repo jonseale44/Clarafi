@@ -367,35 +367,11 @@ export function ProviderDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {labOrders.filter(lab => lab.criticalFlag).slice(0, 5).map((lab) => (
-                    <div key={lab.id} className="flex items-center justify-between p-3 border rounded-lg bg-red-50 border-red-200">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-medium">{lab.patientName}</h4>
-                          <Badge variant="destructive">Critical</Badge>
-                        </div>
-                        <p className="text-sm text-gray-600">{lab.testName}</p>
-                        <p className="text-xs text-gray-500">
-                          Ordered {formatDistanceToNow(new Date(lab.orderedDate), { addSuffix: true })}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => handleReviewLabResult(lab)}
-                        >
-                          Review
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {labOrders.filter(lab => lab.criticalFlag).length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <TestTube className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No critical lab results</p>
-                    </div>
-                  )}
+                  <div className="text-center py-8 text-gray-500">
+                    <TestTube className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Critical Lab Results</h3>
+                    <p className="text-sm">Critical lab results will appear here when lab orders are placed and results are received from external laboratories.</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -473,8 +449,8 @@ export function ProviderDashboard() {
                 {!encountersLoading && pendingEncounters.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
                     <Clock className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No pending encounters</h3>
-                    <p>All encounters have been completed or are in progress.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Encounters</h3>
+                    <p>New encounters will appear here when patients are scheduled or arrive for appointments. Encounters require provider documentation and review before completion.</p>
                   </div>
                 )}
               </div>
@@ -548,8 +524,8 @@ export function ProviderDashboard() {
                 {!labOrdersLoading && labOrders.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
                     <TestTube className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No lab orders to review</h3>
-                    <p>All lab results have been reviewed and signed.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Lab Orders Requiring Review</h3>
+                    <p>Lab results will appear here when orders are placed through the system and results are received from laboratories for provider review and interpretation.</p>
                   </div>
                 )}
               </div>
