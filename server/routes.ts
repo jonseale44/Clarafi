@@ -15,6 +15,9 @@ export function registerRoutes(app: Express): Server {
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
 
+  // Dashboard routes
+  app.use("/api/dashboard", dashboardRoutes);
+
   // Patient routes
   app.get("/api/patients", async (req, res) => {
     try {

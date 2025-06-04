@@ -169,12 +169,12 @@ router.get("/lab-orders-to-review", async (req: Request, res: Response) => {
       .where(
         and(
           eq(labOrders.orderedBy, userId),
-          eq(labResults.status, "completed"),
+          eq(labResults.resultStatus, "final"),
           isNull(labResults.reviewedBy)
         )
       )
       .orderBy(
-        desc(labResults.criticalFlag), // Critical results first
+        desc(sql`case when ${labResults.abnormalFlag} in ('HH', 'LL') then 1 else 0 end`), // Critical results first
         desc(labOrders.orderedAt)
       )
       .limit(50);
@@ -201,8 +201,8 @@ router.post("/review-lab-result/:resultId", async (req: Request, res: Response) 
       .set({
         reviewedBy: userId,
         reviewedAt: new Date(),
-        reviewNote: reviewNote || null,
-        status: "reviewed",
+        providerNotes: reviewNote || null,
+        resultStatus: "reviewed",
       })
       .where(eq(labResults.id, parseInt(resultId)))
       .returning();

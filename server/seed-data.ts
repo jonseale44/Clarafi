@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { patients, encounters, vitals, allergies, medications, diagnoses } from "@shared/schema";
+import { patients, encounters, vitals, allergies, medications, diagnoses, labOrders, labResults, orders } from "@shared/schema";
 import { storage } from "./storage";
 
 export async function seedSampleData() {

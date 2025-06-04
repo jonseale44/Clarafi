@@ -3,6 +3,7 @@ import { PatientHeader } from "@/components/patient/patient-header";
 import { QuickStats } from "@/components/patient/quick-stats";
 import { EncountersTab } from "@/components/patient/encounters-tab";
 import { PatientChartView } from "@/components/patient/patient-chart-view";
+import { ProviderDashboard } from "@/components/dashboard/provider-dashboard";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -115,27 +116,7 @@ export default function Dashboard() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return (
-          <div className="space-y-6">
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Provider Dashboard</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-yellow-800">Pending Encounters</h3>
-                  <p className="text-2xl font-bold text-yellow-600">3</p>
-                </div>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-800">Lab Orders to Review</h3>
-                  <p className="text-2xl font-bold text-blue-600">7</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-green-800">Completed Today</h3>
-                  <p className="text-2xl font-bold text-green-600">12</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        );
+        return <ProviderDashboard />;
       
       case "patients":
         return (
