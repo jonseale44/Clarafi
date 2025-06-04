@@ -1,0 +1,80 @@
+Based on the search results, here's the Quick AI Entry code from the DraftOrders component:
+
+Quick AI Entry Interface
+Location: client/src/components/DraftOrders.tsx
+
+{/* AI Medication Entry Section */}
+<div className="border rounded-md p-3 bg-blue-50">
+  <Label className="font-semibold text-blue-800">
+    Quick Order Entry (AI-Powered)
+  </Label>
+  <p className="text-xs text-blue-600 mt-1 mb-3">
+    Enter free text medication orders, lab requests, or imaging studies. Our AI will process and format them.
+  </p>
+  <div className="relative">
+    <Textarea
+      className="h-24 bg-white"
+      placeholder="Example: Atorvastatin 40mg daily, CBC with differential, Chest X-ray PA and lateral"
+      value={medicationText}
+      onChange={(e) => setMedicationText(e.target.value)}
+    />
+  </div>
+</div>
+AI vs Standard Entry Toggle
+The system has two entry modes controlled by medicationEntryType state:
+
+// Radio button selection
+<div className="flex items-center space-x-2">
+  <input 
+    type="radio" 
+    id="ai-entry" 
+    checked={medicationEntryType === "ai"}
+    onChange={() => setMedicationEntryType("ai")}
+    className="w-4 h-4"
+  />
+  <Label htmlFor="ai-entry" className="text-sm cursor-pointer">AI Entry</Label>
+</div>
+<div className="flex items-center space-x-2">
+  <input 
+    type="radio" 
+    id="standard-entry" 
+    checked={medicationEntryType === "standard"}
+    onChange={() => setMedicationEntryType("standard")}
+    className="w-4 h-4"
+  />
+  <Label htmlFor="standard-entry" className="text-sm cursor-pointer">Standard Entry</Label>
+</div>
+AI Processing Logic
+When in AI mode, the system processes natural language text:
+
+const onSubmit = async (data: any) => {
+  // If we're in AI mode with parsed medications, use AI-processed data
+  if (data.order_type === "medication" && 
+      medicationEntryType === "ai" && 
+      parsedMedications.length === 1) {
+    
+    const parsedMed = parsedMedications[0];
+    
+    // Create payload using AI-parsed medication data
+    const payload = {
+      order_type: "medication",
+      provider_notes: data.provider_notes,
+      medication_name: parsedMed.medication_name,
+      dosage: parsedMed.dosage,
+      form: parsedMed.form || "tablet",
+      sig: parsedMed.sig,
+      quantity: parseInt(parsedMed.quantity) || 30,
+      refills: parseInt(parsedMed.refills) || 0,
+      route_of_administration: parsedMed.route_of_administration || null,
+    };
+    
+    return draftOrdersModule?.createManualOrder(payload, patientId);
+  }
+}
+Key Features
+Natural Language Input: Accepts free-text medical orders
+Multi-Type Processing: Handles medications, labs, and imaging orders
+AI Parsing: Converts unstructured text into structured order data
+Real-time Processing: Shows loading states during AI processing
+Fallback to Manual: Option to switch to standard structured entry
+The Quick AI Entry allows healthcare providers to enter orders in natural language (like "Atorvastatin 40mg daily") and the system automatically parses them into structured database fields for medication name, dosage, frequency, etc.

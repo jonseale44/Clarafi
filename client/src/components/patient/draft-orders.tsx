@@ -671,18 +671,55 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
     orderType,
     priority: "routine",
   });
+  const [entryMode, setEntryMode] = useState<"ai" | "standard">("ai");
+  const [aiText, setAiText] = useState("");
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [aiParsedData, setAiParsedData] = useState<Partial<Order> | null>(null);
 
   useEffect(() => {
     setOrderData({ orderType, priority: "routine" });
+    setAiParsedData(null);
+    setAiText("");
   }, [orderType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(orderData);
+    // Use AI parsed data if available, otherwise use manual data
+    const finalData = aiParsedData || orderData;
+    onSubmit(finalData);
   };
 
   const handleInputChange = (field: string, value: any) => {
     setOrderData({ ...orderData, [field]: value });
+  };
+
+  const processAIText = async () => {
+    if (!aiText.trim()) return;
+    
+    setIsProcessingAI(true);
+    try {
+      const response = await fetch('/api/orders/parse-ai-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: aiText,
+          orderType: orderType
+        })
+      });
+
+      if (response.ok) {
+        const parsed = await response.json();
+        setAiParsedData({ ...parsed, orderType, priority: orderData.priority });
+      } else {
+        throw new Error('Failed to parse AI text');
+      }
+    } catch (error) {
+      console.error('AI parsing error:', error);
+      // Fall back to manual entry
+      setEntryMode("standard");
+    } finally {
+      setIsProcessingAI(false);
+    }
   };
 
   return (
@@ -702,30 +739,137 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
         </Select>
       </div>
 
-      {orderType === "medication" && (
-        <MedicationEditFields order={orderData as Order} onChange={handleInputChange} />
-      )}
-      {orderType === "lab" && (
-        <LabEditFields order={orderData as Order} onChange={handleInputChange} />
-      )}
-      {orderType === "imaging" && (
-        <ImagingEditFields order={orderData as Order} onChange={handleInputChange} />
-      )}
-      {orderType === "referral" && (
-        <ReferralEditFields order={orderData as Order} onChange={handleInputChange} />
-      )}
-
-      <div>
-        <Label htmlFor="clinicalIndication">Clinical Indication</Label>
-        <Textarea
-          id="clinicalIndication"
-          value={orderData.clinicalIndication || ""}
-          onChange={(e) => handleInputChange("clinicalIndication", e.target.value)}
-          placeholder="Reason for this order..."
-        />
+      {/* Entry Mode Selection */}
+      <div className="border rounded-md p-3 bg-gray-50">
+        <Label className="font-semibold text-gray-700 mb-2 block">Entry Mode</Label>
+        <div className="flex gap-4">
+          <div className="flex items-center space-x-2">
+            <input
+              type="radio"
+              id="ai-entry"
+              checked={entryMode === "ai"}
+              onChange={() => setEntryMode("ai")}
+              className="w-4 h-4"
+            />
+            <Label htmlFor="ai-entry" className="text-sm cursor-pointer">
+              AI Entry (Natural Language)
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="radio"
+              id="standard-entry"
+              checked={entryMode === "standard"}
+              onChange={() => setEntryMode("standard")}
+              className="w-4 h-4"
+            />
+            <Label htmlFor="standard-entry" className="text-sm cursor-pointer">
+              Standard Entry
+            </Label>
+          </div>
+        </div>
       </div>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      {entryMode === "ai" ? (
+        <div className="border rounded-md p-3 bg-blue-50">
+          <Label className="font-semibold text-blue-800 mb-2 block">
+            Quick Order Entry (AI-Powered)
+          </Label>
+          <p className="text-xs text-blue-600 mb-3">
+            Enter orders in natural language. AI will parse and structure the information.
+          </p>
+          <div className="space-y-3">
+            <Textarea
+              className="h-24 bg-white"
+              placeholder={
+                orderType === "medication" 
+                  ? "Example: Atorvastatin 40mg daily, take with dinner, 30 tablets, 2 refills"
+                  : orderType === "lab"
+                  ? "Example: CBC with differential, basic metabolic panel, fasting required"
+                  : orderType === "imaging"
+                  ? "Example: Chest X-ray PA and lateral, no contrast needed"
+                  : "Example: Cardiology consultation for chest pain evaluation"
+              }
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+            />
+            <Button
+              type="button"
+              onClick={processAIText}
+              disabled={!aiText.trim() || isProcessingAI}
+              className="w-full"
+            >
+              {isProcessingAI ? "Processing..." : "Parse with AI"}
+            </Button>
+          </div>
+
+          {aiParsedData && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+              <Label className="font-semibold text-green-800 mb-2 block">
+                AI Parsed Information:
+              </Label>
+              <div className="text-sm space-y-1">
+                {orderType === "medication" && (
+                  <>
+                    <div><strong>Medication:</strong> {aiParsedData.medicationName}</div>
+                    <div><strong>Dosage:</strong> {aiParsedData.dosage}</div>
+                    <div><strong>Instructions:</strong> {aiParsedData.sig}</div>
+                    <div><strong>Quantity:</strong> {aiParsedData.quantity}</div>
+                    <div><strong>Refills:</strong> {aiParsedData.refills}</div>
+                  </>
+                )}
+                {orderType === "lab" && (
+                  <>
+                    <div><strong>Test:</strong> {aiParsedData.testName}</div>
+                    <div><strong>Lab:</strong> {aiParsedData.labName}</div>
+                    {aiParsedData.fastingRequired && <div><strong>Fasting Required:</strong> Yes</div>}
+                  </>
+                )}
+                {orderType === "imaging" && (
+                  <>
+                    <div><strong>Study:</strong> {aiParsedData.studyType}</div>
+                    <div><strong>Region:</strong> {aiParsedData.region}</div>
+                    {aiParsedData.contrastNeeded && <div><strong>Contrast:</strong> Yes</div>}
+                  </>
+                )}
+                {orderType === "referral" && (
+                  <>
+                    <div><strong>Specialty:</strong> {aiParsedData.specialtyType}</div>
+                    {aiParsedData.providerName && <div><strong>Provider:</strong> {aiParsedData.providerName}</div>}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {orderType === "medication" && (
+            <MedicationEditFields order={orderData as Order} onChange={handleInputChange} />
+          )}
+          {orderType === "lab" && (
+            <LabEditFields order={orderData as Order} onChange={handleInputChange} />
+          )}
+          {orderType === "imaging" && (
+            <ImagingEditFields order={orderData as Order} onChange={handleInputChange} />
+          )}
+          {orderType === "referral" && (
+            <ReferralEditFields order={orderData as Order} onChange={handleInputChange} />
+          )}
+
+          <div>
+            <Label htmlFor="clinicalIndication">Clinical Indication</Label>
+            <Textarea
+              id="clinicalIndication"
+              value={orderData.clinicalIndication || ""}
+              onChange={(e) => handleInputChange("clinicalIndication", e.target.value)}
+              placeholder="Reason for this order..."
+            />
+          </div>
+        </>
+      )}
+
+      <Button type="submit" disabled={isSubmitting || (entryMode === "ai" && !aiParsedData)} className="w-full">
         {isSubmitting ? "Creating..." : "Create Order"}
       </Button>
     </form>

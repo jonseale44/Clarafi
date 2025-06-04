@@ -939,6 +939,157 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Parse natural language text into structured order data
+  app.post("/api/orders/parse-ai-text", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { text, orderType } = req.body;
+      
+      if (!text || !orderType) {
+        return res.status(400).json({ message: "Text and orderType are required" });
+      }
+
+      console.log(`[AI Parser] Parsing ${orderType} order from text: "${text}"`);
+
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      let prompt = "";
+      let responseSchema = "";
+
+      switch (orderType) {
+        case "medication":
+          prompt = `Parse this medication order into structured data: "${text}"
+          
+Extract the following information and return as JSON:
+- medication_name: The name of the medication
+- dosage: The strength/dose (e.g., "10mg", "500mg")
+- sig: Patient instructions (e.g., "Take twice daily with food")
+- quantity: Number of units to dispense (default 30 if not specified)
+- refills: Number of refills (default 0 if not specified)
+- form: Medication form (tablet, capsule, liquid, etc. - default "tablet")
+- route_of_administration: How to take (oral, topical, injection, etc. - default "oral")
+- days_supply: Days supply (estimate if not specified)
+
+Return only valid JSON without markdown formatting.`;
+          
+          responseSchema = `{
+  "medication_name": "string",
+  "dosage": "string", 
+  "sig": "string",
+  "quantity": number,
+  "refills": number,
+  "form": "string",
+  "route_of_administration": "string",
+  "days_supply": number
+}`;
+          break;
+
+        case "lab":
+          prompt = `Parse this lab order into structured data: "${text}"
+          
+Extract the following information and return as JSON:
+- test_name: The specific test name
+- lab_name: The lab panel or grouping name
+- specimen_type: Type of specimen (blood, urine, etc. - default "blood")
+- fasting_required: Whether fasting is required (boolean)
+- priority: Priority level (routine, urgent, stat - default "routine")
+
+Return only valid JSON without markdown formatting.`;
+          
+          responseSchema = `{
+  "test_name": "string",
+  "lab_name": "string",
+  "specimen_type": "string",
+  "fasting_required": boolean,
+  "priority": "string"
+}`;
+          break;
+
+        case "imaging":
+          prompt = `Parse this imaging order into structured data: "${text}"
+          
+Extract the following information and return as JSON:
+- study_type: Type of imaging study (X-ray, CT, MRI, Ultrasound, etc.)
+- region: Body part or region to be imaged
+- laterality: Side specification (left, right, bilateral, or null)
+- contrast_needed: Whether contrast is needed (boolean)
+- priority: Priority level (routine, urgent, stat - default "routine")
+
+Return only valid JSON without markdown formatting.`;
+          
+          responseSchema = `{
+  "study_type": "string",
+  "region": "string",
+  "laterality": "string or null",
+  "contrast_needed": boolean,
+  "priority": "string"
+}`;
+          break;
+
+        case "referral":
+          prompt = `Parse this referral order into structured data: "${text}"
+          
+Extract the following information and return as JSON:
+- specialty_type: The medical specialty (cardiology, orthopedics, etc.)
+- provider_name: Specific provider name if mentioned (or null)
+- urgency: Urgency level (routine, urgent - default "routine")
+
+Return only valid JSON without markdown formatting.`;
+          
+          responseSchema = `{
+  "specialty_type": "string",
+  "provider_name": "string or null",
+  "urgency": "string"
+}`;
+          break;
+
+        default:
+          return res.status(400).json({ message: "Unsupported order type" });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a medical AI that parses natural language orders into structured data. Always return valid JSON matching this schema: ${responseSchema}`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 500
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      if (!content) {
+        throw new Error('No response from GPT');
+      }
+
+      // Clean the response - remove markdown code blocks if present
+      let cleanedContent = content;
+      if (content.startsWith('```json')) {
+        cleanedContent = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+      } else if (content.startsWith('```')) {
+        cleanedContent = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      const parsedData = JSON.parse(cleanedContent);
+      console.log(`[AI Parser] Successfully parsed ${orderType} order:`, parsedData);
+      
+      res.json(parsedData);
+
+    } catch (error: any) {
+      console.error("[AI Parser] Error parsing order text:", error);
+      res.status(500).json({ message: "Failed to parse order text" });
+    }
+  });
+
   // Register patient parser routes
   app.use("/api", parseRoutes);
 
