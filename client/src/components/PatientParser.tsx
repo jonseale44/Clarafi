@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,33 @@ export function PatientParser() {
   const [createdPatient, setCreatedPatient] = useState<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
+  const textDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-parse text content with debouncing
+  useEffect(() => {
+    if (activeTab === 'text' && textContent.trim()) {
+      // Clear existing timeout
+      if (textDebounceRef.current) {
+        clearTimeout(textDebounceRef.current);
+      }
+      
+      // Set new timeout for debounced parsing
+      textDebounceRef.current = setTimeout(() => {
+        parsePatientInfoFromText(textContent);
+      }, 2000); // 2 second delay
+    } else if (activeTab === 'text' && !textContent.trim()) {
+      // Clear results when text is empty
+      setParseResult(null);
+      setExtractedData(null);
+      setCreatedPatient(null);
+    }
+    
+    return () => {
+      if (textDebounceRef.current) {
+        clearTimeout(textDebounceRef.current);
+      }
+    };
+  }, [textContent, activeTab]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -63,6 +90,9 @@ export function PatientParser() {
       setSelectedFile(file);
       setParseResult(null);
       setExtractedData(null);
+      setCreatedPatient(null);
+      // Automatically parse the file
+      parsePatientInfoFromFile(file);
     } else {
       toast({
         title: "Invalid file type",
@@ -110,32 +140,14 @@ export function PatientParser() {
     });
   };
 
-  const parsePatientInfo = async () => {
-    if (!selectedFile && !textContent.trim()) {
-      toast({
-        title: "Missing input",
-        description: "Please select an image or enter text content",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const parsePatientInfoFromFile = async (file: File) => {
     setIsProcessing(true);
     try {
-      let requestBody: any = {};
-
-      if (activeTab === 'upload' && selectedFile) {
-        const base64Data = await convertFileToBase64(selectedFile);
-        requestBody = {
-          imageData: base64Data,
-          isTextContent: false
-        };
-      } else if (activeTab === 'text' && textContent.trim()) {
-        requestBody = {
-          textContent: textContent.trim(),
-          isTextContent: true
-        };
-      }
+      const base64Data = await convertFileToBase64(file);
+      const requestBody = {
+        imageData: base64Data,
+        isTextContent: false
+      };
 
       const response = await fetch('/api/parse-patient-info', {
         method: 'POST',
@@ -151,8 +163,54 @@ export function PatientParser() {
       if (result.success && result.data) {
         setExtractedData(result.data);
         toast({
-          title: "Parsing successful",
-          description: `Patient information extracted with ${result.confidence}% confidence`,
+          title: "Information extracted",
+          description: `Patient data parsed with ${result.confidence}% confidence`,
+        });
+      } else {
+        toast({
+          title: "Parsing failed",
+          description: result.error || "Failed to extract patient information",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Parse error:', error);
+      toast({
+        title: "Processing error",
+        description: "Failed to process the request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const parsePatientInfoFromText = async (text: string) => {
+    if (!text.trim()) return;
+    
+    setIsProcessing(true);
+    try {
+      const requestBody = {
+        textContent: text.trim(),
+        isTextContent: true
+      };
+
+      const response = await fetch('/api/parse-patient-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const result: ParseResult = await response.json();
+      setParseResult(result);
+
+      if (result.success && result.data) {
+        setExtractedData(result.data);
+        toast({
+          title: "Information extracted",
+          description: `Patient data parsed with ${result.confidence}% confidence`,
         });
       } else {
         toast({
@@ -319,42 +377,37 @@ export function PatientParser() {
             <TabsContent value="text" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="text-content">Patient Information Text</Label>
-                <Textarea
-                  id="text-content"
-                  placeholder="Paste or type patient demographic information here..."
-                  value={textContent}
-                  onChange={(e) => setTextContent(e.target.value)}
-                  rows={6}
-                  className="resize-none"
-                />
+                <div className="relative">
+                  <Textarea
+                    id="text-content"
+                    placeholder="Paste or type patient demographic information here... (Auto-parses after 2 seconds)"
+                    value={textContent}
+                    onChange={(e) => setTextContent(e.target.value)}
+                    rows={6}
+                    className="resize-none"
+                  />
+                  {activeTab === 'text' && textContent.trim() && !isProcessing && (
+                    <div className="absolute top-2 right-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      Auto-parsing...
+                    </div>
+                  )}
+                </div>
               </div>
             </TabsContent>
           </Tabs>
 
           <div className="flex gap-3">
-            <Button 
-              onClick={parsePatientInfo}
-              disabled={isProcessing || (!selectedFile && !textContent.trim())}
-              className="flex items-center gap-2"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <FileText className="h-4 w-4" />
-                  Parse Information
-                </>
-              )}
-            </Button>
+            {isProcessing && (
+              <div className="flex items-center gap-2 text-blue-600">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm">Processing...</span>
+              </div>
+            )}
             
             {extractedData && (
               <Button 
                 onClick={createPatient}
                 disabled={isProcessing}
-                variant="outline"
                 className="flex items-center gap-2"
               >
                 <User className="h-4 w-4" />
