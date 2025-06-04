@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, User, AlertCircle, CheckCircle, Camera } from 'lucide-react';
+import { Upload, FileText, User, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 interface ExtractedPatient {
   first_name: string;
@@ -51,6 +52,7 @@ export function PatientParser() {
   const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
   const textDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [, setLocation] = useLocation();
 
   // Auto-parse text content with debouncing
   useEffect(() => {
@@ -300,6 +302,51 @@ export function PatientParser() {
     setCreatedPatient(null);
   };
 
+  const handleViewPatient = () => {
+    if (createdPatient?.id) {
+      setLocation(`/patients/${createdPatient.id}`);
+    }
+  };
+
+  const handleStartEncounter = async () => {
+    if (!createdPatient?.id) return;
+    
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/encounters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: createdPatient.id,
+          chiefComplaint: 'New patient visit',
+          status: 'active'
+        }),
+      });
+
+      if (response.ok) {
+        const encounter = await response.json();
+        toast({
+          title: "Encounter started",
+          description: "New encounter created successfully",
+        });
+        setLocation(`/encounters/${encounter.id}`);
+      } else {
+        throw new Error('Failed to create encounter');
+      }
+    } catch (error) {
+      console.error('Error creating encounter:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start encounter",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const getConfidenceBadgeVariant = (confidence?: number) => {
     if (!confidence) return "secondary";
     if (confidence >= 90) return "default";
@@ -508,11 +555,34 @@ export function PatientParser() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <p><strong>MRN:</strong> {createdPatient.mrn}</p>
-              <p><strong>Name:</strong> {createdPatient.firstName} {createdPatient.lastName}</p>
-              <p><strong>Date of Birth:</strong> {createdPatient.dateOfBirth}</p>
-              <p><strong>Gender:</strong> {createdPatient.gender}</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p><strong>MRN:</strong> {createdPatient.mrn}</p>
+                <p><strong>Name:</strong> {createdPatient.firstName} {createdPatient.lastName}</p>
+                <p><strong>Date of Birth:</strong> {createdPatient.dateOfBirth}</p>
+                <p><strong>Gender:</strong> {createdPatient.gender}</p>
+              </div>
+              
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  onClick={handleViewPatient}
+                  className="flex items-center gap-2"
+                  disabled={isProcessing}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View Patient Chart
+                </Button>
+                
+                <Button
+                  onClick={handleStartEncounter}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  disabled={isProcessing}
+                >
+                  <Calendar className="h-4 w-4" />
+                  Start New Encounter
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

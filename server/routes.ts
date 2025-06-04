@@ -376,6 +376,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Create new encounter
+  app.post("/api/encounters", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { patientId, chiefComplaint, status = 'active' } = req.body;
+      
+      if (!patientId) {
+        return res.status(400).json({ message: "Patient ID is required" });
+      }
+
+      // Verify patient exists
+      const patient = await storage.getPatient(parseInt(patientId));
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      const encounterData = {
+        patientId: parseInt(patientId),
+        chiefComplaint: chiefComplaint || 'New patient visit',
+        status: status,
+        visitType: 'office_visit',
+        providerId: req.user.id
+      };
+
+      const encounter = await storage.createEncounter(encounterData);
+      res.status(201).json(encounter);
+    } catch (error: any) {
+      console.error('Error creating encounter:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Enhanced voice processing for encounter recording
   app.post("/api/voice/transcribe-enhanced", upload.single("audio"), async (req, res) => {
     try {
