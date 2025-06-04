@@ -1,0 +1,58 @@
+Based on the code analysis, here's the timing sequence for stop recording, SOAP note generation, and draft orders processing:
+
+Recording Stop → SOAP Note → Draft Orders Flow
+1. Stop Recording Trigger
+When handleStopRecording() is called:
+
+MainTranscription: Freezes AI insights, then calls generateSOAPNote()
+NurseTranscription: Freezes AI insights, then calls generateSOAPNote()
+2. SOAP Note Generation
+The generateSOAPNote() function:
+
+Fetches patient chart data from /api/patients/${patientId}/chart
+Sets patient chart in WebSocket modules (SOAPNoteModule, DraftOrdersModule)
+Sends transcription + patient chart to OpenAI via WebSocket
+Uses specific SOAP note instructions with structured format
+3. Draft Orders Processing Sequence
+Draft orders are generated FROM the completed SOAP note, not from the raw transcription. Here's the exact flow:
+
+In SOAPNoteModule.ts:
+
+// After SOAP note is completed:
+console.log("[SOAPNoteModule] Triggering draft orders and CPT code processing with completed note");
+// CRITICAL FIX: Trigger CPT code processing first
+this.triggerCPTCodeProcessing(formattedNote);
+// Then trigger draft orders generation
+setTimeout(() => {
+  this.triggerDraftOrders(formattedNote); // <-- Uses the SOAP note as input
+}, 0);
+Draft Orders Source:
+
+Input: The completed, formatted SOAP note (not raw transcription)
+Processing: triggerDraftOrders() sends the SOAP note to OpenAI with specific extraction instructions
+Output: Structured medication, lab, and imaging orders
+4. Processing Instructions for Draft Orders
+The system sends the SOAP note to OpenAI with these instructions:
+
+Extract medication, lab, and imaging orders from this SOAP note.
+For medications, format as follows:
+Medication: [name and dosage]
+Sig: [instructions]
+Dispense: [quantity] tablets
+Refills: [number]
+For labs, format as follows:
+Lab: [test name]
+For imaging, format as follows:
+Imaging: [modality and body part]
+5. Additional Processing (MainTranscription only)
+After SOAP note generation, MainTranscription also triggers:
+
+CPT code processing via diagnosisCPTMapper.processSoapNote(soapNote)
+Event emission for other components: eventBus.emit('recording-completed')
+Key Points:
+Draft orders are generated FROM the SOAP note, not directly from transcription
+Sequential processing: Stop Recording → SOAP Note → Draft Orders
+Patient chart context: Both SOAP note and draft orders use enriched patient chart data
+WebSocket coordination: All processing happens through the WebSocket client modules
+Error handling: Each step has fallbacks and error logging
+This architecture ensures that draft orders are based on the structured, clinically-formatted SOAP note rather than raw conversational transcription, leading to more accurate medical order extraction.

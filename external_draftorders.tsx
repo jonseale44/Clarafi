@@ -101,9 +101,7 @@ export function DraftOrders({
     // Early initialization of the module when component mounts
     const initializeModule = async () => {
       if (patientId && draftOrdersModule && !moduleInitialized) {
-        console.log(
-          "[DraftOrders] Directly initializing module on component mount",
-        );
+        console.log("[DraftOrders] Directly initializing module on component mount");
         try {
           const chartResponse = await fetch(`/api/patients/${patientId}/chart`);
           if (chartResponse.ok) {
@@ -114,25 +112,17 @@ export function DraftOrders({
               chartData.patient_id = patientId;
             }
 
-            console.log(
-              "[DraftOrders] Setting patient chart with ID:",
-              chartData.patient_id || patientId,
-            );
+            console.log("[DraftOrders] Setting patient chart with ID:", chartData.patient_id || patientId);
             draftOrdersModule.setPatientChart(chartData);
             setModuleInitialized(true);
 
             // Force an immediate refresh of orders
             directFetchDraftOrders();
 
-            console.log(
-              "[DraftOrders] Successfully initialized module on component mount",
-            );
+            console.log("[DraftOrders] Successfully initialized module on component mount");
           } else {
             // Even if chart fetch fails, still initialize with basic patient ID
-            console.log(
-              "[DraftOrders] Chart fetch failed, using basic initialization with ID:",
-              patientId,
-            );
+            console.log("[DraftOrders] Chart fetch failed, using basic initialization with ID:", patientId);
             draftOrdersModule.setPatientChart({ patient_id: patientId });
             setModuleInitialized(true);
           }
@@ -160,16 +150,12 @@ export function DraftOrders({
 
       // Only process events for the current patient
       if (updatedPatientId === patientId) {
-        console.log(
-          "[DraftOrders] Received draft-orders-refreshed event with",
-          orders.length,
-          "orders",
-        );
+        console.log("[DraftOrders] Received draft-orders-refreshed event with", orders.length, "orders");
 
         // Update the cache with the refreshed data
         queryClient.setQueryData(
-          [`/api/patients/${patientId}/orders/draft`],
-          orders,
+          [`/api/patients/${patientId}/orders/draft`], 
+          orders
         );
 
         // Also invalidate the query to ensure components refresh
@@ -180,17 +166,11 @@ export function DraftOrders({
     };
 
     // Add event listener for draft order refreshes
-    window.addEventListener(
-      "draft-orders-refreshed",
-      handleDraftOrdersRefreshed,
-    );
+    window.addEventListener('draft-orders-refreshed', handleDraftOrdersRefreshed);
 
     // Cleanup function
     return () => {
-      window.removeEventListener(
-        "draft-orders-refreshed",
-        handleDraftOrdersRefreshed,
-      );
+      window.removeEventListener('draft-orders-refreshed', handleDraftOrdersRefreshed);
     };
   }, [patientId, queryClient]);
 
@@ -242,33 +222,27 @@ export function DraftOrders({
     refreshLabTemplates();
   }, []);
 
-  // CORE FIX: Reliable direct API fetch function as a fallback
+  // CORE FIX: Reliable direct API fetch function as a fallback 
   // This ensures orders always appear in the UI even when module initialization fails
   const directFetchDraftOrders = async () => {
     console.log("[DraftOrders] Performing direct fetch for draft orders");
     try {
       const response = await fetch(`/api/patients/${patientId}/orders/draft`, {
         method: "GET",
-        headers: {
+        headers: { 
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store",
+          "Cache-Control": "no-cache, no-store" 
         },
         // Force fresh fetch every time
-        cache: "no-store",
+        cache: "no-store"
       });
 
       if (response.ok) {
         const orders = await response.json();
-        console.log(
-          "[DraftOrders] Direct fetch successful, found orders:",
-          orders.length,
-        );
+        console.log("[DraftOrders] Direct fetch successful, found orders:", orders.length);
 
         // Directly update query cache with the fetched data
-        queryClient.setQueryData(
-          [`/api/patients/${patientId}/orders/draft`],
-          orders,
-        );
+        queryClient.setQueryData([`/api/patients/${patientId}/orders/draft`], orders);
 
         // Also invalidate the query to trigger a refetch
         queryClient.invalidateQueries({
@@ -276,17 +250,12 @@ export function DraftOrders({
         });
 
         // Update pending orders state
-        const pendingCount = orders.filter(
-          (order: Order) => order.order_status === "pending",
-        ).length;
+        const pendingCount = orders.filter((order: Order) => order.order_status === "pending").length;
         setHasPendingOrders(pendingCount > 0);
 
         return orders;
       } else {
-        console.error(
-          "[DraftOrders] Direct fetch failed with status:",
-          response.status,
-        );
+        console.error("[DraftOrders] Direct fetch failed with status:", response.status);
         return null;
       }
     } catch (error) {
@@ -300,7 +269,7 @@ export function DraftOrders({
     data: draftOrders = [] as Order[],
     isPending,
     refetch,
-    error,
+    error
   } = useQuery<Order[], Error>({
     queryKey: [`/api/patients/${patientId}/orders/draft`],
     enabled: !!patientId,
@@ -311,18 +280,13 @@ export function DraftOrders({
     refetchOnMount: true, // Always refetch when component mounts
     refetchOnWindowFocus: true, // Refetch when window regains focus
     onSuccess: (data) => {
-      console.log(
-        "[DraftOrders] Successfully fetched draft orders:",
-        data.length,
-      );
+      console.log("[DraftOrders] Successfully fetched draft orders:", data.length);
       if (data.length > 0) {
         console.log("[DraftOrders] First few orders:", data.slice(0, 3));
       }
 
       // Update hasPendingOrders flag based on the data
-      const pendingCount = data.filter(
-        (order) => order.order_status === "pending",
-      ).length;
+      const pendingCount = data.filter(order => order.order_status === "pending").length;
       console.log("[DraftOrders] Pending orders count:", pendingCount);
       setHasPendingOrders(pendingCount > 0);
     },
@@ -330,7 +294,7 @@ export function DraftOrders({
       console.error("[DraftOrders] Error fetching draft orders:", err);
       // On error, try direct API fetch as fallback
       directFetchDraftOrders();
-    },
+    }
   });
 
   useEffect(() => {
@@ -346,22 +310,17 @@ export function DraftOrders({
   // This ensures orders appear immediately on the first attempt for both Method A and Method B encounters
   useEffect(() => {
     const handleOrdersUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        orders: any[];
-        patientId: number;
-      }>;
+      const customEvent = event as CustomEvent<{orders: any[], patientId: number}>;
       const { orders, patientId: updatedPatientId } = customEvent.detail;
 
       // Only process events for the current patient
       if (updatedPatientId === patientId) {
-        console.log(
-          `[DraftOrders] Received ${event.type} event with ${orders.length} orders`,
-        );
+        console.log(`[DraftOrders] Received ${event.type} event with ${orders.length} orders`);
 
         // Update the cache directly to ensure UI reflects latest orders
         queryClient.setQueryData(
-          [`/api/patients/${patientId}/orders/draft`],
-          orders,
+          [`/api/patients/${patientId}/orders/draft`], 
+          orders
         );
 
         // Trigger a query invalidation to ensure components refresh
@@ -377,13 +336,13 @@ export function DraftOrders({
     };
 
     // Add event listeners for both order update event types
-    window.addEventListener("draft-orders-updated", handleOrdersUpdate);
-    window.addEventListener("draft-orders-refreshed", handleOrdersUpdate);
+    window.addEventListener('draft-orders-updated', handleOrdersUpdate);
+    window.addEventListener('draft-orders-refreshed', handleOrdersUpdate);
 
     // Cleanup function to remove event listeners
     return () => {
-      window.removeEventListener("draft-orders-updated", handleOrdersUpdate);
-      window.removeEventListener("draft-orders-refreshed", handleOrdersUpdate);
+      window.removeEventListener('draft-orders-updated', handleOrdersUpdate);
+      window.removeEventListener('draft-orders-refreshed', handleOrdersUpdate);
     };
   }, [patientId, queryClient, refetch]);
 
@@ -432,10 +391,9 @@ export function DraftOrders({
       });
 
       // Keep original order while updating
-      const originalOrders =
-        queryClient.getQueryData<Order[]>([
-          `/api/patients/${patientId}/orders/draft`,
-        ]) || [];
+      const originalOrders = queryClient.getQueryData<Order[]>([
+        `/api/patients/${patientId}/orders/draft`,
+      ]) || [];
       const orderIndex = originalOrders.findIndex((o) => o.id === order.id);
 
       if (orderIndex !== -1) {
@@ -473,32 +431,25 @@ export function DraftOrders({
   };
 
   const handleCreateOrder = async (data: any) => {
-    console.log(
-      "[DraftOrders] Starting handleCreateOrder with data:",
-      JSON.stringify(data, null, 2),
-    );
+    console.log("[DraftOrders] Starting handleCreateOrder with data:", JSON.stringify(data, null, 2));
     try {
       if (!draftOrdersModule) {
         console.error("[DraftOrders] DraftOrdersModule is not initialized");
         toast({
           variant: "destructive",
-          description:
-            "Cannot create order: system not initialized. Please try again.",
+          description: "Cannot create order: system not initialized. Please try again.",
         });
         return;
       }
 
       // Always ensure the module is properly initialized with patient chart before creating orders
       // Check module initialization state - use a safe check in case the method doesn't exist yet
-      const isModuleReady =
-        moduleInitialized &&
-        typeof draftOrdersModule.isInitialized === "function" &&
-        draftOrdersModule.isInitialized();
+      const isModuleReady = moduleInitialized && 
+                          typeof draftOrdersModule.isInitialized === 'function' && 
+                          draftOrdersModule.isInitialized();
 
       if (!isModuleReady && patientId) {
-        console.log(
-          "[DraftOrders] Module not fully initialized, fetching patient chart first",
-        );
+        console.log("[DraftOrders] Module not fully initialized, fetching patient chart first");
 
         try {
           // Try to fetch patient chart directly and initialize module
@@ -507,21 +458,13 @@ export function DraftOrders({
             const chartData = await chartResponse.json();
             draftOrdersModule.setPatientChart(chartData);
             setModuleInitialized(true);
-            console.log(
-              "[DraftOrders] Successfully initialized module with patient chart",
-            );
+            console.log("[DraftOrders] Successfully initialized module with patient chart");
           } else {
-            console.error(
-              "[DraftOrders] Failed to fetch patient chart:",
-              await chartResponse.text(),
-            );
+            console.error("[DraftOrders] Failed to fetch patient chart:", await chartResponse.text());
             // Still try to continue since we at least have the patient ID
           }
         } catch (chartError) {
-          console.error(
-            "[DraftOrders] Error fetching patient chart:",
-            chartError,
-          );
+          console.error("[DraftOrders] Error fetching patient chart:", chartError);
           // Continue anyway with just the patient ID
         }
       }
@@ -534,7 +477,7 @@ export function DraftOrders({
 
       // Show success message
       toast({
-        description: `${data.order_type === "medication" ? "Medication" : "Order"} saved successfully!`,
+        description: `${data.order_type === 'medication' ? 'Medication' : 'Order'} saved successfully!`,
       });
 
       // Force refresh the orders list - first invalidate the cache
@@ -547,9 +490,7 @@ export function DraftOrders({
 
       // Schedule additional delayed refreshes to ensure orders appear
       setTimeout(async () => {
-        console.log(
-          "[DraftOrders] Running additional refresh after order creation",
-        );
+        console.log("[DraftOrders] Running additional refresh after order creation");
         await refetchDraftOrders();
       }, 500);
 
@@ -558,8 +499,7 @@ export function DraftOrders({
       console.error("[DraftOrders] Failed to create order:", error);
       toast({
         variant: "destructive",
-        description:
-          error instanceof Error ? error.message : "Failed to create order",
+        description: error instanceof Error ? error.message : "Failed to create order",
       });
     }
   };
@@ -605,22 +545,19 @@ export function DraftOrders({
 
   function NewOrderDialog() {
     const [orderType, setOrderType] = useState<string>("medication");
-    const [medicationEntryType, setMedicationEntryType] =
-      useState<string>("ai");
+    const [medicationEntryType, setMedicationEntryType] = useState<string>("ai");
     const [medicationText, setMedicationText] = useState<string>("");
     const [parsedMedications, setParsedMedications] = useState<any[]>([]);
     const [parsedLabs, setParsedLabs] = useState<any[]>([]);
     const [parsedImaging, setParsedImaging] = useState<any[]>([]);
-    const [isProcessingMedications, setIsProcessingMedications] =
-      useState<boolean>(false);
+    const [isProcessingMedications, setIsProcessingMedications] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [showSuccess, setShowSuccess] = useState<boolean>(false);
     const [showError, setShowError] = useState<boolean>(false);
     const [showLabsError, setShowLabsError] = useState<boolean>(false);
     const [showImagingError, setShowImagingError] = useState<boolean>(false);
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-    const [processingTimeout, setProcessingTimeout] =
-      useState<NodeJS.Timeout | null>(null);
+    const [processingTimeout, setProcessingTimeout] = useState<NodeJS.Timeout | null>(null);
 
     // Function to refresh draft orders
     const refetchDraftOrders = async () => {
@@ -713,10 +650,7 @@ export function DraftOrders({
 
         // Set form values if there's a single medication (for backward compatibility)
         if (medications.length === 1) {
-          console.log(
-            "[NewOrderDialog] Using AI-parsed medication:",
-            medications[0],
-          );
+          console.log("[NewOrderDialog] Using AI-parsed medication:", medications[0]);
           setValue("order_type", "medication");
           const parsedMed = medications[0];
 
@@ -760,15 +694,11 @@ export function DraftOrders({
 
         // Show the loading indicator
         setIsSaving(true);
-        console.log(
-          "[DraftOrders] Starting unified save operation for all order types",
-        );
+        console.log("[DraftOrders] Starting unified save operation for all order types");
 
         // ALWAYS force module initialization before saving
         // This ensures the module always has the latest patient data
-        console.log(
-          "[DraftOrders] Force-initializing module before saving ANY orders",
-        );
+        console.log("[DraftOrders] Force-initializing module before saving ANY orders");
 
         try {
           // Force module initialization before saving - ALWAYS
@@ -779,44 +709,28 @@ export function DraftOrders({
             if (!chartData.patient_id && patientId) {
               chartData.patient_id = patientId;
             }
-            console.log(
-              "[DraftOrders] Setting patient chart with ID:",
-              chartData.patient_id || patientId,
-            );
+            console.log("[DraftOrders] Setting patient chart with ID:", chartData.patient_id || patientId);
             if (draftOrdersModule) {
               draftOrdersModule.setPatientChart(chartData);
               setModuleInitialized(true);
-              console.log(
-                "[DraftOrders] Successfully initialized module with patient chart before batch save",
-              );
+              console.log("[DraftOrders] Successfully initialized module with patient chart before batch save");
             } else {
               console.error("[DraftOrders] Cannot initialize null module");
             }
           } else {
-            console.error(
-              "[DraftOrders] Failed to fetch patient chart:",
-              chartResponse.status,
-            );
+            console.error("[DraftOrders] Failed to fetch patient chart:", chartResponse.status);
             // Even if the chart fetch fails, still try to initialize with just the ID
             if (patientId && draftOrdersModule) {
-              console.log(
-                "[DraftOrders] Fallback: Initializing module with just patient ID:",
-                patientId,
-              );
+              console.log("[DraftOrders] Fallback: Initializing module with just patient ID:", patientId);
               draftOrdersModule.setPatientChart({ patient_id: patientId });
               setModuleInitialized(true);
             }
           }
         } catch (chartError) {
-          console.error(
-            "[DraftOrders] Error initializing module before batch save:",
-            chartError,
-          );
+          console.error("[DraftOrders] Error initializing module before batch save:", chartError);
           // Fallback to basic initialization
           if (patientId && draftOrdersModule) {
-            console.log(
-              "[DraftOrders] Error recovery: Setting basic patient data",
-            );
+            console.log("[DraftOrders] Error recovery: Setting basic patient data");
             draftOrdersModule.setPatientChart({ patient_id: patientId });
             setModuleInitialized(true);
           }
@@ -829,14 +743,11 @@ export function DraftOrders({
           await directFetchDraftOrders();
           await refetch();
         } catch (refreshError) {
-          console.error(
-            "[DraftOrders] Error refreshing before save:",
-            refreshError,
-          );
+          console.error("[DraftOrders] Error refreshing before save:", refreshError);
         }
 
         // Add a small delay to ensure any pending state changes are applied
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         const allSavePromises = [];
         let successCount = 0;
@@ -855,100 +766,77 @@ export function DraftOrders({
               order_status: "draft",
               medication_name: med.medication_name || "Unknown Medication",
               dosage: med.dosage || "",
-              quantity:
-                typeof med.quantity === "string"
-                  ? parseInt(med.quantity) || 30
-                  : med.quantity || 30,
-              refills:
-                typeof med.refills === "string"
-                  ? parseInt(med.refills) || 0
-                  : med.refills || 0,
+              quantity: typeof med.quantity === 'string' ? parseInt(med.quantity) || 30 : (med.quantity || 30),
+              refills: typeof med.refills === 'string' ? parseInt(med.refills) || 0 : (med.refills || 0),
               sig: med.sig || "Take as directed",
               form: med.form || "tablet",
               provider_notes: med.provider_notes || "",
-              patient_id: patientIdNum,
+              patient_id: patientIdNum
             };
 
             // CRITICAL FIX: ALWAYS use direct API method for medication orders
             // This completely bypasses module initialization issues on first save attempt
-            console.log(
-              `[DraftOrders] ALWAYS using direct API to create ${processedMed.medication_name} for first-time reliability`,
-            );
+            console.log(`[DraftOrders] ALWAYS using direct API to create ${processedMed.medication_name} for first-time reliability`);
             return fetch("/api/orders", {
               method: "POST",
-              headers: {
+              headers: { 
                 "Content-Type": "application/json",
-                "Cache-Control": "no-cache, no-store",
+                "Cache-Control": "no-cache, no-store" 
               },
-              body: JSON.stringify(processedMed),
+              body: JSON.stringify(processedMed)
             })
-              .then((response) => {
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log(`[DraftOrders] Successfully created ${processedMed.medication_name} via direct API`, data);
+              successCount++;
+              return true;
+            })
+            .catch(err => {
+              console.error(`[DraftOrders] Error saving medication ${processedMed.medication_name}:`, err);
+
+              // Last resort fallback - try one more time with simplified payload
+              console.log(`[DraftOrders] Final retry for ${processedMed.medication_name} with simplified payload`);
+
+              // Simplified payload with only essential fields
+              const simplifiedMed = {
+                order_type: "medication",
+                order_status: "draft",
+                medication_name: processedMed.medication_name,
+                dosage: processedMed.dosage,
+                quantity: processedMed.quantity,
+                sig: processedMed.sig,
+                patient_id: patientIdNum
+              };
+
+              return fetch("/api/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(simplifiedMed)
+              })
+              .then(response => {
                 if (!response.ok) {
-                  throw new Error(`Server error: ${response.status}`);
+                  throw new Error(`Server error on retry: ${response.status}`);
                 }
                 return response.json();
               })
-              .then((data) => {
-                console.log(
-                  `[DraftOrders] Successfully created ${processedMed.medication_name} via direct API`,
-                  data,
-                );
+              .then(data => {
+                console.log(`[DraftOrders] Successfully created ${processedMed.medication_name} on final retry`);
                 successCount++;
                 return true;
               })
-              .catch((err) => {
-                console.error(
-                  `[DraftOrders] Error saving medication ${processedMed.medication_name}:`,
-                  err,
-                );
-
-                // Last resort fallback - try one more time with simplified payload
-                console.log(
-                  `[DraftOrders] Final retry for ${processedMed.medication_name} with simplified payload`,
-                );
-
-                // Simplified payload with only essential fields
-                const simplifiedMed = {
-                  order_type: "medication",
-                  order_status: "draft",
-                  medication_name: processedMed.medication_name,
-                  dosage: processedMed.dosage,
-                  quantity: processedMed.quantity,
-                  sig: processedMed.sig,
-                  patient_id: patientIdNum,
-                };
-
-                return fetch("/api/orders", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(simplifiedMed),
-                })
-                  .then((response) => {
-                    if (!response.ok) {
-                      throw new Error(
-                        `Server error on retry: ${response.status}`,
-                      );
-                    }
-                    return response.json();
-                  })
-                  .then((data) => {
-                    console.log(
-                      `[DraftOrders] Successfully created ${processedMed.medication_name} on final retry`,
-                    );
-                    successCount++;
-                    return true;
-                  })
-                  .catch((finalError) => {
-                    console.error(
-                      `[DraftOrders] Final error saving medication ${processedMed.medication_name}:`,
-                      finalError,
-                    );
-                    // Update the parent component state for proper error handling
-                    setShowError(true);
-                    setIsSaving(false);
-                    return false;
-                  });
+              .catch(finalError => {
+                console.error(`[DraftOrders] Final error saving medication ${processedMed.medication_name}:`, finalError);
+                // Update the parent component state for proper error handling
+                setShowError(true);
+                setIsSaving(false);
+                return false;
               });
+            });
           });
 
           allSavePromises.push(...medPromises);
@@ -970,40 +858,33 @@ export function DraftOrders({
               test_name: lab.test_name || lab.lab_name || "Unknown Lab Test",
               priority: lab.priority || "routine",
               provider_notes: lab.provider_notes || "",
-              patient_id: patientIdNum,
+              patient_id: patientIdNum
             };
 
             // CORE FIX: Create lab order directly if module not available
             if (!draftOrdersModule) {
-              console.log(
-                `[DraftOrders] Module not available, creating lab ${processedLab.lab_name} directly via API`,
-              );
+              console.log(`[DraftOrders] Module not available, creating lab ${processedLab.lab_name} directly via API`);
               return fetch("/api/orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(processedLab),
+                body: JSON.stringify(processedLab)
               })
-                .then((response) => {
-                  if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                  }
-                  return response.json();
-                })
-                .then((data) => {
-                  console.log(
-                    `[DraftOrders] Successfully created lab ${processedLab.lab_name} via direct API`,
-                  );
-                  successCount++;
-                  return true;
-                })
-                .catch((err) => {
-                  console.error(
-                    `[DraftOrders] Error saving lab ${processedLab.lab_name}:`,
-                    err,
-                  );
-                  setShowLabsError(true);
-                  return false;
-                });
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`Server error: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log(`[DraftOrders] Successfully created lab ${processedLab.lab_name} via direct API`);
+                successCount++;
+                return true;
+              })
+              .catch(err => {
+                console.error(`[DraftOrders] Error saving lab ${processedLab.lab_name}:`, err);
+                setShowLabsError(true);
+                return false;
+              });
             }
 
             // Use module if available
@@ -1012,42 +893,32 @@ export function DraftOrders({
                 successCount++;
                 return true;
               })
-              .catch((err) => {
-                console.error(
-                  `[DraftOrders] Error saving lab ${processedLab.lab_name}:`,
-                  err,
-                );
+              .catch(err => {
+                console.error(`[DraftOrders] Error saving lab ${processedLab.lab_name}:`, err);
 
                 // FALLBACK: If module fails, try direct API as backup
-                console.log(
-                  `[DraftOrders] Retrying lab ${processedLab.lab_name} via direct API after module failure`,
-                );
+                console.log(`[DraftOrders] Retrying lab ${processedLab.lab_name} via direct API after module failure`);
                 return fetch("/api/orders", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(processedLab),
+                  body: JSON.stringify(processedLab)
                 })
-                  .then((response) => {
-                    if (!response.ok) {
-                      throw new Error(`Server error: ${response.status}`);
-                    }
-                    return response.json();
-                  })
-                  .then((data) => {
-                    console.log(
-                      `[DraftOrders] Successfully created lab ${processedLab.lab_name} via direct API fallback`,
-                    );
-                    successCount++;
-                    return true;
-                  })
-                  .catch((fallbackErr) => {
-                    console.error(
-                      `[DraftOrders] Fallback also failed for lab ${processedLab.lab_name}:`,
-                      fallbackErr,
-                    );
-                    setShowLabsError(true);
-                    return false;
-                  });
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  console.log(`[DraftOrders] Successfully created lab ${processedLab.lab_name} via direct API fallback`);
+                  successCount++;
+                  return true;
+                })
+                .catch(fallbackErr => {
+                  console.error(`[DraftOrders] Fallback also failed for lab ${processedLab.lab_name}:`, fallbackErr);
+                  setShowLabsError(true);
+                  return false;
+                });
               });
           });
 
@@ -1069,40 +940,33 @@ export function DraftOrders({
               study_type: imaging.study_type || "Unspecified Imaging",
               region: imaging.region || "",
               provider_notes: imaging.provider_notes || "",
-              patient_id: patientIdNum,
+              patient_id: patientIdNum
             };
 
             // CORE FIX: Create imaging order directly if module not available
             if (!draftOrdersModule) {
-              console.log(
-                `[DraftOrders] Module not available, creating imaging ${processedImaging.study_type} directly via API`,
-              );
+              console.log(`[DraftOrders] Module not available, creating imaging ${processedImaging.study_type} directly via API`);
               return fetch("/api/orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(processedImaging),
+                body: JSON.stringify(processedImaging)
               })
-                .then((response) => {
-                  if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                  }
-                  return response.json();
-                })
-                .then((data) => {
-                  console.log(
-                    `[DraftOrders] Successfully created imaging ${processedImaging.study_type} via direct API`,
-                  );
-                  successCount++;
-                  return true;
-                })
-                .catch((err) => {
-                  console.error(
-                    `[DraftOrders] Error saving imaging ${processedImaging.study_type}:`,
-                    err,
-                  );
-                  setShowImagingError(true);
-                  return false;
-                });
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`Server error: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log(`[DraftOrders] Successfully created imaging ${processedImaging.study_type} via direct API`);
+                successCount++;
+                return true;
+              })
+              .catch(err => {
+                console.error(`[DraftOrders] Error saving imaging ${processedImaging.study_type}:`, err);
+                setShowImagingError(true);
+                return false;
+              });
             }
 
             // Use module if available
@@ -1111,42 +975,32 @@ export function DraftOrders({
                 successCount++;
                 return true;
               })
-              .catch((err) => {
-                console.error(
-                  `[DraftOrders] Error saving imaging ${processedImaging.study_type}:`,
-                  err,
-                );
+              .catch(err => {
+                console.error(`[DraftOrders] Error saving imaging ${processedImaging.study_type}:`, err);
 
                 // FALLBACK: If module fails, try direct API as backup
-                console.log(
-                  `[DraftOrders] Retrying imaging ${processedImaging.study_type} via direct API after module failure`,
-                );
+                console.log(`[DraftOrders] Retrying imaging ${processedImaging.study_type} via direct API after module failure`);
                 return fetch("/api/orders", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(processedImaging),
+                  body: JSON.stringify(processedImaging)
                 })
-                  .then((response) => {
-                    if (!response.ok) {
-                      throw new Error(`Server error: ${response.status}`);
-                    }
-                    return response.json();
-                  })
-                  .then((data) => {
-                    console.log(
-                      `[DraftOrders] Successfully created imaging ${processedImaging.study_type} via direct API fallback`,
-                    );
-                    successCount++;
-                    return true;
-                  })
-                  .catch((fallbackErr) => {
-                    console.error(
-                      `[DraftOrders] Fallback also failed for imaging ${processedImaging.study_type}:`,
-                      fallbackErr,
-                    );
-                    setShowImagingError(true);
-                    return false;
-                  });
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  console.log(`[DraftOrders] Successfully created imaging ${processedImaging.study_type} via direct API fallback`);
+                  successCount++;
+                  return true;
+                })
+                .catch(fallbackErr => {
+                  console.error(`[DraftOrders] Fallback also failed for imaging ${processedImaging.study_type}:`, fallbackErr);
+                  setShowImagingError(true);
+                  return false;
+                });
               });
           });
 
@@ -1157,23 +1011,16 @@ export function DraftOrders({
         const results = await Promise.all(allSavePromises);
 
         // CRITICAL FIX: Count actual successes from promise results
-        const actualSuccessCount = results.filter(
-          (result) => result === true,
-        ).length;
-        console.log(
-          `[DraftOrders] Actual success count from promises: ${actualSuccessCount}`,
-        );
+        const actualSuccessCount = results.filter(result => result === true).length;
+        console.log(`[DraftOrders] Actual success count from promises: ${actualSuccessCount}`);
 
         // Show appropriate message based on success count
         if (actualSuccessCount === 0) {
           toast({
             variant: "destructive",
-            description: "Failed to save any orders",
+            description: "Failed to save any orders"
           });
-        } else if (
-          actualSuccessCount <
-          parsedMedications.length + parsedLabs.length + parsedImaging.length
-        ) {
+        } else if (actualSuccessCount < (parsedMedications.length + parsedLabs.length + parsedImaging.length)) {
           toast({
             description: `Saved ${actualSuccessCount} orders with some errors`,
           });
@@ -1211,102 +1058,66 @@ export function DraftOrders({
         }
 
         // FINAL FIX: Replace multiple refetch attempts with a reliable direct API fetch
-        console.log(
-          "[DraftOrders] Running single reliable refresh using direct API fetch",
-        );
+        console.log("[DraftOrders] Running single reliable refresh using direct API fetch");
         await directFetchDraftOrders();
 
         // Also manually refetch through React Query for UI updates
-        console.log(
-          "[DraftOrders] Running additional refresh after order creation",
-        );
+        console.log("[DraftOrders] Running additional refresh after order creation");
         try {
           if (refetch) {
             await refetch();
           }
         } catch (refetchError) {
-          console.error(
-            "[DraftOrders] Error in React Query refetch:",
-            refetchError,
-          );
+          console.error("[DraftOrders] Error in React Query refetch:", refetchError);
         }
 
         // Force direct API fetch to ensure we have the latest data - don't rely on cache
         try {
-          console.log(
-            "[DraftOrders] Forcing direct API fetch to get latest orders",
-          );
-          const directApiResponse = await fetch(
-            `/api/patients/${patientId}/orders/draft`,
-          );
+          console.log("[DraftOrders] Forcing direct API fetch to get latest orders");
+          const directApiResponse = await fetch(`/api/patients/${patientId}/orders/draft`);
           if (directApiResponse.ok) {
             const freshOrders = await directApiResponse.json();
-            console.log(
-              "[DraftOrders] Got fresh orders directly from API:",
-              freshOrders.length,
-            );
+            console.log("[DraftOrders] Got fresh orders directly from API:", freshOrders.length);
 
             // Force update the query cache with the fresh data
-            queryClient.setQueryData(
-              [`/api/patients/${patientId}/orders/draft`],
-              freshOrders,
-            );
+            queryClient.setQueryData([`/api/patients/${patientId}/orders/draft`], freshOrders);
           }
         } catch (directFetchError) {
-          console.error(
-            "[DraftOrders] Error in direct API fetch:",
-            directFetchError,
-          );
+          console.error("[DraftOrders] Error in direct API fetch:", directFetchError);
         }
 
         // Schedule multiple delayed refreshes to ensure the database has completed any transactions
         // These multiple refreshes help ensure we catch the orders after they're fully processed
         setTimeout(async () => {
-          console.log(
-            "[DraftOrders] Running second delayed refresh to ensure orders appear",
-          );
+          console.log("[DraftOrders] Running second delayed refresh to ensure orders appear");
           await refetchDraftOrders();
 
           // Final refresh after another delay for race condition safety
           setTimeout(async () => {
-            console.log(
-              "[DraftOrders] Running final refresh to ensure orders appear",
-            );
+            console.log("[DraftOrders] Running final refresh to ensure orders appear");
             await refetchDraftOrders();
 
             // One last direct API fetch as an absolute fallback
             try {
-              const finalDirectFetch = await fetch(
-                `/api/patients/${patientId}/orders/draft`,
-              );
+              const finalDirectFetch = await fetch(`/api/patients/${patientId}/orders/draft`);
               if (finalDirectFetch.ok) {
                 const finalOrders = await finalDirectFetch.json();
                 if (finalOrders.length > 0) {
-                  console.log(
-                    "[DraftOrders] Final direct fetch found orders:",
-                    finalOrders.length,
-                  );
-                  queryClient.setQueryData(
-                    [`/api/patients/${patientId}/orders/draft`],
-                    finalOrders,
-                  );
+                  console.log("[DraftOrders] Final direct fetch found orders:", finalOrders.length);
+                  queryClient.setQueryData([`/api/patients/${patientId}/orders/draft`], finalOrders);
                 }
               }
             } catch (finalFetchError) {
-              console.error(
-                "[DraftOrders] Error in final direct fetch:",
-                finalFetchError,
-              );
+              console.error("[DraftOrders] Error in final direct fetch:", finalFetchError);
             }
           }, 1000);
         }, 500);
+
       } catch (error) {
         console.error("[DraftOrders] Save all orders error:", error);
         toast({
           variant: "destructive",
-          description:
-            "Error saving orders: " +
-            (error instanceof Error ? error.message : "Unknown error"),
+          description: "Error saving orders: " + (error instanceof Error ? error.message : "Unknown error")
         });
       } finally {
         setIsSaving(false);
@@ -1337,10 +1148,7 @@ export function DraftOrders({
           orderData.region = data.region;
         }
 
-        console.log(
-          "[NewOrderDialog] Creating order with data:",
-          JSON.stringify(orderData, null, 2),
-        );
+        console.log("[NewOrderDialog] Creating order with data:", JSON.stringify(orderData, null, 2));
 
         // Create the order
         const result = await handleCreateOrder(orderData);
@@ -1368,9 +1176,7 @@ export function DraftOrders({
             onClick={() => {
               // Force a refresh of draft orders before opening dialog
               refetchDraftOrders().then(() => {
-                console.log(
-                  "[NewOrderDialog] Refreshed draft orders before opening dialog",
-                );
+                console.log("[NewOrderDialog] Refreshed draft orders before opening dialog");
                 setIsDialogOpen(true);
                 setOrderType("medication");
               });
@@ -1396,8 +1202,7 @@ export function DraftOrders({
                   Quick Order Entry (AI-Powered)
                 </Label>
                 <p className="text-xs text-blue-600 mt-1 mb-3">
-                  Enter free text medication orders, lab requests, or imaging
-                  studies. Our AI will process and format them.
+                  Enter free text medication orders, lab requests, or imaging studies. Our AI will process and format them.
                 </p>
 
                 <div className="relative">
@@ -1455,12 +1260,9 @@ export function DraftOrders({
                   <div className="flex items-center text-green-700">
                     <Check className="h-5 w-5 mr-2" />
                     <div>
-                      <p className="font-medium">
-                        Orders processed successfully!
-                      </p>
+                      <p className="font-medium">Orders processed successfully!</p>
                       <p className="text-sm">
-                        Review the orders below and click "Save All Orders" to
-                        create them.
+                        Review the orders below and click "Save All Orders" to create them.
                       </p>
                     </div>
                   </div>
@@ -1511,8 +1313,8 @@ export function DraftOrders({
                         GPT is analyzing your medication text
                       </p>
                       <p className="text-xs text-blue-600">
-                        Processing patient context and assigning appropriate
-                        ICD-10 codes...
+                        Processing patient context and assigning
+                        appropriate ICD-10 codes...
                       </p>
                     </div>
                   </div>
@@ -1520,20 +1322,15 @@ export function DraftOrders({
               )}
 
               {/* Unified Save All Orders Button */}
-              {(parsedMedications.length > 0 ||
-                parsedLabs.length > 0 ||
-                parsedImaging.length > 0) && (
+              {(parsedMedications.length > 0 || parsedLabs.length > 0 || parsedImaging.length > 0) && (
                 <div className="mt-5 mb-4 bg-blue-50 border border-blue-100 rounded-md p-4">
                   <div className="flex justify-between items-center">
                     <div>
                       <Label className="font-semibold text-blue-800 text-sm">
-                        Orders Ready: {parsedMedications.length} Medications,{" "}
-                        {parsedLabs.length} Labs, {parsedImaging.length} Imaging
-                        Studies
+                        Orders Ready: {parsedMedications.length} Medications, {parsedLabs.length} Labs, {parsedImaging.length} Imaging Studies
                       </Label>
                       <p className="text-xs text-blue-600 mt-1">
-                        Review the orders below and click "Save All Orders" to
-                        create them as draft orders
+                        Review the orders below and click "Save All Orders" to create them as draft orders
                       </p>
                     </div>
                     <Button
@@ -1586,17 +1383,13 @@ export function DraftOrders({
                   </div>
                   <div className="mt-2 space-y-2">
                     {parsedMedications.map((med, index) => (
-                      <div
-                        key={`med-${index}`}
-                        className="p-2 border rounded-md bg-gray-50"
-                      >
+                      <div key={`med-${index}`} className="p-2 border rounded-md bg-gray-50">
                         <div className="font-medium">{med.medication_name}</div>
                         <div className="text-sm text-gray-500">
-                          {med.dosage}, {med.form || "tablet"} - {med.sig}
+                          {med.dosage}, {med.form || 'tablet'} - {med.sig}
                         </div>
                         <div className="text-xs mt-1">
-                          Quantity: {med.quantity || 30}, Refills:{" "}
-                          {med.refills || 0}
+                          Quantity: {med.quantity || 30}, Refills: {med.refills || 0}
                         </div>
                       </div>
                     ))}
@@ -1614,18 +1407,10 @@ export function DraftOrders({
                   </div>
                   <div className="mt-2 space-y-2">
                     {parsedLabs.map((lab, index) => (
-                      <div
-                        key={`lab-${index}`}
-                        className="p-2 border rounded-md bg-gray-50"
-                      >
-                        <div className="font-medium">
-                          {lab.lab_test_name ||
-                            lab.lab_name ||
-                            lab.test_name ||
-                            "Lab Test"}
-                        </div>
+                      <div key={`lab-${index}`} className="p-2 border rounded-md bg-gray-50">
+                        <div className="font-medium">{lab.lab_test_name || lab.lab_name || lab.test_name || "Lab Test"}</div>
                         <div className="text-sm text-gray-500">
-                          Priority: {lab.priority || "routine"}
+                          Priority: {lab.priority || 'routine'}
                         </div>
                         {lab.provider_notes && (
                           <div className="text-xs mt-1">
@@ -1648,19 +1433,11 @@ export function DraftOrders({
                   </div>
                   <div className="mt-2 space-y-2">
                     {parsedImaging.map((img, index) => (
-                      <div
-                        key={`img-${index}`}
-                        className="p-2 border rounded-md bg-gray-50"
-                      >
-                        <div className="font-medium">
-                          {img.imaging_test_name ||
-                            img.study_type ||
-                            "Imaging Study"}
-                        </div>
+                      <div key={`img-${index}`} className="p-2 border rounded-md bg-gray-50">
+                        <div className="font-medium">{img.imaging_test_name || img.study_type || "Imaging Study"}</div>
                         {(img.body_part || img.region) && (
                           <div className="text-sm text-gray-500">
-                            Region:{" "}
-                            {img.body_part || img.region || "Unspecified"}
+                            Region: {img.body_part || img.region || "Unspecified"}
                           </div>
                         )}
                         {img.provider_notes && (
@@ -1681,8 +1458,7 @@ export function DraftOrders({
                     <div>
                       <p className="font-medium">Issue with lab orders</p>
                       <p className="text-sm">
-                        Some lab orders could not be processed. Please check the
-                        format or try again.
+                        Some lab orders could not be processed. Please check the format or try again.
                       </p>
                     </div>
                   </div>
@@ -1696,8 +1472,7 @@ export function DraftOrders({
                     <div>
                       <p className="font-medium">Issue with imaging orders</p>
                       <p className="text-sm">
-                        Some imaging orders could not be processed. Please check
-                        the format or try again.
+                        Some imaging orders could not be processed. Please check the format or try again.
                       </p>
                     </div>
                   </div>
@@ -1941,15 +1716,9 @@ export function DraftOrders({
 
       // Convert number fields from string to number
       if (updatedOrder.order_type === "medication") {
-        updatedOrder.quantity = parseInt(
-          updatedOrder.quantity?.toString() || "0",
-        );
-        updatedOrder.refills = parseInt(
-          updatedOrder.refills?.toString() || "0",
-        );
-        updatedOrder.days_supply = parseInt(
-          updatedOrder.days_supply?.toString() || "0",
-        );
+        updatedOrder.quantity = parseInt(updatedOrder.quantity?.toString() || "0");
+        updatedOrder.refills = parseInt(updatedOrder.refills?.toString() || "0");
+        updatedOrder.days_supply = parseInt(updatedOrder.days_supply?.toString() || "0");
       }
 
       try {
@@ -1965,10 +1734,7 @@ export function DraftOrders({
     };
 
     return (
-      <Dialog
-        open={!!editingOrder}
-        onOpenChange={(open) => !open && handleClose()}
-      >
+      <Dialog open={!!editingOrder} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit {getOrderTypeLabel(orderType)} Order</DialogTitle>
@@ -2021,19 +1787,11 @@ export function DraftOrders({
                   </div>
                   <div className="flex flex-col space-y-2">
                     <Label htmlFor="quantity">Quantity</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      {...register("quantity")}
-                    />
+                    <Input id="quantity" type="number" {...register("quantity")} />
                   </div>
                   <div className="flex flex-col space-y-2">
                     <Label htmlFor="refills">Refills</Label>
-                    <Input
-                      id="refills"
-                      type="number"
-                      {...register("refills")}
-                    />
+                    <Input id="refills" type="number" {...register("refills")} />
                   </div>
                   <div className="flex items-center space-x-2 mt-4">
                     <Checkbox
@@ -2137,30 +1895,24 @@ export function DraftOrders({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to update order signing status: ${response.status}`,
-        );
+        throw new Error(`Failed to update order signing status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log(
-        `[DraftOrders] Order ${orderId} signed successfully:`,
-        result,
-      );
+      console.log(`[DraftOrders] Order ${orderId} signed successfully:`, result);
 
       // Update the UI by modifying the local query data
-      const existingOrders =
-        queryClient.getQueryData<Order[]>([
-          `/api/patients/${patientId}/orders/draft`,
-        ]) || [];
+      const existingOrders = queryClient.getQueryData<Order[]>([
+        `/api/patients/${patientId}/orders/draft`,
+      ]) || [];
 
       const updatedOrders = existingOrders.map((order) =>
-        order.id === orderId ? { ...order, order_status: "approved" } : order,
+        order.id === orderId ? { ...order, order_status: "approved" } : order
       );
 
       queryClient.setQueryData<Order[]>(
         [`/api/patients/${patientId}/orders/draft`],
-        updatedOrders,
+        updatedOrders
       );
 
       toast({ description: "Order signed successfully" });
@@ -2180,8 +1932,7 @@ export function DraftOrders({
 
   // State for medication preference dialog
   const [showPreferenceDialog, setShowPreferenceDialog] = useState(false);
-  const [medicationPreference, setMedicationPreference] =
-    useState<string>("print");
+  const [medicationPreference, setMedicationPreference] = useState<string>("print");
   const [savePreference, setSavePreference] = useState(true);
 
   // Fetch patient's medication preference
@@ -2191,25 +1942,19 @@ export function DraftOrders({
     onSuccess: (data) => {
       if (data && data.preference) {
         setMedicationPreference(data.preference);
-        console.log(
-          `[DraftOrders] Loaded patient medication preference: ${data.preference}`,
-        );
+        console.log(`[DraftOrders] Loaded patient medication preference: ${data.preference}`);
       }
     },
     onError: (error) => {
-      console.error(
-        "[DraftOrders] Error fetching medication preference:",
-        error,
-      );
+      console.error("[DraftOrders] Error fetching medication preference:", error);
       // Default to "print" if we can't get the preference
       setMedicationPreference("print");
-    },
+    }
   });
 
   // Check if we have any medication orders
-  const hasMedicationOrders = draftOrders.some(
-    (order) =>
-      order.order_status === "draft" && order.order_type === "medication",
+  const hasMedicationOrders = draftOrders.some(order => 
+    order.order_status === "draft" && order.order_type === "medication"
   );
 
   const handleApproveAll = async () => {
@@ -2235,25 +1980,18 @@ export function DraftOrders({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ preference }),
           });
-          console.log(
-            `[DraftOrders] Patient medication preference saved: ${preference}`,
-          );
+          console.log(`[DraftOrders] Patient medication preference saved: ${preference}`);
         } catch (prefError) {
           console.error("[DraftOrders] Error saving preference:", prefError);
           // Continue with signing even if preference save fails
         }
       }
 
-      const response = await fetch(
-        `/api/orders/patients/${patientId}/sign-all`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            medicationPreference: preference || medicationPreference,
-          }),
-        },
-      );
+      const response = await fetch(`/api/orders/patients/${patientId}/sign-all`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ medicationPreference: preference || medicationPreference }),
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -2269,93 +2007,71 @@ export function DraftOrders({
         console.log("[DraftOrders] Print preference selected");
 
         // First check if we got PDF URLs back from the server
-        if (
-          result.pdfUrls &&
-          Array.isArray(result.pdfUrls) &&
-          result.pdfUrls.length > 0
-        ) {
-          console.log(
-            `[DraftOrders] Opening server-generated PDF: ${result.pdfUrls[0]}`,
-          );
+        if (result.pdfUrls && Array.isArray(result.pdfUrls) && result.pdfUrls.length > 0) {
+          console.log(`[DraftOrders] Opening server-generated PDF: ${result.pdfUrls[0]}`);
 
           // Open the PDF in a new window
           const pdfUrl = result.pdfUrls[0];
-          const fullUrl =
-            pdfUrl.startsWith("/") && !pdfUrl.startsWith("/api")
-              ? `/api${pdfUrl}`
-              : pdfUrl;
+          const fullUrl = pdfUrl.startsWith('/') && !pdfUrl.startsWith('/api') 
+            ? `/api${pdfUrl}` 
+            : pdfUrl;
 
-          window.open(fullUrl, "_blank");
+          window.open(fullUrl, '_blank');
           return;
         }
 
         // Also check for a single PDF URL
         if (result.pdfUrl) {
-          console.log(
-            `[DraftOrders] Opening server-generated PDF: ${result.pdfUrl}`,
-          );
+          console.log(`[DraftOrders] Opening server-generated PDF: ${result.pdfUrl}`);
 
-          const fullUrl =
-            result.pdfUrl.startsWith("/") && !result.pdfUrl.startsWith("/api")
-              ? `/api${result.pdfUrl}`
-              : result.pdfUrl;
+          const fullUrl = result.pdfUrl.startsWith('/') && !result.pdfUrl.startsWith('/api') 
+            ? `/api${result.pdfUrl}` 
+            : result.pdfUrl;
 
-          window.open(fullUrl, "_blank");
+          window.open(fullUrl, '_blank');
           return;
         }
 
-        console.log(
-          "[DraftOrders] No PDF URLs found in response, falling back to HTML generation",
-        );
+        console.log("[DraftOrders] No PDF URLs found in response, falling back to HTML generation");
 
         // Fallback to HTML prescription if no PDFs were generated
-        console.log(
-          `[DraftOrders] Creating fallback HTML prescription for patient ${patientId}`,
-        );
+        console.log(`[DraftOrders] Creating fallback HTML prescription for patient ${patientId}`);
 
         // Create a popup window with our prescription
-        const prescriptionWindow = window.open("", "_blank");
+        const prescriptionWindow = window.open('', '_blank');
         if (!prescriptionWindow) {
-          console.error(
-            "[DraftOrders] Failed to open new window. Popup may be blocked.",
-          );
+          console.error("[DraftOrders] Failed to open new window. Popup may be blocked.");
           toast({
             variant: "destructive",
-            description:
-              "Failed to open prescription. Please allow popups for this site.",
+            description: "Failed to open prescription. Please allow popups for this site."
           });
           return;
         }
 
         // Get medication orders from the result
-        const medicationOrders =
-          result.orders && Array.isArray(result.orders)
-            ? result.orders.filter(
-                (order: any) =>
-                  order.order_type === "medication" &&
-                  order.order_status === "approved",
-              )
-            : [];
+        const medicationOrders = result.orders && Array.isArray(result.orders) 
+          ? result.orders.filter((order: any) => 
+              order.order_type === 'medication' && order.order_status === 'approved')
+          : [];
 
         // Make a direct call to get patient info
         fetch(`/api/patients/${patientId}?t=${Date.now()}`)
-          .then((response) => response.json())
-          .then((patient) => {
+          .then(response => response.json())
+          .then(patient => {
             // Update patient info in the window
-            const patientInfoDiv =
-              prescriptionWindow.document.getElementById("patient-info");
+            const patientInfoDiv = prescriptionWindow.document.getElementById('patient-info');
             if (patientInfoDiv) {
               patientInfoDiv.innerHTML = `
                 <div><strong>Patient:</strong> ${patient.first_name} ${patient.last_name}</div>
                 <div><strong>DOB:</strong> ${new Date(patient.date_of_birth).toLocaleDateString()}</div>
                 <div><strong>Date:</strong> ${new Date().toLocaleDateString()}</div>
-                ${patient.contact_number ? `<div><strong>Phone:</strong> ${patient.contact_number}</div>` : ""}
-                ${patient.address ? `<div><strong>Address:</strong> ${patient.address}</div>` : ""}
+                ${patient.contact_number ? `<div><strong>Phone:</strong> ${patient.contact_number}</div>` : ''}
+                ${patient.address ? `<div><strong>Address:</strong> ${patient.address}</div>` : ''}
               `;
             }
           })
-          .catch((error) => {
-            console.error("[DraftOrders] Error fetching patient data:", error);
+          .catch(error => {
+            console.error('[DraftOrders] Error fetching patient data:', error);
           });
 
         // Write the HTML content directly to the new window
@@ -2487,22 +2203,18 @@ export function DraftOrders({
 
             <h3>Medications:</h3>
             <div id="medications-list">
-              ${medicationOrders
-                .map(
-                  (order: any) => `
+              ${medicationOrders.map((order: any) => `
                 <div class="medication">
-                  <div class="medication-name">${order.medication_name || "Unnamed Medication"}</div>
+                  <div class="medication-name">${order.medication_name || 'Unnamed Medication'}</div>
                   <div class="medication-details">
-                    ${order.dosage ? `<div><strong>Dosage:</strong> ${order.dosage}</div>` : ""}
-                    ${order.frequency ? `<div><strong>Frequency:</strong> ${order.frequency}</div>` : ""}
-                    ${order.quantity ? `<div><strong>Quantity:</strong> ${order.quantity}</div>` : ""}
-                    ${order.refills ? `<div><strong>Refills:</strong> ${order.refills}</div>` : ""}
-                    ${order.provider_notes ? `<div><strong>Instructions:</strong> ${order.provider_notes}</div>` : ""}
+                    ${order.dosage ? `<div><strong>Dosage:</strong> ${order.dosage}</div>` : ''}
+                    ${order.frequency ? `<div><strong>Frequency:</strong> ${order.frequency}</div>` : ''}
+                    ${order.quantity ? `<div><strong>Quantity:</strong> ${order.quantity}</div>` : ''}
+                    ${order.refills ? `<div><strong>Refills:</strong> ${order.refills}</div>` : ''}
+                    ${order.provider_notes ? `<div><strong>Instructions:</strong> ${order.provider_notes}</div>` : ''}
                   </div>
                 </div>
-              `,
-                )
-                .join("")}
+              `).join('')}
             </div>
 
             <div class="signature">
@@ -2520,77 +2232,56 @@ export function DraftOrders({
         prescriptionWindow.document.close();
 
         // The code below is kept as a fallback but won't be reached in normal operation
-        if (
-          false &&
-          result.pdfUrls &&
-          Array.isArray(result.pdfUrls) &&
-          result.pdfUrls.length > 0
-        ) {
+        if (false && result.pdfUrls && Array.isArray(result.pdfUrls) && result.pdfUrls.length > 0) {
           console.log(`[DraftOrders] Opening combined PDF in new tab`);
 
           // Open the combined PDF in a new tab - there should be just one URL containing all medications
           const pdfUrl = result.pdfUrls[0];
           if (pdfUrl) {
-            const fullUrl =
-              pdfUrl.startsWith("/") && !pdfUrl.startsWith("/api")
-                ? `/api${pdfUrl}`
-                : pdfUrl;
+            const fullUrl = pdfUrl.startsWith('/') && !pdfUrl.startsWith('/api') 
+              ? `/api${pdfUrl}` 
+              : pdfUrl;
             console.log(`[DraftOrders] Opening combined PDF: ${fullUrl}`);
             window.open(fullUrl, "_blank");
           }
         } else if (false && result.pdfUrl) {
           // For a single order, open it directly
-          const fullUrl =
-            result.pdfUrl.startsWith("/") && !result.pdfUrl.startsWith("/api")
-              ? result.pdfUrl
-              : result.pdfUrl;
+          const fullUrl = result.pdfUrl.startsWith('/') && !result.pdfUrl.startsWith('/api') 
+            ? result.pdfUrl 
+            : result.pdfUrl;
           console.log(`[DraftOrders] Opening single PDF: ${fullUrl}`);
           window.open(fullUrl, "_blank");
         } else {
-          console.log(
-            "[DraftOrders] Using new HTML viewer instead of PDF generation",
-          );
+          console.log("[DraftOrders] Using new HTML viewer instead of PDF generation");
 
           // Fallback if no PDF URLs are returned: print each medication individually
-          if (
-            result.orders &&
-            Array.isArray(result.orders) &&
-            result.orders.length > 0
-          ) {
+          if (result.orders && Array.isArray(result.orders) && result.orders.length > 0) {
             // Create a combined print request with all medication order IDs
-            const approvedMedications = result.orders.filter(
-              (order: any) =>
-                order.order_type === "medication" &&
-                order.order_status === "approved",
+            const approvedMedications = result.orders.filter((order: any) => 
+              order.order_type === 'medication' && order.order_status === 'approved'
             );
 
             // If there's only one medication, use the existing printOrder function
             if (approvedMedications.length === 1) {
               printOrder(approvedMedications[0].id);
-            }
+            } 
             // For multiple medications, create a combined print request
             else if (approvedMedications.length > 1) {
               // Just print the first one as a fallback in case combined printing isn't working
               printOrder(approvedMedications[0].id);
             }
-            const medicationOrders = result.orders.filter(
-              (order: any) =>
-                order.order_type === "medication" &&
-                order.order_status === "approved",
+            const medicationOrders = result.orders.filter((order: any) => 
+              order.order_type === 'medication' && order.order_status === 'approved'
             );
 
-            console.log(
-              `[DraftOrders] Found ${medicationOrders.length} approved medication orders to print`,
-            );
+            console.log(`[DraftOrders] Found ${medicationOrders.length} approved medication orders to print`);
 
             // Print each medication order
             medicationOrders.forEach((order: any) => {
               printOrder(order.id);
             });
           } else {
-            console.warn(
-              "[DraftOrders] No orders returned from server for print option",
-            );
+            console.warn("[DraftOrders] No orders returned from server for print option");
           }
         }
       }
@@ -2603,13 +2294,10 @@ export function DraftOrders({
       // Close dialog if it was open
       setShowPreferenceDialog(false);
 
-      toast({
-        description:
-          `Successfully signed ${result.count || 0} orders` +
-          ((preference || medicationPreference) === "pharmacy" &&
-          result.sentToPharmacy
-            ? ` (${result.sentToPharmacy} sent to pharmacy)`
-            : ""),
+      toast({ 
+        description: `Successfully signed ${result.count || 0} orders` + 
+                     ((preference || medicationPreference) === "pharmacy" && result.sentToPharmacy ? 
+                     ` (${result.sentToPharmacy} sent to pharmacy)` : "")
       });
     } catch (error) {
       console.error("[DraftOrders] Error signing all orders:", error);
@@ -2626,9 +2314,7 @@ export function DraftOrders({
     try {
       // Check if the order is already being processed
       if (pendingOrders.has(orderId)) {
-        console.log(
-          `[DraftOrders] Order ${orderId} is already being processed, cannot delete`,
-        );
+        console.log(`[DraftOrders] Order ${orderId} is already being processed, cannot delete`);
         return;
       }
 
@@ -2648,24 +2334,18 @@ export function DraftOrders({
       }
 
       const result = await response.json();
-      console.log(
-        `[DraftOrders] Order ${orderId} deleted successfully:`,
-        result,
-      );
+      console.log(`[DraftOrders] Order ${orderId} deleted successfully:`, result);
 
       // Update the UI by modifying the local query data
-      const existingOrders =
-        queryClient.getQueryData<Order[]>([
-          `/api/patients/${patientId}/orders/draft`,
-        ]) || [];
+      const existingOrders = queryClient.getQueryData<Order[]>([
+        `/api/patients/${patientId}/orders/draft`,
+      ]) || [];
 
       // Remove the deleted order from the local cache
-      const updatedOrders = existingOrders.filter(
-        (order) => order.id !== orderId,
-      );
+      const updatedOrders = existingOrders.filter(order => order.id !== orderId);
       queryClient.setQueryData<Order[]>(
         [`/api/patients/${patientId}/orders/draft`],
-        updatedOrders,
+        updatedOrders
       );
 
       toast({ description: "Order deleted successfully" });
@@ -2689,23 +2369,23 @@ export function DraftOrders({
       order.order_status === "draft"
         ? "Draft"
         : order.order_status === "pending"
-          ? "Pending"
-          : order.order_status === "approved"
-            ? "Signed"
-            : order.order_status === "completed"
-              ? "Completed"
-              : "Unknown";
+        ? "Pending"
+        : order.order_status === "approved"
+        ? "Signed"
+        : order.order_status === "completed"
+        ? "Completed"
+        : "Unknown";
 
     const statusColor =
       order.order_status === "draft"
         ? "bg-gray-200 text-gray-800"
         : order.order_status === "pending"
-          ? "bg-yellow-200 text-yellow-800"
-          : order.order_status === "approved"
-            ? "bg-green-200 text-green-800"
-            : order.order_status === "completed"
-              ? "bg-blue-200 text-blue-800"
-              : "bg-gray-200 text-gray-800";
+        ? "bg-yellow-200 text-yellow-800"
+        : order.order_status === "approved"
+        ? "bg-green-200 text-green-800"
+        : order.order_status === "completed"
+        ? "bg-blue-200 text-blue-800"
+        : "bg-gray-200 text-gray-800";
 
     return (
       <div className="flex flex-col">
@@ -2719,9 +2399,7 @@ export function DraftOrders({
                 {order.order_type === "referral" && "Referral"}
                 {order.order_type === "other" && "Other Order"}
               </h3>
-              <span
-                className={`ml-2 text-xs px-2 py-0.5 rounded-full ${statusColor}`}
-              >
+              <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${statusColor}`}>
                 {statusLabel}
               </span>
             </div>
@@ -2731,20 +2409,15 @@ export function DraftOrders({
                   <span className="text-gray-700 font-medium">Dosage: </span>
                   {order.dosage || "Not specified"}
                   <br />
-                  <span className="text-gray-700 font-medium">
-                    Instructions:{" "}
-                  </span>
+                  <span className="text-gray-700 font-medium">Instructions: </span>
                   {order.sig || "Not specified"}
                   <br />
                   <span className="text-gray-700 font-medium">Quantity: </span>
-                  {order.quantity || 0} {order.form || "tabs"},{" "}
-                  {order.refills || 0} refills
+                  {order.quantity || 0} {order.form || "tabs"}, {order.refills || 0} refills
                   {order.diagnosis_code && (
                     <>
                       <br />
-                      <span className="text-gray-700 font-medium">
-                        Diagnosis:{" "}
-                      </span>
+                      <span className="text-gray-700 font-medium">Diagnosis: </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                         {order.diagnosis_code}
                       </span>
@@ -2762,9 +2435,7 @@ export function DraftOrders({
                   {order.diagnosis_code && (
                     <>
                       <br />
-                      <span className="text-gray-700 font-medium">
-                        Diagnosis:{" "}
-                      </span>
+                      <span className="text-gray-700 font-medium">Diagnosis: </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                         {order.diagnosis_code}
                       </span>
@@ -2782,9 +2453,7 @@ export function DraftOrders({
                   {order.diagnosis_code && (
                     <>
                       <br />
-                      <span className="text-gray-700 font-medium">
-                        Diagnosis:{" "}
-                      </span>
+                      <span className="text-gray-700 font-medium">Diagnosis: </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                         {order.diagnosis_code}
                       </span>
@@ -2792,8 +2461,7 @@ export function DraftOrders({
                   )}
                 </div>
               )}
-              {(order.order_type === "referral" ||
-                order.order_type === "other") && (
+              {(order.order_type === "referral" || order.order_type === "other") && (
                 <div>{order.provider_notes || "No details provided"}</div>
               )}
             </div>
@@ -2930,43 +2598,28 @@ export function DraftOrders({
               {hasMedicationOrders && (
                 <div className="mr-4 flex items-center">
                   <span className="text-sm text-gray-600 mr-2">Rx:</span>
-                  <RadioGroup
-                    value={medicationPreference}
+                  <RadioGroup 
+                    value={medicationPreference} 
                     onValueChange={(value) => {
                       setMedicationPreference(value);
                       // Save preference if user changes it
                       if (savePreference) {
-                        fetch(
-                          `/api/patients/${patientId}/medication-preference`,
-                          {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ preference: value }),
-                          },
-                        ).catch((err) =>
-                          console.error("Error saving preference:", err),
-                        );
+                        fetch(`/api/patients/${patientId}/medication-preference`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ preference: value }),
+                        }).catch(err => console.error("Error saving preference:", err));
                       }
                     }}
                     className="flex items-center space-x-4"
                   >
                     <div className="flex items-center space-x-1">
                       <RadioGroupItem value="print" id="print_inline" />
-                      <Label
-                        htmlFor="print_inline"
-                        className="text-sm cursor-pointer"
-                      >
-                        Print
-                      </Label>
+                      <Label htmlFor="print_inline" className="text-sm cursor-pointer">Print</Label>
                     </div>
                     <div className="flex items-center space-x-1">
                       <RadioGroupItem value="pharmacy" id="pharmacy_inline" />
-                      <Label
-                        htmlFor="pharmacy_inline"
-                        className="text-sm cursor-pointer"
-                      >
-                        Pharmacy
-                      </Label>
+                      <Label htmlFor="pharmacy_inline" className="text-sm cursor-pointer">Pharmacy</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -2984,10 +2637,10 @@ export function DraftOrders({
                 </Button>
               )}
 
-              <NewOrderDialog />
-            </div>
+            <NewOrderDialog />
           </div>
         </div>
+      </div>
       </CardHeader>
       <CardContent className="p-0 h-full overflow-y-auto">
         <div className="w-full h-full min-h-[200px]">
