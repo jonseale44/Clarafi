@@ -897,14 +897,23 @@ export function registerRoutes(app: Express): Server {
       if (!req.isAuthenticated()) return res.sendStatus(401);
       
       const orderData = req.body;
-      const order = await storage.createOrder({
+      console.log(`[Orders API] Creating new order with data:`, JSON.stringify(orderData, null, 2));
+      
+      const orderWithUser = {
         ...orderData,
         orderedBy: (req.user as any).id,
-      });
+      };
+      
+      console.log(`[Orders API] Final order data for database:`, JSON.stringify(orderWithUser, null, 2));
+      
+      const order = await storage.createOrder(orderWithUser);
+      console.log(`[Orders API] Successfully created order with ID: ${order.id}`);
       
       res.status(201).json(order);
     } catch (error: any) {
       console.error("[Orders API] Error creating order:", error);
+      console.error("[Orders API] Error stack:", error.stack);
+      console.error("[Orders API] Order data that caused error:", JSON.stringify(req.body, null, 2));
       res.status(500).json({ message: error.message });
     }
   });
@@ -917,10 +926,51 @@ export function registerRoutes(app: Express): Server {
       const orderId = parseInt(req.params.id);
       const updates = req.body;
       
-      const order = await storage.updateOrder(orderId, updates);
+      console.log(`[Orders API] Updating order ${orderId} with data:`, JSON.stringify(updates, null, 2));
+      
+      // Clean up any invalid timestamp fields and other problematic fields
+      const cleanedUpdates = { ...updates };
+      
+      // Remove all timestamp fields as they are auto-managed by the database
+      delete cleanedUpdates.createdAt;
+      delete cleanedUpdates.updatedAt;
+      delete cleanedUpdates.orderedAt;
+      delete cleanedUpdates.approvedAt;
+      
+      // Remove any other auto-generated or problematic fields
+      delete cleanedUpdates.id;
+      
+      // Convert string numbers to proper numbers
+      if (cleanedUpdates.quantity && typeof cleanedUpdates.quantity === 'string') {
+        cleanedUpdates.quantity = parseInt(cleanedUpdates.quantity, 10);
+      }
+      if (cleanedUpdates.refills && typeof cleanedUpdates.refills === 'string') {
+        cleanedUpdates.refills = parseInt(cleanedUpdates.refills, 10);
+      }
+      if (cleanedUpdates.daysSupply && typeof cleanedUpdates.daysSupply === 'string') {
+        cleanedUpdates.daysSupply = parseInt(cleanedUpdates.daysSupply, 10);
+      }
+      
+      // Convert boolean strings to proper booleans
+      if (cleanedUpdates.requiresPriorAuth && typeof cleanedUpdates.requiresPriorAuth === 'string') {
+        cleanedUpdates.requiresPriorAuth = cleanedUpdates.requiresPriorAuth === 'true';
+      }
+      if (cleanedUpdates.fastingRequired && typeof cleanedUpdates.fastingRequired === 'string') {
+        cleanedUpdates.fastingRequired = cleanedUpdates.fastingRequired === 'true';
+      }
+      if (cleanedUpdates.contrastNeeded && typeof cleanedUpdates.contrastNeeded === 'string') {
+        cleanedUpdates.contrastNeeded = cleanedUpdates.contrastNeeded === 'true';
+      }
+      
+      console.log(`[Orders API] Cleaned update data:`, JSON.stringify(cleanedUpdates, null, 2));
+      
+      const order = await storage.updateOrder(orderId, cleanedUpdates);
+      console.log(`[Orders API] Successfully updated order ${orderId}`);
       res.json(order);
     } catch (error: any) {
       console.error("[Orders API] Error updating order:", error);
+      console.error("[Orders API] Error stack:", error.stack);
+      console.error("[Orders API] Update data that caused error:", JSON.stringify(req.body, null, 2));
       res.status(500).json({ message: error.message });
     }
   });
