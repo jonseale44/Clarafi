@@ -785,6 +785,14 @@ export function registerRoutes(app: Express): Server {
       );
 
       console.log(`✅ [SOAP] Generated SOAP note (${soapNote.length} characters)`);
+
+      // Save the SOAP note content to encounter fields for retrieval
+      await storage.updateEncounter(encounterId, {
+        subjective: soapNote.includes('SUBJECTIVE:') ? soapNote.split('SUBJECTIVE:')[1]?.split('OBJECTIVE:')[0]?.trim() : '',
+        objective: soapNote.includes('OBJECTIVE:') ? soapNote.split('OBJECTIVE:')[1]?.split('ASSESSMENT:')[0]?.trim() : '',
+        assessment: soapNote.includes('ASSESSMENT:') ? soapNote.split('ASSESSMENT:')[1]?.split('PLAN:')[0]?.trim() : '',
+        plan: soapNote.includes('PLAN:') ? soapNote.split('PLAN:')[1]?.trim() : ''
+      });
       
       // Automatically extract and create draft orders from SOAP note
       try {
