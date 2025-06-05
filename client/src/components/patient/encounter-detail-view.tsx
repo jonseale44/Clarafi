@@ -916,13 +916,30 @@ export function EncounterDetailView({
     try {
       console.log("💾 [EncounterView] Saving SOAP note...");
       
-      // Here you would typically save to your encounter/notes endpoint
-      // For now, we'll just show a success message
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Get the current SOAP note content from the editor
+      const currentContent = editor?.getHTML() || soapNote;
+      
+      // Save to backend with physical exam learning analysis
+      const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/soap-note`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          soapNote: currentContent
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save SOAP note: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ [EncounterView] SOAP note saved successfully:", data);
       
       toast({
         title: "SOAP Note Saved",
-        description: "Your SOAP note has been saved to the patient's record.",
+        description: "Your SOAP note has been saved and analyzed for future encounters.",
       });
 
     } catch (error) {

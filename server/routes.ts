@@ -805,6 +805,23 @@ export function registerRoutes(app: Express): Server {
         assessment: soapNote.includes('ASSESSMENT:') ? soapNote.split('ASSESSMENT:')[1]?.split('PLAN:')[0]?.trim() : '',
         plan: soapNote.includes('PLAN:') ? soapNote.split('PLAN:')[1]?.trim() : ''
       });
+
+      // Analyze SOAP note for persistent physical findings to learn for future encounters
+      try {
+        console.log(`🧠 [PhysicalExamLearning] Analyzing SOAP note for persistent findings...`);
+        const { PhysicalExamLearningService } = await import('./physical-exam-learning-service.js');
+        const learningService = new PhysicalExamLearningService();
+        
+        await learningService.analyzeSOAPNoteForPersistentFindings(
+          patientId,
+          encounterId,
+          soapNote
+        );
+        console.log(`✅ [PhysicalExamLearning] Analysis completed for encounter ${encounterId}`);
+      } catch (learningError: any) {
+        console.error('❌ [PhysicalExamLearning] Error analyzing SOAP note:', learningError);
+        // Don't fail SOAP generation if learning analysis fails
+      }
       
       // Automatically extract and create draft orders from SOAP note
       try {
@@ -986,6 +1003,64 @@ export function registerRoutes(app: Express): Server {
       console.error('❌ [SOAP API] Error getting SOAP note:', error);
       res.status(500).json({ 
         message: "Failed to get SOAP note", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Save manually edited SOAP note (with physical exam learning analysis)
+  app.put("/api/patients/:id/encounters/:encounterId/soap-note", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const encounterId = parseInt(req.params.encounterId);
+      const { soapNote } = req.body;
+      
+      if (!soapNote || !soapNote.trim()) {
+        return res.status(400).json({ message: "SOAP note content is required" });
+      }
+
+      console.log(`📝 [SOAP Update] Saving manually edited SOAP note for encounter ${encounterId}`);
+
+      // Parse and save the SOAP note content to encounter fields
+      await storage.updateEncounter(encounterId, {
+        subjective: soapNote.includes('SUBJECTIVE:') ? soapNote.split('SUBJECTIVE:')[1]?.split('OBJECTIVE:')[0]?.trim() : '',
+        objective: soapNote.includes('OBJECTIVE:') ? soapNote.split('OBJECTIVE:')[1]?.split('ASSESSMENT:')[0]?.trim() : '',
+        assessment: soapNote.includes('ASSESSMENT:') ? soapNote.split('ASSESSMENT:')[1]?.split('PLAN:')[0]?.trim() : '',
+        plan: soapNote.includes('PLAN:') ? soapNote.split('PLAN:')[1]?.trim() : ''
+      });
+
+      // Analyze manually edited SOAP note for persistent physical findings
+      try {
+        console.log(`🧠 [PhysicalExamLearning] Analyzing manually edited SOAP note for persistent findings...`);
+        const { PhysicalExamLearningService } = await import('./physical-exam-learning-service.js');
+        const learningService = new PhysicalExamLearningService();
+        
+        await learningService.analyzeSOAPNoteForPersistentFindings(
+          patientId,
+          encounterId,
+          soapNote
+        );
+        console.log(`✅ [PhysicalExamLearning] Analysis completed for manually edited encounter ${encounterId}`);
+      } catch (learningError: any) {
+        console.error('❌ [PhysicalExamLearning] Error analyzing manually edited SOAP note:', learningError);
+        // Don't fail SOAP save if learning analysis fails
+      }
+
+      console.log(`✅ [SOAP Update] Manually edited SOAP note saved for encounter ${encounterId}`);
+      
+      res.json({ 
+        message: "SOAP note saved successfully",
+        encounterId,
+        patientId,
+        savedAt: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error('❌ [SOAP Update] Error saving SOAP note:', error);
+      res.status(500).json({ 
+        message: "Failed to save SOAP note", 
         error: error.message 
       });
     }
