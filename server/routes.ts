@@ -880,8 +880,15 @@ export function registerRoutes(app: Express): Server {
       
       // Use GPT to enhance medication orders with missing clinical data
       if (standardizedOrder.orderType === 'medication') {
+        // Import patient chart service to get clinical context
+        const { PatientChartService } = await import('./patient-chart-service.js');
+        
+        // Fetch patient's medical history and current conditions
+        const patientChartData = await PatientChartService.getPatientChartData(standardizedOrder.patientId);
+        
+        // Enhance order using GPT with full clinical context
         const enhancer = new GPTClinicalEnhancer();
-        standardizedOrder = await enhancer.enhanceMedicationOrder(standardizedOrder);
+        standardizedOrder = await enhancer.enhanceMedicationOrder(standardizedOrder, patientChartData);
         console.log("[Orders API] GPT-enhanced order data:", standardizedOrder);
       }
       

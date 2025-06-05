@@ -17,9 +17,10 @@ export class GPTClinicalEnhancer {
 
   /**
    * Enhances incomplete medication orders using GPT medical knowledge
+   * Incorporates patient chart data for clinically accurate ICD-10 selection
    * Populates missing ICD-10 codes, clinical indications, and prior auth requirements
    */
-  async enhanceMedicationOrder(order: InsertOrder): Promise<InsertOrder> {
+  async enhanceMedicationOrder(order: InsertOrder, patientChartData?: any): Promise<InsertOrder> {
     // Check if order needs enhancement
     if (!this.needsEnhancement(order)) {
       return order;
@@ -28,7 +29,7 @@ export class GPTClinicalEnhancer {
     try {
       console.log(`[GPT Enhancer] Enhancing medication order: ${order.medicationName}`);
       
-      const enhancement = await this.requestGPTEnhancement(order);
+      const enhancement = await this.requestGPTEnhancement(order, patientChartData);
       
       const enhancedOrder = {
         ...order,
@@ -62,13 +63,25 @@ export class GPTClinicalEnhancer {
 
   /**
    * Requests GPT to provide clinical enhancement for incomplete orders
+   * Incorporates patient chart data for clinically accurate decisions
    */
-  private async requestGPTEnhancement(order: InsertOrder): Promise<{
+  private async requestGPTEnhancement(order: InsertOrder, patientChartData?: any): Promise<{
     clinicalIndication?: string;
     diagnosisCode?: string;
     requiresPriorAuth?: boolean;
   }> {
+    const chartContext = patientChartData ? `
+Patient Chart Context:
+- Active Problems: ${JSON.stringify(patientChartData.activeProblems || [])}
+- Medical History: ${JSON.stringify(patientChartData.medicalHistory || [])}
+- Current Medications: ${JSON.stringify(patientChartData.currentMedications || [])}
+- Recent Diagnoses: ${JSON.stringify(patientChartData.recentDiagnoses || [])}
+- Allergies: ${JSON.stringify(patientChartData.allergies || [])}
+` : 'No patient chart data available.';
+
     const prompt = `You are a clinical pharmacist AI assistant. A medication order was created manually and needs clinical enhancement for EMR integration and insurance processing.
+
+${chartContext}
 
 Medication Order Details:
 - Medication: ${order.medicationName}
@@ -77,6 +90,8 @@ Medication Order Details:
 - Route: ${order.routeOfAdministration || 'Not specified'}
 - Current Indication: ${order.clinicalIndication || 'Not specified'}
 - Current ICD-10: ${order.diagnosisCode || 'Not specified'}
+
+CRITICAL: Use the patient's existing chart data to make clinically appropriate ICD-10 selections. If the patient has documented hypertension and is being prescribed lisinopril, use the hypertension ICD-10 code. If they have diabetes and are prescribed metformin, use the diabetes code. Always prioritize existing documented conditions over general medication indications.
 
 Please provide clinical enhancement data in JSON format:
 
