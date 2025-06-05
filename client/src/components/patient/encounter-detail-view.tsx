@@ -1209,33 +1209,7 @@ export function EncounterDetailView({
           <DraftOrders patientId={patient.id} encounterId={encounterId} />
 
           {/* CPT Codes & Diagnoses */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">CPT Codes & Diagnoses</h2>
-            </div>
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-              <div className="text-sm">No billing codes or diagnoses yet</div>
-              <div className="text-xs mt-1">
-                Complete a recording to generate codes
-              </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex items-center space-x-2 text-sm">
-                <span className="text-green-600">● Connected</span>
-                <span className="text-gray-500">
-                  Total: 7,737 tokens (59.5%)
-                </span>
-                <span className="text-gray-500">Transcription: 0</span>
-                <span className="text-gray-500">Suggestions: 0</span>
-                <span className="text-gray-500">SOAP: 0</span>
-              </div>
-              <Button variant="outline" size="sm" className="mt-2">
-                Reset
-              </Button>
-            </div>
-          </Card>
+          <CPTCodesDiagnoses patientId={patient.id} encounterId={encounterId} />
         </div>
       </div>
     </div>
