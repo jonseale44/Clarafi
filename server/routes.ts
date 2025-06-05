@@ -1013,12 +1013,9 @@ export function registerRoutes(app: Express): Server {
 
       console.log(`📝 [SOAP Update] Saving manually edited SOAP note for encounter ${encounterId}`);
 
-      // Parse and save the SOAP note content to encounter fields
+      // Save the complete SOAP note to encounter
       await storage.updateEncounter(encounterId, {
-        subjective: soapNote.includes('SUBJECTIVE:') ? soapNote.split('SUBJECTIVE:')[1]?.split('OBJECTIVE:')[0]?.trim() : '',
-        objective: soapNote.includes('OBJECTIVE:') ? soapNote.split('OBJECTIVE:')[1]?.split('ASSESSMENT:')[0]?.trim() : '',
-        assessment: soapNote.includes('ASSESSMENT:') ? soapNote.split('ASSESSMENT:')[1]?.split('PLAN:')[0]?.trim() : '',
-        plan: soapNote.includes('PLAN:') ? soapNote.split('PLAN:')[1]?.trim() : ''
+        note: soapNote
       });
 
       // Analyze manually edited SOAP note for persistent physical findings
