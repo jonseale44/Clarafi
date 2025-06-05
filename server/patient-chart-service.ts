@@ -90,7 +90,7 @@ export class PatientChartService {
       };
 
       console.log(`[Chart Service] Retrieved chart data:`, {
-        activeProblems: chartData.activeProblems.length,
+        activeProblems: Array.isArray(chartData.activeProblems) ? chartData.activeProblems.length : 0,
         medicalHistory: chartData.medicalHistory.length,
         currentMedications: chartData.currentMedications.length,
         recentDiagnoses: chartData.recentDiagnoses.length,

@@ -58,7 +58,7 @@ export class GPTClinicalEnhancer {
     
     const missingDiagnosisCode = !order.diagnosisCode || order.diagnosisCode === '';
     
-    return order.medicationName && (hasGenericIndication || missingDiagnosisCode);
+    return Boolean(order.medicationName) && (hasGenericIndication || missingDiagnosisCode);
   }
 
   /**
