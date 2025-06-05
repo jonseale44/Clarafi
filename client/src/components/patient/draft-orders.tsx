@@ -530,38 +530,91 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
     <>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="medicationName">Medication Name</Label>
+          <Label htmlFor="medicationName">Medication Name *</Label>
           <Input
             id="medicationName"
             value={order.medicationName || ""}
             onChange={(e) => onChange("medicationName", e.target.value)}
+            placeholder="e.g., Lisinopril"
+            required
           />
         </div>
         <div>
-          <Label htmlFor="dosage">Dosage</Label>
+          <Label htmlFor="dosage">Dosage/Strength *</Label>
           <Input
             id="dosage"
             value={order.dosage || ""}
             onChange={(e) => onChange("dosage", e.target.value)}
+            placeholder="e.g., 10mg"
+            required
           />
         </div>
       </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="form">Dosage Form *</Label>
+          <Select value={order.form || ""} onValueChange={(value) => onChange("form", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select dosage form" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tablet">Tablet</SelectItem>
+              <SelectItem value="capsule">Capsule</SelectItem>
+              <SelectItem value="liquid">Liquid/Solution</SelectItem>
+              <SelectItem value="injection">Injection</SelectItem>
+              <SelectItem value="cream">Topical Cream</SelectItem>
+              <SelectItem value="ointment">Ointment</SelectItem>
+              <SelectItem value="patch">Transdermal Patch</SelectItem>
+              <SelectItem value="inhaler">Inhaler</SelectItem>
+              <SelectItem value="drops">Eye/Ear Drops</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="routeOfAdministration">Route *</Label>
+          <Select value={order.routeOfAdministration || ""} onValueChange={(value) => onChange("routeOfAdministration", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select route" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="oral">Oral (PO)</SelectItem>
+              <SelectItem value="topical">Topical</SelectItem>
+              <SelectItem value="injection">Injection (IM/IV/SQ)</SelectItem>
+              <SelectItem value="inhalation">Inhalation</SelectItem>
+              <SelectItem value="ophthalmic">Ophthalmic</SelectItem>
+              <SelectItem value="otic">Otic (Ear)</SelectItem>
+              <SelectItem value="nasal">Nasal</SelectItem>
+              <SelectItem value="rectal">Rectal</SelectItem>
+              <SelectItem value="transdermal">Transdermal</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
       <div>
-        <Label htmlFor="sig">Instructions (Sig)</Label>
-        <Input
+        <Label htmlFor="sig">Patient Instructions (Sig) *</Label>
+        <Textarea
           id="sig"
           value={order.sig || ""}
           onChange={(e) => onChange("sig", e.target.value)}
+          placeholder="e.g., Take 1 tablet by mouth once daily with food"
+          required
+          rows={2}
         />
       </div>
+      
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="quantity">Quantity</Label>
+          <Label htmlFor="quantity">Quantity *</Label>
           <Input
             id="quantity"
             type="number"
             value={order.quantity || ""}
             onChange={(e) => onChange("quantity", parseInt(e.target.value) || 0)}
+            placeholder="30"
+            min="1"
+            required
           />
         </div>
         <div>
@@ -571,6 +624,9 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
             type="number"
             value={order.refills || ""}
             onChange={(e) => onChange("refills", parseInt(e.target.value) || 0)}
+            placeholder="0"
+            min="0"
+            max="11"
           />
         </div>
         <div>
@@ -580,9 +636,45 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
             type="number"
             value={order.daysSupply || ""}
             onChange={(e) => onChange("daysSupply", parseInt(e.target.value) || 0)}
+            placeholder="30"
+            min="1"
           />
         </div>
       </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="diagnosisCode">Diagnosis Code (ICD-10)</Label>
+          <Input
+            id="diagnosisCode"
+            value={order.diagnosisCode || ""}
+            onChange={(e) => onChange("diagnosisCode", e.target.value)}
+            placeholder="e.g., I10 (Essential hypertension)"
+          />
+        </div>
+        <div className="flex items-center space-x-2 pt-6">
+          <input
+            type="checkbox"
+            id="requiresPriorAuth"
+            checked={order.requiresPriorAuth || false}
+            onChange={(e) => onChange("requiresPriorAuth", e.target.checked)}
+            className="rounded border border-gray-300"
+          />
+          <Label htmlFor="requiresPriorAuth">Requires Prior Authorization</Label>
+        </div>
+      </div>
+      
+      {order.requiresPriorAuth && (
+        <div>
+          <Label htmlFor="priorAuthNumber">Prior Authorization Number</Label>
+          <Input
+            id="priorAuthNumber"
+            value={order.priorAuthNumber || ""}
+            onChange={(e) => onChange("priorAuthNumber", e.target.value)}
+            placeholder="Enter prior auth number if available"
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -592,11 +684,13 @@ function LabEditFields({ order, onChange }: { order: Order; onChange: (field: st
     <>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="testName">Test Name</Label>
+          <Label htmlFor="testName">Test Name *</Label>
           <Input
             id="testName"
             value={order.testName || ""}
             onChange={(e) => onChange("testName", e.target.value)}
+            placeholder="e.g., Complete Blood Count"
+            required
           />
         </div>
         <div>
@@ -605,24 +699,62 @@ function LabEditFields({ order, onChange }: { order: Order; onChange: (field: st
             id="labName"
             value={order.labName || ""}
             onChange={(e) => onChange("labName", e.target.value)}
+            placeholder="e.g., Comprehensive Metabolic Panel"
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      
+      <div className="grid grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="specimenType">Specimen Type</Label>
+          <Label htmlFor="specimenType">Specimen Type *</Label>
           <Select value={order.specimenType || ""} onValueChange={(value) => onChange("specimenType", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select specimen type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="blood">Blood</SelectItem>
+              <SelectItem value="blood">Blood (Serum/Plasma)</SelectItem>
+              <SelectItem value="whole_blood">Whole Blood</SelectItem>
               <SelectItem value="urine">Urine</SelectItem>
-              <SelectItem value="tissue">Tissue</SelectItem>
-              <SelectItem value="swab">Swab</SelectItem>
+              <SelectItem value="tissue">Tissue Biopsy</SelectItem>
+              <SelectItem value="swab">Swab (Throat/Nasal)</SelectItem>
+              <SelectItem value="stool">Stool</SelectItem>
+              <SelectItem value="csf">Cerebrospinal Fluid</SelectItem>
+              <SelectItem value="sputum">Sputum</SelectItem>
             </SelectContent>
           </Select>
         </div>
+        
+        <div>
+          <Label htmlFor="testCode">Test Code (LOINC/CPT)</Label>
+          <Input
+            id="testCode"
+            value={order.testCode || ""}
+            onChange={(e) => onChange("testCode", e.target.value)}
+            placeholder="e.g., 80053"
+          />
+        </div>
+        
+        <div className="flex items-center space-x-2 pt-6">
+          <input
+            type="checkbox"
+            id="fastingRequired"
+            checked={order.fastingRequired || false}
+            onChange={(e) => onChange("fastingRequired", e.target.checked)}
+            className="rounded border border-gray-300"
+          />
+          <Label htmlFor="fastingRequired">Fasting Required</Label>
+        </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="providerNotes">Provider Notes</Label>
+        <Textarea
+          id="providerNotes"
+          value={order.providerNotes || ""}
+          onChange={(e) => onChange("providerNotes", e.target.value)}
+          placeholder="Additional instructions for lab processing..."
+          rows={2}
+        />
       </div>
     </>
   );
@@ -633,30 +765,37 @@ function ImagingEditFields({ order, onChange }: { order: Order; onChange: (field
     <>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="studyType">Study Type</Label>
+          <Label htmlFor="studyType">Study Type *</Label>
           <Select value={order.studyType || ""} onValueChange={(value) => onChange("studyType", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select study type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="X-ray">X-ray</SelectItem>
-              <SelectItem value="CT">CT Scan</SelectItem>
-              <SelectItem value="MRI">MRI</SelectItem>
-              <SelectItem value="Ultrasound">Ultrasound</SelectItem>
+              <SelectItem value="X-ray">X-ray (Radiography)</SelectItem>
+              <SelectItem value="CT">CT Scan (Computed Tomography)</SelectItem>
+              <SelectItem value="MRI">MRI (Magnetic Resonance Imaging)</SelectItem>
+              <SelectItem value="Ultrasound">Ultrasound (Sonography)</SelectItem>
               <SelectItem value="Nuclear">Nuclear Medicine</SelectItem>
+              <SelectItem value="Mammography">Mammography</SelectItem>
+              <SelectItem value="Fluoroscopy">Fluoroscopy</SelectItem>
+              <SelectItem value="PET">PET Scan</SelectItem>
+              <SelectItem value="DEXA">DEXA (Bone Density)</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label htmlFor="region">Region/Body Part</Label>
+          <Label htmlFor="region">Region/Body Part *</Label>
           <Input
             id="region"
             value={order.region || ""}
             onChange={(e) => onChange("region", e.target.value)}
+            placeholder="e.g., Chest, Abdomen, Left Knee"
+            required
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      
+      <div className="grid grid-cols-3 gap-4">
         <div>
           <Label htmlFor="laterality">Laterality</Label>
           <Select value={order.laterality || ""} onValueChange={(value) => onChange("laterality", value)}>
@@ -664,12 +803,49 @@ function ImagingEditFields({ order, onChange }: { order: Order; onChange: (field
               <SelectValue placeholder="Select laterality" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="">Not Applicable</SelectItem>
               <SelectItem value="left">Left</SelectItem>
               <SelectItem value="right">Right</SelectItem>
               <SelectItem value="bilateral">Bilateral</SelectItem>
             </SelectContent>
           </Select>
         </div>
+        
+        <div className="flex items-center space-x-2 pt-6">
+          <input
+            type="checkbox"
+            id="contrastNeeded"
+            checked={order.contrastNeeded || false}
+            onChange={(e) => onChange("contrastNeeded", e.target.checked)}
+            className="rounded border border-gray-300"
+          />
+          <Label htmlFor="contrastNeeded">Contrast Required</Label>
+        </div>
+        
+        <div>
+          <Label htmlFor="urgency">Urgency Level</Label>
+          <Select value={order.urgency || ""} onValueChange={(value) => onChange("urgency", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select urgency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="routine">Routine</SelectItem>
+              <SelectItem value="urgent">Urgent (24 hours)</SelectItem>
+              <SelectItem value="stat">STAT (Immediate)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="providerNotes">Provider Notes & Prep Instructions</Label>
+        <Textarea
+          id="providerNotes"
+          value={order.providerNotes || ""}
+          onChange={(e) => onChange("providerNotes", e.target.value)}
+          placeholder="Special instructions, prep requirements, clinical context..."
+          rows={3}
+        />
       </div>
     </>
   );

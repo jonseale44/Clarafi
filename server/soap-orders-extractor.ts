@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { InsertOrder } from "../shared/schema.js";
+import { OrderStandardizationService } from "./order-standardization-service.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -57,7 +58,7 @@ export class SOAPOrdersExtractor {
       const extractedOrders = await this.parseOrdersWithGPT(soapNote);
       console.log(`[SOAPExtractor] Raw GPT extraction result:`, JSON.stringify(extractedOrders, null, 2));
       
-      // Convert extracted orders to database format
+      // Convert extracted orders to database format with standardization
       const orderInserts: InsertOrder[] = [];
       
       // Process medications
@@ -65,11 +66,11 @@ export class SOAPOrdersExtractor {
         console.log(`[SOAPExtractor] Processing ${extractedOrders.medications.length} medications:`);
         for (const med of extractedOrders.medications) {
           console.log(`[SOAPExtractor] Medication: ${med.medication_name} - ${med.dosage}`);
-          const medicationOrder = {
+          const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'medication',
-            orderStatus: 'draft',
+            orderType: 'medication' as const,
+            orderStatus: 'draft' as const,
             medicationName: med.medication_name,
             dosage: med.dosage,
             quantity: med.quantity,
@@ -81,10 +82,13 @@ export class SOAPOrdersExtractor {
             diagnosisCode: med.diagnosis_code,
             requiresPriorAuth: med.requires_prior_auth || false,
             clinicalIndication: med.clinical_indication,
-            priority: 'routine'
+            priority: 'routine' as const
           };
-          console.log(`[SOAPExtractor] Created medication order:`, medicationOrder);
-          orderInserts.push(medicationOrder);
+          
+          // Apply standardization to ensure all required fields are present
+          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
+          console.log(`[SOAPExtractor] Standardized medication order:`, standardizedOrder);
+          orderInserts.push(standardizedOrder);
         }
       } else {
         console.log(`[SOAPExtractor] No medications found in extracted orders`);
@@ -93,54 +97,66 @@ export class SOAPOrdersExtractor {
       // Process labs
       if (extractedOrders.labs) {
         for (const lab of extractedOrders.labs) {
-          orderInserts.push({
+          const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'lab',
-            orderStatus: 'draft',
+            orderType: 'lab' as const,
+            orderStatus: 'draft' as const,
             labName: lab.lab_name,
             testName: lab.test_name,
             testCode: lab.test_code,
             specimenType: lab.specimen_type,
             fastingRequired: lab.fasting_required || false,
             clinicalIndication: lab.clinical_indication,
-            priority: lab.priority || 'routine'
-          });
+            priority: lab.priority || 'routine' as const
+          };
+          
+          // Apply standardization for lab order requirements
+          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
+          orderInserts.push(standardizedOrder);
         }
       }
       
       // Process imaging
       if (extractedOrders.imaging) {
         for (const img of extractedOrders.imaging) {
-          orderInserts.push({
+          const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'imaging',
-            orderStatus: 'draft',
+            orderType: 'imaging' as const,
+            orderStatus: 'draft' as const,
             studyType: img.study_type,
             region: img.region,
             laterality: img.laterality,
             contrastNeeded: img.contrast_needed || false,
             clinicalIndication: img.clinical_indication,
-            priority: img.priority || 'routine'
-          });
+            priority: img.priority || 'routine' as const
+          };
+          
+          // Apply standardization for imaging order requirements
+          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
+          orderInserts.push(standardizedOrder);
         }
       }
       
       // Process referrals
       if (extractedOrders.referrals) {
         for (const ref of extractedOrders.referrals) {
-          orderInserts.push({
+          const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'referral',
-            orderStatus: 'draft',
+            orderType: 'referral' as const,
+            orderStatus: 'draft' as const,
             specialtyType: ref.specialty_type,
             providerName: ref.provider_name,
             clinicalIndication: ref.clinical_indication,
             urgency: ref.urgency,
-            priority: ref.urgency === 'urgent' ? 'urgent' : 'routine'
-          });
+            priority: (ref.urgency === 'urgent' ? 'urgent' : 'routine') as const
+          };
+          
+          // Apply standardization for referral order requirements
+          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
+          orderInserts.push(standardizedOrder);
         }
       }
       
