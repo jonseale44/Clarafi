@@ -414,11 +414,20 @@ function OrderContent({ order }: { order: Order }) {
         <div>
           <div className="font-medium">{order.medicationName}</div>
           <div className="text-sm text-gray-600">
-            {order.dosage} - {order.sig}
+            {order.dosage} {order.form && `(${order.form})`} - {order.routeOfAdministration || 'oral'}
           </div>
-          <div className="text-xs text-gray-500">
-            Qty: {order.quantity}, Refills: {order.refills}
+          <div className="text-sm text-gray-600 mb-1">{order.sig}</div>
+          <div className="text-xs text-gray-500 space-x-4">
+            <span>Qty: {order.quantity}</span>
+            <span>Refills: {order.refills}</span>
+            {order.daysSupply && <span>Days: {order.daysSupply}</span>}
           </div>
+          {order.diagnosisCode && (
+            <div className="text-xs text-blue-600 mt-1">ICD-10: {order.diagnosisCode}</div>
+          )}
+          {order.requiresPriorAuth && (
+            <div className="text-xs text-orange-600 mt-1 font-medium">Prior Authorization Required</div>
+          )}
         </div>
       );
     case "lab":
@@ -428,8 +437,15 @@ function OrderContent({ order }: { order: Order }) {
           {order.labName && (
             <div className="text-sm text-gray-600">{order.labName}</div>
           )}
-          {order.specimenType && (
-            <div className="text-xs text-gray-500">Specimen: {order.specimenType}</div>
+          <div className="text-xs text-gray-500 space-x-4 mt-1">
+            <span>Specimen: {order.specimenType || 'blood'}</span>
+            {order.testCode && <span>Code: {order.testCode}</span>}
+          </div>
+          {order.fastingRequired && (
+            <div className="text-xs text-blue-600 mt-1 font-medium">Fasting Required</div>
+          )}
+          {order.providerNotes && (
+            <div className="text-xs text-gray-600 mt-1">Notes: {order.providerNotes}</div>
           )}
         </div>
       );
@@ -438,8 +454,15 @@ function OrderContent({ order }: { order: Order }) {
         <div>
           <div className="font-medium">{order.studyType}</div>
           <div className="text-sm text-gray-600">{order.region}</div>
-          {order.laterality && (
-            <div className="text-xs text-gray-500">Laterality: {order.laterality}</div>
+          <div className="text-xs text-gray-500 space-x-4 mt-1">
+            {order.laterality && <span>Laterality: {order.laterality}</span>}
+            {order.contrastNeeded && <span className="text-purple-600 font-medium">Contrast Required</span>}
+          </div>
+          {order.urgency && order.urgency !== 'routine' && (
+            <div className="text-xs text-red-600 mt-1 font-medium">Urgency: {order.urgency.toUpperCase()}</div>
+          )}
+          {order.providerNotes && (
+            <div className="text-xs text-gray-600 mt-1">Notes: {order.providerNotes}</div>
           )}
         </div>
       );
@@ -449,6 +472,12 @@ function OrderContent({ order }: { order: Order }) {
           <div className="font-medium">{order.specialtyType}</div>
           {order.providerName && (
             <div className="text-sm text-gray-600">{order.providerName}</div>
+          )}
+          {order.urgency && order.urgency !== 'routine' && (
+            <div className="text-xs text-red-600 mt-1 font-medium">Urgency: {order.urgency.toUpperCase()}</div>
+          )}
+          {order.providerNotes && (
+            <div className="text-xs text-gray-600 mt-1">Notes: {order.providerNotes}</div>
           )}
         </div>
       );
