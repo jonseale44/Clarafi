@@ -62,28 +62,23 @@ PATIENT CONTEXT:
 TRANSCRIPTION:
 ${transcription}
 
-Generate a SOAP note with exactly these 4 sections:
+Generate a comprehensive SOAP note based on the provided information. Return ONLY the SOAP note content in your response - do not add any introductory text, explanations, or formatting instructions.
+
+Structure the note with these sections:
 **SUBJECTIVE:**
 **OBJECTIVE:**
-**ASSESSMENT/PLAN:**
-**ORDERS:**
+**ASSESSMENT:**
+**PLAN:**
 
-Rules:
-1. Use ** for bold headers exactly as shown
-2. Keep content concise but medically accurate
-3. Base content on transcription but incorporate relevant patient context
-4. Include vital signs in OBJECTIVE if available
-5. Address issues mentioned in transcription
-6. Suggest appropriate orders/medications based on assessment
-7. Use professional medical terminology
-8. Return only the SOAP note content, no other text`;
+Use clear, professional medical language. Include relevant findings and clinical reasoning.
+Be concise but thorough. Focus on the current encounter while incorporating relevant history.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are a medical AI that generates SOAP notes. Return only the SOAP note content with the exact format requested."
+            content: "You are a medical AI that generates SOAP notes. Return ONLY the raw SOAP note content exactly as it should appear to the physician. Do not include any introductory text, explanations, or meta-commentary. Start directly with the SOAP note sections."
           },
           {
             role: "user",
