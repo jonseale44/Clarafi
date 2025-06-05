@@ -330,6 +330,9 @@ export function PatientParser() {
 
       if (response.ok) {
         const encounter = await response.json();
+        // Invalidate encounter queries to refresh encounter lists
+        await queryClient.invalidateQueries({ queryKey: ['/api/encounters'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
         toast({
           title: "Encounter started",
           description: "New encounter created successfully",
