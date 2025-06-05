@@ -121,11 +121,33 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
       
-      const validatedData = insertEncounterSchema.parse(req.body);
+      console.log('🔥 [Encounters] POST request received:', req.body);
+      console.log('🔥 [Encounters] User:', req.user);
+      
+      // Ensure providerId is set from authenticated user
+      const encounterData = {
+        ...req.body,
+        providerId: req.user.id // Override with authenticated user ID
+      };
+      
+      console.log('🔥 [Encounters] Processing encounter data:', encounterData);
+      
+      const validatedData = insertEncounterSchema.parse(encounterData);
+      console.log('🔥 [Encounters] Validation successful:', validatedData);
+      
       const encounter = await storage.createEncounter(validatedData);
+      console.log('🔥 [Encounters] Encounter created successfully:', encounter);
+      
       res.status(201).json(encounter);
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      console.error('🔥 [Encounters] Error creating encounter:', error);
+      if (error.issues) {
+        console.error('🔥 [Encounters] Validation issues:', JSON.stringify(error.issues, null, 2));
+      }
+      res.status(500).json({ 
+        message: error.message,
+        details: error.issues || error
+      });
     }
   });
 
@@ -376,46 +398,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Create new encounter
-  app.post("/api/encounters", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      
-      const { patientId, chiefComplaint, status = 'in_progress' } = req.body;
-      
-      if (!patientId) {
-        return res.status(400).json({ message: "Patient ID is required" });
-      }
 
-      // Verify patient exists
-      const patient = await storage.getPatient(parseInt(patientId));
-      if (!patient) {
-        return res.status(404).json({ message: "Patient not found" });
-      }
-
-      // Create encounter data with proper typing
-      const encounterData: any = {
-        patientId: parseInt(patientId),
-        providerId: req.user.id,
-        encounterType: 'office_visit',
-        encounterStatus: status,
-        chiefComplaint: chiefComplaint || 'New patient visit'
-      };
-
-      const encounter = await storage.createEncounter(encounterData);
-      res.status(201).json(encounter);
-    } catch (error: any) {
-      console.error('Error creating encounter:', error);
-      // Log the full error details for debugging
-      if (error.issues) {
-        console.error('Validation issues:', JSON.stringify(error.issues, null, 2));
-      }
-      res.status(500).json({ 
-        message: error.message,
-        details: error.issues || error
-      });
-    }
-  });
 
   // Enhanced voice processing for encounter recording
   app.post("/api/voice/transcribe-enhanced", upload.single("audio"), async (req, res) => {

@@ -306,46 +306,88 @@ export function PatientParser() {
   };
 
   const handleViewPatient = () => {
+    console.log('🔍 [PatientParser] handleViewPatient called');
+    console.log('📋 [PatientParser] createdPatient:', createdPatient);
+    
     if (createdPatient?.id) {
+      console.log('✅ [PatientParser] Navigating to patient view with ID:', createdPatient.id);
       setLocation(`/patients/${createdPatient.id}`);
+    } else {
+      console.error('❌ [PatientParser] No patient ID available for navigation');
+      toast({
+        title: "Error",
+        description: "Patient ID not available. Please try creating the patient again.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleStartEncounter = async () => {
-    if (!createdPatient?.id) return;
+    console.log('🚀 [PatientParser] handleStartEncounter called');
+    console.log('📋 [PatientParser] createdPatient:', createdPatient);
+    
+    if (!createdPatient?.id) {
+      console.error('❌ [PatientParser] No patient ID available for encounter creation');
+      toast({
+        title: "Error",
+        description: "Patient ID not available. Please try creating the patient again.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsProcessing(true);
+    
+    const encounterData = {
+      patientId: createdPatient.id,
+      providerId: 1, // Default provider ID - will be set by server from authenticated user
+      chiefComplaint: 'New patient visit',
+      encounterStatus: 'in_progress',
+      encounterType: 'office_visit'
+    };
+    
+    console.log('📤 [PatientParser] Sending encounter request with data:', encounterData);
+    
     try {
       const response = await fetch('/api/encounters', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          patientId: createdPatient.id,
-          chiefComplaint: 'New patient visit',
-          status: 'in_progress'
-        }),
+        body: JSON.stringify(encounterData),
       });
 
+      console.log('📥 [PatientParser] Encounter response status:', response.status);
+      
       if (response.ok) {
         const encounter = await response.json();
+        console.log('✅ [PatientParser] Encounter created successfully:', encounter);
+        
         // Invalidate encounter queries to refresh encounter lists
         await queryClient.invalidateQueries({ queryKey: ['/api/encounters'] });
         await queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+        
         toast({
           title: "Encounter started",
           description: "New encounter created successfully",
         });
+        
+        console.log('🔄 [PatientParser] Navigating to encounter:', encounter.id);
         setLocation(`/encounters/${encounter.id}`);
       } else {
-        throw new Error('Failed to create encounter');
+        const errorData = await response.text();
+        console.error('❌ [PatientParser] Encounter creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorData
+        });
+        throw new Error(`Failed to create encounter: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      console.error('Error creating encounter:', error);
+      console.error('💥 [PatientParser] Error creating encounter:', error);
       toast({
         title: "Error",
-        description: "Failed to start encounter",
+        description: "Failed to start encounter. Please check the console for details.",
         variant: "destructive",
       });
     } finally {
