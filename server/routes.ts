@@ -869,15 +869,23 @@ export function registerRoutes(app: Express): Server {
       
       // Import standardization service dynamically
       const { OrderStandardizationService } = await import('./order-standardization-service.js');
+      const { GPTClinicalEnhancer } = await import('./gpt-clinical-enhancer.js');
       
       const orderData = req.body;
       console.log("[Orders API] Raw order data received:", orderData);
       
       // Apply standardization to ensure all required fields are present
-      const standardizedOrder = OrderStandardizationService.standardizeOrder(orderData);
+      let standardizedOrder = OrderStandardizationService.standardizeOrder(orderData);
       console.log("[Orders API] Standardized order data:", standardizedOrder);
       
-      // Validate the standardized order
+      // Use GPT to enhance medication orders with missing clinical data
+      if (standardizedOrder.orderType === 'medication') {
+        const enhancer = new GPTClinicalEnhancer();
+        standardizedOrder = await enhancer.enhanceMedicationOrder(standardizedOrder);
+        console.log("[Orders API] GPT-enhanced order data:", standardizedOrder);
+      }
+      
+      // Validate the enhanced order
       const validationErrors = OrderStandardizationService.validateOrderForIntegration(standardizedOrder);
       if (validationErrors.length > 0) {
         console.warn("[Orders API] Order validation warnings:", validationErrors);
@@ -885,7 +893,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const order = await storage.createOrder(standardizedOrder);
-      console.log("[Orders API] Created standardized order:", order);
+      console.log("[Orders API] Created enhanced order:", order);
       res.status(201).json(order);
     } catch (error: any) {
       console.error("[Orders API] Error creating order:", error);
