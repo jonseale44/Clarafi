@@ -156,14 +156,21 @@ export function registerRoutes(app: Express): Server {
       if (!req.isAuthenticated()) return res.sendStatus(401);
       
       const encounterId = parseInt(req.params.id);
+      console.log('🔍 [Encounters] GET request for encounter ID:', encounterId);
+      console.log('🔍 [Encounters] Raw param:', req.params.id);
+      
       const encounter = await storage.getEncounter(encounterId);
+      console.log('🔍 [Encounters] Retrieved encounter:', encounter);
       
       if (!encounter) {
+        console.error('❌ [Encounters] Encounter not found in database for ID:', encounterId);
         return res.status(404).json({ message: "Encounter not found" });
       }
       
+      console.log('✅ [Encounters] Successfully returning encounter:', encounter.id);
       res.json(encounter);
     } catch (error: any) {
+      console.error('💥 [Encounters] Error retrieving encounter:', error);
       res.status(500).json({ message: error.message });
     }
   });

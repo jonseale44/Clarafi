@@ -10,15 +10,22 @@ export function EncounterView() {
   const [, setLocation] = useLocation();
   const encounterId = parseInt(id || "0");
 
-  const { data: encounter, isLoading: encounterLoading } = useQuery<Encounter>({
+  console.log('🔍 [EncounterView] Loading encounter ID:', encounterId);
+  console.log('🔍 [EncounterView] Raw ID param:', id);
+
+  const { data: encounter, isLoading: encounterLoading, error: encounterError } = useQuery<Encounter>({
     queryKey: [`/api/encounters/${encounterId}`],
     enabled: !!encounterId,
   });
 
-  const { data: patient, isLoading: patientLoading } = useQuery<Patient>({
+  console.log('🔍 [EncounterView] Encounter query result:', { encounter, encounterLoading, encounterError });
+
+  const { data: patient, isLoading: patientLoading, error: patientError } = useQuery<Patient>({
     queryKey: [`/api/patients/${encounter?.patientId}`],
     enabled: !!encounter?.patientId,
   });
+
+  console.log('🔍 [EncounterView] Patient query result:', { patient, patientLoading, patientError });
 
   const isLoading = encounterLoading || patientLoading;
 
