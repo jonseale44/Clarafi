@@ -64,8 +64,8 @@ export class PhysicalExamLearningService {
         return;
       }
 
-      // Analyze for persistent findings
-      const findings = await this.identifyPersistentFindings(physicalExamSection, patientId);
+      // Analyze for persistent findings with full SOAP context
+      const findings = await this.identifyPersistentFindings(physicalExamSection, patientId, soapNote);
       
       for (const finding of findings) {
         await this.processPersistentFinding(finding, patientId, encounterId);
@@ -138,16 +138,16 @@ export class PhysicalExamLearningService {
    */
   private extractPhysicalExamSection(soapNote: string): string {
     // Look for physical exam in objective section
-    const objectiveMatch = soapNote.match(/OBJECTIVE[:\s]*(.*?)(?=ASSESSMENT|PLAN|$)/is);
+    const objectiveMatch = soapNote.match(/OBJECTIVE[:\s]*(.*?)(?=ASSESSMENT|PLAN|$)/i);
     if (!objectiveMatch) return '';
 
     const objectiveSection = objectiveMatch[1];
     
     // Look for physical exam keywords
     const physExamPatterns = [
-      /(?:physical\s*exam|examination)[:\s]*(.*?)(?=\n\s*[A-Z]|laboratory|labs|vitals|$)/is,
-      /(?:gen|general)[:\s]*(.*?)(?=\n\s*[A-Z]|$)/is,
-      /(?:heent|cv|heart|lungs|pulm|abd|abdomen|ext|extremities|neuro|skin)[:\s]*(.*?)(?=\n\s*[A-Z]|$)/is
+      /(?:physical\s*exam|examination)[:\s]*(.*?)(?=\n\s*[A-Z]|laboratory|labs|vitals|$)/i,
+      /(?:gen|general)[:\s]*(.*?)(?=\n\s*[A-Z]|$)/i,
+      /(?:heent|cv|heart|lungs|pulm|abd|abdomen|ext|extremities|neuro|skin)[:\s]*(.*?)(?=\n\s*[A-Z]|$)/i
     ];
 
     for (const pattern of physExamPatterns) {
@@ -159,29 +159,50 @@ export class PhysicalExamLearningService {
   }
 
   /**
-   * Use GPT to identify persistent findings in physical exam text
+   * Use GPT to identify persistent findings in physical exam text with full SOAP context
    */
   private async identifyPersistentFindings(
     physicalExamText: string,
-    patientId: number
+    patientId: number,
+    fullSoapNote?: string
   ): Promise<PhysicalFindingAnalysis[]> {
-    const prompt = `Analyze this physical examination text for findings that are likely PERSISTENT and should be remembered for future encounters.
+    // Get patient's medical history for additional context
+    const patientHistory = await this.getPatientHistoryContext(patientId);
+    
+    const prompt = `Analyze this physical examination for findings that are likely PERSISTENT and should be remembered for future encounters.
+
+CRITICAL: Use the full SOAP note context to determine if findings are acute vs chronic.
 
 Examples of PERSISTENT findings:
 - Wheelchair-bound, uses crutches, prosthetic limbs
-- Surgical scars, amputations, deformities
-- Chronic murmurs, chronic skin conditions
+- Surgical scars, amputations, deformities  
+- Chronic murmurs from structural heart disease
 - Permanent neurological deficits
 - Chronic physical limitations
+- Rhonchi in patient with pulmonary fibrosis (chronic)
 
 Examples of NON-PERSISTENT findings:
 - Acute injuries, rashes, wounds
-- Temporary swelling, bruising
+- Temporary swelling, bruising  
 - Current vital signs
 - Acute illness symptoms
+- Rhonchi in patient with pneumonia (acute)
 
 Physical Exam Text:
 "${physicalExamText}"
+
+Full SOAP Note Context:
+"${fullSoapNote || 'Not provided'}"
+
+Patient Medical History Context:
+"${patientHistory}"
+
+DECISION RULES:
+1. If Assessment/Plan mentions acute conditions (pneumonia, UTI, cellulitis) -> findings are likely temporary
+2. If Assessment/Plan mentions chronic conditions (CHF, COPD, pulmonary fibrosis) -> findings may be persistent  
+3. Anatomical findings (scars, deformities) are usually persistent
+4. Functional status (wheelchair, crutches) is usually persistent
+5. Current symptoms without chronic disease context are usually temporary
 
 Return a JSON array of persistent findings. For each finding, provide:
 {
@@ -378,6 +399,48 @@ Return JSON array of relevant findings:
     } catch (error) {
       console.error(`❌ [PhysicalExamLearning] Relevance selection failed:`, error);
       return [];
+    }
+  }
+
+  /**
+   * Get patient's medical history context for better decision making
+   */
+  private async getPatientHistoryContext(patientId: number): Promise<string> {
+    try {
+      const [
+        diagnoses,
+        medications,
+        medicalHistory,
+        socialHistory
+      ] = await Promise.all([
+        storage.getPatientDiagnoses(patientId),
+        storage.getPatientMedications(patientId),
+        storage.getPatientMedicalHistory(patientId),
+        storage.getPatientSocialHistory(patientId)
+      ]);
+
+      const context = [];
+      
+      if (diagnoses.length > 0) {
+        context.push(`Diagnoses: ${diagnoses.map(d => d.diagnosis).join(', ')}`);
+      }
+      
+      if (medications.length > 0) {
+        context.push(`Medications: ${medications.map(m => m.medicationName).join(', ')}`);
+      }
+      
+      if (medicalHistory.length > 0) {
+        context.push(`Medical History: ${medicalHistory.map(h => h.historyText).join('; ')}`);
+      }
+      
+      if (socialHistory.length > 0) {
+        context.push(`Social History: ${socialHistory.map(s => `${s.category}: ${s.currentStatus}`).join('; ')}`);
+      }
+
+      return context.join('\n');
+    } catch (error) {
+      console.error(`❌ [PhysicalExamLearning] Error getting patient history:`, error);
+      return '';
     }
   }
 }
