@@ -188,10 +188,7 @@ export const encounters = pgTable("encounters", {
   
   // Clinical documentation
   chiefComplaint: text("chief_complaint"),
-  subjective: text("subjective"), // Provider's SOAP note
-  objective: text("objective"),
-  assessment: text("assessment"),
-  plan: text("plan"),
+  note: text("note"), // Complete SOAP note in formatted text
   
   // Nursing documentation (same encounter, different view)
   nurseAssessment: text("nurse_assessment"),
@@ -789,10 +786,7 @@ export const insertEncounterSchema = createInsertSchema(encounters).pick({
   encounterSubtype: true,
   encounterStatus: true,
   chiefComplaint: true,
-  subjective: true,
-  objective: true,
-  assessment: true,
-  plan: true,
+  note: true,
   nurseAssessment: true,
   nurseInterventions: true,
   nurseNotes: true,

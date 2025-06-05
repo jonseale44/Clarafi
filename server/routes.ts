@@ -798,12 +798,9 @@ export function registerRoutes(app: Express): Server {
 
       console.log(`✅ [SOAP] Generated SOAP note (${soapNote.length} characters)`);
 
-      // Save the SOAP note content to encounter fields for retrieval
+      // Save the complete SOAP note to encounter
       await storage.updateEncounter(encounterId, {
-        subjective: soapNote.includes('SUBJECTIVE:') ? soapNote.split('SUBJECTIVE:')[1]?.split('OBJECTIVE:')[0]?.trim() : '',
-        objective: soapNote.includes('OBJECTIVE:') ? soapNote.split('OBJECTIVE:')[1]?.split('ASSESSMENT:')[0]?.trim() : '',
-        assessment: soapNote.includes('ASSESSMENT:') ? soapNote.split('ASSESSMENT:')[1]?.split('PLAN:')[0]?.trim() : '',
-        plan: soapNote.includes('PLAN:') ? soapNote.split('PLAN:')[1]?.trim() : ''
+        note: soapNote
       });
 
       // Analyze SOAP note for persistent physical findings to learn for future encounters
@@ -989,15 +986,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Encounter not found" });
       }
 
-      // Return the SOAP note content (stored in assessment, plan, etc.)
-      const soapNote = [
-        encounter.subjective && `**SUBJECTIVE:**\n${encounter.subjective}`,
-        encounter.objective && `**OBJECTIVE:**\n${encounter.objective}`,
-        encounter.assessment && `**ASSESSMENT:**\n${encounter.assessment}`,
-        encounter.plan && `**PLAN:**\n${encounter.plan}`
-      ].filter(Boolean).join('\n\n');
-
-      res.json({ soapNote: soapNote || '' });
+      // Return the complete SOAP note
+      res.json({ soapNote: encounter.note || '' });
 
     } catch (error: any) {
       console.error('❌ [SOAP API] Error getting SOAP note:', error);
