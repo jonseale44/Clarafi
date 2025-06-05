@@ -398,6 +398,7 @@ export function registerRoutes(app: Express): Server {
         patientId: parseInt(patientId),
         providerId: req.user.id,
         encounterType: 'office_visit',
+        encounterSubtype: 'routine_visit',
         encounterStatus: status,
         chiefComplaint: chiefComplaint || 'New patient visit',
         subjective: '',
@@ -414,7 +415,14 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(encounter);
     } catch (error: any) {
       console.error('Error creating encounter:', error);
-      res.status(500).json({ message: error.message });
+      // Log the full error details for debugging
+      if (error.issues) {
+        console.error('Validation issues:', JSON.stringify(error.issues, null, 2));
+      }
+      res.status(500).json({ 
+        message: error.message,
+        details: error.issues || error
+      });
     }
   });
 
