@@ -856,21 +856,64 @@ function ReferralEditFields({ order, onChange }: { order: Order; onChange: (fiel
     <>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="specialtyType">Specialty</Label>
-          <Input
-            id="specialtyType"
-            value={order.specialtyType || ""}
-            onChange={(e) => onChange("specialtyType", e.target.value)}
-          />
+          <Label htmlFor="specialtyType">Specialty *</Label>
+          <Select value={order.specialtyType || ""} onValueChange={(value) => onChange("specialtyType", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select specialty" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cardiology">Cardiology</SelectItem>
+              <SelectItem value="dermatology">Dermatology</SelectItem>
+              <SelectItem value="endocrinology">Endocrinology</SelectItem>
+              <SelectItem value="gastroenterology">Gastroenterology</SelectItem>
+              <SelectItem value="neurology">Neurology</SelectItem>
+              <SelectItem value="oncology">Oncology</SelectItem>
+              <SelectItem value="orthopedics">Orthopedics</SelectItem>
+              <SelectItem value="psychiatry">Psychiatry</SelectItem>
+              <SelectItem value="pulmonology">Pulmonology</SelectItem>
+              <SelectItem value="rheumatology">Rheumatology</SelectItem>
+              <SelectItem value="urology">Urology</SelectItem>
+              <SelectItem value="ophthalmology">Ophthalmology</SelectItem>
+              <SelectItem value="otolaryngology">ENT (Otolaryngology)</SelectItem>
+              <SelectItem value="physical_therapy">Physical Therapy</SelectItem>
+              <SelectItem value="other">Other Specialty</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <Label htmlFor="providerName">Provider Name (Optional)</Label>
-          <Input
-            id="providerName"
-            value={order.providerName || ""}
-            onChange={(e) => onChange("providerName", e.target.value)}
-          />
+          <Label htmlFor="urgency">Urgency Level *</Label>
+          <Select value={order.urgency || ""} onValueChange={(value) => onChange("urgency", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select urgency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="routine">Routine (2-4 weeks)</SelectItem>
+              <SelectItem value="urgent">Urgent (1-2 weeks)</SelectItem>
+              <SelectItem value="stat">STAT (Same day/24 hours)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="providerName">Preferred Provider (Optional)</Label>
+        <Input
+          id="providerName"
+          value={order.providerName || ""}
+          onChange={(e) => onChange("providerName", e.target.value)}
+          placeholder="Specific provider name if requested"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="providerNotes">Referral Notes & Clinical Context</Label>
+        <Textarea
+          id="providerNotes"
+          value={order.providerNotes || ""}
+          onChange={(e) => onChange("providerNotes", e.target.value)}
+          placeholder="Clinical background, specific concerns, requested consultation focus..."
+          rows={3}
+        />
       </div>
     </>
   );

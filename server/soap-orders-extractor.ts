@@ -69,8 +69,8 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'medication' as const,
-            orderStatus: 'draft' as const,
+            orderType: 'medication',
+            orderStatus: 'draft',
             medicationName: med.medication_name,
             dosage: med.dosage,
             quantity: med.quantity,
@@ -82,7 +82,7 @@ export class SOAPOrdersExtractor {
             diagnosisCode: med.diagnosis_code,
             requiresPriorAuth: med.requires_prior_auth || false,
             clinicalIndication: med.clinical_indication,
-            priority: 'routine' as const
+            priority: 'routine'
           };
           
           // Apply standardization to ensure all required fields are present
@@ -100,15 +100,15 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'lab' as const,
-            orderStatus: 'draft' as const,
+            orderType: 'lab',
+            orderStatus: 'draft',
             labName: lab.lab_name,
             testName: lab.test_name,
             testCode: lab.test_code,
             specimenType: lab.specimen_type,
             fastingRequired: lab.fasting_required || false,
             clinicalIndication: lab.clinical_indication,
-            priority: lab.priority || 'routine' as const
+            priority: lab.priority || 'routine'
           };
           
           // Apply standardization for lab order requirements
@@ -123,14 +123,14 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'imaging' as const,
-            orderStatus: 'draft' as const,
+            orderType: 'imaging',
+            orderStatus: 'draft',
             studyType: img.study_type,
             region: img.region,
             laterality: img.laterality,
             contrastNeeded: img.contrast_needed || false,
             clinicalIndication: img.clinical_indication,
-            priority: img.priority || 'routine' as const
+            priority: img.priority || 'routine'
           };
           
           // Apply standardization for imaging order requirements
@@ -145,13 +145,13 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'referral' as const,
-            orderStatus: 'draft' as const,
+            orderType: 'referral',
+            orderStatus: 'draft',
             specialtyType: ref.specialty_type,
             providerName: ref.provider_name,
             clinicalIndication: ref.clinical_indication,
             urgency: ref.urgency,
-            priority: (ref.urgency === 'urgent' ? 'urgent' : 'routine') as const
+            priority: ref.urgency === 'urgent' ? 'urgent' : 'routine'
           };
           
           // Apply standardization for referral order requirements
@@ -176,70 +176,83 @@ export class SOAPOrdersExtractor {
     imaging?: ExtractedImaging[];
     referrals?: ExtractedReferral[];
   }> {
-    const prompt = `You are a medical AI assistant. Extract all medical orders from this SOAP note and categorize them into medications, labs, imaging, and referrals.
+    const prompt = `You are a medical AI assistant specializing in extracting structured medical orders for real EMR integration with external systems like LabCorp, Quest Diagnostics, pharmacies, and imaging centers.
 
 SOAP Note:
 ${soapNote}
 
-Please extract and return a JSON object with the following structure:
+Extract all medical orders and provide complete standardized parameters required for external integrations. Return a JSON object with this structure:
 
 {
   "medications": [
     {
-      "medication_name": "medication name",
-      "dosage": "strength and amount",
+      "medication_name": "exact medication name",
+      "dosage": "strength (e.g., 10mg, 250mg)",
       "quantity": number_of_units,
-      "sig": "patient instructions",
+      "sig": "complete patient instructions",
       "refills": number_of_refills,
-      "form": "tablet/capsule/liquid/etc",
-      "route_of_administration": "oral/topical/injection/etc",
+      "form": "tablet/capsule/liquid/injection/cream/ointment/patch/inhaler/drops",
+      "route_of_administration": "oral/topical/injection/inhalation/ophthalmic/otic/nasal/rectal/transdermal",
       "days_supply": number_of_days,
-      "diagnosis_code": "ICD-10 code if mentioned",
+      "diagnosis_code": "ICD-10 code if available",
       "requires_prior_auth": boolean,
-      "clinical_indication": "reason for prescription"
+      "clinical_indication": "detailed reason for prescription"
     }
   ],
   "labs": [
     {
-      "lab_name": "laboratory or test panel name",
-      "test_name": "specific test name",
-      "test_code": "CPT or LOINC code if mentioned",
-      "specimen_type": "blood/urine/tissue/etc",
+      "lab_name": "panel or group name (e.g., Comprehensive Metabolic Panel)",
+      "test_name": "specific test name (e.g., Glucose, Creatinine)",
+      "test_code": "CPT or LOINC code if known",
+      "specimen_type": "blood/whole_blood/urine/tissue/swab/stool/csf/sputum",
       "fasting_required": boolean,
-      "clinical_indication": "reason for test",
+      "clinical_indication": "detailed reason for test",
       "priority": "stat/urgent/routine"
     }
   ],
   "imaging": [
     {
-      "study_type": "X-ray/CT/MRI/Ultrasound/etc",
-      "region": "body part or region",
-      "laterality": "left/right/bilateral",
+      "study_type": "X-ray/CT/MRI/Ultrasound/Nuclear/Mammography/Fluoroscopy/PET/DEXA",
+      "region": "specific anatomical region (e.g., Chest, Left Knee, Abdomen)",
+      "laterality": "left/right/bilateral or empty if not applicable",
       "contrast_needed": boolean,
-      "clinical_indication": "reason for imaging",
-      "priority": "stat/urgent/routine"
+      "clinical_indication": "detailed reason for imaging with clinical context",
+      "priority": "stat/urgent/routine",
+      "urgency": "stat/urgent/routine"
     }
   ],
   "referrals": [
     {
-      "specialty_type": "cardiology/orthopedics/etc",
-      "provider_name": "specific provider if mentioned",
-      "clinical_indication": "reason for referral",
-      "urgency": "urgent/routine"
+      "specialty_type": "cardiology/dermatology/endocrinology/gastroenterology/neurology/oncology/orthopedics/psychiatry/pulmonology/rheumatology/urology/ophthalmology/otolaryngology/physical_therapy/other",
+      "provider_name": "specific provider name if mentioned",
+      "clinical_indication": "detailed reason for referral with clinical context",
+      "urgency": "stat/urgent/routine"
     }
   ]
 }
 
-Rules:
-1. Only extract orders that are explicitly mentioned in the SOAP note
-2. For medications, parse dosages carefully (e.g., "10mg twice daily" = dosage: "10mg", sig: "Take twice daily")
-3. For quantity, estimate reasonable amounts (e.g., 30-90 tablets for oral medications)
-4. For refills, use common values (0-5 refills typically)
-5. If information is not specified, use reasonable clinical defaults
-6. Return empty arrays for categories with no orders
-7. Ensure all JSON is properly formatted
+CRITICAL EXTRACTION RULES:
+1. MEDICATIONS: Always include dosage form and route - these are required for pharmacy NDC lookup
+2. LABS: Always specify specimen type - required for lab processing and collection
+3. IMAGING: Always include study type and region - required for DICOM routing and scheduling
+4. REFERRALS: Map to standard specialty types for provider network routing
+5. CLINICAL INDICATIONS: Provide detailed context, not just "routine" - required for authorization
+6. QUANTITIES: For medications, estimate 30-90 day supplies based on frequency
+7. SPECIMEN TYPES: Use specific types (blood vs whole_blood, swab vs throat swab)
+8. PRIORITIES: Map clinical urgency to standard values (STAT, URGENT, ROUTINE)
+9. FORMS: Use standardized pharmaceutical forms for accurate dispensing
+10. ROUTES: Use standard administration routes for safety verification
 
-Return only the JSON object, no additional text.`;
+DEFAULTS FOR MISSING INFO:
+- Medication quantity: 30 (for 30-day supply)
+- Medication refills: 0 (no refills unless specified)
+- Medication days_supply: 30
+- Lab specimen_type: "blood" (most common)
+- Lab priority: "routine"
+- Imaging priority: "routine"
+- Referral urgency: "routine"
+
+Return only the JSON object, no markdown formatting or additional text.`;
 
     try {
       const response = await openai.chat.completions.create({
