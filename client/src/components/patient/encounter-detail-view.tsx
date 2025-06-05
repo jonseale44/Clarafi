@@ -30,6 +30,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { DraftOrders } from "./draft-orders";
+import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 
 interface EncounterDetailViewProps {
   patient: Patient;

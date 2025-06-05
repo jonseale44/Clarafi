@@ -832,6 +832,62 @@ export function registerRoutes(app: Express): Server {
         });
         // Don't fail the SOAP generation if order extraction fails
       }
+
+      // Automatically extract and create CPT codes and diagnoses from SOAP note
+      try {
+        console.log(`🏥 [SOAP] ========== STARTING CPT CODES EXTRACTION ==========`);
+        console.log(`🏥 [SOAP] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
+        console.log(`🏥 [SOAP] SOAP Note (${soapNote.length} chars) for CPT extraction`);
+        
+        const { CPTExtractor } = await import('./cpt-extractor.js');
+        const cptExtractor = new CPTExtractor();
+        console.log(`🏥 [SOAP] CPT Extractor imported successfully`);
+        
+        // Extract CPT codes and diagnoses from SOAP note content
+        console.log(`🏥 [SOAP] Calling extractCPTCodesAndDiagnoses...`);
+        const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
+        console.log(`🏥 [SOAP] CPT extraction completed. Result:`, extractedCPTData);
+        
+        if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
+          console.log(`🏥 [SOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`);
+          
+          // Update encounter with CPT codes and diagnoses
+          const encounter = await storage.getEncounter(encounterId);
+          if (encounter) {
+            await storage.updateEncounter(encounterId, {
+              cptCodes: extractedCPTData.cptCodes || [],
+              draftDiagnoses: extractedCPTData.diagnoses || []
+            });
+            console.log(`✅ [SOAP] Updated encounter ${encounterId} with CPT codes and diagnoses`);
+          }
+          
+          // Store individual diagnoses in diagnoses table for billing integration
+          if (extractedCPTData.diagnoses?.length > 0) {
+            for (const diagnosis of extractedCPTData.diagnoses) {
+              try {
+                await storage.createDiagnosis({
+                  patientId,
+                  encounterId,
+                  diagnosis: diagnosis.diagnosis,
+                  icd10Code: diagnosis.icd10Code,
+                  diagnosisDate: new Date().toISOString().split('T')[0],
+                  status: diagnosis.isPrimary ? 'active' : 'active',
+                  notes: `Auto-extracted from SOAP note on ${new Date().toISOString()}`
+                });
+              } catch (diagnosisError) {
+                console.error(`❌ [SOAP] Error creating diagnosis:`, diagnosisError);
+              }
+            }
+            console.log(`✅ [SOAP] Created ${extractedCPTData.diagnoses.length} diagnosis records for billing`);
+          }
+        } else {
+          console.log(`ℹ️ [SOAP] No CPT codes or diagnoses found in SOAP note content`);
+        }
+      } catch (cptError: any) {
+        console.error('❌ [SOAP] Error auto-extracting CPT codes:', cptError);
+        console.error('❌ [SOAP] CPT Error stack:', cptError.stack);
+        // Don't fail the SOAP generation if CPT extraction fails
+      }
       
       res.json({ 
         soapNote,
@@ -844,6 +900,188 @@ export function registerRoutes(app: Express): Server {
       console.error('❌ [SOAP] Error generating SOAP note:', error);
       res.status(500).json({ 
         message: "Failed to generate SOAP note", 
+        error: error.message 
+      });
+    }
+  });
+
+  // CPT Codes and Diagnoses API endpoints for billing integration
+  
+  // Extract CPT codes from SOAP note
+  app.post("/api/patients/:id/encounters/:encounterId/extract-cpt", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const encounterId = parseInt(req.params.encounterId);
+      const { soapNote } = req.body;
+      
+      if (!soapNote || !soapNote.trim()) {
+        return res.status(400).json({ message: "SOAP note content is required" });
+      }
+
+      console.log(`🏥 [CPT API] Extracting CPT codes for patient ${patientId}, encounter ${encounterId}`);
+
+      const { CPTExtractor } = await import('./cpt-extractor.js');
+      const cptExtractor = new CPTExtractor();
+      
+      const extractedData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
+      
+      console.log(`✅ [CPT API] Extracted ${extractedData.cptCodes?.length || 0} CPT codes and ${extractedData.diagnoses?.length || 0} diagnoses`);
+      
+      res.json(extractedData);
+
+    } catch (error: any) {
+      console.error('❌ [CPT API] Error extracting CPT codes:', error);
+      res.status(500).json({ 
+        message: "Failed to extract CPT codes", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Get SOAP note for an encounter
+  app.get("/api/patients/:id/encounters/:encounterId/soap-note", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const encounterId = parseInt(req.params.encounterId);
+      const encounter = await storage.getEncounter(encounterId);
+      
+      if (!encounter) {
+        return res.status(404).json({ message: "Encounter not found" });
+      }
+
+      // Return the SOAP note content (stored in assessment, plan, etc.)
+      const soapNote = [
+        encounter.subjective && `**SUBJECTIVE:**\n${encounter.subjective}`,
+        encounter.objective && `**OBJECTIVE:**\n${encounter.objective}`,
+        encounter.assessment && `**ASSESSMENT:**\n${encounter.assessment}`,
+        encounter.plan && `**PLAN:**\n${encounter.plan}`
+      ].filter(Boolean).join('\n\n');
+
+      res.json({ soapNote: soapNote || '' });
+
+    } catch (error: any) {
+      console.error('❌ [SOAP API] Error getting SOAP note:', error);
+      res.status(500).json({ 
+        message: "Failed to get SOAP note", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Save/Update CPT codes and diagnoses for an encounter
+  app.put("/api/patients/:id/encounters/:encounterId/cpt-codes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const encounterId = parseInt(req.params.encounterId);
+      const { cptCodes, diagnoses, mappings } = req.body;
+      
+      console.log(`🏥 [CPT API] Saving CPT codes for encounter ${encounterId}`);
+
+      // Update encounter with CPT codes and diagnoses
+      await storage.updateEncounter(encounterId, {
+        cptCodes: cptCodes || [],
+        draftDiagnoses: diagnoses || []
+      });
+
+      // Update diagnoses in diagnoses table for billing system integration
+      if (diagnoses && diagnoses.length > 0) {
+        // First, remove existing diagnoses for this encounter
+        const existingDiagnoses = await storage.getPatientDiagnoses(patientId);
+        const encounterDiagnoses = existingDiagnoses.filter(d => d.encounterId === encounterId);
+        
+        // Create new diagnosis records
+        for (const diagnosis of diagnoses) {
+          try {
+            await storage.createDiagnosis({
+              patientId,
+              encounterId,
+              diagnosis: diagnosis.diagnosis,
+              icd10Code: diagnosis.icd10Code,
+              diagnosisDate: new Date().toISOString().split('T')[0],
+              status: diagnosis.isPrimary ? 'active' : 'active',
+              notes: `Updated via CPT codes interface on ${new Date().toISOString()}`
+            });
+          } catch (diagnosisError) {
+            console.error(`❌ [CPT API] Error creating diagnosis:`, diagnosisError);
+          }
+        }
+      }
+
+      console.log(`✅ [CPT API] Saved ${cptCodes?.length || 0} CPT codes and ${diagnoses?.length || 0} diagnoses`);
+      
+      res.json({ 
+        message: "CPT codes and diagnoses saved successfully",
+        cptCodesCount: cptCodes?.length || 0,
+        diagnosesCount: diagnoses?.length || 0
+      });
+
+    } catch (error: any) {
+      console.error('❌ [CPT API] Error saving CPT codes:', error);
+      res.status(500).json({ 
+        message: "Failed to save CPT codes", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Get billing summary for encounter (for EMR billing integration)
+  app.get("/api/patients/:id/encounters/:encounterId/billing-summary", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const encounterId = parseInt(req.params.encounterId);
+      
+      const encounter = await storage.getEncounter(encounterId);
+      const patient = await storage.getPatient(patientId);
+      const diagnoses = await storage.getPatientDiagnoses(patientId);
+      
+      if (!encounter || !patient) {
+        return res.status(404).json({ message: "Encounter or patient not found" });
+      }
+
+      const encounterDiagnoses = diagnoses.filter(d => d.encounterId === encounterId);
+      
+      // Format for billing system integration
+      const billingSummary = {
+        patient: {
+          mrn: patient.mrn,
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          dateOfBirth: patient.dateOfBirth,
+          gender: patient.gender
+        },
+        encounter: {
+          id: encounter.id,
+          encounterType: encounter.encounterType,
+          startTime: encounter.startTime,
+          endTime: encounter.endTime,
+          providerId: encounter.providerId
+        },
+        billing: {
+          cptCodes: encounter.cptCodes || [],
+          diagnoses: encounterDiagnoses.map(d => ({
+            diagnosis: d.diagnosis,
+            icd10Code: d.icd10Code,
+            isPrimary: d.status === 'active',
+            diagnosisDate: d.diagnosisDate
+          })),
+          serviceDate: encounter.startTime,
+          facilityCode: encounter.location || 'CLINIC_001'
+        }
+      };
+
+      res.json(billingSummary);
+
+    } catch (error: any) {
+      console.error('❌ [Billing API] Error getting billing summary:', error);
+      res.status(500).json({ 
+        message: "Failed to get billing summary", 
         error: error.message 
       });
     }

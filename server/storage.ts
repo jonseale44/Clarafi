@@ -43,6 +43,7 @@ export interface IStorage {
   getPatientAllergies(patientId: number): Promise<any[]>;
   getPatientMedications(patientId: number): Promise<any[]>;
   getPatientDiagnoses(patientId: number): Promise<any[]>;
+  createDiagnosis(diagnosis: any): Promise<any>;
   getPatientFamilyHistory(patientId: number): Promise<any[]>;
   getPatientMedicalHistory(patientId: number): Promise<any[]>;
   getPatientSocialHistory(patientId: number): Promise<any[]>;
@@ -220,6 +221,17 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(diagnoses)
       .where(eq(diagnoses.patientId, patientId))
       .orderBy(desc(diagnoses.createdAt));
+  }
+
+  async createDiagnosis(insertDiagnosis: any): Promise<any> {
+    const [diagnosis] = await db
+      .insert(diagnoses)
+      .values({
+        ...insertDiagnosis,
+        createdAt: new Date()
+      })
+      .returning();
+    return diagnosis;
   }
 
   async getPatientFamilyHistory(patientId: number): Promise<any[]> {
