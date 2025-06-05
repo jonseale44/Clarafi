@@ -16,6 +16,7 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />

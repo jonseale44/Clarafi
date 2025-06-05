@@ -381,7 +381,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
       
-      const { patientId, chiefComplaint, status = 'active' } = req.body;
+      const { patientId, chiefComplaint, status = 'in_progress' } = req.body;
       
       if (!patientId) {
         return res.status(400).json({ message: "Patient ID is required" });
@@ -393,13 +393,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      const encounterData = {
+      // Use insertEncounterSchema to validate the data
+      const encounterData = insertEncounterSchema.parse({
         patientId: parseInt(patientId),
         providerId: req.user.id,
         encounterType: 'office_visit',
         encounterStatus: status,
         chiefComplaint: chiefComplaint || 'New patient visit'
-      };
+      });
 
       const encounter = await storage.createEncounter(encounterData);
       res.status(201).json(encounter);
