@@ -2,6 +2,7 @@ import {
   users, patients, encounters, vitals, medications, diagnoses,
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
+  patientPhysicalFindings,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals, type InsertVitals,
   type Order, type InsertOrder
@@ -65,6 +66,14 @@ export interface IStorage {
   updateOrder(id: number, updates: Partial<Order>): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
   deleteAllPatientDraftOrders(patientId: number): Promise<void>;
+  
+  // Physical Findings management (GPT-driven persistent findings)
+  getPatientPhysicalFindings(patientId: number): Promise<any[]>;
+  getActivePhysicalFindings(patientId: number): Promise<any[]>;
+  createPhysicalFinding(finding: any): Promise<any>;
+  updatePhysicalFinding(id: number, updates: any): Promise<any>;
+  markPhysicalFindingConfirmed(id: number, encounterId: number): Promise<void>;
+  markPhysicalFindingContradicted(id: number, encounterId: number): Promise<void>;
   
   sessionStore: session.SessionStore;
 }
@@ -345,6 +354,72 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(orders)
       .where(and(eq(orders.patientId, patientId), eq(orders.orderStatus, "draft")));
+  }
+
+  // Physical Findings management (GPT-driven persistent findings)
+  async getPatientPhysicalFindings(patientId: number): Promise<any[]> {
+    return await db.select().from(patientPhysicalFindings)
+      .where(eq(patientPhysicalFindings.patientId, patientId))
+      .orderBy(desc(patientPhysicalFindings.lastSeenEncounter));
+  }
+
+  async getActivePhysicalFindings(patientId: number): Promise<any[]> {
+    return await db.select().from(patientPhysicalFindings)
+      .where(
+        and(
+          eq(patientPhysicalFindings.patientId, patientId),
+          eq(patientPhysicalFindings.status, "active")
+        )
+      )
+      .orderBy(desc(patientPhysicalFindings.confidence));
+  }
+
+  async createPhysicalFinding(finding: any): Promise<any> {
+    const [created] = await db.insert(patientPhysicalFindings)
+      .values(finding)
+      .returning();
+    return created;
+  }
+
+  async updatePhysicalFinding(id: number, updates: any): Promise<any> {
+    const [updated] = await db.update(patientPhysicalFindings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(patientPhysicalFindings.id, id))
+      .returning();
+    return updated;
+  }
+
+  async markPhysicalFindingConfirmed(id: number, encounterId: number): Promise<void> {
+    const current = await db.select({ confirmedCount: patientPhysicalFindings.confirmedCount })
+      .from(patientPhysicalFindings)
+      .where(eq(patientPhysicalFindings.id, id));
+    
+    if (current.length > 0) {
+      await db.update(patientPhysicalFindings)
+        .set({
+          confirmedCount: current[0].confirmedCount + 1,
+          lastConfirmedEncounter: encounterId,
+          lastSeenEncounter: encounterId,
+          updatedAt: new Date()
+        })
+        .where(eq(patientPhysicalFindings.id, id));
+    }
+  }
+
+  async markPhysicalFindingContradicted(id: number, encounterId: number): Promise<void> {
+    const current = await db.select({ contradictedCount: patientPhysicalFindings.contradictedCount })
+      .from(patientPhysicalFindings)
+      .where(eq(patientPhysicalFindings.id, id));
+    
+    if (current.length > 0) {
+      await db.update(patientPhysicalFindings)
+        .set({
+          contradictedCount: current[0].contradictedCount + 1,
+          lastSeenEncounter: encounterId,
+          updatedAt: new Date()
+        })
+        .where(eq(patientPhysicalFindings.id, id));
+    }
   }
 }
 

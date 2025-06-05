@@ -484,6 +484,45 @@ export const imagingResults = pgTable("imaging_results", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Patient Physical Exam Findings (GPT-managed persistent findings)
+export const patientPhysicalFindings = pgTable("patient_physical_findings", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  
+  // Physical exam categorization
+  examSystem: text("exam_system").notNull(), // 'cardiovascular', 'pulmonary', 'abdominal', 'neurological', etc.
+  examComponent: text("exam_component"), // 'heart sounds', 'lung sounds', 'reflexes', 'scars', etc.
+  
+  // Finding details
+  findingText: text("finding_text").notNull(), // "2/6 systolic murmur at RUSB", "well-healed surgical scar RLQ"
+  findingType: text("finding_type").notNull(), // 'chronic_stable', 'anatomical_variant', 'surgical_history', 'congenital'
+  
+  // Confidence and validation
+  confidence: decimal("confidence", { precision: 3, scale: 2 }).notNull(), // GPT confidence 0.00-1.00
+  confirmedCount: integer("confirmed_count").default(0), // How many times provider confirmed
+  contradictedCount: integer("contradicted_count").default(0), // How many times provider changed/removed
+  
+  // Source tracking
+  firstNotedEncounter: integer("first_noted_encounter").references(() => encounters.id).notNull(),
+  lastConfirmedEncounter: integer("last_confirmed_encounter").references(() => encounters.id),
+  lastSeenEncounter: integer("last_seen_encounter").references(() => encounters.id),
+  
+  // Status
+  status: text("status").default("active"), // 'active', 'resolved', 'outdated', 'invalid'
+  
+  // GPT analysis metadata
+  gptReasoning: text("gpt_reasoning"), // Why GPT thinks this is persistent
+  clinicalContext: jsonb("clinical_context").$type<{
+    relatedDiagnoses?: string[];
+    expectedDuration?: string;
+    monitoringRequired?: boolean;
+    significanceLevel?: 'low' | 'moderate' | 'high';
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Unified Orders Table (for draft orders processing system)
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
@@ -679,6 +718,25 @@ export const imagingResultsRelations = relations(imagingResults, ({ one }) => ({
   }),
 }));
 
+export const patientPhysicalFindingsRelations = relations(patientPhysicalFindings, ({ one }) => ({
+  patient: one(patients, {
+    fields: [patientPhysicalFindings.patientId],
+    references: [patients.id],
+  }),
+  firstNotedEncounter: one(encounters, {
+    fields: [patientPhysicalFindings.firstNotedEncounter],
+    references: [encounters.id],
+  }),
+  lastConfirmedEncounter: one(encounters, {
+    fields: [patientPhysicalFindings.lastConfirmedEncounter],
+    references: [encounters.id],
+  }),
+  lastSeenEncounter: one(encounters, {
+    fields: [patientPhysicalFindings.lastSeenEncounter],
+    references: [encounters.id],
+  }),
+}));
+
 export const ordersRelations = relations(orders, ({ one }) => ({
   patient: one(patients, {
     fields: [orders.patientId],
@@ -792,6 +850,18 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   urgency: true,
   orderedBy: true,
   approvedBy: true,
+});
+
+export const insertPatientPhysicalFindingSchema = createInsertSchema(patientPhysicalFindings).pick({
+  patientId: true,
+  examSystem: true,
+  examComponent: true,
+  findingText: true,
+  findingType: true,
+  confidence: true,
+  firstNotedEncounter: true,
+  gptReasoning: true,
+  clinicalContext: true,
 });
 
 // User preference schemas
