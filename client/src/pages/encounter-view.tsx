@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export function EncounterView() {
-  const { id } = useParams();
-  const [, setLocation] = useLocation();
+  const params = useParams();
+  const [location, setLocation] = useLocation();
+  const { id } = params;
   const encounterId = parseInt(id || "0");
 
-  console.log('🔍 [EncounterView] Loading encounter ID:', encounterId);
+  console.log('🔍 [EncounterView] Full params object:', params);
+  console.log('🔍 [EncounterView] Current location:', location);
+  console.log('🔍 [EncounterView] Window location:', window.location.pathname);
   console.log('🔍 [EncounterView] Raw ID param:', id);
+  console.log('🔍 [EncounterView] Parsed encounter ID:', encounterId);
 
   const { data: encounter, isLoading: encounterLoading, error: encounterError } = useQuery<Encounter>({
     queryKey: [`/api/encounters/${encounterId}`],
