@@ -393,8 +393,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Create encounter data directly without schema validation for now
-      const encounterData = {
+      // Create encounter data with proper typing
+      const encounterData: any = {
         patientId: parseInt(patientId),
         providerId: req.user.id,
         encounterType: 'office_visit',
