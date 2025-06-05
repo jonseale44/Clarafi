@@ -373,7 +373,17 @@ export function PatientParser() {
         });
         
         console.log('🔄 [PatientParser] Navigating to encounter:', encounter.id);
+        console.log('🔄 [PatientParser] Full navigation URL:', `/encounters/${encounter.id}`);
+        console.log('🔄 [PatientParser] Current location before navigation:', window.location.pathname);
+        
         setLocation(`/encounters/${encounter.id}`);
+        
+        console.log('🔄 [PatientParser] Navigation command sent');
+        
+        // Add a small delay to check if navigation worked
+        setTimeout(() => {
+          console.log('🔄 [PatientParser] Location after navigation:', window.location.pathname);
+        }, 100);
       } else {
         const errorData = await response.text();
         console.error('❌ [PatientParser] Encounter creation failed:', {
