@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Encounter } from "@shared/schema";
 import { Plus, Eye, Edit, Clock, MapPin, User, Calendar } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface EncountersTabProps {
   encounters: Encounter[];
@@ -10,20 +11,34 @@ interface EncountersTabProps {
 }
 
 export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "No date";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid Date";
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return "Invalid Date";
+    }
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return "No time";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid Time";
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "Invalid Time";
+    }
   };
 
   const getStatusColor = (status: string) => {
