@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Upload, FileText, User, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
+import { queryClient } from '@/lib/queryClient';
 
 interface ExtractedPatient {
   first_name: string;
@@ -265,6 +266,8 @@ export function PatientParser() {
 
       if (result.success && result.patient) {
         setCreatedPatient(result.patient);
+        // Invalidate patient queries to refresh patient lists
+        await queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
         toast({
           title: "Patient created successfully",
           description: `Created patient record for ${result.patient.firstName} ${result.patient.lastName}`,
@@ -321,7 +324,7 @@ export function PatientParser() {
         body: JSON.stringify({
           patientId: createdPatient.id,
           chiefComplaint: 'New patient visit',
-          status: 'active'
+          status: 'in_progress'
         }),
       });
 

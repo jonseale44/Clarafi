@@ -399,7 +399,15 @@ export function registerRoutes(app: Express): Server {
         providerId: req.user.id,
         encounterType: 'office_visit',
         encounterStatus: status,
-        chiefComplaint: chiefComplaint || 'New patient visit'
+        chiefComplaint: chiefComplaint || 'New patient visit',
+        subjective: '',
+        objective: '',
+        assessment: '',
+        plan: '',
+        nurseAssessment: '',
+        nurseInterventions: '',
+        nurseNotes: '',
+        location: 'Clinic'
       });
 
       const encounter = await storage.createEncounter(encounterData);
