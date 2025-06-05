@@ -11,6 +11,18 @@ interface EncountersTabProps {
 }
 
 export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
+  // Fetch all users/providers for name lookup
+  const { data: providers = [] } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: encounters.length > 0,
+  });
+
+  const getProviderName = (providerId: number | null) => {
+    if (!providerId) return "Unassigned";
+    const provider = (providers as any[]).find((p: any) => p.id === providerId);
+    return provider ? `Dr. ${provider.username}` : `Provider #${providerId}`;
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "No date";
     try {
@@ -127,17 +139,17 @@ export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-3 w-3" />
                       <span className="font-medium">Date:</span>
-                      <span>{formatDate(encounter.startTime)}</span>
+                      <span>{encounter.startTime ? formatDate(encounter.startTime.toString()) : "No date"}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <User className="h-3 w-3" />
                       <span className="font-medium">Provider:</span>
-                      <span>Provider #{encounter.providerId}</span>
+                      <span>{getProviderName(encounter.providerId)}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-3 w-3" />
                       <span className="font-medium">Time:</span>
-                      <span>{formatTime(encounter.startTime)}</span>
+                      <span>{encounter.startTime ? formatTime(encounter.startTime.toString()) : "No time"}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-3 w-3" />

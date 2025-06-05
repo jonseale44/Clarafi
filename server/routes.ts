@@ -18,6 +18,18 @@ export function registerRoutes(app: Express): Server {
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);
 
+  // Users routes
+  app.get("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Patient routes
   app.get("/api/patients", async (req, res) => {
     try {
