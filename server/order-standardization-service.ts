@@ -34,6 +34,10 @@ export class OrderStandardizationService {
    * Required for systems like SureScripts, Epic MyChart Pharmacy
    */
   private static standardizeMedicationOrder(order: InsertOrder): InsertOrder {
+    // Intelligent clinical indication enhancement
+    const enhancedIndication = OrderStandardizationService.enhanceClinicalIndication(order.medicationName || '', order.clinicalIndication || '');
+    const suggestedICD10 = OrderStandardizationService.suggestICD10Code(order.medicationName || '', enhancedIndication);
+
     return {
       ...order,
       // Core medication fields (required for pharmacy integration)
@@ -48,10 +52,10 @@ export class OrderStandardizationService {
       routeOfAdministration: order.routeOfAdministration || 'oral',
       daysSupply: order.daysSupply || 30,
       
-      // Clinical requirements
-      clinicalIndication: order.clinicalIndication || 'See diagnosis',
-      diagnosisCode: order.diagnosisCode || '', // ICD-10 required for insurance
-      requiresPriorAuth: order.requiresPriorAuth || false,
+      // Enhanced clinical requirements
+      clinicalIndication: enhancedIndication,
+      diagnosisCode: order.diagnosisCode || suggestedICD10, // ICD-10 required for insurance
+      requiresPriorAuth: order.requiresPriorAuth || OrderStandardizationService.checkPriorAuthRequirement(order.medicationName || ''),
       
       // Default values for required fields
       priority: order.priority || 'routine',
@@ -200,5 +204,149 @@ export class OrderStandardizationService {
     const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
     const orderTypePrefix = order.orderType.substring(0, 3).toUpperCase();
     return `${orderTypePrefix}-${order.patientId}-${timestamp}`;
+  }
+
+  /**
+   * Enhances clinical indication based on medication name and existing indication
+   */
+  private static enhanceClinicalIndication(medicationName?: string, currentIndication?: string): string {
+    if (!medicationName) return currentIndication || 'Clinical evaluation needed';
+    
+    // If already has a meaningful indication, keep it
+    if (currentIndication && !currentIndication.includes('See diagnosis') && !currentIndication.includes('Clinical correlation')) {
+      return currentIndication;
+    }
+
+    // Common medication indication mappings
+    const medicationIndications: { [key: string]: string } = {
+      'lisinopril': 'Hypertension management',
+      'amlodipine': 'Hypertension management',
+      'metformin': 'Type 2 diabetes mellitus management',
+      'atorvastatin': 'Hyperlipidemia management',
+      'simvastatin': 'Hyperlipidemia management',
+      'levothyroxine': 'Hypothyroidism treatment',
+      'albuterol': 'Asthma/COPD bronchodilator therapy',
+      'prednisolone': 'Anti-inflammatory treatment',
+      'prednisone': 'Anti-inflammatory treatment',
+      'omeprazole': 'Gastroesophageal reflux disease treatment',
+      'pantoprazole': 'Gastroesophageal reflux disease treatment',
+      'sertraline': 'Depression/anxiety management',
+      'fluoxetine': 'Depression/anxiety management',
+      'gabapentin': 'Neuropathic pain management',
+      'ibuprofen': 'Pain and inflammation management',
+      'acetaminophen': 'Pain management',
+      'warfarin': 'Anticoagulation therapy',
+      'furosemide': 'Edema/heart failure management'
+    };
+
+    const lowerMedName = medicationName.toLowerCase();
+    
+    // Check for exact matches first
+    if (medicationIndications[lowerMedName]) {
+      return medicationIndications[lowerMedName];
+    }
+
+    // Check for partial matches
+    for (const [med, indication] of Object.entries(medicationIndications)) {
+      if (lowerMedName.includes(med) || med.includes(lowerMedName)) {
+        return indication;
+      }
+    }
+
+    return currentIndication || 'Medication therapy as clinically indicated';
+  }
+
+  /**
+   * Suggests ICD-10 code based on medication and clinical indication
+   */
+  private static suggestICD10Code(medicationName?: string, indication?: string): string {
+    if (!medicationName && !indication) return '';
+
+    // Common medication to ICD-10 mappings
+    const medicationICD10: { [key: string]: string } = {
+      'lisinopril': 'I10', // Essential hypertension
+      'amlodipine': 'I10', // Essential hypertension
+      'metformin': 'E11.9', // Type 2 diabetes without complications
+      'atorvastatin': 'E78.5', // Hyperlipidemia
+      'simvastatin': 'E78.5', // Hyperlipidemia
+      'levothyroxine': 'E03.9', // Hypothyroidism
+      'albuterol': 'J45.9', // Asthma
+      'prednisolone': 'J45.9', // Often for asthma/COPD
+      'prednisone': 'M79.3', // Inflammatory condition
+      'omeprazole': 'K21.9', // GERD
+      'pantoprazole': 'K21.9', // GERD
+      'sertraline': 'F32.9', // Depression
+      'fluoxetine': 'F32.9', // Depression
+      'gabapentin': 'M79.3', // Neuropathic pain
+      'ibuprofen': 'M79.3', // Pain
+      'acetaminophen': 'R52', // Pain
+      'warfarin': 'Z79.01', // Long-term anticoagulation
+      'furosemide': 'I50.9' // Heart failure
+    };
+
+    // Indication-based ICD-10 mappings
+    const indicationICD10: { [key: string]: string } = {
+      'hypertension': 'I10',
+      'diabetes': 'E11.9',
+      'hyperlipidemia': 'E78.5',
+      'hypothyroidism': 'E03.9',
+      'asthma': 'J45.9',
+      'gerd': 'K21.9',
+      'depression': 'F32.9',
+      'anxiety': 'F41.9',
+      'pain': 'M79.3'
+    };
+
+    if (medicationName) {
+      const lowerMedName = medicationName.toLowerCase();
+      
+      // Check exact medication matches
+      if (medicationICD10[lowerMedName]) {
+        return medicationICD10[lowerMedName];
+      }
+
+      // Check partial medication matches
+      for (const [med, code] of Object.entries(medicationICD10)) {
+        if (lowerMedName.includes(med) || med.includes(lowerMedName)) {
+          return code;
+        }
+      }
+    }
+
+    if (indication) {
+      const lowerIndication = indication.toLowerCase();
+      
+      // Check indication matches
+      for (const [condition, code] of Object.entries(indicationICD10)) {
+        if (lowerIndication.includes(condition)) {
+          return code;
+        }
+      }
+    }
+
+    return ''; // No suggestion available
+  }
+
+  /**
+   * Checks if medication commonly requires prior authorization
+   */
+  private static checkPriorAuthRequirement(medicationName?: string): boolean {
+    if (!medicationName) return false;
+
+    // Medications that commonly require prior auth
+    const priorAuthMeds = [
+      'adalimumab', 'etanercept', 'infliximab', // Biologics
+      'insulin glargine', 'insulin detemir', // Long-acting insulins
+      'rosuvastatin', // High-intensity statins
+      'esomeprazole', // Brand PPIs
+      'duloxetine', 'venlafaxine', // SNRIs
+      'aripiprazole', 'quetiapine', // Atypical antipsychotics
+      'pregabalin', // Controlled substances
+      'celecoxib', // COX-2 inhibitors
+      'varenicline' // Smoking cessation
+    ];
+
+    const lowerMedName = medicationName.toLowerCase();
+    return priorAuthMeds.some(med => lowerMedName.includes(med) || med.includes(lowerMedName));
   }
 }
