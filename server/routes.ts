@@ -327,15 +327,7 @@ export function registerRoutes(app: Express): Server {
 
       try {
         const { AssistantContextService } = await import('./assistant-context-service.js');
-        
-        // Use a singleton pattern for assistant service to maintain consistency
-        if (!(global as any).assistantService) {
-          (global as any).assistantService = new AssistantContextService();
-          await (global as any).assistantService.initializeAssistant();
-          console.log('🤖 [Routes] Created singleton assistant service for live suggestions');
-        }
-        
-        const assistantService = (global as any).assistantService;
+        const assistantService = new AssistantContextService();
         
         // Get or create persistent thread for this patient
         const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
@@ -423,7 +415,21 @@ export function registerRoutes(app: Express): Server {
         transcription: "", // Will be filled by processVoiceRecording
       };
 
-      const result = await processVoiceRecording(req.file.buffer, assistantParams);
+      // Use simplified voice processing
+      const openai = new (await import('openai')).default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      
+      const transcriptionResponse = await openai.audio.transcriptions.create({
+        file: new File([req.file.buffer], 'audio.wav', { type: 'audio/wav' }),
+        model: 'whisper-1',
+      });
+      
+      const result = {
+        transcription: transcriptionResponse.text,
+        patientId: parseInt(req.params.patientId),
+        encounterId: parseInt(req.params.encounterId)
+      };
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -515,21 +521,37 @@ export function registerRoutes(app: Express): Server {
       });
       console.log('📝 [Routes] ✅ Encounter created:', encounter.id);
 
-      console.log('🚀 [Routes] Starting FINAL enhanced voice processing...');
-      const result = await processVoiceRecordingEnhanced(
-        req.file.buffer,
+      console.log('🚀 [Routes] Using fast SOAP service for voice processing...');
+      
+      // Use OpenAI Whisper for transcription
+      const openai = new (await import('openai')).default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      
+      const transcriptionResponse = await openai.audio.transcriptions.create({
+        file: new File([req.file.buffer], 'audio.wav', { type: 'audio/wav' }),
+        model: 'whisper-1',
+      });
+      
+      const transcription = transcriptionResponse.text;
+      console.log('📝 [Routes] ✅ Transcription completed');
+      
+      // Generate SOAP note and orders using fast service
+      const { FastSOAPService } = await import('./fast-soap-service.js');
+      const fastSoapService = new FastSOAPService();
+      
+      const { soapNote, extractedOrders } = await fastSoapService.generateSOAPNoteAndOrdersFast(
         patientId,
-        encounter.id,
-        userRole
+        encounter.id.toString(),
+        transcription
       );
-      console.log('🚀 [Routes] ✅ Final processing completed');
+      
+      console.log('🚀 [Routes] ✅ Fast processing completed');
 
       const response = {
-        transcription: result.transcription,
-        aiSuggestions: result.aiResponse.suggestions,
-        soapNote: result.aiResponse.soapNote,
-        draftOrders: result.aiResponse.draftOrders,
-        cptCodes: result.aiResponse.cptCodes,
+        transcription,
+        soapNote,
+        draftOrders: extractedOrders,
         encounterId: encounter.id,
         isLiveChunk: false
       };
