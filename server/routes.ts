@@ -455,28 +455,27 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
-      // Create a new encounter for voice documentation
-      const newEncounter = await storage.createEncounter({
-        patientId: patientIdNum,
-        providerId: req.user?.id || 1,
-        encounterType: "voice_note",
-        chiefComplaint: "Voice-generated documentation"
-      });
+      // Check for existing in-progress encounter before creating a new one
+      const existingEncounters = await storage.getPatientEncounters(patientIdNum);
+      let targetEncounter = existingEncounters.find(enc => 
+        enc.encounterStatus === "in_progress" || enc.encounterStatus === "scheduled"
+      );
+      
+      // Only create a new encounter if no active encounter exists
+      if (!targetEncounter) {
+        targetEncounter = await storage.createEncounter({
+          patientId: patientIdNum,
+          providerId: req.user?.id || 1,
+          encounterType: "office_visit",
+          chiefComplaint: "Voice-generated documentation"
+        });
+      }
 
       const result = await processVoiceRecordingEnhanced(
         req.file.buffer,
-        {
-          userRole: userRoleStr as "nurse" | "provider", 
-          patientId: patientIdNum,
-          encounterId: newEncounter.id,
-          patientContext: {
-            firstName: patient.firstName,
-            lastName: patient.lastName,
-            age: new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear(),
-            gender: patient.gender,
-            mrn: patient.mrn
-          }
-        }
+        patientIdNum,
+        targetEncounter.id,
+        userRoleStr as "nurse" | "provider"
       );
 
       res.json(result);
