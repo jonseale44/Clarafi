@@ -90,7 +90,17 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
   }, [isRealtimeEnabled]);
 
   const handleWebSocketMessage = (message: any) => {
+    console.log('📨 [RealtimeSOAP] Handling message:', message);
+    
     switch (message.type) {
+      case 'connection_established':
+        console.log('✅ [RealtimeSOAP] Connection established:', message.connectionId);
+        toast({
+          title: "Real-time Connected",
+          description: "Ready for streaming SOAP generation",
+        });
+        break;
+
       case 'soap_delta':
         // Stream SOAP note content as it's generated
         setSoapBuffer(prev => {
@@ -114,7 +124,7 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
         break;
 
       case 'soap_error':
-        console.error('SOAP generation error:', message.error);
+        console.error('❌ [RealtimeSOAP] SOAP generation error:', message.error);
         setIsGenerating(false);
         toast({
           variant: "destructive",
@@ -123,8 +133,17 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
         });
         break;
 
+      case 'error':
+        console.error('❌ [RealtimeSOAP] WebSocket error:', message.message);
+        toast({
+          variant: "destructive",
+          title: "Connection Error",
+          description: message.message || "WebSocket connection error",
+        });
+        break;
+
       default:
-        // Handle other message types if needed
+        console.log('📋 [RealtimeSOAP] Unhandled message type:', message.type);
         break;
     }
   };

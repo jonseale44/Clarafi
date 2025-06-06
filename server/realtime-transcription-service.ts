@@ -22,17 +22,34 @@ export class RealtimeTranscriptionService {
     console.log('🌐 [RealtimeTranscription] Initializing WebSocket server for real-time transcription...');
     
     this.wss = new WebSocketServer({ 
-      server, 
-      path: '/ws/realtime-transcription' 
+      server,
+      path: '/ws/realtime-transcription',
+      verifyClient: (info) => {
+        console.log('🔍 [RealtimeTranscription] Verifying client connection from:', info.origin);
+        console.log('🔍 [RealtimeTranscription] Request headers:', info.req.headers);
+        return true; // Accept all connections for now
+      }
     });
 
     this.wss.on('connection', (ws, req) => {
       const connectionId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       console.log('🔌 [RealtimeTranscription] New connection:', connectionId);
+      console.log('🔌 [RealtimeTranscription] Client IP:', req.socket.remoteAddress);
+      console.log('🔌 [RealtimeTranscription] Headers:', req.headers);
+
+      // Send immediate connection confirmation
+      ws.send(JSON.stringify({
+        type: 'connection_established',
+        connectionId: connectionId,
+        timestamp: new Date().toISOString(),
+        message: 'Connected to Real-time transcription service'
+      }));
 
       ws.on('message', async (data) => {
+        console.log('📨 [RealtimeTranscription] Message from', connectionId, ':', data.toString());
         try {
           const message = JSON.parse(data.toString());
+          console.log('📨 [RealtimeTranscription] Parsed message:', message);
           await this.handleClientMessage(connectionId, ws, message);
         } catch (error) {
           console.error('❌ [RealtimeTranscription] Error parsing message:', error);
@@ -40,13 +57,13 @@ export class RealtimeTranscriptionService {
         }
       });
 
-      ws.on('close', () => {
-        console.log('🔌 [RealtimeTranscription] Connection closed:', connectionId);
+      ws.on('close', (code, reason) => {
+        console.log('🔌 [RealtimeTranscription] Connection closed:', connectionId, 'Code:', code, 'Reason:', reason);
         this.cleanup(connectionId);
       });
 
       ws.on('error', (error) => {
-        console.error('❌ [RealtimeTranscription] WebSocket error:', error);
+        console.error('❌ [RealtimeTranscription] WebSocket error for', connectionId, ':', error);
         this.cleanup(connectionId);
       });
     });
