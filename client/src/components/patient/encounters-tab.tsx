@@ -2,16 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Encounter } from "@shared/schema";
-import { Plus, Eye, Edit, Clock, MapPin, User, Calendar } from "lucide-react";
+import { Plus, Eye, Edit, Clock, MapPin, User, Calendar, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
 interface EncountersTabProps {
   encounters: Encounter[];
   patientId: number;
+  onRefresh?: () => void;
 }
 
-export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
+export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTabProps) {
   const [, setLocation] = useLocation();
   
   // Fetch all users/providers for name lookup

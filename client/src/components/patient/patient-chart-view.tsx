@@ -41,10 +41,13 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch encounters
-  const { data: encounters = [] } = useQuery({
+  // Fetch encounters with automatic refresh
+  const { data: encounters = [], refetch: refetchEncounters } = useQuery({
     queryKey: [`/api/patients/${patientId}/encounters`],
     enabled: !!patientId,
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always consider data stale to ensure fresh updates
   });
 
   // Fetch allergies
@@ -67,7 +70,9 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "encounters"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/pending-encounters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
         title: "Success",
         description: "New encounter created successfully",

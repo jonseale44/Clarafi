@@ -958,9 +958,15 @@ export function EncounterDetailView({
       const data = await response.json();
       console.log("✅ [EncounterView] SOAP note saved successfully:", data);
       
-      // Invalidate encounter cache to ensure changes persist when returning
+      // Invalidate all relevant caches to ensure changes persist
       await queryClient.invalidateQueries({
         queryKey: [`/api/encounters/${encounterId}`]
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/patients/${patient.id}/encounters`]
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/dashboard/pending-encounters"]
       });
       
       toast({
