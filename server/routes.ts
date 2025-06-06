@@ -378,12 +378,16 @@ export function registerRoutes(app: Express): Server {
 
       try {
         console.log('🧠 [Routes] Attempting to get live suggestions...');
-        const { HybridSOAPService } = await import('./hybrid-soap-service.js');
+        const { FastSOAPService } = await import('./fast-soap-service.js');
         
-        const hybridService = new HybridSOAPService();
-        console.log('🧠 [Routes] HybridSOAPService created');
+        const fastService = new FastSOAPService();
+        console.log('🧠 [Routes] FastSOAPService created');
         
-        const suggestions = await hybridService.getEnhancedSuggestions(
+        // Use AssistantContextService directly for suggestions
+        const { AssistantContextService } = await import('./assistant-context-service.js');
+        const assistantService = new AssistantContextService();
+        
+        const suggestions = await assistantService.getRealtimeSuggestions(
           parseInt(patientId),
           transcription
         );
@@ -657,44 +661,21 @@ export function registerRoutes(app: Express): Server {
 
       console.log(`[PersonalizedSOAP] Generating for user ${userId}, patient ${patientId}, encounter ${encounterId}`);
 
-      if (usePersonalization) {
-        // Use personalized SOAP generation with user preferences
-        const { UserSOAPPreferenceService } = await import('./user-soap-preference-service.js');
-        const preferenceService = new UserSOAPPreferenceService();
-        
-        // Get patient context
-        const patient = await storage.getPatient(patientId);
-        if (!patient) {
-          return res.status(404).json({ message: "Patient not found" });
-        }
+      // Use fast SOAP generation service (consolidated approach)
+      const { FastSOAPService } = await import('./fast-soap-service.js');
+      const fastSoapService = new FastSOAPService();
+      
+      // Get patient context
+      const patient = await storage.getPatient(patientId);
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
 
-        const soapNote = await preferenceService.generatePersonalizedSOAP(
-          userId,
-          patientId,
-          transcription,
-          { patient }
-        );
-
-        console.log(`✅ [PersonalizedSOAP] Generated personalized SOAP (${soapNote.length} characters)`);
-        
-        res.json({ 
-          soapNote,
-          patientId,
-          encounterId,
-          userId,
-          personalized: true,
-          generatedAt: new Date().toISOString()
-        });
-      } else {
-        // Fall back to standard generation
-        const { HybridSOAPService } = await import('./hybrid-soap-service.js');
-        const hybridSoapService = new HybridSOAPService();
-        
-        const soapNote = await hybridSoapService.generateSOAPNote(
-          patientId,
-          encounterId.toString(),
-          transcription
-        );
+      const { soapNote, extractedOrders } = await fastSoapService.generateSOAPNoteAndOrdersFast(
+        patientId,
+        encounterId.toString(),
+        transcription
+      );
 
         res.json({ 
           soapNote,
