@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Encounter } from "@shared/schema";
 import { Plus, Eye, Edit, Clock, MapPin, User, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 interface EncountersTabProps {
   encounters: Encounter[];
@@ -11,6 +12,8 @@ interface EncountersTabProps {
 }
 
 export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
+  const [, setLocation] = useLocation();
+  
   // Fetch all users/providers for name lookup
   const { data: providers = [] } = useQuery({
     queryKey: ["/api/users"],
@@ -53,7 +56,9 @@ export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
+    if (!status) return "bg-gray-100 text-gray-800";
+    
     switch (status) {
       case "completed":
         return "bg-green-100 text-green-800";
@@ -69,35 +74,42 @@ export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
   };
 
   const getEncounterTypeLabel = (type: string) => {
-    switch (type) {
+    switch (type?.toLowerCase()) {
       case "office_visit":
+      case "office visit":
         return "Office Visit";
       case "virtual_visit":
+      case "virtual visit":
         return "Virtual Visit";
       case "patient_communication":
         return "Patient Communication";
       case "orders_only":
         return "Orders Only";
+      case "voice_note":
+        return "Voice Note";
       default:
-        return type;
+        return type || "Unknown";
     }
   };
 
   const handleNewEncounter = () => {
-    // In a real app, this would open a new encounter modal
-    console.log("Creating new encounter for patient:", patientId);
+    // Navigate to create new encounter
+    setLocation(`/patients/${patientId}/encounters/new`);
   };
 
   const handleViewEncounter = (encounterId: number) => {
-    console.log("Viewing encounter:", encounterId);
+    // Navigate to encounter view page
+    setLocation(`/encounter/${encounterId}`);
   };
 
   const handleEditEncounter = (encounterId: number) => {
-    console.log("Editing encounter:", encounterId);
+    // Navigate to encounter edit page
+    setLocation(`/encounter/${encounterId}/edit`);
   };
 
   const handleContinueEncounter = (encounterId: number) => {
-    console.log("Continuing encounter:", encounterId);
+    // Navigate to continue encounter
+    setLocation(`/encounter/${encounterId}/continue`);
   };
 
   return (
@@ -125,8 +137,8 @@ export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
                       {getEncounterTypeLabel(encounter.encounterType)}
                       {encounter.encounterSubtype && ` - ${encounter.encounterSubtype}`}
                     </h5>
-                    <Badge variant="secondary" className={getStatusColor(encounter.encounterStatus)}>
-                      {encounter.encounterStatus?.replace('_', ' ')}
+                    <Badge variant="secondary" className={getStatusColor(encounter.encounterStatus || '')}>
+                      {encounter.encounterStatus?.replace('_', ' ') || 'Unknown'}
                     </Badge>
                     {encounter.signatureId && (
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
