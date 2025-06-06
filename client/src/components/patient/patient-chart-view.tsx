@@ -43,7 +43,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
 
   // Fetch encounters
   const { data: encounters = [] } = useQuery({
-    queryKey: ["/api/patients", patientId, "encounters"],
+    queryKey: [`/api/patients/${patientId}/encounters`],
     enabled: !!patientId,
   });
 
