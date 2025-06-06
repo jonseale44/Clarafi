@@ -1147,6 +1147,9 @@ export function EncounterDetailView({
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Real-time API Migration Guide */}
+          <RealtimeMigrationGuide />
+          
           {/* Real-time API Settings */}
           <RealtimeAPISettings
             onApiKeyChange={(key) => setCurrentApiKey(key)}
