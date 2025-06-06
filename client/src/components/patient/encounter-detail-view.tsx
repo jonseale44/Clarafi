@@ -23,7 +23,7 @@ import {
   Save,
 } from "lucide-react";
 import { Patient } from "@shared/schema";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { SOAPNoteEditor } from "@/components/ui/soap-note-editor";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -117,6 +117,9 @@ export function EncounterDetailView({
   
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
+  
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
 
   const editor = useEditor({
     extensions: [
@@ -156,14 +159,19 @@ export function EncounterDetailView({
 
   // Effect to load existing SOAP note from encounter data
   useEffect(() => {
-    if (encounter?.note && editor && !editor.isDestroyed && !soapNote) {
+    if (encounter?.note && editor && !editor.isDestroyed) {
       // Load existing SOAP note from database
       const existingNote = encounter.note;
-      setSoapNote(existingNote);
-      editor.commands.setContent(existingNote);
-      console.log('📄 [EncounterView] Loaded existing SOAP note from encounter data');
+      
+      // Only update if the content is different from what's currently loaded
+      const currentContent = editor.getHTML();
+      if (currentContent !== existingNote && existingNote.trim() !== '') {
+        setSoapNote(existingNote);
+        editor.commands.setContent(existingNote);
+        console.log('📄 [EncounterView] Loaded existing SOAP note from encounter data');
+      }
     }
-  }, [encounter, editor, soapNote]);
+  }, [encounter?.note, editor]);
 
   // Effect to load new SOAP note content only when it's generated
   useEffect(() => {
@@ -949,6 +957,11 @@ export function EncounterDetailView({
 
       const data = await response.json();
       console.log("✅ [EncounterView] SOAP note saved successfully:", data);
+      
+      // Invalidate encounter cache to ensure changes persist when returning
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/encounters/${encounterId}`]
+      });
       
       toast({
         title: "SOAP Note Saved",
