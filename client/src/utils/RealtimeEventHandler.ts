@@ -1,5 +1,87 @@
-import { SOAPNoteModule } from "./modules/SOAPNoteModule";
-import { DraftOrdersModule } from "./modules/DraftOrdersModule";
+// Import modules directly instead of using relative paths
+export class SOAPNoteModuleSimple {
+  private patientChart: any = null;
+  private ws: WebSocket | null = null;
+  private isCompleted: boolean = false;
+
+  constructor(webSocket: WebSocket | null) {
+    this.ws = webSocket;
+  }
+
+  setPatientChart(chart: any): void {
+    if (!chart?.patient_id) {
+      console.error("Invalid patient chart - missing patient_id");
+      return;
+    }
+    this.patientChart = chart;
+  }
+
+  handleGptResponse(data: any): any {
+    if (data.type === "response.text.done") {
+      const fullText = data.response?.text || "";
+      
+      if (!fullText.trim()) {
+        console.warn("Empty SOAP note received from GPT");
+        return null;
+      }
+
+      this.isCompleted = true;
+      
+      return {
+        type: "soap.note.completed",
+        note: fullText,
+      };
+    }
+    return null;
+  }
+}
+
+export class DraftOrdersModuleSimple {
+  private patientChart: any = null;
+
+  constructor(webSocket: WebSocket | null) {
+    // Simple implementation
+  }
+
+  setPatientChart(chart: any): void {
+    this.patientChart = chart;
+  }
+
+  processOrders(ordersText: string): any[] {
+    if (!ordersText.trim()) return [];
+    
+    const orders: any[] = [];
+    const sections = ordersText.split('\n\n').filter(section => section.trim());
+
+    for (const section of sections) {
+      const lines = section.split('\n').map(line => line.trim()).filter(line => line);
+      
+      if (lines.length === 0) continue;
+
+      if (lines[0].toLowerCase().startsWith('medication:')) {
+        orders.push({
+          type: 'medication',
+          name: lines[0].substring(11).trim(),
+          sig: lines.find(l => l.toLowerCase().startsWith('sig:'))?.substring(4).trim() || '',
+          dispense: lines.find(l => l.toLowerCase().startsWith('dispense:'))?.substring(9).trim() || '',
+          refills: parseInt(lines.find(l => l.toLowerCase().startsWith('refills:'))?.substring(8).trim() || '0')
+        });
+      } else if (lines[0].toLowerCase().startsWith('lab:')) {
+        orders.push({
+          type: 'lab',
+          name: lines[0].substring(4).trim()
+        });
+      } else if (lines[0].toLowerCase().startsWith('imaging:')) {
+        orders.push({
+          type: 'imaging',
+          name: lines[0].substring(8).trim()
+        });
+      }
+    }
+
+    return orders;
+  }
+}
 
 /**
  * Event handler for Real-time API WebSocket messages
@@ -8,8 +90,8 @@ import { DraftOrdersModule } from "./modules/DraftOrdersModule";
 export class RealtimeEventHandler {
   private webSocketClient: any;
   private onMessage: (event: any) => void;
-  public soapNoteModule: SOAPNoteModule | null = null;
-  public draftOrdersModule: DraftOrdersModule | null = null;
+  public soapNoteModule: SOAPNoteModuleSimple | null = null;
+  public draftOrdersModule: DraftOrdersModuleSimple | null = null;
 
   constructor(
     webSocketClient: any,
@@ -20,16 +102,15 @@ export class RealtimeEventHandler {
     this.onMessage = onMessage;
     
     // Initialize modules
-    this.soapNoteModule = new SOAPNoteModule(
-      webSocketClient.ws,
-      () => this.handleReconnection()
+    this.soapNoteModule = new SOAPNoteModuleSimple(
+      webSocketClient.ws
     );
     
-    this.draftOrdersModule = new DraftOrdersModule(webSocketClient.ws);
+    this.draftOrdersModule = new DraftOrdersModuleSimple(webSocketClient.ws);
     
     if (patientChart) {
-      this.soapNoteModule.setPatientChart(patientChart);
-      this.draftOrdersModule.setPatientChart(patientChart);
+      this.soapNoteModule?.setPatientChart(patientChart);
+      this.draftOrdersModule?.setPatientChart(patientChart);
     }
   }
 

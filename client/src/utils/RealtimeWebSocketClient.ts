@@ -7,7 +7,7 @@ import { RealtimeEventHandler } from "./RealtimeEventHandler";
 export class RealtimeWebSocketClient {
   private ws: WebSocket | null = null;
   private apiKey: string;
-  private eventHandler: RealtimeEventHandler;
+  public eventHandler: RealtimeEventHandler;
   private isConnected: boolean = false;
   private onReadyCallback: (() => void) | null = null;
   public transcriptionContent: string = "";
@@ -236,7 +236,10 @@ export class RealtimeWebSocketClient {
     try {
       const arrayBuffer = await audioBlob.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      const binaryString = Array.from(uint8Array, byte => String.fromCharCode(byte)).join('');
+      let binaryString = '';
+      for (let i = 0; i < uint8Array.length; i++) {
+        binaryString += String.fromCharCode(uint8Array[i]);
+      }
       const base64Audio = btoa(binaryString);
       
       this.sendMessage({
