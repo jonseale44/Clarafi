@@ -32,6 +32,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { RealtimeSOAPGenerator } from "@/components/RealtimeSOAPGenerator";
+import { RealtimeAPISettings } from "@/components/RealtimeAPISettings";
+import { RealtimeMigrationGuide } from "@/components/RealtimeMigrationGuide";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -117,6 +119,7 @@ export function EncounterDetailView({
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
   const [useRealtimeAPI, setUseRealtimeAPI] = useState(true); // Enable Real-time API by default
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
+  const [currentApiKey, setCurrentApiKey] = useState("");
   
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
@@ -1144,6 +1147,13 @@ export function EncounterDetailView({
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Real-time API Settings */}
+          <RealtimeAPISettings
+            onApiKeyChange={(key) => setCurrentApiKey(key)}
+            onRealtimeToggle={(enabled) => setUseRealtimeAPI(enabled)}
+            isRealtimeEnabled={useRealtimeAPI}
+          />
+          
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -1231,6 +1241,35 @@ export function EncounterDetailView({
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">SOAP Note</h2>
               <div className="flex items-center space-x-2">
+                {/* Real-time SOAP Generator Integration */}
+                {useRealtimeAPI && (currentApiKey || openaiApiKey) && (
+                  <RealtimeSOAPGenerator
+                    patientId={patient.id.toString()}
+                    encounterId={encounterId.toString()}
+                    transcription={transcription}
+                    onSOAPNoteUpdate={(note) => {
+                      setSoapNote(note);
+                      if (editor && !editor.isDestroyed) {
+                        const formattedContent = formatSoapNoteContent(note);
+                        editor.commands.setContent(formattedContent);
+                      }
+                    }}
+                    onSOAPNoteComplete={(note) => {
+                      setSoapNote(note);
+                      setIsGeneratingSOAP(false);
+                      if (editor && !editor.isDestroyed) {
+                        const formattedContent = formatSoapNoteContent(note);
+                        editor.commands.setContent(formattedContent);
+                        lastGeneratedContent.current = note;
+                      }
+                    }}
+                    onDraftOrdersReceived={(orders) => {
+                      setDraftOrders(orders);
+                    }}
+                    apiKey={currentApiKey || openaiApiKey}
+                  />
+                )}
+                
                 {isGeneratingSOAP && (
                   <div className="flex items-center text-sm text-blue-600">
                     <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
