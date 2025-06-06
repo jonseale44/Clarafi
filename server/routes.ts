@@ -7,6 +7,18 @@ import multer from "multer";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+interface AIAssistantParams {
+  userRole: "nurse" | "provider";
+  patientContext: {
+    age: number;
+    gender: string;
+    medicalHistory: string[];
+    currentMedications: string[];
+    allergies: string[];
+    chiefComplaint?: string;
+  };
+}
+
 export function registerRoutes(app: Express): Server {
   
 
@@ -357,8 +369,8 @@ export function registerRoutes(app: Express): Server {
         
         // Format suggestions for the UI
         const formattedSuggestions = {
-          realTimePrompts: suggestions.suggestions || suggestions.realTimePrompts || [],
-          clinicalGuidance: suggestions.clinicalGuidance || suggestions.guidance || suggestions.summary || "AI analysis in progress...",
+          realTimePrompts: suggestions.suggestions || [],
+          clinicalGuidance: "AI analysis in progress...",
           clinicalFlags: suggestions.clinicalFlags || []
         };
         
@@ -571,10 +583,10 @@ export function registerRoutes(app: Express): Server {
       console.log('📤 [Routes] Sending final response:', {
         hasTranscription: !!response.transcription,
         transcriptionLength: response.transcription?.length,
-        hasSuggestions: !!response.aiSuggestions,
+        hasSuggestions: false,
         hasSoapNote: !!response.soapNote,
         draftOrdersCount: response.draftOrders?.length || 0,
-        cptCodesCount: response.cptCodes?.length || 0
+        cptCodesCount: 0
       });
 
       res.json(response);
@@ -633,8 +645,7 @@ export function registerRoutes(app: Express): Server {
       const { AssistantContextService } = await import('./assistant-context-service.js');
       const assistantService = new AssistantContextService();
       
-      // Initialize assistant and get thread
-      await assistantService.initializeAssistant();
+      // Get thread for patient
       const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
       
       // Get intelligent suggestions with patient context

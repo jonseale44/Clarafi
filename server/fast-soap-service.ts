@@ -310,6 +310,8 @@ Keep the note concise but thorough, using standard medical terminology and prope
       return {
         soapNote,
         extractedOrders,
+        cptCodes: [],
+        diagnoses: [],
       };
     } catch (error: any) {
       console.error(`❌ [FastSOAP] Error in fast generation:`, error);
