@@ -818,61 +818,8 @@ export function registerRoutes(app: Express): Server {
         console.log(`ℹ️ [OptimizedSOAP] No draft orders found in SOAP note content`);
       }
 
-      // Automatically extract and create CPT codes and diagnoses from SOAP note
-      try {
-        console.log(`🏥 [SOAP] ========== STARTING CPT CODES EXTRACTION ==========`);
-        console.log(`🏥 [SOAP] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
-        console.log(`🏥 [SOAP] SOAP Note (${soapNote.length} chars) for CPT extraction`);
-        
-        const { CPTExtractor } = await import('./cpt-extractor.js');
-        const cptExtractor = new CPTExtractor();
-        console.log(`🏥 [SOAP] CPT Extractor imported successfully`);
-        
-        // Extract CPT codes and diagnoses from SOAP note content
-        console.log(`🏥 [SOAP] Calling extractCPTCodesAndDiagnoses...`);
-        const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
-        console.log(`🏥 [SOAP] CPT extraction completed. Result:`, extractedCPTData);
-        
-        if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
-          console.log(`🏥 [SOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`);
-          
-          // Update encounter with CPT codes and diagnoses
-          const encounter = await storage.getEncounter(encounterId);
-          if (encounter) {
-            await storage.updateEncounter(encounterId, {
-              cptCodes: extractedCPTData.cptCodes || [],
-              draftDiagnoses: extractedCPTData.diagnoses || []
-            });
-            console.log(`✅ [SOAP] Updated encounter ${encounterId} with CPT codes and diagnoses`);
-          }
-          
-          // Store individual diagnoses in diagnoses table for billing integration
-          if (extractedCPTData.diagnoses?.length > 0) {
-            for (const diagnosis of extractedCPTData.diagnoses) {
-              try {
-                await storage.createDiagnosis({
-                  patientId,
-                  encounterId,
-                  diagnosis: diagnosis.diagnosis,
-                  icd10Code: diagnosis.icd10Code,
-                  diagnosisDate: new Date().toISOString().split('T')[0],
-                  status: diagnosis.isPrimary ? 'active' : 'active',
-                  notes: `Auto-extracted from SOAP note on ${new Date().toISOString()}`
-                });
-              } catch (diagnosisError) {
-                console.error(`❌ [SOAP] Error creating diagnosis:`, diagnosisError);
-              }
-            }
-            console.log(`✅ [SOAP] Created ${extractedCPTData.diagnoses.length} diagnosis records for billing`);
-          }
-        } else {
-          console.log(`ℹ️ [SOAP] No CPT codes or diagnoses found in SOAP note content`);
-        }
-      } catch (cptError: any) {
-        console.error('❌ [SOAP] Error auto-extracting CPT codes:', cptError);
-        console.error('❌ [SOAP] CPT Error stack:', cptError.stack);
-        // Don't fail the SOAP generation if CPT extraction fails
-      }
+      // CPT extraction will be handled in background if needed
+      // Legacy sequential CPT extraction removed for performance
       
       res.json({ 
         soapNote,

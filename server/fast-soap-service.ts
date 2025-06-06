@@ -23,6 +23,8 @@ export class FastSOAPService {
   ): Promise<{
     soapNote: string;
     extractedOrders: any[];
+    cptCodes: any[];
+    diagnoses: any[];
   }> {
     const startTime = Date.now();
     console.log(`⚡ [FastSOAP] Starting fast generation for patient ${patientId}`);
@@ -136,6 +138,20 @@ After completing the SOAP note, add this exact section:
       "specialty_type": "string",
       "clinical_indication": "string",
       "urgency": "routine"
+    }
+  ],
+  "cpt_codes": [
+    {
+      "code": "string",
+      "description": "string",
+      "complexity": "low|medium|high"
+    }
+  ],
+  "diagnoses": [
+    {
+      "diagnosis": "string",
+      "icd10_code": "string",
+      "is_primary": boolean
     }
   ]
 }
