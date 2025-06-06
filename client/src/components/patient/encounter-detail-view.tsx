@@ -332,9 +332,9 @@ export function EncounterDetailView({
     } catch (error) {
       console.error("❌ [EncounterView] Live suggestions failed:", error);
       console.error("❌ [EncounterView] Error details:", {
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack,
+        message: (error as Error)?.message,
+        name: (error as Error)?.name,
+        stack: (error as Error)?.stack,
       });
     }
   };
@@ -773,15 +773,15 @@ export function EncounterDetailView({
     } catch (error) {
       console.error("❌ [EncounterView] DETAILED ERROR in hybrid recording:", {
         error,
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack,
+        message: (error as Error)?.message,
+        name: (error as Error)?.name,
+        stack: (error as Error)?.stack,
         patientId: patient.id,
       });
 
       let errorMessage = "Unknown error occurred";
-      if (error?.message) {
-        errorMessage = error.message;
+      if ((error as Error)?.message) {
+        errorMessage = (error as Error).message;
       } else if (typeof error === "string") {
         errorMessage = error;
       }

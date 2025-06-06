@@ -4,7 +4,6 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertPatientSchema, insertEncounterSchema, insertVitalsSchema } from "@shared/schema";
 import multer from "multer";
-
 const upload = multer({ storage: multer.memoryStorage() });
 
 interface AIAssistantParams {
@@ -24,6 +23,10 @@ export function registerRoutes(app: Express): Server {
 
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
+
+  // Register parse routes for patient information parsing
+  const { parseRoutes } = await import("./parse-routes");
+  app.use("/api", parseRoutes);
 
   // Patient routes
   app.get("/api/patients", async (req, res) => {
