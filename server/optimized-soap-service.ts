@@ -124,15 +124,58 @@ ${transcription}
 Generate a complete, professional SOAP note with the following sections:
 
 **SUBJECTIVE:**
-- Chief complaint and HPI (detailed, chronological)
-- Review of systems (relevant positives and negatives)
-- Past medical history, medications, allergies (reference context above)
-- Social history and family history (if mentioned)
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
 
-**OBJECTIVE:**
-- Vital signs (if available)
-- Physical examination (systematic, include persistent findings where appropriate)
-- Relevant diagnostic results
+**OBJECTIVE:** Organize this section as follows:
+
+Vitals: List all vital signs in a single line, formatted as:
+
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+- If the physical exam is completely **normal**, use the following full, pre-defined template verbatim:
+
+Physical Exam:
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
+
+Modify only abnormal systems. All normal areas must remain unchanged.
+
+Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
+
+Document abnormal findings first (bolded), followed by pertinent negatives (normal font) where space allows.
+
+Use concise, structured phrases. Avoid full sentences and narrative explanations.
+
+✅ Good Example (Objective, No Diagnosis):
+
+Skin: Right forearm with a 2 cm rough, scaly, erythematous plaque with adherent keratotic scale, without ulceration, bleeding, or induration.
+
+🚫 Bad Example (Incorrect Use of Diagnosis):
+
+Skin: Actinic keratosis right forearm.
+
+✅ Good Example (Objective, No Diagnosis):
+
+Lungs: Diminished breath sounds over the right lung base with scattered rhonchi. No wheezes, rales.
+
+🚫 Bad Example (Incorrect Use of Diagnosis):
+
+Lungs: Sounds of pneumonia right lung.
+
+✅ Good Example (Objective, No Diagnosis):
+
+Skin: Left lower leg with erythema, warmth, and mild swelling, without bullae, ulceration, or fluctuance.
+
+🚫 Bad Example (Incorrect Use of Diagnosis):
+
+Skin: Cellulitis on the left lower leg.
+
+Labs: List any lab results if available. If none, state "No labs reported today."
 
 **ASSESSMENT/PLAN:**
 
@@ -186,31 +229,6 @@ Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to 
 
 Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
 
-CPT Codes: Identify and include relevant CPT codes for all procedures, services, and visits. Use this format:
-
-{
-  "metadata": {
-    "type": "cpt_codes"
-  },
-  "content": [
-    {
-      "code": "[CPT CODE]",
-      "description": "[PROCEDURE DESCRIPTION]",
-      "complexity": "low|medium|high"
-    }
-  ]
-}
-
-Example CPT codes to consider:
-- 99201-99205: New patient office visits (complexity levels)
-- 99211-99215: Established patient office visits (complexity levels)
-- 99381-99387: New patient preventive visits
-- 99391-99397: Established patient preventive visits
-- 80048-80076: Metabolic panels and blood tests
-- 71045-71048: Chest X-rays
-- 93000: ECG with interpretation
-- 96372: Therapeutic injection
-
 Additional Guidelines for Medications:
 
 Avoid vague dosing descriptions like "typical dose" or "usual dose."
@@ -234,8 +252,8 @@ Keep the note concise but thorough, using standard medical terminology and prope
       const completion = await openai.chat.completions.create({
         model: "gpt-4.1-nano",
         messages: [{ role: "user", content: unifiedPrompt }],
-        temperature: 0.3,
-        max_tokens: 32000,
+        temperature: 0.7,
+        max_tokens: 4096,
       });
 
       const soapNoteWithOrders = completion.choices[0]?.message?.content;
