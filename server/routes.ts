@@ -561,7 +561,7 @@ export function registerRoutes(app: Express): Server {
         const formattedMessages = messages.data.map(msg => ({
           id: msg.id,
           role: msg.role,
-          content: msg.content[0]?.text?.value || 'No text content',
+          content: (msg.content[0] && msg.content[0].type === 'text') ? msg.content[0].text.value : 'No text content',
           created_at: msg.created_at
         }));
 
