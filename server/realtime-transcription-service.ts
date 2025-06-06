@@ -62,6 +62,9 @@ export class RealtimeTranscriptionService {
       case 'audio_chunk':
         await this.handleAudioChunk(connectionId, message);
         break;
+      case 'generate_soap':
+        await this.generateSOAPNote(connectionId, message);
+        break;
       case 'stop_session':
         await this.stopSession(connectionId);
         break;
@@ -76,7 +79,6 @@ export class RealtimeTranscriptionService {
 
     try {
       // Initialize Assistant and get thread
-      await this.assistantService.initializeAssistant();
       const threadId = await this.assistantService.getOrCreateThread(patientId);
 
       // Create OpenAI Realtime connection using the correct format from your working code
@@ -193,6 +195,26 @@ export class RealtimeTranscriptionService {
         console.error('❌ [RealtimeTranscription] Transcription failed:', message.error);
         break;
 
+      case 'response.text.delta':
+        // Handle streaming SOAP note generation
+        if (message.response?.metadata?.type === 'soap_generation') {
+          connection.clientWs.send(JSON.stringify({
+            type: 'soap_delta',
+            delta: message.delta || ''
+          }));
+        }
+        break;
+
+      case 'response.text.done':
+        // Handle completed SOAP note generation
+        if (message.response?.metadata?.type === 'soap_generation') {
+          connection.clientWs.send(JSON.stringify({
+            type: 'soap_completed',
+            note: message.text || ''
+          }));
+        }
+        break;
+
       case 'response.done':
         console.log('✅ [RealtimeTranscription] Response completed');
         break;
@@ -211,7 +233,7 @@ export class RealtimeTranscriptionService {
       const suggestions = await this.assistantService.getRealtimeSuggestions(
         connection.threadId,
         transcription,
-        connection.userRole,
+        connection.userRole as "nurse" | "provider",
         connection.patientId
       );
 
@@ -261,6 +283,79 @@ export class RealtimeTranscriptionService {
     }
 
     this.cleanup(connectionId);
+  }
+
+  private async generateSOAPNote(connectionId: string, message: any) {
+    const connection = this.activeConnections.get(connectionId);
+    if (!connection?.openaiWs || connection.openaiWs.readyState !== WebSocket.OPEN) {
+      connection?.clientWs.send(JSON.stringify({
+        type: 'soap_error',
+        error: 'Real-time connection not available'
+      }));
+      return;
+    }
+
+    console.log('📝 [RealtimeTranscription] Generating SOAP note for:', connectionId);
+
+    try {
+      const { instructions, patientChart } = message;
+      const transcription = connection.transcriptionBuffer.trim();
+
+      if (!transcription) {
+        connection.clientWs.send(JSON.stringify({
+          type: 'soap_error',
+          error: 'No transcription available for SOAP generation'
+        }));
+        return;
+      }
+
+      // Use the existing Real-time connection to generate SOAP note
+      const soapInstructions = `Generate a comprehensive SOAP note based on this medical encounter transcription.
+
+TRANSCRIPTION:
+${transcription}
+
+PATIENT CONTEXT:
+${patientChart ? JSON.stringify(patientChart, null, 2) : 'No patient context available'}
+
+INSTRUCTIONS:
+${instructions || 'Generate a standard SOAP note with Subjective, Objective, Assessment, and Plan sections.'}
+
+Format the response as a properly structured SOAP note with clear section headers.`;
+
+      // Send SOAP generation request to Real-time API
+      connection.openaiWs.send(JSON.stringify({
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: [{
+            type: 'input_text',
+            text: soapInstructions
+          }]
+        }
+      }));
+
+      // Request response generation
+      connection.openaiWs.send(JSON.stringify({
+        type: 'response.create',
+        response: {
+          modalities: ['text'],
+          instructions: 'Generate a comprehensive SOAP note based on the provided transcription and context.',
+          metadata: {
+            type: 'soap_generation',
+            connectionId: connectionId
+          }
+        }
+      }));
+
+    } catch (error) {
+      console.error('❌ [RealtimeTranscription] Error generating SOAP note:', error);
+      connection?.clientWs.send(JSON.stringify({
+        type: 'soap_error',
+        error: 'Failed to generate SOAP note'
+      }));
+    }
   }
 
   private cleanup(connectionId: string) {
