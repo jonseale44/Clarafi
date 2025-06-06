@@ -205,9 +205,6 @@ export const encounters = pgTable("encounters", {
   draftDiagnoses: jsonb("draft_diagnoses").default([]),
   cptCodes: jsonb("cpt_codes").default([]),
   
-  // Precomputed physical exam findings (for fast SOAP generation)
-  precomputedPhysicalFindings: text("precomputed_physical_findings"),
-  
   // Metadata
   location: text("location"),
   appointmentId: integer("appointment_id").references(() => appointments.id),
