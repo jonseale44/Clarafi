@@ -378,14 +378,19 @@ export function registerRoutes(app: Express): Server {
 
       try {
         console.log('🧠 [Routes] Attempting to get live suggestions...');
-        const { HybridSOAPService } = await import('./hybrid-soap-service.js');
+        const { AssistantContextService } = await import('./assistant-context-service.js');
         
-        const hybridService = new HybridSOAPService();
-        console.log('🧠 [Routes] HybridSOAPService created');
+        const assistantService = new AssistantContextService();
+        console.log('🧠 [Routes] AssistantContextService created');
         
-        const suggestions = await hybridService.getEnhancedSuggestions(
-          parseInt(patientId),
-          transcription
+        // Get or create thread for this patient
+        const threadId = await assistantService.getOrCreateThread(parseInt(patientId));
+        
+        const suggestions = await assistantService.getRealtimeSuggestions(
+          threadId,
+          transcription,
+          "provider",
+          parseInt(patientId)
         );
         console.log('🧠 [Routes] Suggestions received:', suggestions);
 
@@ -686,11 +691,11 @@ export function registerRoutes(app: Express): Server {
           generatedAt: new Date().toISOString()
         });
       } else {
-        // Fall back to standard generation
-        const { HybridSOAPService } = await import('./hybrid-soap-service.js');
-        const hybridSoapService = new HybridSOAPService();
+        // Fall back to optimized generation
+        const { OptimizedSOAPService } = await import('./optimized-soap-service.js');
+        const optimizedSoapService = new OptimizedSOAPService();
         
-        const soapNote = await hybridSoapService.generateSOAPNote(
+        const { soapNote } = await optimizedSoapService.generateSOAPNoteAndOrdersInParallel(
           patientId,
           encounterId.toString(),
           transcription
