@@ -176,9 +176,9 @@ export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
                         <span className="font-medium">Chief Complaint:</span> {encounter.chiefComplaint}
                       </p>
                     )}
-                    {encounter.assessment && (
+                    {encounter.note && (
                       <p className="text-gray-700">
-                        <span className="font-medium">Assessment:</span> {encounter.assessment}
+                        <span className="font-medium">Note:</span> {encounter.note.length > 100 ? encounter.note.substring(0, 100) + '...' : encounter.note}
                       </p>
                     )}
                     {encounter.nurseAssessment && (
