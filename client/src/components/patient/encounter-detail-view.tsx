@@ -35,6 +35,7 @@ import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 interface EncounterDetailViewProps {
   patient: Patient;
   encounterId: number;
+  encounter?: any;
   onBackToChart: () => void;
 }
 
@@ -102,6 +103,7 @@ function AIDebugSection({ patientId }: { patientId: number }) {
 export function EncounterDetailView({
   patient,
   encounterId,
+  encounter,
   onBackToChart,
 }: EncounterDetailViewProps) {
   const [isRecording, setIsRecording] = useState(false);
@@ -151,6 +153,17 @@ export function EncounterDetailView({
       // Convert line breaks to proper HTML
       .replace(/\n/g, '<br/>');
   };
+
+  // Effect to load existing SOAP note from encounter data
+  useEffect(() => {
+    if (encounter?.note && editor && !editor.isDestroyed && !soapNote) {
+      // Load existing SOAP note from database
+      const existingNote = encounter.note;
+      setSoapNote(existingNote);
+      editor.commands.setContent(existingNote);
+      console.log('📄 [EncounterView] Loaded existing SOAP note from encounter data');
+    }
+  }, [encounter, editor, soapNote]);
 
   // Effect to load new SOAP note content only when it's generated
   useEffect(() => {

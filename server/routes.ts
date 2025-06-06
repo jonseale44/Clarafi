@@ -974,6 +974,29 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get encounter by ID (for frontend encounter view)
+  app.get("/api/encounters/:encounterId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const encounterId = parseInt(req.params.encounterId);
+      const encounter = await storage.getEncounter(encounterId);
+      
+      if (!encounter) {
+        return res.status(404).json({ message: "Encounter not found" });
+      }
+
+      res.json(encounter);
+
+    } catch (error: any) {
+      console.error('❌ [Encounter API] Error getting encounter:', error);
+      res.status(500).json({ 
+        message: "Failed to get encounter", 
+        error: error.message 
+      });
+    }
+  });
+
   // Get SOAP note for an encounter
   app.get("/api/patients/:id/encounters/:encounterId/soap-note", async (req, res) => {
     try {

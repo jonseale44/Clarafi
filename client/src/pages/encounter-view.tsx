@@ -68,6 +68,7 @@ export function EncounterView() {
       <EncounterDetailView 
         patient={patient} 
         encounterId={encounterId} 
+        encounter={encounter}
         onBackToChart={handleBackToChart}
       />
     </div>
