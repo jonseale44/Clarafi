@@ -99,17 +99,23 @@ export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
 
   const handleViewEncounter = (encounterId: number) => {
     // Navigate to encounter view page
-    setLocation(`/encounter/${encounterId}`);
+    setLocation(`/encounters/${encounterId}`);
   };
 
   const handleEditEncounter = (encounterId: number) => {
-    // Navigate to encounter edit page
-    setLocation(`/encounter/${encounterId}/edit`);
+    // Navigate to encounter edit page  
+    setLocation(`/encounters/${encounterId}`);
   };
 
   const handleContinueEncounter = (encounterId: number) => {
     // Navigate to continue encounter
-    setLocation(`/encounter/${encounterId}/continue`);
+    setLocation(`/encounters/${encounterId}`);
+  };
+
+  const stripHtmlTags = (html: string) => {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || tempDiv.innerText || "";
   };
 
   return (
@@ -178,7 +184,10 @@ export function EncountersTab({ encounters, patientId }: EncountersTabProps) {
                     )}
                     {encounter.note && (
                       <p className="text-gray-700">
-                        <span className="font-medium">Note:</span> {encounter.note.length > 100 ? encounter.note.substring(0, 100) + '...' : encounter.note}
+                        <span className="font-medium">Note:</span> {(() => {
+                          const plainText = stripHtmlTags(encounter.note);
+                          return plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
+                        })()}
                       </p>
                     )}
                     {encounter.nurseAssessment && (
