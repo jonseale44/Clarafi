@@ -31,7 +31,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
-import { RealtimeSOAPGenerator } from "@/components/RealtimeSOAPGenerator";
+import { RealtimeSOAPIntegration } from "@/components/RealtimeSOAPIntegration";
 import { RealtimeAPISettings } from "@/components/RealtimeAPISettings";
 import { RealtimeMigrationGuide } from "@/components/RealtimeMigrationGuide";
 
@@ -1244,34 +1244,32 @@ export function EncounterDetailView({
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">SOAP Note</h2>
               <div className="flex items-center space-x-2">
-                {/* Real-time SOAP Generator Integration */}
-                {useRealtimeAPI && (currentApiKey || openaiApiKey) && (
-                  <RealtimeSOAPGenerator
-                    patientId={patient.id.toString()}
-                    encounterId={encounterId.toString()}
-                    transcription={transcription}
-                    onSOAPNoteUpdate={(note) => {
-                      setSoapNote(note);
-                      if (editor && !editor.isDestroyed) {
-                        const formattedContent = formatSoapNoteContent(note);
-                        editor.commands.setContent(formattedContent);
-                      }
-                    }}
-                    onSOAPNoteComplete={(note) => {
-                      setSoapNote(note);
-                      setIsGeneratingSOAP(false);
-                      if (editor && !editor.isDestroyed) {
-                        const formattedContent = formatSoapNoteContent(note);
-                        editor.commands.setContent(formattedContent);
-                        lastGeneratedContent.current = note;
-                      }
-                    }}
-                    onDraftOrdersReceived={(orders) => {
-                      setDraftOrders(orders);
-                    }}
-                    apiKey={currentApiKey || openaiApiKey}
-                  />
-                )}
+                {/* Real-time SOAP Integration */}
+                <RealtimeSOAPIntegration
+                  patientId={patient.id.toString()}
+                  encounterId={encounterId.toString()}
+                  transcription={transcription}
+                  onSOAPNoteUpdate={(note) => {
+                    setSoapNote(note);
+                    if (editor && !editor.isDestroyed) {
+                      const formattedContent = formatSoapNoteContent(note);
+                      editor.commands.setContent(formattedContent);
+                    }
+                  }}
+                  onSOAPNoteComplete={(note) => {
+                    setSoapNote(note);
+                    setIsGeneratingSOAP(false);
+                    if (editor && !editor.isDestroyed) {
+                      const formattedContent = formatSoapNoteContent(note);
+                      editor.commands.setContent(formattedContent);
+                      lastGeneratedContent.current = note;
+                    }
+                  }}
+                  onDraftOrdersReceived={(orders) => {
+                    setDraftOrders(orders);
+                  }}
+                  isRealtimeEnabled={useRealtimeAPI}
+                />
                 
                 {isGeneratingSOAP && (
                   <div className="flex items-center text-sm text-blue-600">

@@ -309,45 +309,31 @@ export class RealtimeTranscriptionService {
         return;
       }
 
-      // Use the existing Real-time connection to generate SOAP note
-      const soapInstructions = `Generate a comprehensive SOAP note based on this medical encounter transcription.
+      // Use existing SOAP generation via standard API to preserve prompts
+      const response = await fetch(`${process.env.BASE_URL || 'http://localhost:5000'}/api/patients/${connection.patientId}/encounters/${message.encounterId || 'current'}/generate-soap`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transcription: transcription,
+          userRole: connection.userRole
+        })
+      });
 
-TRANSCRIPTION:
-${transcription}
-
-PATIENT CONTEXT:
-${patientChart ? JSON.stringify(patientChart, null, 2) : 'No patient context available'}
-
-INSTRUCTIONS:
-${instructions || 'Generate a standard SOAP note with Subjective, Objective, Assessment, and Plan sections.'}
-
-Format the response as a properly structured SOAP note with clear section headers.`;
-
-      // Send SOAP generation request to Real-time API
-      connection.openaiWs.send(JSON.stringify({
-        type: 'conversation.item.create',
-        item: {
-          type: 'message',
-          role: 'user',
-          content: [{
-            type: 'input_text',
-            text: soapInstructions
-          }]
-        }
-      }));
-
-      // Request response generation
-      connection.openaiWs.send(JSON.stringify({
-        type: 'response.create',
-        response: {
-          modalities: ['text'],
-          instructions: 'Generate a comprehensive SOAP note based on the provided transcription and context.',
-          metadata: {
-            type: 'soap_generation',
-            connectionId: connectionId
-          }
-        }
-      }));
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Send the generated SOAP note as a streaming response
+        connection.clientWs.send(JSON.stringify({
+          type: 'soap_completed',
+          note: data.soapNote || ''
+        }));
+        
+        console.log('✅ [RealtimeTranscription] SOAP note generated via existing system');
+      } else {
+        throw new Error(`SOAP generation failed: ${response.statusText}`);
+      }
 
     } catch (error) {
       console.error('❌ [RealtimeTranscription] Error generating SOAP note:', error);
