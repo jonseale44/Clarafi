@@ -29,36 +29,52 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
 
   // Connect to existing Real-time transcription WebSocket
   useEffect(() => {
-    if (!isRealtimeEnabled) return;
+    if (!isRealtimeEnabled) {
+      console.log('🔌 [RealtimeSOAP] Real-time disabled, skipping connection');
+      return;
+    }
 
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws/realtime-transcription`;
       
+      console.log('🔌 [RealtimeSOAP] Attempting to connect to:', wsUrl);
+      console.log('🔌 [RealtimeSOAP] Protocol:', protocol);
+      console.log('🔌 [RealtimeSOAP] Host:', window.location.host);
+      
       const websocket = new WebSocket(wsUrl);
       wsRef.current = websocket;
 
       websocket.onopen = () => {
-        console.log('Connected to Real-time transcription service');
+        console.log('✅ [RealtimeSOAP] Connected to Real-time transcription service');
         setWs(websocket);
       };
 
       websocket.onmessage = (event) => {
+        console.log('📨 [RealtimeSOAP] Received message:', event.data);
         try {
           const message = JSON.parse(event.data);
+          console.log('📨 [RealtimeSOAP] Parsed message:', message);
           handleWebSocketMessage(message);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          console.error('❌ [RealtimeSOAP] Error parsing WebSocket message:', error);
         }
       };
 
-      websocket.onclose = () => {
-        console.log('Real-time transcription connection closed');
+      websocket.onclose = (event) => {
+        console.log('🔌 [RealtimeSOAP] Connection closed. Code:', event.code, 'Reason:', event.reason);
         setWs(null);
+        
+        // Auto-reconnect after 3 seconds
+        setTimeout(() => {
+          console.log('🔄 [RealtimeSOAP] Attempting to reconnect...');
+          connectWebSocket();
+        }, 3000);
       };
 
       websocket.onerror = (error) => {
-        console.error('Real-time transcription error:', error);
+        console.error('❌ [RealtimeSOAP] WebSocket error:', error);
+        console.error('❌ [RealtimeSOAP] Connection state:', websocket.readyState);
         setWs(null);
       };
     };
@@ -67,6 +83,7 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
 
     return () => {
       if (wsRef.current) {
+        console.log('🔌 [RealtimeSOAP] Cleaning up WebSocket connection');
         wsRef.current.close();
       }
     };
@@ -125,23 +142,28 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
     try {
       setIsGenerating(true);
       setSoapBuffer("");
+      
+      console.log('🔄 [RealtimeSOAP] Starting SOAP generation process...');
 
       // Fetch patient chart for context
       const response = await fetch(`/api/patients/${patientId}/chart`);
       const patientChart = await response.json();
+      
+      console.log('📊 [RealtimeSOAP] Patient chart fetched, sending SOAP request...');
 
       // Send SOAP generation request to the existing Real-time service
       ws.send(JSON.stringify({
         type: 'generate_soap',
+        encounterId: encounterId,
         instructions: 'Use the existing SOAP note generation prompt from the system', // Preserve existing prompt
         patientChart: patientChart,
         transcription: transcription
       }));
 
-      console.log('SOAP note generation requested via existing Real-time service');
+      console.log('📤 [RealtimeSOAP] SOAP note generation requested via existing Real-time service');
 
     } catch (error) {
-      console.error('Error generating SOAP note:', error);
+      console.error('❌ [RealtimeSOAP] Error generating SOAP note:', error);
       setIsGenerating(false);
       
       toast({

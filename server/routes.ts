@@ -8,6 +8,7 @@ import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import multer from "multer";
 import OpenAI from "openai";
+import { RealtimeTranscriptionService } from "./realtime-transcription-service";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -1695,6 +1696,12 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api", parseRoutes);
 
   const httpServer = createServer(app);
+  
+  // Initialize Real-time transcription WebSocket service
+  console.log('🚀 [Server] Initializing Real-time transcription service...');
+  const realtimeService = new RealtimeTranscriptionService();
+  realtimeService.initialize(httpServer);
+  console.log('✅ [Server] Real-time transcription service initialized');
   
   return httpServer;
 }
