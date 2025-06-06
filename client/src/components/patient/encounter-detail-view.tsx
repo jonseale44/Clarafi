@@ -816,8 +816,7 @@ export function EncounterDetailView({
           duration: 10000,
         });
         
-        // Add a small delay to avoid thread conflicts with live suggestions
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // No delay needed with optimized parallel processing
         
         const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap`, {
           method: "POST",

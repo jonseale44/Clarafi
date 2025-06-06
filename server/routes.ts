@@ -763,7 +763,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // SOAP Note Generation endpoint
+  // SOAP Note Generation endpoint (Optimized)
   app.post("/api/patients/:id/encounters/:encounterId/generate-soap", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -776,7 +776,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Transcription is required" });
       }
 
-      console.log(`🩺 [SOAP] Generating SOAP note for patient ${patientId}, encounter ${encounterId}`);
+      console.log(`🚀 [OptimizedSOAP] Starting parallel generation for patient ${patientId}, encounter ${encounterId}`);
 
       // Get patient data
       const patient = await storage.getPatient(patientId);
@@ -784,86 +784,38 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Use hybrid SOAP generation service
-      const { HybridSOAPService } = await import('./hybrid-soap-service.js');
-      const hybridSoapService = new HybridSOAPService();
+      // Use optimized SOAP generation service (parallel processing)
+      const { OptimizedSOAPService } = await import('./optimized-soap-service.js');
+      const optimizedSoapService = new OptimizedSOAPService();
       
-      // Generate SOAP note with fast response + background learning
-      const soapNote = await hybridSoapService.generateSOAPNote(
+      // Generate SOAP note and extract orders in parallel (includes physical exam learning)
+      const { soapNote, extractedOrders } = await optimizedSoapService.generateSOAPNoteAndOrdersInParallel(
         patientId,
         encounterId.toString(),
         transcription
       );
 
-      console.log(`✅ [SOAP] Generated SOAP note (${soapNote.length} characters)`);
+      console.log(`✅ [OptimizedSOAP] Generated SOAP note (${soapNote.length} characters) and ${extractedOrders.length} orders`);
 
       // Save the complete SOAP note to encounter
       await storage.updateEncounter(encounterId, {
         note: soapNote
       });
 
-      // Analyze SOAP note for persistent physical findings to learn for future encounters
-      try {
-        console.log(`🧠 [PhysicalExamLearning] Analyzing SOAP note for persistent findings...`);
-        const { PhysicalExamLearningService } = await import('./physical-exam-learning-service.js');
-        const learningService = new PhysicalExamLearningService();
+      // Create draft orders in the database (they were extracted in parallel)
+      if (extractedOrders && extractedOrders.length > 0) {
+        console.log(`🧬 [OptimizedSOAP] Creating ${extractedOrders.length} draft orders in database...`);
         
-        await learningService.analyzeSOAPNoteForPersistentFindings(
-          patientId,
-          encounterId,
-          soapNote
+        const createdOrders = await Promise.all(
+          extractedOrders.map((orderData: any, index: number) => {
+            console.log(`🧬 [OptimizedSOAP] Creating order ${index + 1}:`, orderData.medicationName || orderData.labName || orderData.studyType || 'Unknown');
+            return storage.createOrder(orderData);
+          })
         );
-        console.log(`✅ [PhysicalExamLearning] Analysis completed for encounter ${encounterId}`);
-      } catch (learningError: any) {
-        console.error('❌ [PhysicalExamLearning] Error analyzing SOAP note:', learningError);
-        // Don't fail SOAP generation if learning analysis fails
-      }
-      
-      // Automatically extract and create draft orders from SOAP note
-      try {
-        console.log(`🧬 [SOAP] ========== STARTING DRAFT ORDERS EXTRACTION ==========`);
-        console.log(`🧬 [SOAP] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
-        console.log(`🧬 [SOAP] SOAP Note (${soapNote.length} chars):`);
-        console.log(`🧬 [SOAP] SOAP Note Content:\n${soapNote}`);
-        console.log(`🧬 [SOAP] ========== IMPORTING EXTRACTOR ==========`);
         
-        const { SOAPOrdersExtractor } = await import('./soap-orders-extractor.js');
-        const extractor = new SOAPOrdersExtractor();
-        console.log(`🧬 [SOAP] Extractor imported successfully`);
-        
-        // Extract orders from SOAP note content
-        console.log(`🧬 [SOAP] Calling extractOrders...`);
-        const extractedOrders = await extractor.extractOrders(soapNote, patientId, encounterId);
-        console.log(`🧬 [SOAP] Extraction completed. Result:`, extractedOrders);
-        
-        if (extractedOrders && extractedOrders.length > 0) {
-          console.log(`🧬 [SOAP] Found ${extractedOrders.length} draft orders to create`);
-          console.log(`🧬 [SOAP] Orders to create:`, JSON.stringify(extractedOrders, null, 2));
-          
-          // Create draft orders in the database
-          console.log(`🧬 [SOAP] Creating orders in database...`);
-          const createdOrders = await Promise.all(
-            extractedOrders.map((orderData: any, index: number) => {
-              console.log(`🧬 [SOAP] Creating order ${index + 1}:`, orderData);
-              return storage.createOrder(orderData);
-            })
-          );
-          
-          console.log(`✅ [SOAP] Created ${createdOrders.length} draft orders automatically`);
-          console.log(`✅ [SOAP] Created orders:`, JSON.stringify(createdOrders, null, 2));
-        } else {
-          console.log(`ℹ️ [SOAP] No draft orders found in SOAP note content`);
-          console.log(`ℹ️ [SOAP] Extracted orders object:`, extractedOrders);
-        }
-      } catch (orderError: any) {
-        console.error('❌ [SOAP] Error auto-extracting draft orders:', orderError);
-        console.error('❌ [SOAP] Error stack:', orderError.stack);
-        console.error('❌ [SOAP] Error details:', {
-          name: orderError.name,
-          message: orderError.message,
-          cause: orderError.cause
-        });
-        // Don't fail the SOAP generation if order extraction fails
+        console.log(`✅ [OptimizedSOAP] Created ${createdOrders.length} draft orders automatically`);
+      } else {
+        console.log(`ℹ️ [OptimizedSOAP] No draft orders found in SOAP note content`);
       }
 
       // Automatically extract and create CPT codes and diagnoses from SOAP note
