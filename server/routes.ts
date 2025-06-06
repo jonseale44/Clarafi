@@ -784,12 +784,12 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Use optimized SOAP generation service (parallel processing)
-      const { OptimizedSOAPService } = await import('./optimized-soap-service.js');
-      const optimizedSoapService = new OptimizedSOAPService();
+      // Use fast SOAP generation service (direct GPT-4, no Assistant API)
+      const { FastSOAPService } = await import('./fast-soap-service.js');
+      const fastSoapService = new FastSOAPService();
       
-      // Generate SOAP note and extract orders in parallel (includes physical exam learning)
-      const { soapNote, extractedOrders } = await optimizedSoapService.generateSOAPNoteAndOrdersInParallel(
+      // Generate SOAP note and extract orders in single fast call
+      const { soapNote, extractedOrders } = await fastSoapService.generateSOAPNoteAndOrdersFast(
         patientId,
         encounterId.toString(),
         transcription
