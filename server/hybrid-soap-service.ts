@@ -15,22 +15,24 @@ export class HybridSOAPService {
     const startTime = Date.now();
 
     try {
-      // Try to get patient-specific context from accumulated knowledge
+      // Use AssistantContextService for primary SOAP generation (better formatting)
       const threadId = await this.assistantService.getOrCreateThread(patientId);
       
-      // Use direct SOAP generation
-      const soapNote = await this.directSoapService.generateSOAPNote(patientId, encounterId, transcription);
-      
-      // Start background learning for future encounters
-      this.updatePatientKnowledgeInBackground(patientId, transcription, encounterId);
+      const soapNote = await this.assistantService.processCompleteTranscription(
+        threadId,
+        transcription,
+        "provider",
+        patientId,
+        parseInt(encounterId)
+      );
       
       const duration = Date.now() - startTime;
-      console.log(`✅ [HybridSOAP] Direct SOAP completed in ${duration}ms, learning started`);
+      console.log(`✅ [HybridSOAP] Assistant SOAP completed in ${duration}ms`);
       return soapNote;
       
     } catch (error: any) {
-      console.error(`❌ [HybridSOAP] Error in hybrid generation, falling back to direct:`, error);
-      // Fallback to direct generation if anything fails
+      console.error(`❌ [HybridSOAP] Assistant generation failed, falling back to direct:`, error);
+      // Fallback to direct generation if AssistantContextService fails
       const soapNote = await this.directSoapService.generateSOAPNote(patientId, encounterId, transcription);
       this.updatePatientKnowledgeInBackground(patientId, transcription, encounterId);
       return soapNote;
