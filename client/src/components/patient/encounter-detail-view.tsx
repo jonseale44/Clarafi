@@ -143,18 +143,26 @@ export function EncounterDetailView({
     },
   });
 
-  // Function to format SOAP note content for initial display only
+  // Function to format SOAP note content with proper headers and spacing
   const formatSoapNoteContent = (content: string) => {
     if (!content) return "";
     
     return content
-      // Convert markdown bold to HTML
+      // Convert markdown bold to HTML with proper spacing
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Remove extra line breaks after headers
-      .replace(/(<strong>[^<]*<\/strong>)\s*<br\/>\s*<br\/>/g, '$1<br/>')
-      .replace(/(<strong>[^<]*<\/strong>)\s*\n\s*\n/g, '$1\n')
-      // Convert line breaks to proper HTML
-      .replace(/\n/g, '<br/>');
+      // Ensure proper line breaks after headers
+      .replace(/(<strong>[^<]*<\/strong>)\s*/g, '$1<br/><br/>')
+      // Convert single line breaks to HTML breaks
+      .replace(/\n/g, '<br/>')
+      // Clean up multiple consecutive breaks
+      .replace(/(<br\/>){3,}/g, '<br/><br/>')
+      // Ensure sections are properly spaced
+      .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, '<br/>$1')
+      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/>$1')
+      .replace(/(<strong>ASSESSMENT:<\/strong>)/g, '<br/>$1')
+      .replace(/(<strong>PLAN:<\/strong>)/g, '<br/>$1')
+      // Remove leading breaks
+      .replace(/^(<br\/>)+/, '');
   };
 
   // Effect to load existing SOAP note from encounter data
@@ -167,7 +175,10 @@ export function EncounterDetailView({
       const currentContent = editor.getHTML();
       if (currentContent !== existingNote && existingNote.trim() !== '') {
         setSoapNote(existingNote);
-        editor.commands.setContent(existingNote);
+        
+        // Format the existing note for proper display
+        const formattedContent = formatSoapNoteContent(existingNote);
+        editor.commands.setContent(formattedContent);
         console.log('📄 [EncounterView] Loaded existing SOAP note from encounter data');
       }
     }
@@ -831,7 +842,15 @@ export function EncounterDetailView({
 
         if (response.ok) {
           const data = await response.json();
+          const formattedContent = formatSoapNoteContent(data.soapNote);
           setSoapNote(data.soapNote);
+          
+          // Immediately update the editor with formatted content
+          if (editor && !editor.isDestroyed) {
+            editor.commands.setContent(formattedContent);
+            console.log("📝 [EncounterView] Updated editor with formatted SOAP note");
+          }
+          
           console.log("✅ [EncounterView] SOAP note auto-generated successfully");
           
           toast({
@@ -902,7 +921,14 @@ export function EncounterDetailView({
       }
 
       const data = await response.json();
+      const formattedContent = formatSoapNoteContent(data.soapNote);
       setSoapNote(data.soapNote);
+      
+      // Immediately update the editor with formatted content
+      if (editor && !editor.isDestroyed) {
+        editor.commands.setContent(formattedContent);
+        console.log("📝 [EncounterView] Updated editor with formatted SOAP note");
+      }
       
       toast({
         title: "SOAP Note Generated",

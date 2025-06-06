@@ -118,7 +118,27 @@
   .soap-editor br + strong {
     display: block;
     margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Ensure SOAP headers are properly styled */
+  .soap-editor strong:contains("SUBJECTIVE:"),
+  .soap-editor strong:contains("OBJECTIVE:"),
+  .soap-editor strong:contains("ASSESSMENT:"),
+  .soap-editor strong:contains("PLAN:") {
+    display: block;
+    font-weight: 700;
+    font-size: 1.2em;
+    color: #1f2937;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.25rem;
+  }
+
+  /* Proper line spacing for SOAP content */
+  .soap-editor br {
+    line-height: 1.8;
   }
 
   .soap-note {
@@ -446,4 +466,3 @@
       @apply grid-cols-2;
     }
   }
-}

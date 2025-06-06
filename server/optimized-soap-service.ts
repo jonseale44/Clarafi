@@ -232,10 +232,10 @@ Keep the note concise but thorough, using standard medical terminology and prope
       console.log(`🤖 [OptimizedSOAP] Sending unified request to GPT-4...`);
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1-nano",
         messages: [{ role: "user", content: unifiedPrompt }],
         temperature: 0.3,
-        max_tokens: 3000,
+        max_tokens: 32000,
       });
 
       const soapNoteWithOrders = completion.choices[0]?.message?.content;

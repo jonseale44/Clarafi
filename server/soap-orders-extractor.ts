@@ -47,30 +47,51 @@ interface ExtractedReferral {
 }
 
 export class SOAPOrdersExtractor {
-  
-  async extractOrders(soapNote: string, patientId: number, encounterId: number): Promise<InsertOrder[]> {
+  async extractOrders(
+    soapNote: string,
+    patientId: number,
+    encounterId: number,
+  ): Promise<InsertOrder[]> {
     try {
-      console.log(`[SOAPExtractor] ========== STARTING ORDER EXTRACTION ==========`);
-      console.log(`[SOAPExtractor] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
-      console.log(`[SOAPExtractor] SOAP Note length: ${soapNote.length} characters`);
-      console.log(`[SOAPExtractor] SOAP Note preview: ${soapNote.substring(0, 200)}...`);
-      
+      console.log(
+        `[SOAPExtractor] ========== STARTING ORDER EXTRACTION ==========`,
+      );
+      console.log(
+        `[SOAPExtractor] Patient ID: ${patientId}, Encounter ID: ${encounterId}`,
+      );
+      console.log(
+        `[SOAPExtractor] SOAP Note length: ${soapNote.length} characters`,
+      );
+      console.log(
+        `[SOAPExtractor] SOAP Note preview: ${soapNote.substring(0, 200)}...`,
+      );
+
       const extractedOrders = await this.parseOrdersWithGPT(soapNote);
-      console.log(`[SOAPExtractor] Raw GPT extraction result:`, JSON.stringify(extractedOrders, null, 2));
-      
+      console.log(
+        `[SOAPExtractor] Raw GPT extraction result:`,
+        JSON.stringify(extractedOrders, null, 2),
+      );
+
       // Convert extracted orders to database format with standardization
       const orderInserts: InsertOrder[] = [];
-      
+
       // Process medications
-      if (extractedOrders.medications && extractedOrders.medications.length > 0) {
-        console.log(`[SOAPExtractor] Processing ${extractedOrders.medications.length} medications:`);
+      if (
+        extractedOrders.medications &&
+        extractedOrders.medications.length > 0
+      ) {
+        console.log(
+          `[SOAPExtractor] Processing ${extractedOrders.medications.length} medications:`,
+        );
         for (const med of extractedOrders.medications) {
-          console.log(`[SOAPExtractor] Medication: ${med.medication_name} - ${med.dosage}`);
+          console.log(
+            `[SOAPExtractor] Medication: ${med.medication_name} - ${med.dosage}`,
+          );
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'medication',
-            orderStatus: 'draft',
+            orderType: "medication",
+            orderStatus: "draft",
             medicationName: med.medication_name,
             dosage: med.dosage,
             quantity: med.quantity,
@@ -82,94 +103,102 @@ export class SOAPOrdersExtractor {
             diagnosisCode: med.diagnosis_code,
             requiresPriorAuth: med.requires_prior_auth || false,
             clinicalIndication: med.clinical_indication,
-            priority: 'routine'
+            priority: "routine",
           };
-          
+
           // Apply standardization to ensure all required fields are present
-          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
-          console.log(`[SOAPExtractor] Standardized medication order:`, standardizedOrder);
+          const standardizedOrder =
+            OrderStandardizationService.standardizeOrder(rawOrder);
+          console.log(
+            `[SOAPExtractor] Standardized medication order:`,
+            standardizedOrder,
+          );
           orderInserts.push(standardizedOrder);
         }
       } else {
         console.log(`[SOAPExtractor] No medications found in extracted orders`);
       }
-      
+
       // Process labs
       if (extractedOrders.labs) {
         for (const lab of extractedOrders.labs) {
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'lab',
-            orderStatus: 'draft',
+            orderType: "lab",
+            orderStatus: "draft",
             labName: lab.lab_name,
             testName: lab.test_name,
             testCode: lab.test_code,
             specimenType: lab.specimen_type,
             fastingRequired: lab.fasting_required || false,
             clinicalIndication: lab.clinical_indication,
-            priority: lab.priority || 'routine'
+            priority: lab.priority || "routine",
           };
-          
+
           // Apply standardization for lab order requirements
-          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
+          const standardizedOrder =
+            OrderStandardizationService.standardizeOrder(rawOrder);
           orderInserts.push(standardizedOrder);
         }
       }
-      
+
       // Process imaging
       if (extractedOrders.imaging) {
         for (const img of extractedOrders.imaging) {
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'imaging',
-            orderStatus: 'draft',
+            orderType: "imaging",
+            orderStatus: "draft",
             studyType: img.study_type,
             region: img.region,
             laterality: img.laterality,
             contrastNeeded: img.contrast_needed || false,
             clinicalIndication: img.clinical_indication,
-            priority: img.priority || 'routine'
+            priority: img.priority || "routine",
           };
-          
+
           // Apply standardization for imaging order requirements
-          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
+          const standardizedOrder =
+            OrderStandardizationService.standardizeOrder(rawOrder);
           orderInserts.push(standardizedOrder);
         }
       }
-      
+
       // Process referrals
       if (extractedOrders.referrals) {
         for (const ref of extractedOrders.referrals) {
           const rawOrder = {
             patientId,
             encounterId,
-            orderType: 'referral',
-            orderStatus: 'draft',
+            orderType: "referral",
+            orderStatus: "draft",
             specialtyType: ref.specialty_type,
             providerName: ref.provider_name,
             clinicalIndication: ref.clinical_indication,
             urgency: ref.urgency,
-            priority: ref.urgency === 'urgent' ? 'urgent' : 'routine'
+            priority: ref.urgency === "urgent" ? "urgent" : "routine",
           };
-          
+
           // Apply standardization for referral order requirements
-          const standardizedOrder = OrderStandardizationService.standardizeOrder(rawOrder);
+          const standardizedOrder =
+            OrderStandardizationService.standardizeOrder(rawOrder);
           orderInserts.push(standardizedOrder);
         }
       }
-      
-      console.log(`[SOAPExtractor] Extracted ${orderInserts.length} total orders: ${orderInserts.filter(o => o.orderType === 'medication').length} medications, ${orderInserts.filter(o => o.orderType === 'lab').length} labs, ${orderInserts.filter(o => o.orderType === 'imaging').length} imaging, ${orderInserts.filter(o => o.orderType === 'referral').length} referrals`);
-      
+
+      console.log(
+        `[SOAPExtractor] Extracted ${orderInserts.length} total orders: ${orderInserts.filter((o) => o.orderType === "medication").length} medications, ${orderInserts.filter((o) => o.orderType === "lab").length} labs, ${orderInserts.filter((o) => o.orderType === "imaging").length} imaging, ${orderInserts.filter((o) => o.orderType === "referral").length} referrals`,
+      );
+
       return orderInserts;
-      
     } catch (error: any) {
-      console.error('[SOAPExtractor] Error extracting orders:', error);
+      console.error("[SOAPExtractor] Error extracting orders:", error);
       return [];
     }
   }
-  
+
   private async parseOrdersWithGPT(soapNote: string): Promise<{
     medications?: ExtractedMedication[];
     labs?: ExtractedLab[];
@@ -256,46 +285,53 @@ Return only the JSON object, no markdown formatting or additional text.`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1-nano",
         messages: [
           {
             role: "system",
-            content: "You are a medical AI that extracts structured data from clinical notes. Always return valid JSON."
+            content:
+              "You are a medical AI that extracts structured data from clinical notes. Always return valid JSON.",
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         temperature: 0.1,
-        max_tokens: 2000
+        max_tokens: 2000,
       });
 
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
-        throw new Error('No response from GPT');
+        throw new Error("No response from GPT");
       }
 
       // Clean the response - remove markdown code blocks if present
       let cleanedContent = content;
-      if (content.startsWith('```json')) {
-        cleanedContent = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
-      } else if (content.startsWith('```')) {
-        cleanedContent = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+      if (content.startsWith("```json")) {
+        cleanedContent = content
+          .replace(/```json\s*/, "")
+          .replace(/\s*```$/, "");
+      } else if (content.startsWith("```")) {
+        cleanedContent = content.replace(/```\s*/, "").replace(/\s*```$/, "");
       }
-      
+
       console.log(`[SOAPExtractor] Cleaned GPT response:`, cleanedContent);
-      
+
       // Parse the JSON response
       const parsedOrders = JSON.parse(cleanedContent);
-      console.log(`[SOAPExtractor] GPT extracted orders:`, JSON.stringify(parsedOrders, null, 2));
-      
+      console.log(
+        `[SOAPExtractor] GPT extracted orders:`,
+        JSON.stringify(parsedOrders, null, 2),
+      );
+
       return parsedOrders;
-      
     } catch (error: any) {
-      console.error('[SOAPExtractor] Error parsing orders with GPT:', error);
-      if (error.message?.includes('JSON')) {
-        console.error('[SOAPExtractor] JSON parsing failed, GPT response may be malformed');
+      console.error("[SOAPExtractor] Error parsing orders with GPT:", error);
+      if (error.message?.includes("JSON")) {
+        console.error(
+          "[SOAPExtractor] JSON parsing failed, GPT response may be malformed",
+        );
       }
       return {};
     }
