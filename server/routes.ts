@@ -68,6 +68,18 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.delete("/api/patients/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      await storage.deletePatient(patientId);
+      res.json({ message: "Patient deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Patient chart data routes
   app.get("/api/patients/:id/encounters", async (req, res) => {
     try {
