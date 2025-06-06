@@ -832,6 +832,13 @@ export function EncounterDetailView({
         if (response.ok) {
           const data = await response.json();
           setSoapNote(data.soapNote);
+          
+          // Use draft orders directly from SOAP generation response
+          if (data.draftOrders && data.draftOrders.length > 0) {
+            console.log("📋 [EncounterView] Setting draft orders from auto-generated SOAP:", data.draftOrders.length);
+            setDraftOrders(data.draftOrders);
+          }
+          
           console.log("✅ [EncounterView] SOAP note auto-generated successfully");
           
           toast({
@@ -903,6 +910,12 @@ export function EncounterDetailView({
 
       const data = await response.json();
       setSoapNote(data.soapNote);
+      
+      // Use draft orders directly from SOAP generation response
+      if (data.draftOrders && data.draftOrders.length > 0) {
+        console.log("📋 [EncounterView] Setting draft orders from SOAP response:", data.draftOrders.length);
+        setDraftOrders(data.draftOrders);
+      }
       
       toast({
         title: "SOAP Note Generated",

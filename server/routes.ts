@@ -821,8 +821,12 @@ export function registerRoutes(app: Express): Server {
       // CPT extraction will be handled in background if needed
       // Legacy sequential CPT extraction removed for performance
       
+      // Fetch the created draft orders to return them with the response
+      const draftOrders = await storage.getPatientDraftOrders(patientId);
+      
       res.json({ 
         soapNote,
+        draftOrders,
         patientId,
         encounterId,
         generatedAt: new Date().toISOString()
