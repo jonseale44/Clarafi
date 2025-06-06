@@ -31,6 +31,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
+import { RealtimeSOAPGenerator } from "@/components/RealtimeSOAPGenerator";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -114,9 +115,14 @@ export function EncounterDetailView({
   const [soapNote, setSoapNote] = useState("");
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
+  const [useRealtimeAPI, setUseRealtimeAPI] = useState(true); // Enable Real-time API by default
+  const [draftOrders, setDraftOrders] = useState<any[]>([]);
   
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
+  
+  // Get OpenAI API key from environment
+  const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
   
   // Query client for cache invalidation
   const queryClient = useQueryClient();
@@ -197,7 +203,6 @@ export function EncounterDetailView({
   }, [soapNote, editor]);
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState(""); // Track live suggestions during recording
-  const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodes, setCptCodes] = useState<any[]>([]);
   const [isTextMode, setIsTextMode] = useState(false);
   const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
@@ -343,9 +348,9 @@ export function EncounterDetailView({
     } catch (error) {
       console.error("❌ [EncounterView] Live suggestions failed:", error);
       console.error("❌ [EncounterView] Error details:", {
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack,
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        stack: (error as any)?.stack,
       });
     }
   };
@@ -784,15 +789,15 @@ export function EncounterDetailView({
     } catch (error) {
       console.error("❌ [EncounterView] DETAILED ERROR in hybrid recording:", {
         error,
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack,
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        stack: (error as any)?.stack,
         patientId: patient.id,
       });
 
       let errorMessage = "Unknown error occurred";
-      if (error?.message) {
-        errorMessage = error.message;
+      if ((error as any)?.message) {
+        errorMessage = (error as any).message;
       } else if (typeof error === "string") {
         errorMessage = error;
       }
