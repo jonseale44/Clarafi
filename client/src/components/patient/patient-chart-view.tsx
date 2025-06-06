@@ -158,7 +158,11 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
                 New Encounter
               </Button>
             </div>
-            <EncountersTab encounters={Array.isArray(encounters) ? encounters : []} patientId={patientId} />
+            <EncountersTab 
+              encounters={Array.isArray(encounters) ? encounters : []} 
+              patientId={patientId} 
+              onRefresh={refetchEncounters}
+            />
           </div>
         );
       case "problems":

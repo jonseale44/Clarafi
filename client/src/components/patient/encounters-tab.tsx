@@ -123,6 +123,17 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
     <div>
       <div className="flex items-center justify-between mb-6">
         <h4 className="text-lg font-semibold text-gray-900">Recent Encounters</h4>
+        {onRefresh && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onRefresh}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        )}
       </div>
       
       <div className="space-y-4">
