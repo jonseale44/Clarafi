@@ -32,8 +32,6 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { RealtimeSOAPIntegration } from "@/components/RealtimeSOAPIntegration";
-import { RealtimeAPISettings } from "@/components/RealtimeAPISettings";
-import { RealtimeMigrationGuide } from "@/components/RealtimeMigrationGuide";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -117,9 +115,8 @@ export function EncounterDetailView({
   const [soapNote, setSoapNote] = useState("");
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
-  const [useRealtimeAPI, setUseRealtimeAPI] = useState(true); // Enable Real-time API by default
+  const useRealtimeAPI = true; // Real-time API enabled by default in background
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
-  const [currentApiKey, setCurrentApiKey] = useState("");
   
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
@@ -1147,16 +1144,6 @@ export function EncounterDetailView({
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Real-time API Migration Guide */}
-          <RealtimeMigrationGuide />
-          
-          {/* Real-time API Settings */}
-          <RealtimeAPISettings
-            onApiKeyChange={(key) => setCurrentApiKey(key)}
-            onRealtimeToggle={(enabled) => setUseRealtimeAPI(enabled)}
-            isRealtimeEnabled={useRealtimeAPI}
-          />
-          
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">

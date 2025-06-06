@@ -199,17 +199,10 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
 
   return (
     <div className="flex items-center space-x-2">
-      {!ws && (
-        <div className="text-sm text-yellow-600 flex items-center">
-          <div className="animate-spin h-4 w-4 mr-2 border-2 border-yellow-600 border-t-transparent rounded-full" />
-          Connecting to Real-time service...
-        </div>
-      )}
-      
       {isGenerating && (
         <div className="text-sm text-blue-600 flex items-center">
           <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
-          Generating via Real-time streaming...
+          Generating...
         </div>
       )}
 
@@ -218,16 +211,10 @@ export const RealtimeSOAPIntegration: React.FC<RealtimeSOAPIntegrationProps> = (
         disabled={!ws || isGenerating || !transcription}
         variant="default"
         size="sm"
-        className="bg-blue-600 hover:bg-blue-700 text-white"
+        className="bg-green-600 hover:bg-green-700 text-white"
       >
-        {isGenerating ? "Generating..." : "Generate SOAP (Real-time)"}
+        {isGenerating ? "Generating..." : "Generate SOAP Note"}
       </Button>
-
-      {ws && (
-        <div className="text-xs text-green-600">
-          Real-time Connected
-        </div>
-      )}
     </div>
   );
 };
