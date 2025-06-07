@@ -195,28 +195,41 @@ IMPORTANT INSTRUCTIONS:
 - Format the note for easy reading and clinical handoff.
 - If you see 222 in the section headers, keep it, IT'S NOT A TYPO.`;
 
-    // Generate SOAP note first
-    console.log("🔄 [RealtimeSOAP] Creating batch SOAP completion...");
+    // Start SOAP generation AND draft orders extraction CONCURRENTLY
+    console.log("🔄 [RealtimeSOAP] Starting concurrent SOAP and orders processing...");
 
-    const completion = await openai.chat.completions.create({
+    const self = this;
+    
+    // Both processes start simultaneously - the key to speed!
+    const soapPromise = openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: soapPrompt }],
       temperature: 0.7,
       max_tokens: 4096,
     });
 
-    const soapNote = completion.choices[0]?.message?.content;
-    if (!soapNote) {
-      throw new Error("No SOAP note generated from OpenAI");
-    }
-
-    // Create streaming response and handle extractions after SOAP delivery
-    const self = this;
+    // Start draft orders extraction immediately using the same transcription
+    const ordersPromise = self.soapOrdersExtractor.extractOrders(
+      transcription, // Use transcription directly for faster processing
+      patientId,
+      parseInt(encounterId),
+    );
 
     return new ReadableStream({
       async start(controller) {
         try {
-          // Send complete SOAP note in batch (like your working system)
+          // Wait for both processes concurrently
+          const [soapCompletion, extractedOrders] = await Promise.all([
+            soapPromise,
+            ordersPromise
+          ]);
+
+          const soapNote = soapCompletion.choices[0]?.message?.content;
+          if (!soapNote) {
+            throw new Error("No SOAP note generated from OpenAI");
+          }
+
+          // Send SOAP note immediately
           const completeData = JSON.stringify({
             type: "response.text.done",
             text: soapNote,
@@ -224,6 +237,29 @@ IMPORTANT INSTRUCTIONS:
           controller.enqueue(
             new TextEncoder().encode(`data: ${completeData}\n\n`),
           );
+
+          // Orders may already be ready! Send them immediately if available
+          if (extractedOrders && extractedOrders.length > 0) {
+            // Save orders in parallel
+            const savePromises = extractedOrders.map(order => 
+              storage.createOrder(order).catch(error => {
+                console.error(`❌ [RealtimeSOAP] Failed to save order:`, order.orderType, error);
+                return null;
+              })
+            );
+            
+            await Promise.allSettled(savePromises);
+            console.log(`⚡ [RealtimeSOAP] Fast-saved ${extractedOrders.length} orders`);
+
+            // Send orders to frontend immediately
+            const ordersData = JSON.stringify({
+              type: "draft_orders",
+              orders: extractedOrders,
+            });
+            controller.enqueue(
+              new TextEncoder().encode(`data: ${ordersData}\n\n`),
+            );
+          }
 
           // Start all extractions in parallel immediately after SOAP delivery
           const parallelExtractions = Promise.allSettled([
