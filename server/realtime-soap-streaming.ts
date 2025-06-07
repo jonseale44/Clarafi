@@ -203,7 +203,7 @@ IMPORTANT INSTRUCTIONS:
 
     const self = this;
     
-    // Both processes start simultaneously - the key to speed!
+    // Start all three processes simultaneously for maximum speed!
     const soapPromise = openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: soapPrompt }],
@@ -218,13 +218,21 @@ IMPORTANT INSTRUCTIONS:
       parseInt(encounterId),
     );
 
+    // Start CPT extraction immediately from transcription (concurrent with SOAP generation)
+    const cptPromise = self.extractCPTFromTranscription(
+      transcription,
+      patientId,
+      parseInt(encounterId),
+    );
+
     return new ReadableStream({
       async start(controller) {
         try {
-          // Wait for both processes concurrently
-          const [soapCompletion, extractedOrders] = await Promise.all([
+          // Wait for all three processes concurrently
+          const [soapCompletion, extractedOrders, extractedCPTData] = await Promise.all([
             soapPromise,
-            ordersPromise
+            ordersPromise,
+            cptPromise
           ]);
 
           const soapNote = soapCompletion.choices[0]?.message?.content;
@@ -261,6 +269,26 @@ IMPORTANT INSTRUCTIONS:
             });
             controller.enqueue(
               new TextEncoder().encode(`data: ${ordersData}\n\n`),
+            );
+          }
+
+          // Send CPT codes to frontend immediately if available
+          if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
+            console.log(`⚡ [RealtimeSOAP] Fast-extracted ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`);
+
+            // Save CPT data to encounter immediately
+            await storage.updateEncounter(parseInt(encounterId), {
+              cptCodes: extractedCPTData.cptCodes || [],
+              draftDiagnoses: extractedCPTData.diagnoses || [],
+            });
+
+            // Send CPT data to frontend immediately
+            const cptData = JSON.stringify({
+              type: "cpt_codes",
+              cptData: extractedCPTData,
+            });
+            controller.enqueue(
+              new TextEncoder().encode(`data: ${cptData}\n\n`),
             );
           }
 
@@ -467,5 +495,38 @@ ${knownAllergies}
 
 RECENT VITALS:
 ${recentVitals}`;
+  }
+
+  /**
+   * Extract CPT codes from transcription (concurrent with SOAP generation)
+   */
+  private async extractCPTFromTranscription(
+    transcription: string,
+    patientId: number,
+    encounterId: number,
+  ): Promise<any> {
+    try {
+      console.log(
+        `🏥 [RealtimeSOAP] Extracting CPT codes from transcription for patient ${patientId}, encounter ${encounterId}`,
+      );
+
+      const { CPTExtractor } = await import("./cpt-extractor.js");
+      const cptExtractor = new CPTExtractor();
+
+      // Extract CPT codes directly from transcription for faster processing
+      const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(transcription);
+
+      if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
+        console.log(
+          `🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses from transcription`,
+        );
+        return extractedCPTData;
+      }
+
+      return { cptCodes: [], diagnoses: [] };
+    } catch (error) {
+      console.error("❌ [RealtimeSOAP] Error extracting CPT codes from transcription:", error);
+      return { cptCodes: [], diagnoses: [] };
+    }
   }
 }
