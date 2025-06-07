@@ -115,12 +115,6 @@
     font-size: 1.1em;
   }
 
-  .soap-editor br + strong {
-    display: block;
-    margin-top: 1.5rem;
-    margin-bottom: 0.25rem;
-  }
-
   /* Ensure SOAP headers are properly styled */
   .soap-editor strong:contains("SUBJECTIVE:"),
   .soap-editor strong:contains("OBJECTIVE:"),
@@ -135,6 +129,12 @@
     margin-bottom: 0.25rem;
     border-bottom: 1px solid #e5e7eb;
     padding-bottom: 0.25rem;
+  }
+
+  /* Keep regular bolded text inline */
+  .soap-editor strong {
+    display: inline;
+    font-weight: 600;
   }
 
   /* Proper line spacing for SOAP content */
