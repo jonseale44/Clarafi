@@ -225,61 +225,69 @@ IMPORTANT INSTRUCTIONS:
             new TextEncoder().encode(`data: ${completeData}\n\n`),
           );
 
-          // Process extractions in background after SOAP note is delivered
-          try {
-            // Save SOAP note to encounter first
-            await storage.updateEncounter(parseInt(encounterId), {
+          // Start all extractions in parallel immediately after SOAP delivery
+          const parallelExtractions = Promise.allSettled([
+            // Save SOAP note to encounter
+            storage.updateEncounter(parseInt(encounterId), {
               note: soapNote,
-            });
-
-            // Extract draft orders
-            const extractedOrders =
-              await self.soapOrdersExtractor.extractOrders(
-                soapNote,
-                patientId,
-                parseInt(encounterId),
-              );
-
-            if (extractedOrders && extractedOrders.length > 0) {
-              // Save orders to database
-              console.log(`🗄️ [RealtimeSOAP] Saving ${extractedOrders.length} orders to database...`);
-              
-              for (const order of extractedOrders) {
-                try {
-                  const savedOrder = await storage.createOrder(order);
-                  console.log(`✅ [RealtimeSOAP] Saved order: ${order.orderType} - ${order.medicationName || order.labName || order.studyType || order.specialtyType}`);
-                } catch (saveError) {
-                  console.error(`❌ [RealtimeSOAP] Failed to save order:`, order, saveError);
-                }
-              }
-
-              // Send orders to frontend via stream
-              const ordersData = JSON.stringify({
-                type: "draft_orders",
-                orders: extractedOrders,
-              });
-              controller.enqueue(
-                new TextEncoder().encode(`data: ${ordersData}\n\n`),
-              );
-              console.log(
-                `✅ [RealtimeSOAP] Extracted and saved ${extractedOrders.length} draft orders`,
-              );
-            } else {
-              console.log(`⚠️ [RealtimeSOAP] No orders extracted from SOAP note`);
-            }
-
-            // Extract CPT codes and diagnoses
-            await self.extractCPTCodesAndDiagnoses(
+            }),
+            
+            // Extract and save draft orders
+            self.soapOrdersExtractor.extractOrders(
               soapNote,
               patientId,
               parseInt(encounterId),
-            );
-          } catch (extractionError) {
-            console.error(
-              "❌ [RealtimeSOAP] Error in background extractions:",
-              extractionError,
-            );
-          }
+            ).then(async (extractedOrders) => {
+              if (extractedOrders && extractedOrders.length > 0) {
+                // Save all orders in parallel for speed
+                const savePromises = extractedOrders.map(order => 
+                  storage.createOrder(order).catch(error => {
+                    console.error(`❌ [RealtimeSOAP] Failed to save order:`, order.orderType, error);
+                    return null;
+                  })
+                );
+                
+                await Promise.allSettled(savePromises);
+                console.log(`⚡ [RealtimeSOAP] Fast-saved ${extractedOrders.length} orders in parallel`);
+
+                // Send orders to frontend immediately after saving
+                const ordersData = JSON.stringify({
+                  type: "draft_orders",
+                  orders: extractedOrders,
+                });
+                controller.enqueue(
+                  new TextEncoder().encode(`data: ${ordersData}\n\n`),
+                );
+                
+                return extractedOrders;
+              }
+              return [];
+            }),
+            
+            // Extract CPT codes and diagnoses in parallel
+            self.extractCPTCodesAndDiagnoses(
+              soapNote,
+              patientId,
+              parseInt(encounterId),
+            )
+          ]);
+
+          // Don't wait for extractions to complete - let them run in background
+          parallelExtractions.then((results) => {
+            const [soapSave, ordersResult, cptResult] = results;
+            
+            if (soapSave.status === 'fulfilled') {
+              console.log(`✅ [RealtimeSOAP] SOAP note saved`);
+            }
+            if (ordersResult.status === 'fulfilled') {
+              console.log(`✅ [RealtimeSOAP] Orders extraction completed`);
+            }
+            if (cptResult.status === 'fulfilled') {
+              console.log(`✅ [RealtimeSOAP] CPT extraction completed`);
+            }
+          }).catch(error => {
+            console.error("❌ [RealtimeSOAP] Background extraction error:", error);
+          });
 
           console.log(
             "✅ [RealtimeSOAP] SOAP generation and extraction completed",
