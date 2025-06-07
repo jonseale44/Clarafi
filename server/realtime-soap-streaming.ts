@@ -165,25 +165,27 @@ IMPORTANT INSTRUCTIONS:
 - Include pertinent negatives where clinically relevant.
 - Format the note for easy reading and clinical handoff.`;
 
-    // Create streaming response using Real-time API
+    // Generate SOAP note first
+    console.log("🔄 [RealtimeSOAP] Creating batch SOAP completion...");
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: soapPrompt }],
+      temperature: 0.7,
+      max_tokens: 4096,
+    });
+
+    const soapNote = completion.choices[0]?.message?.content;
+    if (!soapNote) {
+      throw new Error("No SOAP note generated from OpenAI");
+    }
+
+    // Create streaming response and handle extractions after SOAP delivery
+    const self = this;
+    
     return new ReadableStream({
       async start(controller) {
         try {
-          console.log("🔄 [RealtimeSOAP] Creating batch SOAP completion...");
-          
-          // Use standard OpenAI chat completions for batch delivery (faster than streaming)
-          const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [{ role: "user", content: soapPrompt }],
-            temperature: 0.7,
-            max_tokens: 4096,
-          });
-
-          const soapNote = completion.choices[0]?.message?.content;
-          if (!soapNote) {
-            throw new Error("No SOAP note generated from OpenAI");
-          }
-
           // Send complete SOAP note in batch (like your working system)
           const completeData = JSON.stringify({
             type: 'response.text.done',
@@ -191,8 +193,35 @@ IMPORTANT INSTRUCTIONS:
           });
           controller.enqueue(new TextEncoder().encode(`data: ${completeData}\n\n`));
 
-          // Process draft orders and CPT codes extraction in background
-          await this.processSOAPExtractions(soapNote, patientId, parseInt(encounterId), controller);
+          // Process extractions in background after SOAP note is delivered
+          try {
+            // Save SOAP note to encounter first
+            await storage.updateEncounter(parseInt(encounterId), {
+              note: soapNote
+            });
+
+            // Extract draft orders
+            const extractedOrders = await self.soapOrdersExtractor.extractOrders(
+              soapNote,
+              patientId,
+              parseInt(encounterId),
+            );
+
+            if (extractedOrders && extractedOrders.length > 0) {
+              const ordersData = JSON.stringify({
+                type: 'draft_orders',
+                orders: extractedOrders,
+              });
+              controller.enqueue(new TextEncoder().encode(`data: ${ordersData}\n\n`));
+              console.log(`✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`);
+            }
+
+            // Extract CPT codes and diagnoses
+            await self.extractCPTCodesAndDiagnoses(soapNote, patientId, parseInt(encounterId));
+
+          } catch (extractionError) {
+            console.error("❌ [RealtimeSOAP] Error in background extractions:", extractionError);
+          }
           
           console.log("✅ [RealtimeSOAP] SOAP generation and extraction completed");
           controller.close();
@@ -218,43 +247,48 @@ IMPORTANT INSTRUCTIONS:
     soapNote: string,
     patientId: number,
     encounterId: number,
-    controller: ReadableStreamDefaultController,
-  ): Promise<void> {
+  ): Promise<{ orders: any[] }> {
     try {
-      await Promise.allSettled([
+      const results = await Promise.allSettled([
         // Extract structured orders from the generated SOAP note
         this.soapOrdersExtractor.extractOrders(
           soapNote,
           patientId,
           encounterId,
-        ).then((extractedOrders: any) => {
-          if (extractedOrders && extractedOrders.length > 0) {
-            // Send draft orders to frontend
-            const ordersData = JSON.stringify({
-              type: 'draft_orders',
-              orders: extractedOrders,
-            });
-            controller.enqueue(new TextEncoder().encode(`data: ${ordersData}\n\n`));
-            console.log(`✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`);
-          }
-        }).catch((error: any) => {
-          console.error("❌ [RealtimeSOAP] Error extracting orders:", error);
-        }),
+        ),
 
         // Extract CPT codes and diagnoses from SOAP note
-        this.extractCPTCodesAndDiagnoses(soapNote, patientId, encounterId).catch((error: any) => {
-          console.error("❌ [RealtimeSOAP] Error extracting CPT codes:", error);
-        }),
+        this.extractCPTCodesAndDiagnoses(soapNote, patientId, encounterId),
 
         // Save SOAP note to encounter
         storage.updateEncounter(encounterId, {
           note: soapNote
-        }).catch((error: any) => {
-          console.error("❌ [RealtimeSOAP] Error saving SOAP note:", error);
         })
       ]);
+
+      // Extract orders result
+      const ordersResult = results[0];
+      let extractedOrders: any[] = [];
+      
+      if (ordersResult.status === 'fulfilled' && ordersResult.value) {
+        extractedOrders = ordersResult.value;
+        console.log(`✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`);
+      } else if (ordersResult.status === 'rejected') {
+        console.error("❌ [RealtimeSOAP] Error extracting orders:", ordersResult.reason);
+      }
+
+      // Log other results
+      if (results[1].status === 'rejected') {
+        console.error("❌ [RealtimeSOAP] Error extracting CPT codes:", results[1].reason);
+      }
+      if (results[2].status === 'rejected') {
+        console.error("❌ [RealtimeSOAP] Error saving SOAP note:", results[2].reason);
+      }
+
+      return { orders: extractedOrders };
     } catch (error: any) {
       console.error("❌ [RealtimeSOAP] Error processing SOAP extractions:", error);
+      return { orders: [] };
     }
   }
 
