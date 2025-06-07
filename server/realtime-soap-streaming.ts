@@ -10,6 +10,7 @@ import {
 } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { SOAPOrdersExtractor } from "./soap-orders-extractor.js";
+import { PhysicalExamLearningService } from "./physical-exam-learning-service.js";
 import { storage } from "./storage.js";
 
 const openai = new OpenAI({
@@ -18,9 +19,11 @@ const openai = new OpenAI({
 
 export class RealtimeSOAPStreaming {
   private soapOrdersExtractor: SOAPOrdersExtractor;
+  private physicalExamLearningService: PhysicalExamLearningService;
 
   constructor() {
     this.soapOrdersExtractor = new SOAPOrdersExtractor();
+    this.physicalExamLearningService = new PhysicalExamLearningService();
   }
 
   async generateSOAPNoteStream(
@@ -277,12 +280,24 @@ IMPORTANT INSTRUCTIONS:
               soapNote,
               patientId,
               parseInt(encounterId),
-            )
+            ),
+            
+            // Analyze for physical exam learning (background processing)
+            self.physicalExamLearningService
+              .analyzeSOAPNoteForPersistentFindings(
+                patientId,
+                parseInt(encounterId),
+                soapNote,
+              )
+              .catch((error) => {
+                console.warn("🧠 [RealtimeSOAP] Physical exam learning analysis failed:", error);
+                return null;
+              })
           ]);
 
           // Don't wait for extractions to complete - let them run in background
           parallelExtractions.then((results) => {
-            const [soapSave, ordersResult, cptResult] = results;
+            const [soapSave, ordersResult, cptResult, physicalExamResult] = results;
             
             if (soapSave.status === 'fulfilled') {
               console.log(`✅ [RealtimeSOAP] SOAP note saved`);
@@ -292,6 +307,9 @@ IMPORTANT INSTRUCTIONS:
             }
             if (cptResult.status === 'fulfilled') {
               console.log(`✅ [RealtimeSOAP] CPT extraction completed`);
+            }
+            if (physicalExamResult.status === 'fulfilled') {
+              console.log(`✅ [RealtimeSOAP] Physical exam learning analysis completed`);
             }
           }).catch(error => {
             console.error("❌ [RealtimeSOAP] Background extraction error:", error);
