@@ -1318,12 +1318,12 @@ export function EncounterDetailView({
                 {editor && soapNote && soapNote.length > 0 ? (
                   <EditorContent
                     editor={editor}
-                    className="soap-note prose max-w-none p-4"
+                    className="soap-editor max-w-none p-4"
                   />
                 ) : editor ? (
                   <EditorContent
                     editor={editor}
-                    className="soap-note prose max-w-none p-4"
+                    className="soap-editor max-w-none p-4"
                   />
                 ) : (
                   <div className="text-center py-8 text-gray-500">
