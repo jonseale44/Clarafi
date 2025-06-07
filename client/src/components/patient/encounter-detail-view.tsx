@@ -1216,10 +1216,10 @@ export function EncounterDetailView({
             </div>
           </Card>
 
-          {/* GPT Suggestions */}
+          {/* AI Suggestions */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">GPT Suggestions</h2>
+              <h2 className="text-lg font-semibold">AI Suggestions</h2>
               <Button
                 onClick={generateSmartSuggestions}
                 size="sm"
@@ -1229,7 +1229,7 @@ export function EncounterDetailView({
               </Button>
             </div>
             <div className="text-gray-500 text-sm whitespace-pre-line">
-              {gptSuggestions || "GPT analysis will appear here..."}
+              {gptSuggestions || "AI analysis will appear here..."}
             </div>
           </Card>
 
