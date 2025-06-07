@@ -1173,7 +1173,7 @@ export function EncounterDetailView({
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Notes</h2>
+              <h2 className="text-lg font-semibold">Real-Time Transcription</h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-green-600">● Connected</span>
                 <span className="text-xs text-gray-500">
@@ -1220,9 +1220,8 @@ export function EncounterDetailView({
                 </Button>
               </div>
 
-              {/* Real-Time Transcription */}
+              {/* Transcription Content */}
               <div className="space-y-2">
-                <h3 className="font-medium">Real-Time Transcription</h3>
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
                   {transcription ||
                     (isRecording
