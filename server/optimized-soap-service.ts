@@ -264,13 +264,12 @@ If you see 111 in the section headers, keep it, IT'S NOT A TYPO.`;
       }
 
       // Step 6: Start parallel processing while SOAP note is fresh
+      console.log(`🚫 [OptimizedSOAP] DUPLICATE PREVENTION: Orders now handled by Real-time SOAP system`);
+      
       const parallelProcessing = await Promise.allSettled([
-        // Extract structured orders from the generated SOAP note
-        this.soapOrdersExtractor.extractOrders(
-          soapNoteWithOrders,
-          patientId,
-          parseInt(encounterId),
-        ),
+        // DISABLED: Extract structured orders from the generated SOAP note
+        // Real-time SOAP system already handles orders to prevent duplicates
+        Promise.resolve([]),
         // Analyze for physical exam learning (background processing)
         this.physicalExamLearningService
           .analyzeSOAPNoteForPersistentFindings(
@@ -287,10 +286,7 @@ If you see 111 in the section headers, keep it, IT'S NOT A TYPO.`;
           }),
       ]);
 
-      const extractedOrders =
-        parallelProcessing[0].status === "fulfilled"
-          ? parallelProcessing[0].value
-          : [];
+      const extractedOrders = []; // DISABLED to prevent duplicates
       const physicalExamAnalysis =
         parallelProcessing[1].status === "fulfilled"
           ? parallelProcessing[1].value
