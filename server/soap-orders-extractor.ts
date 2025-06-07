@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { InsertOrder } from "../shared/schema.js";
 import { OrderStandardizationService } from "./order-standardization-service.js";
+import { LOINCLookupService } from "./loinc-lookup-service.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -119,24 +120,44 @@ export class SOAPOrdersExtractor {
         console.log(`[SOAPExtractor] No medications found in extracted orders`);
       }
 
-      // Process labs
+      // Process labs with LOINC standardization
       if (extractedOrders.labs) {
+        console.log(
+          `[SOAPExtractor] Processing ${extractedOrders.labs.length} lab orders with LOINC lookup:`,
+        );
         for (const lab of extractedOrders.labs) {
+          console.log(
+            `[SOAPExtractor] Lab: ${lab.lab_name} / ${lab.test_name} - Original code: ${lab.test_code}`,
+          );
+
+          // Standardize lab with LOINC lookup for database compatibility
+          const standardizedLab = LOINCLookupService.standardizeLabOrder({
+            labName: lab.lab_name,
+            testName: lab.test_name,
+            testCode: lab.test_code,
+            specimenType: lab.specimen_type,
+            fastingRequired: lab.fasting_required,
+          });
+
           const rawOrder = {
             patientId,
             encounterId,
             orderType: "lab",
             orderStatus: "draft",
-            labName: lab.lab_name,
-            testName: lab.test_name,
-            testCode: lab.test_code,
-            specimenType: lab.specimen_type,
-            fastingRequired: lab.fasting_required || false,
+            labName: standardizedLab.labName,
+            testName: standardizedLab.testName,
+            testCode: standardizedLab.testCode,
+            specimenType: standardizedLab.specimenType,
+            fastingRequired: standardizedLab.fastingRequired,
             clinicalIndication: lab.clinical_indication,
             priority: lab.priority || "routine",
           };
 
-          // Apply standardization for lab order requirements
+          console.log(
+            `[SOAPExtractor] Standardized lab: ${standardizedLab.testName} - LOINC: ${standardizedLab.testCode}`,
+          );
+
+          // Apply order standardization for database requirements
           const standardizedOrder =
             OrderStandardizationService.standardizeOrder(rawOrder);
           orderInserts.push(standardizedOrder);
@@ -232,7 +253,7 @@ Extract all medical orders and provide complete standardized parameters required
     {
       "lab_name": "panel or group name (e.g., Comprehensive Metabolic Panel)",
       "test_name": "specific test name (e.g., Glucose, Creatinine)",
-      "test_code": "CPT or LOINC code if known",
+      "test_code": "LOINC code - REQUIRED for all lab tests (e.g., 58410-2 for CBC, 24323-8 for CMP)",
       "specimen_type": "blood/whole_blood/urine/tissue/swab/stool/csf/sputum",
       "fasting_required": boolean,
       "clinical_indication": "detailed reason for test",
@@ -262,7 +283,20 @@ Extract all medical orders and provide complete standardized parameters required
 
 CRITICAL EXTRACTION RULES:
 1. MEDICATIONS: Always include dosage form and route - these are required for pharmacy NDC lookup
-2. LABS: Always specify specimen type - required for lab processing and collection
+2. LABS: MUST include LOINC codes for ALL tests - required for EMR integration and lab ordering systems
+   - CBC = 58410-2
+   - CMP/Comprehensive Metabolic Panel = 24323-8  
+   - BMP/Basic Metabolic Panel = 51990-0
+   - TSH = 11579-0
+   - A1C/HbA1c = 4548-4
+   - Lipid Panel = 57698-3
+   - Urinalysis = 5794-3
+   - AST = 1920-8
+   - ALT = 1742-6
+   - CRP = 1988-5
+   - ESR = 4537-7
+   - Vitamin D = 14905-4
+   - Vitamin B12 = 2132-9
 3. IMAGING: Always include study type and region - required for DICOM routing and scheduling
 4. REFERRALS: Map to standard specialty types for provider network routing
 5. CLINICAL INDICATIONS: Provide detailed context, not just "routine" - required for authorization
