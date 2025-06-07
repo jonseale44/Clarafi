@@ -63,13 +63,18 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       console.log("🔍 [CPTComponent] Encounter CPT codes:", encounter.cptCodes);
       console.log("🔍 [CPTComponent] Encounter diagnoses:", encounter.draftDiagnoses);
       
-      if (encounter.cptCodes && Array.isArray(encounter.cptCodes)) {
+      if (encounter.cptCodes && Array.isArray(encounter.cptCodes) && encounter.cptCodes.length > 0) {
         console.log("🔍 [CPTComponent] Setting CPT codes:", encounter.cptCodes.length);
         setCPTCodes(encounter.cptCodes);
+      } else {
+        console.log("🔍 [CPTComponent] No CPT codes found, keeping existing:", cptCodes.length);
       }
-      if (encounter.draftDiagnoses && Array.isArray(encounter.draftDiagnoses)) {
+      
+      if (encounter.draftDiagnoses && Array.isArray(encounter.draftDiagnoses) && encounter.draftDiagnoses.length > 0) {
         console.log("🔍 [CPTComponent] Setting diagnoses:", encounter.draftDiagnoses.length);
         setDiagnoses(encounter.draftDiagnoses);
+      } else {
+        console.log("🔍 [CPTComponent] No diagnoses found, keeping existing:", diagnoses.length);
       }
     }
   }, [encounterData]);

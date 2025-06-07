@@ -187,7 +187,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Encounter not found" });
       }
       
-      console.log('✅ [Encounters] Successfully returning encounter with CPT codes:', encounter.cptCodes?.length || 0);
+      const cptCodesCount = encounter.cptCodes && Array.isArray(encounter.cptCodes) ? encounter.cptCodes.length : 0;
+      console.log('✅ [Encounters] Successfully returning encounter with CPT codes:', cptCodesCount);
       res.json({ encounter });
     } catch (error: any) {
       console.error('💥 [Encounters] Error retrieving encounter:', error);
