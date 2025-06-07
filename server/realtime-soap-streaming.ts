@@ -320,12 +320,19 @@ IMPORTANT INSTRUCTIONS:
           if (extractedCPTData) {
             console.log("🔍 [RealtimeSOAP] CPT codes found:", extractedCPTData.cptCodes?.length || 0);
             console.log("🔍 [RealtimeSOAP] Diagnoses found:", extractedCPTData.diagnoses?.length || 0);
+            console.log("🔍 [RealtimeSOAP] CPT codes array:", extractedCPTData.cptCodes);
+            console.log("🔍 [RealtimeSOAP] Diagnoses array:", extractedCPTData.diagnoses);
           }
+          
+          const hasCptCodes = extractedCPTData?.cptCodes?.length > 0;
+          const hasDiagnoses = extractedCPTData?.diagnoses?.length > 0;
+          console.log("🔍 [RealtimeSOAP] Has CPT codes:", hasCptCodes);
+          console.log("🔍 [RealtimeSOAP] Has diagnoses:", hasDiagnoses);
+          console.log("🔍 [RealtimeSOAP] Condition check:", extractedCPTData && (hasCptCodes || hasDiagnoses));
           
           if (
             extractedCPTData &&
-            (extractedCPTData.cptCodes?.length > 0 ||
-              extractedCPTData.diagnoses?.length > 0)
+            (hasCptCodes || hasDiagnoses)
           ) {
             console.log(
               `⚡ [RealtimeSOAP] Fast-extracted ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`,
