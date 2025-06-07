@@ -28,7 +28,9 @@ export class RealtimeSOAPStreaming {
     encounterId: string,
     transcription: string,
   ): Promise<ReadableStream> {
-    console.log(`🩺 [RealtimeSOAP] Starting streaming SOAP generation for patient ${patientId}`);
+    console.log(
+      `🩺 [RealtimeSOAP] Starting streaming SOAP generation for patient ${patientId}`,
+    );
 
     // Get patient context (same as OptimizedSOAPService)
     const [
@@ -40,11 +42,36 @@ export class RealtimeSOAPStreaming {
       recentEncounters,
     ] = await Promise.all([
       db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
-      db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)).orderBy(desc(diagnoses.id)).limit(10),
-      db.select().from(medications).where(eq(medications.patientId, patientId)).orderBy(desc(medications.id)).limit(10),
-      db.select().from(allergies).where(eq(allergies.patientId, patientId)).orderBy(desc(allergies.id)).limit(5),
-      db.select().from(vitals).where(eq(vitals.patientId, patientId)).orderBy(desc(vitals.id)).limit(5),
-      db.select().from(encounters).where(eq(encounters.patientId, patientId)).orderBy(desc(encounters.id)).limit(3),
+      db
+        .select()
+        .from(diagnoses)
+        .where(eq(diagnoses.patientId, patientId))
+        .orderBy(desc(diagnoses.id))
+        .limit(10),
+      db
+        .select()
+        .from(medications)
+        .where(eq(medications.patientId, patientId))
+        .orderBy(desc(medications.id))
+        .limit(10),
+      db
+        .select()
+        .from(allergies)
+        .where(eq(allergies.patientId, patientId))
+        .orderBy(desc(allergies.id))
+        .limit(5),
+      db
+        .select()
+        .from(vitals)
+        .where(eq(vitals.patientId, patientId))
+        .orderBy(desc(vitals.id))
+        .limit(5),
+      db
+        .select()
+        .from(encounters)
+        .where(eq(encounters.patientId, patientId))
+        .orderBy(desc(encounters.id))
+        .limit(3),
     ]);
 
     if (!patient.length) {
@@ -52,7 +79,9 @@ export class RealtimeSOAPStreaming {
     }
 
     const patientData = patient[0];
-    const age = new Date().getFullYear() - new Date(patientData.dateOfBirth).getFullYear();
+    const age =
+      new Date().getFullYear() -
+      new Date(patientData.dateOfBirth).getFullYear();
 
     // Build medical context (same as OptimizedSOAPService)
     const medicalContext = this.buildMedicalContext(
@@ -76,10 +105,10 @@ ${transcription}
 
 Generate a complete, professional SOAP note with the following sections:
 
-**SUBJECTIVE:**
+**SUBJECTIVE222:**
 Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
 
-**OBJECTIVE:** Organize this section as follows:
+**OBJECTIVE222:** Organize this section as follows:
 
 Vitals: List all vital signs in a single line, formatted as:
 
@@ -163,11 +192,12 @@ IMPORTANT INSTRUCTIONS:
 - Use professional medical language throughout.
 - Ensure all clinical reasoning is evidence-based and logical.
 - Include pertinent negatives where clinically relevant.
-- Format the note for easy reading and clinical handoff.`;
+- Format the note for easy reading and clinical handoff.
+- If you see 222 in the section headers, keep it, IT'S NOT A TYPO.`;
 
     // Generate SOAP note first
     console.log("🔄 [RealtimeSOAP] Creating batch SOAP completion...");
-    
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: soapPrompt }],
@@ -182,58 +212,90 @@ IMPORTANT INSTRUCTIONS:
 
     // Create streaming response and handle extractions after SOAP delivery
     const self = this;
-    
+
     return new ReadableStream({
       async start(controller) {
         try {
           // Send complete SOAP note in batch (like your working system)
           const completeData = JSON.stringify({
-            type: 'response.text.done',
+            type: "response.text.done",
             text: soapNote,
           });
-          controller.enqueue(new TextEncoder().encode(`data: ${completeData}\n\n`));
+          controller.enqueue(
+            new TextEncoder().encode(`data: ${completeData}\n\n`),
+          );
 
           // Process extractions in background after SOAP note is delivered
           try {
             // Save SOAP note to encounter first
             await storage.updateEncounter(parseInt(encounterId), {
-              note: soapNote
+              note: soapNote,
             });
 
             // Extract draft orders
-            const extractedOrders = await self.soapOrdersExtractor.extractOrders(
+            const extractedOrders =
+              await self.soapOrdersExtractor.extractOrders(
+                soapNote,
+                patientId,
+                parseInt(encounterId),
+              );
+
+            if (extractedOrders && extractedOrders.length > 0) {
+              // Save orders to database
+              console.log(`🗄️ [RealtimeSOAP] Saving ${extractedOrders.length} orders to database...`);
+              
+              for (const order of extractedOrders) {
+                try {
+                  const savedOrder = await storage.createOrder(order);
+                  console.log(`✅ [RealtimeSOAP] Saved order: ${order.orderType} - ${order.medicationName || order.labName || order.studyType || order.specialtyType}`);
+                } catch (saveError) {
+                  console.error(`❌ [RealtimeSOAP] Failed to save order:`, order, saveError);
+                }
+              }
+
+              // Send orders to frontend via stream
+              const ordersData = JSON.stringify({
+                type: "draft_orders",
+                orders: extractedOrders,
+              });
+              controller.enqueue(
+                new TextEncoder().encode(`data: ${ordersData}\n\n`),
+              );
+              console.log(
+                `✅ [RealtimeSOAP] Extracted and saved ${extractedOrders.length} draft orders`,
+              );
+            } else {
+              console.log(`⚠️ [RealtimeSOAP] No orders extracted from SOAP note`);
+            }
+
+            // Extract CPT codes and diagnoses
+            await self.extractCPTCodesAndDiagnoses(
               soapNote,
               patientId,
               parseInt(encounterId),
             );
-
-            if (extractedOrders && extractedOrders.length > 0) {
-              const ordersData = JSON.stringify({
-                type: 'draft_orders',
-                orders: extractedOrders,
-              });
-              controller.enqueue(new TextEncoder().encode(`data: ${ordersData}\n\n`));
-              console.log(`✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`);
-            }
-
-            // Extract CPT codes and diagnoses
-            await self.extractCPTCodesAndDiagnoses(soapNote, patientId, parseInt(encounterId));
-
           } catch (extractionError) {
-            console.error("❌ [RealtimeSOAP] Error in background extractions:", extractionError);
+            console.error(
+              "❌ [RealtimeSOAP] Error in background extractions:",
+              extractionError,
+            );
           }
-          
-          console.log("✅ [RealtimeSOAP] SOAP generation and extraction completed");
-          controller.close();
 
+          console.log(
+            "✅ [RealtimeSOAP] SOAP generation and extraction completed",
+          );
+          controller.close();
         } catch (error: any) {
           console.error("❌ [RealtimeSOAP] Error in streaming:", error);
-          
+
           const errorData = JSON.stringify({
-            type: 'error',
-            message: (error as Error)?.message || 'Failed to generate SOAP note',
+            type: "error",
+            message:
+              (error as Error)?.message || "Failed to generate SOAP note",
           });
-          controller.enqueue(new TextEncoder().encode(`data: ${errorData}\n\n`));
+          controller.enqueue(
+            new TextEncoder().encode(`data: ${errorData}\n\n`),
+          );
           controller.close();
         }
       },
@@ -262,32 +324,46 @@ IMPORTANT INSTRUCTIONS:
 
         // Save SOAP note to encounter
         storage.updateEncounter(encounterId, {
-          note: soapNote
-        })
+          note: soapNote,
+        }),
       ]);
 
       // Extract orders result
       const ordersResult = results[0];
       let extractedOrders: any[] = [];
-      
-      if (ordersResult.status === 'fulfilled' && ordersResult.value) {
+
+      if (ordersResult.status === "fulfilled" && ordersResult.value) {
         extractedOrders = ordersResult.value;
-        console.log(`✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`);
-      } else if (ordersResult.status === 'rejected') {
-        console.error("❌ [RealtimeSOAP] Error extracting orders:", ordersResult.reason);
+        console.log(
+          `✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`,
+        );
+      } else if (ordersResult.status === "rejected") {
+        console.error(
+          "❌ [RealtimeSOAP] Error extracting orders:",
+          ordersResult.reason,
+        );
       }
 
       // Log other results
-      if (results[1].status === 'rejected') {
-        console.error("❌ [RealtimeSOAP] Error extracting CPT codes:", results[1].reason);
+      if (results[1].status === "rejected") {
+        console.error(
+          "❌ [RealtimeSOAP] Error extracting CPT codes:",
+          results[1].reason,
+        );
       }
-      if (results[2].status === 'rejected') {
-        console.error("❌ [RealtimeSOAP] Error saving SOAP note:", results[2].reason);
+      if (results[2].status === "rejected") {
+        console.error(
+          "❌ [RealtimeSOAP] Error saving SOAP note:",
+          results[2].reason,
+        );
       }
 
       return { orders: extractedOrders };
     } catch (error: any) {
-      console.error("❌ [RealtimeSOAP] Error processing SOAP extractions:", error);
+      console.error(
+        "❌ [RealtimeSOAP] Error processing SOAP extractions:",
+        error,
+      );
       return { orders: [] };
     }
   }
@@ -301,22 +377,31 @@ IMPORTANT INSTRUCTIONS:
     encounterId: number,
   ): Promise<void> {
     try {
-      console.log(`🏥 [RealtimeSOAP] Extracting CPT codes for patient ${patientId}, encounter ${encounterId}`);
+      console.log(
+        `🏥 [RealtimeSOAP] Extracting CPT codes for patient ${patientId}, encounter ${encounterId}`,
+      );
 
-      const { CPTExtractor } = await import('./cpt-extractor.js');
+      const { CPTExtractor } = await import("./cpt-extractor.js");
       const cptExtractor = new CPTExtractor();
-      
-      const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
-      
-      if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
-        console.log(`🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`);
-        
+
+      const extractedCPTData =
+        await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
+
+      if (
+        extractedCPTData &&
+        (extractedCPTData.cptCodes?.length > 0 ||
+          extractedCPTData.diagnoses?.length > 0)
+      ) {
+        console.log(
+          `🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`,
+        );
+
         // Update encounter with CPT codes and diagnoses
         await storage.updateEncounter(encounterId, {
           cptCodes: extractedCPTData.cptCodes || [],
-          draftDiagnoses: extractedCPTData.diagnoses || []
+          draftDiagnoses: extractedCPTData.diagnoses || [],
         });
-        
+
         // Store individual diagnoses in diagnoses table for billing integration
         if (extractedCPTData.diagnoses?.length > 0) {
           for (const diagnosis of extractedCPTData.diagnoses) {
@@ -326,21 +411,28 @@ IMPORTANT INSTRUCTIONS:
                 encounterId,
                 diagnosis: diagnosis.diagnosis,
                 icd10Code: diagnosis.icd10Code,
-                diagnosisDate: new Date().toISOString().split('T')[0],
-                status: diagnosis.isPrimary ? 'active' : 'active',
-                notes: `Auto-extracted from SOAP note on ${new Date().toISOString()}`
+                diagnosisDate: new Date().toISOString().split("T")[0],
+                status: diagnosis.isPrimary ? "active" : "active",
+                notes: `Auto-extracted from SOAP note on ${new Date().toISOString()}`,
               });
             } catch (diagnosisError) {
-              console.error(`❌ [RealtimeSOAP] Error creating diagnosis:`, diagnosisError);
+              console.error(
+                `❌ [RealtimeSOAP] Error creating diagnosis:`,
+                diagnosisError,
+              );
             }
           }
-          console.log(`✅ [RealtimeSOAP] Created ${extractedCPTData.diagnoses.length} diagnosis records for billing`);
+          console.log(
+            `✅ [RealtimeSOAP] Created ${extractedCPTData.diagnoses.length} diagnosis records for billing`,
+          );
         }
       } else {
-        console.log(`ℹ️ [RealtimeSOAP] No CPT codes or diagnoses found in SOAP note`);
+        console.log(
+          `ℹ️ [RealtimeSOAP] No CPT codes or diagnoses found in SOAP note`,
+        );
       }
     } catch (error) {
-      console.error('❌ [RealtimeSOAP] Error extracting CPT codes:', error);
+      console.error("❌ [RealtimeSOAP] Error extracting CPT codes:", error);
     }
   }
 
@@ -354,21 +446,29 @@ IMPORTANT INSTRUCTIONS:
     recentEncounters: any[],
   ): string {
     // Same medical context building as OptimizedSOAPService
-    const currentDiagnoses = diagnosisList.length > 0 
-      ? diagnosisList.map(d => `- ${d.condition} (${d.icd10Code || 'unspecified'})`).join('\n')
-      : '- No active diagnoses on file';
+    const currentDiagnoses =
+      diagnosisList.length > 0
+        ? diagnosisList
+            .map((d) => `- ${d.condition} (${d.icd10Code || "unspecified"})`)
+            .join("\n")
+        : "- No active diagnoses on file";
 
-    const currentMedications = meds.length > 0
-      ? meds.map(m => `- ${m.name}: ${m.dosage}, ${m.frequency}`).join('\n')
-      : '- No current medications on file';
+    const currentMedications =
+      meds.length > 0
+        ? meds.map((m) => `- ${m.name}: ${m.dosage}, ${m.frequency}`).join("\n")
+        : "- No current medications on file";
 
-    const knownAllergies = allergiesList.length > 0
-      ? allergiesList.map(a => `- ${a.allergen}: ${a.reaction} (${a.severity})`).join('\n')
-      : '- NKDA (No Known Drug Allergies)';
+    const knownAllergies =
+      allergiesList.length > 0
+        ? allergiesList
+            .map((a) => `- ${a.allergen}: ${a.reaction} (${a.severity})`)
+            .join("\n")
+        : "- NKDA (No Known Drug Allergies)";
 
-    const recentVitals = vitalsList.length > 0
-      ? `Recent Vitals: ${vitalsList[0].systolic}/${vitalsList[0].diastolic} mmHg, HR ${vitalsList[0].heartRate}, Temp ${vitalsList[0].temperature}°F`
-      : 'No recent vitals available';
+    const recentVitals =
+      vitalsList.length > 0
+        ? `Recent Vitals: ${vitalsList[0].systolic}/${vitalsList[0].diastolic} mmHg, HR ${vitalsList[0].heartRate}, Temp ${vitalsList[0].temperature}°F`
+        : "No recent vitals available";
 
     return `Patient: ${patientData.firstName} ${patientData.lastName}
 Age: ${age} years old

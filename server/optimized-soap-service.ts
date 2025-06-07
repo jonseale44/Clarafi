@@ -123,10 +123,10 @@ ${transcription}
 
 Generate a complete, professional SOAP note with the following sections:
 
-**SUBJECTIVE:**
+**SUBJECTIVE111:**
 Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
 
-**OBJECTIVE:** Organize this section as follows:
+**OBJECTIVE111:** Organize this section as follows:
 
 Vitals: List all vital signs in a single line, formatted as:
 
@@ -244,7 +244,9 @@ Ensure documentation is concise, focused, and free from narrative explanations o
 Use the default Physical Exam template unless manual findings are explicitly documented. Replace only the affected areas as necessary.
 Include ICD-10 codes for all conditions immediately after each condition in the Assessment/Plan section.
 
-Keep the note concise but thorough, using standard medical terminology and proper formatting.`;
+Keep the note concise but thorough, using standard medical terminology and proper formatting.
+
+If you see 111 in the section headers, keep it, IT'S NOT A TYPO.`;
 
       // Step 5: Generate SOAP note with embedded orders using direct GPT-4 (faster than Assistant API)
       console.log(`🤖 [OptimizedSOAP] Sending unified request to GPT-4...`);
