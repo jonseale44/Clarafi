@@ -1334,6 +1334,7 @@ export function EncounterDetailView({
             onSOAPNoteUpdate={handleSOAPNoteUpdate}
             onSOAPNoteComplete={handleSOAPNoteComplete}
             onDraftOrdersReceived={handleDraftOrdersReceived}
+            onCPTCodesReceived={handleCPTCodesReceived}
             isRealtimeEnabled={true}
             autoTrigger={false}
           />
