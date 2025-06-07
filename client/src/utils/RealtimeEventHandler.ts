@@ -263,12 +263,9 @@ export class RealtimeEventHandler {
   }
 
   /**
-   * Update patient chart in all modules
+   * Update patient chart in draft orders module
    */
   public updatePatientChart(patientChart: any): void {
-    if (this.soapNoteModule) {
-      this.soapNoteModule.setPatientChart(patientChart);
-    }
     if (this.draftOrdersModule) {
       this.draftOrdersModule.setPatientChart(patientChart);
     }
