@@ -809,18 +809,10 @@ export function registerRoutes(app: Express): Server {
         note: soapNote
       });
 
-      // Create draft orders in the database (they were extracted in parallel)
+      // LEGACY: Draft orders now handled by Real-time SOAP system to prevent duplicates
       if (extractedOrders && extractedOrders.length > 0) {
-        console.log(`🧬 [OptimizedSOAP] Creating ${extractedOrders.length} draft orders in database...`);
-        
-        const createdOrders = await Promise.all(
-          extractedOrders.map((orderData: any, index: number) => {
-            console.log(`🧬 [OptimizedSOAP] Creating order ${index + 1}:`, orderData.medicationName || orderData.labName || orderData.studyType || 'Unknown');
-            return storage.createOrder(orderData);
-          })
-        );
-        
-        console.log(`✅ [OptimizedSOAP] Created ${createdOrders.length} draft orders automatically`);
+        console.log(`🚫 [OptimizedSOAP] Draft orders disabled - handled by Real-time SOAP system`);
+        console.log(`🚫 [OptimizedSOAP] Would have created ${extractedOrders.length} orders (preventing duplicates)`);
       } else {
         console.log(`ℹ️ [OptimizedSOAP] No draft orders found in SOAP note content`);
       }

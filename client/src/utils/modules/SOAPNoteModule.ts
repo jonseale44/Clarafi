@@ -56,53 +56,13 @@ export class SOAPNoteModule {
   }
 
   /**
-   * Trigger draft orders generation based on completed SOAP note
+   * LEGACY: Draft orders now handled by concurrent Real-time SOAP system
+   * This method is disabled to prevent duplicate order generation
    */
   private triggerDraftOrders(soapNote: string): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket not ready for draft orders");
-      return;
-    }
-
-    const draftOrderInstructions = `
-Extract medication, lab, and imaging orders from this SOAP note.
-
-For medications, format as follows:
-Medication: [name and dosage]
-Sig: [instructions]
-Dispense: [quantity] tablets
-Refills: [number]
-
-For labs, format as follows:
-Lab: [test name]
-
-For imaging, format as follows:
-Imaging: [modality and body part]
-Instructions: [any special instructions]
-Priority: [routine/stat]
-
-Each order must be separated by two newlines.
-`;
-
-    const message = {
-      type: "response.create",
-      response: {
-        modalities: ["text"],
-        instructions: draftOrderInstructions,
-        metadata: { type: "draft_orders" },
-        max_output_tokens: 2048,
-        input: [
-          {
-            type: "message",
-            role: "user",
-            content: [{ type: "input_text", text: soapNote }],
-          },
-        ],
-        temperature: 0.7,
-      },
-    };
-
-    this.ws.send(JSON.stringify(message));
+    console.log("🚫 [SOAPNoteModule] Draft orders disabled - handled by concurrent Real-time SOAP system");
+    // Legacy draft order generation disabled to prevent duplicates
+    return;
   }
 
   /**
