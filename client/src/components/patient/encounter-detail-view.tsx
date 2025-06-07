@@ -140,6 +140,13 @@ export function EncounterDetailView({
   };
 
   const handleSOAPNoteComplete = async (note: string) => {
+    const timestamp = new Date().toISOString();
+    console.log(`🔍 [EncounterView] === SOAP NOTE COMPLETION ===`);
+    console.log(`🔍 [EncounterView] Time: ${timestamp}`);
+    console.log(`🔍 [EncounterView] Note length: ${note.length}`);
+    console.log(`🔍 [EncounterView] Patient: ${patient.id}, Encounter: ${encounterId}`);
+    console.log(`🔍 [EncounterView] About to save to encounter - checking for any triggered processing...`);
+    
     setSoapNote(note);
     if (editor && !editor.isDestroyed) {
       const formattedContent = formatSoapNoteContent(note);
@@ -148,6 +155,7 @@ export function EncounterDetailView({
     
     // Save the SOAP note to the encounter
     try {
+      console.log(`🔍 [EncounterView] Calling SOAP save API at ${timestamp}`);
       await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/soap-note`, {
         method: "PUT",
         headers: {
@@ -155,7 +163,8 @@ export function EncounterDetailView({
         },
         body: JSON.stringify({ soapNote: note }),
       });
-      console.log("✅ [EncounterView] Real-time SOAP note saved to encounter");
+      console.log(`✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`);
+      console.log(`🔍 [EncounterView] === SOAP SAVE COMPLETED ===`);
     } catch (error) {
       console.error("❌ [EncounterView] Error saving Real-time SOAP note:", error);
     }

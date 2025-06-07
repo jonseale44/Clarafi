@@ -314,6 +314,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    // Track all order creation sources with detailed logging
+    const stack = new Error().stack;
+    const caller = stack?.split('\n')[2]?.trim() || 'unknown';
+    const timestamp = new Date().toISOString();
+    
+    console.log(`🔍 [STORAGE] === ORDER CREATION TRACKING ===`);
+    console.log(`🔍 [STORAGE] Time: ${timestamp}`);
+    console.log(`🔍 [STORAGE] Called from: ${caller}`);
+    console.log(`🔍 [STORAGE] Order Type: ${insertOrder.orderType}`);
+    console.log(`🔍 [STORAGE] Patient: ${insertOrder.patientId}, Encounter: ${insertOrder.encounterId}`);
+    console.log(`🔍 [STORAGE] Order Name: ${insertOrder.medicationName || insertOrder.labName || insertOrder.studyType || 'unknown'}`);
+    console.log(`🔍 [STORAGE] Full Order Data:`, JSON.stringify(insertOrder, null, 2));
+    console.log(`🔍 [STORAGE] ===============================`);
+    
     const [order] = await db
       .insert(orders)
       .values({
@@ -322,6 +336,8 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .returning();
+      
+    console.log(`✅ [STORAGE] Order created with ID: ${order.id} at ${timestamp}`);
     return order;
   }
 
