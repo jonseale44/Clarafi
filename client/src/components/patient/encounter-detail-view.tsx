@@ -224,19 +224,18 @@ export function EncounterDetailView({
     if (!content) return "";
     
     return content
-      // Convert markdown bold to HTML with proper spacing
+      // Convert markdown bold to HTML
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Ensure proper line breaks after headers
-      .replace(/(<strong>[^<]*<\/strong>)\s*/g, '$1<br/><br/>')
       // Convert single line breaks to HTML breaks
       .replace(/\n/g, '<br/>')
       // Clean up multiple consecutive breaks
       .replace(/(<br\/>){3,}/g, '<br/><br/>')
-      // Ensure sections are properly spaced
+      // Ensure SOAP headers have proper spacing before them but not excessive spacing after
       .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>ASSESSMENT:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>PLAN:<\/strong>)/g, '<br/>$1')
+      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/><br/>$1')
+      .replace(/(<strong>ASSESSMENT.*?:<\/strong>)/g, '<br/><br/>$1')
+      .replace(/(<strong>PLAN:<\/strong>)/g, '<br/><br/>$1')
+      .replace(/(<strong>ORDERS:<\/strong>)/g, '<br/><br/>$1')
       // Remove leading breaks
       .replace(/^(<br\/>)+/, '');
   };
