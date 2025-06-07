@@ -820,60 +820,16 @@ export function EncounterDetailView({
 
     setIsRecording(false);
     
-    // Automatically generate SOAP note when recording stops (like external implementation)
+    // Trigger Real-time SOAP generation after recording stops
     if (transcriptionBuffer && transcriptionBuffer.trim()) {
-      try {
-        console.log("🩺 [EncounterView] Auto-generating SOAP note after recording...");
-        setIsGeneratingSOAP(true);
-        
-        toast({
-          title: "Processing SOAP Note",
-          description: "Your note is being processed and saved. You can continue using the app.",
-          duration: 10000,
-        });
-        
-        // No delay needed with optimized parallel processing
-        
-        const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            transcription: transcriptionBuffer,
-            userRole: "provider"
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const formattedContent = formatSoapNoteContent(data.soapNote);
-          setSoapNote(data.soapNote);
-          
-          // Immediately update the editor with formatted content
-          if (editor && !editor.isDestroyed) {
-            editor.commands.setContent(formattedContent);
-            console.log("📝 [EncounterView] Updated editor with formatted SOAP note");
-          }
-          
-          console.log("✅ [EncounterView] SOAP note auto-generated successfully");
-          
-          toast({
-            title: "SOAP Note Generated",
-            description: "Clinical documentation has been created automatically",
-          });
-        } else {
-          throw new Error(`Failed to generate SOAP note: ${response.statusText}`);
-        }
-      } catch (error) {
-        console.error("❌ [EncounterView] Error auto-generating SOAP note:", error);
-        toast({
-          variant: "destructive",
-          title: "SOAP Generation Failed",
-          description: "Failed to generate SOAP note automatically. You can try the generate button.",
-        });
-      } finally {
-        setIsGeneratingSOAP(false);
+      console.log("🩺 [EncounterView] Triggering Real-time SOAP generation after recording...");
+      
+      // Set transcription for Real-time SOAP component
+      setTranscription(transcriptionBuffer);
+      
+      // Trigger Real-time streaming SOAP generation
+      if (realtimeSOAPRef.current) {
+        realtimeSOAPRef.current.generateSOAPNote();
       }
     } else {
       toast({

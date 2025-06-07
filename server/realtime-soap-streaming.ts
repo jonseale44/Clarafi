@@ -194,12 +194,12 @@ IMPORTANT INSTRUCTIONS:
           console.log("✅ [RealtimeSOAP] Streaming SOAP generation completed");
           controller.close();
 
-        } catch (error) {
+        } catch (error: any) {
           console.error("❌ [RealtimeSOAP] Error in streaming:", error);
           
           const errorData = JSON.stringify({
             type: 'error',
-            message: error.message || 'Failed to generate SOAP note',
+            message: (error as Error)?.message || 'Failed to generate SOAP note',
           });
           controller.enqueue(new TextEncoder().encode(`data: ${errorData}\n\n`));
           controller.close();
