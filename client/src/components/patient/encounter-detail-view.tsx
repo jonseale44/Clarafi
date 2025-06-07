@@ -228,14 +228,14 @@ export function EncounterDetailView({
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       // Convert single line breaks to HTML breaks
       .replace(/\n/g, '<br/>')
-      // Clean up multiple consecutive breaks
-      .replace(/(<br\/>){3,}/g, '<br/><br/>')
+      // Aggressively clean up multiple consecutive breaks (2 or more)
+      .replace(/(<br\/>){2,}/g, '<br/>')
       // Ensure SOAP headers have proper spacing before them but not excessive spacing after
       .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/><br/>$1')
-      .replace(/(<strong>ASSESSMENT.*?:<\/strong>)/g, '<br/><br/>$1')
-      .replace(/(<strong>PLAN:<\/strong>)/g, '<br/><br/>$1')
-      .replace(/(<strong>ORDERS:<\/strong>)/g, '<br/><br/>$1')
+      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/>$1')
+      .replace(/(<strong>ASSESSMENT.*?:<\/strong>)/g, '<br/>$1')
+      .replace(/(<strong>PLAN:<\/strong>)/g, '<br/>$1')
+      .replace(/(<strong>ORDERS:<\/strong>)/g, '<br/>$1')
       // Remove leading breaks
       .replace(/^(<br\/>)+/, '');
   };
