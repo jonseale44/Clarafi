@@ -238,7 +238,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
     <Card className="p-6">
       <CardHeader className="px-0 pt-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">CPT Codes & Diagnoses</CardTitle>
+          <CardTitle className="text-lg font-semibold">Billing</CardTitle>
           <div className="flex items-center space-x-2">
             <Button
               size="sm"
