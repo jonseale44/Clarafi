@@ -268,37 +268,9 @@ IMPORTANT INSTRUCTIONS:
               note: soapNote,
             }),
             
-            // Extract and save draft orders
-            self.soapOrdersExtractor.extractOrders(
-              soapNote,
-              patientId,
-              parseInt(encounterId),
-            ).then(async (extractedOrders) => {
-              if (extractedOrders && extractedOrders.length > 0) {
-                // Save all orders in parallel for speed
-                const savePromises = extractedOrders.map(order => 
-                  storage.createOrder(order).catch(error => {
-                    console.error(`❌ [RealtimeSOAP] Failed to save order:`, order.orderType, error);
-                    return null;
-                  })
-                );
-                
-                await Promise.allSettled(savePromises);
-                console.log(`⚡ [RealtimeSOAP] Fast-saved ${extractedOrders.length} orders in parallel`);
-
-                // Send orders to frontend immediately after saving
-                const ordersData = JSON.stringify({
-                  type: "draft_orders",
-                  orders: extractedOrders,
-                });
-                controller.enqueue(
-                  new TextEncoder().encode(`data: ${ordersData}\n\n`),
-                );
-                
-                return extractedOrders;
-              }
-              return [];
-            }),
+            // REMOVED: Duplicate order extraction from SOAP note
+            // Orders already extracted from transcription above (line 212)
+            Promise.resolve([]),
             
             // Extract CPT codes and diagnoses in parallel
             self.extractCPTCodesAndDiagnoses(
