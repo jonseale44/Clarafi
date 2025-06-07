@@ -1173,7 +1173,7 @@ export function EncounterDetailView({
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">Real-Time Transcription</h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-green-600">● Connected</span>
               </div>
@@ -1219,7 +1219,7 @@ export function EncounterDetailView({
           {/* AI Suggestions */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">AI Suggestions</h2>
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">AI Suggestions</h2>
               <Button
                 onClick={generateSmartSuggestions}
                 size="sm"
@@ -1238,7 +1238,7 @@ export function EncounterDetailView({
           {/* Note Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Note</h2>
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">Note</h2>
               <div className="flex items-center space-x-2">
                 {/* Real-time SOAP Integration */}
                 <RealtimeSOAPIntegration
