@@ -292,23 +292,12 @@ IMPORTANT INSTRUCTIONS:
             );
           }
 
-          // Start all extractions in parallel immediately after SOAP delivery
+          // Start remaining extractions in parallel immediately after SOAP delivery
           const parallelExtractions = Promise.allSettled([
             // Save SOAP note to encounter
             storage.updateEncounter(parseInt(encounterId), {
               note: soapNote,
             }),
-            
-            // REMOVED: Duplicate order extraction from SOAP note
-            // Orders already extracted from transcription above (line 212)
-            Promise.resolve([]),
-            
-            // Extract CPT codes and diagnoses in parallel
-            self.extractCPTCodesAndDiagnoses(
-              soapNote,
-              patientId,
-              parseInt(encounterId),
-            ),
             
             // Analyze for physical exam learning (background processing)
             self.physicalExamLearningService
@@ -325,16 +314,10 @@ IMPORTANT INSTRUCTIONS:
 
           // Don't wait for extractions to complete - let them run in background
           parallelExtractions.then((results) => {
-            const [soapSave, ordersResult, cptResult, physicalExamResult] = results;
+            const [soapSave, physicalExamResult] = results;
             
             if (soapSave.status === 'fulfilled') {
               console.log(`✅ [RealtimeSOAP] SOAP note saved`);
-            }
-            if (ordersResult.status === 'fulfilled') {
-              console.log(`✅ [RealtimeSOAP] Orders extraction completed`);
-            }
-            if (cptResult.status === 'fulfilled') {
-              console.log(`✅ [RealtimeSOAP] CPT extraction completed`);
             }
             if (physicalExamResult.status === 'fulfilled') {
               console.log(`✅ [RealtimeSOAP] Physical exam learning analysis completed`);
@@ -377,73 +360,7 @@ IMPORTANT INSTRUCTIONS:
     return { orders: [] };
   }
 
-  /**
-   * Extract CPT codes and diagnoses from SOAP note and save to database
-   */
-  private async extractCPTCodesAndDiagnoses(
-    soapNote: string,
-    patientId: number,
-    encounterId: number,
-  ): Promise<void> {
-    try {
-      console.log(
-        `🏥 [RealtimeSOAP] Extracting CPT codes for patient ${patientId}, encounter ${encounterId}`,
-      );
 
-      const { CPTExtractor } = await import("./cpt-extractor.js");
-      const cptExtractor = new CPTExtractor();
-
-      const extractedCPTData =
-        await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
-
-      if (
-        extractedCPTData &&
-        (extractedCPTData.cptCodes?.length > 0 ||
-          extractedCPTData.diagnoses?.length > 0)
-      ) {
-        console.log(
-          `🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`,
-        );
-
-        // Update encounter with CPT codes and diagnoses
-        await storage.updateEncounter(encounterId, {
-          cptCodes: extractedCPTData.cptCodes || [],
-          draftDiagnoses: extractedCPTData.diagnoses || [],
-        });
-
-        // Store individual diagnoses in diagnoses table for billing integration
-        if (extractedCPTData.diagnoses?.length > 0) {
-          for (const diagnosis of extractedCPTData.diagnoses) {
-            try {
-              await storage.createDiagnosis({
-                patientId,
-                encounterId,
-                diagnosis: diagnosis.diagnosis,
-                icd10Code: diagnosis.icd10Code,
-                diagnosisDate: new Date().toISOString().split("T")[0],
-                status: diagnosis.isPrimary ? "active" : "active",
-                notes: `Auto-extracted from SOAP note on ${new Date().toISOString()}`,
-              });
-            } catch (diagnosisError) {
-              console.error(
-                `❌ [RealtimeSOAP] Error creating diagnosis:`,
-                diagnosisError,
-              );
-            }
-          }
-          console.log(
-            `✅ [RealtimeSOAP] Created ${extractedCPTData.diagnoses.length} diagnosis records for billing`,
-          );
-        }
-      } else {
-        console.log(
-          `ℹ️ [RealtimeSOAP] No CPT codes or diagnoses found in SOAP note`,
-        );
-      }
-    } catch (error) {
-      console.error("❌ [RealtimeSOAP] Error extracting CPT codes:", error);
-    }
-  }
 
   private buildMedicalContext(
     patientData: any,

@@ -9,6 +9,7 @@ interface RealtimeSOAPIntegrationProps {
   onSOAPNoteUpdate: (note: string) => void;
   onSOAPNoteComplete: (note: string) => void;
   onDraftOrdersReceived: (orders: any[]) => void;
+  onCPTCodesReceived?: (cptData: any) => void;
   isRealtimeEnabled: boolean;
   autoTrigger?: boolean;
 }
@@ -24,6 +25,7 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   onSOAPNoteUpdate,
   onSOAPNoteComplete,
   onDraftOrdersReceived,
+  onCPTCodesReceived,
   isRealtimeEnabled,
   autoTrigger = false
 }, ref) => {
@@ -107,6 +109,8 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
                 });
               } else if (data.type === 'draft_orders') {
                 onDraftOrdersReceived(data.orders || []);
+              } else if (data.type === 'cpt_codes') {
+                onCPTCodesReceived?.(data);
               } else if (data.type === 'error') {
                 throw new Error(data.message);
               }

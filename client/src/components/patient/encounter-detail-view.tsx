@@ -117,6 +117,7 @@ export function EncounterDetailView({
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
   const useRealtimeAPI = true; // Real-time API enabled by default in background
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
+  const [cptCodes, setCptCodes] = useState<any[]>([]);
   
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
@@ -173,6 +174,13 @@ export function EncounterDetailView({
   const handleDraftOrdersReceived = (orders: any[]) => {
     setDraftOrders(orders);
     console.log("📋 [EncounterView] Real-time draft orders received:", orders.length);
+  };
+
+  const handleCPTCodesReceived = (cptData: any) => {
+    if (cptData.cptCodes) {
+      setCptCodes(cptData.cptCodes);
+      console.log("🏥 [EncounterView] Real-time CPT codes received:", cptData.cptCodes.length);
+    }
   };
 
   const editor = useEditor({
