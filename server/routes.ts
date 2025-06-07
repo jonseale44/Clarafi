@@ -693,15 +693,45 @@ export function registerRoutes(app: Express): Server {
           generatedAt: new Date().toISOString()
         });
       } else {
-        // Fall back to optimized generation
-        const { OptimizedSOAPService } = await import('./optimized-soap-service.js');
-        const optimizedSoapService = new OptimizedSOAPService();
-        
-        const { soapNote } = await optimizedSoapService.generateSOAPNoteAndOrdersInParallel(
+        // Fall back to realtime streaming generation (non-personalized)
+        const realtimeSOAP = new RealtimeSOAPStreaming();
+        const stream = await realtimeSOAP.generateSOAPNoteStream(
           patientId,
           encounterId.toString(),
           transcription
         );
+        
+        // Read the complete SOAP note from the stream
+        const reader = stream.getReader();
+        let soapNote = '';
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = new TextDecoder().decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.type === 'response.text.done') {
+                    soapNote = data.text;
+                    break;
+                  }
+                } catch (e) {
+                  // Ignore parsing errors for streaming data
+                }
+              }
+            }
+            
+            if (soapNote) break;
+          }
+        } finally {
+          reader.releaseLock();
+        }
 
         res.json({ 
           soapNote,

@@ -1,40 +1,4 @@
-// Import modules directly instead of using relative paths
-export class SOAPNoteModuleSimple {
-  private patientChart: any = null;
-  private ws: WebSocket | null = null;
-  private isCompleted: boolean = false;
-
-  constructor(webSocket: WebSocket | null) {
-    this.ws = webSocket;
-  }
-
-  setPatientChart(chart: any): void {
-    if (!chart?.patient_id) {
-      console.error("Invalid patient chart - missing patient_id");
-      return;
-    }
-    this.patientChart = chart;
-  }
-
-  handleGptResponse(data: any): any {
-    if (data.type === "response.text.done") {
-      const fullText = data.response?.text || "";
-      
-      if (!fullText.trim()) {
-        console.warn("Empty SOAP note received from GPT");
-        return null;
-      }
-
-      this.isCompleted = true;
-      
-      return {
-        type: "soap.note.completed",
-        note: fullText,
-      };
-    }
-    return null;
-  }
-}
+// LEGACY: SOAPNoteModuleSimple removed - functionality now handled by RealtimeSOAPIntegration component
 
 export class DraftOrdersModuleSimple {
   private patientChart: any = null;
@@ -90,7 +54,6 @@ export class DraftOrdersModuleSimple {
 export class RealtimeEventHandler {
   private webSocketClient: any;
   private onMessage: (event: any) => void;
-  public soapNoteModule: SOAPNoteModuleSimple | null = null;
   public draftOrdersModule: DraftOrdersModuleSimple | null = null;
 
   constructor(
@@ -101,15 +64,10 @@ export class RealtimeEventHandler {
     this.webSocketClient = webSocketClient;
     this.onMessage = onMessage;
     
-    // Initialize modules
-    this.soapNoteModule = new SOAPNoteModuleSimple(
-      webSocketClient.ws
-    );
-    
+    // Initialize draft orders module only (SOAP note handling moved to RealtimeSOAPIntegration)
     this.draftOrdersModule = new DraftOrdersModuleSimple(webSocketClient.ws);
     
     if (patientChart) {
-      this.soapNoteModule?.setPatientChart(patientChart);
       this.draftOrdersModule?.setPatientChart(patientChart);
     }
   }
@@ -239,7 +197,7 @@ export class RealtimeEventHandler {
   }
 
   /**
-   * Handle SOAP note completion
+   * Handle SOAP note completion - now handled by RealtimeSOAPIntegration component
    */
   private handleSOAPNoteCompletion(data: any, fullText: string): void {
     if (!fullText.trim()) {
@@ -247,14 +205,11 @@ export class RealtimeEventHandler {
       return;
     }
 
-    const event = this.soapNoteModule?.handleGptResponse({
-      type: "response.text.done",
-      response: { text: fullText },
+    // Direct event forwarding - SOAP processing moved to RealtimeSOAPIntegration
+    this.onMessage({
+      type: "soap.note.completed",
+      note: fullText,
     });
-    
-    if (event) {
-      this.onMessage(event);
-    }
   }
 
   /**
