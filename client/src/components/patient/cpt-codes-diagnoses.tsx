@@ -57,12 +57,18 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
 
   // Load data when encounter data is available
   useEffect(() => {
+    console.log("🔍 [CPTComponent] Encounter data updated:", encounterData);
     if (encounterData && typeof encounterData === 'object' && 'encounter' in encounterData) {
       const encounter = (encounterData as any).encounter;
+      console.log("🔍 [CPTComponent] Encounter CPT codes:", encounter.cptCodes);
+      console.log("🔍 [CPTComponent] Encounter diagnoses:", encounter.draftDiagnoses);
+      
       if (encounter.cptCodes && Array.isArray(encounter.cptCodes)) {
+        console.log("🔍 [CPTComponent] Setting CPT codes:", encounter.cptCodes.length);
         setCPTCodes(encounter.cptCodes);
       }
       if (encounter.draftDiagnoses && Array.isArray(encounter.draftDiagnoses)) {
+        console.log("🔍 [CPTComponent] Setting diagnoses:", encounter.draftDiagnoses.length);
         setDiagnoses(encounter.draftDiagnoses);
       }
     }

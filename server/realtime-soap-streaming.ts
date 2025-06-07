@@ -333,10 +333,17 @@ IMPORTANT INSTRUCTIONS:
 
             // Save CPT data to encounter immediately
             console.log("💾 [RealtimeSOAP] Saving CPT data to encounter...");
-            await storage.updateEncounter(parseInt(encounterId), {
+            console.log("💾 [RealtimeSOAP] Encounter ID:", parseInt(encounterId));
+            console.log("💾 [RealtimeSOAP] CPT codes to save:", extractedCPTData.cptCodes);
+            console.log("💾 [RealtimeSOAP] Diagnoses to save:", extractedCPTData.diagnoses);
+            
+            const updateResult = await storage.updateEncounter(parseInt(encounterId), {
               cptCodes: extractedCPTData.cptCodes || [],
               draftDiagnoses: extractedCPTData.diagnoses || [],
             });
+            
+            console.log("💾 [RealtimeSOAP] Encounter update result:", updateResult);
+            console.log("✅ [RealtimeSOAP] CPT data saved to encounter database");
 
             // Send CPT data to frontend immediately
             console.log("📤 [RealtimeSOAP] Streaming CPT codes to frontend...");
