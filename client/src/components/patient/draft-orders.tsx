@@ -79,7 +79,7 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
       if (!response.ok) throw new Error("Failed to fetch draft orders");
       return response.json();
     },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds to catch new draft orders
+    refetchInterval: 2000, // Auto-refresh every 2 seconds for immediate draft orders
   });
 
   // Update order mutation
