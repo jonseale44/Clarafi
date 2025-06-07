@@ -181,6 +181,7 @@ export function EncounterDetailView({
       setCptCodes(cptData.cptCodes || []);
       console.log("🏥 [EncounterView] Real-time CPT codes received:", (cptData.cptCodes || []).length);
       console.log("🏥 [EncounterView] Real-time diagnoses received:", (cptData.diagnoses || []).length);
+      console.log("🔗 [EncounterView] Real-time mappings received:", (cptData.mappings || []).length);
       
       // Refresh the encounter data to show the CPT codes in the CPT codes component
       console.log("🔄 [EncounterView] Invalidating queries for patient:", patient.id, "encounter:", encounterId);
@@ -189,10 +190,14 @@ export function EncounterDetailView({
       });
       console.log("🔄 [EncounterView] Query invalidation completed");
       
-      // Show a toast notification
+      // Show enhanced toast notification
+      const highestCode = (cptData.cptCodes || []).reduce((highest: any, current: any) => {
+        return current.code > highest.code ? current : highest;
+      }, { code: '', complexity: '' });
+      
       toast({
-        title: "CPT Codes Generated",
-        description: `Auto-extracted ${(cptData.cptCodes || []).length} CPT codes and ${(cptData.diagnoses || []).length} diagnoses`,
+        title: "Advanced CPT Codes Generated",
+        description: `Optimized billing: ${(cptData.cptCodes || []).length} CPT codes, ${(cptData.diagnoses || []).length} diagnoses${highestCode.code ? ` (${highestCode.code} - ${highestCode.complexity})` : ''}`,
       });
     }
   };

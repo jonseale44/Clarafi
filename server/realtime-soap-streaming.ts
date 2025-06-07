@@ -557,8 +557,8 @@ ${recentVitals}`;
       // Get encounter count for this patient
       const patientEncounters = await db
         .select()
-        .from(encounters)
-        .where(eq(encounters.patientId, patientId));
+        .from(encountersTable)
+        .where(eq(encountersTable.patientId, patientId));
 
       // Get medical history
       const diagnosisList = await db

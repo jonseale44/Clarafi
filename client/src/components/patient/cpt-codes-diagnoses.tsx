@@ -33,6 +33,12 @@ interface CPTDiagnosisMapping {
   selected: boolean;
 }
 
+interface DiagnosisMapping {
+  diagnosisIndex: number;
+  cptCodeIndex: number;
+  selected: boolean;
+}
+
 interface CPTCodesProps {
   patientId: number;
   encounterId: number;
