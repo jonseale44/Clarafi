@@ -108,8 +108,10 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
                   description: "Clinical documentation completed successfully",
                 });
               } else if (data.type === 'draft_orders') {
+                console.log("📋 [RealtimeSOAP] Received draft orders:", data.orders?.length || 0);
                 onDraftOrdersReceived(data.orders || []);
               } else if (data.type === 'cpt_codes') {
+                console.log("🏥 [RealtimeSOAP] Received CPT codes:", data);
                 onCPTCodesReceived?.(data);
               } else if (data.type === 'error') {
                 throw new Error(data.message);

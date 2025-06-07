@@ -108,16 +108,16 @@ ${transcription}
 
 Generate a complete, professional SOAP note with the following sections:
 
-**SUBJECTIVE222:**
+**SUBJECTIVE:**
 Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
 
-**OBJECTIVE222:** Organize this section as follows:
+**OBJECTIVE:** Organize this section as follows:
 
 Vitals: List all vital signs in a single line, formatted as:
 
 BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
 
-- If the physical exam is completely **normal**, use the following full, pre-defined template verbatim:
+- If the physical exam is completely normal, use the following full, pre-defined template verbatim:
 
 Physical Exam:
 Gen: AAO x 3. NAD.
@@ -128,11 +128,38 @@ Abd: Normoactive bowel sounds. Soft, non-tender.
 Ext: No clubbing, cyanosis, or edema.
 Skin: No rashes or lesions.
 
-Modify only abnormal systems. All normal areas must remain unchanged.
+Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded
 
 Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
 
-Document abnormal findings first (bolded), followed by pertinent negatives (normal font) where space allows.
+Use concise, structured phrases. Avoid full sentences and narrative explanations.
+
+Example 1: 
+Transcription: "2 cm actinic keratosis on right forearm."
+
+✅ Good outcome (Objective, No Diagnosis):
+Skin: **Right forearm with a 2 cm rough, scaly, erythematous plaque with adherent keratotic scale**, without ulceration, bleeding, or induration.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis, no bolding):
+Skin: Actinic keratosis right forearm.
+
+Example 2:
+Transcription: "Pneumonia right lung."
+
+✅ Good outcome (Objective, No Diagnosis):
+Lungs: Normal work of breathing. **Diminished breath sounds over the right lung base with scattered rhonchi.** No wheezes, rales.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis, bolding entire organ system):
+**Lungs: Sounds of pneumonia right lung.**
+
+Example 3: 
+Transcription: "Cellulitis left lower leg."
+
+✅ Good outcome (Objective, No Diagnosis):
+Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bullae, ulceration, or fluctuance.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis):
+Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
 
@@ -195,15 +222,17 @@ IMPORTANT INSTRUCTIONS:
 - Use professional medical language throughout.
 - Ensure all clinical reasoning is evidence-based and logical.
 - Include pertinent negatives where clinically relevant.
-- Format the note for easy reading and clinical handoff.
-- If you see 222 in the section headers, keep it, IT'S NOT A TYPO.`;
+- Format the note for easy reading and clinical handoff.`;
 
     // Start SOAP generation AND draft orders extraction CONCURRENTLY
-    console.log("🔄 [RealtimeSOAP] Starting concurrent SOAP and orders processing...");
+    console.log(
+      "🔄 [RealtimeSOAP] Starting concurrent SOAP and orders processing...",
+    );
 
     const self = this;
-    
+
     // Start all three processes simultaneously for maximum speed!
+    console.log("🩺 [RealtimeSOAP] Starting SOAP generation...");
     const soapPromise = openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: soapPrompt }],
@@ -212,6 +241,7 @@ IMPORTANT INSTRUCTIONS:
     });
 
     // Start draft orders extraction immediately using the same transcription
+    console.log("📋 [RealtimeSOAP] Starting draft orders extraction...");
     const ordersPromise = self.soapOrdersExtractor.extractOrders(
       transcription, // Use transcription directly for faster processing
       patientId,
@@ -219,6 +249,7 @@ IMPORTANT INSTRUCTIONS:
     );
 
     // Start CPT extraction immediately from transcription (concurrent with SOAP generation)
+    console.log("🏥 [RealtimeSOAP] Starting CPT codes extraction from transcription...");
     const cptPromise = self.extractCPTFromTranscription(
       transcription,
       patientId,
@@ -229,16 +260,20 @@ IMPORTANT INSTRUCTIONS:
       async start(controller) {
         try {
           // Wait for all three processes concurrently
-          const [soapCompletion, extractedOrders, extractedCPTData] = await Promise.all([
-            soapPromise,
-            ordersPromise,
-            cptPromise
-          ]);
+          console.log("⏳ [RealtimeSOAP] Waiting for concurrent processes to complete...");
+          const [soapCompletion, extractedOrders, extractedCPTData] =
+            await Promise.all([soapPromise, ordersPromise, cptPromise]);
+
+          console.log("✅ [RealtimeSOAP] All concurrent processes completed");
+          console.log(`📋 [RealtimeSOAP] Orders extracted: ${extractedOrders?.length || 0}`);
+          console.log(`🏥 [RealtimeSOAP] CPT data result:`, extractedCPTData ? 'Success' : 'Failed');
 
           const soapNote = soapCompletion.choices[0]?.message?.content;
           if (!soapNote) {
             throw new Error("No SOAP note generated from OpenAI");
           }
+
+          console.log(`🩺 [RealtimeSOAP] SOAP note generated (${soapNote.length} chars)`);
 
           // Send SOAP note immediately
           const completeData = JSON.stringify({
@@ -252,15 +287,21 @@ IMPORTANT INSTRUCTIONS:
           // Orders may already be ready! Send them immediately if available
           if (extractedOrders && extractedOrders.length > 0) {
             // Save orders in parallel
-            const savePromises = extractedOrders.map(order => 
-              storage.createOrder(order).catch(error => {
-                console.error(`❌ [RealtimeSOAP] Failed to save order:`, order.orderType, error);
+            const savePromises = extractedOrders.map((order) =>
+              storage.createOrder(order).catch((error) => {
+                console.error(
+                  `❌ [RealtimeSOAP] Failed to save order:`,
+                  order.orderType,
+                  error,
+                );
                 return null;
-              })
+              }),
             );
-            
+
             await Promise.allSettled(savePromises);
-            console.log(`⚡ [RealtimeSOAP] Fast-saved ${extractedOrders.length} orders`);
+            console.log(
+              `⚡ [RealtimeSOAP] Fast-saved ${extractedOrders.length} orders`,
+            );
 
             // Send orders to frontend immediately
             const ordersData = JSON.stringify({
@@ -273,23 +314,43 @@ IMPORTANT INSTRUCTIONS:
           }
 
           // Send CPT codes to frontend immediately if available
-          if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
-            console.log(`⚡ [RealtimeSOAP] Fast-extracted ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`);
+          console.log("🔍 [RealtimeSOAP] Checking CPT extraction results...");
+          console.log("🔍 [RealtimeSOAP] extractedCPTData:", extractedCPTData);
+          
+          if (extractedCPTData) {
+            console.log("🔍 [RealtimeSOAP] CPT codes found:", extractedCPTData.cptCodes?.length || 0);
+            console.log("🔍 [RealtimeSOAP] Diagnoses found:", extractedCPTData.diagnoses?.length || 0);
+          }
+          
+          if (
+            extractedCPTData &&
+            (extractedCPTData.cptCodes?.length > 0 ||
+              extractedCPTData.diagnoses?.length > 0)
+          ) {
+            console.log(
+              `⚡ [RealtimeSOAP] Fast-extracted ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`,
+            );
 
             // Save CPT data to encounter immediately
+            console.log("💾 [RealtimeSOAP] Saving CPT data to encounter...");
             await storage.updateEncounter(parseInt(encounterId), {
               cptCodes: extractedCPTData.cptCodes || [],
               draftDiagnoses: extractedCPTData.diagnoses || [],
             });
 
             // Send CPT data to frontend immediately
+            console.log("📤 [RealtimeSOAP] Streaming CPT codes to frontend...");
             const cptData = JSON.stringify({
               type: "cpt_codes",
-              cptData: extractedCPTData,
+              cptCodes: extractedCPTData.cptCodes || [],
+              diagnoses: extractedCPTData.diagnoses || [],
             });
             controller.enqueue(
               new TextEncoder().encode(`data: ${cptData}\n\n`),
             );
+            console.log("✅ [RealtimeSOAP] CPT codes streamed to frontend");
+          } else {
+            console.log("⚠️ [RealtimeSOAP] No CPT codes or diagnoses found to stream");
           }
 
           // Start remaining extractions in parallel immediately after SOAP delivery
@@ -298,7 +359,7 @@ IMPORTANT INSTRUCTIONS:
             storage.updateEncounter(parseInt(encounterId), {
               note: soapNote,
             }),
-            
+
             // Analyze for physical exam learning (background processing)
             self.physicalExamLearningService
               .analyzeSOAPNoteForPersistentFindings(
@@ -307,24 +368,34 @@ IMPORTANT INSTRUCTIONS:
                 soapNote,
               )
               .catch((error) => {
-                console.warn("🧠 [RealtimeSOAP] Physical exam learning analysis failed:", error);
+                console.warn(
+                  "🧠 [RealtimeSOAP] Physical exam learning analysis failed:",
+                  error,
+                );
                 return null;
-              })
+              }),
           ]);
 
           // Don't wait for extractions to complete - let them run in background
-          parallelExtractions.then((results) => {
-            const [soapSave, physicalExamResult] = results;
-            
-            if (soapSave.status === 'fulfilled') {
-              console.log(`✅ [RealtimeSOAP] SOAP note saved`);
-            }
-            if (physicalExamResult.status === 'fulfilled') {
-              console.log(`✅ [RealtimeSOAP] Physical exam learning analysis completed`);
-            }
-          }).catch(error => {
-            console.error("❌ [RealtimeSOAP] Background extraction error:", error);
-          });
+          parallelExtractions
+            .then((results) => {
+              const [soapSave, physicalExamResult] = results;
+
+              if (soapSave.status === "fulfilled") {
+                console.log(`✅ [RealtimeSOAP] SOAP note saved`);
+              }
+              if (physicalExamResult.status === "fulfilled") {
+                console.log(
+                  `✅ [RealtimeSOAP] Physical exam learning analysis completed`,
+                );
+              }
+            })
+            .catch((error) => {
+              console.error(
+                "❌ [RealtimeSOAP] Background extraction error:",
+                error,
+              );
+            });
 
           console.log(
             "✅ [RealtimeSOAP] SOAP generation and extraction completed",
@@ -356,11 +427,11 @@ IMPORTANT INSTRUCTIONS:
     patientId: number,
     encounterId: number,
   ): Promise<{ orders: any[] }> {
-    console.log("🚫 [RealtimeSOAP] processSOAPExtractions disabled - orders handled by concurrent processing");
+    console.log(
+      "🚫 [RealtimeSOAP] processSOAPExtractions disabled - orders handled by concurrent processing",
+    );
     return { orders: [] };
   }
-
-
 
   private buildMedicalContext(
     patientData: any,
@@ -426,23 +497,40 @@ ${recentVitals}`;
       console.log(
         `🏥 [RealtimeSOAP] Extracting CPT codes from transcription for patient ${patientId}, encounter ${encounterId}`,
       );
+      console.log(`🏥 [RealtimeSOAP] Transcription length: ${transcription.length} characters`);
+      console.log(`🏥 [RealtimeSOAP] Transcription preview: ${transcription.substring(0, 200)}...`);
 
       const { CPTExtractor } = await import("./cpt-extractor.js");
+      console.log(`🏥 [RealtimeSOAP] CPTExtractor imported successfully`);
+      
       const cptExtractor = new CPTExtractor();
+      console.log(`🏥 [RealtimeSOAP] CPTExtractor instance created`);
 
       // Extract CPT codes directly from transcription for faster processing
-      const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(transcription);
+      console.log(`🏥 [RealtimeSOAP] Starting CPT extraction process...`);
+      const extractedCPTData =
+        await cptExtractor.extractCPTCodesAndDiagnoses(transcription);
 
-      if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
+      console.log(`🏥 [RealtimeSOAP] CPT extraction completed. Result:`, extractedCPTData);
+
+      if (
+        extractedCPTData &&
+        (extractedCPTData.cptCodes?.length > 0 ||
+          extractedCPTData.diagnoses?.length > 0)
+      ) {
         console.log(
           `🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses from transcription`,
         );
         return extractedCPTData;
       }
 
+      console.log(`🏥 [RealtimeSOAP] No CPT codes found, returning empty result`);
       return { cptCodes: [], diagnoses: [] };
     } catch (error) {
-      console.error("❌ [RealtimeSOAP] Error extracting CPT codes from transcription:", error);
+      console.error(
+        "❌ [RealtimeSOAP] Error extracting CPT codes from transcription:",
+        error,
+      );
       return { cptCodes: [], diagnoses: [] };
     }
   }
