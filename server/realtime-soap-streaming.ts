@@ -6,7 +6,7 @@ import {
   medications,
   allergies,
   vitals,
-  encounters,
+  encounters as encountersTable,
 } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { SOAPOrdersExtractor } from "./soap-orders-extractor.js";
@@ -71,9 +71,9 @@ export class RealtimeSOAPStreaming {
         .limit(5),
       db
         .select()
-        .from(encounters)
-        .where(eq(encounters.patientId, patientId))
-        .orderBy(desc(encounters.id))
+        .from(encountersTable)
+        .where(eq(encountersTable.patientId, patientId))
+        .orderBy(desc(encountersTable.id))
         .limit(3),
     ]);
 
@@ -352,17 +352,18 @@ IMPORTANT INSTRUCTIONS:
             console.log("💾 [RealtimeSOAP] Encounter update result:", updateResult);
             console.log("✅ [RealtimeSOAP] CPT data saved to encounter database");
 
-            // Send CPT data to frontend immediately
+            // Send CPT data to frontend immediately with automatic mappings
             console.log("📤 [RealtimeSOAP] Streaming CPT codes to frontend...");
             const cptData = JSON.stringify({
               type: "cpt_codes",
               cptCodes: extractedCPTData.cptCodes || [],
               diagnoses: extractedCPTData.diagnoses || [],
+              mappings: extractedCPTData.mappings || [],
             });
             controller.enqueue(
               new TextEncoder().encode(`data: ${cptData}\n\n`),
             );
-            console.log("✅ [RealtimeSOAP] CPT codes streamed to frontend");
+            console.log("✅ [RealtimeSOAP] CPT codes streamed to frontend with automatic mappings");
           } else {
             console.log("⚠️ [RealtimeSOAP] No CPT codes or diagnoses found to stream");
           }
@@ -512,18 +513,20 @@ ${recentVitals}`;
         `🏥 [RealtimeSOAP] Extracting CPT codes from transcription for patient ${patientId}, encounter ${encounterId}`,
       );
       console.log(`🏥 [RealtimeSOAP] Transcription length: ${transcription.length} characters`);
-      console.log(`🏥 [RealtimeSOAP] Transcription preview: ${transcription.substring(0, 200)}...`);
+
+      // Get patient context for accurate coding
+      const patientContext = await this.getPatientContext(patientId);
+      console.log(`🏥 [RealtimeSOAP] Patient context:`, patientContext);
 
       const { CPTExtractor } = await import("./cpt-extractor.js");
-      console.log(`🏥 [RealtimeSOAP] CPTExtractor imported successfully`);
-      
       const cptExtractor = new CPTExtractor();
-      console.log(`🏥 [RealtimeSOAP] CPTExtractor instance created`);
 
-      // Extract CPT codes directly from transcription for faster processing
-      console.log(`🏥 [RealtimeSOAP] Starting CPT extraction process...`);
-      const extractedCPTData =
-        await cptExtractor.extractCPTCodesAndDiagnoses(transcription);
+      // Extract CPT codes with patient context for billing optimization
+      console.log(`🏥 [RealtimeSOAP] Starting advanced CPT extraction...`);
+      const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(
+        transcription, 
+        patientContext
+      );
 
       console.log(`🏥 [RealtimeSOAP] CPT extraction completed. Result:`, extractedCPTData);
 
@@ -533,7 +536,7 @@ ${recentVitals}`;
           extractedCPTData.diagnoses?.length > 0)
       ) {
         console.log(
-          `🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses from transcription`,
+          `🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`,
         );
         return extractedCPTData;
       }
@@ -546,6 +549,38 @@ ${recentVitals}`;
         error,
       );
       return { cptCodes: [], diagnoses: [] };
+    }
+  }
+
+  private async getPatientContext(patientId: number) {
+    try {
+      // Get encounter count for this patient
+      const patientEncounters = await db
+        .select()
+        .from(encounters)
+        .where(eq(encounters.patientId, patientId));
+
+      // Get medical history
+      const diagnosisList = await db
+        .select()
+        .from(diagnoses)
+        .where(eq(diagnoses.patientId, patientId))
+        .limit(10);
+
+      return {
+        isNewPatient: patientEncounters.length === 0,
+        previousEncounterCount: patientEncounters.length,
+        medicalHistory: diagnosisList.map(d => d.diagnosis),
+        currentProblems: diagnosisList.filter(d => d.status === 'active').map(d => d.diagnosis)
+      };
+    } catch (error) {
+      console.error('Error getting patient context:', error);
+      return {
+        isNewPatient: false,
+        previousEncounterCount: 0,
+        medicalHistory: [],
+        currentProblems: []
+      };
     }
   }
 }
