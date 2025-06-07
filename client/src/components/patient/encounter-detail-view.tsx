@@ -176,10 +176,22 @@ export function EncounterDetailView({
     console.log("📋 [EncounterView] Real-time draft orders received:", orders.length);
   };
 
-  const handleCPTCodesReceived = (cptData: any) => {
-    if (cptData.cptCodes) {
-      setCptCodes(cptData.cptCodes);
-      console.log("🏥 [EncounterView] Real-time CPT codes received:", cptData.cptCodes.length);
+  const handleCPTCodesReceived = async (cptData: any) => {
+    if (cptData.cptCodes || cptData.diagnoses) {
+      setCptCodes(cptData.cptCodes || []);
+      console.log("🏥 [EncounterView] Real-time CPT codes received:", (cptData.cptCodes || []).length);
+      console.log("🏥 [EncounterView] Real-time diagnoses received:", (cptData.diagnoses || []).length);
+      
+      // Refresh the encounter data to show the CPT codes in the CPT codes component
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
+      });
+      
+      // Show a toast notification
+      toast({
+        title: "CPT Codes Generated",
+        description: `Auto-extracted ${(cptData.cptCodes || []).length} CPT codes and ${(cptData.diagnoses || []).length} diagnoses`,
+      });
     }
   };
 

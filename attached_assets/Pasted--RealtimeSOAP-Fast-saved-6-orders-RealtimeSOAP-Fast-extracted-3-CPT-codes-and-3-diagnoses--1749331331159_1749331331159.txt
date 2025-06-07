@@ -1,0 +1,33 @@
+ [RealtimeSOAP] Fast-saved 6 orders
+⚡ [RealtimeSOAP] Fast-extracted 3 CPT codes and 3 diagnoses
+🔍 [PhysicalExamLearning] Analyzing SOAP note for patient 42, encounter 126
+ℹ️ [PhysicalExamLearning] No substantial physical exam section found
+✅ [RealtimeSOAP] SOAP generation and extraction completed
+✅ [RealtimeSOAP] SOAP note saved
+✅ [RealtimeSOAP] Physical exam learning analysis completed
+9:20:33 PM [express] POST /api/realtime-soap/stream 200 in 7986ms
+9:20:35 PM [express] GET /api/patients/42/draft-orders 200 in 182ms :: [{"id":321,"patientId":42,"en…
+9:20:37 PM [express] GET /api/patients/42/draft-orders 304 in 183ms :: [{"id":321,"patientId":42,"en…
+9:20:39 PM [express] GET /api/patients/42/draft-orders 304 in 179ms :: [{"id":321,"patientId":42,"en…
+9:20:42 PM [express] GET /api/patients/42/draft-orders 304 in 187ms :: [{"id":321,"patientId":42,"en…
+9:20:44 PM [express] GET /api/patients/42/draft-orders 304 in 182ms :: [{"id":321,"patientId":42,"en…
+9:20:46 PM [express] GET /api/patients/42/draft-orders 304 in 183ms :: [{"id":321,"patientId":42,"en…
+9:20:48 PM [express] GET /api/patients/42/draft-orders 304 in 182ms :: [{"id":321,"patientId":42,"en…
+9:20:50 PM [express] GET /api/patients/42/draft-orders 304 in 185ms :: [{"id":321,"patientId":42,"en…
+9:20:53 PM [express] GET /api/patients/42/draft-orders 304 in 182ms :: [{"id":321,"patientId":42,"en…
+9:20:55 PM [express] GET /api/patients/42/draft-orders 304 in 184ms :: [{"id":321,"patientId":42,"en…
+9:20:55 PM [express] GET /api/patients/42/encounters 200 in 314ms :: [{"id":126,"patientId":42,"prov…
+9:20:57 PM [express] GET /api/patients/42/draft-orders 304 in 177ms :: [{"id":321,"patientId":42,"en…
+9:20:59 PM [express] GET /api/patients/42/draft-orders 304 in 175ms :: [{"id":321,"patientId":42,"en…
+9:21:02 PM [express] GET /api/patients/42/draft-orders 304 in 175ms :: [{"id":321,"patientId":42,"en…
+9:21:04 PM [express] GET /api/patients/42/draft-orders 304 in 175ms :: [{"id":321,"patientId":42,"en…
+9:21:06 PM [express] GET /api/patients/42/draft-orders 304 in 175ms :: [{"id":321,"patientId":42,"en…
+9:21:08 PM [express] GET /api/patients/42/draft-orders 304 in 175ms :: [{"id":321,"patientId":42,"en…
+9:21:11 PM [express] GET /api/patients/42/draft-orders 304 in 177ms :: [{"id":321,"patientId":42,"en…
+9:21:12 PM [express] GET /api/patients/42/encounters/126/soap-note 200 in 176ms :: {"soapNote":"**SU…
+🏥 [CPT API] Extracting CPT codes for patient 42, encounter 126
+🏥 [CPT Extractor] Starting extraction from SOAP note (1891 chars)
+9:21:13 PM [express] GET /api/patients/42/draft-orders 304 in 174ms :: [{"id":321,"patientId":42,"en…
+9:21:15 PM [express] GET /api/patients/42/draft-orders 304 in 177ms :: [{"id":321,"patientId":42,"en…
+✅ [CPT Extractor] Extracted 4 CPT codes and 2 diagnoses
+✅ [CPT API] Extracted 4 CPT codes and 2 diagnoses
