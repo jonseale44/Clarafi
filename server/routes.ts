@@ -165,6 +165,36 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/patients/:patientId/encounters/:encounterId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const encounterId = parseInt(req.params.encounterId);
+      const patientId = parseInt(req.params.patientId);
+      console.log('🔍 [Encounters] GET request for patient:', patientId, 'encounter:', encounterId);
+      
+      const encounter = await storage.getEncounter(encounterId);
+      console.log('🔍 [Encounters] Retrieved encounter:', encounter);
+      
+      if (!encounter) {
+        console.error('❌ [Encounters] Encounter not found in database for ID:', encounterId);
+        return res.status(404).json({ message: "Encounter not found" });
+      }
+      
+      // Verify the encounter belongs to the specified patient
+      if (encounter.patientId !== patientId) {
+        console.error('❌ [Encounters] Encounter patient mismatch:', encounter.patientId, 'vs', patientId);
+        return res.status(404).json({ message: "Encounter not found" });
+      }
+      
+      console.log('✅ [Encounters] Successfully returning encounter with CPT codes:', encounter.cptCodes?.length || 0);
+      res.json({ encounter });
+    } catch (error: any) {
+      console.error('💥 [Encounters] Error retrieving encounter:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/encounters/:id", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);

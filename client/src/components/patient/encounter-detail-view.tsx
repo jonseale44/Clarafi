@@ -183,9 +183,11 @@ export function EncounterDetailView({
       console.log("🏥 [EncounterView] Real-time diagnoses received:", (cptData.diagnoses || []).length);
       
       // Refresh the encounter data to show the CPT codes in the CPT codes component
-      queryClient.invalidateQueries({ 
+      console.log("🔄 [EncounterView] Invalidating queries for patient:", patient.id, "encounter:", encounterId);
+      await queryClient.invalidateQueries({ 
         queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
       });
+      console.log("🔄 [EncounterView] Query invalidation completed");
       
       // Show a toast notification
       toast({
