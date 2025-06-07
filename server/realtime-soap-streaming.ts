@@ -347,69 +347,16 @@ IMPORTANT INSTRUCTIONS:
   }
 
   /**
-   * Process SOAP extractions (draft orders and CPT codes) in parallel
+   * LEGACY: Removed duplicate order extraction - now handled by concurrent processing
+   * This method was causing duplicate draft orders with 5-10 second delay
    */
   private async processSOAPExtractions(
     soapNote: string,
     patientId: number,
     encounterId: number,
   ): Promise<{ orders: any[] }> {
-    try {
-      const results = await Promise.allSettled([
-        // Extract structured orders from the generated SOAP note
-        this.soapOrdersExtractor.extractOrders(
-          soapNote,
-          patientId,
-          encounterId,
-        ),
-
-        // Extract CPT codes and diagnoses from SOAP note
-        this.extractCPTCodesAndDiagnoses(soapNote, patientId, encounterId),
-
-        // Save SOAP note to encounter
-        storage.updateEncounter(encounterId, {
-          note: soapNote,
-        }),
-      ]);
-
-      // Extract orders result
-      const ordersResult = results[0];
-      let extractedOrders: any[] = [];
-
-      if (ordersResult.status === "fulfilled" && ordersResult.value) {
-        extractedOrders = ordersResult.value;
-        console.log(
-          `✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`,
-        );
-      } else if (ordersResult.status === "rejected") {
-        console.error(
-          "❌ [RealtimeSOAP] Error extracting orders:",
-          ordersResult.reason,
-        );
-      }
-
-      // Log other results
-      if (results[1].status === "rejected") {
-        console.error(
-          "❌ [RealtimeSOAP] Error extracting CPT codes:",
-          results[1].reason,
-        );
-      }
-      if (results[2].status === "rejected") {
-        console.error(
-          "❌ [RealtimeSOAP] Error saving SOAP note:",
-          results[2].reason,
-        );
-      }
-
-      return { orders: extractedOrders };
-    } catch (error: any) {
-      console.error(
-        "❌ [RealtimeSOAP] Error processing SOAP extractions:",
-        error,
-      );
-      return { orders: [] };
-    }
+    console.log("🚫 [RealtimeSOAP] processSOAPExtractions disabled - orders handled by concurrent processing");
+    return { orders: [] };
   }
 
   /**
