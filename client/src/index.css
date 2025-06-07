@@ -137,39 +137,7 @@
     margin-bottom: 0.3rem;
   }
 
-  .soap-note .ProseMirror strong {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 1.05em;
-    display: block;
-    margin-top: 1.5rem;
-    margin-bottom: 0rem;
-    line-height: 1.2;
-  }
-
-  .soap-note .ProseMirror p:first-child strong:first-child {
-    margin-top: 0;
-  }
-
-  .soap-note .ProseMirror br + strong {
-    margin-top: 1.5rem;
-    margin-bottom: 0rem;
-  }
-
-  /* Remove spacing from breaks immediately after headers */
-  .soap-note .ProseMirror strong + br {
-    display: none;
-  }
-
-  /* Tighten spacing between bullet points */
-  .soap-note .ProseMirror p:not(:has(strong)) {
-    margin-bottom: 0.3rem;
-  }
-
-  /* Ensure no extra spacing after any strong element */
-  .soap-note .ProseMirror strong + p {
-    margin-top: 0.1rem;
-  }
+  /* Legacy .soap-note styles removed - using .soap-editor instead */
 
   ::-webkit-scrollbar-thumb {
     @apply bg-border rounded-full;
