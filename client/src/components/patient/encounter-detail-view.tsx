@@ -257,9 +257,10 @@ export function EncounterDetailView({
       }
     }
   }, [soapNote, editor]);
+
+  // Additional state variables (moved to avoid duplication)
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState(""); // Track live suggestions during recording
-  const [cptCodes, setCptCodes] = useState<any[]>([]);
   const [isTextMode, setIsTextMode] = useState(false);
   const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
   const { toast } = useToast();
@@ -1267,6 +1268,7 @@ export function EncounterDetailView({
                   onDraftOrdersReceived={(orders) => {
                     setDraftOrders(orders);
                   }}
+                  onCPTCodesReceived={handleCPTCodesReceived}
                   isRealtimeEnabled={useRealtimeAPI}
                 />
                 
