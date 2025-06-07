@@ -9,12 +9,20 @@ import {
   encounters,
 } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
+import { SOAPOrdersExtractor } from "./soap-orders-extractor.js";
+import { storage } from "./storage.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export class RealtimeSOAPStreaming {
+  private soapOrdersExtractor: SOAPOrdersExtractor;
+
+  constructor() {
+    this.soapOrdersExtractor = new SOAPOrdersExtractor();
+  }
+
   async generateSOAPNoteStream(
     patientId: number,
     encounterId: string,
@@ -182,8 +190,11 @@ IMPORTANT INSTRUCTIONS:
             text: soapNote,
           });
           controller.enqueue(new TextEncoder().encode(`data: ${completeData}\n\n`));
+
+          // Process draft orders and CPT codes extraction in background
+          await this.processSOAPExtractions(soapNote, patientId, parseInt(encounterId), controller);
           
-          console.log("✅ [RealtimeSOAP] Streaming SOAP generation completed");
+          console.log("✅ [RealtimeSOAP] SOAP generation and extraction completed");
           controller.close();
 
         } catch (error: any) {
@@ -198,6 +209,105 @@ IMPORTANT INSTRUCTIONS:
         }
       },
     });
+  }
+
+  /**
+   * Process SOAP extractions (draft orders and CPT codes) in parallel
+   */
+  private async processSOAPExtractions(
+    soapNote: string,
+    patientId: number,
+    encounterId: number,
+    controller: ReadableStreamDefaultController,
+  ): Promise<void> {
+    try {
+      await Promise.allSettled([
+        // Extract structured orders from the generated SOAP note
+        this.soapOrdersExtractor.extractOrders(
+          soapNote,
+          patientId,
+          encounterId,
+        ).then((extractedOrders: any) => {
+          if (extractedOrders && extractedOrders.length > 0) {
+            // Send draft orders to frontend
+            const ordersData = JSON.stringify({
+              type: 'draft_orders',
+              orders: extractedOrders,
+            });
+            controller.enqueue(new TextEncoder().encode(`data: ${ordersData}\n\n`));
+            console.log(`✅ [RealtimeSOAP] Extracted ${extractedOrders.length} draft orders`);
+          }
+        }).catch((error: any) => {
+          console.error("❌ [RealtimeSOAP] Error extracting orders:", error);
+        }),
+
+        // Extract CPT codes and diagnoses from SOAP note
+        this.extractCPTCodesAndDiagnoses(soapNote, patientId, encounterId).catch((error: any) => {
+          console.error("❌ [RealtimeSOAP] Error extracting CPT codes:", error);
+        }),
+
+        // Save SOAP note to encounter
+        storage.updateEncounter(encounterId, {
+          note: soapNote
+        }).catch((error: any) => {
+          console.error("❌ [RealtimeSOAP] Error saving SOAP note:", error);
+        })
+      ]);
+    } catch (error: any) {
+      console.error("❌ [RealtimeSOAP] Error processing SOAP extractions:", error);
+    }
+  }
+
+  /**
+   * Extract CPT codes and diagnoses from SOAP note and save to database
+   */
+  private async extractCPTCodesAndDiagnoses(
+    soapNote: string,
+    patientId: number,
+    encounterId: number,
+  ): Promise<void> {
+    try {
+      console.log(`🏥 [RealtimeSOAP] Extracting CPT codes for patient ${patientId}, encounter ${encounterId}`);
+
+      const { CPTExtractor } = await import('./cpt-extractor.js');
+      const cptExtractor = new CPTExtractor();
+      
+      const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
+      
+      if (extractedCPTData && (extractedCPTData.cptCodes?.length > 0 || extractedCPTData.diagnoses?.length > 0)) {
+        console.log(`🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`);
+        
+        // Update encounter with CPT codes and diagnoses
+        await storage.updateEncounter(encounterId, {
+          cptCodes: extractedCPTData.cptCodes || [],
+          draftDiagnoses: extractedCPTData.diagnoses || []
+        });
+        
+        // Store individual diagnoses in diagnoses table for billing integration
+        if (extractedCPTData.diagnoses?.length > 0) {
+          for (const diagnosis of extractedCPTData.diagnoses) {
+            try {
+              await storage.createDiagnosis({
+                patientId,
+                encounterId,
+                diagnosis: diagnosis.diagnosis,
+                icd10Code: diagnosis.icd10Code,
+                diagnosisDate: new Date().toISOString().split('T')[0],
+                status: diagnosis.isPrimary ? 'active' : 'active',
+                notes: `Auto-extracted from SOAP note on ${new Date().toISOString()}`
+              });
+            } catch (diagnosisError) {
+              console.error(`❌ [RealtimeSOAP] Error creating diagnosis:`, diagnosisError);
+            }
+          }
+          console.log(`✅ [RealtimeSOAP] Created ${extractedCPTData.diagnoses.length} diagnosis records for billing`);
+        }
+      } else {
+        console.log(`ℹ️ [RealtimeSOAP] No CPT codes or diagnoses found in SOAP note`);
+      }
+    } catch (error) {
+      console.error('❌ [RealtimeSOAP] Error extracting CPT codes:', error);
+    }
   }
 
   private buildMedicalContext(
