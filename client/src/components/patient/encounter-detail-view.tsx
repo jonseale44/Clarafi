@@ -1183,19 +1183,6 @@ export function EncounterDetailView({
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm">Transcription: 0</span>
-                    <span className="text-sm">Suggestions: 0</span>
-                    <span className="text-sm">SOAP: 0</span>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Reset
-                  </Button>
-                </div>
-              </div>
-
               <div className="flex items-center space-x-4">
                 <Button
                   variant="outline"
