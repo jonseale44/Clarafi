@@ -161,33 +161,25 @@ IMPORTANT INSTRUCTIONS:
     return new ReadableStream({
       async start(controller) {
         try {
-          console.log("🔄 [RealtimeSOAP] Creating streaming chat completion...");
+          console.log("🔄 [RealtimeSOAP] Creating batch SOAP completion...");
           
-          // Use standard OpenAI chat completions with streaming
-          const stream = await openai.chat.completions.create({
+          // Use standard OpenAI chat completions for batch delivery (faster than streaming)
+          const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [{ role: "user", content: soapPrompt }],
-            stream: true,
             temperature: 0.7,
             max_tokens: 4096,
           });
 
-          for await (const chunk of stream) {
-            const delta = chunk.choices[0]?.delta?.content;
-            if (delta) {
-              // Send streaming delta to frontend for character-by-character display
-              const data = JSON.stringify({
-                type: 'response.text.delta',
-                delta: delta,
-              });
-              
-              controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-            }
+          const soapNote = completion.choices[0]?.message?.content;
+          if (!soapNote) {
+            throw new Error("No SOAP note generated from OpenAI");
           }
 
-          // Signal completion
+          // Send complete SOAP note in batch (like your working system)
           const completeData = JSON.stringify({
             type: 'response.text.done',
+            text: soapNote,
           });
           controller.enqueue(new TextEncoder().encode(`data: ${completeData}\n\n`));
           

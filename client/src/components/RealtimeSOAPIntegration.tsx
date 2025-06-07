@@ -92,14 +92,14 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
             try {
               const data = JSON.parse(line.slice(6));
               
-              if (data.type === 'response.text.delta') {
-                // Character-by-character streaming for "typing" effect
-                accumulatedSoap += data.delta;
-                setSoapBuffer(accumulatedSoap);
-                onSOAPNoteUpdate(accumulatedSoap);
-              } else if (data.type === 'response.text.done') {
+              if (data.type === 'response.text.done') {
+                // Batch delivery - complete SOAP note arrives all at once (faster)
+                const completeSoap = data.text || "";
+                setSoapBuffer(completeSoap);
+                onSOAPNoteUpdate(completeSoap);
+                onSOAPNoteComplete(completeSoap);
+                
                 console.log("✅ [RealtimeSOAP] SOAP note generation completed");
-                onSOAPNoteComplete(accumulatedSoap);
                 
                 toast({
                   title: "SOAP Note Generated",
@@ -143,37 +143,8 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     }
   }, [transcription, autoTrigger]);
 
-  if (!isRealtimeEnabled) {
-    return null;
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Manual trigger button */}
-      <Button 
-        onClick={generateSOAPNote}
-        disabled={isGenerating || !transcription?.trim()}
-        className="w-full"
-      >
-        {isGenerating ? "Generating SOAP Note..." : "Generate Real-time SOAP Note"}
-      </Button>
-      
-      {/* Show generation status */}
-      {isGenerating && (
-        <div className="text-sm text-muted-foreground">
-          Streaming SOAP note generation...
-        </div>
-      )}
-      
-      {/* Show accumulated SOAP content */}
-      {soapBuffer && (
-        <div className="border rounded-lg p-4 bg-muted/50">
-          <h4 className="font-medium mb-2">Generated SOAP Note:</h4>
-          <div className="text-sm whitespace-pre-wrap">{soapBuffer}</div>
-        </div>
-      )}
-    </div>
-  );
+  // Real-time SOAP works seamlessly in background - no UI needed
+  return null;
 });
 
 RealtimeSOAPIntegration.displayName = "RealtimeSOAPIntegration";
