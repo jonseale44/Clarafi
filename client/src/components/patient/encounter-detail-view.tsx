@@ -1235,10 +1235,10 @@ export function EncounterDetailView({
 
 
 
-          {/* SOAP Note Section */}
+          {/* Note Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">SOAP Note</h2>
+              <h2 className="text-lg font-semibold">Note</h2>
               <div className="flex items-center space-x-2">
                 {/* Real-time SOAP Integration */}
                 <RealtimeSOAPIntegration

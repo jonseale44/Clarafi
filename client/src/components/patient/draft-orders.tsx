@@ -134,7 +134,7 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
-      toast({ title: "All draft orders deleted successfully" });
+      toast({ title: "All orders deleted successfully" });
     },
     onError: (error: any) => {
       toast({
@@ -186,7 +186,7 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
   };
 
   const handleDeleteAll = () => {
-    if (confirm(`Are you sure you want to delete all ${orders.length} draft orders? This action cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete all ${orders.length} orders? This action cannot be undone.`)) {
       deleteAllOrdersMutation.mutate();
     }
   };
@@ -207,7 +207,7 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Draft Orders</CardTitle>
+          <CardTitle>Orders</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-2">
@@ -223,7 +223,7 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
-          Draft Orders
+          Orders
           {orders.length > 0 && (
             <Badge variant="secondary">{orders.length}</Badge>
           )}
@@ -265,7 +265,7 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
       <CardContent>
         {orders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <div className="text-sm">No draft orders yet</div>
+            <div className="text-sm">No orders yet</div>
             <div className="text-xs mt-1">
               Orders will appear here automatically after recording clinical notes
             </div>
