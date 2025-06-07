@@ -1176,9 +1176,6 @@ export function EncounterDetailView({
               <h2 className="text-lg font-semibold">Real-Time Transcription</h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-green-600">● Connected</span>
-                <span className="text-xs text-gray-500">
-                  Total: 7,737 tokens (59.5%)
-                </span>
               </div>
             </div>
 
