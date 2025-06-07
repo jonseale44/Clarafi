@@ -161,11 +161,11 @@ IMPORTANT INSTRUCTIONS:
     return new ReadableStream({
       async start(controller) {
         try {
-          console.log("🔄 [RealtimeSOAP] Creating Real-time API session for streaming...");
+          console.log("🔄 [RealtimeSOAP] Creating streaming chat completion...");
           
-          // Use Real-time API for streaming response
+          // Use standard OpenAI chat completions with streaming
           const stream = await openai.chat.completions.create({
-            model: "gpt-4o-realtime-preview",
+            model: "gpt-4o",
             messages: [{ role: "user", content: soapPrompt }],
             stream: true,
             temperature: 0.7,
@@ -175,7 +175,7 @@ IMPORTANT INSTRUCTIONS:
           for await (const chunk of stream) {
             const delta = chunk.choices[0]?.delta?.content;
             if (delta) {
-              // Send streaming delta to frontend
+              // Send streaming delta to frontend for character-by-character display
               const data = JSON.stringify({
                 type: 'response.text.delta',
                 delta: delta,

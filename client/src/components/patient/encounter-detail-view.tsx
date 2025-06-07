@@ -31,7 +31,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
-import { RealtimeSOAPIntegration } from "@/components/RealtimeSOAPIntegration";
+import { RealtimeSOAPIntegration, RealtimeSOAPRef } from "@/components/RealtimeSOAPIntegration";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -126,6 +126,45 @@ export function EncounterDetailView({
   
   // Query client for cache invalidation
   const queryClient = useQueryClient();
+
+  // Real-time SOAP generation ref
+  const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
+
+  // Handlers for Real-time SOAP Integration
+  const handleSOAPNoteUpdate = (note: string) => {
+    setSoapNote(note);
+    if (editor && !editor.isDestroyed) {
+      const formattedContent = formatSoapNoteContent(note);
+      editor.commands.setContent(formattedContent);
+    }
+  };
+
+  const handleSOAPNoteComplete = async (note: string) => {
+    setSoapNote(note);
+    if (editor && !editor.isDestroyed) {
+      const formattedContent = formatSoapNoteContent(note);
+      editor.commands.setContent(formattedContent);
+    }
+    
+    // Save the SOAP note to the encounter
+    try {
+      await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/soap-note`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ soapNote: note }),
+      });
+      console.log("✅ [EncounterView] Real-time SOAP note saved to encounter");
+    } catch (error) {
+      console.error("❌ [EncounterView] Error saving Real-time SOAP note:", error);
+    }
+  };
+
+  const handleDraftOrdersReceived = (orders: any[]) => {
+    setDraftOrders(orders);
+    console.log("📋 [EncounterView] Real-time draft orders received:", orders.length);
+  };
 
   const editor = useEditor({
     extensions: [
@@ -1266,6 +1305,19 @@ export function EncounterDetailView({
               </div>
             </div>
           </Card>
+
+          {/* Real-time SOAP Integration (hidden, works in background) */}
+          <RealtimeSOAPIntegration
+            ref={realtimeSOAPRef}
+            patientId={patient.id.toString()}
+            encounterId={encounterId.toString()}
+            transcription={transcription}
+            onSOAPNoteUpdate={handleSOAPNoteUpdate}
+            onSOAPNoteComplete={handleSOAPNoteComplete}
+            onDraftOrdersReceived={handleDraftOrdersReceived}
+            isRealtimeEnabled={true}
+            autoTrigger={false}
+          />
 
           {/* Draft Orders */}
           <DraftOrders patientId={patient.id} encounterId={encounterId} />
