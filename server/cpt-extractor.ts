@@ -39,31 +39,35 @@ export class CPTExtractor {
       console.log(`🏥 [CPT Extractor] Starting extraction from SOAP note (${soapNote.length} chars)`);
 
       const prompt = `
-Analyze this SOAP note and extract ALL relevant CPT codes and diagnoses for billing purposes.
+Analyze this clinical documentation and determine appropriate CPT codes and diagnoses for billing purposes.
 
-SOAP Note:
+Clinical Documentation:
 ${soapNote}
 
-EXTRACTION REQUIREMENTS:
+CODING REQUIREMENTS:
 
-1. CPT CODES: Extract all billable services, procedures, and encounters mentioned or implied:
-   - Office visits (99201-99215 based on complexity)
-   - Procedures performed (injections, minor surgeries, etc.)
-   - Diagnostic services (ECG, spirometry, etc.)
-   - Preventive care visits (99381-99397)
-   - Any other billable services
+1. CPT CODES: Determine and assign appropriate billing codes for all services provided:
+   - Office visits (99201-99215): Assess complexity based on:
+     * Number of problems addressed (straightforward=1, low=2, moderate=3-4, high=5+)
+     * Amount of data reviewed (labs, imaging, records)
+     * Risk level (minimal, low, moderate, high)
+   - Procedures performed: Assign specific CPT codes for any injections, minor surgeries, biopsies
+   - Diagnostic services: Code for ECG, spirometry, vision screening, etc. if performed
+   - Preventive care visits (99381-99397): If this is a wellness/physical exam
+   - Any other billable services actually provided
 
-2. DIAGNOSES: Extract all conditions mentioned with ICD-10 codes:
-   - Primary diagnosis (main reason for visit)
-   - Secondary diagnoses (comorbidities, incidental findings)
-   - Include both acute and chronic conditions
-   - Map to specific ICD-10 codes
+2. DIAGNOSES: Assign accurate ICD-10 codes for all conditions addressed:
+   - Primary diagnosis: Main reason for this visit
+   - Secondary diagnoses: Additional conditions managed or affecting care
+   - Include both acute conditions and chronic disease management
+   - Use most specific ICD-10 codes available
 
-MEDICAL DECISION-MAKING GUIDELINES:
-- Use appropriate visit complexity based on number of problems, data reviewed, and risk
-- Include all procedures actually performed or clearly documented
-- Map diagnoses to most specific ICD-10 codes available
-- Consider both billable and non-billable diagnoses for completeness
+MEDICAL CODING GUIDELINES:
+- Base visit complexity on actual clinical work documented
+- Only code procedures that were actually performed, not just discussed
+- Assign the most specific and accurate ICD-10 codes
+- Ensure CPT codes match the level of service actually provided
+- Consider medical necessity for all assigned codes
 
 Return ONLY a JSON object in this exact format:
 {
