@@ -206,7 +206,7 @@ export function EncounterDetailView({
     ],
     editorProps: {
       attributes: {
-        class: "outline-none min-h-[500px] prose max-w-none whitespace-pre-wrap soap-editor",
+        class: "outline-none min-h-[500px] max-w-none whitespace-pre-wrap soap-editor",
       },
     },
     content: "",
