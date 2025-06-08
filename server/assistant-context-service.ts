@@ -126,12 +126,12 @@ export class AssistantContextService {
       // Get the patient's assistant
       const assistantId = await this.getOrCreatePatientAssistant(patientId);
 
-      // Add the transcription to the thread
+      // Add the transcription to the thread with instructions for single suggestion
       await this.openai.beta.threads.messages.create(threadId, {
         role: "user",
         content: `Live transcription from ${userRole}: ${partialTranscription}
 
-Please provide brief clinical insights or suggestions based on this partial transcription and the patient's medical history.`
+Based on this latest transcription segment and the patient's medical history, provide ONE specific, actionable clinical insight or suggestion. If you have nothing new or relevant to add based on this segment, respond with "CONTINUE" only. Keep responses under 25 words and focus on immediate clinical relevance.`
       });
 
       // Run the assistant
@@ -156,13 +156,20 @@ Please provide brief clinical insights or suggestions based on this partial tran
         if (lastMessage && lastMessage.role === "assistant") {
           const content = lastMessage.content[0];
           if (content.type === "text") {
-            const suggestions = content.text.value.split('\n')
-              .filter((line: string) => line.trim())
-              .map((line: string) => line.replace(/^[•\-\*]\s*/, '').trim())
-              .filter((suggestion: string) => suggestion.length > 0);
+            const response = content.text.value.trim();
+            
+            // If assistant says CONTINUE, return empty suggestions
+            if (response === "CONTINUE" || response.includes("CONTINUE")) {
+              return {
+                suggestions: [],
+                clinicalFlags: [],
+                contextualReminders: []
+              };
+            }
 
+            // Return single suggestion
             return {
-              suggestions,
+              suggestions: [response],
               clinicalFlags: [],
               contextualReminders: []
             };

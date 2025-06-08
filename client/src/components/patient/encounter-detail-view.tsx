@@ -347,7 +347,7 @@ export function EncounterDetailView({
 
   // Function to get real-time suggestions during recording
   const getLiveAISuggestions = async (transcription: string) => {
-    if (transcription.length < 50) return; // Only process meaningful chunks
+    if (transcription.length < 15) return; // Process smaller chunks for faster response
 
     try {
       console.log(
@@ -418,18 +418,27 @@ export function EncounterDetailView({
             );
           }
 
-          // Count existing numbered suggestions to continue numbering
-          const existingNumbers = (
-            existingLiveSuggestions.match(/\d+\./g) || []
-          ).length;
-          console.log(
-            "🔧 [EncounterView] Found existing numbered items:",
-            existingNumbers,
-          );
-
+          // Only append new suggestions if they exist and aren't empty
           if (data.aiSuggestions.realTimePrompts?.length > 0) {
-            data.aiSuggestions.realTimePrompts.forEach(
-              (prompt: string, index: number) => {
+            // Filter out empty suggestions 
+            const newSuggestions = data.aiSuggestions.realTimePrompts.filter(
+              (prompt: string) => prompt && prompt.trim() && prompt.trim() !== "Continue recording for more context..."
+            );
+
+            if (newSuggestions.length > 0) {
+              // Count existing numbered suggestions to continue numbering
+              const existingNumbers = (
+                existingLiveSuggestions.match(/\d+\./g) || []
+              ).length;
+              
+              console.log(
+                "🔧 [EncounterView] Found existing numbered items:",
+                existingNumbers,
+                "Adding new suggestions:",
+                newSuggestions.length
+              );
+
+              newSuggestions.forEach((prompt: string, index: number) => {
                 const itemNumber = existingNumbers + index + 1;
                 suggestionsText += `${itemNumber}. ${prompt}\n`;
                 console.log(
@@ -438,8 +447,10 @@ export function EncounterDetailView({
                   ":",
                   prompt.substring(0, 50) + "...",
                 );
-              },
-            );
+              });
+            } else {
+              console.log("🔧 [EncounterView] No new meaningful suggestions to add");
+            }
           }
 
           console.log(
