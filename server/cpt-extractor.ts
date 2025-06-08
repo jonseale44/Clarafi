@@ -187,17 +187,26 @@ REVENUE MAXIMIZATION EXAMPLES:
 PROCEDURE CODES TO CONSIDER:
 ${PROCEDURE_CPT_CODES.slice(0, 15).map(p => `${p.code}: ${p.description}`).join('\n')}
 
-DIAGNOSIS IDENTIFICATION REQUIREMENTS:
-- IDENTIFY ALL CONDITIONS mentioned, assessed, or managed during the visit
-- Include primary diagnosis (main reason for visit) AND all secondary diagnoses
-- Secondary diagnoses include: chronic conditions addressed, comorbidities affecting care, conditions requiring monitoring
-- Do NOT miss any condition that adds complexity or affects medical decision making
-- Examples: If COPD exacerbation is primary, but hypertension is also managed/discussed, include BOTH
+MANDATORY DIAGNOSIS REQUIREMENTS - CRITICAL FOR BILLING:
+- SCAN THE ENTIRE CLINICAL DOCUMENTATION for every mentioned condition
+- ASSESSMENT/PLAN section contains billable diagnoses - extract ALL of them
+- Include PRIMARY diagnosis (chief complaint) AND ALL SECONDARY diagnoses
+- Secondary diagnoses: chronic conditions managed, comorbidities treated, conditions requiring follow-up
+- REVENUE IMPACT: Each additional diagnosis increases complexity scoring and justifies higher E&M codes
+- BILLING RULE: If multiple conditions are documented, ALL must be coded for maximum reimbursement
+
+SPECIFIC SEARCH PATTERNS:
+- Look for ICD-10 codes explicitly mentioned (J44.1, I10, etc.)
+- Find condition names in Assessment/Plan: "COPD", "Hypertension", "Diabetes", etc.
+- Identify medications prescribed for different conditions (prednisone=COPD, HCTZ=hypertension)
+- Count treatment plans for separate conditions
 
 CRITICAL BILLING RULES:
 1. REVENUE MAXIMIZATION: Select the HIGHEST appropriate code level supported by documentation
 2. COMPREHENSIVE DIAGNOSIS CODING: Include ALL diagnoses that justify complexity scoring
 3. Medicare compliance: Document reasoning for complexity level selection
+
+MANDATORY: If you identify multiple conditions in the clinical documentation, you MUST include ALL of them in the diagnoses array. Missing any documented condition results in revenue loss and billing compliance failure.
 
 Return ONLY a JSON object with your optimal billing decision:
 {
@@ -221,7 +230,9 @@ Return ONLY a JSON object with your optimal billing decision:
       "isPrimary": false
     }
   ]
-}`;
+}
+
+VALIDATION CHECK: Count the conditions you mentioned in your reasoning. Your diagnoses array MUST contain the same number of conditions. If your reasoning mentions "2 conditions" but you only list 1 diagnosis, you have made an error.`;
   }
 
   private generateAutomaticMappings(cptCodes: CPTCode[], diagnoses: DiagnosisCode[]): DiagnosisMapping[] {
