@@ -19,18 +19,26 @@ import {
   Save,
   RefreshCw,
   Check,
-  X
+  X,
+  Search,
+  Info
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { CPTAutocomplete } from "@/components/ui/cpt-autocomplete";
+import { getCPTCodeByCode, type CPTCodeData } from "@/data/cpt-codes";
 
 interface CPTCode {
+  id: string; // Unique ID to fix mapping issues
   code: string;
   description: string;
-  complexity?: 'low' | 'medium' | 'high';
+  complexity?: 'low' | 'moderate' | 'high' | 'straightforward';
+  category?: string;
+  baseRate?: number;
 }
 
 interface DiagnosisCode {
+  id: string; // Unique ID to fix mapping issues
   diagnosis: string;
   icd10Code: string;
   isPrimary?: boolean;
@@ -42,11 +50,8 @@ interface CPTDiagnosisMapping {
   selected: boolean;
 }
 
-interface DiagnosisMapping {
-  diagnosisIndex: number;
-  cptCodeIndex: number;
-  selected: boolean;
-}
+// Helper function to generate unique IDs
+const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 interface CPTCodesProps {
   patientId: number;
