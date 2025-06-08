@@ -195,39 +195,37 @@ MANDATORY DIAGNOSIS REQUIREMENTS - CRITICAL FOR BILLING:
 - REVENUE IMPACT: Each additional diagnosis increases complexity scoring and justifies higher E&M codes
 - BILLING RULE: If multiple conditions are documented, ALL must be coded for maximum reimbursement
 
-SPECIFIC SEARCH PATTERNS:
-- Look for ICD-10 codes explicitly mentioned (J44.1, I10, etc.)
-- Find condition names in Assessment/Plan: "COPD", "Hypertension", "Diabetes", etc.
-- Identify medications prescribed for different conditions (prednisone=COPD, HCTZ=hypertension)
-- Count treatment plans for separate conditions
+ANALYSIS METHODOLOGY:
+- Extract ICD-10 codes explicitly mentioned in the documentation
+- Identify all condition names listed in Assessment/Plan section
+- Review medications prescribed and their clinical indications
+- Count distinct treatment plans for different medical conditions
+- Ensure new vs established patient coding is correct based on encounter history
 
 CRITICAL BILLING RULES:
 1. REVENUE MAXIMIZATION: Select the HIGHEST appropriate code level supported by documentation
 2. COMPREHENSIVE DIAGNOSIS CODING: Include ALL diagnoses that justify complexity scoring
 3. Medicare compliance: Document reasoning for complexity level selection
 
+CRITICAL INSTRUCTION: Analyze ONLY the clinical text provided in this specific request. Do NOT use any examples, templates, or previous case data. Every diagnosis and CPT code must come directly from the documentation you are analyzing RIGHT NOW.
+
 MANDATORY: If you identify multiple conditions in the clinical documentation, you MUST include ALL of them in the diagnoses array. Missing any documented condition results in revenue loss and billing compliance failure.
 
-Return ONLY a JSON object with your optimal billing decision:
+Return ONLY a JSON object with this exact structure. Base ALL decisions on the actual clinical documentation provided:
 {
   "cptCodes": [
     {
-      "code": "99214",
-      "description": "Office visit, established patient, moderate complexity",
-      "complexity": "moderate",
-      "reasoning": "2 chronic conditions addressed (COPD exacerbation + hypertension), lab results reviewed, moderate risk"
+      "code": "[SELECT_APPROPRIATE_CODE]",
+      "description": "[OFFICIAL_CPT_DESCRIPTION]",
+      "complexity": "[straightforward|low|moderate|high]",
+      "reasoning": "[YOUR_ANALYSIS_OF_THIS_SPECIFIC_CASE]"
     }
   ],
   "diagnoses": [
     {
-      "diagnosis": "Chronic obstructive pulmonary disease exacerbation",
-      "icd10Code": "J44.1",
+      "diagnosis": "[CONDITION_FROM_ACTUAL_DOCUMENTATION]",
+      "icd10Code": "[APPROPRIATE_ICD10_CODE]",
       "isPrimary": true
-    },
-    {
-      "diagnosis": "Hypertension",
-      "icd10Code": "I10",
-      "isPrimary": false
     }
   ]
 }
