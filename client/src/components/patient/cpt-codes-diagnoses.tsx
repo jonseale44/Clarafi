@@ -208,16 +208,21 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       }
 
       const data = await response.json();
-      setCPTCodes(data.cptCodes || []);
-      setDiagnoses(data.diagnoses || []);
+      
+      // Convert GPT data to unique ID format before setting state
+      const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(data.cptCodes || [], data.diagnoses || []);
+      
+      console.log('🔧 [CPTComponent] Converting GPT data to unique ID format');
+      setCPTCodes(convertedCPTCodes);
+      setDiagnoses(convertedDiagnoses);
       
       // Use GPT's intelligent mappings to automatically select associations
       if (data.mappings && data.mappings.length > 0) {
         console.log('🔗 [CPTComponent] Using GPT automatic mappings:', data.mappings);
-        initializeMappings(data.cptCodes || [], data.diagnoses || [], data.mappings);
+        initializeMappings(convertedCPTCodes, convertedDiagnoses, data.mappings);
       } else {
         console.log('🔗 [CPTComponent] No GPT mappings, initializing empty');
-        initializeMappings(data.cptCodes || [], data.diagnoses || []);
+        initializeMappings(convertedCPTCodes, convertedDiagnoses);
       }
       
       toast({
@@ -240,23 +245,31 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
 
   // Initialize mappings between diagnoses and CPT codes
   const initializeMappings = (cptCodes: CPTCode[], diagnoses: DiagnosisCode[], gptMappings?: any[]) => {
+    console.log('🔗 [CPTComponent] Initializing mappings with unique IDs');
+    console.log('🔗 [CPTComponent] CPT codes:', cptCodes.map(c => `${c.code}(${c.id})`));
+    console.log('🔗 [CPTComponent] Diagnoses:', diagnoses.map(d => `${d.icd10Code}(${d.id})`));
+    console.log('🔗 [CPTComponent] GPT mappings:', gptMappings);
+    
     const newMappings: CPTDiagnosisMapping[] = [];
-    diagnoses.forEach((diagnosis, diagIndex) => {
-      cptCodes.forEach((cpt, cptIndex) => {
+    diagnoses.forEach((diagnosis) => {
+      cptCodes.forEach((cpt) => {
         // Check if GPT selected this combination
         let isSelected = false;
         if (gptMappings) {
           const gptMapping = gptMappings.find(m => 
             m.diagnosisId === diagnosis.icd10Code && 
-            m.cptCodes.includes(cpt.code) && 
+            m.cptCodes?.includes(cpt.code) && 
             m.isSelected
           );
           isSelected = !!gptMapping;
+          if (isSelected) {
+            console.log(`🔗 [CPTComponent] GPT selected mapping: ${diagnosis.icd10Code} -> ${cpt.code}`);
+          }
         }
         
         newMappings.push({
-          diagnosisId: `${diagIndex}`,
-          cptCodeId: `${cptIndex}`,
+          diagnosisId: diagnosis.id,
+          cptCodeId: cpt.id,
           selected: isSelected
         });
       });
