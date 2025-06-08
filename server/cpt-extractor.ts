@@ -2,13 +2,7 @@ import OpenAI from 'openai';
 import { 
   CPT_OFFICE_VISIT_CODES, 
   PROCEDURE_CPT_CODES, 
-  RISK_ASSESSMENT_KEYWORDS,
-  DATA_COMPLEXITY_KEYWORDS,
-  determineBestCPTCode,
-  calculateEMComplexity,
-  EMComplexityFactors,
-  DataComplexity,
-  RiskLevel
+  CPT_REIMBURSEMENT_RATES
 } from './medical-coding-guidelines.js';
 
 interface CPTCode {
@@ -63,17 +57,14 @@ export class CPTExtractor {
     patientContext?: PatientContext
   ): Promise<ExtractedCPTData> {
     try {
-      console.log(`🏥 [CPT Extractor] Starting advanced extraction from clinical text (${clinicalText.length} chars)`);
+      console.log(`🏥 [CPT Extractor] Starting GPT-only extraction from clinical text (${clinicalText.length} chars)`);
       
-      // Analyze complexity factors first
-      const complexityFactors = this.analyzeComplexityFactors(clinicalText);
-      const isNewPatient = patientContext?.isNewPatient ?? this.determineNewPatientStatus(clinicalText, patientContext);
+      const isNewPatient = patientContext?.isNewPatient ?? false;
       
       console.log(`🏥 [CPT Extractor] Patient type: ${isNewPatient ? 'NEW' : 'ESTABLISHED'}`);
-      console.log(`🏥 [CPT Extractor] Complexity factors:`, complexityFactors);
 
-      // Build comprehensive prompt with Medicare guidelines
-      const prompt = this.buildAdvancedCodingPrompt(clinicalText, complexityFactors, isNewPatient, patientContext);
+      // Build comprehensive prompt with complete Medicare guidelines for GPT
+      const prompt = this.buildComprehensiveMedicarePrompt(clinicalText, isNewPatient, patientContext);
 
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-nano",
@@ -98,13 +89,10 @@ export class CPTExtractor {
 
       let extractedData = JSON.parse(content) as ExtractedCPTData;
       
-      // Apply billing optimization logic
-      extractedData = this.optimizeBilling(extractedData, complexityFactors, isNewPatient);
-      
       // Generate automatic diagnosis-to-CPT mappings
       extractedData.mappings = this.generateAutomaticMappings(extractedData.cptCodes, extractedData.diagnoses);
       
-      console.log(`✅ [CPT Extractor] Optimized billing: ${extractedData.cptCodes?.length || 0} CPT codes, ${extractedData.diagnoses?.length || 0} diagnoses`);
+      console.log(`✅ [CPT Extractor] GPT-selected billing: ${extractedData.cptCodes?.length || 0} CPT codes, ${extractedData.diagnoses?.length || 0} diagnoses`);
       console.log(`🔗 [CPT Extractor] Generated ${extractedData.mappings?.length || 0} automatic mappings`);
       
       return extractedData;
@@ -216,71 +204,78 @@ export class CPTExtractor {
 Your goal is to maximize legitimate billing while ensuring accuracy and compliance. You understand the difference between new and established patients, complexity scoring, and appropriate code selection for optimal reimbursement.`;
   }
 
-  private buildAdvancedCodingPrompt(
+  private buildComprehensiveMedicarePrompt(
     clinicalText: string, 
-    complexityFactors: EMComplexityFactors, 
     isNewPatient: boolean, 
     patientContext?: PatientContext
   ): string {
     const visitType = isNewPatient ? "NEW PATIENT" : "ESTABLISHED PATIENT";
     const eligibleCodes = CPT_OFFICE_VISIT_CODES
       .filter(code => isNewPatient ? code.newPatient : code.establishedPatient)
-      .map(code => `${code.code}: ${code.description}`)
+      .map(code => `${code.code}: ${code.description} - Medicare Rate: $${CPT_REIMBURSEMENT_RATES[code.code] || 'N/A'}`)
       .join('\n');
 
     return `
-MEDICAL CODING ANALYSIS
+MEDICARE BILLING OPTIMIZATION ANALYSIS
 
-PATIENT TYPE: ${visitType}
+PATIENT STATUS: ${visitType}
 ${patientContext?.previousEncounterCount !== undefined ? 
   `Previous encounters: ${patientContext.previousEncounterCount}` : ''}
+${patientContext?.medicalHistory?.length ? 
+  `Medical history: ${patientContext.medicalHistory.slice(0, 5).join(', ')}` : ''}
 
 CLINICAL DOCUMENTATION:
 ${clinicalText}
 
-COMPLEXITY ANALYSIS COMPLETED:
-- Problems addressed: ${complexityFactors.problemsAddressed}
-- Data reviewed: ${Object.values(complexityFactors.dataReviewed).filter(Boolean).length} points
-- Risk level: ${complexityFactors.riskLevel}
+=== MEDICARE E&M GUIDELINES 2024 ===
 
-ELIGIBLE E&M CODES FOR ${visitType}:
+ELIGIBLE CODES FOR ${visitType}:
 ${eligibleCodes}
 
-AVAILABLE PROCEDURE CODES:
-${PROCEDURE_CPT_CODES.slice(0, 10).map(p => `${p.code}: ${p.description}`).join('\n')}
+KEY COMPLEXITY FACTORS YOU MUST ANALYZE:
+1. PROBLEMS ADDRESSED:
+   - 1 problem = straightforward/low complexity
+   - 2 problems = low/moderate complexity  
+   - 3+ problems = moderate/high complexity
 
-CODING INSTRUCTIONS:
+2. DATA REVIEWED & ORDERED:
+   - Review of records/tests = +1 point
+   - Ordering diagnostic tests = +1 point
+   - Independent interpretation = +2 points
+   - Discussion with other providers = +1 point
+   - 0-1 points = minimal, 2 points = limited, 3+ points = moderate/extensive
 
-1. SELECT THE HIGHEST APPROPRIATE E&M CODE:
-   - For NEW patients: Choose from 99202-99205 based on complexity
-   - For ESTABLISHED patients: Choose from 99212-99215 based on complexity
-   - MAXIMIZE billing by selecting the highest code that meets requirements
-   - Consider all documented work: problems, data, risk, time
+3. MEDICAL DECISION MAKING RISK:
+   - Minimal: Self-limited problems, OTC meds
+   - Low: Stable chronic illness, prescription meds
+   - Moderate: Acute illness, minor surgery, chronic illness with exacerbation
+   - High: Acute serious illness, major surgery, drug therapy requiring monitoring
 
-2. CODE ALL PERFORMED PROCEDURES:
-   - Only include procedures actually performed during this visit
-   - Do NOT include lab tests, imaging, or referrals (these are separate)
-   - Include: injections, minor surgeries, ECGs, spirometry, wound care
+MEDICARE BILLING OPTIMIZATION RULES:
+- NEVER undercode - select the HIGHEST appropriate level supported by documentation
+- NEW patients (99202-99205): No professional services in past 3 years
+- ESTABLISHED patients (99212-99215): Professional services within past 3 years
+- Choose the highest complexity level when 2 of 3 factors (problems, data, risk) support it
+- Time-based coding available for counseling >50% of visit time
 
-3. ASSIGN COMPREHENSIVE DIAGNOSES:
-   - Primary diagnosis: Main reason for visit
-   - Secondary diagnoses: All conditions addressed or affecting care
-   - Use most specific ICD-10 codes available
-   - Include chronic conditions if managed during visit
+REVENUE MAXIMIZATION EXAMPLES:
+- If documentation shows 2+ problems + test ordering + moderate risk = 99214 (not 99213)
+- If new patient with comprehensive exam + moderate complexity = 99204 (not 99203)
+- Multiple chronic conditions managed = higher complexity level
 
-4. BILLING OPTIMIZATION RULES:
-   - Never undercode - select highest appropriate level
-   - Ensure medical necessity for all codes
-   - Document complexity factors clearly
-   - Follow Medicare guidelines for code selection
+PROCEDURE CODES TO CONSIDER:
+${PROCEDURE_CPT_CODES.slice(0, 15).map(p => `${p.code}: ${p.description}`).join('\n')}
 
-Return ONLY a JSON object in this exact format:
+CRITICAL: Your primary goal is REVENUE MAXIMIZATION while maintaining Medicare compliance. Always choose the highest appropriate code level. Document your reasoning for the selected complexity level.
+
+Return ONLY a JSON object with your optimal billing decision:
 {
   "cptCodes": [
     {
       "code": "99214",
       "description": "Office visit, established patient, moderate complexity",
-      "complexity": "moderate"
+      "complexity": "moderate",
+      "reasoning": "2 chronic conditions addressed, lab results reviewed, moderate risk due to COPD exacerbation"
     }
   ],
   "diagnoses": [
@@ -293,58 +288,7 @@ Return ONLY a JSON object in this exact format:
 }`;
   }
 
-  private optimizeBilling(
-    extractedData: ExtractedCPTData, 
-    complexityFactors: EMComplexityFactors, 
-    isNewPatient: boolean
-  ): ExtractedCPTData {
-    // Apply our Medicare guidelines logic to verify/optimize the E&M code
-    const recommendedCode = determineBestCPTCode(isNewPatient, complexityFactors);
-    
-    if (recommendedCode && extractedData.cptCodes.length > 0) {
-      // Find the E&M code in the extracted data
-      const emCodeIndex = extractedData.cptCodes.findIndex(code => 
-        code.code.startsWith('992') // E&M codes
-      );
-      
-      if (emCodeIndex >= 0) {
-        // Compare with our recommendation and use the higher one
-        const currentCode = extractedData.cptCodes[emCodeIndex];
-        const currentComplexity = this.getComplexityScore(currentCode.complexity || 'straightforward');
-        const recommendedComplexity = this.getComplexityScore(recommendedCode.complexity);
-        
-        if (recommendedComplexity > currentComplexity) {
-          console.log(`🔧 [Billing Optimization] Upgrading ${currentCode.code} to ${recommendedCode.code}`);
-          extractedData.cptCodes[emCodeIndex] = {
-            code: recommendedCode.code,
-            description: recommendedCode.description,
-            complexity: recommendedCode.complexity
-          };
-        }
-      }
-    }
-    
-    // Remove any lab/radiology codes that shouldn't be here
-    extractedData.cptCodes = extractedData.cptCodes.filter(code => {
-      const codeNum = parseInt(code.code);
-      // Keep E&M codes (99201-99499) and procedure codes, exclude lab/radiology
-      return (codeNum >= 99201 && codeNum <= 99499) || 
-             (codeNum >= 10000 && codeNum <= 69999) || // Surgical procedures
-             (codeNum >= 90000 && codeNum <= 99199);   // Medicine procedures
-    });
-    
-    return extractedData;
-  }
 
-  private getComplexityScore(complexity: string): number {
-    switch (complexity) {
-      case 'high': return 4;
-      case 'moderate': return 3;
-      case 'low': return 2;
-      case 'straightforward': return 1;
-      default: return 0;
-    }
-  }
 
   private generateAutomaticMappings(cptCodes: CPTCode[], diagnoses: DiagnosisCode[]): DiagnosisMapping[] {
     const mappings: DiagnosisMapping[] = [];
