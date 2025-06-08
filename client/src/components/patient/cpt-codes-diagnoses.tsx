@@ -79,24 +79,52 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
     enabled: !!patientId && !!encounterId
   });
 
+  // Convert legacy data to new format with unique IDs
+  const convertToUniqueIdFormat = (cptCodes: any[], diagnoses: any[]) => {
+    console.log("🔧 [CPTComponent] Converting legacy data to unique ID format");
+    
+    const convertedCPTCodes: CPTCode[] = cptCodes.map((cpt, index) => ({
+      id: cpt.id || `cpt-${index}-${Date.now()}`,
+      code: cpt.code,
+      description: cpt.description,
+      complexity: cpt.complexity,
+      category: cpt.category,
+      baseRate: cpt.baseRate
+    }));
+
+    const convertedDiagnoses: DiagnosisCode[] = diagnoses.map((diag, index) => ({
+      id: diag.id || `diag-${index}-${Date.now()}`,
+      diagnosis: diag.diagnosis,
+      icd10Code: diag.icd10Code,
+      isPrimary: diag.isPrimary
+    }));
+
+    console.log("🔧 [CPTComponent] Converted CPT codes:", convertedCPTCodes.length);
+    console.log("🔧 [CPTComponent] Converted diagnoses:", convertedDiagnoses.length);
+    
+    return { convertedCPTCodes, convertedDiagnoses };
+  };
+
   // Load data when encounter data is available
   useEffect(() => {
     console.log("🔍 [CPTComponent] Encounter data updated:", encounterData);
     if (encounterData && typeof encounterData === 'object' && 'encounter' in encounterData) {
       const encounter = (encounterData as any).encounter;
-      console.log("🔍 [CPTComponent] Encounter CPT codes:", encounter.cptCodes);
-      console.log("🔍 [CPTComponent] Encounter diagnoses:", encounter.draftDiagnoses);
+      console.log("🔍 [CPTComponent] Raw encounter CPT codes:", encounter.cptCodes);
+      console.log("🔍 [CPTComponent] Raw encounter diagnoses:", encounter.draftDiagnoses);
       
       if (encounter.cptCodes && Array.isArray(encounter.cptCodes) && encounter.cptCodes.length > 0) {
-        console.log("🔍 [CPTComponent] Setting CPT codes:", encounter.cptCodes.length);
-        setCPTCodes(encounter.cptCodes);
+        const { convertedCPTCodes } = convertToUniqueIdFormat(encounter.cptCodes, []);
+        console.log("🔍 [CPTComponent] Setting CPT codes with unique IDs:", convertedCPTCodes.length);
+        setCPTCodes(convertedCPTCodes);
       } else {
         console.log("🔍 [CPTComponent] No CPT codes found, keeping existing:", cptCodes.length);
       }
       
       if (encounter.draftDiagnoses && Array.isArray(encounter.draftDiagnoses) && encounter.draftDiagnoses.length > 0) {
-        console.log("🔍 [CPTComponent] Setting diagnoses:", encounter.draftDiagnoses.length);
-        setDiagnoses(encounter.draftDiagnoses);
+        const { convertedDiagnoses } = convertToUniqueIdFormat([], encounter.draftDiagnoses);
+        console.log("🔍 [CPTComponent] Setting diagnoses with unique IDs:", convertedDiagnoses.length);
+        setDiagnoses(convertedDiagnoses);
       } else {
         console.log("🔍 [CPTComponent] No diagnoses found, keeping existing:", diagnoses.length);
       }
@@ -105,13 +133,14 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       if (encounter.cptCodes && encounter.draftDiagnoses && 
           encounter.cptCodes.length > 0 && encounter.draftDiagnoses.length > 0) {
         console.log("🔗 [CPTComponent] Initializing intelligent mappings for real-time data");
-        initializeMappings(encounter.cptCodes, encounter.draftDiagnoses);
+        const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(encounter.cptCodes, encounter.draftDiagnoses);
+        initializeMappings(convertedCPTCodes, convertedDiagnoses);
         
-        // Apply intelligent diagnosis-to-CPT associations
+        // Apply intelligent diagnosis-to-CPT associations with unique IDs
         setTimeout(() => {
           const intelligentMappings: CPTDiagnosisMapping[] = [];
-          encounter.draftDiagnoses.forEach((diagnosis: any, diagIndex: number) => {
-            encounter.cptCodes.forEach((cpt: any, cptIndex: number) => {
+          convertedDiagnoses.forEach((diagnosis) => {
+            convertedCPTCodes.forEach((cpt) => {
               // Define intelligent associations based on clinical logic
               let shouldSelect = false;
               
@@ -138,14 +167,14 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
               }
               
               intelligentMappings.push({
-                diagnosisId: `${diagIndex}`,
-                cptCodeId: `${cptIndex}`,
+                diagnosisId: diagnosis.id,
+                cptCodeId: cpt.id,
                 selected: shouldSelect
               });
             });
           });
           setMappings(intelligentMappings);
-          console.log("🔗 [CPTComponent] Applied intelligent clinical mappings:", 
+          console.log("🔗 [CPTComponent] Applied intelligent clinical mappings with unique IDs:", 
                      intelligentMappings.filter(m => m.selected).length, "selected");
         }, 100);
       }
@@ -258,48 +287,78 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
     );
   };
 
-  // Add new CPT code
-  const addCPTCode = () => {
+  // Add new CPT code with autocomplete
+  const addCPTCodeFromAutocomplete = (cptData: CPTCodeData) => {
+    console.log("➕ [CPTComponent] Adding CPT code from autocomplete:", cptData);
     const newCPT: CPTCode = {
-      code: "",
-      description: "",
-      complexity: "medium"
+      id: generateId(),
+      code: cptData.code,
+      description: cptData.description,
+      complexity: cptData.complexity,
+      category: cptData.category,
+      baseRate: cptData.baseRate
     };
-    setCPTCodes(prev => [...prev, newCPT]);
-    setEditingCPT(cptCodes.length);
-    setEditCPTValue("");
-    setEditCPTDescription("");
+    setCPTCodes(prev => {
+      const updated = [...prev, newCPT];
+      console.log("➕ [CPTComponent] Updated CPT codes list:", updated.length);
+      return updated;
+    });
+    
+    // Initialize mappings for the new CPT code
+    setMappings(prev => {
+      const newMappings = [...prev];
+      diagnoses.forEach((diagnosis) => {
+        newMappings.push({
+          diagnosisId: diagnosis.id,
+          cptCodeId: newCPT.id,
+          selected: false
+        });
+      });
+      console.log("🔗 [CPTComponent] Added mappings for new CPT code:", newMappings.length);
+      return newMappings;
+    });
   };
 
   // Add new diagnosis
   const addDiagnosis = () => {
     const newDiagnosis: DiagnosisCode = {
+      id: generateId(),
       diagnosis: "",
       icd10Code: "",
       isPrimary: false
     };
     setDiagnoses(prev => [...prev, newDiagnosis]);
-    setEditingDiagnosis(diagnoses.length);
+    setEditingDiagnosis(diagnoses.findIndex(d => d.id === newDiagnosis.id));
     setEditDiagnosisValue("");
     setEditDiagnosisICD("");
   };
 
   // Start editing CPT code
-  const startEditingCPT = (index: number) => {
-    setEditingCPT(index);
-    setEditCPTValue(cptCodes[index].code);
-    setEditCPTDescription(cptCodes[index].description);
+  const startEditingCPT = (cptId: string) => {
+    const cpt = cptCodes.find(c => c.id === cptId);
+    if (cpt) {
+      console.log("✏️ [CPTComponent] Starting CPT edit for:", cpt.code);
+      setEditingCPT(cptCodes.findIndex(c => c.id === cptId));
+      setEditCPTValue(cpt.code);
+      setEditCPTDescription(cpt.description);
+    }
   };
 
   // Start editing diagnosis
-  const startEditingDiagnosis = (index: number) => {
-    setEditingDiagnosis(index);
-    setEditDiagnosisValue(diagnoses[index].diagnosis);
-    setEditDiagnosisICD(diagnoses[index].icd10Code);
+  const startEditingDiagnosis = (diagId: string) => {
+    const diag = diagnoses.find(d => d.id === diagId);
+    if (diag) {
+      console.log("✏️ [CPTComponent] Starting diagnosis edit for:", diag.diagnosis);
+      setEditingDiagnosis(diagnoses.findIndex(d => d.id === diagId));
+      setEditDiagnosisValue(diag.diagnosis);
+      setEditDiagnosisICD(diag.icd10Code);
+    }
   };
 
   // Save CPT code edit
   const saveCPTEdit = (index: number) => {
+    const cptId = cptCodes[index]?.id;
+    console.log("💾 [CPTComponent] Saving CPT edit for index:", index, "ID:", cptId);
     setCPTCodes(prev => prev.map((cpt, i) => 
       i === index 
         ? { ...cpt, code: editCPTValue, description: editCPTDescription }
@@ -310,6 +369,8 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
 
   // Save diagnosis edit
   const saveDiagnosisEdit = (index: number) => {
+    const diagId = diagnoses[index]?.id;
+    console.log("💾 [CPTComponent] Saving diagnosis edit for index:", index, "ID:", diagId);
     setDiagnoses(prev => prev.map((diag, i) => 
       i === index 
         ? { ...diag, diagnosis: editDiagnosisValue, icd10Code: editDiagnosisICD }
@@ -320,32 +381,49 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
 
   // Cancel edit
   const cancelEdit = () => {
+    console.log("❌ [CPTComponent] Canceling edit");
     setEditingCPT(null);
     setEditingDiagnosis(null);
   };
 
-  // Delete CPT code
-  const deleteCPTCode = (index: number) => {
-    setCPTCodes(prev => prev.filter((_, i) => i !== index));
-    // Remove mappings for this CPT code
-    setMappings(prev => prev.filter(m => m.cptCodeId !== `${index}`));
-    // Adjust mapping IDs for remaining CPT codes
-    setMappings(prev => prev.map(m => ({
-      ...m,
-      cptCodeId: parseInt(m.cptCodeId) > index ? `${parseInt(m.cptCodeId) - 1}` : m.cptCodeId
-    })));
+  // Delete CPT code using unique ID
+  const deleteCPTCode = (cptId: string) => {
+    console.log("🗑️ [CPTComponent] Deleting CPT code with ID:", cptId);
+    console.log("🗑️ [CPTComponent] Current CPT codes before deletion:", cptCodes.length);
+    console.log("🗑️ [CPTComponent] Current mappings before deletion:", mappings.length);
+    
+    setCPTCodes(prev => {
+      const filtered = prev.filter(cpt => cpt.id !== cptId);
+      console.log("🗑️ [CPTComponent] CPT codes after deletion:", filtered.length);
+      return filtered;
+    });
+    
+    // Remove mappings for this CPT code using unique ID
+    setMappings(prev => {
+      const filtered = prev.filter(m => m.cptCodeId !== cptId);
+      console.log("🗑️ [CPTComponent] Mappings after deletion:", filtered.length);
+      return filtered;
+    });
   };
 
-  // Delete diagnosis
-  const deleteDiagnosis = (index: number) => {
-    setDiagnoses(prev => prev.filter((_, i) => i !== index));
-    // Remove mappings for this diagnosis
-    setMappings(prev => prev.filter(m => m.diagnosisId !== `${index}`));
-    // Adjust mapping IDs for remaining diagnoses
-    setMappings(prev => prev.map(m => ({
-      ...m,
-      diagnosisId: parseInt(m.diagnosisId) > index ? `${parseInt(m.diagnosisId) - 1}` : m.diagnosisId
-    })));
+  // Delete diagnosis using unique ID
+  const deleteDiagnosis = (diagId: string) => {
+    console.log("🗑️ [CPTComponent] Deleting diagnosis with ID:", diagId);
+    console.log("🗑️ [CPTComponent] Current diagnoses before deletion:", diagnoses.length);
+    console.log("🗑️ [CPTComponent] Current mappings before deletion:", mappings.length);
+    
+    setDiagnoses(prev => {
+      const filtered = prev.filter(diag => diag.id !== diagId);
+      console.log("🗑️ [CPTComponent] Diagnoses after deletion:", filtered.length);
+      return filtered;
+    });
+    
+    // Remove mappings for this diagnosis using unique ID
+    setMappings(prev => {
+      const filtered = prev.filter(m => m.diagnosisId !== diagId);
+      console.log("🗑️ [CPTComponent] Mappings after deletion:", filtered.length);
+      return filtered;
+    });
   };
 
   // Save changes
@@ -483,7 +561,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                                 <TooltipTrigger asChild>
                                   <div
                                     className="font-mono text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                    onClick={() => startEditingCPT(index)}
+                                    onClick={() => startEditingCPT(cpt.id)}
                                   >
                                     {cpt.code}
                                   </div>
@@ -504,7 +582,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => deleteCPTCode(index)}
+                                  onClick={() => deleteCPTCode(cpt.id)}
                                   className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -515,9 +593,11 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                         </th>
                       ))}
                       <th className="px-3 py-3 text-center text-sm font-medium text-gray-900">
-                        <Button size="sm" variant="ghost" onClick={addCPTCode}>
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                        <CPTAutocomplete
+                          placeholder="Add CPT code..."
+                          onSelect={addCPTCodeFromAutocomplete}
+                          className="min-w-[200px]"
+                        />
                       </th>
                     </tr>
                   </thead>
@@ -573,11 +653,14 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                             </div>
                           )}
                         </td>
-                        {cptCodes.map((cpt, cptIndex) => (
-                          <td key={cptIndex} className="px-3 py-4 text-center border-r">
+                        {cptCodes.map((cpt) => (
+                          <td key={cpt.id} className="px-3 py-4 text-center border-r">
                             <Checkbox
-                              checked={isMappingSelected(`${diagIndex}`, `${cptIndex}`)}
-                              onCheckedChange={() => toggleMapping(`${diagIndex}`, `${cptIndex}`)}
+                              checked={isMappingSelected(diagnosis.id, cpt.id)}
+                              onCheckedChange={() => {
+                                console.log("☑️ [CPTComponent] Checkbox toggled for diagnosis:", diagnosis.id, "CPT:", cpt.id);
+                                toggleMapping(diagnosis.id, cpt.id);
+                              }}
                             />
                           </td>
                         ))}
