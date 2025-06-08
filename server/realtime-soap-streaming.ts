@@ -554,7 +554,7 @@ ${recentVitals}`;
 
   private async getPatientContext(patientId: number) {
     try {
-      // Get encounter count for this patient
+      // Get encounter count for this patient (excluding current encounter)
       const patientEncounters = await db
         .select()
         .from(encountersTable)
@@ -567,8 +567,14 @@ ${recentVitals}`;
         .where(eq(diagnoses.patientId, patientId))
         .limit(10);
 
+      // A patient is new if they have 1 or fewer encounters (current one)
+      // Medicare defines new patient as no professional services within past 3 years
+      const isNewPatient = patientEncounters.length <= 1;
+      
+      console.log(`🏥 [Patient Context] Patient ${patientId}: ${patientEncounters.length} encounters, isNew: ${isNewPatient}`);
+
       return {
-        isNewPatient: patientEncounters.length === 0,
+        isNewPatient,
         previousEncounterCount: patientEncounters.length,
         medicalHistory: diagnosisList.map(d => d.diagnosis),
         currentProblems: diagnosisList.filter(d => d.status === 'active').map(d => d.diagnosis)

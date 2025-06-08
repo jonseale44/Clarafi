@@ -902,10 +902,23 @@ export function registerRoutes(app: Express): Server {
 
       console.log(`🏥 [CPT API] Extracting CPT codes for patient ${patientId}, encounter ${encounterId}`);
 
+      // Get patient context for proper new vs established patient coding
+      const patientEncounters = await storage.getPatientEncounters(patientId);
+      const diagnosisList = await storage.getPatientDiagnoses(patientId);
+      
+      const patientContext = {
+        isNewPatient: patientEncounters.length <= 1,
+        previousEncounterCount: patientEncounters.length,
+        medicalHistory: diagnosisList.map(d => d.diagnosis),
+        currentProblems: diagnosisList.filter(d => d.status === 'active').map(d => d.diagnosis)
+      };
+
+      console.log(`🏥 [CPT API] Patient context: ${patientContext.isNewPatient ? 'NEW' : 'ESTABLISHED'} patient with ${patientContext.previousEncounterCount} encounters`);
+
       const { CPTExtractor } = await import('./cpt-extractor.js');
       const cptExtractor = new CPTExtractor();
       
-      const extractedData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote);
+      const extractedData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote, patientContext);
       
       console.log(`✅ [CPT API] Extracted ${extractedData.cptCodes?.length || 0} CPT codes and ${extractedData.diagnoses?.length || 0} diagnoses`);
       
