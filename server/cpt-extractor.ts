@@ -175,7 +175,17 @@ REVENUE MAXIMIZATION EXAMPLES:
 PROCEDURE CODES TO CONSIDER:
 ${PROCEDURE_CPT_CODES.slice(0, 15).map(p => `${p.code}: ${p.description}`).join('\n')}
 
-CRITICAL: Your primary goal is REVENUE MAXIMIZATION while maintaining Medicare compliance. Always choose the highest appropriate code level. Document your reasoning for the selected complexity level.
+DIAGNOSIS IDENTIFICATION REQUIREMENTS:
+- IDENTIFY ALL CONDITIONS mentioned, assessed, or managed during the visit
+- Include primary diagnosis (main reason for visit) AND all secondary diagnoses
+- Secondary diagnoses include: chronic conditions addressed, comorbidities affecting care, conditions requiring monitoring
+- Do NOT miss any condition that adds complexity or affects medical decision making
+- Examples: If COPD exacerbation is primary, but hypertension is also managed/discussed, include BOTH
+
+CRITICAL BILLING RULES:
+1. REVENUE MAXIMIZATION: Select the HIGHEST appropriate code level supported by documentation
+2. COMPREHENSIVE DIAGNOSIS CODING: Include ALL diagnoses that justify complexity scoring
+3. Medicare compliance: Document reasoning for complexity level selection
 
 Return ONLY a JSON object with your optimal billing decision:
 {
@@ -184,7 +194,7 @@ Return ONLY a JSON object with your optimal billing decision:
       "code": "99214",
       "description": "Office visit, established patient, moderate complexity",
       "complexity": "moderate",
-      "reasoning": "2 chronic conditions addressed, lab results reviewed, moderate risk due to COPD exacerbation"
+      "reasoning": "2 chronic conditions addressed (COPD exacerbation + hypertension), lab results reviewed, moderate risk"
     }
   ],
   "diagnoses": [
@@ -192,6 +202,11 @@ Return ONLY a JSON object with your optimal billing decision:
       "diagnosis": "Chronic obstructive pulmonary disease exacerbation",
       "icd10Code": "J44.1",
       "isPrimary": true
+    },
+    {
+      "diagnosis": "Hypertension",
+      "icd10Code": "I10",
+      "isPrimary": false
     }
   ]
 }`;
