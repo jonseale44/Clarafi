@@ -324,7 +324,7 @@ Return only the JSON object, no markdown formatting or additional text.`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",

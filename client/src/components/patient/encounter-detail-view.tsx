@@ -26,12 +26,15 @@ import { Patient } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { SOAPNoteEditor } from "@/components/ui/soap-note-editor";
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
-import { RealtimeSOAPIntegration, RealtimeSOAPRef } from "@/components/RealtimeSOAPIntegration";
+import {
+  RealtimeSOAPIntegration,
+  RealtimeSOAPRef,
+} from "@/components/RealtimeSOAPIntegration";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -57,25 +60,23 @@ const chartSections = [
 ];
 
 function AIDebugSection({ patientId }: { patientId: number }) {
-  const { data: assistantConfig, isLoading, error } = useQuery({
+  const {
+    data: assistantConfig,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: [`/api/patients/${patientId}/assistant`],
-    enabled: !!patientId
+    enabled: !!patientId,
   });
 
   if (isLoading) {
     return (
-      <div className="p-2 text-xs text-gray-500">
-        Loading assistant info...
-      </div>
+      <div className="p-2 text-xs text-gray-500">Loading assistant info...</div>
     );
   }
 
   if (error || !assistantConfig) {
-    return (
-      <div className="p-2 text-xs text-red-600">
-        No assistant found
-      </div>
-    );
+    return <div className="p-2 text-xs text-red-600">No assistant found</div>;
   }
 
   // Type the response data properly
@@ -85,13 +86,16 @@ function AIDebugSection({ patientId }: { patientId: number }) {
     <div className="p-2">
       <div className="text-xs space-y-2">
         <div>
-          <span className="font-medium">Assistant:</span> {config?.name || 'Unknown'}
+          <span className="font-medium">Assistant:</span>{" "}
+          {config?.name || "Unknown"}
         </div>
         <div>
-          <span className="font-medium">Model:</span> {config?.model || 'Unknown'}
+          <span className="font-medium">Model:</span>{" "}
+          {config?.model || "Unknown"}
         </div>
         <div>
-          <span className="font-medium">Thread:</span> {config?.thread_id ? 'Active' : 'None'}
+          <span className="font-medium">Thread:</span>{" "}
+          {config?.thread_id ? "Active" : "None"}
         </div>
         <Button size="sm" variant="outline" className="w-full text-xs">
           View Full Debug
@@ -118,13 +122,13 @@ export function EncounterDetailView({
   const useRealtimeAPI = true; // Real-time API enabled by default in background
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodes, setCptCodes] = useState<any[]>([]);
-  
+
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
-  
+
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  
+
   // Query client for cache invalidation
   const queryClient = useQueryClient();
 
@@ -145,59 +149,91 @@ export function EncounterDetailView({
     console.log(`🔍 [EncounterView] === SOAP NOTE COMPLETION ===`);
     console.log(`🔍 [EncounterView] Time: ${timestamp}`);
     console.log(`🔍 [EncounterView] Note length: ${note.length}`);
-    console.log(`🔍 [EncounterView] Patient: ${patient.id}, Encounter: ${encounterId}`);
-    console.log(`🔍 [EncounterView] About to save to encounter - checking for any triggered processing...`);
-    
+    console.log(
+      `🔍 [EncounterView] Patient: ${patient.id}, Encounter: ${encounterId}`,
+    );
+    console.log(
+      `🔍 [EncounterView] About to save to encounter - checking for any triggered processing...`,
+    );
+
     setSoapNote(note);
     if (editor && !editor.isDestroyed) {
       const formattedContent = formatSoapNoteContent(note);
       editor.commands.setContent(formattedContent);
     }
-    
+
     // Save the SOAP note to the encounter
     try {
       console.log(`🔍 [EncounterView] Calling SOAP save API at ${timestamp}`);
-      await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/soap-note`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      await fetch(
+        `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ soapNote: note }),
         },
-        body: JSON.stringify({ soapNote: note }),
-      });
-      console.log(`✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`);
+      );
+      console.log(
+        `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
+      );
       console.log(`🔍 [EncounterView] === SOAP SAVE COMPLETED ===`);
     } catch (error) {
-      console.error("❌ [EncounterView] Error saving Real-time SOAP note:", error);
+      console.error(
+        "❌ [EncounterView] Error saving Real-time SOAP note:",
+        error,
+      );
     }
   };
 
   const handleDraftOrdersReceived = (orders: any[]) => {
     setDraftOrders(orders);
-    console.log("📋 [EncounterView] Real-time draft orders received:", orders.length);
+    console.log(
+      "📋 [EncounterView] Real-time draft orders received:",
+      orders.length,
+    );
   };
 
   const handleCPTCodesReceived = async (cptData: any) => {
     if (cptData.cptCodes || cptData.diagnoses) {
       setCptCodes(cptData.cptCodes || []);
-      console.log("🏥 [EncounterView] Real-time CPT codes received:", (cptData.cptCodes || []).length);
-      console.log("🏥 [EncounterView] Real-time diagnoses received:", (cptData.diagnoses || []).length);
-      console.log("🔗 [EncounterView] Real-time mappings received:", (cptData.mappings || []).length);
-      
+      console.log(
+        "🏥 [EncounterView] Real-time CPT codes received:",
+        (cptData.cptCodes || []).length,
+      );
+      console.log(
+        "🏥 [EncounterView] Real-time diagnoses received:",
+        (cptData.diagnoses || []).length,
+      );
+      console.log(
+        "🔗 [EncounterView] Real-time mappings received:",
+        (cptData.mappings || []).length,
+      );
+
       // Refresh the encounter data to show the CPT codes in the CPT codes component
-      console.log("🔄 [EncounterView] Invalidating queries for patient:", patient.id, "encounter:", encounterId);
-      await queryClient.invalidateQueries({ 
-        queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
+      console.log(
+        "🔄 [EncounterView] Invalidating queries for patient:",
+        patient.id,
+        "encounter:",
+        encounterId,
+      );
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`],
       });
       console.log("🔄 [EncounterView] Query invalidation completed");
-      
+
       // Show enhanced toast notification
-      const highestCode = (cptData.cptCodes || []).reduce((highest: any, current: any) => {
-        return current.code > highest.code ? current : highest;
-      }, { code: '', complexity: '' });
-      
+      const highestCode = (cptData.cptCodes || []).reduce(
+        (highest: any, current: any) => {
+          return current.code > highest.code ? current : highest;
+        },
+        { code: "", complexity: "" },
+      );
+
       toast({
         title: "Advanced CPT Codes Generated",
-        description: `Optimized billing: ${(cptData.cptCodes || []).length} CPT codes, ${(cptData.diagnoses || []).length} diagnoses${highestCode.code ? ` (${highestCode.code} - ${highestCode.complexity})` : ''}`,
+        description: `Optimized billing: ${(cptData.cptCodes || []).length} CPT codes, ${(cptData.diagnoses || []).length} diagnoses${highestCode.code ? ` (${highestCode.code} - ${highestCode.complexity})` : ""}`,
       });
     }
   };
@@ -211,7 +247,8 @@ export function EncounterDetailView({
     ],
     editorProps: {
       attributes: {
-        class: "outline-none min-h-[500px] max-w-none whitespace-pre-wrap soap-editor",
+        class:
+          "outline-none min-h-[500px] max-w-none whitespace-pre-wrap soap-editor",
       },
     },
     content: "",
@@ -227,22 +264,24 @@ export function EncounterDetailView({
   // Function to format SOAP note content with proper headers and spacing
   const formatSoapNoteContent = (content: string) => {
     if (!content) return "";
-    
-    return content
-      // Convert markdown bold to HTML
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Convert single line breaks to HTML breaks
-      .replace(/\n/g, '<br/>')
-      // Aggressively clean up multiple consecutive breaks (2 or more)
-      .replace(/(<br\/>){2,}/g, '<br/>')
-      // Ensure SOAP headers have proper spacing before them but not excessive spacing after
-      .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>OBJECTIVE:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>ASSESSMENT.*?:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>PLAN:<\/strong>)/g, '<br/>$1')
-      .replace(/(<strong>ORDERS:<\/strong>)/g, '<br/>$1')
-      // Remove leading breaks
-      .replace(/^(<br\/>)+/, '');
+
+    return (
+      content
+        // Convert markdown bold to HTML
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        // Convert single line breaks to HTML breaks
+        .replace(/\n/g, "<br/>")
+        // Aggressively clean up multiple consecutive breaks (2 or more)
+        .replace(/(<br\/>){2,}/g, "<br/>")
+        // Ensure SOAP headers have proper spacing before them but not excessive spacing after
+        .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>OBJECTIVE:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>ASSESSMENT.*?:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>PLAN:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>ORDERS:<\/strong>)/g, "<br/>$1")
+        // Remove leading breaks
+        .replace(/^(<br\/>)+/, "")
+    );
   };
 
   // Effect to load existing SOAP note from encounter data
@@ -250,16 +289,18 @@ export function EncounterDetailView({
     if (encounter?.note && editor && !editor.isDestroyed) {
       // Load existing SOAP note from database
       const existingNote = encounter.note;
-      
+
       // Only update if the content is different from what's currently loaded
       const currentContent = editor.getHTML();
-      if (currentContent !== existingNote && existingNote.trim() !== '') {
+      if (currentContent !== existingNote && existingNote.trim() !== "") {
         setSoapNote(existingNote);
-        
+
         // Format the existing note for proper display
         const formattedContent = formatSoapNoteContent(existingNote);
         editor.commands.setContent(formattedContent);
-        console.log('📄 [EncounterView] Loaded existing SOAP note from encounter data');
+        console.log(
+          "📄 [EncounterView] Loaded existing SOAP note from encounter data",
+        );
       }
     }
   }, [encounter?.note, editor]);
@@ -268,7 +309,10 @@ export function EncounterDetailView({
   useEffect(() => {
     if (editor && soapNote && !editor.isDestroyed) {
       // Only update if this is new generated content (contains markdown)
-      if (soapNote.includes('**') && soapNote !== lastGeneratedContent.current) {
+      if (
+        soapNote.includes("**") &&
+        soapNote !== lastGeneratedContent.current
+      ) {
         const formattedContent = formatSoapNoteContent(soapNote);
         editor.commands.setContent(formattedContent);
         lastGeneratedContent.current = soapNote;
@@ -894,14 +938,16 @@ export function EncounterDetailView({
     }
 
     setIsRecording(false);
-    
+
     // Trigger Real-time SOAP generation after recording stops
     if (transcriptionBuffer && transcriptionBuffer.trim()) {
-      console.log("🩺 [EncounterView] Triggering Real-time SOAP generation after recording...");
-      
+      console.log(
+        "🩺 [EncounterView] Triggering Real-time SOAP generation after recording...",
+      );
+
       // Set transcription for Real-time SOAP component
       setTranscription(transcriptionBuffer);
-      
+
       // Trigger Real-time streaming SOAP generation
       if (realtimeSOAPRef.current) {
         realtimeSOAPRef.current.generateSOAPNote();
@@ -913,8 +959,6 @@ export function EncounterDetailView({
       });
     }
   };
-
-
 
   const generateSmartSuggestions = () => {
     setGptSuggestions(
@@ -932,7 +976,8 @@ export function EncounterDetailView({
       toast({
         variant: "destructive",
         title: "No Transcription",
-        description: "Please complete a recording before generating a SOAP note.",
+        description:
+          "Please complete a recording before generating a SOAP note.",
       });
       return;
     }
@@ -940,17 +985,20 @@ export function EncounterDetailView({
     setIsGeneratingSOAP(true);
     try {
       console.log("🩺 [EncounterView] Generating SOAP note...");
-      
-      const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+
+      const response = await fetch(
+        `/api/patients/${patient.id}/encounters/${encounterId}/generate-soap`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            transcription: transcriptionBuffer,
+            userRole: "provider",
+          }),
         },
-        body: JSON.stringify({
-          transcription: transcriptionBuffer,
-          userRole: "provider"
-        }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to generate SOAP note: ${response.statusText}`);
@@ -959,18 +1007,20 @@ export function EncounterDetailView({
       const data = await response.json();
       const formattedContent = formatSoapNoteContent(data.soapNote);
       setSoapNote(data.soapNote);
-      
+
       // Immediately update the editor with formatted content
       if (editor && !editor.isDestroyed) {
         editor.commands.setContent(formattedContent);
-        console.log("📝 [EncounterView] Updated editor with formatted SOAP note");
+        console.log(
+          "📝 [EncounterView] Updated editor with formatted SOAP note",
+        );
       }
-      
+
       toast({
         title: "SOAP Note Generated",
-        description: "Your SOAP note has been generated successfully. You can now edit and save it.",
+        description:
+          "Your SOAP note has been generated successfully. You can now edit and save it.",
       });
-
     } catch (error) {
       console.error("❌ [EncounterView] Error generating SOAP note:", error);
       toast({
@@ -989,7 +1039,8 @@ export function EncounterDetailView({
       toast({
         variant: "destructive",
         title: "No Content",
-        description: "Please generate or enter SOAP note content before saving.",
+        description:
+          "Please generate or enter SOAP note content before saving.",
       });
       return;
     }
@@ -997,20 +1048,23 @@ export function EncounterDetailView({
     setIsSavingSOAP(true);
     try {
       console.log("💾 [EncounterView] Saving SOAP note...");
-      
+
       // Get the current SOAP note content from the editor
       const currentContent = editor?.getHTML() || soapNote;
-      
+
       // Save to backend with physical exam learning analysis
-      const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/soap-note`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            soapNote: currentContent,
+          }),
         },
-        body: JSON.stringify({
-          soapNote: currentContent
-        }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to save SOAP note: ${response.statusText}`);
@@ -1018,23 +1072,23 @@ export function EncounterDetailView({
 
       const data = await response.json();
       console.log("✅ [EncounterView] SOAP note saved successfully:", data);
-      
+
       // Invalidate all relevant caches to ensure changes persist
       await queryClient.invalidateQueries({
-        queryKey: [`/api/encounters/${encounterId}`]
+        queryKey: [`/api/encounters/${encounterId}`],
       });
       await queryClient.invalidateQueries({
-        queryKey: [`/api/patients/${patient.id}/encounters`]
+        queryKey: [`/api/patients/${patient.id}/encounters`],
       });
       await queryClient.invalidateQueries({
-        queryKey: ["/api/dashboard/pending-encounters"]
-      });
-      
-      toast({
-        title: "SOAP Note Saved",
-        description: "Your SOAP note has been saved and analyzed for future encounters.",
+        queryKey: ["/api/dashboard/pending-encounters"],
       });
 
+      toast({
+        title: "SOAP Note Saved",
+        description:
+          "Your SOAP note has been saved and analyzed for future encounters.",
+      });
     } catch (error) {
       console.error("❌ [EncounterView] Error saving SOAP note:", error);
       toast({
@@ -1146,11 +1200,13 @@ export function EncounterDetailView({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="bg-white border-b border-gray-100 p-3 text-xs text-gray-600">
-                  {section.id === "encounters"
-                    ? "Current encounter in progress"
-                    : section.id === "ai-debug"
-                    ? <AIDebugSection patientId={patient.id} />
-                    : `${section.label} content`}
+                  {section.id === "encounters" ? (
+                    "Current encounter in progress"
+                  ) : section.id === "ai-debug" ? (
+                    <AIDebugSection patientId={patient.id} />
+                  ) : (
+                    `${section.label} content`
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -1178,7 +1234,9 @@ export function EncounterDetailView({
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">Real-Time Transcription</h2>
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                Real-Time Transcription
+              </h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-green-600">● Connected</span>
               </div>
@@ -1224,7 +1282,9 @@ export function EncounterDetailView({
           {/* AI Suggestions */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">AI Suggestions</h2>
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                AI Suggestions
+              </h2>
               <Button
                 onClick={generateSmartSuggestions}
                 size="sm"
@@ -1238,12 +1298,12 @@ export function EncounterDetailView({
             </div>
           </Card>
 
-
-
           {/* Note Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">Note</h2>
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                Note
+              </h2>
               <div className="flex items-center space-x-2">
                 {/* Real-time SOAP Integration */}
                 <RealtimeSOAPIntegration
@@ -1272,7 +1332,7 @@ export function EncounterDetailView({
                   onCPTCodesReceived={handleCPTCodesReceived}
                   isRealtimeEnabled={useRealtimeAPI}
                 />
-                
+
                 {isGeneratingSOAP && (
                   <div className="flex items-center text-sm text-blue-600">
                     <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />

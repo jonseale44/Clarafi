@@ -234,7 +234,7 @@ IMPORTANT INSTRUCTIONS:
     // Start all three processes simultaneously for maximum speed!
     console.log("🩺 [RealtimeSOAP] Starting SOAP generation...");
     const soapPromise = openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1",
       messages: [{ role: "user", content: soapPrompt }],
       temperature: 0.7,
       max_tokens: 4000,
@@ -249,7 +249,9 @@ IMPORTANT INSTRUCTIONS:
     );
 
     // Start CPT extraction immediately from transcription (concurrent with SOAP generation)
-    console.log("🏥 [RealtimeSOAP] Starting CPT codes extraction from transcription...");
+    console.log(
+      "🏥 [RealtimeSOAP] Starting CPT codes extraction from transcription...",
+    );
     const cptPromise = self.extractCPTFromTranscription(
       transcription,
       patientId,
@@ -260,20 +262,29 @@ IMPORTANT INSTRUCTIONS:
       async start(controller) {
         try {
           // Wait for all three processes concurrently
-          console.log("⏳ [RealtimeSOAP] Waiting for concurrent processes to complete...");
+          console.log(
+            "⏳ [RealtimeSOAP] Waiting for concurrent processes to complete...",
+          );
           const [soapCompletion, extractedOrders, extractedCPTData] =
             await Promise.all([soapPromise, ordersPromise, cptPromise]);
 
           console.log("✅ [RealtimeSOAP] All concurrent processes completed");
-          console.log(`📋 [RealtimeSOAP] Orders extracted: ${extractedOrders?.length || 0}`);
-          console.log(`🏥 [RealtimeSOAP] CPT data result:`, extractedCPTData ? 'Success' : 'Failed');
+          console.log(
+            `📋 [RealtimeSOAP] Orders extracted: ${extractedOrders?.length || 0}`,
+          );
+          console.log(
+            `🏥 [RealtimeSOAP] CPT data result:`,
+            extractedCPTData ? "Success" : "Failed",
+          );
 
           const soapNote = soapCompletion.choices[0]?.message?.content;
           if (!soapNote) {
             throw new Error("No SOAP note generated from OpenAI");
           }
 
-          console.log(`🩺 [RealtimeSOAP] SOAP note generated (${soapNote.length} chars)`);
+          console.log(
+            `🩺 [RealtimeSOAP] SOAP note generated (${soapNote.length} chars)`,
+          );
 
           // Send SOAP note immediately
           const completeData = JSON.stringify({
@@ -316,41 +327,70 @@ IMPORTANT INSTRUCTIONS:
           // Send CPT codes to frontend immediately if available
           console.log("🔍 [RealtimeSOAP] Checking CPT extraction results...");
           console.log("🔍 [RealtimeSOAP] extractedCPTData:", extractedCPTData);
-          
+
           if (extractedCPTData) {
-            console.log("🔍 [RealtimeSOAP] CPT codes found:", extractedCPTData.cptCodes?.length || 0);
-            console.log("🔍 [RealtimeSOAP] Diagnoses found:", extractedCPTData.diagnoses?.length || 0);
-            console.log("🔍 [RealtimeSOAP] CPT codes array:", extractedCPTData.cptCodes);
-            console.log("🔍 [RealtimeSOAP] Diagnoses array:", extractedCPTData.diagnoses);
+            console.log(
+              "🔍 [RealtimeSOAP] CPT codes found:",
+              extractedCPTData.cptCodes?.length || 0,
+            );
+            console.log(
+              "🔍 [RealtimeSOAP] Diagnoses found:",
+              extractedCPTData.diagnoses?.length || 0,
+            );
+            console.log(
+              "🔍 [RealtimeSOAP] CPT codes array:",
+              extractedCPTData.cptCodes,
+            );
+            console.log(
+              "🔍 [RealtimeSOAP] Diagnoses array:",
+              extractedCPTData.diagnoses,
+            );
           }
-          
+
           const hasCptCodes = extractedCPTData?.cptCodes?.length > 0;
           const hasDiagnoses = extractedCPTData?.diagnoses?.length > 0;
           console.log("🔍 [RealtimeSOAP] Has CPT codes:", hasCptCodes);
           console.log("🔍 [RealtimeSOAP] Has diagnoses:", hasDiagnoses);
-          console.log("🔍 [RealtimeSOAP] Condition check:", extractedCPTData && (hasCptCodes || hasDiagnoses));
-          
-          if (
-            extractedCPTData &&
-            (hasCptCodes || hasDiagnoses)
-          ) {
+          console.log(
+            "🔍 [RealtimeSOAP] Condition check:",
+            extractedCPTData && (hasCptCodes || hasDiagnoses),
+          );
+
+          if (extractedCPTData && (hasCptCodes || hasDiagnoses)) {
             console.log(
               `⚡ [RealtimeSOAP] Fast-extracted ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`,
             );
 
             // Save CPT data to encounter immediately
             console.log("💾 [RealtimeSOAP] Saving CPT data to encounter...");
-            console.log("💾 [RealtimeSOAP] Encounter ID:", parseInt(encounterId));
-            console.log("💾 [RealtimeSOAP] CPT codes to save:", extractedCPTData.cptCodes);
-            console.log("💾 [RealtimeSOAP] Diagnoses to save:", extractedCPTData.diagnoses);
-            
-            const updateResult = await storage.updateEncounter(parseInt(encounterId), {
-              cptCodes: extractedCPTData.cptCodes || [],
-              draftDiagnoses: extractedCPTData.diagnoses || [],
-            });
-            
-            console.log("💾 [RealtimeSOAP] Encounter update result:", updateResult);
-            console.log("✅ [RealtimeSOAP] CPT data saved to encounter database");
+            console.log(
+              "💾 [RealtimeSOAP] Encounter ID:",
+              parseInt(encounterId),
+            );
+            console.log(
+              "💾 [RealtimeSOAP] CPT codes to save:",
+              extractedCPTData.cptCodes,
+            );
+            console.log(
+              "💾 [RealtimeSOAP] Diagnoses to save:",
+              extractedCPTData.diagnoses,
+            );
+
+            const updateResult = await storage.updateEncounter(
+              parseInt(encounterId),
+              {
+                cptCodes: extractedCPTData.cptCodes || [],
+                draftDiagnoses: extractedCPTData.diagnoses || [],
+              },
+            );
+
+            console.log(
+              "💾 [RealtimeSOAP] Encounter update result:",
+              updateResult,
+            );
+            console.log(
+              "✅ [RealtimeSOAP] CPT data saved to encounter database",
+            );
 
             // Send CPT data to frontend immediately with automatic mappings
             console.log("📤 [RealtimeSOAP] Streaming CPT codes to frontend...");
@@ -363,9 +403,13 @@ IMPORTANT INSTRUCTIONS:
             controller.enqueue(
               new TextEncoder().encode(`data: ${cptData}\n\n`),
             );
-            console.log("✅ [RealtimeSOAP] CPT codes streamed to frontend with automatic mappings");
+            console.log(
+              "✅ [RealtimeSOAP] CPT codes streamed to frontend with automatic mappings",
+            );
           } else {
-            console.log("⚠️ [RealtimeSOAP] No CPT codes or diagnoses found to stream");
+            console.log(
+              "⚠️ [RealtimeSOAP] No CPT codes or diagnoses found to stream",
+            );
           }
 
           // Start remaining extractions in parallel immediately after SOAP delivery
@@ -512,7 +556,9 @@ ${recentVitals}`;
       console.log(
         `🏥 [RealtimeSOAP] Extracting CPT codes from transcription for patient ${patientId}, encounter ${encounterId}`,
       );
-      console.log(`🏥 [RealtimeSOAP] Transcription length: ${transcription.length} characters`);
+      console.log(
+        `🏥 [RealtimeSOAP] Transcription length: ${transcription.length} characters`,
+      );
 
       // Get patient context for accurate coding
       const patientContext = await this.getPatientContext(patientId);
@@ -523,16 +569,27 @@ ${recentVitals}`;
 
       // Extract CPT codes with patient context for billing optimization
       console.log(`🏥 [RealtimeSOAP] Starting advanced CPT extraction...`);
-      console.log(`📄 [RealtimeSOAP] Transcription being sent to CPT extractor (${transcription.length} chars):`);
-      console.log(`📋 [RealtimeSOAP] Transcription content preview:`, transcription.substring(0, 1000));
-      console.log(`🏥 [RealtimeSOAP] Patient context being sent:`, JSON.stringify(patientContext, null, 2));
-      
-      const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(
-        transcription, 
-        patientContext
+      console.log(
+        `📄 [RealtimeSOAP] Transcription being sent to CPT extractor (${transcription.length} chars):`,
+      );
+      console.log(
+        `📋 [RealtimeSOAP] Transcription content preview:`,
+        transcription.substring(0, 1000),
+      );
+      console.log(
+        `🏥 [RealtimeSOAP] Patient context being sent:`,
+        JSON.stringify(patientContext, null, 2),
       );
 
-      console.log(`🏥 [RealtimeSOAP] CPT extraction completed. Result:`, extractedCPTData);
+      const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(
+        transcription,
+        patientContext,
+      );
+
+      console.log(
+        `🏥 [RealtimeSOAP] CPT extraction completed. Result:`,
+        extractedCPTData,
+      );
 
       if (
         extractedCPTData &&
@@ -545,7 +602,9 @@ ${recentVitals}`;
         return extractedCPTData;
       }
 
-      console.log(`🏥 [RealtimeSOAP] No CPT codes found, returning empty result`);
+      console.log(
+        `🏥 [RealtimeSOAP] No CPT codes found, returning empty result`,
+      );
       return { cptCodes: [], diagnoses: [] };
     } catch (error) {
       console.error(
@@ -587,7 +646,10 @@ ${recentVitals}`;
         const today = new Date();
         patientAge = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
           patientAge--;
         }
       }
@@ -595,26 +657,30 @@ ${recentVitals}`;
       // A patient is new if they have 1 or fewer encounters (current one)
       // Medicare defines new patient as no professional services within past 3 years
       const isNewPatient = patientEncounters.length <= 1;
-      
-      console.log(`🏥 [Patient Context] Patient ${patientId}: age ${patientAge}, ${patientEncounters.length} encounters, isNew: ${isNewPatient}`);
+
+      console.log(
+        `🏥 [Patient Context] Patient ${patientId}: age ${patientAge}, ${patientEncounters.length} encounters, isNew: ${isNewPatient}`,
+      );
 
       return {
         isNewPatient,
         previousEncounterCount: patientEncounters.length,
-        medicalHistory: diagnosisList.map(d => d.diagnosis),
-        currentProblems: diagnosisList.filter(d => d.status === 'active').map(d => d.diagnosis),
+        medicalHistory: diagnosisList.map((d) => d.diagnosis),
+        currentProblems: diagnosisList
+          .filter((d) => d.status === "active")
+          .map((d) => d.diagnosis),
         patientAge: patientAge,
-        dateOfBirth: dateOfBirth
+        dateOfBirth: dateOfBirth,
       };
     } catch (error) {
-      console.error('Error getting patient context:', error);
+      console.error("Error getting patient context:", error);
       return {
         isNewPatient: false,
         previousEncounterCount: 0,
         medicalHistory: [],
         currentProblems: [],
         patientAge: 0,
-        dateOfBirth: ""
+        dateOfBirth: "",
       };
     }
   }
