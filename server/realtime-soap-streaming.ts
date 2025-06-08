@@ -237,7 +237,7 @@ IMPORTANT INSTRUCTIONS:
       model: "gpt-4o",
       messages: [{ role: "user", content: soapPrompt }],
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: 4000,
     });
 
     // Start draft orders extraction immediately using the same transcription
@@ -558,6 +558,13 @@ ${recentVitals}`;
 
   private async getPatientContext(patientId: number) {
     try {
+      // Get patient basic information including date of birth
+      const patientData = await db
+        .select()
+        .from(patients)
+        .where(eq(patients.id, patientId))
+        .limit(1);
+
       // Get encounter count for this patient (excluding current encounter)
       const patientEncounters = await db
         .select()
@@ -571,17 +578,33 @@ ${recentVitals}`;
         .where(eq(diagnoses.patientId, patientId))
         .limit(10);
 
+      // Calculate patient age from date of birth
+      let patientAge = 0;
+      let dateOfBirth = "";
+      if (patientData.length > 0 && patientData[0].dateOfBirth) {
+        dateOfBirth = patientData[0].dateOfBirth;
+        const birthDate = new Date(dateOfBirth);
+        const today = new Date();
+        patientAge = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          patientAge--;
+        }
+      }
+
       // A patient is new if they have 1 or fewer encounters (current one)
       // Medicare defines new patient as no professional services within past 3 years
       const isNewPatient = patientEncounters.length <= 1;
       
-      console.log(`🏥 [Patient Context] Patient ${patientId}: ${patientEncounters.length} encounters, isNew: ${isNewPatient}`);
+      console.log(`🏥 [Patient Context] Patient ${patientId}: age ${patientAge}, ${patientEncounters.length} encounters, isNew: ${isNewPatient}`);
 
       return {
         isNewPatient,
         previousEncounterCount: patientEncounters.length,
         medicalHistory: diagnosisList.map(d => d.diagnosis),
-        currentProblems: diagnosisList.filter(d => d.status === 'active').map(d => d.diagnosis)
+        currentProblems: diagnosisList.filter(d => d.status === 'active').map(d => d.diagnosis),
+        patientAge: patientAge,
+        dateOfBirth: dateOfBirth
       };
     } catch (error) {
       console.error('Error getting patient context:', error);
@@ -589,7 +612,9 @@ ${recentVitals}`;
         isNewPatient: false,
         previousEncounterCount: 0,
         medicalHistory: [],
-        currentProblems: []
+        currentProblems: [],
+        patientAge: 0,
+        dateOfBirth: ""
       };
     }
   }

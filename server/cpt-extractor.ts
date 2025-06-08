@@ -35,6 +35,8 @@ interface PatientContext {
   previousEncounterCount: number;
   medicalHistory: string[];
   currentProblems: string[];
+  patientAge?: number;
+  dateOfBirth?: string;
 }
 
 export class CPTExtractor {
@@ -166,10 +168,15 @@ Your goal is to maximize legitimate billing while ensuring accuracy and complian
       )
       .join("\n");
 
+    // Generate age-specific preventive medicine guidance
+    const patientAge = patientContext?.patientAge;
+    const ageSpecificGuidance = patientAge ? this.getAgeSpecificPreventiveGuidance(patientAge, isNewPatient) : "";
+
     return `
 MEDICARE BILLING OPTIMIZATION ANALYSIS
 
 PATIENT STATUS: ${visitType}
+${patientAge ? `PATIENT AGE: ${patientAge} years` : ""}
 ${
   patientContext?.previousEncounterCount !== undefined
     ? `Previous encounters: ${patientContext.previousEncounterCount}`
@@ -180,6 +187,8 @@ ${
     ? `Medical history: ${patientContext.medicalHistory.slice(0, 5).join(", ")}`
     : ""
 }
+
+${ageSpecificGuidance}
 
 CLINICAL DOCUMENTATION:
 ${clinicalText}
@@ -323,6 +332,43 @@ Return ONLY a JSON object with this exact structure:
 }
 
 VALIDATION CHECK: Count the conditions you mentioned in your reasoning. Your diagnoses array MUST contain the same number of conditions. If your reasoning mentions "2 conditions" but you only list 1 diagnosis, you have made an error.`;
+  }
+
+  private getAgeSpecificPreventiveGuidance(patientAge: number, isNewPatient: boolean): string {
+    const preventivePrefix = isNewPatient ? "993" : "993";
+    let ageCode = "";
+    let ageRange = "";
+    
+    if (patientAge < 1) {
+      ageCode = isNewPatient ? "99381" : "99391";
+      ageRange = "infant (under 1 year)";
+    } else if (patientAge >= 1 && patientAge <= 4) {
+      ageCode = isNewPatient ? "99382" : "99392";
+      ageRange = "early childhood (1-4 years)";
+    } else if (patientAge >= 5 && patientAge <= 11) {
+      ageCode = isNewPatient ? "99383" : "99393";
+      ageRange = "late childhood (5-11 years)";
+    } else if (patientAge >= 12 && patientAge <= 17) {
+      ageCode = isNewPatient ? "99384" : "99394";
+      ageRange = "adolescent (12-17 years)";
+    } else if (patientAge >= 18 && patientAge <= 39) {
+      ageCode = isNewPatient ? "99385" : "99395";
+      ageRange = "young adult (18-39 years)";
+    } else if (patientAge >= 40 && patientAge <= 64) {
+      ageCode = isNewPatient ? "99386" : "99396";
+      ageRange = "adult (40-64 years)";
+    } else if (patientAge >= 65) {
+      ageCode = isNewPatient ? "99387" : "99397";
+      ageRange = "senior (65+ years)";
+    }
+
+    return `
+AGE-SPECIFIC PREVENTIVE MEDICINE CODING:
+For patient age ${patientAge} years, the correct preventive medicine code is:
+${ageCode}: Preventive medicine, ${isNewPatient ? 'new' : 'established'} patient, ${ageRange}
+Medicare Rate: $${CPT_REIMBURSEMENT_RATES[ageCode] || "N/A"}
+
+CRITICAL: Always use the age-appropriate preventive medicine code. Using incorrect age ranges will result in claim denials.`;
   }
 
   private generateAutomaticMappings(
