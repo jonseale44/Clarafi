@@ -307,13 +307,18 @@ CRITICAL EXTRACTION RULES:
 10. ROUTES: Use standard administration routes for safety verification
 
 DEFAULTS FOR MISSING INFO:
-- Medication quantity: 30 (for 30-day supply)
-- Medication refills: 0 (no refills unless specified)
-- Medication days_supply: 30
-- Lab specimen_type: "blood" (most common)
-- Lab priority: "routine"
-- Imaging priority: "routine"
-- Referral urgency: "routine"
+- For medications: 
+  * Include generic and brand names, dosages, frequencies, quantities
+  * Default to 90-day TOTAL supply (including refills) unless duration is specified
+  * For once daily: 30 tablets with 2 refills (30+30+30=90 day supply)
+  * For twice daily: 60 tablets with 2 refills (60+60+60=180 tablets for 90 days)
+  * For three times daily: 90 tablets with 2 refills (90+90+90=270 tablets for 90 days)
+  * If specific duration mentioned (e.g., "for 5 days", "7 day course"), calculate exact quantity with 0 refills
+  * If user specifies exact quantity/refills, use those values instead of defaults
+- For labs: Recognize common abbreviations (CMP = Comprehensive Metabolic Panel, CBC = Complete Blood Count, etc.)
+- For imaging: Recognize abbreviations (CXR = Chest X-ray, CT = Computed Tomography, etc.)
+- For referrals: Extract specialty consultations mentioned
+- Set appropriate defaults for missing information
 
 Return only the JSON object, no markdown formatting or additional text.`;
 
