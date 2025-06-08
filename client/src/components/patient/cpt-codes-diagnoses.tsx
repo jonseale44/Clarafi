@@ -552,6 +552,36 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
           </div>
         ) : (
           <div className="space-y-6">
+            {/* Debug Information Panel */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Info className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Debug Information</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-xs">
+                <div>
+                  <span className="font-medium">CPT Codes:</span> {cptCodes.length}
+                  <div className="text-blue-600">
+                    {cptCodes.map(cpt => `${cpt.code} (${cpt.id.slice(-8)})`).join(', ')}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium">Diagnoses:</span> {diagnoses.length}
+                  <div className="text-blue-600">
+                    {diagnoses.map(diag => `${diag.icd10Code} (${diag.id.slice(-8)})`).join(', ')}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium">Active Mappings:</span> {mappings.filter(m => m.selected).length} / {mappings.length}
+                  <div className="text-blue-600">
+                    Selected: {mappings.filter(m => m.selected).map(m => 
+                      `${m.diagnosisId.slice(-4)}-${m.cptCodeId.slice(-4)}`
+                    ).join(', ')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* CPT Codes and Diagnoses Mapping Table */}
             <TooltipProvider>
               <div className="border rounded-lg overflow-hidden">
@@ -708,13 +738,14 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                     ))}
                     <tr>
                       <td className="px-4 py-4 border-r">
-                        <Button size="sm" variant="ghost" onClick={addDiagnosis} className="w-full justify-start">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Diagnosis
-                        </Button>
+                        <DiagnosisAutocomplete
+                          placeholder="Add diagnosis..."
+                          onSelect={addDiagnosisFromAutocomplete}
+                          className="w-full"
+                        />
                       </td>
-                      {cptCodes.map((_, index) => (
-                        <td key={index} className="px-3 py-4 border-r"></td>
+                      {cptCodes.map((cpt) => (
+                        <td key={`empty-${cpt.id}`} className="px-3 py-4 border-r"></td>
                       ))}
                       <td className="px-3 py-4"></td>
                     </tr>
