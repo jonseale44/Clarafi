@@ -296,11 +296,8 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                       Diagnoses (ICD-10)
                     </th>
                     {cptCodes.map((cpt, index) => (
-                      <th key={index} className="px-3 py-3 text-center text-sm font-medium text-gray-900 border-r min-w-[120px]">
-                        <div className="space-y-1">
-                          <div className="font-mono text-xs">{cpt.code}</div>
-                          <div className="text-xs text-gray-600 line-clamp-2">{cpt.description}</div>
-                        </div>
+                      <th key={index} className="px-3 py-3 text-center text-sm font-medium text-gray-900 border-r min-w-[80px]">
+                        <div className="font-mono text-sm">{cpt.code}</div>
                       </th>
                     ))}
                     <th className="px-3 py-3 text-center text-sm font-medium text-gray-900">
