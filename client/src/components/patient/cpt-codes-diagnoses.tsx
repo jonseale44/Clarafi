@@ -74,51 +74,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Generate intelligent mappings using the same SOAP analysis logic
-  const generateIntelligentMappingsFromSOAP = async (cptCodes: CPTCode[], diagnoses: DiagnosisCode[]) => {
-    try {
-      console.log('🧠 [CPTComponent] Generating intelligent mappings from SOAP analysis');
-      
-      // Get the current SOAP note to analyze for intelligent mappings
-      const soapResponse = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/soap-note`);
-      if (!soapResponse.ok) {
-        console.log('🧠 [CPTComponent] No SOAP note found, using basic clinical logic');
-        // Fallback to basic clinical logic if no SOAP note
-        initializeMappings(cptCodes, diagnoses);
-        return;
-      }
-      
-      const { soapNote } = await soapResponse.json();
-      
-      // Use the same GPT analysis that "Generate from SOAP" uses
-      const response = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/extract-cpt`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ soapNote }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.mappings && data.mappings.length > 0) {
-          console.log('🧠 [CPTComponent] Using GPT intelligent mappings for consistency');
-          initializeMappings(cptCodes, diagnoses, data.mappings);
-        } else {
-          console.log('🧠 [CPTComponent] No GPT mappings available, using basic logic');
-          initializeMappings(cptCodes, diagnoses);
-        }
-      } else {
-        // Fallback to basic initialization
-        initializeMappings(cptCodes, diagnoses);
-      }
-    } catch (error) {
-      console.error('🧠 [CPTComponent] Error generating intelligent mappings:', error);
-      // Fallback to basic initialization
-      initializeMappings(cptCodes, diagnoses);
-    }
-  };
-
   // Fetch existing CPT codes and diagnoses for the encounter
   const { data: encounterData, isLoading } = useQuery({
     queryKey: [`/api/patients/${patientId}/encounters/${encounterId}`],
@@ -182,59 +137,50 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
         const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(encounter.cptCodes, encounter.draftDiagnoses);
         initializeMappings(convertedCPTCodes, convertedDiagnoses);
         
-        // Use the same mapping logic as "Generate from SOAP" to ensure consistency
+        // Apply intelligent diagnosis-to-CPT associations with unique IDs
         setTimeout(() => {
-          // Generate a fresh SOAP note analysis to get intelligent mappings
-          generateIntelligentMappingsFromSOAP(convertedCPTCodes, convertedDiagnoses);
+          const intelligentMappings: CPTDiagnosisMapping[] = [];
+          convertedDiagnoses.forEach((diagnosis) => {
+            convertedCPTCodes.forEach((cpt) => {
+              // Define intelligent associations based on clinical logic
+              let shouldSelect = false;
+              
+              // Problem-focused E&M codes (99212-99215, 99202-99205) pair with clinical diagnoses
+              if (['99212', '99213', '99214', '99215', '99202', '99203', '99204', '99205'].includes(cpt.code)) {
+                // Associate with non-wellness diagnoses (not Z00.xx)
+                shouldSelect = !diagnosis.icd10Code?.startsWith('Z00');
+              }
+              
+              // Preventive medicine codes (99381-99397) pair with wellness diagnoses
+              if (['99381', '99382', '99383', '99384', '99385', '99386', '99387',
+                   '99391', '99392', '99393', '99394', '99395', '99396', '99397'].includes(cpt.code)) {
+                // Associate only with Z00.xx (wellness) diagnoses
+                shouldSelect = diagnosis.icd10Code?.startsWith('Z00');
+              }
+              
+              // Procedure codes (17110, 17111) pair with specific diagnoses
+              if (['17110', '17111'].includes(cpt.code)) {
+                // Associate with wart/lesion diagnoses (B07.xx, D23.xx, etc.)
+                shouldSelect = diagnosis.icd10Code?.startsWith('B07') || 
+                              diagnosis.icd10Code?.startsWith('D23') ||
+                              diagnosis.diagnosis?.toLowerCase().includes('wart') ||
+                              diagnosis.diagnosis?.toLowerCase().includes('lesion');
+              }
+              
+              intelligentMappings.push({
+                diagnosisId: diagnosis.id,
+                cptCodeId: cpt.id,
+                selected: shouldSelect
+              });
+            });
+          });
+          setMappings(intelligentMappings);
+          console.log("🔗 [CPTComponent] Applied intelligent clinical mappings with unique IDs:", 
+                     intelligentMappings.filter(m => m.selected).length, "selected");
         }, 100);
       }
     }
   }, [encounterData]);
-
-  // Generate intelligent mappings using the same SOAP analysis logic
-  const generateIntelligentMappingsFromSOAP = async (cptCodes: CPTCode[], diagnoses: DiagnosisCode[]) => {
-    try {
-      console.log('🧠 [CPTComponent] Generating intelligent mappings from SOAP analysis');
-      
-      // Get the current SOAP note to analyze for intelligent mappings
-      const soapResponse = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/soap-note`);
-      if (!soapResponse.ok) {
-        console.log('🧠 [CPTComponent] No SOAP note found, using basic clinical logic');
-        // Fallback to basic clinical logic if no SOAP note
-        initializeMappings(cptCodes, diagnoses);
-        return;
-      }
-      
-      const { soapNote } = await soapResponse.json();
-      
-      // Use the same GPT analysis that "Generate from SOAP" uses
-      const response = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/extract-cpt`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ soapNote }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.mappings && data.mappings.length > 0) {
-          console.log('🧠 [CPTComponent] Using GPT intelligent mappings for consistency');
-          initializeMappings(cptCodes, diagnoses, data.mappings);
-        } else {
-          console.log('🧠 [CPTComponent] No GPT mappings available, using basic logic');
-          initializeMappings(cptCodes, diagnoses);
-        }
-      } else {
-        // Fallback to basic initialization
-        initializeMappings(cptCodes, diagnoses);
-      }
-    } catch (error) {
-      console.error('🧠 [CPTComponent] Error generating intelligent mappings:', error);
-      // Fallback to basic initialization
-      initializeMappings(cptCodes, diagnoses);
-    }
-  };
 
   // Generate CPT codes automatically from SOAP note
   const generateCPTCodes = async () => {
