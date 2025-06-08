@@ -299,6 +299,26 @@ Return ONLY a JSON object with this exact structure:
       "icd10Code": "B07.9",
       "isPrimary": false
     }
+  ],
+  "intelligentMappings": [
+    {
+      "diagnosisIndex": 0,
+      "cptIndex": 0,
+      "clinicalRationale": "Respiratory symptoms require problem-focused E&M evaluation",
+      "shouldSelect": true
+    },
+    {
+      "diagnosisIndex": 1,
+      "cptIndex": 1,
+      "clinicalRationale": "Wellness examination maps to preventive medicine service",
+      "shouldSelect": true
+    },
+    {
+      "diagnosisIndex": 2,
+      "cptIndex": 2,
+      "clinicalRationale": "Wart removal procedure directly treats viral warts diagnosis",
+      "shouldSelect": true
+    }
   ]
 }
 
