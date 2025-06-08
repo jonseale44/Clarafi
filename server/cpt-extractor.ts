@@ -28,6 +28,7 @@ interface ExtractedCPTData {
   cptCodes: CPTCode[];
   diagnoses: DiagnosisCode[];
   mappings?: DiagnosisMapping[];
+  intelligentMappings?: any[];
 }
 
 interface PatientContext {
