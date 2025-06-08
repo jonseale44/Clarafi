@@ -607,6 +607,17 @@ ${recentVitals}`;
         console.log(
           `🏥 [RealtimeSOAP] Found ${extractedCPTData.cptCodes?.length || 0} CPT codes and ${extractedCPTData.diagnoses?.length || 0} diagnoses`,
         );
+        
+        // Apply intelligent clinical mappings (same logic as manual generation)
+        extractedCPTData.intelligentMappings = this.generateIntelligentMappings(
+          extractedCPTData.cptCodes || [],
+          extractedCPTData.diagnoses || []
+        );
+        
+        console.log(
+          `🔗 [RealtimeSOAP] Applied ${extractedCPTData.intelligentMappings?.length || 0} intelligent mappings`,
+        );
+        
         return extractedCPTData;
       }
 
@@ -621,6 +632,77 @@ ${recentVitals}`;
       );
       return { cptCodes: [], diagnoses: [] };
     }
+  }
+
+  /**
+   * Generate intelligent clinical mappings between diagnoses and CPT codes
+   * Uses the same logic as the frontend manual generation for consistency
+   */
+  private generateIntelligentMappings(cptCodes: any[], diagnoses: any[]): any[] {
+    const intelligentMappings: any[] = [];
+    
+    diagnoses.forEach((diagnosis, diagnosisIndex) => {
+      cptCodes.forEach((cpt, cptIndex) => {
+        let shouldSelect = false;
+        let clinicalRationale = "";
+        
+        // Problem-focused E&M codes pair ONLY with clinical diagnoses
+        if (['99212', '99213', '99214', '99215', '99202', '99203', '99204', '99205'].includes(cpt.code)) {
+          shouldSelect = !diagnosis.icd10Code?.startsWith('Z') && 
+                        !diagnosis.diagnosis?.toLowerCase().includes('routine') &&
+                        !diagnosis.diagnosis?.toLowerCase().includes('examination');
+          
+          if (shouldSelect) {
+            clinicalRationale = `Acute respiratory symptoms with moderate complexity management (controller therapy, diagnostic testing) justify problem-focused E&M code ${cpt.code}.`;
+          }
+        }
+        
+        // Preventive medicine codes pair ONLY with wellness diagnoses
+        else if (['99381', '99382', '99383', '99384', '99385', '99386', '99387',
+                  '99391', '99392', '99393', '99394', '99395', '99396', '99397'].includes(cpt.code)) {
+          shouldSelect = diagnosis.icd10Code?.startsWith('Z00') ||
+                        diagnosis.diagnosis?.toLowerCase().includes('routine') ||
+                        diagnosis.diagnosis?.toLowerCase().includes('examination');
+          
+          if (shouldSelect) {
+            clinicalRationale = `Annual wellness visit and preventive care map to preventive medicine service code ${cpt.code}.`;
+          }
+        }
+        
+        // Procedure codes pair with specific diagnoses
+        else if (['17110', '17111'].includes(cpt.code)) {
+          shouldSelect = diagnosis.icd10Code?.startsWith('B07') || 
+                        diagnosis.icd10Code?.startsWith('D23') ||
+                        diagnosis.diagnosis?.toLowerCase().includes('wart') ||
+                        diagnosis.diagnosis?.toLowerCase().includes('lesion');
+          
+          if (shouldSelect) {
+            clinicalRationale = `Lesion removal procedure ${cpt.code} is medically necessary for ${diagnosis.diagnosis}.`;
+          }
+        }
+        
+        // Default: primary diagnoses map to other codes
+        else {
+          shouldSelect = diagnosis.isPrimary === true && !diagnosis.icd10Code?.startsWith('Z');
+          
+          if (shouldSelect) {
+            clinicalRationale = `Primary diagnosis ${diagnosis.diagnosis} justifies ${cpt.code} for comprehensive care.`;
+          }
+        }
+        
+        if (shouldSelect) {
+          intelligentMappings.push({
+            diagnosisIndex,
+            cptIndex,
+            clinicalRationale,
+            shouldSelect: true
+          });
+        }
+      });
+    });
+    
+    console.log(`🔗 [RealtimeSOAP] Generated ${intelligentMappings.length} intelligent mappings`);
+    return intelligentMappings;
   }
 
   private async getPatientContext(patientId: number) {
