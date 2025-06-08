@@ -26,6 +26,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { CPTAutocomplete } from "@/components/ui/cpt-autocomplete";
+import { DiagnosisAutocomplete } from "@/components/ui/diagnosis-autocomplete";
 import { getCPTCodeByCode, type CPTCodeData } from "@/data/cpt-codes";
 
 interface CPTCode {
@@ -319,7 +320,37 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
     });
   };
 
-  // Add new diagnosis
+  // Add new diagnosis from autocomplete
+  const addDiagnosisFromAutocomplete = (diagnosisData: { code: string; description: string; category?: string }) => {
+    console.log("➕ [CPTComponent] Adding diagnosis from autocomplete:", diagnosisData);
+    const newDiagnosis: DiagnosisCode = {
+      id: generateId(),
+      diagnosis: diagnosisData.description,
+      icd10Code: diagnosisData.code,
+      isPrimary: false
+    };
+    setDiagnoses(prev => {
+      const updated = [...prev, newDiagnosis];
+      console.log("➕ [CPTComponent] Updated diagnoses list:", updated.length);
+      return updated;
+    });
+    
+    // Initialize mappings for the new diagnosis
+    setMappings(prev => {
+      const newMappings = [...prev];
+      cptCodes.forEach((cpt) => {
+        newMappings.push({
+          diagnosisId: newDiagnosis.id,
+          cptCodeId: cpt.id,
+          selected: false
+        });
+      });
+      console.log("🔗 [CPTComponent] Added mappings for new diagnosis:", newMappings.length);
+      return newMappings;
+    });
+  };
+
+  // Add new diagnosis manually
   const addDiagnosis = () => {
     const newDiagnosis: DiagnosisCode = {
       id: generateId(),
@@ -603,7 +634,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {diagnoses.map((diagnosis, diagIndex) => (
-                      <tr key={diagIndex} className="hover:bg-gray-50">
+                      <tr key={diagnosis.id} className="hover:bg-gray-50">
                         <td className="px-4 py-4 border-r">
                           {editingDiagnosis === diagIndex ? (
                             <div className="space-y-2">
@@ -632,7 +663,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                             <div className="group space-y-1">
                               <div
                                 className="font-medium text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                onClick={() => startEditingDiagnosis(diagIndex)}
+                                onClick={() => startEditingDiagnosis(diagnosis.id)}
                               >
                                 {diagnosis.diagnosis}
                               </div>
@@ -644,7 +675,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => deleteDiagnosis(diagIndex)}
+                                  onClick={() => deleteDiagnosis(diagnosis.id)}
                                   className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-red-500 hover:text-red-700"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -668,7 +699,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                           <Button 
                             size="sm" 
                             variant="ghost"
-                            onClick={() => startEditingDiagnosis(diagIndex)}
+                            onClick={() => startEditingDiagnosis(diagnosis.id)}
                           >
                             <Edit2 className="h-4 w-4" />
                           </Button>
