@@ -82,6 +82,29 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       } else {
         console.log("🔍 [CPTComponent] No diagnoses found, keeping existing:", diagnoses.length);
       }
+      
+      // Initialize mappings with real-time data if both CPT codes and diagnoses are present
+      if (encounter.cptCodes && encounter.draftDiagnoses && 
+          encounter.cptCodes.length > 0 && encounter.draftDiagnoses.length > 0) {
+        console.log("🔗 [CPTComponent] Initializing mappings for real-time data");
+        // For real-time data, automatically select all mappings since GPT already decided they belong together
+        initializeMappings(encounter.cptCodes, encounter.draftDiagnoses);
+        // Auto-select all combinations for real-time data
+        setTimeout(() => {
+          const autoMappings: CPTDiagnosisMapping[] = [];
+          encounter.draftDiagnoses.forEach((_: any, diagIndex: number) => {
+            encounter.cptCodes.forEach((_: any, cptIndex: number) => {
+              autoMappings.push({
+                diagnosisId: `${diagIndex}`,
+                cptCodeId: `${cptIndex}`,
+                selected: true
+              });
+            });
+          });
+          setMappings(autoMappings);
+          console.log("🔗 [CPTComponent] Auto-selected all real-time mappings");
+        }, 100);
+      }
     }
   }, [encounterData]);
 
@@ -114,10 +137,10 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       setCPTCodes(data.cptCodes || []);
       setDiagnoses(data.diagnoses || []);
       
-      // Use GPT's intelligent mappings if provided, otherwise initialize empty
+      // Use GPT's intelligent mappings to automatically select associations
       if (data.mappings && data.mappings.length > 0) {
-        console.log('🔗 [CPTComponent] Using GPT mappings:', data.mappings);
-        setMappings(convertGPTMappingsToUI(data.mappings, data.cptCodes || [], data.diagnoses || []));
+        console.log('🔗 [CPTComponent] Using GPT automatic mappings:', data.mappings);
+        initializeMappings(data.cptCodes || [], data.diagnoses || [], data.mappings);
       } else {
         console.log('🔗 [CPTComponent] No GPT mappings, initializing empty');
         initializeMappings(data.cptCodes || [], data.diagnoses || []);
@@ -142,18 +165,33 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
   };
 
   // Initialize mappings between diagnoses and CPT codes
-  const initializeMappings = (cptCodes: CPTCode[], diagnoses: DiagnosisCode[]) => {
+  const initializeMappings = (cptCodes: CPTCode[], diagnoses: DiagnosisCode[], gptMappings?: any[]) => {
     const newMappings: CPTDiagnosisMapping[] = [];
     diagnoses.forEach((diagnosis, diagIndex) => {
       cptCodes.forEach((cpt, cptIndex) => {
+        // Check if GPT selected this combination
+        let isSelected = false;
+        if (gptMappings) {
+          const gptMapping = gptMappings.find(m => 
+            m.diagnosisId === diagnosis.icd10Code && 
+            m.cptCodes.includes(cpt.code) && 
+            m.isSelected
+          );
+          isSelected = !!gptMapping;
+        }
+        
         newMappings.push({
           diagnosisId: `${diagIndex}`,
           cptCodeId: `${cptIndex}`,
-          selected: false
+          selected: isSelected
         });
       });
     });
     setMappings(newMappings);
+    
+    if (gptMappings) {
+      console.log('🔗 [CPTComponent] Applied GPT automatic selections to', newMappings.filter(m => m.selected).length, 'mappings');
+    }
   };
 
   // Toggle mapping between diagnosis and CPT code
