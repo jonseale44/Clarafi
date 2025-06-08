@@ -248,33 +248,26 @@ IMPORTANT INSTRUCTIONS:
       parseInt(encounterId),
     );
 
-    // Start CPT extraction immediately from transcription (concurrent with SOAP generation)
+    // Wait for SOAP note generation first, then extract CPT codes from SOAP
     console.log(
-      "🏥 [RealtimeSOAP] Starting CPT codes extraction from transcription...",
-    );
-    const cptPromise = self.extractCPTFromTranscription(
-      transcription,
-      patientId,
-      parseInt(encounterId),
+      "🏥 [RealtimeSOAP] Will extract CPT codes from generated SOAP note...",
     );
 
     return new ReadableStream({
       async start(controller) {
         try {
-          // Wait for all three processes concurrently
+          // Wait for SOAP generation and orders extraction
           console.log(
-            "⏳ [RealtimeSOAP] Waiting for concurrent processes to complete...",
+            "⏳ [RealtimeSOAP] Waiting for SOAP generation and orders extraction...",
           );
-          const [soapCompletion, extractedOrders, extractedCPTData] =
-            await Promise.all([soapPromise, ordersPromise, cptPromise]);
+          const [soapCompletion, extractedOrders] = await Promise.all([
+            soapPromise,
+            ordersPromise,
+          ]);
 
-          console.log("✅ [RealtimeSOAP] All concurrent processes completed");
+          console.log("✅ [RealtimeSOAP] SOAP generation and orders completed");
           console.log(
             `📋 [RealtimeSOAP] Orders extracted: ${extractedOrders?.length || 0}`,
-          );
-          console.log(
-            `🏥 [RealtimeSOAP] CPT data result:`,
-            extractedCPTData ? "Success" : "Failed",
           );
 
           const soapNote = soapCompletion.choices[0]?.message?.content;
@@ -284,6 +277,21 @@ IMPORTANT INSTRUCTIONS:
 
           console.log(
             `🩺 [RealtimeSOAP] SOAP note generated (${soapNote.length} chars)`,
+          );
+
+          // Now extract CPT codes from the generated SOAP note
+          console.log(
+            "🏥 [RealtimeSOAP] Starting CPT codes extraction from SOAP note...",
+          );
+          const extractedCPTData = await self.extractCPTFromSOAP(
+            soapNote,
+            patientId,
+            parseInt(encounterId),
+          );
+
+          console.log(
+            `🏥 [RealtimeSOAP] CPT data result:`,
+            extractedCPTData ? "Success" : "Failed",
           );
 
           // Send SOAP note immediately
@@ -545,19 +553,19 @@ ${recentVitals}`;
   }
 
   /**
-   * Extract CPT codes from transcription (concurrent with SOAP generation)
+   * Extract CPT codes from generated SOAP note (sequential after SOAP generation)
    */
-  private async extractCPTFromTranscription(
-    transcription: string,
+  private async extractCPTFromSOAP(
+    soapNote: string,
     patientId: number,
     encounterId: number,
   ): Promise<any> {
     try {
       console.log(
-        `🏥 [RealtimeSOAP] Extracting CPT codes from transcription for patient ${patientId}, encounter ${encounterId}`,
+        `🏥 [RealtimeSOAP] Extracting CPT codes from SOAP note for patient ${patientId}, encounter ${encounterId}`,
       );
       console.log(
-        `🏥 [RealtimeSOAP] Transcription length: ${transcription.length} characters`,
+        `🏥 [RealtimeSOAP] SOAP note length: ${soapNote.length} characters`,
       );
 
       // Get patient context for accurate coding
@@ -567,14 +575,14 @@ ${recentVitals}`;
       const { CPTExtractor } = await import("./cpt-extractor.js");
       const cptExtractor = new CPTExtractor();
 
-      // Extract CPT codes with patient context for billing optimization
-      console.log(`🏥 [RealtimeSOAP] Starting advanced CPT extraction...`);
+      // Extract CPT codes from SOAP note with patient context for billing optimization
+      console.log(`🏥 [RealtimeSOAP] Starting advanced CPT extraction from SOAP...`);
       console.log(
-        `📄 [RealtimeSOAP] Transcription being sent to CPT extractor (${transcription.length} chars):`,
+        `📄 [RealtimeSOAP] SOAP note being sent to CPT extractor (${soapNote.length} chars):`,
       );
       console.log(
-        `📋 [RealtimeSOAP] Transcription content preview:`,
-        transcription.substring(0, 1000),
+        `📋 [RealtimeSOAP] SOAP note content preview:`,
+        soapNote.substring(0, 1000),
       );
       console.log(
         `🏥 [RealtimeSOAP] Patient context being sent:`,
@@ -582,7 +590,7 @@ ${recentVitals}`;
       );
 
       const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(
-        transcription,
+        soapNote,
         patientContext,
       );
 
@@ -608,7 +616,7 @@ ${recentVitals}`;
       return { cptCodes: [], diagnoses: [] };
     } catch (error) {
       console.error(
-        "❌ [RealtimeSOAP] Error extracting CPT codes from transcription:",
+        "❌ [RealtimeSOAP] Error extracting CPT codes from SOAP note:",
         error,
       );
       return { cptCodes: [], diagnoses: [] };
