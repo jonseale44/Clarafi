@@ -4,13 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   Plus, 
   Edit2, 
   Trash2, 
   FileText, 
   Save,
-  RefreshCw
+  RefreshCw,
+  Check,
+  X
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -49,8 +58,12 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
   const [diagnoses, setDiagnoses] = useState<DiagnosisCode[]>([]);
   const [mappings, setMappings] = useState<CPTDiagnosisMapping[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [editingCPT, setEditingCPT] = useState<string | null>(null);
-  const [editingDiagnosis, setEditingDiagnosis] = useState<string | null>(null);
+  const [editingCPT, setEditingCPT] = useState<number | null>(null);
+  const [editingDiagnosis, setEditingDiagnosis] = useState<number | null>(null);
+  const [editCPTValue, setEditCPTValue] = useState("");
+  const [editCPTDescription, setEditCPTDescription] = useState("");
+  const [editDiagnosisValue, setEditDiagnosisValue] = useState("");
+  const [editDiagnosisICD, setEditDiagnosisICD] = useState("");
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -248,7 +261,9 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       complexity: "medium"
     };
     setCPTCodes(prev => [...prev, newCPT]);
-    setEditingCPT(`${cptCodes.length}`);
+    setEditingCPT(cptCodes.length);
+    setEditCPTValue("");
+    setEditCPTDescription("");
   };
 
   // Add new diagnosis
@@ -259,7 +274,73 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       isPrimary: false
     };
     setDiagnoses(prev => [...prev, newDiagnosis]);
-    setEditingDiagnosis(`${diagnoses.length}`);
+    setEditingDiagnosis(diagnoses.length);
+    setEditDiagnosisValue("");
+    setEditDiagnosisICD("");
+  };
+
+  // Start editing CPT code
+  const startEditingCPT = (index: number) => {
+    setEditingCPT(index);
+    setEditCPTValue(cptCodes[index].code);
+    setEditCPTDescription(cptCodes[index].description);
+  };
+
+  // Start editing diagnosis
+  const startEditingDiagnosis = (index: number) => {
+    setEditingDiagnosis(index);
+    setEditDiagnosisValue(diagnoses[index].diagnosis);
+    setEditDiagnosisICD(diagnoses[index].icd10Code);
+  };
+
+  // Save CPT code edit
+  const saveCPTEdit = (index: number) => {
+    setCPTCodes(prev => prev.map((cpt, i) => 
+      i === index 
+        ? { ...cpt, code: editCPTValue, description: editCPTDescription }
+        : cpt
+    ));
+    setEditingCPT(null);
+  };
+
+  // Save diagnosis edit
+  const saveDiagnosisEdit = (index: number) => {
+    setDiagnoses(prev => prev.map((diag, i) => 
+      i === index 
+        ? { ...diag, diagnosis: editDiagnosisValue, icd10Code: editDiagnosisICD }
+        : diag
+    ));
+    setEditingDiagnosis(null);
+  };
+
+  // Cancel edit
+  const cancelEdit = () => {
+    setEditingCPT(null);
+    setEditingDiagnosis(null);
+  };
+
+  // Delete CPT code
+  const deleteCPTCode = (index: number) => {
+    setCPTCodes(prev => prev.filter((_, i) => i !== index));
+    // Remove mappings for this CPT code
+    setMappings(prev => prev.filter(m => m.cptCodeId !== `${index}`));
+    // Adjust mapping IDs for remaining CPT codes
+    setMappings(prev => prev.map(m => ({
+      ...m,
+      cptCodeId: parseInt(m.cptCodeId) > index ? `${parseInt(m.cptCodeId) - 1}` : m.cptCodeId
+    })));
+  };
+
+  // Delete diagnosis
+  const deleteDiagnosis = (index: number) => {
+    setDiagnoses(prev => prev.filter((_, i) => i !== index));
+    // Remove mappings for this diagnosis
+    setMappings(prev => prev.filter(m => m.diagnosisId !== `${index}`));
+    // Adjust mapping IDs for remaining diagnoses
+    setMappings(prev => prev.map(m => ({
+      ...m,
+      diagnosisId: parseInt(m.diagnosisId) > index ? `${parseInt(m.diagnosisId) - 1}` : m.diagnosisId
+    })));
   };
 
   // Save changes
@@ -358,67 +439,170 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
         ) : (
           <div className="space-y-6">
             {/* CPT Codes and Diagnoses Mapping Table */}
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-r">
-                      Diagnoses (ICD-10)
-                    </th>
-                    {cptCodes.map((cpt, index) => (
-                      <th key={index} className="px-3 py-3 text-center text-sm font-medium text-gray-900 border-r min-w-[80px]">
-                        <div className="font-mono text-sm">{cpt.code}</div>
+            <TooltipProvider>
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border-r">
+                        Diagnoses (ICD-10)
                       </th>
-                    ))}
-                    <th className="px-3 py-3 text-center text-sm font-medium text-gray-900">
-                      <Button size="sm" variant="ghost" onClick={addCPTCode}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {diagnoses.map((diagnosis, diagIndex) => (
-                    <tr key={diagIndex} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 border-r">
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm">{diagnosis.diagnosis}</div>
-                          <div className="text-xs text-gray-600 font-mono">({diagnosis.icd10Code})</div>
-                          {diagnosis.isPrimary && (
-                            <Badge variant="secondary" className="text-xs">Primary</Badge>
+                      {cptCodes.map((cpt, index) => (
+                        <th key={index} className="px-3 py-3 text-center text-sm font-medium text-gray-900 border-r min-w-[120px]">
+                          {editingCPT === index ? (
+                            <div className="space-y-2">
+                              <Input
+                                value={editCPTValue}
+                                onChange={(e) => setEditCPTValue(e.target.value)}
+                                placeholder="CPT Code"
+                                className="h-8 text-center font-mono text-sm"
+                              />
+                              <Input
+                                value={editCPTDescription}
+                                onChange={(e) => setEditCPTDescription(e.target.value)}
+                                placeholder="Description"
+                                className="h-8 text-xs"
+                              />
+                              <div className="flex justify-center space-x-1">
+                                <Button size="sm" variant="ghost" onClick={() => saveCPTEdit(index)}>
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="group">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className="font-mono text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                    onClick={() => startEditingCPT(index)}
+                                  >
+                                    {cpt.code}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="max-w-xs">
+                                    <p className="font-medium">{cpt.code}</p>
+                                    <p className="text-sm">{cpt.description}</p>
+                                    {cpt.complexity && (
+                                      <Badge variant="outline" className="mt-1">
+                                        {cpt.complexity}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteCPTCode(index)}
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
                           )}
-                        </div>
-                      </td>
-                      {cptCodes.map((cpt, cptIndex) => (
-                        <td key={cptIndex} className="px-3 py-4 text-center border-r">
-                          <Checkbox
-                            checked={isMappingSelected(`${diagIndex}`, `${cptIndex}`)}
-                            onCheckedChange={() => toggleMapping(`${diagIndex}`, `${cptIndex}`)}
-                          />
-                        </td>
+                        </th>
                       ))}
-                      <td className="px-3 py-4 text-center">
-                        <Button size="sm" variant="ghost">
-                          <Edit2 className="h-4 w-4" />
+                      <th className="px-3 py-3 text-center text-sm font-medium text-gray-900">
+                        <Button size="sm" variant="ghost" onClick={addCPTCode}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {diagnoses.map((diagnosis, diagIndex) => (
+                      <tr key={diagIndex} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 border-r">
+                          {editingDiagnosis === diagIndex ? (
+                            <div className="space-y-2">
+                              <Input
+                                value={editDiagnosisValue}
+                                onChange={(e) => setEditDiagnosisValue(e.target.value)}
+                                placeholder="Diagnosis"
+                                className="h-8"
+                              />
+                              <Input
+                                value={editDiagnosisICD}
+                                onChange={(e) => setEditDiagnosisICD(e.target.value)}
+                                placeholder="ICD-10 Code"
+                                className="h-8 font-mono"
+                              />
+                              <div className="flex justify-start space-x-1">
+                                <Button size="sm" variant="ghost" onClick={() => saveDiagnosisEdit(diagIndex)}>
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="group space-y-1">
+                              <div
+                                className="font-medium text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                onClick={() => startEditingDiagnosis(diagIndex)}
+                              >
+                                {diagnosis.diagnosis}
+                              </div>
+                              <div className="text-xs text-gray-600 font-mono">({diagnosis.icd10Code})</div>
+                              <div className="flex items-center space-x-2">
+                                {diagnosis.isPrimary && (
+                                  <Badge variant="secondary" className="text-xs">Primary</Badge>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteDiagnosis(diagIndex)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        {cptCodes.map((cpt, cptIndex) => (
+                          <td key={cptIndex} className="px-3 py-4 text-center border-r">
+                            <Checkbox
+                              checked={isMappingSelected(`${diagIndex}`, `${cptIndex}`)}
+                              onCheckedChange={() => toggleMapping(`${diagIndex}`, `${cptIndex}`)}
+                            />
+                          </td>
+                        ))}
+                        <td className="px-3 py-4 text-center">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => startEditingDiagnosis(diagIndex)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td className="px-4 py-4 border-r">
+                        <Button size="sm" variant="ghost" onClick={addDiagnosis} className="w-full justify-start">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Diagnosis
                         </Button>
                       </td>
+                      {cptCodes.map((_, index) => (
+                        <td key={index} className="px-3 py-4 border-r"></td>
+                      ))}
+                      <td className="px-3 py-4"></td>
                     </tr>
-                  ))}
-                  <tr>
-                    <td className="px-4 py-4 border-r">
-                      <Button size="sm" variant="ghost" onClick={addDiagnosis} className="w-full justify-start">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Diagnosis
-                      </Button>
-                    </td>
-                    {cptCodes.map((_, index) => (
-                      <td key={index} className="px-3 py-4 border-r"></td>
-                    ))}
-                    <td className="px-3 py-4"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            </TooltipProvider>
 
             {/* Summary */}
             <div className="flex items-center justify-between text-sm text-gray-600">
