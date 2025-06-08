@@ -122,9 +122,13 @@ export function EncounterDetailView({
   const useRealtimeAPI = true; // Real-time API enabled by default in background
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodes, setCptCodes] = useState<any[]>([]);
+  const [gptSuggestions, setGptSuggestions] = useState("");
+  const [liveSuggestions, setLiveSuggestions] = useState("");
+  const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
 
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
+  const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -321,8 +325,6 @@ export function EncounterDetailView({
   }, [soapNote, editor]);
 
   // Additional state variables (moved to avoid duplication)
-  const [gptSuggestions, setGptSuggestions] = useState("");
-  const [liveSuggestions, setLiveSuggestions] = useState(""); // Track live suggestions during recording
   const [isTextMode, setIsTextMode] = useState(false);
   const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
   const { toast } = useToast();
@@ -348,6 +350,21 @@ export function EncounterDetailView({
   // Function to get real-time suggestions during recording
   const getLiveAISuggestions = async (transcription: string) => {
     if (transcription.length < 15) return; // Process smaller chunks for faster response
+
+    // Debounce suggestions to prevent too many rapid API calls
+    const now = Date.now();
+    if (now - lastSuggestionTime < 1000) {
+      // Clear any existing timeout and set a new one
+      if (suggestionDebounceTimer.current) {
+        clearTimeout(suggestionDebounceTimer.current);
+      }
+      suggestionDebounceTimer.current = setTimeout(() => {
+        getLiveAISuggestions(transcription);
+      }, 1000);
+      return;
+    }
+
+    setLastSuggestionTime(now);
 
     try {
       console.log(
@@ -907,7 +924,7 @@ export function EncounterDetailView({
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorder.start(2000); // Collect chunks every 2 seconds for real-time updates
+      mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
       setIsRecording(true);
 
       (window as any).currentMediaRecorder = mediaRecorder;
