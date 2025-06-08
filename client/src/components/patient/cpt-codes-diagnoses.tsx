@@ -114,8 +114,14 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       setCPTCodes(data.cptCodes || []);
       setDiagnoses(data.diagnoses || []);
       
-      // Initialize mappings (all unselected initially)
-      initializeMappings(data.cptCodes || [], data.diagnoses || []);
+      // Use GPT's intelligent mappings if provided, otherwise initialize empty
+      if (data.mappings && data.mappings.length > 0) {
+        console.log('🔗 [CPTComponent] Using GPT mappings:', data.mappings);
+        setMappings(convertGPTMappingsToUI(data.mappings, data.cptCodes || [], data.diagnoses || []));
+      } else {
+        console.log('🔗 [CPTComponent] No GPT mappings, initializing empty');
+        initializeMappings(data.cptCodes || [], data.diagnoses || []);
+      }
       
       toast({
         title: "CPT Codes Generated",
