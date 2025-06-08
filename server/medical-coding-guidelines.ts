@@ -199,8 +199,7 @@ export const CPT_REIMBURSEMENT_RATES: Record<string, number> = {
   "12002": 189.45,
   "11055": 45.67,
   "11056": 67.83,
-  "17000": 89.15,
-  "17003": 34.28,
+
   "11730": 156.79,
   "10060": 187.23,
   "20610": 298.45,
@@ -230,9 +229,7 @@ export const CPT_REIMBURSEMENT_RATES: Record<string, number> = {
   
   // Destruction/Cryotherapy Rates
   "17110": 145.67,
-  "17111": 234.89,
-  "17000": 89.15,
-  "17003": 34.28
+  "17111": 234.89
 };
 
 /**

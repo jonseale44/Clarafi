@@ -83,26 +83,52 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
         console.log("🔍 [CPTComponent] No diagnoses found, keeping existing:", diagnoses.length);
       }
       
-      // Initialize mappings with real-time data if both CPT codes and diagnoses are present
+      // Initialize mappings with intelligent associations based on clinical relevance
       if (encounter.cptCodes && encounter.draftDiagnoses && 
           encounter.cptCodes.length > 0 && encounter.draftDiagnoses.length > 0) {
-        console.log("🔗 [CPTComponent] Initializing mappings for real-time data");
-        // For real-time data, automatically select all mappings since GPT already decided they belong together
+        console.log("🔗 [CPTComponent] Initializing intelligent mappings for real-time data");
         initializeMappings(encounter.cptCodes, encounter.draftDiagnoses);
-        // Auto-select all combinations for real-time data
+        
+        // Apply intelligent diagnosis-to-CPT associations
         setTimeout(() => {
-          const autoMappings: CPTDiagnosisMapping[] = [];
-          encounter.draftDiagnoses.forEach((_: any, diagIndex: number) => {
-            encounter.cptCodes.forEach((_: any, cptIndex: number) => {
-              autoMappings.push({
+          const intelligentMappings: CPTDiagnosisMapping[] = [];
+          encounter.draftDiagnoses.forEach((diagnosis: any, diagIndex: number) => {
+            encounter.cptCodes.forEach((cpt: any, cptIndex: number) => {
+              // Define intelligent associations based on clinical logic
+              let shouldSelect = false;
+              
+              // Problem-focused E&M codes (99212-99215, 99202-99205) pair with clinical diagnoses
+              if (['99212', '99213', '99214', '99215', '99202', '99203', '99204', '99205'].includes(cpt.code)) {
+                // Associate with non-wellness diagnoses (not Z00.xx)
+                shouldSelect = !diagnosis.icd10Code?.startsWith('Z00');
+              }
+              
+              // Preventive medicine codes (99381-99397) pair with wellness diagnoses
+              if (['99381', '99382', '99383', '99384', '99385', '99386', '99387',
+                   '99391', '99392', '99393', '99394', '99395', '99396', '99397'].includes(cpt.code)) {
+                // Associate only with Z00.xx (wellness) diagnoses
+                shouldSelect = diagnosis.icd10Code?.startsWith('Z00');
+              }
+              
+              // Procedure codes (17110, 17111) pair with specific diagnoses
+              if (['17110', '17111'].includes(cpt.code)) {
+                // Associate with wart/lesion diagnoses (B07.xx, D23.xx, etc.)
+                shouldSelect = diagnosis.icd10Code?.startsWith('B07') || 
+                              diagnosis.icd10Code?.startsWith('D23') ||
+                              diagnosis.diagnosis?.toLowerCase().includes('wart') ||
+                              diagnosis.diagnosis?.toLowerCase().includes('lesion');
+              }
+              
+              intelligentMappings.push({
                 diagnosisId: `${diagIndex}`,
                 cptCodeId: `${cptIndex}`,
-                selected: true
+                selected: shouldSelect
               });
             });
           });
-          setMappings(autoMappings);
-          console.log("🔗 [CPTComponent] Auto-selected all real-time mappings");
+          setMappings(intelligentMappings);
+          console.log("🔗 [CPTComponent] Applied intelligent clinical mappings:", 
+                     intelligentMappings.filter(m => m.selected).length, "selected");
         }, 100);
       }
     }
