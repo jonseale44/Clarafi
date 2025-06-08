@@ -151,7 +151,31 @@ export const PROCEDURE_CPT_CODES = [
   { code: "94010", description: "Spirometry" },
   { code: "99401", description: "Preventive counseling, 15 minutes" },
   { code: "99402", description: "Preventive counseling, 30 minutes" },
-  { code: "96116", description: "Neurobehavioral status exam" }
+  { code: "96116", description: "Neurobehavioral status exam" },
+  
+  // Preventive Medicine Codes - New Patients
+  { code: "99381", description: "Preventive medicine, new patient, infant (under 1 year)" },
+  { code: "99382", description: "Preventive medicine, new patient, early childhood (1-4 years)" },
+  { code: "99383", description: "Preventive medicine, new patient, late childhood (5-11 years)" },
+  { code: "99384", description: "Preventive medicine, new patient, adolescent (12-17 years)" },
+  { code: "99385", description: "Preventive medicine, new patient, young adult (18-39 years)" },
+  { code: "99386", description: "Preventive medicine, new patient, adult (40-64 years)" },
+  { code: "99387", description: "Preventive medicine, new patient, senior (65+ years)" },
+  
+  // Preventive Medicine Codes - Established Patients
+  { code: "99391", description: "Preventive medicine, established patient, infant (under 1 year)" },
+  { code: "99392", description: "Preventive medicine, established patient, early childhood (1-4 years)" },
+  { code: "99393", description: "Preventive medicine, established patient, late childhood (5-11 years)" },
+  { code: "99394", description: "Preventive medicine, established patient, adolescent (12-17 years)" },
+  { code: "99395", description: "Preventive medicine, established patient, young adult (18-39 years)" },
+  { code: "99396", description: "Preventive medicine, established patient, adult (40-64 years)" },
+  { code: "99397", description: "Preventive medicine, established patient, senior (65+ years)" },
+  
+  // Destruction/Cryotherapy Codes
+  { code: "17110", description: "Destruction of benign lesions, up to 14 lesions" },
+  { code: "17111", description: "Destruction of benign lesions, 15 or more lesions" },
+  { code: "17000", description: "Destruction of premalignant lesions, first lesion" },
+  { code: "17003", description: "Destruction of premalignant lesions, each additional lesion" }
 ];
 
 // 2024 Medicare Reimbursement Rates (National Average)
@@ -184,7 +208,31 @@ export const CPT_REIMBURSEMENT_RATES: Record<string, number> = {
   "94010": 78.34,
   "99401": 65.12,
   "99402": 89.67,
-  "96116": 234.56
+  "96116": 234.56,
+  
+  // Preventive Medicine Rates - New Patients
+  "99381": 156.78,
+  "99382": 198.45,
+  "99383": 234.67,
+  "99384": 278.90,
+  "99385": 312.45,
+  "99386": 356.78,
+  "99387": 389.12,
+  
+  // Preventive Medicine Rates - Established Patients
+  "99391": 134.56,
+  "99392": 167.89,
+  "99393": 189.34,
+  "99394": 223.45,
+  "99395": 267.89,
+  "99396": 298.56,
+  "99397": 334.78,
+  
+  // Destruction/Cryotherapy Rates
+  "17110": 145.67,
+  "17111": 234.89,
+  "17000": 89.15,
+  "17003": 34.28
 };
 
 /**

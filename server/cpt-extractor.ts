@@ -1,9 +1,9 @@
-import OpenAI from 'openai';
-import { 
-  CPT_OFFICE_VISIT_CODES, 
-  PROCEDURE_CPT_CODES, 
-  CPT_REIMBURSEMENT_RATES
-} from './medical-coding-guidelines.js';
+import OpenAI from "openai";
+import {
+  CPT_OFFICE_VISIT_CODES,
+  PROCEDURE_CPT_CODES,
+  CPT_REIMBURSEMENT_RATES,
+} from "./medical-coding-guidelines.js";
 
 interface CPTCode {
   code: string;
@@ -43,7 +43,7 @@ export class CPTExtractor {
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
+      throw new Error("OPENAI_API_KEY environment variable is required");
     }
     this.openai = new OpenAI({
       apiKey: apiKey,
@@ -51,36 +51,51 @@ export class CPTExtractor {
   }
 
   async extractCPTCodesAndDiagnoses(
-    clinicalText: string, 
-    patientContext?: PatientContext
+    clinicalText: string,
+    patientContext?: PatientContext,
   ): Promise<ExtractedCPTData> {
     try {
-      console.log(`🏥 [CPT Extractor] Starting GPT-only extraction from clinical text (${clinicalText.length} chars)`);
-      
-      const isNewPatient = patientContext?.isNewPatient ?? false;
-      console.log(`🏥 [CPT Extractor] Patient type: ${isNewPatient ? 'NEW' : 'ESTABLISHED'}`);
+      console.log(
+        `🏥 [CPT Extractor] Starting GPT-only extraction from clinical text (${clinicalText.length} chars)`,
+      );
 
-      const prompt = this.buildComprehensiveMedicarePrompt(clinicalText, isNewPatient, patientContext);
-      
+      const isNewPatient = patientContext?.isNewPatient ?? false;
+      console.log(
+        `🏥 [CPT Extractor] Patient type: ${isNewPatient ? "NEW" : "ESTABLISHED"}`,
+      );
+
+      const prompt = this.buildComprehensiveMedicarePrompt(
+        clinicalText,
+        isNewPatient,
+        patientContext,
+      );
+
       console.log(`🔍 [CPT Extractor] FULL PROMPT TO GPT:`);
-      console.log(`📝 [CPT Extractor] Clinical text length: ${clinicalText.length} chars`);
-      console.log(`📋 [CPT Extractor] Clinical text preview: ${clinicalText.substring(0, 500)}...`);
-      console.log(`🏥 [CPT Extractor] Patient context:`, JSON.stringify(patientContext, null, 2));
+      console.log(
+        `📝 [CPT Extractor] Clinical text length: ${clinicalText.length} chars`,
+      );
+      console.log(
+        `📋 [CPT Extractor] Clinical text preview: ${clinicalText.substring(0, 500)}...`,
+      );
+      console.log(
+        `🏥 [CPT Extractor] Patient context:`,
+        JSON.stringify(patientContext, null, 2),
+      );
 
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",
-            content: this.getSystemPrompt()
+            content: this.getSystemPrompt(),
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         response_format: { type: "json_object" },
-        temperature: 0.1
+        temperature: 0.1,
       });
 
       const content = response.choices[0].message.content;
@@ -92,21 +107,32 @@ export class CPTExtractor {
       console.log(content);
 
       let extractedData = JSON.parse(content) as ExtractedCPTData;
-      
-      console.log(`📊 [CPT Extractor] PARSED GPT DATA:`);
-      console.log(`CPT Codes:`, JSON.stringify(extractedData.cptCodes, null, 2));
-      console.log(`Diagnoses:`, JSON.stringify(extractedData.diagnoses, null, 2));
-      
-      // Generate automatic diagnosis-to-CPT mappings
-      extractedData.mappings = this.generateAutomaticMappings(extractedData.cptCodes, extractedData.diagnoses);
-      
-      console.log(`✅ [CPT Extractor] GPT-selected billing: ${extractedData.cptCodes?.length || 0} CPT codes, ${extractedData.diagnoses?.length || 0} diagnoses`);
-      
-      return extractedData;
 
+      console.log(`📊 [CPT Extractor] PARSED GPT DATA:`);
+      console.log(
+        `CPT Codes:`,
+        JSON.stringify(extractedData.cptCodes, null, 2),
+      );
+      console.log(
+        `Diagnoses:`,
+        JSON.stringify(extractedData.diagnoses, null, 2),
+      );
+
+      // Generate automatic diagnosis-to-CPT mappings
+      extractedData.mappings = this.generateAutomaticMappings(
+        extractedData.cptCodes,
+        extractedData.diagnoses,
+      );
+
+      console.log(
+        `✅ [CPT Extractor] GPT-selected billing: ${extractedData.cptCodes?.length || 0} CPT codes, ${extractedData.diagnoses?.length || 0} diagnoses`,
+      );
+
+      return extractedData;
     } catch (error) {
-      console.error('❌ [CPT Extractor] Error in GPT extraction:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("❌ [CPT Extractor] Error in GPT extraction:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       throw new Error(`Failed to extract CPT codes: ${errorMessage}`);
     }
   }
@@ -126,24 +152,34 @@ Your goal is to maximize legitimate billing while ensuring accuracy and complian
   }
 
   private buildComprehensiveMedicarePrompt(
-    clinicalText: string, 
-    isNewPatient: boolean, 
-    patientContext?: PatientContext
+    clinicalText: string,
+    isNewPatient: boolean,
+    patientContext?: PatientContext,
   ): string {
     const visitType = isNewPatient ? "NEW PATIENT" : "ESTABLISHED PATIENT";
-    const eligibleCodes = CPT_OFFICE_VISIT_CODES
-      .filter(code => isNewPatient ? code.newPatient : code.establishedPatient)
-      .map(code => `${code.code}: ${code.description} - Medicare Rate: $${CPT_REIMBURSEMENT_RATES[code.code] || 'N/A'}`)
-      .join('\n');
+    const eligibleCodes = CPT_OFFICE_VISIT_CODES.filter((code) =>
+      isNewPatient ? code.newPatient : code.establishedPatient,
+    )
+      .map(
+        (code) =>
+          `${code.code}: ${code.description} - Medicare Rate: $${CPT_REIMBURSEMENT_RATES[code.code] || "N/A"}`,
+      )
+      .join("\n");
 
     return `
 MEDICARE BILLING OPTIMIZATION ANALYSIS
 
 PATIENT STATUS: ${visitType}
-${patientContext?.previousEncounterCount !== undefined ? 
-  `Previous encounters: ${patientContext.previousEncounterCount}` : ''}
-${patientContext?.medicalHistory?.length ? 
-  `Medical history: ${patientContext.medicalHistory.slice(0, 5).join(', ')}` : ''}
+${
+  patientContext?.previousEncounterCount !== undefined
+    ? `Previous encounters: ${patientContext.previousEncounterCount}`
+    : ""
+}
+${
+  patientContext?.medicalHistory?.length
+    ? `Medical history: ${patientContext.medicalHistory.slice(0, 5).join(", ")}`
+    : ""
+}
 
 CLINICAL DOCUMENTATION:
 ${clinicalText}
@@ -185,7 +221,9 @@ REVENUE MAXIMIZATION EXAMPLES:
 - Multiple chronic conditions managed = higher complexity level
 
 PROCEDURE CODES TO CONSIDER:
-${PROCEDURE_CPT_CODES.slice(0, 15).map(p => `${p.code}: ${p.description}`).join('\n')}
+${PROCEDURE_CPT_CODES.slice(0, 15)
+  .map((p) => `${p.code}: ${p.description}`)
+  .join("\n")}
 
 MANDATORY DIAGNOSIS REQUIREMENTS - CRITICAL FOR BILLING:
 - SCAN THE ENTIRE CLINICAL DOCUMENTATION for every mentioned condition
@@ -195,12 +233,22 @@ MANDATORY DIAGNOSIS REQUIREMENTS - CRITICAL FOR BILLING:
 - REVENUE IMPACT: Each additional diagnosis increases complexity scoring and justifies higher E&M codes
 - BILLING RULE: If multiple conditions are documented, ALL must be coded for maximum reimbursement
 
-ANALYSIS METHODOLOGY:
-- Extract ICD-10 codes explicitly mentioned in the documentation
-- Identify all condition names listed in Assessment/Plan section
-- Review medications prescribed and their clinical indications
-- Count distinct treatment plans for different medical conditions
-- Ensure new vs established patient coding is correct based on encounter history
+COMPREHENSIVE BILLING ANALYSIS:
+1. EVALUATION & MANAGEMENT CODES:
+   - Problem-focused visits: 99202-99205 (new) or 99212-99215 (established)
+   - Preventive medicine: 99381-99387 (new) or 99391-99397 (established) for wellness/routine care
+   - Match diagnosis to appropriate E&M category (Z00.00 = preventive codes, not problem-focused)
+
+2. PROCEDURE CODES - Identify ALL performed procedures:
+   - Cryotherapy/destruction: 17110 (up to 14 lesions), 17111 (15+ lesions)
+   - Injections, biopsies, minor procedures
+   - In-office diagnostic procedures
+
+3. DIAGNOSIS-TO-CODE MAPPING:
+   - Wellness visits (Z00.xx) → Preventive medicine codes (99381-99387/99391-99397)
+   - Warts/lesions (B07.xx) → Destruction procedures (17110/17111)
+   - Acute conditions → Problem-focused E&M codes
+   - Multiple unrelated services may require separate code sets
 
 CRITICAL BILLING RULES:
 1. REVENUE MAXIMIZATION: Select the HIGHEST appropriate code level supported by documentation
@@ -211,21 +259,45 @@ CRITICAL INSTRUCTION: Analyze ONLY the clinical text provided in this specific r
 
 MANDATORY: If you identify multiple conditions in the clinical documentation, you MUST include ALL of them in the diagnoses array. Missing any documented condition results in revenue loss and billing compliance failure.
 
-Return ONLY a JSON object with this exact structure. Base ALL decisions on the actual clinical documentation provided:
+MANDATORY: Identify ALL billable services performed during this encounter. Include BOTH evaluation/management AND any procedures performed.
+
+Return ONLY a JSON object with this exact structure:
 {
   "cptCodes": [
     {
-      "code": "[SELECT_APPROPRIATE_CODE]",
-      "description": "[OFFICIAL_CPT_DESCRIPTION]",
-      "complexity": "[straightforward|low|moderate|high]",
-      "reasoning": "[YOUR_ANALYSIS_OF_THIS_SPECIFIC_CASE]"
+      "code": "99204",
+      "description": "Office visit, new patient, moderate complexity",
+      "complexity": "moderate",
+      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity"
+    },
+    {
+      "code": "99386", 
+      "description": "Preventive medicine service, new patient, 40-64 years",
+      "complexity": "preventive",
+      "reasoning": "Annual wellness exam component of visit"
+    },
+    {
+      "code": "17110",
+      "description": "Destruction of benign lesions, up to 14 lesions",
+      "complexity": "procedure",
+      "reasoning": "Cryotherapy performed on skin lesions"
     }
   ],
   "diagnoses": [
     {
-      "diagnosis": "[CONDITION_FROM_ACTUAL_DOCUMENTATION]",
-      "icd10Code": "[APPROPRIATE_ICD10_CODE]",
+      "diagnosis": "Breathlessness and chest tightness",
+      "icd10Code": "R06.4",
       "isPrimary": true
+    },
+    {
+      "diagnosis": "Routine general medical examination",
+      "icd10Code": "Z00.00",
+      "isPrimary": false
+    },
+    {
+      "diagnosis": "Viral warts, unspecified",
+      "icd10Code": "B07.9",
+      "isPrimary": false
     }
   ]
 }
@@ -233,23 +305,28 @@ Return ONLY a JSON object with this exact structure. Base ALL decisions on the a
 VALIDATION CHECK: Count the conditions you mentioned in your reasoning. Your diagnoses array MUST contain the same number of conditions. If your reasoning mentions "2 conditions" but you only list 1 diagnosis, you have made an error.`;
   }
 
-  private generateAutomaticMappings(cptCodes: CPTCode[], diagnoses: DiagnosisCode[]): DiagnosisMapping[] {
+  private generateAutomaticMappings(
+    cptCodes: CPTCode[],
+    diagnoses: DiagnosisCode[],
+  ): DiagnosisMapping[] {
     const mappings: DiagnosisMapping[] = [];
-    
+
     // Create mappings for each diagnosis
     diagnoses.forEach((diagnosis) => {
       // Map all CPT codes to primary diagnosis, only E&M codes to secondary
-      const applicableCptCodes = diagnosis.isPrimary 
-        ? cptCodes.map(cpt => cpt.code)
-        : cptCodes.filter(cpt => cpt.code.startsWith('992')).map(cpt => cpt.code);
-      
+      const applicableCptCodes = diagnosis.isPrimary
+        ? cptCodes.map((cpt) => cpt.code)
+        : cptCodes
+            .filter((cpt) => cpt.code.startsWith("992"))
+            .map((cpt) => cpt.code);
+
       mappings.push({
         diagnosisId: diagnosis.icd10Code,
         cptCodes: applicableCptCodes,
-        isSelected: true // Pre-select all mappings for optimal billing
+        isSelected: true, // Pre-select all mappings for optimal billing
       });
     });
-    
+
     return mappings;
   }
 }
