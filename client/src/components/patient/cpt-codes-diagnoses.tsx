@@ -375,6 +375,18 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
     }
   };
 
+  // Real-time CPT code validation and auto-description update
+  const handleCPTValueChange = (value: string) => {
+    setEditCPTValue(value);
+    
+    // Auto-update description if valid CPT code is found
+    const foundCPT = getCPTCodeByCode(value);
+    if (foundCPT) {
+      console.log("🔍 [CPTComponent] Real-time CPT match found:", foundCPT.code);
+      setEditCPTDescription(foundCPT.description);
+    }
+  };
+
   // Start editing diagnosis
   const startEditingDiagnosis = (diagId: string) => {
     const diag = diagnoses.find(d => d.id === diagId);
@@ -386,15 +398,53 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
     }
   };
 
-  // Save CPT code edit
-  const saveCPTEdit = (index: number) => {
-    const cptId = cptCodes[index]?.id;
-    console.log("💾 [CPTComponent] Saving CPT edit for index:", index, "ID:", cptId);
+  // Update CPT code from autocomplete during edit
+  const updateCPTFromAutocomplete = (index: number, cptData: CPTCodeData) => {
+    console.log("🔄 [CPTComponent] Updating CPT from autocomplete at index:", index, "with:", cptData);
     setCPTCodes(prev => prev.map((cpt, i) => 
       i === index 
-        ? { ...cpt, code: editCPTValue, description: editCPTDescription }
+        ? { 
+            ...cpt, 
+            code: cptData.code, 
+            description: cptData.description,
+            complexity: cptData.complexity,
+            category: cptData.category,
+            baseRate: cptData.baseRate
+          }
         : cpt
     ));
+    setEditingCPT(null);
+  };
+
+  // Save CPT code edit (for manual entry)
+  const saveCPTEdit = (index: number) => {
+    const cptId = cptCodes[index]?.id;
+    console.log("💾 [CPTComponent] Saving manual CPT edit for index:", index, "ID:", cptId);
+    
+    // Try to find the CPT code in our database to auto-populate description
+    const foundCPT = getCPTCodeByCode(editCPTValue);
+    if (foundCPT) {
+      console.log("🔍 [CPTComponent] Found CPT in database, auto-updating description");
+      setCPTCodes(prev => prev.map((cpt, i) => 
+        i === index 
+          ? { 
+              ...cpt, 
+              code: foundCPT.code, 
+              description: foundCPT.description,
+              complexity: foundCPT.complexity,
+              category: foundCPT.category,
+              baseRate: foundCPT.baseRate
+            }
+          : cpt
+      ));
+    } else {
+      // Fallback to manual entry
+      setCPTCodes(prev => prev.map((cpt, i) => 
+        i === index 
+          ? { ...cpt, code: editCPTValue, description: editCPTDescription }
+          : cpt
+      ));
+    }
     setEditingCPT(null);
   };
 
@@ -562,20 +612,20 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                 <div>
                   <span className="font-medium">CPT Codes:</span> {cptCodes.length}
                   <div className="text-blue-600">
-                    {cptCodes.map(cpt => `${cpt.code} (${cpt.id.slice(-8)})`).join(', ')}
+                    {cptCodes.map(cpt => `${cpt.code} (${cpt.id?.slice(-8) || 'no-id'})`).join(', ')}
                   </div>
                 </div>
                 <div>
                   <span className="font-medium">Diagnoses:</span> {diagnoses.length}
                   <div className="text-blue-600">
-                    {diagnoses.map(diag => `${diag.icd10Code} (${diag.id.slice(-8)})`).join(', ')}
+                    {diagnoses.map(diag => `${diag.icd10Code} (${diag.id?.slice(-8) || 'no-id'})`).join(', ')}
                   </div>
                 </div>
                 <div>
                   <span className="font-medium">Active Mappings:</span> {mappings.filter(m => m.selected).length} / {mappings.length}
                   <div className="text-blue-600">
                     Selected: {mappings.filter(m => m.selected).map(m => 
-                      `${m.diagnosisId.slice(-4)}-${m.cptCodeId.slice(-4)}`
+                      `${m.diagnosisId?.slice(-4) || 'no-id'}-${m.cptCodeId?.slice(-4) || 'no-id'}`
                     ).join(', ')}
                   </div>
                 </div>
@@ -595,18 +645,22 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
                         <th key={index} className="px-3 py-3 text-center text-sm font-medium text-gray-900 border-r min-w-[120px]">
                           {editingCPT === index ? (
                             <div className="space-y-2">
-                              <Input
+                              <CPTAutocomplete
                                 value={editCPTValue}
-                                onChange={(e) => setEditCPTValue(e.target.value)}
-                                placeholder="CPT Code"
+                                onSelect={(cptData) => updateCPTFromAutocomplete(index, cptData)}
+                                placeholder="Search CPT codes..."
                                 className="h-8 text-center font-mono text-sm"
                               />
+                              <div className="text-xs text-gray-400 text-center">or</div>
                               <Input
-                                value={editCPTDescription}
-                                onChange={(e) => setEditCPTDescription(e.target.value)}
-                                placeholder="Description"
-                                className="h-8 text-xs"
+                                value={editCPTValue}
+                                onChange={(e) => handleCPTValueChange(e.target.value)}
+                                placeholder="Enter CPT code"
+                                className="h-7 text-center font-mono text-sm"
                               />
+                              <div className="text-xs text-gray-600 max-w-[200px] mx-auto text-center leading-tight">
+                                {editCPTDescription}
+                              </div>
                               <div className="flex justify-center space-x-1">
                                 <Button size="sm" variant="ghost" onClick={() => saveCPTEdit(index)}>
                                   <Check className="h-3 w-3" />
