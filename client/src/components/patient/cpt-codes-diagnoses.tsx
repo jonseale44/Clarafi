@@ -145,17 +145,21 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
               // Define intelligent associations based on clinical logic
               let shouldSelect = false;
               
-              // Problem-focused E&M codes (99212-99215, 99202-99205) pair with clinical diagnoses
+              // Problem-focused E&M codes (99212-99215, 99202-99205) pair ONLY with clinical diagnoses
               if (['99212', '99213', '99214', '99215', '99202', '99203', '99204', '99205'].includes(cpt.code)) {
-                // Associate with non-wellness diagnoses (not Z00.xx)
-                shouldSelect = !diagnosis.icd10Code?.startsWith('Z00');
+                // Associate ONLY with non-wellness diagnoses (not Z codes)
+                shouldSelect = !diagnosis.icd10Code?.startsWith('Z') && 
+                              !diagnosis.diagnosis?.toLowerCase().includes('routine') &&
+                              !diagnosis.diagnosis?.toLowerCase().includes('examination');
               }
               
-              // Preventive medicine codes (99381-99397) pair with wellness diagnoses
+              // Preventive medicine codes (99381-99397) pair ONLY with wellness diagnoses
               if (['99381', '99382', '99383', '99384', '99385', '99386', '99387',
                    '99391', '99392', '99393', '99394', '99395', '99396', '99397'].includes(cpt.code)) {
-                // Associate only with Z00.xx (wellness) diagnoses
-                shouldSelect = diagnosis.icd10Code?.startsWith('Z00');
+                // Associate ONLY with Z00.xx (wellness) diagnoses or routine examinations
+                shouldSelect = diagnosis.icd10Code?.startsWith('Z00') ||
+                              diagnosis.diagnosis?.toLowerCase().includes('routine') ||
+                              diagnosis.diagnosis?.toLowerCase().includes('examination');
               }
               
               // Procedure codes (17110, 17111) pair with specific diagnoses
@@ -216,14 +220,10 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       setCPTCodes(convertedCPTCodes);
       setDiagnoses(convertedDiagnoses);
       
-      // Use GPT's intelligent mappings to automatically select associations
-      if (data.mappings && data.mappings.length > 0) {
-        console.log('🔗 [CPTComponent] Using GPT automatic mappings:', data.mappings);
-        initializeMappings(convertedCPTCodes, convertedDiagnoses, data.mappings);
-      } else {
-        console.log('🔗 [CPTComponent] No GPT mappings, initializing empty');
-        initializeMappings(convertedCPTCodes, convertedDiagnoses);
-      }
+      // Always use hardcoded intelligent mappings instead of GPT's decisions
+      // GPT tends to be overly aggressive with associations, hardcoded logic is more accurate
+      console.log('🔗 [CPTComponent] Using hardcoded intelligent mappings (overriding GPT)');
+      initializeMappings(convertedCPTCodes, convertedDiagnoses);
       
       toast({
         title: "CPT Codes Generated",
