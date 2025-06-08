@@ -523,6 +523,10 @@ ${recentVitals}`;
 
       // Extract CPT codes with patient context for billing optimization
       console.log(`🏥 [RealtimeSOAP] Starting advanced CPT extraction...`);
+      console.log(`📄 [RealtimeSOAP] Transcription being sent to CPT extractor (${transcription.length} chars):`);
+      console.log(`📋 [RealtimeSOAP] Transcription content preview:`, transcription.substring(0, 1000));
+      console.log(`🏥 [RealtimeSOAP] Patient context being sent:`, JSON.stringify(patientContext, null, 2));
+      
       const extractedCPTData = await cptExtractor.extractCPTCodesAndDiagnoses(
         transcription, 
         patientContext

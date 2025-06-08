@@ -914,11 +914,15 @@ export function registerRoutes(app: Express): Server {
       };
 
       console.log(`🏥 [CPT API] Patient context: ${patientContext.isNewPatient ? 'NEW' : 'ESTABLISHED'} patient with ${patientContext.previousEncounterCount} encounters`);
+      console.log(`📄 [CPT API] SOAP note being sent to extractor (${soapNote.length} chars):`);
+      console.log(`📋 [CPT API] SOAP note content preview:`, soapNote.substring(0, 1000));
 
       const { CPTExtractor } = await import('./cpt-extractor.js');
       const cptExtractor = new CPTExtractor();
       
       const extractedData = await cptExtractor.extractCPTCodesAndDiagnoses(soapNote, patientContext);
+      
+      console.log(`📊 [CPT API] FINAL EXTRACTED DATA:`, JSON.stringify(extractedData, null, 2));
       
       console.log(`✅ [CPT API] Extracted ${extractedData.cptCodes?.length || 0} CPT codes and ${extractedData.diagnoses?.length || 0} diagnoses`);
       

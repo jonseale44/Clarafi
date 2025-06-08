@@ -61,6 +61,11 @@ export class CPTExtractor {
       console.log(`🏥 [CPT Extractor] Patient type: ${isNewPatient ? 'NEW' : 'ESTABLISHED'}`);
 
       const prompt = this.buildComprehensiveMedicarePrompt(clinicalText, isNewPatient, patientContext);
+      
+      console.log(`🔍 [CPT Extractor] FULL PROMPT TO GPT:`);
+      console.log(`📝 [CPT Extractor] Clinical text length: ${clinicalText.length} chars`);
+      console.log(`📋 [CPT Extractor] Clinical text preview: ${clinicalText.substring(0, 500)}...`);
+      console.log(`🏥 [CPT Extractor] Patient context:`, JSON.stringify(patientContext, null, 2));
 
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-nano",
@@ -83,7 +88,14 @@ export class CPTExtractor {
         throw new Error("No response content from OpenAI");
       }
 
+      console.log(`🤖 [CPT Extractor] RAW GPT RESPONSE:`);
+      console.log(content);
+
       let extractedData = JSON.parse(content) as ExtractedCPTData;
+      
+      console.log(`📊 [CPT Extractor] PARSED GPT DATA:`);
+      console.log(`CPT Codes:`, JSON.stringify(extractedData.cptCodes, null, 2));
+      console.log(`Diagnoses:`, JSON.stringify(extractedData.diagnoses, null, 2));
       
       // Generate automatic diagnosis-to-CPT mappings
       extractedData.mappings = this.generateAutomaticMappings(extractedData.cptCodes, extractedData.diagnoses);
