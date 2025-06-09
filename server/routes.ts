@@ -13,11 +13,8 @@ import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import multer from "multer";
 import OpenAI from "openai";
-import { RealtimeTranscriptionService } from "./realtime-transcription-service";
-import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
-import { EnhancedRealtimeService } from "./enhanced-realtime-service";
 import fastMedicalRoutes from "./fast-medical-routes";
-import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
+import { consolidatedRealtimeService } from "./consolidated-realtime-service";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
