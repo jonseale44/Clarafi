@@ -253,7 +253,7 @@ export class EnhancedRealtimeService {
     }
 
     const openaiWs = new WebSocket(
-      "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
+      "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17",
       {
         headers: {
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -266,28 +266,30 @@ export class EnhancedRealtimeService {
       openaiWs.on('open', () => {
         console.log(`✅ [EnhancedRealtime] OpenAI WebSocket connected for session ${connection.sessionId}`);
         
-        // Configure session
+        // Configure session with proven settings from external implementation
         const sessionConfig = {
           type: "session.update",
           session: {
-            modalities: ["text", "audio"],
-            instructions: "You are a helpful AI assistant providing real-time transcription.",
-            voice: "alloy",
+            instructions: "You are a medical AI assistant providing real-time clinical insights and suggestions during patient encounters. Focus on actionable clinical guidance, differential diagnoses, and treatment recommendations based on the conversation flow.",
+            model: "gpt-4o-mini-realtime-preview-2024-12-17",
+            modalities: ["text"], // Text-only output for suggestions
             input_audio_format: "pcm16",
-            output_audio_format: "pcm16",
             input_audio_transcription: {
-              model: "whisper-1"
+              model: "whisper-1",
+              language: "en",
+              prompt: "You MUST ALWAYS translate the speech into English ONLY, regardless of input language. NEVER include the original non-English text. ONLY OUTPUT ENGLISH text. Translate all utterances, questions, and statements fully to English without leaving any words in the original language."
             },
             turn_detection: {
               type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500
+              threshold: 0.3, // Lower threshold for better sensitivity
+              prefix_padding_ms: 500, // Increased to catch more of the start of speech
+              silence_duration_ms: 1000, // Increased to allow for natural pauses
+              create_response: true
             },
             tools: [],
             tool_choice: "none",
-            temperature: 0.8,
-            max_response_output_tokens: 4096
+            temperature: 0.7,
+            max_response_output_tokens: 1000
           }
         };
 
