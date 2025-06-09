@@ -608,18 +608,12 @@ export function EncounterDetailView({
         realtimeWs.onopen = () => {
           console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
 
-          // Update session configuration for transcription + AI suggestions
+          // Session configuration: Focus on transcription only, AI suggestions handled separately
           realtimeWs!.send(
             JSON.stringify({
               type: "session.update",
               session: {
-                instructions: `You are a medical AI assistant. When providing clinical insights, ALWAYS RESPOND IN ENGLISH ONLY, regardless of input language. Provide concise, actionable medical insights for physicians using bullet points (•).
-
-Focus on evidence-based recommendations with specific medication dosages:
-• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day
-• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily
-
-Prioritize high-value insights: medication dosages, red flags, advanced diagnostics, specific guidelines. Avoid general advice physicians already know.`,
+                instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
                 model: "gpt-4o-mini-realtime-preview-2024-12-17",
                 modalities: ["text", "audio"],
                 input_audio_format: "pcm16",
@@ -647,46 +641,48 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
         ) => {
           if (!ws) return;
 
-          // Inject patient context for AI suggestions
-          const patientContext = `
-PATIENT CONTEXT FOR AI ASSISTANT:
-Patient: ${patientData.firstName} ${patientData.lastName}
-Age: ${patientData.age || "Unknown"}
-Gender: ${patientData.gender || "Unknown"}
+          console.log("[EncounterView] Starting AI suggestions conversation");
 
-You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+          // 1. Fetch full patient chart data like external implementation
+          let patientChart = null;
+          try {
+            console.log("[EncounterView] Fetching patient chart data for context injection");
+            const chartResponse = await fetch(`/api/patients/${patientData.id}/chart`);
+            if (chartResponse.ok) {
+              patientChart = await chartResponse.json();
+              console.log("[EncounterView] Patient chart data fetched successfully");
+            } else {
+              console.warn("[EncounterView] Failed to fetch patient chart, using basic data only");
+            }
+          } catch (error) {
+            console.warn("[EncounterView] Error fetching patient chart:", error);
+          }
 
-Instructions:
+          // 2. Format comprehensive patient context like external system
+          const formatPatientContext = (chart: any, basicData: any): string => {
+            if (chart) {
+              // Remove large sections to prevent token overflow
+              const cleanChart = { ...chart };
+              delete cleanChart.attachments;
+              delete cleanChart.appointments;
+              delete cleanChart.office_visits;
+              delete cleanChart.encounters;
+              delete cleanChart.text_content;
+              delete cleanChart.extracted_text;
+              
+              return `Patient Chart Context:\n${JSON.stringify(cleanChart, null, 2)}`;
+            } else {
+              // Fallback to basic patient data
+              return `Patient: ${basicData.firstName} ${basicData.lastName}
+Age: ${basicData.age || "Unknown"}
+Gender: ${basicData.gender || "Unknown"}
+MRN: ${basicData.mrn || "Unknown"}`;
+            }
+          };
 
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first and indicate readiness for more if requested.
+          const patientContext = formatPatientContext(patientChart, patientData);
 
-Additionally, if the physician asks, provide relevant information from the patient's chart or office visits, such as past medical history, current medications, allergies, lab results, and imaging findings. Include this information concisely and accurately where appropriate. This medical information might be present in old office visit notes. Do not make anything up; it is better to say you don't have that information available.
-
-Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
-Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
-
-Additional details for medication recommendations:
-
-Always include typical starting dose, dose adjustment schedules, and maximum dose.
-Output examples of good insights:
-
-• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
-• Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
-• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
-
-Output examples of bad insights (to avoid):
-
-• Encourage gentle stretches and light activity to maintain mobility.
-• Suggest warm baths at night for symptomatic relief of muscle tension.
-• Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
-
-Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
-
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.
-`;
-
+          // 3. Inject patient context using external implementation format
           const contextMessage = {
             type: "conversation.item.create",
             item: {
@@ -701,16 +697,17 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             },
           };
 
-          console.log(
-            "🧠 [EncounterView] Injecting patient context for AI suggestions",
-          );
+          console.log("🧠 [EncounterView] Injecting patient context for AI suggestions");
           ws.send(JSON.stringify(contextMessage));
 
-          // Create response for AI suggestions (using session instructions)
+          // 4. Create response for AI suggestions with metadata like external system
           const suggestionsMessage = {
             type: "response.create",
             response: {
               modalities: ["text"],
+              metadata: {
+                type: "suggestions"
+              }
             },
           };
 
@@ -753,40 +750,45 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             const deltaText = message.delta || "";
             console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);
 
-            // Accumulate suggestions buffer like transcription
-            suggestionsBuffer += deltaText;
+            // Apply external system's content filtering to prevent cross-contamination
+            const shouldFilterContent = (content: string): boolean => {
+              // Filter out SOAP note patterns
+              const soapPatterns = [
+                "Patient Visit Summary", "PATIENT VISIT SUMMARY", "Visit Summary", "VISIT SUMMARY",
+                "Chief Complaint:", "**Chief Complaint:**", "History of Present Illness:", "**History of Present Illness:**",
+                "Vital Signs:", "**Vital Signs:**", "Review of Systems:", "**Review of Systems:**",
+                "Physical Examination:", "**Physical Examination:**", "Assessment:", "**Assessment:**",
+                "Plan:", "**Plan:**", "Diagnosis:", "**Diagnosis:**", "Impression:", "**Impression:**",
+                "SUBJECTIVE:", "OBJECTIVE:", "ASSESSMENT:", "PLAN:", "S:", "O:", "A:", "P:",
+                "SOAP Note", "Clinical Note", "Progress Note"
+              ];
 
-            // Filter out SOAP notes and orders from suggestions
-            const visitSummaryPatterns = [
-              "Chief Complaint:",
-              "SUBJECTIVE:",
-              "OBJECTIVE:",
-              "ASSESSMENT:",
-              "PLAN:",
-              "Patient Visit Summary",
-              "**SUBJECTIVE:**",
-              "**OBJECTIVE:**",
-              "**ASSESSMENT:**",
-              "**PLAN:**",
-            ];
+              // Filter out order patterns 
+              const orderPatterns = [
+                "Lab: [", "Imaging: [", "Medication: [", "Labs:", "Imaging:", "Medications:",
+                "Laboratory:", "Radiology:", "Prescriptions:"
+              ];
 
-            const containsVisitSummary = visitSummaryPatterns.some((pattern) =>
-              suggestionsBuffer.includes(pattern),
-            );
+              return soapPatterns.some(pattern => content.includes(pattern)) ||
+                     orderPatterns.some(pattern => content.includes(pattern));
+            };
 
-            if (!containsVisitSummary) {
+            // Only process if content passes filtering
+            if (!shouldFilterContent(suggestionsBuffer + deltaText)) {
+              // Accumulate suggestions buffer like transcription
+              suggestionsBuffer += deltaText;
+
               // Set complete suggestions with header
-              if (
-                !suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
-              ) {
-                const formattedSuggestions =
-                  "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
+              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+                const formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
                 setLiveSuggestions(formattedSuggestions);
                 setGptSuggestions(formattedSuggestions);
               } else {
                 setLiveSuggestions(suggestionsBuffer);
                 setGptSuggestions(suggestionsBuffer);
               }
+            } else {
+              console.warn("[EncounterView] Filtered out SOAP/order content from AI suggestions");
             }
           }
 
