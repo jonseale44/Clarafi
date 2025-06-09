@@ -439,7 +439,71 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Legacy HTTP suggestions removed - using OpenAI Realtime API streaming instead
+  // Live AI suggestions endpoint for real-time transcription (used by encounter recording)
+  app.post("/api/voice/live-suggestions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const { patientId, userRole = "provider", transcription } = req.body;
+
+      if (!patientId || !transcription) {
+        return res
+          .status(400)
+          .json({ message: "Patient ID and transcription are required" });
+      }
+
+      // Get patient context
+      const patient = await storage.getPatient(parseInt(patientId));
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      try {
+        console.log("🎯 [Routes] Using enhanced realtime suggestions...");
+        
+        // Use WebSocket streaming for fast suggestions (no audio buffer needed for live mode)
+        const result = await realtimeMedicalContext.processVoiceWithFastContext(
+          Buffer.alloc(0), // Empty buffer for text-only mode
+          parseInt(patientId),
+          userRole as "nurse" | "provider",
+          transcription || "Live transcription in progress"
+        );
+
+        console.log("✅ [Routes] Enhanced suggestions received");
+
+        const formattedSuggestions = {
+          realTimePrompts: result.providerPrompts || result.nursePrompts || [],
+          clinicalGuidance: result.clinicalNotes || "AI analysis in progress...",
+          clinicalFlags: result.medicalAlerts || [],
+        };
+
+        const response = {
+          aiSuggestions: formattedSuggestions,
+          isLive: true,
+          performance: {
+            responseTime: result.contextUsed?.responseTime || 0,
+            tokenCount: result.contextUsed?.tokenCount || 0,
+            cacheHit: result.contextUsed?.cacheHit || false,
+            system: "enhanced-realtime"
+          }
+        };
+
+        res.json(response);
+      } catch (error: any) {
+        console.error("❌ [Routes] Enhanced suggestions error:", error);
+        res.status(500).json({
+          message: "Failed to generate enhanced suggestions",
+          error: error?.message || "Unknown error",
+          aiSuggestions: {
+            realTimePrompts: ["Continue recording..."],
+            clinicalGuidance: "Enhanced suggestions temporarily unavailable",
+          },
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // Enhanced voice processing for encounter recording
   app.post(

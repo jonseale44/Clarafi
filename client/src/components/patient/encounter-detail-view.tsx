@@ -125,7 +125,6 @@ export function EncounterDetailView({
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
-  const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
 
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
@@ -136,27 +135,9 @@ export function EncounterDetailView({
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   // Real-time SOAP generation ref
   const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
-
-  // SOAP Note Editor
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: "SOAP note will be generated here...",
-      }),
-    ],
-    content: soapNote,
-    onUpdate: ({ editor }) => {
-      const currentContent = editor.getHTML();
-      if (currentContent !== lastGeneratedContent.current) {
-        setSoapNote(currentContent);
-      }
-    },
-  });
 
   // Handlers for Real-time SOAP Integration
   const handleSOAPNoteUpdate = (note: string) => {
@@ -261,7 +242,23 @@ export function EncounterDetailView({
     }
   };
 
-  // Remove duplicate editor - using the one declared above
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: "Generated SOAP note will appear here...",
+      }),
+    ],
+    editorProps: {
+      attributes: {
+        class:
+          "outline-none min-h-[500px] max-w-none whitespace-pre-wrap soap-editor",
+      },
+    },
+    content: "",
+    onUpdate: ({ editor }) => {
+      // Update React state when user types
+      if (!editor.isDestroyed) {
         const newContent = editor.getHTML();
         setSoapNote(newContent);
       }
@@ -350,7 +347,155 @@ export function EncounterDetailView({
     });
   };
 
-  // Legacy HTTP-based suggestions removed - using OpenAI Realtime API streaming instead
+  // Function to get real-time suggestions during recording
+  const getLiveAISuggestions = async (transcription: string) => {
+    if (transcription.length < 15) return; // Process smaller chunks for faster response
+
+    // Debounce suggestions to prevent too many rapid API calls
+    const now = Date.now();
+    if (now - lastSuggestionTime < 1000) {
+      // Clear any existing timeout and set a new one
+      if (suggestionDebounceTimer.current) {
+        clearTimeout(suggestionDebounceTimer.current);
+      }
+      suggestionDebounceTimer.current = setTimeout(() => {
+        getLiveAISuggestions(transcription);
+      }, 1000);
+      return;
+    }
+
+    setLastSuggestionTime(now);
+
+    try {
+      console.log(
+        "🧠 [EncounterView] Getting live AI suggestions for transcription:",
+        transcription.substring(0, 100) + "...",
+      );
+
+      const requestBody = {
+        patientId: patient.id.toString(),
+        userRole: "provider",
+        isLiveChunk: "true",
+        transcription: transcription,
+      };
+
+      console.log(
+        "🧠 [EncounterView] Sending live suggestions request to /api/voice/live-suggestions",
+      );
+      console.log("🧠 [EncounterView] Request body:", requestBody);
+
+      const response = await fetch("/api/voice/live-suggestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log(
+        "🧠 [EncounterView] Live suggestions response status:",
+        response.status,
+      );
+      console.log(
+        "🧠 [EncounterView] Live suggestions response headers:",
+        Object.fromEntries(response.headers.entries()),
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("🧠 [EncounterView] Live AI suggestions received:", data);
+
+        if (data.aiSuggestions) {
+          console.log(
+            "🔧 [EncounterView] Processing live suggestions, existing:",
+            liveSuggestions?.length || 0,
+            "chars",
+          );
+          console.log(
+            "🔧 [EncounterView] New suggestions count:",
+            data.aiSuggestions.realTimePrompts?.length || 0,
+          );
+
+          // Get existing live suggestions to append to them (like transcription buffer)
+          const existingLiveSuggestions = liveSuggestions || "";
+          let suggestionsText = existingLiveSuggestions;
+
+          // If this is the first suggestion, add the header
+          if (!existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+            suggestionsText = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n";
+            console.log("🔧 [EncounterView] First suggestion - added header");
+          }
+
+          // Only append new suggestions if they exist and aren't empty
+          if (data.aiSuggestions.realTimePrompts?.length > 0) {
+            // Filter out empty suggestions and ones already in the buffer
+            const newSuggestions = data.aiSuggestions.realTimePrompts.filter(
+              (prompt: string) => {
+                if (!prompt || !prompt.trim() || prompt.trim() === "Continue recording for more context...") {
+                  return false;
+                }
+                // Check if this suggestion is already in our accumulated text
+                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, '').trim();
+                return !existingLiveSuggestions.includes(cleanPrompt);
+              }
+            );
+
+            if (newSuggestions.length > 0) {
+              console.log(
+                "🔧 [EncounterView] Adding",
+                newSuggestions.length,
+                "new suggestions to existing",
+                existingLiveSuggestions.length,
+                "chars"
+              );
+
+              // Append each new suggestion (like transcription delta accumulation)
+              newSuggestions.forEach((prompt: string) => {
+                const formattedPrompt = prompt.startsWith('•') || prompt.startsWith('-') || prompt.startsWith('*') 
+                  ? prompt 
+                  : `• ${prompt}`;
+                suggestionsText += `${formattedPrompt}\n`;
+                console.log(
+                  "🔧 [EncounterView] Accumulated suggestion:",
+                  formattedPrompt.substring(0, 50) + "...",
+                );
+              });
+            } else {
+              console.log("🔧 [EncounterView] No new suggestions to accumulate");
+            }
+          }
+
+          console.log(
+            "🔧 [EncounterView] Final live suggestions length:",
+            suggestionsText.length,
+          );
+          setLiveSuggestions(suggestionsText);
+          setGptSuggestions(suggestionsText); // Also update the display
+          console.log(
+            "🔧 [EncounterView] Live suggestions updated, length:",
+            suggestionsText.length,
+          );
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(
+          "❌ [EncounterView] Live suggestions HTTP error:",
+          response.status,
+        );
+        console.error("❌ [EncounterView] Full HTML response:", errorText);
+        throw new Error(
+          `HTTP ${response.status}: ${errorText.substring(0, 200)}`,
+        );
+      }
+    } catch (error) {
+      console.error("❌ [EncounterView] Live suggestions failed:", error);
+      console.error("❌ [EncounterView] Error details:", {
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        stack: (error as any)?.stack,
+      });
+    }
+  };
 
   const startRecording = async () => {
     console.log(
@@ -366,7 +511,7 @@ export function EncounterDetailView({
     try {
       // Create direct WebSocket connection to OpenAI like your working code
       let realtimeWs: WebSocket | null = null;
-      let localTranscriptionBuffer = "";
+      let transcriptionBuffer = "";
       let lastSuggestionLength = 0;
       let suggestionsStarted = false;
       let sessionId = "";
