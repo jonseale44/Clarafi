@@ -129,8 +129,6 @@ export function EncounterDetailView({
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-  
-
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -423,7 +421,9 @@ export function EncounterDetailView({
           let suggestionsText = existingLiveSuggestions;
 
           // If this is the first suggestion, add the header
-          if (!existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+          if (
+            !existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
+          ) {
             suggestionsText = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n";
             console.log("🔧 [EncounterView] First suggestion - added header");
           }
@@ -433,13 +433,17 @@ export function EncounterDetailView({
             // Filter out empty suggestions and ones already in the buffer
             const newSuggestions = data.aiSuggestions.realTimePrompts.filter(
               (prompt: string) => {
-                if (!prompt || !prompt.trim() || prompt.trim() === "Continue recording for more context...") {
+                if (
+                  !prompt ||
+                  !prompt.trim() ||
+                  prompt.trim() === "Continue recording for more context..."
+                ) {
                   return false;
                 }
                 // Check if this suggestion is already in our accumulated text
-                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, '').trim();
+                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, "").trim();
                 return !existingLiveSuggestions.includes(cleanPrompt);
-              }
+              },
             );
 
             if (newSuggestions.length > 0) {
@@ -448,14 +452,17 @@ export function EncounterDetailView({
                 newSuggestions.length,
                 "new suggestions to existing",
                 existingLiveSuggestions.length,
-                "chars"
+                "chars",
               );
 
               // Append each new suggestion (like transcription delta accumulation)
               newSuggestions.forEach((prompt: string) => {
-                const formattedPrompt = prompt.startsWith('•') || prompt.startsWith('-') || prompt.startsWith('*') 
-                  ? prompt 
-                  : `• ${prompt}`;
+                const formattedPrompt =
+                  prompt.startsWith("•") ||
+                  prompt.startsWith("-") ||
+                  prompt.startsWith("*")
+                    ? prompt
+                    : `• ${prompt}`;
                 suggestionsText += `${formattedPrompt}\n`;
                 console.log(
                   "🔧 [EncounterView] Accumulated suggestion:",
@@ -463,7 +470,9 @@ export function EncounterDetailView({
                 );
               });
             } else {
-              console.log("🔧 [EncounterView] No new suggestions to accumulate");
+              console.log(
+                "🔧 [EncounterView] No new suggestions to accumulate",
+              );
             }
           }
 
@@ -599,13 +608,20 @@ export function EncounterDetailView({
         realtimeWs.onopen = () => {
           console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
 
-          // Update session configuration like your working code
+          // Update session configuration with comprehensive medical prompt
           realtimeWs!.send(
             JSON.stringify({
               type: "session.update",
               session: {
-                instructions:
-                  "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+                instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Avoid restating general knowledge or overly simplistic recommendations a physician would already know. Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines.
+
+Always include typical starting dose, dose adjustment schedules, and maximum dose for medications. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES. Return each new insight on a separate line, and prefix each line with a bullet (•), dash (-), or number if appropriate.
+
+Examples:
+• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day
+• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily`,
                 model: "gpt-4o-mini-realtime-preview-2024-12-17",
                 modalities: ["text"],
                 input_audio_format: "pcm16",
@@ -627,18 +643,50 @@ export function EncounterDetailView({
 
         // ✅ ACTIVE AI SUGGESTIONS SYSTEM - WebSocket with Comprehensive Medical Prompt
         // This is the primary AI suggestions implementation used by the UI
-        const startSuggestionsConversation = async (ws: WebSocket | null, patientData: any) => {
+        const startSuggestionsConversation = async (
+          ws: WebSocket | null,
+          patientData: any,
+        ) => {
           if (!ws) return;
-          
+
           // Inject patient context for AI suggestions
           const patientContext = `
 PATIENT CONTEXT FOR AI ASSISTANT:
 Patient: ${patientData.firstName} ${patientData.lastName}
-Age: ${patientData.age || 'Unknown'}
-Gender: ${patientData.gender || 'Unknown'}
+Age: ${patientData.age || "Unknown"}
+Gender: ${patientData.gender || "Unknown"}
 
-You are providing real-time clinical insights. Respond with concise, actionable bullet points with specific medication dosages and evidence-based guidance.
-Format responses as bullet points (•) with clinical specificity.
+You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+
+Instructions:
+
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first and indicate readiness for more if requested.
+
+Additionally, if the physician asks, provide relevant information from the patient's chart or office visits, such as past medical history, current medications, allergies, lab results, and imaging findings. Include this information concisely and accurately where appropriate. This medical information might be present in old office visit notes. Do not make anything up; it is better to say you don't have that information available.
+
+Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
+Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
+
+Additional details for medication recommendations:
+
+Always include typical starting dose, dose adjustment schedules, and maximum dose.
+Output examples of good insights:
+
+• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
+• Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
+• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
+
+Output examples of bad insights (to avoid):
+
+• Encourage gentle stretches and light activity to maintain mobility.
+• Suggest warm baths at night for symptomatic relief of muscle tension.
+• Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
+
+Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
+
+Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
+
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.
 `;
 
           const contextMessage = {
@@ -649,53 +697,28 @@ Format responses as bullet points (•) with clinical specificity.
               content: [
                 {
                   type: "input_text",
-                  text: patientContext
-                }
-              ]
-            }
+                  text: patientContext,
+                },
+              ],
+            },
           };
 
-          console.log("🧠 [EncounterView] Injecting patient context for AI suggestions");
+          console.log(
+            "🧠 [EncounterView] Injecting patient context for AI suggestions",
+          );
           ws.send(JSON.stringify(contextMessage));
 
-          // Create response for AI suggestions with comprehensive medical prompt
+          // Create response for AI suggestions (using session instructions)
           const suggestionsMessage = {
             type: "response.create",
             response: {
               modalities: ["text"],
-              instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
-
-Instructions:
-
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Additionally, if the physician asks, provide relevant information from the patient's chart or office visits, such as past medical history, current medications, allergies, lab results, and imaging findings. Include this information concisely and accurately where appropriate. This medical information might be present in old office visit notes. Do not make anything up, it would be better to say you don't have that information available.
-
-Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
-Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. When referencing diagnostics or red flags, provide a complete list to guide the differential diagnosis (e.g., imaging-related red flags). Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per line.
-
-Additional details for medication recommendations:
-
-Always include typical starting dose, dose adjustment schedules, and maximum dose.
-Output examples of good insights:
-
-Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
-Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
-Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
-
-Output examples of bad insights (to avoid):
-
-Encourage gentle stretches and light activity to maintain mobility.
-Suggest warm baths at night for symptomatic relief of muscle tension.
-Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
-
-Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-Return each new insight on a separate line, and prefix each line with a bullet (•), dash (-), or number if appropriate. Do not combine multiple ideas on the same line. 
-
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`
-            }
+            },
           };
 
-          console.log("🧠 [EncounterView] Creating AI suggestions conversation");
+          console.log(
+            "🧠 [EncounterView] Creating AI suggestions conversation",
+          );
           ws.send(JSON.stringify(suggestionsMessage));
         };
 
@@ -714,36 +737,52 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             setTranscriptionBuffer(transcriptionBuffer);
 
             // Start AI suggestions conversation when we have enough transcription
-            if (transcriptionBuffer.length > 50 && !suggestionsStarted && realtimeWs) {
+            if (
+              transcriptionBuffer.length > 50 &&
+              !suggestionsStarted &&
+              realtimeWs
+            ) {
               suggestionsStarted = true;
-              console.log("🧠 [EncounterView] Starting AI suggestions conversation");
+              console.log(
+                "🧠 [EncounterView] Starting AI suggestions conversation",
+              );
               startSuggestionsConversation(realtimeWs, patient);
             }
-          } 
-          
+          }
+
           // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
             console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);
-            
+
             // Accumulate suggestions buffer like transcription
             suggestionsBuffer += deltaText;
-            
+
             // Filter out SOAP notes and orders from suggestions
             const visitSummaryPatterns = [
-              "Chief Complaint:", "SUBJECTIVE:", "OBJECTIVE:", 
-              "ASSESSMENT:", "PLAN:", "Patient Visit Summary",
-              "**SUBJECTIVE:**", "**OBJECTIVE:**", "**ASSESSMENT:**", "**PLAN:**"
+              "Chief Complaint:",
+              "SUBJECTIVE:",
+              "OBJECTIVE:",
+              "ASSESSMENT:",
+              "PLAN:",
+              "Patient Visit Summary",
+              "**SUBJECTIVE:**",
+              "**OBJECTIVE:**",
+              "**ASSESSMENT:**",
+              "**PLAN:**",
             ];
-            
-            const containsVisitSummary = visitSummaryPatterns.some(pattern => 
-              suggestionsBuffer.includes(pattern)
+
+            const containsVisitSummary = visitSummaryPatterns.some((pattern) =>
+              suggestionsBuffer.includes(pattern),
             );
-            
+
             if (!containsVisitSummary) {
               // Set complete suggestions with header
-              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-                const formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
+              if (
+                !suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
+              ) {
+                const formattedSuggestions =
+                  "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
                 setLiveSuggestions(formattedSuggestions);
                 setGptSuggestions(formattedSuggestions);
               } else {
@@ -752,32 +791,42 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               }
             }
           }
-          
+
           // Handle AI suggestions completion
           else if (message.type === "response.text.done") {
             console.log("✅ [EncounterView] AI suggestions completed");
             // Suggestions are already accumulated via deltas
           }
-          
+
           // Handle transcription completion
           else if (
-            message.type === "conversation.item.input_audio_transcription.completed"
+            message.type ===
+            "conversation.item.input_audio_transcription.completed"
           ) {
             const finalText = message.transcript || "";
-            console.log("✅ [EncounterView] Transcription completed:", finalText);
-          } 
-          
+            console.log(
+              "✅ [EncounterView] Transcription completed:",
+              finalText,
+            );
+          }
+
           // Handle session events
-          else if (message.type === "session.created" || message.type === "session.updated") {
+          else if (
+            message.type === "session.created" ||
+            message.type === "session.updated"
+          ) {
             console.log("🔧 [EncounterView] Session event:", message.type);
             if (message.session?.id) {
               sessionId = message.session.id;
             }
           }
-          
+
           // Handle errors
           else if (message.type === "error") {
-            console.error("❌ [EncounterView] OpenAI Realtime API Error:", message);
+            console.error(
+              "❌ [EncounterView] OpenAI Realtime API Error:",
+              message,
+            );
           }
         };
 
