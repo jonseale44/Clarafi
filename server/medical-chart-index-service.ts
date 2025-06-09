@@ -3,14 +3,10 @@ import { db } from "./db.js";
 import {
   patients,
   encounters,
-  medicalHistory,
-  familyHistory,
-  socialHistory,
   allergies,
   medications,
   diagnoses,
-  vitals,
-  patientPhysicalFindings
+  vitals
 } from "../shared/schema.js";
 import { eq, desc, and, gte } from "drizzle-orm";
 
@@ -237,7 +233,7 @@ export class MedicalChartIndexService {
         currentProblems: activeDiagnoses.filter(d => d.status === 'active').map(d => d.diagnosis),
         medications: currentMeds.filter(m => m.status === 'active'),
         allergies: allergiesList,
-        medicalHistory: medHistory
+        medicalHistory: []
       }),
       lastUpdated: new Date(),
       lastEncounterId: recentEncounters[0]?.id || 0,
@@ -258,10 +254,10 @@ export class MedicalChartIndexService {
 Create a token-efficient medical summary for realtime AI assistance. Maximum 400 tokens.
 
 Patient Data:
-- Active Problems: ${rawData.currentProblems.join(', ')}
-- Medications: ${rawData.medications.map((m: any) => `${m.medicationName} ${m.dosage}`).join(', ')}
-- Allergies: ${rawData.allergies.map((a: any) => `${a.allergen} (${a.reaction})`).join(', ')}
-- Key History: ${rawData.medicalHistory.slice(0, 3).map((h: any) => h.historyText).join('; ')}
+- Active Problems: ${rawData.currentProblems.join(', ') || 'None documented'}
+- Medications: ${rawData.medications.map((m: any) => `${m.medicationName} ${m.dosage}`).join(', ') || 'None'}
+- Allergies: ${rawData.allergies.map((a: any) => `${a.allergen} (${a.reaction || 'reaction unknown'})`).join(', ') || 'NKDA'}
+- Key History: ${rawData.medicalHistory.length > 0 ? rawData.medicalHistory.slice(0, 3).join('; ') : 'No significant history'}
 
 Create:
 1. conciseSummary: Essential medical context in 1-2 sentences
@@ -417,7 +413,7 @@ Return JSON array of concepts:
     return dotProduct / (magnitudeA * magnitudeB);
   }
 
-  // Database query helpers (implement based on your existing patterns)
+  // Database query helpers (using existing database structure)
   private async getPatientBasicInfo(patientId: number) {
     const result = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
     return result[0];
@@ -429,18 +425,6 @@ Return JSON array of concepts:
       .where(eq(encounters.patientId, patientId))
       .orderBy(desc(encounters.startTime))
       .limit(limit);
-  }
-
-  private async getMedicalHistory(patientId: number) {
-    return await db.select().from(medicalHistory).where(eq(medicalHistory.patientId, patientId));
-  }
-
-  private async getFamilyHistory(patientId: number) {
-    return await db.select().from(familyHistory).where(eq(familyHistory.patientId, patientId));
-  }
-
-  private async getSocialHistory(patientId: number) {
-    return await db.select().from(socialHistory).where(eq(socialHistory.patientId, patientId));
   }
 
   private async getAllergies(patientId: number) {
@@ -461,12 +445,6 @@ Return JSON array of concepts:
       .where(eq(vitals.patientId, patientId))
       .orderBy(desc(vitals.measuredAt))
       .limit(1);
-  }
-
-  private async getPersistentFindings(patientId: number) {
-    return await db.select()
-      .from(patientPhysicalFindings)
-      .where(eq(patientPhysicalFindings.patientId, patientId));
   }
 
   private formatVitals(vitals: any): Record<string, any> {
