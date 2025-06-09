@@ -421,12 +421,11 @@ export function EncounterDetailView({
           let suggestionsText = "";
 
           // If this is the first suggestion, add the header
-          if (!existingLiveSuggestions.includes("🧠 LIVE AI ANALYSIS:")) {
-            suggestionsText = "🧠 LIVE AI ANALYSIS:\n";
+          if (!existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+            suggestionsText = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n";
             if (data.aiSuggestions.clinicalGuidance) {
               suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
             }
-            suggestionsText += "📋 Live Suggestions:\n";
             console.log("🔧 [EncounterView] First suggestion - added header");
           } else {
             suggestionsText = existingLiveSuggestions;
@@ -455,14 +454,15 @@ export function EncounterDetailView({
                 newSuggestions.length
               );
 
-              newSuggestions.forEach((prompt: string, index: number) => {
-                const itemNumber = existingNumbers + index + 1;
-                suggestionsText += `${itemNumber}. ${prompt}\n`;
+              newSuggestions.forEach((prompt: string) => {
+                // If prompt already has bullet or dash, use as-is; otherwise add bullet
+                const formattedPrompt = prompt.startsWith('•') || prompt.startsWith('-') || prompt.startsWith('*') 
+                  ? prompt 
+                  : `• ${prompt}`;
+                suggestionsText += `${formattedPrompt}\n`;
                 console.log(
-                  "🔧 [EncounterView] Added item",
-                  itemNumber,
-                  ":",
-                  prompt.substring(0, 50) + "...",
+                  "🔧 [EncounterView] Added suggestion:",
+                  formattedPrompt.substring(0, 50) + "...",
                 );
               });
             } else {

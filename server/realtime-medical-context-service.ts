@@ -197,32 +197,41 @@ export class RealtimeMedicalContextService {
    * Build optimized system prompt based on user role
    */
   private buildOptimizedSystemPrompt(userRole: "nurse" | "provider"): string {
-    const basePrompt = `You are an expert medical AI assistant providing real-time clinical support during patient encounters.`;
-    
     if (userRole === "nurse") {
-      return `${basePrompt}
+      return `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY. Provide concise, single-line nursing insights.
 
-NURSE ROLE FOCUS:
-- Nursing assessments and interventions
-- Patient comfort and safety
-- Vital signs interpretation
-- Patient education needs
-- Care coordination
-- Documentation assistance
+Instructions:
+- Focus on nursing assessments, interventions, patient safety, and care coordination
+- Prioritize practical, actionable suggestions for immediate nursing tasks
+- Include specific vital sign ranges, medication administration guidance, and patient education
+- Avoid general knowledge nurses already know
+- Stay brief and actionable, limit to one insight per line
+- Return each insight on a separate line with bullet (•) or dash (-)
+- Start each response on a new line with line breaks between prompts
 
-Provide practical, actionable suggestions that help with immediate nursing tasks.`;
+Examples:
+• Blood pressure >140/90 requires provider notification and repeat in 15 minutes
+• Assess pain scale q2h for first 8 hours post-procedure
+• Hold metformin if patient NPO >24 hours or creatinine >1.5`;
     } else {
-      return `${basePrompt}
+      return `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of input language. Provide concise, single-line medical insights exclusively for physicians.
 
-PROVIDER ROLE FOCUS:
-- Diagnostic reasoning
-- Treatment planning
-- Medical decision-making
-- Order management
-- Clinical documentation
-- Patient care coordination
+Instructions:
+- Focus on high-value, evidence-based diagnostic, medication, and clinical decision-making insights
+- Include relevant patient chart information: past medical history, current medications, allergies, lab results, imaging findings
+- Prioritize specifics: detailed medication dosages (starting dose, titration schedule, max dose), red flags, advanced diagnostics, specific guidelines
+- When referencing diagnostics or red flags, provide complete lists to guide differential diagnosis
+- Avoid restating general knowledge physicians already know
+- Stay brief and actionable, limit to one insight per line
+- Always include typical starting dose, dose adjustment schedules, and maximum dose for medications
+- DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES
+- Return each insight on separate line with bullet (•), dash (-), or number
+- Start each response on new line with line breaks between prompts
 
-Provide clinical insights that support diagnostic and therapeutic decisions.`;
+Examples of good insights:
+• Amitriptyline for nerve pain: 10-25 mg at night, titrate weekly, max 150 mg/day
+• Persistent lower back pain without neurological signs suggests mechanical etiology; imaging not required unless red flags
+• Meloxicam: start 7.5 mg daily, max 15 mg daily`;
     }
   }
 
@@ -250,16 +259,21 @@ ${medicalContext}
 ${chiefComplaint ? `CHIEF COMPLAINT: ${chiefComplaint}\n` : ''}
 VOICE TRANSCRIPTION: "${transcription}"
 
-Analyze the transcription and provide JSON response:
+Provide clinical insights based on transcription. Return JSON format only:
 {
-  "suggestions": ["actionable suggestion 1", "actionable suggestion 2", "actionable suggestion 3"],
-  "draftOrders": ["order 1", "order 2"],
-  "draftDiagnoses": ["diagnosis 1", "diagnosis 2"], 
-  "clinicalNotes": "Brief clinical summary and recommendations",
-  "medicalAlerts": ["alert 1 if any clinical concerns"]
+  "suggestions": ["• specific insight 1", "• actionable recommendation 2", "• clinical guidance 3"],
+  "draftOrders": ["specific order with dosage/details"],
+  "draftDiagnoses": ["ICD-10 appropriate diagnosis"], 
+  "clinicalNotes": "Brief clinical summary",
+  "medicalAlerts": ["red flag or clinical concern if any"]
 }
 
-Focus on immediate, actionable guidance based on the voice input and patient context.`;
+Each suggestion must be:
+- Single line with bullet point (•) or dash (-)
+- Specific medication dosages with starting dose, titration, max dose
+- Evidence-based diagnostic or therapeutic guidance
+- Red flags or advanced diagnostics when relevant
+- Actionable for immediate clinical decision-making`;
   }
 
   /**
