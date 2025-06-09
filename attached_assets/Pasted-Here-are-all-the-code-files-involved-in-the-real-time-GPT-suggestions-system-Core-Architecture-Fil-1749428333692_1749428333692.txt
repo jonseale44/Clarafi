@@ -1,0 +1,71 @@
+Here are all the code files involved in the real-time GPT suggestions system:
+
+Core Architecture Files
+1. RealTimeSuggestionsModule.ts - Main suggestions processing module
+
+Handles WebSocket events for real-time suggestions
+Injects patient chart context into conversations
+Filters out SOAP notes, orders, and visit summaries to prevent cross-contamination
+Manages conversation state and freezing/unfreezing insights
+2. WebSocketEventHandler.ts - Central event routing system
+
+Routes different event types to appropriate modules
+Prevents duplicate processing with event tracking
+Handles metadata-based routing for suggestions vs SOAP notes vs orders
+3. MainTranscription.tsx - UI component displaying suggestions
+
+Shows GPT suggestions in real-time panel alongside transcription
+Implements auto-scrolling and frozen state indicators
+Manages WebSocket client lifecycle
+Key Implementation Details
+Real-time Streaming Pattern:
+
+// RealTimeSuggestionsModule handles streaming text
+case "response.text.delta":
+  // Process incremental text updates
+  const event = this.suggestionsModule.handleGptAnalysis(data);
+  
+case "response.text.done": 
+  // Handle completion and end conversation
+Patient Context Injection:
+
+// Inject patient chart once per WebSocket connection
+async injectChartContext() {
+  const patientContext = this.formatPatientContext(this.patientChart);
+  const message = {
+    type: "conversation.item.create",
+    data: {
+      role: "user",
+      content: patientContext,
+      session_id: this.sessionId,
+    }
+  };
+  this.ws.send(JSON.stringify(message));
+}
+Content Filtering System:
+
+// Prevent SOAP notes from appearing in suggestions
+const visitSummaryPatterns = [
+  "Chief Complaint:", "SUBJECTIVE:", "OBJECTIVE:", 
+  "ASSESSMENT:", "PLAN:", "Patient Visit Summary"
+];
+const containsVisitSummary = visitSummaryPatterns.some(pattern => 
+  fullContent.includes(pattern)
+);
+if (containsVisitSummary) {
+  return null; // Block from suggestions
+}
+Supporting Files
+4. WebSocketClient.ts - WebSocket connection management
+5. PatientMessage.tsx - Alternative GPT suggestions for patient communication
+6. server/routes.ts - API endpoints for message suggestions
+7. server/services/gpt-service.ts - GPT processing services
+
+The system works by:
+
+Establishing WebSocket connection with OpenAI Real-time API
+Injecting patient chart context once per session
+Streaming real-time suggestions based on conversation
+Filtering content to prevent duplicate display of SOAP notes/orders
+Freezing suggestions when recording stops to prevent overwrites
+This creates intelligent, contextual suggestions that understand the patient's medical history while avoiding interference with other AI-generated content.

@@ -1,0 +1,465 @@
+import { WebSocketClient } from "../WebSocketClient";
+
+export class RealTimeSuggestionsModule {
+  private patientChart: any = null;
+  // Track injected charts by WebSocket instance
+  private static _injectedChartWebSockets = new WeakMap<
+    WebSocket,
+    Set<string>
+  >();
+  private currentConversationId: string | null = null;
+  private ws: WebSocket | null;
+  private sessionId: string | null = null;
+  private isConversationActive: boolean = false;
+  private patientId: string | null = null;
+  // Flag to determine if insights are frozen (after stop recording)
+  private _isFrozen: boolean = false;
+
+  constructor(webSocket: WebSocket | null, patientId?: string) {
+    this.ws = webSocket;
+    if (patientId) {
+      this.patientId = patientId;
+    }
+    console.log(
+      "[RealTimeSuggestionsModule] WebSocket initialized:",
+      !!webSocket,
+      "for patient:",
+      patientId,
+    );
+  }
+
+  updateWebSocket(newWs: WebSocket | null) {
+    const previousWs = this.ws;
+    this.ws = newWs;
+
+    // Only reset conversation state if we're actually changing WebSockets
+    if (previousWs !== newWs) {
+      this.isConversationActive = false;
+      this.currentConversationId = null;
+
+      console.log(
+        "[RealTimeSuggestionsModule] WebSocket updated, chart injection needed:",
+        this.patientId && newWs
+          ? !this.hasInjectedChart(this.patientId)
+          : "unknown patient",
+      );
+    }
+  }
+
+  setPatientId(patientId: string) {
+    this.patientId = patientId;
+    console.log("[RealTimeSuggestionsModule] Patient ID set:", patientId);
+  }
+
+  setPatientChart(chart: any) {
+    this.patientChart = chart;
+    console.log(
+      "[RealTimeSuggestionsModule] Chart data set for patient:",
+      this.patientId,
+    );
+  }
+
+  private hasInjectedChart(patientId: string): boolean {
+    if (!this.ws) return false;
+
+    const injectedPatients =
+      RealTimeSuggestionsModule._injectedChartWebSockets.get(this.ws);
+    return injectedPatients ? injectedPatients.has(patientId) : false;
+  }
+
+  private markChartAsInjected(patientId: string): void {
+    if (!this.ws) return;
+
+    let injectedPatients =
+      RealTimeSuggestionsModule._injectedChartWebSockets.get(this.ws);
+    if (!injectedPatients) {
+      injectedPatients = new Set<string>();
+      RealTimeSuggestionsModule._injectedChartWebSockets.set(
+        this.ws,
+        injectedPatients,
+      );
+    }
+
+    injectedPatients.add(patientId);
+  }
+
+  async startNewConversation(patientId: string) {
+    console.log(
+      "[RealTimeSuggestionsModule] Starting new conversation for patient:",
+      patientId,
+    );
+
+    if (!this.ws) {
+      console.error("[RealTimeSuggestionsModule] WebSocket not initialized");
+      return;
+    }
+
+    // Prevent multiple new conversations in quick succession
+    if (this.isConversationActive) {
+      console.log(
+        "[RealTimeSuggestionsModule] Conversation already active, skipping",
+      );
+      return;
+    }
+
+    this.patientId = patientId;
+    this.isConversationActive = true;
+    this.currentConversationId = null;
+
+    try {
+      // Get the WebSocketClient instance
+      const wsClient = this.ws instanceof WebSocketClient ? this.ws : null;
+
+      // 1. Check if we need to inject chart (only once per WebSocket connection)
+      const needsChartInjection = wsClient
+        ? !wsClient.hasPatientChartBeenSent(patientId)
+        : !this.hasInjectedChart(patientId);
+
+      if (needsChartInjection) {
+        console.log(
+          "[RealTimeSuggestionsModule] Fetching patient chart data for context injection",
+        );
+        const chartResponse = await fetch(`/api/patients/${patientId}/chart`);
+        if (!chartResponse.ok) {
+          throw new Error(
+            `Failed to fetch patient chart: ${chartResponse.status}`,
+          );
+        }
+        this.patientChart = await chartResponse.json();
+
+        // 2. Wait for session to be established
+        if (!this.sessionId) {
+          console.log(
+            "[RealTimeSuggestionsModule] Waiting for session to be established...",
+          );
+          await new Promise<void>((resolve, reject) => {
+            const checkSession = () => {
+              if (this.sessionId) {
+                resolve();
+              } else if (!this.ws) {
+                reject(
+                  new Error("WebSocket disconnected while waiting for session"),
+                );
+              } else {
+                setTimeout(checkSession, 100);
+              }
+            };
+            checkSession();
+          });
+        }
+
+        // 3. Inject the chart context
+        const byteSize = await this.injectChartContext();
+
+        // Mark that we've injected the chart for this patient with this WebSocket
+        if (wsClient) {
+          wsClient.markPatientChartAsSent(patientId);
+        } else {
+          this.markChartAsInjected(patientId);
+        }
+
+        // Log chart injection
+        console.log(
+          `[RealTimeSuggestionsModule] ✅ Chart context injected at ${new Date().toISOString()} (once per WebSocket connection)`,
+        );
+      } else {
+        console.log(
+          `[RealTimeSuggestionsModule] ℹ️ Using existing chart already injected for this WebSocket connection`,
+        );
+      }
+    } catch (error) {
+      this.isConversationActive = false;
+      console.error(
+        "[RealTimeSuggestionsModule] ❌ Failed to start conversation:",
+        error,
+      );
+      throw error;
+    }
+  }
+
+  endConversation() {
+    this.isConversationActive = false;
+    // Note: We don't reset _hasInjectedChart here anymore as it should persist for the session
+    this.currentConversationId = null;
+    console.log("[RealTimeSuggestionsModule] 🔚 Conversation ended");
+  }
+
+  /**
+   * Freezes the AI insights to prevent further updates.
+   * This is called when recording stops to prevent duplicate content.
+   */
+  freezeInsights() {
+    this._isFrozen = true;
+    console.log("[RealTimeSuggestionsModule] 🧊 AI insights FROZEN - will stop accepting updates");
+  }
+
+  /**
+   * Unfreezes the AI insights to allow updates again.
+   * This is called when recording starts to allow new updates.
+   */
+  unfreezeInsights() {
+    this._isFrozen = false;
+    console.log("[RealTimeSuggestionsModule] 🔥 AI insights UNFROZEN - will accept updates");
+  }
+
+  private formatPatientContext(patientChart: any): string {
+    // Deep clone to avoid reference issues
+    const chart = JSON.parse(JSON.stringify(patientChart));
+
+    // Remove sections that could contain large text content
+    const sectionsToRemove = [
+      'attachments',
+      'appointments', 
+      'office_visits',
+      'encounters',
+      'text_content',
+      'extracted_text'
+    ];
+
+    // Clean at root level
+    sectionsToRemove.forEach(section => delete chart[section]);
+
+    // Also clean any nested attachment data in other sections
+    const cleanObject = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+      sectionsToRemove.forEach(key => delete obj[key]);
+      Object.values(obj).forEach(value => cleanObject(value));
+    };
+
+    cleanObject(chart);
+
+    return `Patient Chart:\n${JSON.stringify(chart, null, 2)}`;
+  }
+
+  private async injectChartContext(): Promise<number> {
+    if (!this.ws || !this.sessionId || !this.patientChart) {
+      console.error(
+        "[RealTimeSuggestionsModule] Cannot inject chart context, missing dependencies",
+      );
+      return 0;
+    }
+
+    const patientContext = this.formatPatientContext(this.patientChart);
+    console.log(
+      "[RealTimeSuggestionsModule] 💉 Injecting chart context into conversation",
+    );
+
+    // Analyze the size of the context being injected
+    const textEncoder = new TextEncoder();
+    const encodedContext = textEncoder.encode(JSON.stringify(patientContext));
+    const byteSize = encodedContext.length;
+    const wordCount = patientContext.length / 5; // Rough estimate
+    const estimatedTokens = wordCount * 1.3; // Rough estimate
+
+    // Detailed logging of chart injection data
+    console.log("[RealTimeSuggestionsModule] 📊 CHART INJECTION STATISTICS 📊");
+    console.log(`Chart size: ~${(byteSize / 1024).toFixed(2)} KB`);
+    console.log(`Word count: ~${wordCount} words`);
+    console.log(`Estimated tokens: ~${estimatedTokens} tokens`);
+
+    const message = {
+      type: "conversation.item.create",
+      data: {
+        role: "user",
+        content: patientContext,
+        session_id: this.sessionId,
+      },
+    };
+
+    this.ws.send(JSON.stringify(message));
+    return byteSize;
+  }
+
+  handleGptAnalysis(data: any) {
+    console.group("[RealTimeSuggestionsModule] 🧠 GPT ANALYSIS HANDLER");
+    console.log("Event Type:", data.type);
+    console.log("Has Response:", !!data.response);
+    console.log("Metadata Type:", data.response?.metadata?.type || "MISSING");
+    console.log("Has Delta:", !!data.delta);
+    console.log("Has Text:", !!data.text);
+    console.log("Frozen State:", this._isFrozen);
+
+    // EARLY RETURN: If insights are frozen, reject any updates
+    if (this._isFrozen) {
+      console.warn("[RealTimeSuggestionsModule] 🧊 AI insights are FROZEN - rejecting update");
+      console.groupEnd();
+      return null;
+    }
+
+    const contentPreview = data.delta
+        ? `DELTA: "${data.delta}"`
+        : data.text
+          ? `TEXT: "${data.text.substring(0, 30)}${data.text.length > 30 ? "..." : ""}"`
+          : "N/A";
+
+    console.log("Content Preview:", contentPreview);
+
+    // Get the full content for deeper analysis
+    const fullContent = data.delta || data.text || "";
+
+    // DO A FULL CONTENT DUMP FOR DEBUGGING PURPOSES
+    console.log("Full Content:", fullContent);
+
+    // Verify this is a suggestions event or at least not a conflicting type
+    if (
+      data.response?.metadata?.type &&
+      data.response.metadata.type !== "suggestions"
+    ) {
+      console.warn(
+        "[SuggestionsModule] ⚠️ Received non-suggestion event:",
+        data.response.metadata.type,
+      );
+      console.log("This might be handling event intended for another module!");
+      console.groupEnd();
+      return null;
+    }
+
+    // SUPER AGGRESSIVE PREVENTION: Multiple checks for ANY form of Visit Summary or SOAP note content
+    const visitSummaryPatterns = [
+      // Visit summaries
+      "Patient Visit Summary",
+      "PATIENT VISIT SUMMARY", 
+      "Visit Summary",
+      "VISIT SUMMARY",
+
+      // SOAP note sections and formats (including markdown and plain text)
+      "Chief Complaint:",
+      "**Chief Complaint:**",
+      "History of Present Illness:",
+      "**History of Present Illness:**",
+      "Vital Signs:",
+      "**Vital Signs:**",
+      "Review of Systems:",
+      "**Review of Systems:**",
+      "Physical Examination:",
+      "**Physical Examination:**",
+      "Assessment:",
+      "**Assessment:**",
+      "Plan:",
+      "**Plan:**",
+      "Diagnosis:",
+      "**Diagnosis:**",
+      "Impression:",
+      "**Impression:**",
+      "Recommendations:",
+      "**Recommendations:**",
+      "Follow-up:",
+      "**Follow-up:**",
+      "SUBJECTIVE:",
+      "OBJECTIVE:",
+      "ASSESSMENT:",
+      "PLAN:",
+      "S:",
+      "O:",
+      "A:",
+      "P:",
+
+      // Regular expressions for structural detection
+      "SOAP Note",
+      "Clinical Note",
+      "Progress Note"
+    ];
+
+    // Filter out order-related content that should be handled by DraftOrdersModule
+    const orderPatterns = [
+      "Lab: [",
+      "Imaging: [",
+      "Medication: [",
+      "Labs:",
+      "Imaging:",
+      "Medications:",
+      "Laboratory:",
+      "Radiology:",
+      "Prescriptions:"
+    ];
+
+    // Check if ANY of the patterns match - dump the full content for analysis
+    console.log("[SuggestionsModule] 🔍 CHECKING CONTENT:", fullContent.substring(0, 100) + "...");
+
+    // Check for visit summary patterns
+    const containsVisitSummary = visitSummaryPatterns.some(pattern => {
+      const hasPattern = fullContent.includes(pattern);
+      if (hasPattern) {
+        console.warn(`[SuggestionsModule] ⚠️ Matched visit summary pattern: "${pattern}" - BLOCKING from suggestions`);
+      }
+      return hasPattern;
+    });
+
+    if (containsVisitSummary) {
+      console.warn("[SuggestionsModule] ⚠️ Detected Visit Summary Pattern - BLOCKING from suggestions");
+      console.groupEnd();
+      return null;
+    }
+
+    // Check for order patterns - this is the key fix for the duplicate content issue
+    const containsOrderContent = orderPatterns.some(pattern => {
+      const hasPattern = fullContent.includes(pattern);
+      if (hasPattern) {
+        console.warn(`[SuggestionsModule] ⚠️ Matched order pattern: "${pattern}" - BLOCKING from suggestions`);
+      }
+      return hasPattern;
+    });
+
+    // If this is order content, don't show it in the suggestions UI
+    if (containsOrderContent) {
+      console.warn("[SuggestionsModule] ⚠️ Detected order content - BLOCKING from suggestions");
+      console.groupEnd();
+      return null;
+    }
+
+    // Additional check for SOAP note content even without metadata
+    const soapNoteFormatDetected =
+      fullContent.includes("SUBJECTIVE:") ||
+      fullContent.includes("OBJECTIVE:") ||
+      fullContent.includes("ASSESSMENT/PLAN:") ||
+      fullContent.includes("ASSESSMENT:") ||
+      fullContent.includes("PLAN:") ||
+      fullContent.includes("**SUBJECTIVE:**") ||
+      fullContent.includes("**OBJECTIVE:**") ||
+      fullContent.includes("**ASSESSMENT:**") ||
+      fullContent.includes("**PLAN:**");
+
+    if (soapNoteFormatDetected) {
+      console.warn(
+        "[SuggestionsModule] ⚠️ Detected SOAP note format in suggestions module - ignoring",
+      );
+      console.log("This content should be handled by the SOAP module");
+      console.groupEnd();
+      return null;
+    }
+
+    if (!data.delta && !data.text) {
+      console.log("[SuggestionsModule] Empty content, returning empty delta");
+      console.groupEnd();
+      return { type: "gpt.analysis.delta", delta: "" };
+    }
+
+    let processedText = data.delta || data.text;
+    console.log("[SuggestionsModule] Raw content:", processedText);
+
+    // Add newlines after sentence-ending periods, excluding periods in decimal numbers
+    processedText = processedText.replace(/•\s*/g, "\n• ");
+    //console.log("[SuggestionsModule] Processed content:", processedText);
+
+    // End the conversation when we receive a completion message
+    if (data.type === "response.text.done") {
+      console.log(
+        "[SuggestionsModule] Completion received, ending conversation",
+      );
+      this.endConversation();
+    }
+
+    const result = {
+      type:
+        data.type === "response.text.done"
+          ? "gpt.analysis.complete"
+          : "gpt.analysis.delta",
+
+      [data.type === "response.text.done" ? "text" : "delta"]: processedText,
+    };
+
+    console.log("[SuggestionsModule] Returning event:", result.type);
+    console.groupEnd();
+    return result;
+  }
+}
