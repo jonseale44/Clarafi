@@ -253,7 +253,7 @@ export class EnhancedRealtimeService {
     }
 
     const openaiWs = new WebSocket(
-      "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17",
+      "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview",
       {
         headers: {
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -299,7 +299,7 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 Return each new insight on a separate line, and prefix each line with a bullet (•), dash (-), or number if appropriate. Do not combine multiple ideas on the same line. 
 
 Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
-            model: "gpt-4o-mini-realtime-preview-2024-12-17",
+            model: "gpt-4o-mini-realtime-preview",
             modalities: ["text"], // Text-only output for suggestions
             input_audio_format: "pcm16",
             input_audio_transcription: {
