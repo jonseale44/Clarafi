@@ -461,12 +461,11 @@ export function registerRoutes(app: Express): Server {
       try {
         console.log("🎯 [Routes] Using enhanced realtime suggestions...");
         
-        // Use the new realtime medical context service for fast suggestions
-        const result = await realtimeMedicalContext.processVoiceWithFastContext(
-          Buffer.from(""), // No audio buffer for text-only processing
+        // Use text-only mode for fast suggestions (bypass audio processing)
+        const result = await realtimeMedicalContext.generateTextOnlySuggestions(
           parseInt(patientId),
           userRole as "nurse" | "provider",
-          "" // No chief complaint for live suggestions
+          transcription || "Live transcription in progress"
         );
 
         console.log("✅ [Routes] Enhanced suggestions received");

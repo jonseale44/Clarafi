@@ -268,11 +268,11 @@ Focus on immediate, actionable guidance based on the voice input and patient con
         throw new Error("Audio buffer too small, likely invalid audio data");
       }
 
-      // Create a proper File object with WAV headers if needed
-      const audioBlob = new Blob([audioBuffer], { type: "audio/wav" });
-      const audioFile = new File([audioBlob], "recording.wav", { type: "audio/wav" });
-
       console.log(`🎵 [RealtimeMedical] Transcribing audio (${audioBuffer.length} bytes)`);
+
+      // Create proper WAV file with headers
+      const wavBuffer = this.createWAVBuffer(audioBuffer);
+      const audioFile = new File([wavBuffer], "recording.wav", { type: "audio/wav" });
 
       const response = await this.openai.audio.transcriptions.create({
         file: audioFile,
@@ -289,6 +289,43 @@ Focus on immediate, actionable guidance based on the voice input and patient con
       console.error(`❌ [RealtimeMedical] Transcription failed:`, error);
       throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Create proper WAV file buffer with headers
+   */
+  private createWAVBuffer(audioBuffer: Buffer): Buffer {
+    const sampleRate = 16000; // 16kHz
+    const numChannels = 1; // Mono
+    const bitsPerSample = 16;
+    const blockAlign = numChannels * bitsPerSample / 8;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = audioBuffer.length;
+    const fileSize = 36 + dataSize;
+
+    const header = Buffer.alloc(44);
+    let offset = 0;
+
+    // RIFF chunk descriptor
+    header.write('RIFF', offset); offset += 4;
+    header.writeUInt32LE(fileSize, offset); offset += 4;
+    header.write('WAVE', offset); offset += 4;
+
+    // fmt sub-chunk
+    header.write('fmt ', offset); offset += 4;
+    header.writeUInt32LE(16, offset); offset += 4; // Sub-chunk size
+    header.writeUInt16LE(1, offset); offset += 2; // Audio format (PCM)
+    header.writeUInt16LE(numChannels, offset); offset += 2;
+    header.writeUInt32LE(sampleRate, offset); offset += 4;
+    header.writeUInt32LE(byteRate, offset); offset += 4;
+    header.writeUInt16LE(blockAlign, offset); offset += 2;
+    header.writeUInt16LE(bitsPerSample, offset); offset += 2;
+
+    // data sub-chunk
+    header.write('data', offset); offset += 4;
+    header.writeUInt32LE(dataSize, offset);
+
+    return Buffer.concat([header, audioBuffer]);
   }
 
   /**
