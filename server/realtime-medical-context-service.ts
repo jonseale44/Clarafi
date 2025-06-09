@@ -165,7 +165,10 @@ export class RealtimeMedicalContextService {
         max_tokens: 1500
       });
 
-      const result = JSON.parse(response.choices[0].message.content || "{}");
+      // Extract and clean JSON from response (handle markdown code blocks)
+      const rawContent = response.choices[0].message.content || "{}";
+      const cleanedContent = this.extractJSON(rawContent);
+      const result = JSON.parse(cleanedContent);
       
       // Structure response based on user role
       const structuredResponse: RealtimeMedicalResponse = {
@@ -357,6 +360,39 @@ Focus on immediate, actionable guidance based on the voice input and patient con
   }
 
 
+
+  /**
+   * Extract JSON from AI response, handling markdown code blocks
+   */
+  private extractJSON(content: string): string {
+    try {
+      // Remove markdown code block markers
+      let cleaned = content.trim();
+      
+      // Handle ```json blocks
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      // Handle ``` blocks
+      if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      // Find JSON object boundaries
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd = cleaned.lastIndexOf('}');
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+      }
+      
+      return cleaned.trim();
+    } catch (error) {
+      console.error(`❌ [RealtimeMedical] JSON extraction failed:`, error);
+      return "{}";
+    }
+  }
 
   /**
    * Update medical chart index after encounter completion
