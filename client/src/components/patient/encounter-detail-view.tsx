@@ -129,6 +129,9 @@ export function EncounterDetailView({
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // WebSocket connection to RealTimeSuggestionsModule
+  const suggestionsWsRef = useRef<WebSocket | null>(null);
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -707,35 +710,14 @@ Focus on immediate clinical utility for provider decision-making.`
             }
           } 
           
-          // Handle AI suggestions streaming deltas (like transcription)
+          // Handle AI suggestions streaming deltas - route through RealTimeSuggestionsModule
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
-            console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);
+            console.log("🧠 [EncounterView] AI suggestions delta, routing to RealTimeSuggestionsModule:", deltaText);
             
-            // Accumulate suggestions buffer like transcription
-            suggestionsBuffer += deltaText;
-            
-            // Filter out SOAP notes and orders from suggestions
-            const visitSummaryPatterns = [
-              "Chief Complaint:", "SUBJECTIVE:", "OBJECTIVE:", 
-              "ASSESSMENT:", "PLAN:", "Patient Visit Summary",
-              "**SUBJECTIVE:**", "**OBJECTIVE:**", "**ASSESSMENT:**", "**PLAN:**"
-            ];
-            
-            const containsVisitSummary = visitSummaryPatterns.some(pattern => 
-              suggestionsBuffer.includes(pattern)
-            );
-            
-            if (!containsVisitSummary) {
-              // Set complete suggestions with header
-              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-                const formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
-                setLiveSuggestions(formattedSuggestions);
-                setGptSuggestions(formattedSuggestions);
-              } else {
-                setLiveSuggestions(suggestionsBuffer);
-                setGptSuggestions(suggestionsBuffer);
-              }
+            // Send transcription to RealTimeSuggestionsModule via WebSocket for better suggestions
+            if (transcriptionBuffer && transcriptionBuffer.length > 10) {
+              sendTranscriptionToSuggestionsModule(transcriptionBuffer);
             }
           }
           
