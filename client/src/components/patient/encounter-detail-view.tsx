@@ -781,9 +781,15 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
             };
 
             // Only process if content passes filtering
-            if (!shouldFilterContent(suggestionsBuffer + deltaText)) {
-              // Accumulate suggestions buffer like transcription
-              suggestionsBuffer += deltaText;
+            if (!shouldFilterContent(deltaText)) {
+              // Process text like external system: ensure bullet points start on new lines
+              // Remove any existing bullet points to avoid duplication, then add clean formatting
+              let processedText = deltaText;
+              processedText = processedText.replace(/^[\s]*[-•]\s*/gm, ""); // Remove existing bullets at start of lines
+              processedText = processedText.replace(/•\s*/g, "\n• "); // Add clean bullet formatting
+              
+              // Accumulate suggestions buffer
+              suggestionsBuffer += processedText;
 
               // Set complete suggestions with header
               if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
@@ -819,6 +825,9 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
             // Trigger new AI suggestions based on completed transcription
             if (suggestionsStarted && finalText.length > 10 && realtimeWs) {
               console.log("🧠 [EncounterView] Triggering AI suggestions for completed transcription");
+              
+              // Reset suggestions buffer for new response (prevents appending to old suggestions)
+              suggestionsBuffer = "";
               
               // Send the transcription as new context
               const transcriptionContext = {
