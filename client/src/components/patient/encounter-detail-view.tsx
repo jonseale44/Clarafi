@@ -738,7 +738,7 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
             setTranscription(transcriptionBuffer);
             setTranscriptionBuffer(transcriptionBuffer);
 
-            // Start AI suggestions conversation when we have enough transcription
+            // Start AI suggestions conversation when we have enough transcription (first time only)
             if (
               transcriptionBuffer.length > 50 &&
               !suggestionsStarted &&
@@ -805,7 +805,7 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
             // Suggestions are already accumulated via deltas
           }
 
-          // Handle transcription completion
+          // Handle transcription completion and trigger new AI suggestions
           else if (
             message.type ===
             "conversation.item.input_audio_transcription.completed"
@@ -815,6 +815,42 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
               "✅ [EncounterView] Transcription completed:",
               finalText,
             );
+
+            // Trigger new AI suggestions based on completed transcription
+            if (suggestionsStarted && finalText.length > 10 && realtimeWs) {
+              console.log("🧠 [EncounterView] Triggering AI suggestions for completed transcription");
+              
+              // Send the transcription as new context
+              const transcriptionContext = {
+                type: "conversation.item.create",
+                item: {
+                  type: "message",
+                  role: "user",
+                  content: [
+                    {
+                      type: "input_text",
+                      text: `Additional clinical information: "${finalText}"`
+                    }
+                  ]
+                }
+              };
+              
+              realtimeWs.send(JSON.stringify(transcriptionContext));
+              
+              // Request new AI response
+              const newResponse = {
+                type: "response.create",
+                response: {
+                  modalities: ["text"],
+                  instructions: `Based on this new clinical information, provide additional medical insights using bullet points (•). Focus on medication dosages, red flags, or diagnostic considerations specific to what was just discussed.`,
+                  metadata: {
+                    type: "suggestions"
+                  }
+                }
+              };
+              
+              realtimeWs.send(JSON.stringify(newResponse));
+            }
           }
 
           // Handle session events
