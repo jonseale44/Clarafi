@@ -970,17 +970,7 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
       };
 
       mediaRecorder.onstop = async () => {
-        console.log(
-          "🎤 [EncounterView] Recording stopped, cleaning up real-time connection...",
-        );
-
-        // Close the real-time WebSocket connection
-        if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
-          realtimeWs.close();
-          console.log(
-            "🌐 [EncounterView] Real-time WebSocket connection closed",
-          );
-        }
+        console.log("🎤 [EncounterView] Recording stopped");
 
         // Clean up audio processing
         if (processor) {
@@ -989,143 +979,13 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
           audioContext.close();
         }
 
-        console.log(
-          "🎤 [EncounterView] Now processing with Assistants API for AI suggestions...",
-        );
+        // Keep WebSocket connection open for ongoing AI suggestions
+        // Do NOT close the WebSocket - let it continue providing suggestions
+        console.log("🧠 [EncounterView] WebSocket remains open for ongoing AI suggestions");
 
-        // Use the real-time transcription for AI analysis via Assistants API
-        if (transcriptionBuffer.trim()) {
-          try {
-            // Send transcription to Assistants API for comprehensive analysis
-            const formData = new FormData();
-            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-            formData.append("audio", audioBlob, "recording.webm");
-            formData.append("patientId", patient.id.toString());
-            formData.append("userRole", "provider");
-            formData.append("isLiveChunk", "false");
-            formData.append("transcriptionOverride", transcriptionBuffer);
-
-            const response = await fetch("/api/voice/transcribe-enhanced", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              console.log("🤖 [EncounterView] Assistants API response:", data);
-              console.log(
-                "🧠 [EncounterView] AI Suggestions structure:",
-                data.aiSuggestions
-                  ? Object.keys(data.aiSuggestions)
-                  : "No suggestions",
-              );
-
-              // Process AI suggestions - preserve existing live suggestions
-              if (data.aiSuggestions) {
-                const existingLiveSuggestions = liveSuggestions || "";
-                let suggestionsText = existingLiveSuggestions;
-
-                // If we have existing live suggestions from recording, append final analysis
-                if (
-                  existingLiveSuggestions.includes("🧠 LIVE AI ANALYSIS:") ||
-                  existingLiveSuggestions.includes("📋 Live Suggestions:")
-                ) {
-                  suggestionsText += "\n\n🎯 FINAL ANALYSIS:\n";
-
-                  // Add clinical guidance
-                  if (data.aiSuggestions.clinicalGuidance) {
-                    suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
-                  }
-
-                  // Add final provider suggestions with continued numbering
-                  if (data.aiSuggestions.realTimePrompts?.length > 0) {
-                    const existingNumbers = (
-                      existingLiveSuggestions.match(/\d+\./g) || []
-                    ).length;
-                    suggestionsText += "📋 Final Provider Suggestions:\n";
-                    data.aiSuggestions.realTimePrompts.forEach(
-                      (prompt: string, index: number) => {
-                        suggestionsText += `${existingNumbers + index + 1}. ${prompt}\n`;
-                      },
-                    );
-                  }
-
-                  console.log(
-                    "🧠 [EncounterView] Preserved live suggestions and added final analysis",
-                  );
-                } else {
-                  // No existing live suggestions, use regular format
-                  suggestionsText = "🧠 AI ANALYSIS:\n";
-
-                  if (data.aiSuggestions.clinicalGuidance) {
-                    suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
-                  }
-
-                  if (data.aiSuggestions.realTimePrompts?.length > 0) {
-                    suggestionsText += "📋 Provider Suggestions:\n";
-                    data.aiSuggestions.realTimePrompts.forEach(
-                      (prompt: string, index: number) => {
-                        suggestionsText += `${index + 1}. ${prompt}\n`;
-                      },
-                    );
-                  }
-
-                  console.log(
-                    "🧠 [EncounterView] No live suggestions found, using regular format",
-                  );
-                }
-
-                console.log(
-                  "🧠 [EncounterView] Setting GPT suggestions:",
-                  suggestionsText,
-                );
-                setGptSuggestions(suggestionsText);
-              }
-
-              // Use SOAP note from Assistants API
-              if (data.soapNote) {
-                console.log("📝 [EncounterView] Setting SOAP note");
-                setSoapNote(data.soapNote);
-              }
-
-              // Use draft orders from Assistants API
-              if (data.draftOrders) {
-                console.log(
-                  "📋 [EncounterView] Setting draft orders:",
-                  data.draftOrders.length,
-                );
-                setDraftOrders(data.draftOrders);
-              }
-
-              // Use CPT codes from Assistants API
-              if (data.cptCodes) {
-                console.log(
-                  "🏥 [EncounterView] Setting CPT codes:",
-                  data.cptCodes.length,
-                );
-                setCptCodes(data.cptCodes);
-              }
-
-              toast({
-                title: "AI Analysis Complete",
-                description: "Smart suggestions and clinical insights ready",
-              });
-            } else {
-              throw new Error(`Server responded with ${response.status}`);
-            }
-          } catch (error) {
-            console.error(
-              "❌ [EncounterView] Assistants API processing failed:",
-              error,
-            );
-            setGptSuggestions("Failed to get AI suggestions");
-          }
-        } else {
-          console.log(
-            "⚠️ [EncounterView] No transcription available for AI analysis",
-          );
-          setGptSuggestions("No transcription available for AI analysis");
-        }
+        // All AI suggestions are now handled by the WebSocket connection
+        // No fallback to Assistants API needed
+        console.log("✅ [EncounterView] Recording complete. AI suggestions continue via WebSocket.");
 
         stream.getTracks().forEach((track) => track.stop());
       };
