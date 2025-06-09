@@ -10,6 +10,7 @@ import { medicalChartIndex } from "./medical-chart-index-service.js";
  */
 
 export interface RealtimeMedicalResponse {
+  transcription?: string;
   nursePrompts?: string[];
   providerPrompts?: string[];
   draftOrders?: string[];
@@ -79,6 +80,7 @@ export class RealtimeMedicalContextService {
     
     return {
       ...aiResponse,
+      transcription,
       contextUsed: {
         tokenCount: fastContext.contextUsed?.tokenCount || 0,
         cacheHit: fastContext.contextUsed?.cacheHit || false,

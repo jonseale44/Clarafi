@@ -536,7 +536,7 @@ export function registerRoutes(app: Express): Server {
             );
 
             res.json({
-              transcription: result.transcription || "",
+              transcription: result.clinicalNotes || "",
               suggestions: {
                 suggestions: result.providerPrompts || result.nursePrompts || [],
                 clinicalFlags: result.medicalAlerts || []
