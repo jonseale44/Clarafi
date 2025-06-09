@@ -125,6 +125,7 @@ export function EncounterDetailView({
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
+  const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
 
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
@@ -135,9 +136,27 @@ export function EncounterDetailView({
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Real-time SOAP generation ref
   const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
+
+  // SOAP Note Editor
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: "SOAP note will be generated here...",
+      }),
+    ],
+    content: soapNote,
+    onUpdate: ({ editor }) => {
+      const currentContent = editor.getHTML();
+      if (currentContent !== lastGeneratedContent.current) {
+        setSoapNote(currentContent);
+      }
+    },
+  });
 
   // Handlers for Real-time SOAP Integration
   const handleSOAPNoteUpdate = (note: string) => {
@@ -242,23 +261,7 @@ export function EncounterDetailView({
     }
   };
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: "Generated SOAP note will appear here...",
-      }),
-    ],
-    editorProps: {
-      attributes: {
-        class:
-          "outline-none min-h-[500px] max-w-none whitespace-pre-wrap soap-editor",
-      },
-    },
-    content: "",
-    onUpdate: ({ editor }) => {
-      // Update React state when user types
-      if (!editor.isDestroyed) {
+  // Remove duplicate editor - using the one declared above
         const newContent = editor.getHTML();
         setSoapNote(newContent);
       }
@@ -363,7 +366,7 @@ export function EncounterDetailView({
     try {
       // Create direct WebSocket connection to OpenAI like your working code
       let realtimeWs: WebSocket | null = null;
-      let transcriptionBuffer = "";
+      let localTranscriptionBuffer = "";
       let lastSuggestionLength = 0;
       let suggestionsStarted = false;
       let sessionId = "";
