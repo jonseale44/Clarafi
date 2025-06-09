@@ -608,22 +608,20 @@ export function EncounterDetailView({
         realtimeWs.onopen = () => {
           console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
 
-          // Update session configuration with comprehensive medical prompt
+          // Update session configuration for transcription + AI suggestions
           realtimeWs!.send(
             JSON.stringify({
               type: "session.update",
               session: {
-                instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+                instructions: `You are a medical AI assistant. When providing clinical insights, ALWAYS RESPOND IN ENGLISH ONLY, regardless of input language. Provide concise, actionable medical insights for physicians using bullet points (•).
 
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Avoid restating general knowledge or overly simplistic recommendations a physician would already know. Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines.
-
-Always include typical starting dose, dose adjustment schedules, and maximum dose for medications. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES. Return each new insight on a separate line, and prefix each line with a bullet (•), dash (-), or number if appropriate.
-
-Examples:
+Focus on evidence-based recommendations with specific medication dosages:
 • Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day
-• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily`,
+• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily
+
+Prioritize high-value insights: medication dosages, red flags, advanced diagnostics, specific guidelines. Avoid general advice physicians already know.`,
                 model: "gpt-4o-mini-realtime-preview-2024-12-17",
-                modalities: ["text"],
+                modalities: ["text", "audio"],
                 input_audio_format: "pcm16",
                 input_audio_transcription: {
                   model: "whisper-1",
@@ -634,7 +632,7 @@ Examples:
                   threshold: 0.3,
                   prefix_padding_ms: 300,
                   silence_duration_ms: 500,
-                  create_response: true,
+                  create_response: false,
                 },
               },
             }),
