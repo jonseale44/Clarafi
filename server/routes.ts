@@ -15,6 +15,8 @@ import multer from "multer";
 import OpenAI from "openai";
 import { RealtimeTranscriptionService } from "./realtime-transcription-service";
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
+import { EnhancedRealtimeService } from "./enhanced-realtime-service";
+import fastMedicalRoutes from "./fast-medical-routes";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -24,6 +26,9 @@ export function registerRoutes(app: Express): Server {
 
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);
+
+  // Fast medical context routes (replaces assistant-based approach)
+  app.use("/api", fastMedicalRoutes);
 
   // Users routes
   app.get("/api/users", async (req, res) => {
@@ -453,47 +458,44 @@ export function registerRoutes(app: Express): Server {
       }
 
       try {
-        console.log("🧠 [Routes] Attempting to get live suggestions...");
-        const { AssistantContextService } = await import(
-          "./assistant-context-service.js"
-        );
-
-        const assistantService = new AssistantContextService();
-        console.log("🧠 [Routes] AssistantContextService created");
-
-        // Get or create thread for this patient
-        const threadId = await assistantService.getOrCreateThread(
+        console.log("🎯 [Routes] Using enhanced realtime suggestions...");
+        
+        // Use the new realtime medical context service for fast suggestions
+        const result = await realtimeMedicalContext.processVoiceWithFastContext(
+          Buffer.from(""), // No audio buffer for text-only processing
           parseInt(patientId),
+          userRole as "nurse" | "provider",
+          "" // No chief complaint for live suggestions
         );
 
-        const suggestions = await assistantService.getRealtimeSuggestions(
-          threadId,
-          transcription,
-          "provider",
-          parseInt(patientId),
-        );
-        console.log("🧠 [Routes] Suggestions received:", suggestions);
+        console.log("✅ [Routes] Enhanced suggestions received");
 
         const formattedSuggestions = {
-          realTimePrompts: suggestions.suggestions || [],
-          clinicalGuidance: "AI analysis in progress...",
-          clinicalFlags: suggestions.clinicalFlags || [],
+          realTimePrompts: result.providerPrompts || result.nursePrompts || [],
+          clinicalGuidance: result.clinicalNotes || "AI analysis in progress...",
+          clinicalFlags: result.medicalAlerts || [],
         };
 
         const response = {
           aiSuggestions: formattedSuggestions,
           isLive: true,
+          performance: {
+            responseTime: result.contextUsed?.responseTime || 0,
+            tokenCount: result.contextUsed?.tokenCount || 0,
+            cacheHit: result.contextUsed?.cacheHit || false,
+            system: "enhanced-realtime"
+          }
         };
 
         res.json(response);
       } catch (error: any) {
-        console.error("❌ [Routes] Live suggestions error:", error);
+        console.error("❌ [Routes] Enhanced suggestions error:", error);
         res.status(500).json({
-          message: "Failed to generate live suggestions",
+          message: "Failed to generate enhanced suggestions",
           error: error?.message || "Unknown error",
           aiSuggestions: {
             realTimePrompts: ["Continue recording..."],
-            clinicalGuidance: "Live suggestions temporarily unavailable",
+            clinicalGuidance: "Enhanced suggestions temporarily unavailable",
           },
         });
       }
@@ -1950,6 +1952,12 @@ Return only valid JSON without markdown formatting.`;
   const realtimeService = new RealtimeTranscriptionService();
   realtimeService.initialize(httpServer);
   console.log("✅ [Server] Real-time transcription service initialized");
+
+  // Initialize Enhanced Real-time service (replaces assistant-based approach)
+  console.log("🚀 [Server] Initializing Enhanced Real-time service...");
+  const enhancedRealtimeService = new EnhancedRealtimeService();
+  enhancedRealtimeService.initialize(httpServer);
+  console.log("✅ [Server] Enhanced Real-time service initialized");
 
   return httpServer;
 }
