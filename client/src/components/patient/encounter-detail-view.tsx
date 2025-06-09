@@ -656,6 +656,8 @@ Format responses as bullet points (•) with clinical specificity.
           ws.send(JSON.stringify(contextMessage));
 
           // Create response for AI suggestions
+          // ⚠️ LEGACY AI PROMPT - This frontend prompt is outdated
+          // Current AI suggestions use Enhanced Realtime Service with comprehensive medical prompt
           const suggestionsMessage = {
             type: "response.create",
             response: {

@@ -2,6 +2,23 @@ import { WebSocketServer } from 'ws';
 import WebSocket from 'ws';
 import { AssistantContextService } from './assistant-context-service.js';
 
+/**
+ * ⚠️ LEGACY SYSTEM - NOT CURRENTLY ACTIVE ⚠️
+ * 
+ * This is a legacy transcription service that uses the deprecated Assistants API.
+ * It has been replaced by the Enhanced Realtime Service for better performance.
+ * 
+ * Active transcription and AI suggestions are handled by:
+ * - server/enhanced-realtime-service.ts (Primary WebSocket service)
+ * - server/realtime-suggestions-module.ts (Secondary module)
+ * 
+ * This legacy system has issues:
+ * - Uses slow Assistants API instead of realtime WebSocket streaming
+ * - Complex state management with threads and assistants
+ * - Higher latency for real-time suggestions
+ * 
+ * DO NOT modify this file expecting it to affect current transcription functionality.
+ */
 export class RealtimeTranscriptionService {
   private wss: WebSocketServer | null = null;
   private assistantService: AssistantContextService;

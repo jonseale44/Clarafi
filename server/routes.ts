@@ -606,7 +606,8 @@ export function registerRoutes(app: Express): Server {
     },
   );
 
-  // Get assistant configuration for a patient
+  // ⚠️ LEGACY ROUTE - Get assistant configuration for a patient (DEPRECATED)
+  // This route uses the legacy Assistants API - current AI suggestions use Enhanced Realtime Service
   app.get("/api/patients/:id/assistant", async (req, res) => {
     try {
       const patientId = parseInt(req.params.id);
@@ -659,7 +660,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get assistant thread messages for a patient
+  // ⚠️ LEGACY ROUTE - Get assistant thread messages for a patient (DEPRECATED)
+  // This route uses the legacy Assistants API - current AI suggestions use Enhanced Realtime Service
   app.get("/api/patients/:id/assistant/messages", async (req, res) => {
     try {
       const patientId = parseInt(req.params.id);
@@ -1972,11 +1974,12 @@ Return only valid JSON without markdown formatting.`;
 
   const httpServer = createServer(app);
 
-  // Initialize Real-time transcription WebSocket service
-  console.log("🚀 [Server] Initializing Real-time transcription service...");
+  // ⚠️ LEGACY SYSTEM - Initialize Real-time transcription WebSocket service (DEPRECATED)
+  // This uses the legacy Assistants API and should not be modified for current AI suggestions
+  console.log("🚀 [Server] Initializing Legacy Real-time transcription service...");
   const realtimeService = new RealtimeTranscriptionService();
   realtimeService.initialize(httpServer);
-  console.log("✅ [Server] Real-time transcription service initialized");
+  console.log("✅ [Server] Legacy Real-time transcription service initialized");
 
   // Initialize Enhanced Real-time service (replaces assistant-based approach)
   console.log("🚀 [Server] Initializing Enhanced Real-time service...");

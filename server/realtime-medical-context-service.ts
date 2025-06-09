@@ -3,10 +3,17 @@ import WebSocket from "ws";
 import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 /**
- * Realtime Medical Context Service
- *
- * Provides fast, token-efficient medical context for OpenAI realtime API calls
- * Replaces the slower assistant-based approach while maintaining medical accuracy
+ * ⚠️ LEGACY SYSTEM - PARTIALLY ACTIVE BUT BEING REPLACED ⚠️
+ * 
+ * This service provides medical context but uses older patterns.
+ * The Enhanced Realtime Service is the primary active system.
+ * 
+ * Current active AI systems:
+ * - server/enhanced-realtime-service.ts (Primary WebSocket + AI suggestions)
+ * - server/realtime-suggestions-module.ts (Secondary AI module)
+ * 
+ * This service may still be called by legacy routes but should not be
+ * considered the primary AI suggestions implementation.
  */
 
 export interface RealtimeMedicalResponse {

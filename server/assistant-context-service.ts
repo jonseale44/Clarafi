@@ -13,6 +13,24 @@ import {
 import { eq, desc } from "drizzle-orm";
 import { PrivacyService } from "./privacy-service.js";
 
+/**
+ * ⚠️ LEGACY SYSTEM - NOT CURRENTLY ACTIVE ⚠️
+ * 
+ * This is a legacy OpenAI Assistants API-based system that has been replaced
+ * by the faster Enhanced Realtime Service. This code is kept for reference
+ * but is not the primary AI suggestions implementation.
+ * 
+ * Active AI suggestions are handled by:
+ * - server/enhanced-realtime-service.ts (Primary)
+ * - server/realtime-suggestions-module.ts (Secondary)
+ * 
+ * Issues with this legacy system:
+ * - Slow response times (creates individual assistants per patient)
+ * - High API costs (persistent threads and assistants)
+ * - Complex state management
+ * 
+ * DO NOT modify this file thinking it will affect current AI suggestions.
+ */
 export class AssistantContextService {
   private openai: OpenAI;
   private patientAssistants: Map<number, string> = new Map(); // Cache patient ID -> assistant ID
@@ -116,6 +134,10 @@ export class AssistantContextService {
     return thread.id;
   }
 
+  /**
+   * ⚠️ LEGACY METHOD - This method is part of the deprecated Assistants API system
+   * Current AI suggestions use Enhanced Realtime Service with WebSocket streaming
+   */
   async getRealtimeSuggestions(
     threadId: string,
     partialTranscription: string,
