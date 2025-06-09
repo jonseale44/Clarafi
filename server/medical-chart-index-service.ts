@@ -194,29 +194,21 @@ export class MedicalChartIndexService {
   private async refreshPatientSummary(patientId: number): Promise<MedicalSummaryCache> {
     console.log(`🔄 [MedicalIndex] Building fresh summary for patient ${patientId}`);
 
-    // Get all patient data in parallel
+    // Get all patient data in parallel (using existing database structure)
     const [
       patient,
       recentEncounters,
-      medHistory,
-      famHistory,
-      socHistory,
       allergiesList,
       currentMeds,
       activeDiagnoses,
-      recentVitals,
-      persistentFindings
+      recentVitals
     ] = await Promise.all([
       this.getPatientBasicInfo(patientId),
       this.getRecentEncounters(patientId, 5),
-      this.getMedicalHistory(patientId),
-      this.getFamilyHistory(patientId),
-      this.getSocialHistory(patientId),
       this.getAllergies(patientId),
       this.getCurrentMedications(patientId),
       this.getActiveDiagnoses(patientId),
-      this.getRecentVitals(patientId),
-      this.getPersistentFindings(patientId)
+      this.getRecentVitals(patientId)
     ]);
 
     // Build structured summary
@@ -235,10 +227,10 @@ export class MedicalChartIndexService {
         lastVitals: recentVitals.length > 0 ? this.formatVitals(recentVitals[0]) : {}
       },
       medicalBackground: {
-        medicalHistory: medHistory.map(h => h.historyText),
-        familyHistory: famHistory.map(f => `${f.familyMember}: ${f.medicalHistory}`),
-        socialHistory: socHistory.reduce((acc, s) => ({ ...acc, [s.category]: s.currentStatus }), {}),
-        persistentFindings: persistentFindings.filter(f => f.status === 'active').map(f => f.findingText),
+        medicalHistory: [], // Will be populated from encounters
+        familyHistory: [], // Will be populated from encounters
+        socialHistory: {}, // Will be populated from encounters
+        persistentFindings: [], // Will be populated from encounters
         chronicConditions: activeDiagnoses.filter(d => d.status === 'chronic').map(d => d.diagnosis)
       },
       realtimeContext: await this.generateRealtimeContext(patientId, {

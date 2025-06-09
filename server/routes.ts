@@ -17,6 +17,7 @@ import { RealtimeTranscriptionService } from "./realtime-transcription-service";
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
 import { EnhancedRealtimeService } from "./enhanced-realtime-service";
 import fastMedicalRoutes from "./fast-medical-routes";
+import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
