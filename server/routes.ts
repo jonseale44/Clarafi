@@ -461,8 +461,9 @@ export function registerRoutes(app: Express): Server {
       try {
         console.log("🎯 [Routes] Using enhanced realtime suggestions...");
         
-        // Use text-only mode for fast suggestions (bypass audio processing)
-        const result = await realtimeMedicalContext.generateTextOnlySuggestions(
+        // Use WebSocket streaming for fast suggestions (no audio buffer needed for live mode)
+        const result = await realtimeMedicalContext.processVoiceWithFastContext(
+          Buffer.alloc(0), // Empty buffer for text-only mode
           parseInt(patientId),
           userRole as "nurse" | "provider",
           transcription || "Live transcription in progress"

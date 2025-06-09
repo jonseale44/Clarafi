@@ -356,47 +356,7 @@ Focus on immediate, actionable guidance based on the voice input and patient con
     });
   }
 
-  /**
-   * Generate text-only suggestions without audio processing
-   */
-  async generateTextOnlySuggestions(
-    patientId: number,
-    userRole: "nurse" | "provider",
-    transcription: string = ""
-  ): Promise<any> {
-    const startTime = Date.now();
-    
-    try {
-      console.log(`🎯 [RealtimeMedical] Generating text-only suggestions for patient ${patientId} (${userRole})`);
 
-      // Get fast medical context
-      const patientContext = await medicalChartIndex.getFastMedicalContext(patientId);
-
-      // Generate suggestions using the fast context
-      const suggestions = await this.generateFastAIResponse({
-        transcription,
-        userRole,
-        patientContext,
-        chiefComplaint: ""
-      });
-
-      const responseTime = Date.now() - startTime;
-      console.log(`⚡ [RealtimeMedical] Text-only suggestions generated in ${responseTime}ms`);
-
-      return {
-        ...suggestions,
-        contextUsed: {
-          tokenCount: patientContext.tokenCount,
-          responseTime,
-          cacheHit: true
-        }
-      };
-
-    } catch (error) {
-      console.error(`❌ [RealtimeMedical] Error generating text-only suggestions:`, error);
-      throw error;
-    }
-  }
 
   /**
    * Update medical chart index after encounter completion
