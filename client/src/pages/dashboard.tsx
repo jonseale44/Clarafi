@@ -79,7 +79,7 @@ export default function Dashboard() {
   });
 
   // Fetch allergies for critical alerts
-  const { data: allergies = [] } = useQuery({
+  const { data: allergies = [] } = useQuery<any[]>({
     queryKey: ["/api/patients", selectedPatientId, "allergies"],
     enabled: !!selectedPatientId,
   });
@@ -203,10 +203,7 @@ export default function Dashboard() {
       ) : (
         <>
           {patient && (
-            <PatientHeader
-              patient={patient}
-              selectedPatientId={selectedPatientId}
-            />
+            <PatientHeader patient={patient} allergies={allergies} />
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
@@ -214,7 +211,7 @@ export default function Dashboard() {
               <Card className="p-4">
                 <h3 className="font-semibold mb-3">All Patients</h3>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {Array.isArray(allPatients) && allPatients.map((p: any) => (
+                  {allPatients.map((p) => (
                     <div
                       key={p.id}
                       className={`p-2 rounded cursor-pointer transition-colors ${
@@ -239,7 +236,7 @@ export default function Dashboard() {
 
             <div className="lg:col-span-3">
               {selectedPatientId && (
-                <ProviderDashboard selectedPatientId={selectedPatientId} />
+                <ProviderDashboard />
               )}
             </div>
           </div>
