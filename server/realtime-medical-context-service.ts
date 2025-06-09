@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import WebSocket from "ws";
 import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 /**
@@ -54,13 +55,16 @@ export class RealtimeMedicalContextService {
   ): Promise<RealtimeMedicalResponse> {
     const startTime = Date.now();
     
-    // Step 1: Transcribe audio (parallel with context loading)
-    const [transcription, fastContext] = await Promise.all([
-      this.transcribeAudio(audioBuffer),
+    // Step 1: Process audio with WebSocket streaming (parallel with context loading)
+    const [transcriptionResult, fastContext] = await Promise.all([
+      audioBuffer && audioBuffer.length > 0 
+        ? this.processAudioStream(audioBuffer)
+        : Promise.resolve({ text: "" }),
       this.getFastPatientContext(patientId)
     ]);
 
-    console.log(`🎯 [RealtimeMedical] Transcription: "${transcription}"`);
+    const transcription = transcriptionResult.text;
+    console.log(`🎯 [RealtimeMedical] Stream transcription: "${transcription}"`);
     console.log(`📋 [RealtimeMedical] Context loaded: ${fastContext.contextUsed?.tokenCount} tokens`);
 
     // Step 2: Generate AI assistance with optimized context
@@ -254,78 +258,102 @@ Focus on immediate, actionable guidance based on the voice input and patient con
   }
 
   /**
-   * Transcribe audio using OpenAI Whisper
+   * Process audio streaming using OpenAI Realtime API (WebSocket approach)
+   * This bypasses the file format issues by streaming PCM16 audio directly
    */
-  private async transcribeAudio(audioBuffer: Buffer): Promise<{ text: string }> {
-    try {
-      // Validate audio buffer
-      if (!audioBuffer || audioBuffer.length === 0) {
-        throw new Error("Empty audio buffer provided");
+  private async processAudioStream(audioBuffer: Buffer): Promise<{ text: string }> {
+    return new Promise((resolve, reject) => {
+      try {
+        console.log(`🎵 [RealtimeMedical] Processing audio stream (${audioBuffer.length} bytes)`);
+
+        // Convert audio buffer to base64 for streaming
+        const base64Audio = audioBuffer.toString('base64');
+        
+        // Create WebSocket connection to OpenAI Realtime API
+        const ws = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01", {
+          headers: {
+            "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+            "OpenAI-Beta": "realtime=v1"
+          }
+        } as any);
+
+        let transcriptionText = "";
+
+        ws.on('open', () => {
+          // Configure session for transcription only
+          ws.send(JSON.stringify({
+            type: "session.update",
+            session: {
+              modalities: ["text"],
+              instructions: "You are a medical transcription assistant. Transcribe the audio accurately.",
+              input_audio_format: "pcm16",
+              input_audio_transcription: {
+                model: "whisper-1"
+              },
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 500
+              }
+            }
+          }));
+
+          // Send audio buffer in chunks
+          const chunkSize = 4096;
+          for (let i = 0; i < base64Audio.length; i += chunkSize) {
+            const chunk = base64Audio.slice(i, i + chunkSize);
+            ws.send(JSON.stringify({
+              type: "input_audio_buffer.append",
+              audio: chunk
+            }));
+          }
+
+          // Commit the audio buffer
+          ws.send(JSON.stringify({
+            type: "input_audio_buffer.commit"
+          }));
+        });
+
+        ws.on('message', (data) => {
+          const message = JSON.parse(data.toString());
+          
+          if (message.type === "conversation.item.input_audio_transcription.completed") {
+            transcriptionText = message.transcript || "";
+            console.log(`📝 [RealtimeMedical] Stream transcription: "${transcriptionText}"`);
+            ws.close();
+            resolve({ text: transcriptionText });
+          } else if (message.type === "error") {
+            console.error(`❌ [RealtimeMedical] Streaming error:`, message.error);
+            ws.close();
+            reject(new Error(`Streaming transcription failed: ${message.error.message}`));
+          }
+        });
+
+        ws.on('error', (error) => {
+          console.error(`❌ [RealtimeMedical] WebSocket error:`, error);
+          reject(new Error(`WebSocket connection failed: ${error.message}`));
+        });
+
+        ws.on('close', () => {
+          if (!transcriptionText) {
+            resolve({ text: "" }); // Return empty if no transcription received
+          }
+        });
+
+        // Timeout after 30 seconds
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close();
+            reject(new Error("Transcription timeout"));
+          }
+        }, 30000);
+
+      } catch (error) {
+        console.error(`❌ [RealtimeMedical] Stream processing failed:`, error);
+        reject(error);
       }
-
-      // Check if buffer is too small (likely invalid audio)
-      if (audioBuffer.length < 1024) {
-        throw new Error("Audio buffer too small, likely invalid audio data");
-      }
-
-      console.log(`🎵 [RealtimeMedical] Transcribing audio (${audioBuffer.length} bytes)`);
-
-      // Create proper WAV file with headers
-      const wavBuffer = this.createWAVBuffer(audioBuffer);
-      const audioFile = new File([wavBuffer], "recording.wav", { type: "audio/wav" });
-
-      const response = await this.openai.audio.transcriptions.create({
-        file: audioFile,
-        model: "whisper-1",
-        response_format: "text",
-        language: "en"
-      });
-
-      const text = response || "";
-      console.log(`📝 [RealtimeMedical] Transcription result: "${text}"`);
-
-      return { text };
-    } catch (error) {
-      console.error(`❌ [RealtimeMedical] Transcription failed:`, error);
-      throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  /**
-   * Create proper WAV file buffer with headers
-   */
-  private createWAVBuffer(audioBuffer: Buffer): Buffer {
-    const sampleRate = 16000; // 16kHz
-    const numChannels = 1; // Mono
-    const bitsPerSample = 16;
-    const blockAlign = numChannels * bitsPerSample / 8;
-    const byteRate = sampleRate * blockAlign;
-    const dataSize = audioBuffer.length;
-    const fileSize = 36 + dataSize;
-
-    const header = Buffer.alloc(44);
-    let offset = 0;
-
-    // RIFF chunk descriptor
-    header.write('RIFF', offset); offset += 4;
-    header.writeUInt32LE(fileSize, offset); offset += 4;
-    header.write('WAVE', offset); offset += 4;
-
-    // fmt sub-chunk
-    header.write('fmt ', offset); offset += 4;
-    header.writeUInt32LE(16, offset); offset += 4; // Sub-chunk size
-    header.writeUInt16LE(1, offset); offset += 2; // Audio format (PCM)
-    header.writeUInt16LE(numChannels, offset); offset += 2;
-    header.writeUInt32LE(sampleRate, offset); offset += 4;
-    header.writeUInt32LE(byteRate, offset); offset += 4;
-    header.writeUInt16LE(blockAlign, offset); offset += 2;
-    header.writeUInt16LE(bitsPerSample, offset); offset += 2;
-
-    // data sub-chunk
-    header.write('data', offset); offset += 4;
-    header.writeUInt32LE(dataSize, offset);
-
-    return Buffer.concat([header, audioBuffer]);
+    });
   }
 
   /**
@@ -345,11 +373,12 @@ Focus on immediate, actionable guidance based on the voice input and patient con
       const patientContext = await medicalChartIndex.getFastMedicalContext(patientId);
 
       // Generate suggestions using the fast context
-      const suggestions = await this.generateFastSuggestions(
-        patientContext,
+      const suggestions = await this.generateFastAIResponse({
         transcription,
-        userRole
-      );
+        userRole,
+        patientContext,
+        chiefComplaint: ""
+      });
 
       const responseTime = Date.now() - startTime;
       console.log(`⚡ [RealtimeMedical] Text-only suggestions generated in ${responseTime}ms`);
