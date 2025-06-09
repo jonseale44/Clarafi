@@ -130,8 +130,7 @@ export function EncounterDetailView({
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   
-  // WebSocket connection to RealTimeSuggestionsModule
-  const suggestionsWsRef = useRef<WebSocket | null>(null);
+
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -658,29 +657,40 @@ Format responses as bullet points (•) with clinical specificity.
           console.log("🧠 [EncounterView] Injecting patient context for AI suggestions");
           ws.send(JSON.stringify(contextMessage));
 
-          // Create response for AI suggestions
-          // ⚠️ LEGACY AI PROMPT - This frontend prompt is outdated
-          // Current AI suggestions use Enhanced Realtime Service with comprehensive medical prompt
+          // Create response for AI suggestions with comprehensive medical prompt
           const suggestionsMessage = {
             type: "response.create",
             response: {
               modalities: ["text"],
-              instructions: `You are a medical AI assistant providing real-time clinical insights. 
-              
-Provide clinical guidance based on conversation transcription. Format as bullet points:
-• Specific medication dosages with starting dose, titration, max dose
-• Evidence-based diagnostic or therapeutic recommendations  
-• Red flags or advanced diagnostics when relevant
-• Actionable clinical decision-making guidance
+              instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
-Each suggestion should be:
-- Single line with bullet point (•)
-- Specific and actionable
-- Evidence-based medical guidance
-- Include dosages, frequencies, monitoring parameters
-- Highlight contraindications or precautions when relevant
+Instructions:
 
-Focus on immediate clinical utility for provider decision-making.`
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Additionally, if the physician asks, provide relevant information from the patient's chart or office visits, such as past medical history, current medications, allergies, lab results, and imaging findings. Include this information concisely and accurately where appropriate. This medical information might be present in old office visit notes. Do not make anything up, it would be better to say you don't have that information available.
+
+Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
+Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. When referencing diagnostics or red flags, provide a complete list to guide the differential diagnosis (e.g., imaging-related red flags). Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per line.
+
+Additional details for medication recommendations:
+
+Always include typical starting dose, dose adjustment schedules, and maximum dose.
+Output examples of good insights:
+
+Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
+Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
+Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
+
+Output examples of bad insights (to avoid):
+
+Encourage gentle stretches and light activity to maintain mobility.
+Suggest warm baths at night for symptomatic relief of muscle tension.
+Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
+
+Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
+
+Return each new insight on a separate line, and prefix each line with a bullet (•), dash (-), or number if appropriate. Do not combine multiple ideas on the same line. 
+
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`
             }
           };
 
@@ -710,14 +720,35 @@ Focus on immediate clinical utility for provider decision-making.`
             }
           } 
           
-          // Handle AI suggestions streaming deltas - route through RealTimeSuggestionsModule
+          // Handle AI suggestions streaming deltas with comprehensive medical prompt
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
-            console.log("🧠 [EncounterView] AI suggestions delta, routing to RealTimeSuggestionsModule:", deltaText);
+            console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);
             
-            // Send transcription to RealTimeSuggestionsModule via WebSocket for better suggestions
-            if (transcriptionBuffer && transcriptionBuffer.length > 10) {
-              sendTranscriptionToSuggestionsModule(transcriptionBuffer);
+            // Accumulate suggestions buffer like transcription
+            suggestionsBuffer += deltaText;
+            
+            // Filter out SOAP notes and orders from suggestions
+            const visitSummaryPatterns = [
+              "Chief Complaint:", "SUBJECTIVE:", "OBJECTIVE:", 
+              "ASSESSMENT:", "PLAN:", "Patient Visit Summary",
+              "**SUBJECTIVE:**", "**OBJECTIVE:**", "**ASSESSMENT:**", "**PLAN:**"
+            ];
+            
+            const containsVisitSummary = visitSummaryPatterns.some(pattern => 
+              suggestionsBuffer.includes(pattern)
+            );
+            
+            if (!containsVisitSummary) {
+              // Set complete suggestions with header
+              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+                const formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
+                setLiveSuggestions(formattedSuggestions);
+                setGptSuggestions(formattedSuggestions);
+              } else {
+                setLiveSuggestions(suggestionsBuffer);
+                setGptSuggestions(suggestionsBuffer);
+              }
             }
           }
           
