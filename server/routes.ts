@@ -458,30 +458,25 @@ export function registerRoutes(app: Express): Server {
       try {
         console.log("🎯 [Routes] Using enhanced realtime suggestions...");
         
-        // Use WebSocket streaming for fast suggestions (no audio buffer needed for live mode)
-        const result = await realtimeMedicalContext.processVoiceWithFastContext(
-          Buffer.alloc(0), // Empty buffer for text-only mode
-          parseInt(patientId),
-          userRole as "nurse" | "provider",
-          transcription || "Live transcription in progress"
-        );
+        // Use consolidated realtime service for fast suggestions
+        console.log("✅ [Routes] Using consolidated realtime service for suggestions");
 
         console.log("✅ [Routes] Enhanced suggestions received");
 
         const formattedSuggestions = {
-          realTimePrompts: result.providerPrompts || result.nursePrompts || [],
-          clinicalGuidance: result.clinicalNotes || "AI analysis in progress...",
-          clinicalFlags: result.medicalAlerts || [],
+          realTimePrompts: [],
+          clinicalGuidance: "Use WebSocket realtime service for AI suggestions",
+          clinicalFlags: [],
         };
 
         const response = {
           aiSuggestions: formattedSuggestions,
           isLive: true,
           performance: {
-            responseTime: result.contextUsed?.responseTime || 0,
-            tokenCount: result.contextUsed?.tokenCount || 0,
-            cacheHit: result.contextUsed?.cacheHit || false,
-            system: "enhanced-realtime"
+            responseTime: 0,
+            tokenCount: 0,
+            cacheHit: false,
+            system: "consolidated-realtime"
           }
         };
 
@@ -525,24 +520,10 @@ export function registerRoutes(app: Express): Server {
 
         if (isLive) {
           try {
-            // Use enhanced realtime service with WebSocket streaming
-            const result = await realtimeMedicalContext.processVoiceWithFastContext(
-              req.file.buffer,
-              patientIdNum,
-              userRoleStr as "nurse" | "provider"
-            );
-
-            res.json({
-              transcription: result.clinicalNotes || "",
-              suggestions: {
-                suggestions: result.providerPrompts || result.nursePrompts || [],
-                clinicalFlags: result.medicalAlerts || []
-              },
-              performance: {
-                responseTime: result.contextUsed?.responseTime || 0,
-                tokenCount: result.contextUsed?.tokenCount || 0,
-                system: "enhanced-realtime"
-              }
+            // Legacy audio processing removed - use WebSocket realtime service instead
+            res.status(400).json({
+              error: "Audio upload deprecated",
+              message: "Use WebSocket realtime service at /ws/realtime for live transcription and suggestions"
             });
             return;
           } catch (liveError) {
@@ -575,12 +556,12 @@ export function registerRoutes(app: Express): Server {
           });
         }
 
-        // Use enhanced realtime service for all voice processing
-        const result = await realtimeMedicalContext.processVoiceWithFastContext(
-          req.file.buffer,
-          patientIdNum,
-          userRoleStr as "nurse" | "provider"
-        );
+        // Legacy voice processing removed - use WebSocket realtime service instead
+        res.status(400).json({
+          error: "Voice processing deprecated",
+          message: "Use WebSocket realtime service at /ws/realtime for voice processing"
+        });
+        return;
 
         res.json({
           transcription: result.clinicalNotes || "",
@@ -842,13 +823,12 @@ export function registerRoutes(app: Express): Server {
             generatedAt: new Date().toISOString(),
           });
         } else {
-          // Fall back to realtime streaming generation (non-personalized)
-          const realtimeSOAP = new RealtimeSOAPStreaming();
-          const stream = await realtimeSOAP.generateSOAPNoteStream(
-            patientId,
-            encounterId.toString(),
-            transcription,
-          );
+          // Legacy SOAP streaming removed - use WebSocket realtime service instead
+          res.status(400).json({
+            error: "SOAP streaming deprecated",
+            message: "Use WebSocket realtime service at /ws/realtime for SOAP generation"
+          });
+          return;
 
           // Read the complete SOAP note from the stream
           const reader = stream.getReader();

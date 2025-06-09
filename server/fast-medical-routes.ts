@@ -1,6 +1,5 @@
 import { Router } from "express";
 import multer from "multer";
-import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 const router = Router();

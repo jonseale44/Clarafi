@@ -480,10 +480,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       clearInterval(this.connectionCleanupInterval);
     }
     
-    const connectionIds = Array.from(this.activeConnections.keys());
-    for (const connectionId of connectionIds) {
+    this.activeConnections.forEach((_, connectionId) => {
       this.closeConnection(connectionId);
-    }
+    });
     
     if (this.wss) {
       this.wss.close();
