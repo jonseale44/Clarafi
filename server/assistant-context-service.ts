@@ -14,22 +14,15 @@ import { eq, desc } from "drizzle-orm";
 import { PrivacyService } from "./privacy-service.js";
 
 /**
- * ⚠️ LEGACY SYSTEM - NOT CURRENTLY ACTIVE ⚠️
+ * ⚠️ LEGACY SYSTEM - NOT USED BY ACTIVE UI ⚠️
  * 
- * This is a legacy OpenAI Assistants API-based system that has been replaced
- * by the faster Enhanced Realtime Service. This code is kept for reference
- * but is not the primary AI suggestions implementation.
+ * Legacy OpenAI Assistants API-based system for patient context management
+ * Slow response times and high API costs led to replacement with direct WebSocket approach
  * 
- * Active AI suggestions are handled by:
- * - server/enhanced-realtime-service.ts (Primary)
- * - server/realtime-suggestions-module.ts (Secondary)
+ * ACTIVE AI SUGGESTIONS SYSTEM:
+ * - client/src/components/patient/encounter-detail-view.tsx (Direct WebSocket to OpenAI)
  * 
- * Issues with this legacy system:
- * - Slow response times (creates individual assistants per patient)
- * - High API costs (persistent threads and assistants)
- * - Complex state management
- * 
- * DO NOT modify this file thinking it will affect current AI suggestions.
+ * This service is kept for compatibility but not actively used by current UI
  */
 export class AssistantContextService {
   private openai: OpenAI;

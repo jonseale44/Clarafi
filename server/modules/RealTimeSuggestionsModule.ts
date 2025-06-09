@@ -1,13 +1,13 @@
 /**
- * ✅ PRIMARY ACTIVE AI SUGGESTIONS MODULE ✅
+ * ⚠️ INACTIVE MODULE - Not connected to UI ⚠️
  * 
- * This is the main AI suggestions implementation currently in use.
- * Used by WebSocketEventHandler for real-time medical AI insights.
+ * Real-time AI suggestions module with comprehensive medical prompts
+ * Contains high-quality medical guidance but not used by current UI
  * 
- * Contains the comprehensive medical prompt for physician-focused guidance
- * including specific medication dosages, red flags, and evidence-based insights.
+ * ACTIVE AI SUGGESTIONS SYSTEM:
+ * - client/src/components/patient/encounter-detail-view.tsx (Direct WebSocket to OpenAI)
  * 
- * This is the file to modify for AI prompt changes and suggestions logic.
+ * This module could be used for future WebSocket-based implementations
  */
 
 export interface EventMetadata {

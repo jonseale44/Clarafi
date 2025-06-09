@@ -625,7 +625,8 @@ export function EncounterDetailView({
           );
         };
 
-        // Function to start AI suggestions conversation
+        // ✅ ACTIVE AI SUGGESTIONS SYSTEM - WebSocket with Comprehensive Medical Prompt
+        // This is the primary AI suggestions implementation used by the UI
         const startSuggestionsConversation = async (ws: WebSocket | null, patientData: any) => {
           if (!ws) return;
           
@@ -720,7 +721,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             }
           } 
           
-          // Handle AI suggestions streaming deltas with comprehensive medical prompt
+          // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
             console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);

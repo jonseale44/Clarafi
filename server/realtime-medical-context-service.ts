@@ -3,17 +3,15 @@ import WebSocket from "ws";
 import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 /**
- * ⚠️ LEGACY SYSTEM - PARTIALLY ACTIVE BUT BEING REPLACED ⚠️
+ * ⚠️ LEGACY SERVICE - NOT USED BY ACTIVE UI ⚠️
  * 
- * This service provides medical context but uses older patterns.
- * The Enhanced Realtime Service is the primary active system.
+ * Enhanced Real-time Medical Context Service with comprehensive medical prompt
+ * Contains updated medical guidance but UI now uses direct WebSocket connections
  * 
- * Current active AI systems:
- * - server/enhanced-realtime-service.ts (Primary WebSocket + AI suggestions)
- * - server/realtime-suggestions-module.ts (Secondary AI module)
+ * ACTIVE AI SUGGESTIONS SYSTEM:
+ * - client/src/components/patient/encounter-detail-view.tsx (WebSocket to OpenAI)
  * 
- * This service may still be called by legacy routes but should not be
- * considered the primary AI suggestions implementation.
+ * This service is kept for compatibility but not actively used by current UI
  */
 
 export interface RealtimeMedicalResponse {

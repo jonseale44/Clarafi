@@ -439,8 +439,9 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // ⚠️ LEGACY ROUTE - Live AI suggestions endpoint (PARTIALLY DEPRECATED)
-  // This route uses legacy realtime medical context service - Enhanced Realtime Service is primary
+  // ⚠️ LEGACY ROUTE - NOT USED BY ACTIVE UI ⚠️
+  // The UI now uses direct WebSocket connections for AI suggestions
+  // This HTTP route is kept for compatibility but not actively used
   app.post("/api/voice/live-suggestions", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);

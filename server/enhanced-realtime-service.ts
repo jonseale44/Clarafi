@@ -4,18 +4,15 @@ import { WebSocketEventHandler } from './modules/WebSocketEventHandler.js';
 import { realtimeMedicalContext } from './realtime-medical-context-service.js';
 
 /**
- * ⚠️ BROKEN WRAPPER SERVICE - HAS API COMPATIBILITY ISSUES ⚠️
+ * ⚠️ INACTIVE SERVICE - Has API compatibility issues ⚠️
  * 
- * This service is initialized but has broken API calls to WebSocketEventHandler.
- * The service is trying to call methods that don't exist on WebSocketEventHandler.
+ * Enhanced Realtime Service wrapper with broken method calls
+ * Contains initialization code but has TypeScript errors preventing use
  * 
- * The actual active AI suggestions system is:
- * - server/modules/RealTimeSuggestionsModule.ts (Primary AI implementation)
- * - server/modules/WebSocketEventHandler.ts (Event routing)
- * - server/realtime-medical-context-service.ts (Legacy but still called by routes)
+ * ACTIVE AI SUGGESTIONS SYSTEM:
+ * - client/src/components/patient/encounter-detail-view.tsx (Direct WebSocket to OpenAI)
  * 
- * This file needs API fixes or should be marked as legacy if not actually used.
- * TypeScript errors indicate method mismatches with WebSocketEventHandler interface.
+ * This service would need API fixes to become functional
  */
 
 interface ConnectionState {
