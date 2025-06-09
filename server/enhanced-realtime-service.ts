@@ -4,9 +4,18 @@ import { WebSocketEventHandler } from './modules/WebSocketEventHandler.js';
 import { realtimeMedicalContext } from './realtime-medical-context-service.js';
 
 /**
- * Enhanced Realtime Service
- * Replaces assistant-based approach with fast realtime GPT suggestions
- * Integrates WebSocket event handler and medical context indexing
+ * ⚠️ BROKEN WRAPPER SERVICE - HAS API COMPATIBILITY ISSUES ⚠️
+ * 
+ * This service is initialized but has broken API calls to WebSocketEventHandler.
+ * The service is trying to call methods that don't exist on WebSocketEventHandler.
+ * 
+ * The actual active AI suggestions system is:
+ * - server/modules/RealTimeSuggestionsModule.ts (Primary AI implementation)
+ * - server/modules/WebSocketEventHandler.ts (Event routing)
+ * - server/realtime-medical-context-service.ts (Legacy but still called by routes)
+ * 
+ * This file needs API fixes or should be marked as legacy if not actually used.
+ * TypeScript errors indicate method mismatches with WebSocketEventHandler interface.
  */
 
 interface ConnectionState {

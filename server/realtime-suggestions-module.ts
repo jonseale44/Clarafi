@@ -2,8 +2,14 @@ import WebSocket from "ws";
 import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 /**
- * Real-time GPT Suggestions Module
- * Based on your external working implementation
+ * ⚠️ LEGACY SYSTEM - NOT CURRENTLY ACTIVE ⚠️
+ * 
+ * This is a standalone suggestions module that is NOT being used by the current system.
+ * The actual active AI suggestions module is:
+ * - server/modules/RealTimeSuggestionsModule.ts (Primary AI implementation)
+ * 
+ * This file contains duplicate code and identical prompts to the active system.
+ * DO NOT modify this file thinking it will affect current AI suggestions.
  */
 
 export interface SuggestionEvent {

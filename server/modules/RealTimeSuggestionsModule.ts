@@ -1,6 +1,13 @@
 /**
- * RealTimeSuggestionsModule - Handles streaming AI suggestions via OpenAI Realtime API
- * Based on external working implementation
+ * ✅ PRIMARY ACTIVE AI SUGGESTIONS MODULE ✅
+ * 
+ * This is the main AI suggestions implementation currently in use.
+ * Used by WebSocketEventHandler for real-time medical AI insights.
+ * 
+ * Contains the comprehensive medical prompt for physician-focused guidance
+ * including specific medication dosages, red flags, and evidence-based insights.
+ * 
+ * This is the file to modify for AI prompt changes and suggestions logic.
  */
 
 export interface EventMetadata {
