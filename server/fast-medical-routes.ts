@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 const router = Router();
@@ -25,11 +26,24 @@ router.post("/voice/fast-transcribe", upload.single("audio"), async (req, res) =
 
     console.log(`🎯 [FastMedical] Processing voice for patient ${patientId}, role: ${userRole}`);
 
-    // Legacy voice processing removed - use WebSocket realtime service instead
-    res.status(400).json({
-      success: false,
-      message: "Voice upload deprecated",
-      redirect: "Use WebSocket realtime service at /ws/realtime for voice processing"
+    // Process voice with fast medical context
+    const result = await realtimeMedicalContext.processVoiceWithFastContext(
+      audioFile.buffer,
+      parseInt(patientId),
+      userRole as "nurse" | "provider",
+      chiefComplaint
+    );
+
+    console.log(`✅ [FastMedical] Voice processed in ${result.contextUsed?.responseTime}ms`);
+
+    res.json({
+      success: true,
+      ...result,
+      performance: {
+        responseTime: result.contextUsed?.responseTime,
+        tokenCount: result.contextUsed?.tokenCount,
+        cacheHit: result.contextUsed?.cacheHit
+      }
     });
 
   } catch (error: any) {
@@ -88,8 +102,8 @@ router.post("/encounters/:id/update-medical-index", async (req, res) => {
 
     console.log(`🔄 [FastMedical] Updating medical index for encounter ${encounterId}`);
 
-    // Update medical index using chart index service
-    await medicalChartIndex.updateAfterEncounter(encounterId, soapNote);
+    // Update medical index (async operation)
+    await realtimeMedicalContext.updateMedicalIndex(encounterId, soapNote);
 
     res.json({
       success: true,
@@ -121,7 +135,7 @@ router.post("/patients/:id/search-medical-context", async (req, res) => {
       return res.status(400).json({ message: "Search query is required" });
     }
 
-    const results = await medicalChartIndex.findRelevantMedicalContext(patientId, query);
+    const results = await realtimeMedicalContext.findRelevantContext(patientId, query);
 
     res.json({
       success: true,

@@ -6,10 +6,10 @@ import { AlertTriangle, Pill } from "lucide-react";
 
 interface PatientHeaderProps {
   patient: Patient;
-  allergies?: any[];
+  allergies: any[];
 }
 
-export function PatientHeader({ patient, allergies = [] }: PatientHeaderProps) {
+export function PatientHeader({ patient, allergies }: PatientHeaderProps) {
   const calculateAge = (dateOfBirth: string) => {
     const today = new Date();
     const birth = new Date(dateOfBirth);
@@ -93,9 +93,9 @@ export function PatientHeader({ patient, allergies = [] }: PatientHeaderProps) {
           ))}
           
           {patient.activeProblems && Array.isArray(patient.activeProblems) && patient.activeProblems.length > 0 && (
-            <div key="active-problems" className="flex items-center space-x-2 bg-orange-50 text-orange-800 px-3 py-2 rounded-lg text-sm">
+            <div className="flex items-center space-x-2 bg-orange-50 text-orange-800 px-3 py-2 rounded-lg text-sm">
               <Pill className="h-4 w-4" />
-              <span>Active Problems: {(patient.activeProblems as any[]).length}</span>
+              <span>Active Problems: {patient.activeProblems.length}</span>
             </div>
           )}
         </div>
