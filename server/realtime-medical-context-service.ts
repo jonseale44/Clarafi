@@ -154,10 +154,9 @@ export class RealtimeMedicalContextService {
       const response = await this.openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt + " Always return valid JSON." },
           { role: "user", content: contextPrompt }
         ],
-        response_format: { type: "json_object" },
         temperature: 0.7,
         max_tokens: 1500
       });

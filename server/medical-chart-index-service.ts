@@ -271,17 +271,27 @@ Return JSON: {
 }`;
 
     const response = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
-        { role: "system", content: "You are a medical AI that creates concise, accurate summaries for clinical use." },
+        { role: "system", content: "You are a medical AI that creates concise, accurate summaries for clinical use. Always return valid JSON." },
         { role: "user", content: prompt }
       ],
-      response_format: { type: "json_object" },
       temperature: 0.1,
       max_tokens: 500
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const content = response.choices[0].message.content || "{}";
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch {
+      // Fallback if JSON parsing fails
+      result = {
+        conciseSummary: content.slice(0, 200),
+        alerts: [],
+        relevantHistory: "Unable to parse structured response"
+      };
+    }
 
     return {
       tokenOptimizedSummary: result.conciseSummary || "",
