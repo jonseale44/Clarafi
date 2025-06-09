@@ -1,4 +1,4 @@
-const WebSocket = require('ws');
+import WebSocket from 'ws';
 
 // Test the enhanced realtime suggestions system
 const testRealtimeSuggestions = () => {

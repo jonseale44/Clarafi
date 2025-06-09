@@ -339,6 +339,45 @@ Please provide real-time clinical insights and suggestions as the conversation p
   }
 
   /**
+   * Freeze insights to prevent overwrites
+   */
+  freezeInsights(): void {
+    this.freezeSuggestions();
+  }
+
+  /**
+   * Unfreeze insights
+   */
+  unfreezeInsights(): void {
+    this.unfreezeSuggestions();
+  }
+
+  /**
+   * Check if suggestions are frozen
+   */
+  areFrozen(): boolean {
+    return this.isFrozen;
+  }
+
+  /**
+   * Get module status
+   */
+  getStatus(): { connected: boolean; frozen: boolean; sessionId: string } {
+    return {
+      connected: this.ws?.readyState === WebSocket.OPEN,
+      frozen: this.isFrozen,
+      sessionId: this.sessionId
+    };
+  }
+
+  /**
+   * Close connection
+   */
+  close(): void {
+    this.cleanup();
+  }
+
+  /**
    * Cleanup and close connection
    */
   cleanup(): void {

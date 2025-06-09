@@ -113,7 +113,7 @@ export class WebSocketEventHandler {
 
     try {
       if (this.suggestionsModule) {
-        await this.suggestionsModule.processLiveTranscription(transcription);
+        this.suggestionsModule.processTranscription(transcription);
       }
 
       this.markEventProcessed(eventId, metadata);
@@ -161,7 +161,7 @@ export class WebSocketEventHandler {
       case "conversation.item.input_audio_transcription.delta":
         if (this.suggestionsModule) {
           const transcription = message.transcript || message.delta || "";
-          this.suggestionsModule.processLiveTranscription(transcription);
+          this.suggestionsModule.processTranscription(transcription);
         }
         break;
 
