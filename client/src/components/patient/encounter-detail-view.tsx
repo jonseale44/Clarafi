@@ -513,6 +513,9 @@ export function EncounterDetailView({
       let realtimeWs: WebSocket | null = null;
       let transcriptionBuffer = "";
       let lastSuggestionLength = 0;
+      let suggestionsStarted = false;
+      let sessionId = "";
+      let suggestionsBuffer = "";
 
       try {
         console.log(
@@ -620,6 +623,66 @@ export function EncounterDetailView({
           );
         };
 
+        // Function to start AI suggestions conversation
+        const startSuggestionsConversation = async (ws: WebSocket | null, patientData: any) => {
+          if (!ws) return;
+          
+          // Inject patient context for AI suggestions
+          const patientContext = `
+PATIENT CONTEXT FOR AI ASSISTANT:
+Patient: ${patientData.firstName} ${patientData.lastName}
+Age: ${patientData.age || 'Unknown'}
+Gender: ${patientData.gender || 'Unknown'}
+
+You are providing real-time clinical insights. Respond with concise, actionable bullet points with specific medication dosages and evidence-based guidance.
+Format responses as bullet points (•) with clinical specificity.
+`;
+
+          const contextMessage = {
+            type: "conversation.item.create",
+            item: {
+              type: "message",
+              role: "user",
+              content: [
+                {
+                  type: "input_text",
+                  text: patientContext
+                }
+              ]
+            }
+          };
+
+          console.log("🧠 [EncounterView] Injecting patient context for AI suggestions");
+          ws.send(JSON.stringify(contextMessage));
+
+          // Create response for AI suggestions
+          const suggestionsMessage = {
+            type: "response.create",
+            response: {
+              modalities: ["text"],
+              instructions: `You are a medical AI assistant providing real-time clinical insights. 
+              
+Provide clinical guidance based on conversation transcription. Format as bullet points:
+• Specific medication dosages with starting dose, titration, max dose
+• Evidence-based diagnostic or therapeutic recommendations  
+• Red flags or advanced diagnostics when relevant
+• Actionable clinical decision-making guidance
+
+Each suggestion should be:
+- Single line with bullet point (•)
+- Specific and actionable
+- Evidence-based medical guidance
+- Include dosages, frequencies, monitoring parameters
+- Highlight contraindications or precautions when relevant
+
+Focus on immediate clinical utility for provider decision-making.`
+            }
+          };
+
+          console.log("🧠 [EncounterView] Creating AI suggestions conversation");
+          ws.send(JSON.stringify(suggestionsMessage));
+        };
+
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [EncounterView] OpenAI message type:", message.type);
@@ -635,10 +698,10 @@ export function EncounterDetailView({
             setTranscriptionBuffer(transcriptionBuffer);
 
             // Start AI suggestions conversation when we have enough transcription
-            if (transcriptionBuffer.length > 50 && !suggestionsStarted) {
+            if (transcriptionBuffer.length > 50 && !suggestionsStarted && realtimeWs) {
               suggestionsStarted = true;
               console.log("🧠 [EncounterView] Starting AI suggestions conversation");
-              startSuggestionsConversation();
+              startSuggestionsConversation(realtimeWs, patient);
             }
           } 
           
@@ -647,13 +710,31 @@ export function EncounterDetailView({
             const deltaText = message.delta || "";
             console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);
             
-            // Accumulate suggestions like transcription deltas
-            if (!liveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-              setLiveSuggestions("🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + deltaText);
-            } else {
-              setLiveSuggestions(prev => prev + deltaText);
+            // Accumulate suggestions buffer like transcription
+            suggestionsBuffer += deltaText;
+            
+            // Filter out SOAP notes and orders from suggestions
+            const visitSummaryPatterns = [
+              "Chief Complaint:", "SUBJECTIVE:", "OBJECTIVE:", 
+              "ASSESSMENT:", "PLAN:", "Patient Visit Summary",
+              "**SUBJECTIVE:**", "**OBJECTIVE:**", "**ASSESSMENT:**", "**PLAN:**"
+            ];
+            
+            const containsVisitSummary = visitSummaryPatterns.some(pattern => 
+              suggestionsBuffer.includes(pattern)
+            );
+            
+            if (!containsVisitSummary) {
+              // Set complete suggestions with header
+              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+                const formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
+                setLiveSuggestions(formattedSuggestions);
+                setGptSuggestions(formattedSuggestions);
+              } else {
+                setLiveSuggestions(suggestionsBuffer);
+                setGptSuggestions(suggestionsBuffer);
+              }
             }
-            setGptSuggestions(liveSuggestions + deltaText);
           }
           
           // Handle AI suggestions completion
