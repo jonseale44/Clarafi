@@ -256,16 +256,35 @@ Focus on immediate, actionable guidance based on the voice input and patient con
   /**
    * Transcribe audio using OpenAI Whisper
    */
-  private async transcribeAudio(audioBuffer: Buffer): Promise<string> {
+  private async transcribeAudio(audioBuffer: Buffer): Promise<{ text: string }> {
     try {
+      // Validate audio buffer
+      if (!audioBuffer || audioBuffer.length === 0) {
+        throw new Error("Empty audio buffer provided");
+      }
+
+      // Check if buffer is too small (likely invalid audio)
+      if (audioBuffer.length < 1024) {
+        throw new Error("Audio buffer too small, likely invalid audio data");
+      }
+
+      // Create a proper File object with WAV headers if needed
+      const audioBlob = new Blob([audioBuffer], { type: "audio/wav" });
+      const audioFile = new File([audioBlob], "recording.wav", { type: "audio/wav" });
+
+      console.log(`🎵 [RealtimeMedical] Transcribing audio (${audioBuffer.length} bytes)`);
+
       const response = await this.openai.audio.transcriptions.create({
-        file: new File([audioBuffer], "audio.wav", { type: "audio/wav" }),
+        file: audioFile,
         model: "whisper-1",
         response_format: "text",
         language: "en"
       });
 
-      return response || "";
+      const text = response || "";
+      console.log(`📝 [RealtimeMedical] Transcription result: "${text}"`);
+
+      return { text };
     } catch (error) {
       console.error(`❌ [RealtimeMedical] Transcription failed:`, error);
       throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
