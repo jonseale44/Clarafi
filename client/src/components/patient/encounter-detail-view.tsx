@@ -623,9 +623,8 @@ export function EncounterDetailView({
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [EncounterView] OpenAI message type:", message.type);
-          console.log("📨 [EncounterView] Full OpenAI message:", message);
 
-          // Handle transcription events - only use delta for live updates
+          // Handle transcription events - accumulate deltas
           if (
             message.type === "conversation.item.input_audio_transcription.delta"
           ) {
@@ -635,39 +634,53 @@ export function EncounterDetailView({
             setTranscription(transcriptionBuffer);
             setTranscriptionBuffer(transcriptionBuffer);
 
-            // Trigger live AI suggestions when we have enough text (every 25 chars for faster response)
-            if (transcriptionBuffer.length - lastSuggestionLength > 25) {
-              lastSuggestionLength = transcriptionBuffer.length;
-              console.log(
-                "🧠 [EncounterView] Triggering live AI suggestions for buffer length:",
-                transcriptionBuffer.length,
-              );
-              getLiveAISuggestions(transcriptionBuffer);
+            // Start AI suggestions conversation when we have enough transcription
+            if (transcriptionBuffer.length > 50 && !suggestionsStarted) {
+              suggestionsStarted = true;
+              console.log("🧠 [EncounterView] Starting AI suggestions conversation");
+              startSuggestionsConversation();
             }
-          } else if (
-            message.type ===
-            "conversation.item.input_audio_transcription.completed"
+          } 
+          
+          // Handle AI suggestions streaming deltas (like transcription)
+          else if (message.type === "response.text.delta") {
+            const deltaText = message.delta || "";
+            console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);
+            
+            // Accumulate suggestions like transcription deltas
+            if (!liveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+              setLiveSuggestions("🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + deltaText);
+            } else {
+              setLiveSuggestions(prev => prev + deltaText);
+            }
+            setGptSuggestions(liveSuggestions + deltaText);
+          }
+          
+          // Handle AI suggestions completion
+          else if (message.type === "response.text.done") {
+            console.log("✅ [EncounterView] AI suggestions completed");
+            // Suggestions are already accumulated via deltas
+          }
+          
+          // Handle transcription completion
+          else if (
+            message.type === "conversation.item.input_audio_transcription.completed"
           ) {
-            // Log completion but don't add to buffer (already added via deltas)
             const finalText = message.transcript || "";
-            console.log(
-              "✅ [EncounterView] Transcription completed (not adding to buffer):",
-              finalText,
-            );
-
-            // Trigger final suggestions on completion if we haven't recently
-            if (transcriptionBuffer.length - lastSuggestionLength > 25) {
-              console.log(
-                "🧠 [EncounterView] Triggering final AI suggestions on completion",
-              );
-              getLiveAISuggestions(transcriptionBuffer);
+            console.log("✅ [EncounterView] Transcription completed:", finalText);
+          } 
+          
+          // Handle session events
+          else if (message.type === "session.created" || message.type === "session.updated") {
+            console.log("🔧 [EncounterView] Session event:", message.type);
+            if (message.session?.id) {
+              sessionId = message.session.id;
             }
-          } else if (message.type === "error") {
-            console.error(
-              "❌ [EncounterView] OpenAI Realtime API Error:",
-              message,
-            );
-            console.error("❌ [EncounterView] Error details:", message.error);
+          }
+          
+          // Handle errors
+          else if (message.type === "error") {
+            console.error("❌ [EncounterView] OpenAI Realtime API Error:", message);
           }
         };
 
