@@ -2,8 +2,19 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    let errorMessage = res.statusText;
+    try {
+      const text = await res.text();
+      // Check if response is HTML (error page) vs JSON
+      if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
+        errorMessage = `Server error (${res.status})`;
+      } else {
+        errorMessage = text || res.statusText;
+      }
+    } catch {
+      errorMessage = res.statusText;
+    }
+    throw new Error(`${res.status}: ${errorMessage}`);
   }
 }
 
@@ -38,6 +49,18 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
+    
+    // Handle empty responses
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await res.text();
+      if (text.trim() === "") return null;
+      if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
+        throw new Error(`Server returned HTML instead of JSON for ${queryKey[0]}`);
+      }
+      return text;
+    }
+    
     return await res.json();
   };
 

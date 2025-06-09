@@ -136,8 +136,16 @@ export function registerRoutes(app: Express): Server {
       if (!req.isAuthenticated()) return res.sendStatus(401);
       
       const encounterId = parseInt(req.params.id);
-      const orders = await storage.getEncounterOrders(encounterId);
-      res.json(orders);
+      // Get encounter first to find patient ID, then get patient orders
+      const encounter = await storage.getEncounter(encounterId);
+      if (!encounter) {
+        return res.status(404).json({ message: "Encounter not found" });
+      }
+      
+      const orders = await storage.getPatientOrders(encounter.patientId);
+      // Filter orders for this specific encounter if needed
+      const encounterOrders = orders.filter(order => order.encounterId === encounterId);
+      res.json(encounterOrders);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
