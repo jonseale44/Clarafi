@@ -416,57 +416,52 @@ export function EncounterDetailView({
             data.aiSuggestions.realTimePrompts?.length || 0,
           );
 
-          // Get existing live suggestions to append to them
+          // Get existing live suggestions to append to them (like transcription buffer)
           const existingLiveSuggestions = liveSuggestions || "";
-          let suggestionsText = "";
+          let suggestionsText = existingLiveSuggestions;
 
           // If this is the first suggestion, add the header
           if (!existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
             suggestionsText = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n";
-            if (data.aiSuggestions.clinicalGuidance) {
-              suggestionsText += `${data.aiSuggestions.clinicalGuidance}\n\n`;
-            }
             console.log("🔧 [EncounterView] First suggestion - added header");
-          } else {
-            suggestionsText = existingLiveSuggestions;
-            console.log(
-              "🔧 [EncounterView] Appending to existing live suggestions",
-            );
           }
 
           // Only append new suggestions if they exist and aren't empty
           if (data.aiSuggestions.realTimePrompts?.length > 0) {
-            // Filter out empty suggestions 
+            // Filter out empty suggestions and ones already in the buffer
             const newSuggestions = data.aiSuggestions.realTimePrompts.filter(
-              (prompt: string) => prompt && prompt.trim() && prompt.trim() !== "Continue recording for more context..."
+              (prompt: string) => {
+                if (!prompt || !prompt.trim() || prompt.trim() === "Continue recording for more context...") {
+                  return false;
+                }
+                // Check if this suggestion is already in our accumulated text
+                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, '').trim();
+                return !existingLiveSuggestions.includes(cleanPrompt);
+              }
             );
 
             if (newSuggestions.length > 0) {
-              // Count existing numbered suggestions to continue numbering
-              const existingNumbers = (
-                existingLiveSuggestions.match(/\d+\./g) || []
-              ).length;
-              
               console.log(
-                "🔧 [EncounterView] Found existing numbered items:",
-                existingNumbers,
-                "Adding new suggestions:",
-                newSuggestions.length
+                "🔧 [EncounterView] Adding",
+                newSuggestions.length,
+                "new suggestions to existing",
+                existingLiveSuggestions.length,
+                "chars"
               );
 
+              // Append each new suggestion (like transcription delta accumulation)
               newSuggestions.forEach((prompt: string) => {
-                // If prompt already has bullet or dash, use as-is; otherwise add bullet
                 const formattedPrompt = prompt.startsWith('•') || prompt.startsWith('-') || prompt.startsWith('*') 
                   ? prompt 
                   : `• ${prompt}`;
                 suggestionsText += `${formattedPrompt}\n`;
                 console.log(
-                  "🔧 [EncounterView] Added suggestion:",
+                  "🔧 [EncounterView] Accumulated suggestion:",
                   formattedPrompt.substring(0, 50) + "...",
                 );
               });
             } else {
-              console.log("🔧 [EncounterView] No new meaningful suggestions to add");
+              console.log("🔧 [EncounterView] No new suggestions to accumulate");
             }
           }
 
