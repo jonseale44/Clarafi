@@ -439,7 +439,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Live AI suggestions endpoint for real-time transcription (used by encounter recording)
+  // ⚠️ LEGACY ROUTE - Live AI suggestions endpoint (PARTIALLY DEPRECATED)
+  // This route uses legacy realtime medical context service - Enhanced Realtime Service is primary
   app.post("/api/voice/live-suggestions", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -505,7 +506,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Enhanced voice processing for encounter recording
+  // ⚠️ LEGACY ROUTE - Enhanced voice processing (PARTIALLY DEPRECATED)
+  // This route uses legacy realtime medical context service - Enhanced Realtime Service is primary
   app.post(
     "/api/voice/transcribe-enhanced",
     upload.single("audio"),
