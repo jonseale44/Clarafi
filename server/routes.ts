@@ -8,7 +8,7 @@ import {
   insertVitalsSchema,
   insertOrderSchema,
 } from "@shared/schema";
-import { processVoiceRecordingEnhanced, AIAssistantParams } from "./openai";
+// Legacy import removed - using enhanced realtime service only
 import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import multer from "multer";
@@ -528,24 +528,34 @@ export function registerRoutes(app: Express): Server {
 
         if (isLive) {
           try {
-            const { SimpleRealtimeService } = await import(
-              "./simple-realtime-service.js"
-            );
-            const realtimeService = new SimpleRealtimeService();
-
-            const result = await realtimeService.processLiveAudioChunk(
+            // Use enhanced realtime service with WebSocket streaming
+            const result = await realtimeMedicalContext.processVoiceWithFastContext(
               req.file.buffer,
               patientIdNum,
-              userRoleStr,
+              userRoleStr as "nurse" | "provider"
             );
 
-            res.json(result);
+            res.json({
+              transcription: result.transcription || "",
+              suggestions: {
+                suggestions: result.providerPrompts || result.nursePrompts || [],
+                clinicalFlags: result.medicalAlerts || []
+              },
+              performance: {
+                responseTime: result.contextUsed?.responseTime || 0,
+                tokenCount: result.contextUsed?.tokenCount || 0,
+                system: "enhanced-realtime"
+              }
+            });
             return;
           } catch (liveError) {
-            console.error(
-              "Live processing failed, falling back to enhanced:",
-              liveError,
-            );
+            console.error("Enhanced live processing failed:", liveError);
+            res.status(500).json({
+              error: "Enhanced live processing failed",
+              transcription: "",
+              suggestions: { suggestions: [], clinicalFlags: [] }
+            });
+            return;
           }
         }
 
@@ -568,14 +578,28 @@ export function registerRoutes(app: Express): Server {
           });
         }
 
-        const result = await processVoiceRecordingEnhanced(
+        // Use enhanced realtime service for all voice processing
+        const result = await realtimeMedicalContext.processVoiceWithFastContext(
           req.file.buffer,
           patientIdNum,
-          targetEncounter.id,
-          userRoleStr as "nurse" | "provider",
+          userRoleStr as "nurse" | "provider"
         );
 
-        res.json(result);
+        res.json({
+          transcription: result.clinicalNotes || "",
+          aiSuggestions: {
+            providerPrompts: result.providerPrompts || [],
+            nursePrompts: result.nursePrompts || [],
+            draftOrders: result.draftOrders || [],
+            draftDiagnoses: result.draftDiagnoses || [],
+            clinicalNotes: result.clinicalNotes || ""
+          },
+          performance: {
+            responseTime: result.contextUsed?.responseTime || 0,
+            tokenCount: result.contextUsed?.tokenCount || 0,
+            system: "enhanced-realtime"
+          }
+        });
       } catch (error: any) {
         res.status(500).json({ message: error.message });
       }
