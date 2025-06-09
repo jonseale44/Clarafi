@@ -564,18 +564,18 @@ export function registerRoutes(app: Express): Server {
         return;
 
         res.json({
-          transcription: result.clinicalNotes || "",
+          transcription: "",
           aiSuggestions: {
-            providerPrompts: result.providerPrompts || [],
-            nursePrompts: result.nursePrompts || [],
-            draftOrders: result.draftOrders || [],
-            draftDiagnoses: result.draftDiagnoses || [],
-            clinicalNotes: result.clinicalNotes || ""
+            providerPrompts: [],
+            nursePrompts: [],
+            draftOrders: [],
+            draftDiagnoses: [],
+            clinicalNotes: "Use WebSocket realtime service for voice processing"
           },
           performance: {
-            responseTime: result.contextUsed?.responseTime || 0,
-            tokenCount: result.contextUsed?.tokenCount || 0,
-            system: "enhanced-realtime"
+            responseTime: 0,
+            tokenCount: 0,
+            system: "consolidated-realtime"
           }
         });
       } catch (error: any) {
@@ -829,46 +829,6 @@ export function registerRoutes(app: Express): Server {
             message: "Use WebSocket realtime service at /ws/realtime for SOAP generation"
           });
           return;
-
-          // Read the complete SOAP note from the stream
-          const reader = stream.getReader();
-          let soapNote = "";
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              const chunk = new TextDecoder().decode(value);
-              const lines = chunk.split("\n");
-
-              for (const line of lines) {
-                if (line.startsWith("data: ")) {
-                  try {
-                    const data = JSON.parse(line.slice(6));
-                    if (data.type === "response.text.done") {
-                      soapNote = data.text;
-                      break;
-                    }
-                  } catch (e) {
-                    // Ignore parsing errors for streaming data
-                  }
-                }
-              }
-
-              if (soapNote) break;
-            }
-          } finally {
-            reader.releaseLock();
-          }
-
-          res.json({
-            soapNote,
-            patientId,
-            encounterId,
-            personalized: false,
-            generatedAt: new Date().toISOString(),
-          });
         }
       } catch (error: any) {
         console.error("❌ [PersonalizedSOAP] Error:", error);
@@ -1949,17 +1909,10 @@ Return only valid JSON without markdown formatting.`;
 
   const httpServer = createServer(app);
 
-  // Initialize Real-time transcription WebSocket service
-  console.log("🚀 [Server] Initializing Real-time transcription service...");
-  const realtimeService = new RealtimeTranscriptionService();
-  realtimeService.initialize(httpServer);
-  console.log("✅ [Server] Real-time transcription service initialized");
-
-  // Initialize Enhanced Real-time service (replaces assistant-based approach)
-  console.log("🚀 [Server] Initializing Enhanced Real-time service...");
-  const enhancedRealtimeService = new EnhancedRealtimeService();
-  enhancedRealtimeService.initialize(httpServer);
-  console.log("✅ [Server] Enhanced Real-time service initialized");
+  // Initialize Consolidated Real-time service (replaces all legacy realtime systems)
+  console.log("🚀 [Server] Initializing Consolidated Real-time service...");
+  consolidatedRealtimeService.initialize(httpServer);
+  console.log("✅ [Server] Consolidated Real-time service initialized");
 
   return httpServer;
 }
