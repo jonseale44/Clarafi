@@ -1,6 +1,5 @@
 import { WebSocketServer } from 'ws';
 import WebSocket from 'ws';
-import { AssistantContextService } from './assistant-context-service.js';
 
 /**
  * ⚠️ LEGACY SYSTEM - NOT CURRENTLY ACTIVE ⚠️
@@ -21,7 +20,6 @@ import { AssistantContextService } from './assistant-context-service.js';
  */
 export class RealtimeTranscriptionService {
   private wss: WebSocketServer | null = null;
-  private assistantService: AssistantContextService;
   private activeConnections = new Map<string, {
     clientWs: WebSocket;
     openaiWs: WebSocket | null;
@@ -32,7 +30,7 @@ export class RealtimeTranscriptionService {
   }>();
 
   constructor() {
-    this.assistantService = new AssistantContextService();
+    // AssistantContextService removed - this service is legacy and inactive
   }
 
   initialize(server: any) {
@@ -112,8 +110,8 @@ export class RealtimeTranscriptionService {
     console.log('🚀 [RealtimeTranscription] Starting session for patient:', patientId);
 
     try {
-      // Initialize Assistant and get thread
-      const threadId = await this.assistantService.getOrCreateThread(patientId);
+      // Legacy assistant service removed - this service is inactive
+      const threadId = null;
 
       // Create OpenAI Realtime connection using the correct format from your working code
       const openaiWs = new WebSocket('wss://api.openai.com/v1/realtime', {
@@ -264,12 +262,12 @@ export class RealtimeTranscriptionService {
     if (!connection || !connection.threadId) return;
 
     try {
-      const suggestions = await this.assistantService.getRealtimeSuggestions(
-        connection.threadId,
-        transcription,
-        connection.userRole as "nurse" | "provider",
-        connection.patientId
-      );
+      // Legacy assistant service removed - returning empty suggestions
+      const suggestions = {
+        suggestions: [],
+        clinicalFlags: [],
+        contextualReminders: []
+      };
 
       connection.clientWs.send(JSON.stringify({
         type: 'live_suggestions',
