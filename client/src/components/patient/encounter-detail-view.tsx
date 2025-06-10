@@ -984,12 +984,15 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               // Add each segment as a separate bullet point
               const newBullets = conversationSegments.map((segment: string) => `• ${segment}`).join('\n');
               
-              // Replace the current buffer content with formatted bullets (don't append to avoid duplication)
+              // Append the new formatted bullets to existing transcription
               setTranscription(prev => {
-                // Remove the raw buffer content and add formatted bullets
-                const existingLines = prev ? prev.split('\n').filter(line => line.trim() && line.startsWith('•')) : [];
-                const combinedContent = existingLines.length > 0 ? existingLines.join('\n') + '\n' + newBullets : newBullets;
-                return combinedContent;
+                if (!prev || prev.trim() === transcriptionBuffer.trim()) {
+                  // If previous content is just the raw buffer, replace with formatted bullets
+                  return newBullets;
+                } else {
+                  // If we have existing formatted content, append new bullets
+                  return prev + '\n' + newBullets;
+                }
               });
               
               // Clear the buffer since we've processed this content
