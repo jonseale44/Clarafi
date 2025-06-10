@@ -126,19 +126,20 @@ export function EncounterDetailView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
 
-  // Better sentence detection and formatting function
+  // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
     if (!text) return text;
     
-    // Handle both completed sentences and ongoing speech
-    const lines = text.split('\n').filter(line => line.trim());
+    // Split into sentences but keep natural conversation flow
+    const sentences = text
+      .split(/(?<=[.!?])\s+/)  // Split on sentence endings followed by whitespace
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
     
-    return lines.map(line => {
-      // If line doesn't start with bullet, add one
-      if (!line.trim().startsWith('•')) {
-        return `• ${line.trim()}`;
-      }
-      return line;
+    return sentences.map(sentence => {
+      // Clean up the sentence and add bullet if it doesn't have one
+      const cleanSentence = sentence.replace(/^[•\-\*]\s*/, ''); // Remove existing bullets
+      return `• ${cleanSentence}`;
     }).join('\n');
   };
 
@@ -973,12 +974,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               finalText.length,
             );
 
-            // Format completed transcription with bullet points
+            // Format completed transcription with bullet points for conversational flow
             if (finalText.trim()) {
-              const formattedLine = `• ${finalText.trim()}.`;
-              setTranscription(prev => prev ? `${prev}\n${formattedLine}` : formattedLine);
-              setTranscriptionBuffer(prev => prev ? `${prev}\n${formattedLine}` : formattedLine);
-              console.log("📝 [EncounterView] Formatted transcription line:", formattedLine);
+              // Split the completed text into natural conversation segments
+              const conversationSegments = finalText.trim()
+                .split(/(?<=[.!?])\s+/)
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+              
+              // Add each segment as a separate bullet point
+              const newBullets = conversationSegments.map(segment => `• ${segment}`).join('\n');
+              setTranscription(prev => prev ? `${prev}\n${newBullets}` : newBullets);
+              setTranscriptionBuffer(prev => prev ? `${prev} ${finalText}` : finalText);
+              console.log("📝 [EncounterView] Added conversation segments:", conversationSegments.length);
             }
 
             // Trigger new AI suggestions based on completed transcription
