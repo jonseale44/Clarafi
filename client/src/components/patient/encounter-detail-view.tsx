@@ -951,7 +951,7 @@ deltaText.includes("+"),
                     role: "user",
                     content: [{
                       type: "input_text",
-                      text: `Updated conversation context: "${liveTranscriptionContent || transcriptionBuffer}"\n\nProvide relevant medical suggestions based on this updated context.`
+                      text: "Updated conversation context: \"" + (liveTranscriptionContent || transcriptionBuffer) + "\"\n\nProvide relevant medical suggestions based on this updated context."
                     }]
                   }
                 };
@@ -1164,9 +1164,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   content: [
                     {
                       type: "input_text",
-                      text: `Current complete conversation: "${completeTranscription}"
-
-Please provide medical suggestions based on this complete conversation context.`,
+                      text: "Current complete conversation: \"" + completeTranscription + "\"\n\nPlease provide medical suggestions based on this complete conversation context.",
                     },
                   ],
                 },
