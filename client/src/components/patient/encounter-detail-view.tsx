@@ -112,8 +112,7 @@ export function EncounterDetailView({
   onBackToChart,
 }: EncounterDetailViewProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [completedTranscription, setCompletedTranscription] = useState(""); // Formatted bullet points
-  const [liveTranscription, setLiveTranscription] = useState(""); // Raw text during recording
+  const [transcription, setTranscription] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
@@ -535,7 +534,7 @@ export function EncounterDetailView({
     // Clear previous suggestions when starting new recording
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
-    setLiveTranscription("");
+    setTranscription("");
 
     try {
       // Create direct WebSocket connection to OpenAI like your working code
@@ -820,10 +819,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               deltaText.endsWith("+"),
             );
 
-            // For delta updates, just accumulate and show raw text during recording
+            // For delta updates, just accumulate the raw text without formatting
             transcriptionBuffer += deltaText;
             setTranscriptionBuffer(transcriptionBuffer);
-            setLiveTranscription(transcriptionBuffer);
+            
+            // Show the raw accumulating text during recording (no bullets yet)
+            setTranscription(transcriptionBuffer);
 
             console.log(
               "📝 [EncounterView] Updated transcription buffer:",
@@ -983,15 +984,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               // Add each segment as a separate bullet point
               const newBullets = conversationSegments.map((segment: string) => `• ${segment}`).join('\n');
               
-              // Add formatted bullets to completed transcription
-              setCompletedTranscription(prev => {
-                return prev ? prev + '\n' + newBullets : newBullets;
+              // Append the new formatted bullets to existing transcription
+              setTranscription(prev => {
+                if (!prev || prev.trim() === transcriptionBuffer.trim()) {
+                  // If previous content is just the raw buffer, replace with formatted bullets
+                  return newBullets;
+                } else {
+                  // If we have existing formatted content, append new bullets
+                  return prev + '\n' + newBullets;
+                }
               });
               
-              // Clear the buffer and live transcription since we've processed this content
+              // Clear the buffer since we've processed this content
               transcriptionBuffer = "";
               setTranscriptionBuffer("");
-              setLiveTranscription("");
               
               console.log("📝 [EncounterView] Added conversation segments:", conversationSegments.length);
             }
@@ -1261,7 +1267,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       );
 
       // Set transcription for Real-time SOAP component
-      setLiveTranscription(transcriptionBuffer);
+      setTranscription(transcriptionBuffer);
 
       // Trigger Real-time streaming SOAP generation
       if (realtimeSOAPRef.current) {
@@ -1586,7 +1592,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               <div className="space-y-2">
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
                   <div className="whitespace-pre-line text-sm leading-relaxed">
-                    {isRecording ? liveTranscription : completedTranscription ||
+                    {transcription ||
                       (isRecording
                         ? "Listening..."
                         : "Transcription will appear here during recording")}
@@ -1626,7 +1632,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 <RealtimeSOAPIntegration
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
-                  transcription={completedTranscription || liveTranscription}
+                  transcription={transcription}
                   onSOAPNoteUpdate={(note) => {
                     setSoapNote(note);
                     if (editor && !editor.isDestroyed) {
@@ -1708,7 +1714,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             ref={realtimeSOAPRef}
             patientId={patient.id.toString()}
             encounterId={encounterId.toString()}
-            transcription={completedTranscription || liveTranscription}
+            transcription={transcription}
             onSOAPNoteUpdate={handleSOAPNoteUpdate}
             onSOAPNoteComplete={handleSOAPNoteComplete}
             onDraftOrdersReceived={handleDraftOrdersReceived}
