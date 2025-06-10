@@ -1,7 +1,6 @@
 import { WebSocketServer } from "ws";
 import WebSocket from "ws";
 import { WebSocketEventHandler } from "./modules/WebSocketEventHandler.js";
-import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 
 /**
  * ⚠️ INACTIVE SERVICE - Has API compatibility issues ⚠️

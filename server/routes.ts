@@ -438,73 +438,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // ⚠️ LEGACY ROUTE - NOT USED BY ACTIVE UI ⚠️
-  // The UI now uses direct WebSocket connections for AI suggestions
-  // This HTTP route is kept for compatibility but not actively used
-  app.post("/api/voice/live-suggestions", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const { patientId, userRole = "provider", transcription } = req.body;
-
-      if (!patientId || !transcription) {
-        return res
-          .status(400)
-          .json({ message: "Patient ID and transcription are required" });
-      }
-
-      // Get patient context
-      const patient = await storage.getPatient(parseInt(patientId));
-      if (!patient) {
-        return res.status(404).json({ message: "Patient not found" });
-      }
-
-      try {
-        console.log("🎯 [Routes] Using enhanced realtime suggestions...");
-        
-        // Use WebSocket streaming for fast suggestions (no audio buffer needed for live mode)
-        const result = await realtimeMedicalContext.processVoiceWithFastContext(
-          Buffer.alloc(0), // Empty buffer for text-only mode
-          parseInt(patientId),
-          userRole as "nurse" | "provider",
-          transcription || "Live transcription in progress"
-        );
-
-        console.log("✅ [Routes] Enhanced suggestions received");
-
-        const formattedSuggestions = {
-          realTimePrompts: result.providerPrompts || result.nursePrompts || [],
-          clinicalGuidance: result.clinicalNotes || "AI analysis in progress...",
-          clinicalFlags: result.medicalAlerts || [],
-        };
-
-        const response = {
-          aiSuggestions: formattedSuggestions,
-          isLive: true,
-          performance: {
-            responseTime: result.contextUsed?.responseTime || 0,
-            tokenCount: result.contextUsed?.tokenCount || 0,
-            cacheHit: result.contextUsed?.cacheHit || false,
-            system: "enhanced-realtime"
-          }
-        };
-
-        res.json(response);
-      } catch (error: any) {
-        console.error("❌ [Routes] Enhanced suggestions error:", error);
-        res.status(500).json({
-          message: "Failed to generate enhanced suggestions",
-          error: error?.message || "Unknown error",
-          aiSuggestions: {
-            realTimePrompts: ["Continue recording..."],
-            clinicalGuidance: "Enhanced suggestions temporarily unavailable",
-          },
-        });
-      }
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+  // Live AI suggestions now handled directly by frontend WebSocket connection to OpenAI
 
   // ⚠️ LEGACY ROUTE - Enhanced voice processing (PARTIALLY DEPRECATED)
   // This route uses legacy realtime medical context service - Enhanced Realtime Service is primary
@@ -529,36 +463,20 @@ export function registerRoutes(app: Express): Server {
         }
 
         if (isLive) {
-          try {
-            // Use enhanced realtime service with WebSocket streaming
-            const result = await realtimeMedicalContext.processVoiceWithFastContext(
-              req.file.buffer,
-              patientIdNum,
-              userRoleStr as "nurse" | "provider"
-            );
-
-            res.json({
-              transcription: result.clinicalNotes || "",
-              suggestions: {
-                suggestions: result.providerPrompts || result.nursePrompts || [],
-                clinicalFlags: result.medicalAlerts || []
-              },
-              performance: {
-                responseTime: result.contextUsed?.responseTime || 0,
-                tokenCount: result.contextUsed?.tokenCount || 0,
-                system: "enhanced-realtime"
-              }
-            });
-            return;
-          } catch (liveError) {
-            console.error("Enhanced live processing failed:", liveError);
-            res.status(500).json({
-              error: "Enhanced live processing failed",
-              transcription: "",
-              suggestions: { suggestions: [], clinicalFlags: [] }
-            });
-            return;
-          }
+          // Live processing moved to frontend WebSocket implementation
+          res.json({
+            transcription: "Live processing now handled by frontend WebSocket",
+            suggestions: {
+              suggestions: ["Use real-time WebSocket transcription for better performance"],
+              clinicalFlags: []
+            },
+            performance: {
+              responseTime: 0,
+              tokenCount: 0,
+              system: "deprecated"
+            }
+          });
+          return;
         }
 
         // Check for existing in-progress encounter before creating a new one
@@ -580,26 +498,20 @@ export function registerRoutes(app: Express): Server {
           });
         }
 
-        // Use enhanced realtime service for all voice processing
-        const result = await realtimeMedicalContext.processVoiceWithFastContext(
-          req.file.buffer,
-          patientIdNum,
-          userRoleStr as "nurse" | "provider"
-        );
-
+        // Voice processing moved to frontend WebSocket implementation
         res.json({
-          transcription: result.clinicalNotes || "",
+          transcription: "Voice processing now handled by frontend WebSocket",
           aiSuggestions: {
-            providerPrompts: result.providerPrompts || [],
-            nursePrompts: result.nursePrompts || [],
-            draftOrders: result.draftOrders || [],
-            draftDiagnoses: result.draftDiagnoses || [],
-            clinicalNotes: result.clinicalNotes || ""
+            providerPrompts: ["Use WebSocket transcription for better performance"],
+            nursePrompts: ["Switch to real-time WebSocket transcription"],
+            draftOrders: [],
+            draftDiagnoses: [],
+            clinicalNotes: "This endpoint is deprecated"
           },
           performance: {
-            responseTime: result.contextUsed?.responseTime || 0,
-            tokenCount: result.contextUsed?.tokenCount || 0,
-            system: "enhanced-realtime"
+            responseTime: 0,
+            tokenCount: 0,
+            system: "deprecated"
           }
         });
       } catch (error: any) {
