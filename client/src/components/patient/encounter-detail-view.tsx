@@ -126,6 +126,22 @@ export function EncounterDetailView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
 
+  // Better sentence detection and formatting function
+  const formatTranscriptionWithBullets = (text: string) => {
+    if (!text) return text;
+    
+    // Handle both completed sentences and ongoing speech
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    return lines.map(line => {
+      // If line doesn't start with bullet, add one
+      if (!line.trim().startsWith('•')) {
+        return `• ${line.trim()}`;
+      }
+      return line;
+    }).join('\n');
+  };
+
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -552,7 +568,7 @@ export function EncounterDetailView({
           model: "gpt-4o-mini-realtime-preview-2024-12-17",
           modalities: ["text"],
           instructions:
-            "You are a medical transcription assistant. Provide accurate transcription of medical conversations.IMPORTANT: Formatting requirement: add one plus sign at the end of each sentence (+).",
+            "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
           input_audio_format: "pcm16",
           input_audio_transcription: {
             model: "whisper-1",
@@ -641,7 +657,7 @@ export function EncounterDetailView({
 
           console.log("📤 [API-OUT] Session update message being sent:");
           console.log(JSON.stringify(sessionUpdateMessage, null, 2));
-          
+
           realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
         };
 
@@ -779,7 +795,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [EncounterView] OpenAI message type:", message.type);
-          
+
           // Log all incoming messages for debugging
           console.log("📥 [API-IN] Complete OpenAI message:");
           console.log(JSON.stringify(message, null, 2));
@@ -789,16 +805,35 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             message.type === "conversation.item.input_audio_transcription.delta"
           ) {
             const deltaText = message.transcript || message.delta || "";
-            console.log("📝 [EncounterView] Transcription delta received:", deltaText);
-            console.log("📝 [EncounterView] Delta contains '+' symbol:", deltaText.includes('+'));
-            console.log("📝 [EncounterView] Delta ends with '+':", deltaText.endsWith('+'));
-            
+            console.log(
+              "📝 [EncounterView] Transcription delta received:",
+              deltaText,
+            );
+            console.log(
+              "📝 [EncounterView] Delta contains '+' symbol:",
+              deltaText.includes("+"),
+            );
+            console.log(
+              "📝 [EncounterView] Delta ends with '+':",
+              deltaText.endsWith("+"),
+            );
+
+            // For delta updates, just accumulate
             transcriptionBuffer += deltaText;
-            setTranscription(transcriptionBuffer);
-            setTranscriptionBuffer(transcriptionBuffer);
             
-            console.log("📝 [EncounterView] Updated transcription buffer:", transcriptionBuffer);
-            console.log("📝 [EncounterView] Buffer contains '+' symbols:", (transcriptionBuffer.match(/\+/g) || []).length);
+            // Apply bullet formatting to the accumulated buffer for real-time display
+            const formattedBuffer = formatTranscriptionWithBullets(transcriptionBuffer);
+            setTranscription(formattedBuffer);
+            setTranscriptionBuffer(transcriptionBuffer); //keep this???
+
+            console.log(
+              "📝 [EncounterView] Updated transcription buffer:",
+              transcriptionBuffer,
+            );
+            console.log(
+              "📝 [EncounterView] Buffer contains '+' symbols:",
+              (transcriptionBuffer.match(/\+/g) || []).length,
+            );
 
             // Start AI suggestions conversation when we have enough transcription (first time only)
             if (
@@ -925,9 +960,26 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               "✅ [EncounterView] Transcription completed:",
               finalText,
             );
-            console.log("📝 [EncounterView] Final transcript contains '+' symbols:", (finalText.match(/\+/g) || []).length);
-            console.log("📝 [EncounterView] Final transcript formatted correctly:", finalText.includes('+'));
-            console.log("📝 [EncounterView] Final transcript length:", finalText.length);
+            console.log(
+              "📝 [EncounterView] Final transcript contains '+' symbols:",
+              (finalText.match(/\+/g) || []).length,
+            );
+            console.log(
+              "📝 [EncounterView] Final transcript formatted correctly:",
+              finalText.includes("+"),
+            );
+            console.log(
+              "📝 [EncounterView] Final transcript length:",
+              finalText.length,
+            );
+
+            // Format completed transcription with bullet points
+            if (finalText.trim()) {
+              const formattedLine = `• ${finalText.trim()}.`;
+              setTranscription(prev => prev ? `${prev}\n${formattedLine}` : formattedLine);
+              setTranscriptionBuffer(prev => prev ? `${prev}\n${formattedLine}` : formattedLine);
+              console.log("📝 [EncounterView] Formatted transcription line:", formattedLine);
+            }
 
             // Trigger new AI suggestions based on completed transcription
             if (suggestionsStarted && finalText.length > 10 && realtimeWs) {
@@ -1518,10 +1570,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               {/* Transcription Content */}
               <div className="space-y-2">
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
-                  {transcription ||
-                    (isRecording
-                      ? "Listening..."
-                      : "Transcription will appear here during recording")}
+                  <div className="whitespace-pre-line text-sm leading-relaxed">
+                    {transcription ||
+                      (isRecording
+                        ? "Listening..."
+                        : "Transcription will appear here during recording")}
+                  </div>
                 </div>
               </div>
             </div>
