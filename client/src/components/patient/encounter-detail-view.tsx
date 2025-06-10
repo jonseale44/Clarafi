@@ -819,12 +819,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               deltaText.endsWith("+"),
             );
 
-            // For delta updates, just accumulate the raw text without formatting
+            // For delta updates, append the delta text to existing transcription
             transcriptionBuffer += deltaText;
             setTranscriptionBuffer(transcriptionBuffer);
             
-            // Show the raw accumulating text during recording (no bullets yet)
-            setTranscription(transcriptionBuffer);
+            // Append delta to existing transcription (don't replace)
+            setTranscription(prev => prev + deltaText);
 
             console.log(
               "📝 [EncounterView] Updated transcription buffer:",
@@ -984,15 +984,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               // Add each segment as a separate bullet point
               const newBullets = conversationSegments.map((segment: string) => `• ${segment}`).join('\n');
               
-              // Append the new formatted bullets to existing transcription
+              // Replace the raw buffer content with formatted bullets
               setTranscription(prev => {
-                if (!prev || prev.trim() === transcriptionBuffer.trim()) {
-                  // If previous content is just the raw buffer, replace with formatted bullets
-                  return newBullets;
-                } else {
-                  // If we have existing formatted content, append new bullets
-                  return prev + '\n' + newBullets;
-                }
+                // Remove the unformatted buffer content and replace with formatted bullets
+                const withoutCurrentBuffer = prev.replace(transcriptionBuffer, '').trimEnd();
+                return withoutCurrentBuffer ? withoutCurrentBuffer + '\n' + newBullets : newBullets;
               });
               
               // Clear the buffer since we've processed this content
