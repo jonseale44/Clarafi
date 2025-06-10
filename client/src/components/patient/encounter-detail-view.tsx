@@ -552,7 +552,7 @@ export function EncounterDetailView({
           model: "gpt-4o-mini-realtime-preview-2024-12-17",
           modalities: ["text"],
           instructions:
-            "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+            "You are a medical transcription assistant. Provide accurate transcription of medical conversations.IMPORTANT: Formatting requirement: add one plus sign at the end of each sentence (+).",
           input_audio_format: "pcm16",
           input_audio_transcription: {
             model: "whisper-1",
@@ -615,7 +615,7 @@ export function EncounterDetailView({
               type: "session.update",
               session: {
                 instructions:
-                  "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+                  "You are a medical transcription assistant. Provide accurate transcription of medical conversations. IMPORTANT: Formatting requirement: add one plus sign at the end of each sentence (+).",
                 model: "gpt-4o-mini-realtime-preview-2024-12-17",
                 modalities: ["text", "audio"],
                 input_audio_format: "pcm16",
@@ -723,7 +723,7 @@ MRN: ${basicData.mrn || "Unknown"}`;
             type: "response.create",
             response: {
               modalities: ["text"],
-              instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+              instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++). You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 Instructions:
 
@@ -753,7 +753,7 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 
 Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
 
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).`,
               metadata: {
                 type: "suggestions",
               },
@@ -937,7 +937,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 type: "response.create",
                 response: {
                   modalities: ["text"],
-                  instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+                  instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 Instructions:
 
@@ -967,7 +967,7 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 
 Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
 
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).`,
                   metadata: {
                     type: "suggestions",
                   },
@@ -995,10 +995,14 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               "❌ [EncounterView] OpenAI Realtime API Error:",
               message,
             );
-            
+
             // Reset conversation state to prevent "conversation already has an active response" errors
-            if (message.error?.code === "conversation_already_has_active_response") {
-              console.log("🔄 [EncounterView] Resetting conversation state due to race condition");
+            if (
+              message.error?.code === "conversation_already_has_active_response"
+            ) {
+              console.log(
+                "🔄 [EncounterView] Resetting conversation state due to race condition",
+              );
               conversationActive = false;
               suggestionsStarted = false;
             }
