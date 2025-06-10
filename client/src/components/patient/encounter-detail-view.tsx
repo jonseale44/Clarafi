@@ -972,27 +972,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
             // Only process if content passes filtering
             if (!shouldFilterContent(deltaText)) {
-              // Process text like external system: ensure bullet points start on new lines
-              // Remove any existing bullet points to avoid duplication, then add clean formatting
-              let processedText = deltaText;
-              processedText = processedText.replace(/^[\s]*[-•]\s*/gm, ""); // Remove existing bullets at start of lines
-              processedText = processedText.replace(/•\s*/g, "\n• "); // Add clean bullet formatting
+              // Accumulate suggestions buffer with delta text (like transcription)
+              suggestionsBuffer += deltaText;
 
-              // Accumulate suggestions buffer
-              suggestionsBuffer += processedText;
-
-              // Set complete suggestions with header
-              if (
-                !suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
-              ) {
-                const formattedSuggestions =
-                  "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
-                setLiveSuggestions(formattedSuggestions);
-                setGptSuggestions(formattedSuggestions);
+              // Format the complete accumulated suggestions with header
+              let formattedSuggestions;
+              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+                formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
               } else {
-                setLiveSuggestions(suggestionsBuffer);
-                setGptSuggestions(suggestionsBuffer);
+                formattedSuggestions = suggestionsBuffer;
               }
+
+              // Update the display with accumulated content
+              setLiveSuggestions(formattedSuggestions);
+              setGptSuggestions(formattedSuggestions);
             } else {
               console.warn(
                 "[EncounterView] Filtered out SOAP/order content from AI suggestions",
@@ -1064,8 +1057,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 "🧠 [EncounterView] Triggering AI suggestions for completed transcription",
               );
 
-              // Reset suggestions buffer for new response (prevents appending to old suggestions)
-              suggestionsBuffer = "";
+              // Keep suggestions buffer to accumulate like transcription (don't reset)
+              // suggestionsBuffer = ""; // Removed - this was causing replacement instead of accumulation
 
               // Send the transcription as new context
               const transcriptionContext = {
