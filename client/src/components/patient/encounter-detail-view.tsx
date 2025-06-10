@@ -116,26 +116,26 @@ export function EncounterDetailView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
-  
+
   // Deduplication system
   const processedEvents = useRef(new Set<string>());
   const processedContent = useRef(new Set<string>());
-  
+
   // Deduplication helper functions
   const isEventProcessed = (eventId: string) => {
     return eventId ? processedEvents.current.has(eventId) : false;
   };
-  
+
   const markEventAsProcessed = (eventId: string) => {
     if (eventId) processedEvents.current.add(eventId);
   };
-  
+
   const isContentProcessed = (content: string) => {
     if (!content || content.length <= 10) return false;
     const signature = content.substring(0, 50).trim();
     return processedContent.current.has(signature);
   };
-  
+
   const markContentAsProcessed = (content: string) => {
     if (content && content.length > 10) {
       const signature = content.substring(0, 50).trim();
@@ -155,18 +155,20 @@ export function EncounterDetailView({
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
     if (!text) return text;
-    
+
     // Split into sentences but keep natural conversation flow
     const sentences = text
-      .split(/(?<=[.!?])\s+/)  // Split on sentence endings followed by whitespace
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-    
-    return sentences.map(sentence => {
-      // Clean up the sentence and add bullet if it doesn't have one
-      const cleanSentence = sentence.replace(/^[•\-\*]\s*/, ''); // Remove existing bullets
-      return `• ${cleanSentence}`;
-    }).join('\n');
+      .split(/(?<=[.!?])\s+/) // Split on sentence endings followed by whitespace
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    return sentences
+      .map((sentence) => {
+        // Clean up the sentence and add bullet if it doesn't have one
+        const cleanSentence = sentence.replace(/^[•\-\*]\s*/, ""); // Remove existing bullets
+        return `• ${cleanSentence}`;
+      })
+      .join("\n");
   };
 
   // Track the last generated content to avoid re-formatting user edits
@@ -595,7 +597,7 @@ export function EncounterDetailView({
           model: "gpt-4o-mini-realtime-preview-2024-12-17",
           modalities: ["text"],
           instructions:
-            "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+            "You are a medical transcription assistant. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations. ",
           input_audio_format: "pcm16",
           input_audio_transcription: {
             model: "whisper-1",
@@ -663,9 +665,14 @@ export function EncounterDetailView({
           const sessionUpdateMessage = {
             type: "session.update",
             session: {
-              instructions:
-                "You are a medical transcription assistant. Provide accurate transcription of medical conversations. IMPORTANT: Formatting requirement: add one plus sign at the end of each sentence (+).",
-              model: "gpt-4o-mini-realtime-preview-2024-12-17",
+              instructions: `You are a medical transcription assistant specialized in clinical conversations. 
+              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. 
+              Pay special attention to:
+              - Medication names and dosages (e.g., "Metformin 500mg twice daily")
+              - Medical abbreviations (e.g., "BP", "HR", "HEENT")
+              - Anatomical terms and symptoms
+              - Numbers and measurements (vital signs, lab values)
+              Format with bullet points for natural conversation flow.`,
               modalities: ["text", "audio"],
               input_audio_format: "pcm16",
               input_audio_transcription: {
@@ -829,13 +836,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
           // Add deduplication checks
           if (message.event_id && isEventProcessed(message.event_id)) {
-            console.log("🚫 [EncounterView] Skipping duplicate event:", message.event_id);
+            console.log(
+              "🚫 [EncounterView] Skipping duplicate event:",
+              message.event_id,
+            );
             return;
           }
 
-          const content = message.delta || message.transcript || message.text || "";
+          const content =
+            message.delta || message.transcript || message.text || "";
           if (content && isContentProcessed(content)) {
-            console.log("🚫 [EncounterView] Skipping duplicate content:", content.substring(0, 30));
+            console.log(
+              "🚫 [EncounterView] Skipping duplicate content:",
+              content.substring(0, 30),
+            );
             return;
           }
 
@@ -864,9 +878,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             // For delta updates, append the delta text to existing transcription
             transcriptionBuffer += deltaText;
             setTranscriptionBuffer(transcriptionBuffer);
-            
+
             // Append delta to existing transcription (don't replace)
-            setTranscription(prev => prev + deltaText);
+            setTranscription((prev) => prev + deltaText);
 
             console.log(
               "📝 [EncounterView] Updated transcription buffer:",
@@ -1018,22 +1032,30 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             // Format completed transcription with bullet points for conversational flow
             if (finalText.trim()) {
               // Split the completed text into natural conversation segments
-              const conversationSegments = finalText.trim()
+              const conversationSegments = finalText
+                .trim()
                 .split(/(?<=[.!?])\s+/)
                 .map((s: string) => s.trim())
                 .filter((s: string) => s.length > 0);
-              
+
               // Add each segment as a separate bullet point
-              const newBullets = conversationSegments.map((segment: string) => `• ${segment}`).join('\n');
-              
+              const newBullets = conversationSegments
+                .map((segment: string) => `• ${segment}`)
+                .join("\n");
+
               // Simple append to existing transcription - deduplication prevents duplicates
-              setTranscription(prev => prev ? prev + '\n' + newBullets : newBullets);
-              
+              setTranscription((prev) =>
+                prev ? prev + "\n" + newBullets : newBullets,
+              );
+
               // Clear the buffer since we've processed this content
               transcriptionBuffer = "";
               setTranscriptionBuffer("");
-              
-              console.log("📝 [EncounterView] Added conversation segments:", conversationSegments.length);
+
+              console.log(
+                "📝 [EncounterView] Added conversation segments:",
+                conversationSegments.length,
+              );
             }
 
             // Trigger new AI suggestions based on completed transcription

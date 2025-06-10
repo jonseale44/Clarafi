@@ -17,7 +17,6 @@ import OpenAI from "openai";
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
 
 import fastMedicalRoutes from "./fast-medical-routes";
-import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 

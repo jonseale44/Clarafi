@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
-import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 import { medicalChartIndex } from "./medical-chart-index-service.js";
+import OpenAI from "openai";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -26,23 +26,23 @@ router.post("/voice/fast-transcribe", upload.single("audio"), async (req, res) =
 
     console.log(`🎯 [FastMedical] Processing voice for patient ${patientId}, role: ${userRole}`);
 
-    // Process voice with fast medical context
-    const result = await realtimeMedicalContext.processVoiceWithFastContext(
-      audioFile.buffer,
-      parseInt(patientId),
-      userRole as "nurse" | "provider",
-      chiefComplaint
-    );
-
-    console.log(`✅ [FastMedical] Voice processed in ${result.contextUsed?.responseTime}ms`);
+    // Simplified voice processing - transcription now handled by frontend WebSocket
+    // This endpoint is deprecated in favor of direct OpenAI Realtime API in the frontend
+    console.log(`⚠️ [FastMedical] Legacy voice endpoint called - consider using WebSocket transcription`);
 
     res.json({
       success: true,
-      ...result,
+      transcription: "Voice processing moved to frontend WebSocket implementation",
+      providerPrompts: ["Use real-time WebSocket transcription for better performance"],
+      nursePrompts: ["Switch to WebSocket-based transcription"],
+      draftOrders: [],
+      draftDiagnoses: [],
+      clinicalNotes: "Voice transcription now handled by frontend",
+      medicalAlerts: [],
       performance: {
-        responseTime: result.contextUsed?.responseTime,
-        tokenCount: result.contextUsed?.tokenCount,
-        cacheHit: result.contextUsed?.cacheHit
+        responseTime: 0,
+        tokenCount: 0,
+        cacheHit: false
       }
     });
 
@@ -103,7 +103,7 @@ router.post("/encounters/:id/update-medical-index", async (req, res) => {
     console.log(`🔄 [FastMedical] Updating medical index for encounter ${encounterId}`);
 
     // Update medical index (async operation)
-    await realtimeMedicalContext.updateMedicalIndex(encounterId, soapNote);
+    await medicalChartIndex.updateAfterEncounter(encounterId, soapNote);
 
     res.json({
       success: true,
@@ -135,7 +135,7 @@ router.post("/patients/:id/search-medical-context", async (req, res) => {
       return res.status(400).json({ message: "Search query is required" });
     }
 
-    const results = await realtimeMedicalContext.findRelevantContext(patientId, query);
+    const results = await medicalChartIndex.findRelevantMedicalContext(patientId, query, limit);
 
     res.json({
       success: true,
