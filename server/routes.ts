@@ -13,7 +13,7 @@ import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import multer from "multer";
 import OpenAI from "openai";
-import { RealtimeTranscriptionService } from "./realtime-transcription-service";
+
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
 
 import fastMedicalRoutes from "./fast-medical-routes";
@@ -1977,12 +1977,7 @@ Return only valid JSON without markdown formatting.`;
 
   const httpServer = createServer(app);
 
-  // ⚠️ LEGACY SYSTEM - Initialize Real-time transcription WebSocket service (DEPRECATED)
-  // This uses the legacy Assistants API and should not be modified for current AI suggestions
-  console.log("🚀 [Server] Initializing Legacy Real-time transcription service...");
-  const realtimeService = new RealtimeTranscriptionService();
-  realtimeService.initialize(httpServer);
-  console.log("✅ [Server] Legacy Real-time transcription service initialized");
+  // Legacy real-time transcription service removed - AI suggestions now use direct client WebSocket connection
 
   // Enhanced Real-time service removed - AI suggestions now use direct client WebSocket connection
 
