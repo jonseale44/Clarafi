@@ -819,13 +819,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               deltaText.endsWith("+"),
             );
 
-            // For delta updates, just accumulate
+            // For delta updates, just accumulate the raw text without formatting
             transcriptionBuffer += deltaText;
+            setTranscriptionBuffer(transcriptionBuffer);
             
-            // Apply bullet formatting to the accumulated buffer for real-time display
-            const formattedBuffer = formatTranscriptionWithBullets(transcriptionBuffer);
-            setTranscription(formattedBuffer);
-            setTranscriptionBuffer(transcriptionBuffer); //keep this???
+            // Show the raw accumulating text during recording (no bullets yet)
+            setTranscription(transcriptionBuffer);
 
             console.log(
               "📝 [EncounterView] Updated transcription buffer:",
@@ -979,13 +978,24 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               // Split the completed text into natural conversation segments
               const conversationSegments = finalText.trim()
                 .split(/(?<=[.!?])\s+/)
-                .map(s => s.trim())
-                .filter(s => s.length > 0);
+                .map((s: string) => s.trim())
+                .filter((s: string) => s.length > 0);
               
               // Add each segment as a separate bullet point
-              const newBullets = conversationSegments.map(segment => `• ${segment}`).join('\n');
-              setTranscription(prev => prev ? `${prev}\n${newBullets}` : newBullets);
-              setTranscriptionBuffer(prev => prev ? `${prev} ${finalText}` : finalText);
+              const newBullets = conversationSegments.map((segment: string) => `• ${segment}`).join('\n');
+              
+              // Replace the current buffer content with formatted bullets (don't append to avoid duplication)
+              setTranscription(prev => {
+                // Remove the raw buffer content and add formatted bullets
+                const existingLines = prev ? prev.split('\n').filter(line => line.trim() && line.startsWith('•')) : [];
+                const combinedContent = existingLines.length > 0 ? existingLines.join('\n') + '\n' + newBullets : newBullets;
+                return combinedContent;
+              });
+              
+              // Clear the buffer since we've processed this content
+              transcriptionBuffer = "";
+              setTranscriptionBuffer("");
+              
               console.log("📝 [EncounterView] Added conversation segments:", conversationSegments.length);
             }
 
