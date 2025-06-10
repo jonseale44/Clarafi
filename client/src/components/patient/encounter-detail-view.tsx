@@ -613,7 +613,8 @@ export function EncounterDetailView({
             JSON.stringify({
               type: "session.update",
               session: {
-                instructions: "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
+                instructions:
+                  "You are a medical transcription assistant. Provide accurate transcription of medical conversations.",
                 model: "gpt-4o-mini-realtime-preview-2024-12-17",
                 modalities: ["text", "audio"],
                 input_audio_format: "pcm16",
@@ -646,16 +647,27 @@ export function EncounterDetailView({
           // 1. Fetch full patient chart data like external implementation
           let patientChart = null;
           try {
-            console.log("[EncounterView] Fetching patient chart data for context injection");
-            const chartResponse = await fetch(`/api/patients/${patientData.id}/chart`);
+            console.log(
+              "[EncounterView] Fetching patient chart data for context injection",
+            );
+            const chartResponse = await fetch(
+              `/api/patients/${patientData.id}/chart`,
+            );
             if (chartResponse.ok) {
               patientChart = await chartResponse.json();
-              console.log("[EncounterView] Patient chart data fetched successfully");
+              console.log(
+                "[EncounterView] Patient chart data fetched successfully",
+              );
             } else {
-              console.warn("[EncounterView] Failed to fetch patient chart, using basic data only");
+              console.warn(
+                "[EncounterView] Failed to fetch patient chart, using basic data only",
+              );
             }
           } catch (error) {
-            console.warn("[EncounterView] Error fetching patient chart:", error);
+            console.warn(
+              "[EncounterView] Error fetching patient chart:",
+              error,
+            );
           }
 
           // 2. Format comprehensive patient context like external system
@@ -669,7 +681,7 @@ export function EncounterDetailView({
               delete cleanChart.encounters;
               delete cleanChart.text_content;
               delete cleanChart.extracted_text;
-              
+
               return `Patient Chart Context:\n${JSON.stringify(cleanChart, null, 2)}`;
             } else {
               // Fallback to basic patient data
@@ -680,7 +692,10 @@ MRN: ${basicData.mrn || "Unknown"}`;
             }
           };
 
-          const patientContext = formatPatientContext(patientChart, patientData);
+          const patientContext = formatPatientContext(
+            patientChart,
+            patientData,
+          );
 
           // 3. Inject patient context using external implementation format
           const contextMessage = {
@@ -697,7 +712,9 @@ MRN: ${basicData.mrn || "Unknown"}`;
             },
           };
 
-          console.log("🧠 [EncounterView] Injecting patient context for AI suggestions");
+          console.log(
+            "🧠 [EncounterView] Injecting patient context for AI suggestions",
+          );
           ws.send(JSON.stringify(contextMessage));
 
           // 4. Create response for AI suggestions with metadata like external system
@@ -705,16 +722,10 @@ MRN: ${basicData.mrn || "Unknown"}`;
             type: "response.create",
             response: {
               modalities: ["text"],
-              instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of input language. Provide concise, actionable medical insights for physicians using bullet points (•).
-
-Focus on evidence-based recommendations with specific medication dosages:
-• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day
-• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily
-
-Prioritize high-value insights: medication dosages, red flags, advanced diagnostics, specific guidelines. Avoid general advice physicians already know. Use bullet points format consistently.`,
+              instructions: `You are a basketball coach giving motivational advice! Always respond with extreme enthusiasm and end every sentence with THREE exclamation points!!! Talk about medicine like you're coaching a basketball team to victory!!! Use basketball metaphors for everything!!! Always yell encouragement like "YOU GOT THIS CHAMP!!!" and "SLAM DUNK THAT DIAGNOSIS!!!" Never give normal medical advice - only basketball coaching style motivation!!!`,
               metadata: {
-                type: "suggestions"
-              }
+                type: "suggestions",
+              },
             },
           };
 
@@ -761,23 +772,58 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
             const shouldFilterContent = (content: string): boolean => {
               // Filter out SOAP note patterns
               const soapPatterns = [
-                "Patient Visit Summary", "PATIENT VISIT SUMMARY", "Visit Summary", "VISIT SUMMARY",
-                "Chief Complaint:", "**Chief Complaint:**", "History of Present Illness:", "**History of Present Illness:**",
-                "Vital Signs:", "**Vital Signs:**", "Review of Systems:", "**Review of Systems:**",
-                "Physical Examination:", "**Physical Examination:**", "Assessment:", "**Assessment:**",
-                "Plan:", "**Plan:**", "Diagnosis:", "**Diagnosis:**", "Impression:", "**Impression:**",
-                "SUBJECTIVE:", "OBJECTIVE:", "ASSESSMENT:", "PLAN:", "S:", "O:", "A:", "P:",
-                "SOAP Note", "Clinical Note", "Progress Note"
+                "Patient Visit Summary",
+                "PATIENT VISIT SUMMARY",
+                "Visit Summary",
+                "VISIT SUMMARY",
+                "Chief Complaint:",
+                "**Chief Complaint:**",
+                "History of Present Illness:",
+                "**History of Present Illness:**",
+                "Vital Signs:",
+                "**Vital Signs:**",
+                "Review of Systems:",
+                "**Review of Systems:**",
+                "Physical Examination:",
+                "**Physical Examination:**",
+                "Assessment:",
+                "**Assessment:**",
+                "Plan:",
+                "**Plan:**",
+                "Diagnosis:",
+                "**Diagnosis:**",
+                "Impression:",
+                "**Impression:**",
+                "SUBJECTIVE:",
+                "OBJECTIVE:",
+                "ASSESSMENT:",
+                "PLAN:",
+                "S:",
+                "O:",
+                "A:",
+                "P:",
+                "SOAP Note",
+                "Clinical Note",
+                "Progress Note",
               ];
 
-              // Filter out order patterns 
+              // Filter out order patterns
               const orderPatterns = [
-                "Lab: [", "Imaging: [", "Medication: [", "Labs:", "Imaging:", "Medications:",
-                "Laboratory:", "Radiology:", "Prescriptions:"
+                "Lab: [",
+                "Imaging: [",
+                "Medication: [",
+                "Labs:",
+                "Imaging:",
+                "Medications:",
+                "Laboratory:",
+                "Radiology:",
+                "Prescriptions:",
               ];
 
-              return soapPatterns.some(pattern => content.includes(pattern)) ||
-                     orderPatterns.some(pattern => content.includes(pattern));
+              return (
+                soapPatterns.some((pattern) => content.includes(pattern)) ||
+                orderPatterns.some((pattern) => content.includes(pattern))
+              );
             };
 
             // Only process if content passes filtering
@@ -787,13 +833,16 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
               let processedText = deltaText;
               processedText = processedText.replace(/^[\s]*[-•]\s*/gm, ""); // Remove existing bullets at start of lines
               processedText = processedText.replace(/•\s*/g, "\n• "); // Add clean bullet formatting
-              
+
               // Accumulate suggestions buffer
               suggestionsBuffer += processedText;
 
               // Set complete suggestions with header
-              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-                const formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
+              if (
+                !suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
+              ) {
+                const formattedSuggestions =
+                  "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
                 setLiveSuggestions(formattedSuggestions);
                 setGptSuggestions(formattedSuggestions);
               } else {
@@ -801,7 +850,9 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
                 setGptSuggestions(suggestionsBuffer);
               }
             } else {
-              console.warn("[EncounterView] Filtered out SOAP/order content from AI suggestions");
+              console.warn(
+                "[EncounterView] Filtered out SOAP/order content from AI suggestions",
+              );
             }
           }
 
@@ -824,11 +875,13 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
 
             // Trigger new AI suggestions based on completed transcription
             if (suggestionsStarted && finalText.length > 10 && realtimeWs) {
-              console.log("🧠 [EncounterView] Triggering AI suggestions for completed transcription");
-              
+              console.log(
+                "🧠 [EncounterView] Triggering AI suggestions for completed transcription",
+              );
+
               // Reset suggestions buffer for new response (prevents appending to old suggestions)
               suggestionsBuffer = "";
-              
+
               // Send the transcription as new context
               const transcriptionContext = {
                 type: "conversation.item.create",
@@ -838,14 +891,14 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
                   content: [
                     {
                       type: "input_text",
-                      text: `Additional clinical information: "${finalText}"`
-                    }
-                  ]
-                }
+                      text: `Additional clinical information: "${finalText}"`,
+                    },
+                  ],
+                },
               };
-              
+
               realtimeWs.send(JSON.stringify(transcriptionContext));
-              
+
               // Request new AI response
               const newResponse = {
                 type: "response.create",
@@ -853,11 +906,11 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
                   modalities: ["text"],
                   instructions: `Based on this new clinical information, provide additional medical insights using bullet points (•). Focus on medication dosages, red flags, or diagnostic considerations specific to what was just discussed.`,
                   metadata: {
-                    type: "suggestions"
-                  }
-                }
+                    type: "suggestions",
+                  },
+                },
               };
-              
+
               realtimeWs.send(JSON.stringify(newResponse));
             }
           }
@@ -981,11 +1034,15 @@ Prioritize high-value insights: medication dosages, red flags, advanced diagnost
 
         // Keep WebSocket connection open for ongoing AI suggestions
         // Do NOT close the WebSocket - let it continue providing suggestions
-        console.log("🧠 [EncounterView] WebSocket remains open for ongoing AI suggestions");
+        console.log(
+          "🧠 [EncounterView] WebSocket remains open for ongoing AI suggestions",
+        );
 
         // All AI suggestions are now handled by the WebSocket connection
         // No fallback to Assistants API needed
-        console.log("✅ [EncounterView] Recording complete. AI suggestions continue via WebSocket.");
+        console.log(
+          "✅ [EncounterView] Recording complete. AI suggestions continue via WebSocket.",
+        );
 
         stream.getTracks().forEach((track) => track.stop());
       };

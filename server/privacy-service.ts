@@ -84,7 +84,7 @@ ${context.recentEncounters.length > 0 ? context.recentEncounters.map((encounter)
 LATEST VITALS:
 ${context.vitals}
 
- You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+ You are a medical AI assistant. ALWAYS RESPOND IN HINDI ONLY, regardless of what language is used for input. NEVER respond in any language other than HINDI under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
   Instructions:
 

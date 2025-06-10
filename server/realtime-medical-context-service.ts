@@ -4,13 +4,13 @@ import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 /**
  * ⚠️ LEGACY SERVICE - NOT USED BY ACTIVE UI ⚠️
- * 
+ *
  * Enhanced Real-time Medical Context Service with comprehensive medical prompt
  * Contains updated medical guidance but UI now uses direct WebSocket connections
- * 
+ *
  * ACTIVE AI SUGGESTIONS SYSTEM:
  * - client/src/components/patient/encounter-detail-view.tsx (WebSocket to OpenAI)
- * 
+ *
  * This service is kept for compatibility but not actively used by current UI
  */
 
@@ -220,7 +220,7 @@ export class RealtimeMedicalContextService {
    */
   private buildOptimizedSystemPrompt(userRole: "nurse" | "provider"): string {
     if (userRole === "nurse") {
-      return `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY. Provide concise, single-line nursing insights.
+      return `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN SPANISH ONLY. Provide concise, single-line nursing insights.
 
 Instructions:
 - Focus on nursing assessments, interventions, patient safety, and care coordination
@@ -236,7 +236,7 @@ Examples:
 • Assess pain scale q2h for first 8 hours post-procedure
 • Hold metformin if patient NPO >24 hours or creatinine >1.5`;
     } else {
-      return `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+      return `You are a medical AI assistant. ALWAYS RESPOND IN SPANISH ONLY, regardless of what language is used for input. NEVER respond in any language other than SPANISH under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 Instructions:
 

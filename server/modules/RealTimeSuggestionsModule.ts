@@ -1,25 +1,28 @@
 /**
  * ⚠️ INACTIVE MODULE - Not connected to UI ⚠️
- * 
+ *
  * Real-time AI suggestions module with comprehensive medical prompts
  * Contains high-quality medical guidance but not used by current UI
- * 
+ *
  * ACTIVE AI SUGGESTIONS SYSTEM:
  * - client/src/components/patient/encounter-detail-view.tsx (Direct WebSocket to OpenAI)
- * 
+ *
  * This module could be used for future WebSocket-based implementations
  */
 
 export interface EventMetadata {
   patientId: number;
   sessionId: string;
-  userRole: 'nurse' | 'provider';
-  moduleType: 'suggestions' | 'transcription' | 'soap' | 'orders';
+  userRole: "nurse" | "provider";
+  moduleType: "suggestions" | "transcription" | "soap" | "orders";
 }
 
 export class RealTimeSuggestionsModule {
   private patientChart: any = null;
-  private static _injectedChartWebSockets = new WeakMap<WebSocket, Set<string>>();
+  private static _injectedChartWebSockets = new WeakMap<
+    WebSocket,
+    Set<string>
+  >();
   private currentConversationId: string | null = null;
   private ws: WebSocket | null;
   private sessionId: string | null = null;
@@ -29,7 +32,11 @@ export class RealTimeSuggestionsModule {
   private suggestionsBuffer: string = "";
   private onMessage: (event: any) => void;
 
-  constructor(webSocket: WebSocket | null, onMessage: (event: any) => void, patientId?: string) {
+  constructor(
+    webSocket: WebSocket | null,
+    onMessage: (event: any) => void,
+    patientId?: string,
+  ) {
     this.ws = webSocket;
     this.onMessage = onMessage;
     if (patientId) {
@@ -52,7 +59,9 @@ export class RealTimeSuggestionsModule {
       this.currentConversationId = null;
       console.log(
         "[RealTimeSuggestionsModule] WebSocket updated, chart injection needed:",
-        this.patientId && newWs ? !this.hasInjectedChart(this.patientId) : "unknown patient",
+        this.patientId && newWs
+          ? !this.hasInjectedChart(this.patientId)
+          : "unknown patient",
       );
     }
   }
@@ -91,22 +100,30 @@ export class RealTimeSuggestionsModule {
 
   private hasInjectedChart(patientId: string): boolean {
     if (!this.ws) return false;
-    const injectedPatients = RealTimeSuggestionsModule._injectedChartWebSockets.get(this.ws);
+    const injectedPatients =
+      RealTimeSuggestionsModule._injectedChartWebSockets.get(this.ws);
     return injectedPatients ? injectedPatients.has(patientId) : false;
   }
 
   private markChartAsInjected(patientId: string): void {
     if (!this.ws) return;
-    let injectedPatients = RealTimeSuggestionsModule._injectedChartWebSockets.get(this.ws);
+    let injectedPatients =
+      RealTimeSuggestionsModule._injectedChartWebSockets.get(this.ws);
     if (!injectedPatients) {
       injectedPatients = new Set<string>();
-      RealTimeSuggestionsModule._injectedChartWebSockets.set(this.ws, injectedPatients);
+      RealTimeSuggestionsModule._injectedChartWebSockets.set(
+        this.ws,
+        injectedPatients,
+      );
     }
     injectedPatients.add(patientId);
   }
 
   async startNewConversation(patientId: string) {
-    console.log("[RealTimeSuggestionsModule] Starting new conversation for patient:", patientId);
+    console.log(
+      "[RealTimeSuggestionsModule] Starting new conversation for patient:",
+      patientId,
+    );
 
     if (!this.ws) {
       console.error("[RealTimeSuggestionsModule] WebSocket not initialized");
@@ -114,7 +131,9 @@ export class RealTimeSuggestionsModule {
     }
 
     if (this.isConversationActive) {
-      console.log("[RealTimeSuggestionsModule] Conversation already active, skipping");
+      console.log(
+        "[RealTimeSuggestionsModule] Conversation already active, skipping",
+      );
       return;
     }
 
@@ -126,21 +145,29 @@ export class RealTimeSuggestionsModule {
       const needsChartInjection = !this.hasInjectedChart(patientId);
 
       if (needsChartInjection) {
-        console.log("[RealTimeSuggestionsModule] Fetching patient chart data for context injection");
+        console.log(
+          "[RealTimeSuggestionsModule] Fetching patient chart data for context injection",
+        );
         const chartResponse = await fetch(`/api/patients/${patientId}/chart`);
         if (!chartResponse.ok) {
-          throw new Error(`Failed to fetch patient chart: ${chartResponse.status}`);
+          throw new Error(
+            `Failed to fetch patient chart: ${chartResponse.status}`,
+          );
         }
         this.patientChart = await chartResponse.json();
 
         if (!this.sessionId) {
-          console.log("[RealTimeSuggestionsModule] Waiting for session to be established...");
+          console.log(
+            "[RealTimeSuggestionsModule] Waiting for session to be established...",
+          );
           await new Promise<void>((resolve, reject) => {
             const checkSession = () => {
               if (this.sessionId) {
                 resolve();
               } else if (!this.ws) {
-                reject(new Error("WebSocket disconnected while waiting for session"));
+                reject(
+                  new Error("WebSocket disconnected while waiting for session"),
+                );
               } else {
                 setTimeout(checkSession, 100);
               }
@@ -155,7 +182,10 @@ export class RealTimeSuggestionsModule {
 
       await this.createConversation();
     } catch (error) {
-      console.error("[RealTimeSuggestionsModule] Error starting conversation:", error);
+      console.error(
+        "[RealTimeSuggestionsModule] Error starting conversation:",
+        error,
+      );
       this.isConversationActive = false;
     }
   }
@@ -172,10 +202,10 @@ export class RealTimeSuggestionsModule {
         content: [
           {
             type: "input_text",
-            text: patientContext
-          }
-        ]
-      }
+            text: patientContext,
+          },
+        ],
+      },
     };
 
     console.log("[RealTimeSuggestionsModule] Injecting patient chart context");
@@ -186,13 +216,13 @@ export class RealTimeSuggestionsModule {
     const context = `
 PATIENT CONTEXT FOR AI ASSISTANT:
 Patient: ${chart.firstName} ${chart.lastName}
-Age: ${chart.age || 'Unknown'}
-Gender: ${chart.gender || 'Unknown'}
+Age: ${chart.age || "Unknown"}
+Gender: ${chart.gender || "Unknown"}
 
-${chart.activeProblems?.length > 0 ? `Active Problems: ${chart.activeProblems.join(', ')}` : ''}
-${chart.criticalAlerts?.length > 0 ? `⚠️ Alerts: ${chart.criticalAlerts.join('; ')}` : ''}
-${chart.allergies?.length > 0 ? `Allergies: ${chart.allergies.join(', ')}` : ''}
-${chart.medications?.length > 0 ? `Current Medications: ${chart.medications.join(', ')}` : ''}
+${chart.activeProblems?.length > 0 ? `Active Problems: ${chart.activeProblems.join(", ")}` : ""}
+${chart.criticalAlerts?.length > 0 ? `⚠️ Alerts: ${chart.criticalAlerts.join("; ")}` : ""}
+${chart.allergies?.length > 0 ? `Allergies: ${chart.allergies.join(", ")}` : ""}
+${chart.medications?.length > 0 ? `Current Medications: ${chart.medications.join(", ")}` : ""}
 
 You are providing real-time clinical insights. Respond with concise, actionable bullet points with specific medication dosages and evidence-based guidance.
 Format responses as bullet points (•) with clinical specificity.
@@ -207,7 +237,7 @@ Format responses as bullet points (•) with clinical specificity.
       type: "response.create",
       response: {
         modalities: ["text"],
-        instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+        instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ITALIAN ONLY, regardless of what language is used for input. NEVER respond in any language other than ITALIAN under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 Instructions:
 
@@ -235,11 +265,13 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 
 Return each new insight on a separate line, and prefix each line with a bullet (•), dash (-), or number if appropriate. Do not combine multiple ideas on the same line. 
 
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`
-      }
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
+      },
     };
 
-    console.log("[RealTimeSuggestionsModule] Creating conversation for suggestions");
+    console.log(
+      "[RealTimeSuggestionsModule] Creating conversation for suggestions",
+    );
     this.ws.send(JSON.stringify(message));
   }
 
@@ -248,34 +280,41 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
    */
   handleGptAnalysis(data: any, metadata: EventMetadata): any {
     if (this._isFrozen) {
-      console.log("[RealTimeSuggestionsModule] Suggestions frozen, ignoring update");
+      console.log(
+        "[RealTimeSuggestionsModule] Suggestions frozen, ignoring update",
+      );
       return null;
     }
 
-    console.log("[RealTimeSuggestionsModule] Processing GPT analysis:", data.type);
+    console.log(
+      "[RealTimeSuggestionsModule] Processing GPT analysis:",
+      data.type,
+    );
 
     // Handle streaming text deltas (like transcription)
     if (data.type === "response.text.delta") {
       const deltaText = data.delta || "";
       console.log("[RealTimeSuggestionsModule] Suggestion delta:", deltaText);
-      
+
       // Accumulate suggestions like transcription deltas
       this.suggestionsBuffer += deltaText;
-      
+
       // Filter out SOAP notes and orders from suggestions
       if (this.containsVisitSummary(this.suggestionsBuffer)) {
-        console.log("[RealTimeSuggestionsModule] Filtering out SOAP content from suggestions");
+        console.log(
+          "[RealTimeSuggestionsModule] Filtering out SOAP content from suggestions",
+        );
         return null;
       }
 
       const event = {
-        type: 'ai_suggestions_delta',
+        type: "ai_suggestions_delta",
         data: {
           delta: deltaText,
           buffer: this.suggestionsBuffer,
           patientId: metadata.patientId,
-          sessionId: metadata.sessionId
-        }
+          sessionId: metadata.sessionId,
+        },
       };
 
       this.onMessage(event);
@@ -284,23 +323,26 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
     // Handle completion
     if (data.type === "response.text.done") {
-      console.log("[RealTimeSuggestionsModule] Suggestions completed, buffer length:", this.suggestionsBuffer.length);
-      
+      console.log(
+        "[RealTimeSuggestionsModule] Suggestions completed, buffer length:",
+        this.suggestionsBuffer.length,
+      );
+
       const event = {
-        type: 'ai_suggestions_completed',
+        type: "ai_suggestions_completed",
         data: {
           finalText: this.suggestionsBuffer,
           patientId: metadata.patientId,
-          sessionId: metadata.sessionId
-        }
+          sessionId: metadata.sessionId,
+        },
       };
 
       this.onMessage(event);
-      
+
       // Reset for next conversation
       this.isConversationActive = false;
       this.currentConversationId = null;
-      
+
       return event;
     }
 
@@ -312,14 +354,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
    */
   private containsVisitSummary(content: string): boolean {
     const visitSummaryPatterns = [
-      "Chief Complaint:", "SUBJECTIVE:", "OBJECTIVE:", 
-      "ASSESSMENT:", "PLAN:", "Patient Visit Summary",
-      "**SUBJECTIVE:**", "**OBJECTIVE:**", "**ASSESSMENT:**", "**PLAN:**"
+      "Chief Complaint:",
+      "SUBJECTIVE:",
+      "OBJECTIVE:",
+      "ASSESSMENT:",
+      "PLAN:",
+      "Patient Visit Summary",
+      "**SUBJECTIVE:**",
+      "**OBJECTIVE:**",
+      "**ASSESSMENT:**",
+      "**PLAN:**",
     ];
-    
-    return visitSummaryPatterns.some(pattern => 
-      content.includes(pattern)
-    );
+
+    return visitSummaryPatterns.some((pattern) => content.includes(pattern));
   }
 
   /**
@@ -346,7 +393,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     const sessionConfig = {
       type: "session.update",
       session: {
-        instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+        instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ITALIAN ONLY, regardless of what language is used for input. NEVER respond in any language other than ITALIAN under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 Instructions:
 
@@ -381,23 +428,26 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         input_audio_transcription: {
           model: "whisper-1",
           language: "en",
-          prompt: "You MUST ALWAYS translate the speech into English ONLY, regardless of input language. NEVER include the original non-English text. ONLY OUTPUT ENGLISH text. Translate all utterances, questions, and statements fully to English without leaving any words in the original language."
+          prompt:
+            "You MUST ALWAYS translate the speech into Italian ONLY, regardless of input language. NEVER include the original non-Italian text. ONLY OUTPUT Italian text. Translate all utterances, questions, and statements fully to ITALIAN without leaving any words in the original language.",
         },
         turn_detection: {
           type: "server_vad",
           threshold: 0.3, // Lower threshold for better sensitivity
           prefix_padding_ms: 500, // Increased to catch more of the start of speech
           silence_duration_ms: 1000, // Increased to allow for natural pauses
-          create_response: true
+          create_response: true,
         },
         tools: [],
         tool_choice: "none",
         temperature: 0.7,
-        max_response_output_tokens: 1000
-      }
+        max_response_output_tokens: 1000,
+      },
     };
 
-    console.log("[RealTimeSuggestionsModule] Configuring session with comprehensive medical prompt");
+    console.log(
+      "[RealTimeSuggestionsModule] Configuring session with comprehensive medical prompt",
+    );
     this.ws.send(JSON.stringify(sessionConfig));
   }
 }

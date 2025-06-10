@@ -3,17 +3,21 @@ import { medicalChartIndex } from "./medical-chart-index-service.js";
 
 /**
  * ⚠️ LEGACY SYSTEM - NOT CURRENTLY ACTIVE ⚠️
- * 
+ *
  * This is a standalone suggestions module that is NOT being used by the current system.
  * The actual active AI suggestions module is:
  * - server/modules/RealTimeSuggestionsModule.ts (Primary AI implementation)
- * 
+ *
  * This file contains duplicate code and identical prompts to the active system.
  * DO NOT modify this file thinking it will affect current AI suggestions.
  */
 
 export interface SuggestionEvent {
-  type: "gpt.analysis.delta" | "gpt.analysis.completed" | "suggestions.frozen" | "suggestions.unfrozen";
+  type:
+    | "gpt.analysis.delta"
+    | "gpt.analysis.completed"
+    | "suggestions.frozen"
+    | "suggestions.unfrozen";
   delta?: string;
   content?: string;
   sessionId: string;
@@ -62,7 +66,7 @@ export class RealTimeSuggestionsModule {
     "Imaging Results:",
     "Orders:",
     "Prescriptions:",
-    "Referrals:"
+    "Referrals:",
   ];
 
   constructor(sessionId: string, onMessage: (event: SuggestionEvent) => void) {
@@ -77,17 +81,22 @@ export class RealTimeSuggestionsModule {
     try {
       // Load patient chart context
       this.patientChart = await this.loadPatientChart(patientId);
-      
+
       // Connect to OpenAI Realtime API using your working format
-      this.ws = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview", {
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-          "OpenAI-Beta": "realtime=v1"
-        }
-      });
+      this.ws = new WebSocket(
+        "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview",
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "OpenAI-Beta": "realtime=v1",
+          },
+        },
+      );
 
       this.ws.on("open", () => {
-        console.log(`✅ [Suggestions] WebSocket connected for session ${this.sessionId}`);
+        console.log(
+          `✅ [Suggestions] WebSocket connected for session ${this.sessionId}`,
+        );
         this.configureSession();
         this.injectChartContext();
       });
@@ -101,9 +110,10 @@ export class RealTimeSuggestionsModule {
       });
 
       this.ws.on("close", () => {
-        console.log(`🔌 [Suggestions] WebSocket closed for session ${this.sessionId}`);
+        console.log(
+          `🔌 [Suggestions] WebSocket closed for session ${this.sessionId}`,
+        );
       });
-
     } catch (error) {
       console.error(`❌ [Suggestions] Failed to initialize:`, error);
       throw error;
@@ -119,7 +129,7 @@ export class RealTimeSuggestionsModule {
     const sessionConfig = {
       type: "session.update",
       session: {
-        instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+        instructions: `You are a medical AI assistant. ALWAYS RESPOND IN JAPANESE ONLY, regardless of what language is used for input. NEVER respond in any language other than Japanese under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 Instructions:
 
@@ -154,20 +164,21 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         input_audio_transcription: {
           model: "whisper-1",
           language: "en",
-          prompt: "You MUST ALWAYS translate the speech into English ONLY, regardless of input language. NEVER include the original non-English text. ONLY OUTPUT ENGLISH text. Translate all utterances, questions, and statements fully to English without leaving any words in the original language."
+          prompt:
+            "You MUST ALWAYS translate the speech into JAPANESE ONLY, regardless of input language. NEVER include the original non-JAPANESE text. ONLY OUTPUT JAPANESE text. Translate all utterances, questions, and statements fully to JAPANESE without leaving any words in the original language.",
         },
         turn_detection: {
           type: "server_vad",
           threshold: 0.3, // Lower threshold for better sensitivity
           prefix_padding_ms: 500, // Increased to catch more of the start of speech
           silence_duration_ms: 1000, // Increased to allow for natural pauses
-          create_response: true
+          create_response: true,
         },
         tools: [],
         tool_choice: "none",
         temperature: 0.7,
-        max_response_output_tokens: 1000
-      }
+        max_response_output_tokens: 1000,
+      },
     };
 
     this.ws.send(JSON.stringify(sessionConfig));
@@ -180,18 +191,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     if (!this.ws || !this.patientChart) return;
 
     const patientContext = this.formatPatientContext(this.patientChart);
-    
+
     const message = {
       type: "conversation.item.create",
       data: {
         role: "user",
         content: patientContext,
-        session_id: this.sessionId
-      }
+        session_id: this.sessionId,
+      },
     };
 
     this.ws.send(JSON.stringify(message));
-    console.log(`📋 [Suggestions] Patient context injected for session ${this.sessionId}`);
+    console.log(
+      `📋 [Suggestions] Patient context injected for session ${this.sessionId}`,
+    );
   }
 
   /**
@@ -202,11 +215,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       case "response.text.delta":
         this.handleGptAnalysis(data);
         break;
-        
+
       case "response.text.done":
         this.handleGptAnalysisComplete(data);
         break;
-        
+
       case "error":
         console.error(`❌ [Suggestions] OpenAI error:`, data.error);
         break;
@@ -225,12 +238,14 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     this.currentContent += delta;
 
     // Content filtering - block SOAP notes and orders from suggestions
-    const containsVisitSummary = this.visitSummaryPatterns.some(pattern => 
-      this.currentContent.includes(pattern)
+    const containsVisitSummary = this.visitSummaryPatterns.some((pattern) =>
+      this.currentContent.includes(pattern),
     );
 
     if (containsVisitSummary) {
-      console.log(`🚫 [Suggestions] Blocked content containing visit summary patterns`);
+      console.log(
+        `🚫 [Suggestions] Blocked content containing visit summary patterns`,
+      );
       return null;
     }
 
@@ -245,7 +260,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       type: "gpt.analysis.delta",
       delta,
       content: this.currentContent,
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
 
     this.onMessage(event);
@@ -261,11 +276,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     const event: SuggestionEvent = {
       type: "gpt.analysis.completed",
       content: this.currentContent,
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
 
     this.onMessage(event);
-    
+
     // Reset for next conversation turn
     this.currentContent = "";
   }
@@ -281,23 +296,28 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       item: {
         type: "message",
         role: "user",
-        content: [{
-          type: "input_text",
-          text: `Current conversation: ${transcription}`
-        }]
-      }
+        content: [
+          {
+            type: "input_text",
+            text: `Current conversation: ${transcription}`,
+          },
+        ],
+      },
     };
 
     this.ws.send(JSON.stringify(message));
 
     // Trigger response generation
-    this.ws.send(JSON.stringify({
-      type: "response.create",
-      response: {
-        modalities: ["text"],
-        instructions: "Provide clinical insights and suggestions based on this conversation update."
-      }
-    }));
+    this.ws.send(
+      JSON.stringify({
+        type: "response.create",
+        response: {
+          modalities: ["text"],
+          instructions:
+            "Provide clinical insights and suggestions based on this conversation update.",
+        },
+      }),
+    );
   }
 
   /**
@@ -308,7 +328,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     const event: SuggestionEvent = {
       type: "suggestions.frozen",
       sessionId: this.sessionId,
-      frozen: true
+      frozen: true,
     };
     this.onMessage(event);
   }
@@ -321,7 +341,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     const event: SuggestionEvent = {
       type: "suggestions.unfrozen",
       sessionId: this.sessionId,
-      frozen: false
+      frozen: false,
     };
     this.onMessage(event);
   }
@@ -332,20 +352,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
   private async loadPatientChart(patientId: number): Promise<PatientChart> {
     try {
       const context = await medicalChartIndex.getFastMedicalContext(patientId);
-      
+
       return {
         patientId,
         basicInfo: {
           age: 0,
           gender: "Unknown",
-          mrn: patientId.toString()
+          mrn: patientId.toString(),
         },
         activeProblems: context.activeProblems || [],
         medications: context.medications || [],
         allergies: context.allergies || [],
         medicalHistory: [],
         recentEncounters: [],
-        vitals: {}
+        vitals: {},
       };
     } catch (error) {
       console.error(`❌ [Suggestions] Failed to load patient chart:`, error);
@@ -361,15 +381,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     
 Patient: ${chart.basicInfo.age}yo ${chart.basicInfo.gender} (MRN: ${chart.basicInfo.mrn})
 
-Active Problems: ${chart.activeProblems.join(', ') || 'None documented'}
+Active Problems: ${chart.activeProblems.join(", ") || "None documented"}
 
-Current Medications: ${chart.medications.join(', ') || 'None'}
+Current Medications: ${chart.medications.join(", ") || "None"}
 
-Allergies: ${chart.allergies.join(', ') || 'NKDA'}
+Allergies: ${chart.allergies.join(", ") || "NKDA"}
 
-Medical History: ${chart.medicalHistory.join(', ') || 'None documented'}
+Medical History: ${chart.medicalHistory.join(", ") || "None documented"}
 
-Recent Vitals: ${Object.entries(chart.vitals).map(([key, value]) => `${key}: ${value}`).join(', ') || 'None available'}
+Recent Vitals: ${
+      Object.entries(chart.vitals)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ") || "None available"
+    }
 
 Please provide real-time clinical insights and suggestions as the conversation progresses.`;
   }
@@ -402,7 +426,7 @@ Please provide real-time clinical insights and suggestions as the conversation p
     return {
       connected: this.ws?.readyState === WebSocket.OPEN,
       frozen: this.isFrozen,
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
   }
 
