@@ -153,6 +153,7 @@ export function EncounterDetailView({
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
   const [liveTranscriptionContent, setLiveTranscriptionContent] = useState(""); // Unified content for AI
+  const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
@@ -175,7 +176,6 @@ export function EncounterDetailView({
 
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
-  const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -951,7 +951,7 @@ deltaText.includes("+"),
                     role: "user",
                     content: [{
                       type: "input_text",
-                      text: "Updated conversation context: \"" + (liveTranscriptionContent || transcriptionBuffer) + "\"\n\nProvide relevant medical suggestions based on this updated context."
+                      text: `Updated conversation context: "${liveTranscriptionContent || transcriptionBuffer}"\n\nProvide relevant medical suggestions based on this updated context.`
                     }]
                   }
                 };
@@ -963,30 +963,7 @@ deltaText.includes("+"),
                   type: "response.create",
                   response: {
                     modalities: ["text"],
-                    instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++). You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
-
-CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
-
-Instructions:
-
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what the patient is saying RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
-
-Base your suggestions on:
-1. CURRENT symptoms described in the live conversation
-2. CURRENT presentation and patient statements  
-3. Only reference past history if directly relevant to current symptoms
-
-Do NOT suggest treatments for conditions not mentioned in the current encounter.
-
-CRITICAL INSTRUCTION: Respond ONLY to symptoms mentioned in the current live conversation. Do NOT use examples from other medical conditions.
-
-For medication recommendations, include starting dose, titration schedule, and maximum dose when relevant to the CURRENT chief complaint.
-
-Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making based on what the patient is describing RIGHT NOW. No filler or overly obvious advice.
-
-Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
-
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\\n) after answering a user question.IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).`,
+                    instructions: "You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY. Provide concise medical insights based ONLY on what the patient is saying in the current conversation. Focus on diagnostic and therapeutic insights for the symptoms mentioned RIGHT NOW. Add ++ at the end of each sentence.",
                     metadata: {
                       type: "suggestions"
                     }
