@@ -1,6 +1,6 @@
 import { WebSocketServer } from "ws";
 import WebSocket from "ws";
-import { WebSocketEventHandler } from "./modules/WebSocketEventHandler.js";
+import { WebSocketEventHandler } from "./websocket-event-handler.js";
 import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 
 /**
