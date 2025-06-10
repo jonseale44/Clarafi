@@ -1055,7 +1055,7 @@ deltaText.includes("+"),
 
               // Add each segment as a separate bullet point
               const newBullets = conversationSegments
-                .map((segment: string) => "- " + segment)
+                .map((segment: string) => `• ${segment}`)
                 .join("\n");
 
               // Simple append to existing transcription - deduplication prevents duplicates
