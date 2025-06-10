@@ -884,7 +884,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             );
             console.log(
               "📝 [EncounterView] Delta contains '+' symbol:",
-              deltaText.includes("+"),
+              ```text
+deltaText.includes("+"),
             );
             console.log(
               "📝 [EncounterView] Delta ends with '+':",
@@ -938,10 +939,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               if (suggestionDebounceTimer.current) {
                 clearTimeout(suggestionDebounceTimer.current);
               }
-              
+
               suggestionDebounceTimer.current = setTimeout(() => {
                 console.log("🧠 [EncounterView] Updating AI context with live transcription");
-                
+
                 // Send updated context to AI
                 const contextUpdate = {
                   type: "conversation.item.create",
@@ -954,9 +955,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     }]
                   }
                 };
-                
+
                 realtimeWs.send(JSON.stringify(contextUpdate));
-                
+
                 // Request new AI response
                 const responseRequest = {
                   type: "response.create",
@@ -991,7 +992,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     }
                   }
                 };
-                
+
                 realtimeWs.send(JSON.stringify(responseRequest));
               }, 2000); // 2-second debounce
             }
@@ -1009,125 +1010,55 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               "🧠 [EncounterView] Current suggestions buffer length:",
               suggestionsBuffer.length,
             );
-            console.log(
-              "🧠 [EncounterView] Current live suggestions length:",
-              liveSuggestions.length,
-            );
 
-            // Apply external system's content filtering to prevent cross-contamination
-            const shouldFilterContent = (content: string): boolean => {
-              // Filter out SOAP note patterns
-              const soapPatterns = [
-                "Patient Visit Summary",
-                "PATIENT VISIT SUMMARY",
-                "Visit Summary",
-                "VISIT SUMMARY",
-                "Chief Complaint:",
-                "**Chief Complaint:**",
-                "History of Present Illness:",
-                "**History of Present Illness:**",
-                "Vital Signs:",
-                "**Vital Signs:**",
-                "Review of Systems:",
-                "**Review of Systems:**",
-                "Physical Examination:",
-                "**Physical Examination:**",
-                "Assessment:",
-                "**Assessment:**",
-                "Plan:",
-                "**Plan:**",
-                "Diagnosis:",
-                "**Diagnosis:**",
-                "Impression:",
-                "**Impression:**",
-                "SUBJECTIVE:",
-                "OBJECTIVE:",
-                "ASSESSMENT:",
-                "PLAN:",
-                "S:",
-                "O:",
-                "A:",
-                "P:",
-                "SOAP Note",
-                "Clinical Note",
-                "Progress Note",
-              ];
-
-              // Filter out order patterns
-              const orderPatterns = [
-                "Lab: [",
-                "Imaging: [",
-                "Medication: [",
-                "Labs:",
-                "Imaging:",
-                "Medications:",
-                "Laboratory:",
-                "Radiology:",
-                "Prescriptions:",
-              ];
-
-              return (
-                soapPatterns.some((pattern) => content.includes(pattern)) ||
-                orderPatterns.some((pattern) => content.includes(pattern))
-              );
-            };
-
-            // Only process if content passes filtering
-            if (!shouldFilterContent(deltaText)) {
+            if (deltaText && !conversationEnded) {
+              // Accumulate suggestions like transcription buffer
+              suggestionsBuffer += deltaText;
               console.log(
-                "🧠 [EncounterView] Content passed filtering, processing delta",
+                "🧠 [EncounterView] Accumulated suggestions buffer length:",
+                suggestionsBuffer.length,
               );
 
-              // Accumulate suggestions buffer with delta text using state
-              setSuggestionsBuffer((prev) => {
-                const newBuffer = prev + deltaText;
-                console.log(
-                  "🧠 [EncounterView] Buffer updated from length",
-                  prev.length,
-                  "to",
-                  newBuffer.length,
-                );
-                console.log(
-                  "🧠 [EncounterView] New buffer content preview:",
-                  newBuffer.substring(0, 200),
-                );
+              // Format suggestions buffer with header and proper line breaks
+              let newBuffer = suggestionsBuffer;
 
-                // Format the complete accumulated suggestions with header
-                let formattedSuggestions;
-                if (!newBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-                  formattedSuggestions =
-                    "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + newBuffer;
-                  console.log("🧠 [EncounterView] Added header to suggestions");
-                } else {
-                  formattedSuggestions = newBuffer;
-                  console.log(
-                    "🧠 [EncounterView] Header already present, using buffer as-is",
-                  );
-                }
+              // Apply regex formatting for bullet points - add line break before bullet points
+              // This regex looks for bullet points (•, -, *) that aren't already on a new line
+              newBuffer = newBuffer.replace(/(?<!^|\n)\s*([•\-\*])\s*/g, '\n$1 ');
 
-                console.log(
-                  "🧠 [EncounterView] Final formatted suggestions length:",
-                  formattedSuggestions.length,
-                );
-                console.log(
-                  "🧠 [EncounterView] Final formatted suggestions preview:",
-                  formattedSuggestions.substring(0, 300),
-                );
-
-                // Update the display with accumulated content
-                setLiveSuggestions(formattedSuggestions);
-                setGptSuggestions(formattedSuggestions);
-                console.log(
-                  "🧠 [EncounterView] Updated both live and GPT suggestions display",
-                );
-
-                return newBuffer;
-              });
-            } else {
-              console.warn(
-                "🧠 [EncounterView] Content FILTERED OUT - contains SOAP/order patterns:",
-                deltaText.substring(0, 100),
+              console.log(
+                "🧠 [EncounterView] Formatted buffer length:",
+                newBuffer.length,
               );
+              console.log(
+                "🧠 [EncounterView] Formatted buffer content preview:",
+                newBuffer.substring(0, 200),
+              );
+
+              // Format the complete accumulated suggestions with header
+              let formattedSuggestions;
+              if (!newBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+                formattedSuggestions =
+                  "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + newBuffer;
+                console.log("🧠 [EncounterView] Added header to suggestions");
+              } else {
+                formattedSuggestions = newBuffer;
+                console.log(
+                  "🧠 [EncounterView] Header already present, using buffer as-is",
+                );
+              }
+
+              console.log(
+                "🧠 [EncounterView] Final formatted suggestions length:",
+                formattedSuggestions.length,
+              );
+              console.log(
+                "🧠 [EncounterView] Final formatted suggestions preview:",
+                formattedSuggestions.substring(0, 300),
+              );
+
+              // Update the display with accumulated content
+              setLiveSuggestions(formattedSuggestions);
             }
           }
 
@@ -1885,7 +1816,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     if (editor && !editor.isDestroyed) {
                       const formattedContent = formatSoapNoteContent(note);
                       editor.commands.setContent(formattedContent);
-                    }
+                                        }
                   }}
                   onSOAPNoteComplete={(note) => {
                     setSoapNote(note);
