@@ -151,6 +151,7 @@ export function EncounterDetailView({
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
+  const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
 
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
@@ -562,6 +563,7 @@ export function EncounterDetailView({
     // Clear previous suggestions when starting new recording
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
+    setSuggestionsBuffer(""); // Clear suggestions buffer for fresh accumulation
     setTranscription("");
 
     try {
@@ -572,7 +574,6 @@ export function EncounterDetailView({
       let suggestionsStarted = false;
       let conversationActive = false; // Track active conversation state
       let sessionId = "";
-      let suggestionsBuffer = "";
 
       try {
         console.log(
@@ -972,20 +973,24 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
             // Only process if content passes filtering
             if (!shouldFilterContent(deltaText)) {
-              // Accumulate suggestions buffer with delta text (like transcription)
-              suggestionsBuffer += deltaText;
+              // Accumulate suggestions buffer with delta text using state
+              setSuggestionsBuffer(prev => {
+                const newBuffer = prev + deltaText;
+                
+                // Format the complete accumulated suggestions with header
+                let formattedSuggestions;
+                if (!newBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
+                  formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + newBuffer;
+                } else {
+                  formattedSuggestions = newBuffer;
+                }
 
-              // Format the complete accumulated suggestions with header
-              let formattedSuggestions;
-              if (!suggestionsBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-                formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + suggestionsBuffer;
-              } else {
-                formattedSuggestions = suggestionsBuffer;
-              }
-
-              // Update the display with accumulated content
-              setLiveSuggestions(formattedSuggestions);
-              setGptSuggestions(formattedSuggestions);
+                // Update the display with accumulated content
+                setLiveSuggestions(formattedSuggestions);
+                setGptSuggestions(formattedSuggestions);
+                
+                return newBuffer;
+              });
             } else {
               console.warn(
                 "[EncounterView] Filtered out SOAP/order content from AI suggestions",
