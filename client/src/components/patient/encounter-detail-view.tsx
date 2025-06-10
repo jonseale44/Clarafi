@@ -116,6 +116,32 @@ export function EncounterDetailView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
+  
+  // Deduplication system
+  const processedEvents = useRef(new Set<string>());
+  const processedContent = useRef(new Set<string>());
+  
+  // Deduplication helper functions
+  const isEventProcessed = (eventId: string) => {
+    return eventId ? processedEvents.current.has(eventId) : false;
+  };
+  
+  const markEventAsProcessed = (eventId: string) => {
+    if (eventId) processedEvents.current.add(eventId);
+  };
+  
+  const isContentProcessed = (content: string) => {
+    if (!content || content.length <= 10) return false;
+    const signature = content.substring(0, 50).trim();
+    return processedContent.current.has(signature);
+  };
+  
+  const markContentAsProcessed = (content: string) => {
+    if (content && content.length > 10) {
+      const signature = content.substring(0, 50).trim();
+      processedContent.current.add(signature);
+    }
+  };
   const [soapNote, setSoapNote] = useState("");
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
@@ -801,6 +827,22 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           console.log("📥 [API-IN] Complete OpenAI message:");
           console.log(JSON.stringify(message, null, 2));
 
+          // Add deduplication checks
+          if (message.event_id && isEventProcessed(message.event_id)) {
+            console.log("🚫 [EncounterView] Skipping duplicate event:", message.event_id);
+            return;
+          }
+
+          const content = message.delta || message.transcript || message.text || "";
+          if (content && isContentProcessed(content)) {
+            console.log("🚫 [EncounterView] Skipping duplicate content:", content.substring(0, 30));
+            return;
+          }
+
+          // Mark as processed
+          if (message.event_id) markEventAsProcessed(message.event_id);
+          if (content) markContentAsProcessed(content);
+
           // Handle transcription events - accumulate deltas
           if (
             message.type === "conversation.item.input_audio_transcription.delta"
@@ -984,12 +1026,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               // Add each segment as a separate bullet point
               const newBullets = conversationSegments.map((segment: string) => `• ${segment}`).join('\n');
               
-              // Replace the raw buffer content with formatted bullets
-              setTranscription(prev => {
-                // Remove the unformatted buffer content and replace with formatted bullets
-                const withoutCurrentBuffer = prev.replace(transcriptionBuffer, '').trimEnd();
-                return withoutCurrentBuffer ? withoutCurrentBuffer + '\n' + newBullets : newBullets;
-              });
+              // Simple append to existing transcription - deduplication prevents duplicates
+              setTranscription(prev => prev ? prev + '\n' + newBullets : newBullets);
               
               // Clear the buffer since we've processed this content
               transcriptionBuffer = "";
