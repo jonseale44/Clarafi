@@ -567,6 +567,9 @@ export function EncounterDetailView({
           },
         };
 
+        console.log("📤 [API-OUT] Session config being sent to OpenAI:");
+        console.log(JSON.stringify(sessionConfig, null, 2));
+
         const sessionResponse = await fetch(
           "https://api.openai.com/v1/realtime/sessions",
           {
@@ -582,6 +585,8 @@ export function EncounterDetailView({
 
         if (!sessionResponse.ok) {
           const error = await sessionResponse.json();
+          console.log("❌ [API-IN] Session creation failed:");
+          console.log(JSON.stringify(error, null, 2));
           throw new Error(
             `Failed to create session: ${error.message || "Unknown error"}`,
           );
@@ -589,6 +594,8 @@ export function EncounterDetailView({
 
         const session = await sessionResponse.json();
         console.log("✅ [EncounterView] Session created:", session.id);
+        console.log("📥 [API-IN] Session creation response:");
+        console.log(JSON.stringify(session, null, 2));
 
         // Step 2: Connect via WebSocket with session token like your working code
         const protocols = [
@@ -610,29 +617,32 @@ export function EncounterDetailView({
           console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
 
           // Session configuration: Focus on transcription only, AI suggestions handled separately
-          realtimeWs!.send(
-            JSON.stringify({
-              type: "session.update",
-              session: {
-                instructions:
-                  "You are a medical transcription assistant. Provide accurate transcription of medical conversations. IMPORTANT: Formatting requirement: add one plus sign at the end of each sentence (+).",
-                model: "gpt-4o-mini-realtime-preview-2024-12-17",
-                modalities: ["text", "audio"],
-                input_audio_format: "pcm16",
-                input_audio_transcription: {
-                  model: "whisper-1",
-                  language: "en",
-                },
-                turn_detection: {
-                  type: "server_vad",
-                  threshold: 0.3,
-                  prefix_padding_ms: 300,
-                  silence_duration_ms: 500,
-                  create_response: false,
-                },
+          const sessionUpdateMessage = {
+            type: "session.update",
+            session: {
+              instructions:
+                "You are a medical transcription assistant. Provide accurate transcription of medical conversations. IMPORTANT: Formatting requirement: add one plus sign at the end of each sentence (+).",
+              model: "gpt-4o-mini-realtime-preview-2024-12-17",
+              modalities: ["text", "audio"],
+              input_audio_format: "pcm16",
+              input_audio_transcription: {
+                model: "whisper-1",
+                language: "en",
               },
-            }),
-          );
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.3,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 500,
+                create_response: false,
+              },
+            },
+          };
+
+          console.log("📤 [API-OUT] Session update message being sent:");
+          console.log(JSON.stringify(sessionUpdateMessage, null, 2));
+          
+          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
         };
 
         // ✅ ACTIVE AI SUGGESTIONS SYSTEM - WebSocket with Comprehensive Medical Prompt
@@ -769,6 +779,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [EncounterView] OpenAI message type:", message.type);
+          
+          // Log all incoming messages for debugging
+          console.log("📥 [API-IN] Complete OpenAI message:");
+          console.log(JSON.stringify(message, null, 2));
 
           // Handle transcription events - accumulate deltas
           if (
