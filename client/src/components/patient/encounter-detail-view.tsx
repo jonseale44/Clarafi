@@ -1092,7 +1092,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   newBuffer.substring(0, 200),
                 );
 
-                // Format the complete accumulated suggestions with header
+                // Format the complete accumulated suggestions with header and bullet point separation
                 let formattedSuggestions;
                 if (!newBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
                   formattedSuggestions =
@@ -1104,6 +1104,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     "🧠 [EncounterView] Header already present, using buffer as-is",
                   );
                 }
+
+                // Apply bullet point formatting for better visual separation
+                formattedSuggestions = formattedSuggestions
+                  // Add new line before bullet points (•, -, *, numbers)
+                  .replace(/([^\n])(\s*[•\-\*]|\s*\d+\.)\s*/g, '$1\n\n$2 ')
+                  // Add new line before "Consider" at start of suggestions
+                  .replace(/([^\n])(Consider\s)/g, '$1\n\n$2')
+                  // Clean up multiple consecutive newlines
+                  .replace(/\n{3,}/g, '\n\n')
+                  // Ensure proper spacing after header
+                  .replace(/🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g, '🩺 REAL-TIME CLINICAL INSIGHTS:\n\n');
+                
+                console.log("🧠 [EncounterView] Applied bullet point formatting");
 
                 console.log(
                   "🧠 [EncounterView] Final formatted suggestions length:",
