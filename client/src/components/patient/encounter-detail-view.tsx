@@ -1586,7 +1586,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               <div className="space-y-2">
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
                   <div className="whitespace-pre-line text-sm leading-relaxed">
-                    {transcription ||
+                    {isRecording ? liveTranscription : completedTranscription ||
                       (isRecording
                         ? "Listening..."
                         : "Transcription will appear here during recording")}
@@ -1626,7 +1626,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 <RealtimeSOAPIntegration
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
-                  transcription={transcription}
+                  transcription={completedTranscription || liveTranscription}
                   onSOAPNoteUpdate={(note) => {
                     setSoapNote(note);
                     if (editor && !editor.isDestroyed) {
@@ -1708,7 +1708,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             ref={realtimeSOAPRef}
             patientId={patient.id.toString()}
             encounterId={encounterId.toString()}
-            transcription={transcription}
+            transcription={completedTranscription || liveTranscription}
             onSOAPNoteUpdate={handleSOAPNoteUpdate}
             onSOAPNoteComplete={handleSOAPNoteComplete}
             onDraftOrdersReceived={handleDraftOrdersReceived}
