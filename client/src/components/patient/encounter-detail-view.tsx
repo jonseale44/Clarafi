@@ -902,16 +902,37 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               suggestionsStarted = true;
               conversationActive = true;
               console.log(
-                "🧠 [EncounterView] Starting AI suggestions conversation",
+                "🧠 [EncounterView] TRIGGERING AI suggestions conversation - transcription buffer length:",
+                transcriptionBuffer.length
+              );
+              console.log(
+                "🧠 [EncounterView] Suggestions started:",
+                suggestionsStarted,
+                "Conversation active:",
+                conversationActive
               );
               startSuggestionsConversation(realtimeWs, patient);
+            } else {
+              console.log(
+                "🧠 [EncounterView] NOT starting suggestions - buffer length:",
+                transcriptionBuffer.length,
+                "started:",
+                suggestionsStarted,
+                "active:",
+                conversationActive,
+                "ws:",
+                !!realtimeWs
+              );
             }
           }
 
           // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
-            console.log("🧠 [EncounterView] AI suggestions delta:", deltaText);
+            console.log("🧠 [EncounterView] AI suggestions delta received:", deltaText);
+            console.log("🧠 [EncounterView] Delta length:", deltaText.length);
+            console.log("🧠 [EncounterView] Current suggestions buffer length:", suggestionsBuffer.length);
+            console.log("🧠 [EncounterView] Current live suggestions length:", liveSuggestions.length);
 
             // Apply external system's content filtering to prevent cross-contamination
             const shouldFilterContent = (content: string): boolean => {
@@ -973,27 +994,39 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
             // Only process if content passes filtering
             if (!shouldFilterContent(deltaText)) {
+              console.log("🧠 [EncounterView] Content passed filtering, processing delta");
+              
               // Accumulate suggestions buffer with delta text using state
-              setSuggestionsBuffer(prev => {
+              setSuggestionsBuffer((prev) => {
                 const newBuffer = prev + deltaText;
-                
+                console.log("🧠 [EncounterView] Buffer updated from length", prev.length, "to", newBuffer.length);
+                console.log("🧠 [EncounterView] New buffer content preview:", newBuffer.substring(0, 200));
+
                 // Format the complete accumulated suggestions with header
                 let formattedSuggestions;
                 if (!newBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-                  formattedSuggestions = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + newBuffer;
+                  formattedSuggestions =
+                    "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + newBuffer;
+                  console.log("🧠 [EncounterView] Added header to suggestions");
                 } else {
                   formattedSuggestions = newBuffer;
+                  console.log("🧠 [EncounterView] Header already present, using buffer as-is");
                 }
+
+                console.log("🧠 [EncounterView] Final formatted suggestions length:", formattedSuggestions.length);
+                console.log("🧠 [EncounterView] Final formatted suggestions preview:", formattedSuggestions.substring(0, 300));
 
                 // Update the display with accumulated content
                 setLiveSuggestions(formattedSuggestions);
                 setGptSuggestions(formattedSuggestions);
-                
+                console.log("🧠 [EncounterView] Updated both live and GPT suggestions display");
+
                 return newBuffer;
               });
             } else {
               console.warn(
-                "[EncounterView] Filtered out SOAP/order content from AI suggestions",
+                "🧠 [EncounterView] Content FILTERED OUT - contains SOAP/order patterns:",
+                deltaText.substring(0, 100)
               );
             }
           }
@@ -1059,7 +1092,16 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             // Trigger new AI suggestions based on completed transcription
             if (suggestionsStarted && finalText.length > 10 && realtimeWs) {
               console.log(
-                "🧠 [EncounterView] Triggering AI suggestions for completed transcription",
+                "🧠 [EncounterView] Triggering NEW AI suggestions for completed transcription:",
+                finalText.substring(0, 100)
+              );
+              console.log(
+                "🧠 [EncounterView] Current suggestions buffer length before new request:",
+                suggestionsBuffer.length
+              );
+              console.log(
+                "🧠 [EncounterView] WebSocket ready state:",
+                realtimeWs.readyState
               );
 
               // Keep suggestions buffer to accumulate like transcription (don't reset)
@@ -1080,9 +1122,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 },
               };
 
+              console.log("🧠 [EncounterView] Sending transcription context to OpenAI");
               realtimeWs.send(JSON.stringify(transcriptionContext));
 
               // Request new AI response
+              console.log("🧠 [EncounterView] Creating new response request for AI suggestions");
               const newResponse = {
                 type: "response.create",
                 response: {
@@ -1124,7 +1168,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 },
               };
 
+              console.log("🧠 [EncounterView] Sending new response request to OpenAI");
+              console.log("🧠 [EncounterView] Response payload:", JSON.stringify(newResponse, null, 2));
               realtimeWs.send(JSON.stringify(newResponse));
+              console.log("🧠 [EncounterView] New response request sent successfully");
+            } else {
+              console.log(
+                "🧠 [EncounterView] NOT triggering new suggestions - started:",
+                suggestionsStarted,
+                "text length:",
+                finalText.length,
+                "ws:",
+                !!realtimeWs
+              );
             }
           }
 
