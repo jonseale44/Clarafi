@@ -596,7 +596,7 @@ export function EncounterDetailView({
         // Step 1: Create session exactly like your working code
         console.log("🔧 [EncounterView] Creating OpenAI session...");
         const sessionConfig = {
-          model: "gpt-4o-mini-realtime-preview-2024-12-17",
+          model: "gpt-4o-mini-realtime-preview",
           modalities: ["text"],
           instructions:
             "You are a medical transcription assistant. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations. ",
@@ -652,7 +652,7 @@ export function EncounterDetailView({
         ];
 
         const params = new URLSearchParams({
-          model: "gpt-4o-mini-realtime-preview-2024-12-17",
+          model: "gpt-4o-mini-realtime-preview",
         });
 
         realtimeWs = new WebSocket(
@@ -668,7 +668,7 @@ export function EncounterDetailView({
             type: "session.update",
             session: {
               instructions: `You are a medical transcription assistant specialized in clinical conversations. 
-              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. 
+              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
               Pay special attention to:
               - Medication names and dosages (e.g., "Metformin 500mg twice daily")
               - Medical abbreviations (e.g., "BP", "HR", "HEENT")
@@ -747,8 +747,8 @@ CURRENT ENCOUNTER FOCUS:
 - Provide suggestions based on what the patient is saying NOW
 - Do not rely heavily on past medical history unless directly relevant to current symptoms
 
-Critical Allergies: ${chart?.allergies?.length > 0 ? chart.allergies.map(a => a.allergen).join(', ') : 'None documented'}
-Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedications.map(m => m.name).join(', ') : 'None documented'}`;
+Critical Allergies: ${chart?.allergies?.length > 0 ? chart.allergies.map((a) => a.allergen).join(", ") : "None documented"}
+Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedications.map((m) => m.name).join(", ") : "None documented"}`;
 
             return basicInfo;
           };
@@ -759,7 +759,8 @@ Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedi
           );
 
           // 3. Inject patient context AND current live transcription
-          const currentTranscription = liveTranscriptionContent || transcriptionBuffer || "";
+          const currentTranscription =
+            liveTranscriptionContent || transcriptionBuffer || "";
           const contextWithTranscription = `${patientContext}
 
 CURRENT LIVE CONVERSATION:
@@ -920,36 +921,98 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               conversationActive = true;
               console.log(
                 "🧠 [EncounterView] TRIGGERING AI suggestions conversation - transcription buffer length:",
-                transcriptionBuffer.length
+                transcriptionBuffer.length,
               );
               console.log(
                 "🧠 [EncounterView] Suggestions started:",
                 suggestionsStarted,
                 "Conversation active:",
-                conversationActive
+                conversationActive,
               );
               startSuggestionsConversation(realtimeWs, patient);
-            } else {
-              console.log(
-                "🧠 [EncounterView] NOT starting suggestions - buffer length:",
-                transcriptionBuffer.length,
-                "started:",
-                suggestionsStarted,
-                "active:",
-                conversationActive,
-                "ws:",
-                !!realtimeWs
-              );
+            }
+
+            // NEW: Continuously update AI suggestions with live context
+            if (suggestionsStarted && transcriptionBuffer.length > 50 && realtimeWs) {
+              // Debounce to prevent too many rapid updates
+              if (suggestionDebounceTimer.current) {
+                clearTimeout(suggestionDebounceTimer.current);
+              }
+              
+              suggestionDebounceTimer.current = setTimeout(() => {
+                console.log("🧠 [EncounterView] Updating AI context with live transcription");
+                
+                // Send updated context to AI
+                const contextUpdate = {
+                  type: "conversation.item.create",
+                  item: {
+                    type: "message",
+                    role: "user",
+                    content: [{
+                      type: "input_text",
+                      text: `Updated conversation context: "${liveTranscriptionContent || transcriptionBuffer}"\n\nProvide relevant medical suggestions based on this updated context.`
+                    }]
+                  }
+                };
+                
+                realtimeWs.send(JSON.stringify(contextUpdate));
+                
+                // Request new AI response
+                const responseRequest = {
+                  type: "response.create",
+                  response: {
+                    modalities: ["text"],
+                    instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++). You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+
+CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
+
+Instructions:
+
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what the patient is saying RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
+
+Base your suggestions on:
+1. CURRENT symptoms described in the live conversation
+2. CURRENT presentation and patient statements  
+3. Only reference past history if directly relevant to current symptoms
+
+Do NOT suggest treatments for conditions not mentioned in the current encounter.
+
+CRITICAL INSTRUCTION: Respond ONLY to symptoms mentioned in the current live conversation. Do NOT use examples from other medical conditions.
+
+For medication recommendations, include starting dose, titration schedule, and maximum dose when relevant to the CURRENT chief complaint.
+
+Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making based on what the patient is describing RIGHT NOW. No filler or overly obvious advice.
+
+Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
+
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\\n) after answering a user question.IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).`,
+                    metadata: {
+                      type: "suggestions"
+                    }
+                  }
+                };
+                
+                realtimeWs.send(JSON.stringify(responseRequest));
+              }, 2000); // 2-second debounce
             }
           }
 
           // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
-            console.log("🧠 [EncounterView] AI suggestions delta received:", deltaText);
+            console.log(
+              "🧠 [EncounterView] AI suggestions delta received:",
+              deltaText,
+            );
             console.log("🧠 [EncounterView] Delta length:", deltaText.length);
-            console.log("🧠 [EncounterView] Current suggestions buffer length:", suggestionsBuffer.length);
-            console.log("🧠 [EncounterView] Current live suggestions length:", liveSuggestions.length);
+            console.log(
+              "🧠 [EncounterView] Current suggestions buffer length:",
+              suggestionsBuffer.length,
+            );
+            console.log(
+              "🧠 [EncounterView] Current live suggestions length:",
+              liveSuggestions.length,
+            );
 
             // Apply external system's content filtering to prevent cross-contamination
             const shouldFilterContent = (content: string): boolean => {
@@ -1011,13 +1074,23 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
             // Only process if content passes filtering
             if (!shouldFilterContent(deltaText)) {
-              console.log("🧠 [EncounterView] Content passed filtering, processing delta");
-              
+              console.log(
+                "🧠 [EncounterView] Content passed filtering, processing delta",
+              );
+
               // Accumulate suggestions buffer with delta text using state
               setSuggestionsBuffer((prev) => {
                 const newBuffer = prev + deltaText;
-                console.log("🧠 [EncounterView] Buffer updated from length", prev.length, "to", newBuffer.length);
-                console.log("🧠 [EncounterView] New buffer content preview:", newBuffer.substring(0, 200));
+                console.log(
+                  "🧠 [EncounterView] Buffer updated from length",
+                  prev.length,
+                  "to",
+                  newBuffer.length,
+                );
+                console.log(
+                  "🧠 [EncounterView] New buffer content preview:",
+                  newBuffer.substring(0, 200),
+                );
 
                 // Format the complete accumulated suggestions with header
                 let formattedSuggestions;
@@ -1027,23 +1100,33 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   console.log("🧠 [EncounterView] Added header to suggestions");
                 } else {
                   formattedSuggestions = newBuffer;
-                  console.log("🧠 [EncounterView] Header already present, using buffer as-is");
+                  console.log(
+                    "🧠 [EncounterView] Header already present, using buffer as-is",
+                  );
                 }
 
-                console.log("🧠 [EncounterView] Final formatted suggestions length:", formattedSuggestions.length);
-                console.log("🧠 [EncounterView] Final formatted suggestions preview:", formattedSuggestions.substring(0, 300));
+                console.log(
+                  "🧠 [EncounterView] Final formatted suggestions length:",
+                  formattedSuggestions.length,
+                );
+                console.log(
+                  "🧠 [EncounterView] Final formatted suggestions preview:",
+                  formattedSuggestions.substring(0, 300),
+                );
 
                 // Update the display with accumulated content
                 setLiveSuggestions(formattedSuggestions);
                 setGptSuggestions(formattedSuggestions);
-                console.log("🧠 [EncounterView] Updated both live and GPT suggestions display");
+                console.log(
+                  "🧠 [EncounterView] Updated both live and GPT suggestions display",
+                );
 
                 return newBuffer;
               });
             } else {
               console.warn(
                 "🧠 [EncounterView] Content FILTERED OUT - contains SOAP/order patterns:",
-                deltaText.substring(0, 100)
+                deltaText.substring(0, 100),
               );
             }
           }
@@ -1125,22 +1208,23 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             if (suggestionsStarted && finalText.length > 10 && realtimeWs) {
               console.log(
                 "🧠 [EncounterView] Triggering NEW AI suggestions for completed transcription:",
-                finalText.substring(0, 100)
+                finalText.substring(0, 100),
               );
               console.log(
                 "🧠 [EncounterView] Current suggestions buffer length before new request:",
-                suggestionsBuffer.length
+                suggestionsBuffer.length,
               );
               console.log(
                 "🧠 [EncounterView] WebSocket ready state:",
-                realtimeWs.readyState
+                realtimeWs.readyState,
               );
 
               // Keep suggestions buffer to accumulate like transcription (don't reset)
               // suggestionsBuffer = ""; // Removed - this was causing replacement instead of accumulation
 
               // Send the COMPLETE live transcription as context (not just the delta)
-              const completeTranscription = liveTranscriptionContent || transcriptionBuffer;
+              const completeTranscription =
+                liveTranscriptionContent || transcriptionBuffer;
               const transcriptionContext = {
                 type: "conversation.item.create",
                 item: {
@@ -1157,11 +1241,15 @@ Please provide medical suggestions based on this complete conversation context.`
                 },
               };
 
-              console.log("🧠 [EncounterView] Sending transcription context to OpenAI");
+              console.log(
+                "🧠 [EncounterView] Sending transcription context to OpenAI",
+              );
               realtimeWs.send(JSON.stringify(transcriptionContext));
 
               // Request new AI response
-              console.log("🧠 [EncounterView] Creating new response request for AI suggestions");
+              console.log(
+                "🧠 [EncounterView] Creating new response request for AI suggestions",
+              );
               const newResponse = {
                 type: "response.create",
                 response: {
@@ -1210,10 +1298,17 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 },
               };
 
-              console.log("🧠 [EncounterView] Sending new response request to OpenAI");
-              console.log("🧠 [EncounterView] Response payload:", JSON.stringify(newResponse, null, 2));
+              console.log(
+                "🧠 [EncounterView] Sending new response request to OpenAI",
+              );
+              console.log(
+                "🧠 [EncounterView] Response payload:",
+                JSON.stringify(newResponse, null, 2),
+              );
               realtimeWs.send(JSON.stringify(newResponse));
-              console.log("🧠 [EncounterView] New response request sent successfully");
+              console.log(
+                "🧠 [EncounterView] New response request sent successfully",
+              );
             } else {
               console.log(
                 "🧠 [EncounterView] NOT triggering new suggestions - started:",
@@ -1221,7 +1316,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 "text length:",
                 finalText.length,
                 "ws:",
-                !!realtimeWs
+                !!realtimeWs,
               );
             }
           }

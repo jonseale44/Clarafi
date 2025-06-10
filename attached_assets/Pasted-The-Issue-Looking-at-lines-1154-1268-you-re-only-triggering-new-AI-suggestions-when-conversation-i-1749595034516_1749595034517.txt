@@ -1,0 +1,67 @@
+The Issue:
+Looking at lines 1154-1268, you're only triggering new AI suggestions when conversation.item.input_audio_transcription.completed fires, but this event becomes less frequent as the conversation continues. The AI needs continuous context updates with each new transcription delta.
+
+The Fix:
+
+Replace your current transcription delta handler (lines 877-945) with this pattern that continuously updates the AI context:
+
+// Handle transcription events - accumulate deltas AND update AI context
+if (message.type === "conversation.item.input_audio_transcription.delta") {
+  const deltaText = message.transcript || message.delta || "";
+  
+  // Existing logic - append delta
+  transcriptionBuffer += deltaText;
+  setTranscriptionBuffer(transcriptionBuffer);
+  setTranscription((prev) => prev + deltaText);
+  setLiveTranscriptionContent((prev) => prev + deltaText);
+  // NEW: Continuously update AI suggestions with live context
+  if (suggestionsStarted && transcriptionBuffer.length > 50) {
+    // Debounce to prevent too many rapid updates
+    if (suggestionDebounceTimer.current) {
+      clearTimeout(suggestionDebounceTimer.current);
+    }
+    
+    suggestionDebounceTimer.current = setTimeout(() => {
+      console.log("🧠 [EncounterView] Updating AI context with live transcription");
+      
+      // Send updated context to AI
+      const contextUpdate = {
+        type: "conversation.item.create",
+        item: {
+          type: "message",
+          role: "user",
+          content: [{
+            type: "input_text",
+            text: `Updated conversation context: "${liveTranscriptionContent}"\n\nProvide relevant medical suggestions based on this updated context.`
+          }]
+        }
+      };
+      
+      realtimeWs.send(JSON.stringify(contextUpdate));
+      
+      // Request new AI response
+      const responseRequest = {
+        type: "response.create",
+        response: {
+          modalities: ["text"],
+          instructions: `[Your existing instructions...]`,
+          metadata: {
+            type: "suggestions"
+          }
+        }
+      };
+      
+      realtimeWs.send(JSON.stringify(responseRequest));
+    }, 2000); // 2-second debounce
+  }
+  // Keep your existing suggestion startup logic...
+}
+Key Changes:
+
+Continuous Context Updates: Send new context to AI every time transcription accumulates (not just on completion)
+
+Debouncing: Use a 2-second timer to prevent overwhelming the API with updates
+
+Live Context: Always send the complete liveTranscriptionContent so AI has full conversation context
+
+Persistent State: Don't reset suggestionsBuffer or conversation state between updates
