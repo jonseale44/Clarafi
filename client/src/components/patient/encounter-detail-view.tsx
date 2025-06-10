@@ -112,7 +112,8 @@ export function EncounterDetailView({
   onBackToChart,
 }: EncounterDetailViewProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [transcription, setTranscription] = useState("");
+  const [completedTranscription, setCompletedTranscription] = useState(""); // Formatted bullet points
+  const [liveTranscription, setLiveTranscription] = useState(""); // Raw text during recording
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
@@ -534,7 +535,7 @@ export function EncounterDetailView({
     // Clear previous suggestions when starting new recording
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
-    setTranscription("");
+    setLiveTranscription("");
 
     try {
       // Create direct WebSocket connection to OpenAI like your working code
@@ -819,12 +820,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               deltaText.endsWith("+"),
             );
 
-            // For delta updates, just accumulate the raw text without formatting
+            // For delta updates, just accumulate and show raw text during recording
             transcriptionBuffer += deltaText;
             setTranscriptionBuffer(transcriptionBuffer);
-            
-            // Show the raw accumulating text during recording (no bullets yet)
-            setTranscription(transcriptionBuffer);
+            setLiveTranscription(transcriptionBuffer);
 
             console.log(
               "📝 [EncounterView] Updated transcription buffer:",
@@ -984,20 +983,15 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               // Add each segment as a separate bullet point
               const newBullets = conversationSegments.map((segment: string) => `• ${segment}`).join('\n');
               
-              // Append the new formatted bullets to existing transcription
-              setTranscription(prev => {
-                if (!prev || prev.trim() === transcriptionBuffer.trim()) {
-                  // If previous content is just the raw buffer, replace with formatted bullets
-                  return newBullets;
-                } else {
-                  // If we have existing formatted content, append new bullets
-                  return prev + '\n' + newBullets;
-                }
+              // Add formatted bullets to completed transcription
+              setCompletedTranscription(prev => {
+                return prev ? prev + '\n' + newBullets : newBullets;
               });
               
-              // Clear the buffer since we've processed this content
+              // Clear the buffer and live transcription since we've processed this content
               transcriptionBuffer = "";
               setTranscriptionBuffer("");
+              setLiveTranscription("");
               
               console.log("📝 [EncounterView] Added conversation segments:", conversationSegments.length);
             }
@@ -1267,7 +1261,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       );
 
       // Set transcription for Real-time SOAP component
-      setTranscription(transcriptionBuffer);
+      setLiveTranscription(transcriptionBuffer);
 
       // Trigger Real-time streaming SOAP generation
       if (realtimeSOAPRef.current) {
