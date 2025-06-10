@@ -732,26 +732,24 @@ export function EncounterDetailView({
             );
           }
 
-          // 2. Format comprehensive patient context like external system
+          // 2. Format patient context prioritizing current encounter over historical data
           const formatPatientContext = (chart: any, basicData: any): string => {
-            if (chart) {
-              // Remove large sections to prevent token overflow
-              const cleanChart = { ...chart };
-              delete cleanChart.attachments;
-              delete cleanChart.appointments;
-              delete cleanChart.office_visits;
-              delete cleanChart.encounters;
-              delete cleanChart.text_content;
-              delete cleanChart.extracted_text;
-
-              return `Patient Chart Context:\n${JSON.stringify(cleanChart, null, 2)}`;
-            } else {
-              // Fallback to basic patient data
-              return `Patient: ${basicData.firstName} ${basicData.lastName}
-Age: ${basicData.age || "Unknown"}
+            // Always start with basic patient demographics only
+            const basicInfo = `Patient: ${basicData.firstName} ${basicData.lastName}
+Age: ${basicData.age || "Unknown"} 
 Gender: ${basicData.gender || "Unknown"}
-MRN: ${basicData.mrn || "Unknown"}`;
-            }
+MRN: ${basicData.mrn || "Unknown"}
+
+CURRENT ENCOUNTER FOCUS: 
+- This is a NEW encounter starting fresh
+- Focus on the current conversation and transcription
+- Provide suggestions based on what the patient is saying NOW
+- Do not rely heavily on past medical history unless directly relevant to current symptoms
+
+Critical Allergies: ${chart?.allergies?.length > 0 ? chart.allergies.map(a => a.allergen).join(', ') : 'None documented'}
+Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedications.map(m => m.name).join(', ') : 'None documented'}`;
+
+            return basicInfo;
           };
 
           const patientContext = formatPatientContext(
@@ -786,11 +784,18 @@ MRN: ${basicData.mrn || "Unknown"}`;
               modalities: ["text"],
               instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++). You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
+CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
+
 Instructions:
 
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first and indicate readiness for more if requested.
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what the patient is saying RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
 
-Additionally, if the physician asks, provide relevant information from the patient's chart or office visits, such as past medical history, current medications, allergies, lab results, and imaging findings. Include this information concisely and accurately where appropriate. This medical information might be present in old office visit notes. Do not make anything up; it is better to say you don't have that information available.
+Base your suggestions on:
+1. CURRENT symptoms described in the live conversation
+2. CURRENT presentation and patient statements  
+3. Only reference past history if directly relevant to current symptoms
+
+Do NOT suggest treatments for conditions not mentioned in the current encounter.
 
 Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
 Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
@@ -1044,8 +1049,23 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           ) {
             const finalText = message.transcript || "";
             console.log(
+              "✅ [EncounterView] === TRANSCRIPTION COMPLETED EVENT ===",
+            );
+            console.log(
               "✅ [EncounterView] Transcription completed:",
               finalText,
+            );
+            console.log(
+              "✅ [EncounterView] Suggestions started status:",
+              suggestionsStarted,
+            );
+            console.log(
+              "✅ [EncounterView] Text length for new suggestions:",
+              finalText.length,
+            );
+            console.log(
+              "✅ [EncounterView] WebSocket state:",
+              realtimeWs?.readyState,
             );
             console.log(
               "📝 [EncounterView] Final transcript contains '+' symbols:",
@@ -1133,11 +1153,18 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   modalities: ["text"],
                   instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
+CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
+
 Instructions:
 
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first and indicate readiness for more if requested.
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what the patient is saying RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
 
-Additionally, if the physician asks, provide relevant information from the patient's chart or office visits, such as past medical history, current medications, allergies, lab results, and imaging findings. Include this information concisely and accurately where appropriate. This medical information might be present in old office visit notes. Do not make anything up; it is better to say you don't have that information available.
+Base your suggestions on:
+1. CURRENT symptoms described in the live conversation
+2. CURRENT presentation and patient statements
+3. Only reference past history if directly relevant to current symptoms
+
+Do NOT suggest treatments for conditions not mentioned in the current encounter.
 
 Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
 Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
