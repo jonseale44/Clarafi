@@ -789,10 +789,16 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             message.type === "conversation.item.input_audio_transcription.delta"
           ) {
             const deltaText = message.transcript || message.delta || "";
-            console.log("📝 [EncounterView] Transcription delta:", deltaText);
+            console.log("📝 [EncounterView] Transcription delta received:", deltaText);
+            console.log("📝 [EncounterView] Delta contains '+' symbol:", deltaText.includes('+'));
+            console.log("📝 [EncounterView] Delta ends with '+':", deltaText.endsWith('+'));
+            
             transcriptionBuffer += deltaText;
             setTranscription(transcriptionBuffer);
             setTranscriptionBuffer(transcriptionBuffer);
+            
+            console.log("📝 [EncounterView] Updated transcription buffer:", transcriptionBuffer);
+            console.log("📝 [EncounterView] Buffer contains '+' symbols:", (transcriptionBuffer.match(/\+/g) || []).length);
 
             // Start AI suggestions conversation when we have enough transcription (first time only)
             if (
@@ -919,6 +925,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               "✅ [EncounterView] Transcription completed:",
               finalText,
             );
+            console.log("📝 [EncounterView] Final transcript contains '+' symbols:", (finalText.match(/\+/g) || []).length);
+            console.log("📝 [EncounterView] Final transcript formatted correctly:", finalText.includes('+'));
+            console.log("📝 [EncounterView] Final transcript length:", finalText.length);
 
             // Trigger new AI suggestions based on completed transcription
             if (suggestionsStarted && finalText.length > 10 && realtimeWs) {
