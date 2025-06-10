@@ -16,7 +16,7 @@ import OpenAI from "openai";
 
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
 
-import fastMedicalRoutes from "./fast-medical-routes";
+// Fast medical routes removed - functionality moved to frontend WebSocket
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -27,8 +27,7 @@ export function registerRoutes(app: Express): Server {
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);
 
-  // Fast medical context routes (replaces assistant-based approach)
-  app.use("/api", fastMedicalRoutes);
+  // Fast medical context routes removed - functionality moved to frontend WebSocket
 
   // Users routes
   app.get("/api/users", async (req, res) => {
