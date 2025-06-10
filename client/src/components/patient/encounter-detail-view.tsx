@@ -152,6 +152,7 @@ export function EncounterDetailView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
+  const [liveTranscriptionContent, setLiveTranscriptionContent] = useState(""); // Unified content for AI
 
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
@@ -757,7 +758,15 @@ Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedi
             patientData,
           );
 
-          // 3. Inject patient context using external implementation format
+          // 3. Inject patient context AND current live transcription
+          const currentTranscription = liveTranscriptionContent || transcriptionBuffer || "";
+          const contextWithTranscription = `${patientContext}
+
+CURRENT LIVE CONVERSATION:
+${currentTranscription}
+
+Please provide medical suggestions based on what the patient is saying in this current conversation.`;
+
           const contextMessage = {
             type: "conversation.item.create",
             item: {
@@ -766,7 +775,7 @@ Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedi
               content: [
                 {
                   type: "input_text",
-                  text: patientContext,
+                  text: contextWithTranscription,
                 },
               ],
             },
@@ -887,6 +896,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
             // Append delta to existing transcription (don't replace)
             setTranscription((prev) => prev + deltaText);
+
+            // CRITICAL: Update unified transcription content for AI suggestions
+            setLiveTranscriptionContent((prev) => prev + deltaText);
 
             console.log(
               "📝 [EncounterView] Updated transcription buffer:",
@@ -1127,7 +1139,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               // Keep suggestions buffer to accumulate like transcription (don't reset)
               // suggestionsBuffer = ""; // Removed - this was causing replacement instead of accumulation
 
-              // Send the transcription as new context
+              // Send the COMPLETE live transcription as context (not just the delta)
+              const completeTranscription = liveTranscriptionContent || transcriptionBuffer;
               const transcriptionContext = {
                 type: "conversation.item.create",
                 item: {
@@ -1136,7 +1149,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   content: [
                     {
                       type: "input_text",
-                      text: `Additional clinical information: "${finalText}"`,
+                      text: `Current complete conversation: "${completeTranscription}"
+
+Please provide medical suggestions based on this complete conversation context.`,
                     },
                   ],
                 },
