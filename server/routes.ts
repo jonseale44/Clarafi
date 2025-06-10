@@ -15,7 +15,7 @@ import multer from "multer";
 import OpenAI from "openai";
 import { RealtimeTranscriptionService } from "./realtime-transcription-service";
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
-import { EnhancedRealtimeService } from "./enhanced-realtime-service";
+
 import fastMedicalRoutes from "./fast-medical-routes";
 import { realtimeMedicalContext } from "./realtime-medical-context-service.js";
 
@@ -1984,11 +1984,7 @@ Return only valid JSON without markdown formatting.`;
   realtimeService.initialize(httpServer);
   console.log("✅ [Server] Legacy Real-time transcription service initialized");
 
-  // Initialize Enhanced Real-time service (replaces assistant-based approach)
-  console.log("🚀 [Server] Initializing Enhanced Real-time service...");
-  const enhancedRealtimeService = new EnhancedRealtimeService();
-  enhancedRealtimeService.initialize(httpServer);
-  console.log("✅ [Server] Enhanced Real-time service initialized");
+  // Enhanced Real-time service removed - AI suggestions now use direct client WebSocket connection
 
   return httpServer;
 }
