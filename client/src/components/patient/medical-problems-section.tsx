@@ -470,10 +470,31 @@ export function MedicalProblemsSection({
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-2">
                         <div className="bg-gray-50 rounded p-2 text-xs">
-                          <div className="text-gray-600 text-center py-2">
-                            No visit history available yet
-                          </div>
-                          {/* Future visit history will be populated here */}
+                          {problem.visitHistory && problem.visitHistory.length > 0 ? (
+                            <div className="space-y-2">
+                              {problem.visitHistory.map((visit: any, index: number) => (
+                                <div key={index} className="border-l-2 border-blue-200 pl-2">
+                                  <div className="text-gray-700 font-medium text-xs">
+                                    {new Date(visit.date).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    })}
+                                  </div>
+                                  <div className="text-gray-600 text-xs mt-1">
+                                    {visit.notes}
+                                  </div>
+                                  <div className="text-gray-500 text-xs mt-1">
+                                    Provider: {visit.provider} | Encounter #{visit.encounter_id}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-gray-600 text-center py-2">
+                              No visit history available yet
+                            </div>
+                          )}
                         </div>
                       </CollapsibleContent>
                     </Collapsible>

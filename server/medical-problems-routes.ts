@@ -20,16 +20,31 @@ router.get("/patients/:patientId/medical-problems", async (req, res) => {
     const medicalProblems = await storage.getPatientMedicalProblems(patientId);
     console.log(`🔍 [MedicalProblems] Found ${medicalProblems.length} problems`);
     
-    // Format for compatibility with existing frontend
+    // Debug: Log raw problem data to understand structure
+    medicalProblems.forEach((problem, index) => {
+      console.log(`🔍 [MedicalProblems] Problem ${index + 1} raw data:`, {
+        id: problem.id,
+        problemTitle: problem.problemTitle,
+        visitHistoryType: typeof problem.visitHistory,
+        visitHistoryValue: problem.visitHistory,
+        changeLogType: typeof problem.changeLog,
+        changeLogValue: problem.changeLog
+      });
+    });
+    
+    // Format with full visit history preserved
     const formattedProblems = medicalProblems.map(problem => ({
       id: problem.id,
       diagnosis: problem.problemTitle,
       icd10Code: problem.currentIcd10Code,
       diagnosisDate: problem.firstDiagnosedDate,
       status: problem.problemStatus,
-      notes: problem.visitHistory?.[0]?.notes || '',
+      notes: (Array.isArray(problem.visitHistory) ? problem.visitHistory[0]?.notes : '') || '',
       encounterId: problem.firstEncounterId,
       createdAt: problem.createdAt,
+      // Preserve rich visit history data
+      visitHistory: problem.visitHistory || [],
+      changeLog: problem.changeLog || [],
     }));
 
     console.log(`🔍 [MedicalProblems] Returning formatted problems:`, formattedProblems);
