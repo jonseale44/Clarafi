@@ -32,6 +32,9 @@ export function registerRoutes(app: Express): Server {
   // Medical problems routes
   app.use("/api", medicalProblemsRoutes);
 
+  // Enhanced medical problems routes (JSONB visit history)
+  app.use("/api", enhancedMedicalProblemsRoutes);
+
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 
   // Users routes
