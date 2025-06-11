@@ -64,16 +64,34 @@ router.get("/medical-problems/:problemId/visit-history", async (req, res) => {
  */
 router.post("/encounters/:encounterId/process-medical-problems", async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    console.log(`🏥 [MedicalProblemsAPI] === PROCESSING REQUEST START ===`);
+    console.log(`🏥 [MedicalProblemsAPI] Encounter ID: ${req.params.encounterId}`);
+    console.log(`🏥 [MedicalProblemsAPI] Request body keys: ${Object.keys(req.body)}`);
+    console.log(`🏥 [MedicalProblemsAPI] User authenticated: ${req.isAuthenticated()}`);
+    
+    if (!req.isAuthenticated()) {
+      console.log(`❌ [MedicalProblemsAPI] User not authenticated`);
+      return res.sendStatus(401);
+    }
 
     const encounterId = parseInt(req.params.encounterId);
     const { soapNote, patientId } = req.body;
     const providerId = req.user!.id;
 
+    console.log(`🏥 [MedicalProblemsAPI] Parsed encounter ID: ${encounterId}`);
+    console.log(`🏥 [MedicalProblemsAPI] Patient ID: ${patientId}`);
+    console.log(`🏥 [MedicalProblemsAPI] Provider ID: ${providerId}`);
+    console.log(`🏥 [MedicalProblemsAPI] SOAP note length: ${soapNote?.length || 0} characters`);
+    console.log(`🏥 [MedicalProblemsAPI] SOAP note preview: ${soapNote?.substring(0, 100) || 'empty'}...`);
+
     if (!soapNote || !patientId) {
+      console.log(`❌ [MedicalProblemsAPI] Missing required fields - soapNote: ${!!soapNote}, patientId: ${!!patientId}`);
       return res.status(400).json({ error: "SOAP note and patient ID are required" });
     }
 
+    console.log(`🏥 [MedicalProblemsAPI] Calling delta processing service...`);
+    const startTime = Date.now();
+    
     // Process medical problems incrementally
     const result = await medicalProblemsDelta.processSOAPDelta(
       patientId,
@@ -82,15 +100,25 @@ router.post("/encounters/:encounterId/process-medical-problems", async (req, res
       providerId
     );
 
-    res.json({
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ [MedicalProblemsAPI] Delta processing completed in ${totalTime}ms`);
+    console.log(`✅ [MedicalProblemsAPI] Result:`, result);
+
+    const response = {
       success: true,
       changes: result.changes,
       processingTimeMs: result.processing_time_ms,
       problemsAffected: result.total_problems_affected
-    });
+    };
+    
+    console.log(`✅ [MedicalProblemsAPI] Sending response:`, response);
+    console.log(`🏥 [MedicalProblemsAPI] === PROCESSING REQUEST END ===`);
+    
+    res.json(response);
 
   } catch (error) {
-    console.error("Error processing medical problems:", error);
+    console.error(`❌ [MedicalProblemsAPI] Error processing medical problems:`, error);
+    console.error(`❌ [MedicalProblemsAPI] Stack trace:`, error.stack);
     res.status(500).json({ error: "Failed to process medical problems" });
   }
 });

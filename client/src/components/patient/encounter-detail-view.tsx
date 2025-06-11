@@ -325,30 +325,53 @@ export function EncounterDetailView({
       
       // Process medical problems with delta analysis
       try {
-        console.log(`🏥 [EncounterView] Processing medical problems delta analysis...`);
+        console.log(`🏥 [MedicalProblems] === MEDICAL PROBLEMS PROCESSING START ===`);
+        console.log(`🏥 [MedicalProblems] Patient ID: ${patient.id}`);
+        console.log(`🏥 [MedicalProblems] Encounter ID: ${encounterId}`);
+        console.log(`🏥 [MedicalProblems] SOAP Note length: ${note.length} characters`);
+        console.log(`🏥 [MedicalProblems] SOAP Note preview: ${note.substring(0, 200)}...`);
+        console.log(`🏥 [MedicalProblems] Making API call to: /api/encounters/${encounterId}/process-medical-problems`);
+        
+        const requestBody = {
+          soapNote: note,
+          patientId: patient.id
+        };
+        console.log(`🏥 [MedicalProblems] Request body:`, requestBody);
+        
         const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({
-            soapNote: note,
-            patientId: patient.id
-          })
+          body: JSON.stringify(requestBody)
         });
+
+        console.log(`🏥 [MedicalProblems] Response status: ${medicalProblemsResponse.status}`);
+        console.log(`🏥 [MedicalProblems] Response ok: ${medicalProblemsResponse.ok}`);
 
         if (medicalProblemsResponse.ok) {
           const result = await medicalProblemsResponse.json();
-          console.log(`✅ [EncounterView] Medical problems processed: ${result.problemsAffected} problems affected in ${result.processingTimeMs}ms`);
+          console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
+          console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
+          console.log(`✅ [MedicalProblems] Full result:`, result);
           
           // Invalidate medical problems queries to refresh UI
-          queryClient.invalidateQueries({ 
+          console.log(`🔄 [MedicalProblems] Invalidating cache for patient ${patient.id}`);
+          await queryClient.invalidateQueries({ 
             queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
           });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          });
+          console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
         } else {
-          console.warn(`⚠️ [EncounterView] Medical problems processing failed:`, await medicalProblemsResponse.text());
+          const errorText = await medicalProblemsResponse.text();
+          console.error(`❌ [MedicalProblems] FAILED with status ${medicalProblemsResponse.status}`);
+          console.error(`❌ [MedicalProblems] Error response: ${errorText}`);
         }
+        console.log(`🏥 [MedicalProblems] === MEDICAL PROBLEMS PROCESSING END ===`);
       } catch (medicalProblemsError) {
-        console.error("Failed to process medical problems:", medicalProblemsError);
+        console.error(`❌ [MedicalProblems] EXCEPTION during processing:`, medicalProblemsError);
+        console.error(`❌ [MedicalProblems] Stack trace:`, medicalProblemsError.stack);
         // Don't show error toast for this - it's background processing
       }
       

@@ -66,18 +66,27 @@ export class MedicalProblemsDeltaService {
     providerId: number
   ): Promise<DeltaProcessingResult> {
     const startTime = Date.now();
+    console.log(`🏥 [DeltaService] === DELTA PROCESSING START ===`);
+    console.log(`🏥 [DeltaService] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
+    console.log(`🏥 [DeltaService] SOAP Note length: ${soapNote.length} characters`);
 
     try {
       // Get existing medical problems for context
+      console.log(`🏥 [DeltaService] Fetching existing medical problems...`);
       const existingProblems = await this.getExistingProblems(patientId);
+      console.log(`🏥 [DeltaService] Found ${existingProblems.length} existing medical problems`);
       
       // Get encounter and patient info
+      console.log(`🏥 [DeltaService] Fetching encounter and patient info...`);
       const [encounter, patient] = await Promise.all([
         this.getEncounterInfo(encounterId),
         this.getPatientInfo(patientId)
       ]);
+      console.log(`🏥 [DeltaService] Patient: ${patient.first_name} ${patient.last_name}, Age: ${this.calculateAge(patient.date_of_birth)}`);
+      console.log(`🏥 [DeltaService] Encounter: ${encounter.encounter_type}, Status: ${encounter.encounter_status}`);
 
       // Generate delta changes using GPT
+      console.log(`🏥 [DeltaService] Starting GPT delta analysis...`);
       const changes = await this.generateDeltaChanges(
         existingProblems,
         soapNote,
@@ -85,11 +94,19 @@ export class MedicalProblemsDeltaService {
         patient,
         providerId
       );
+      console.log(`🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`);
+      changes.forEach((change, index) => {
+        console.log(`🏥 [DeltaService] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing problem'} (confidence: ${change.confidence})`);
+      });
 
       // Apply changes optimistically to database
+      console.log(`🏥 [DeltaService] Applying ${changes.length} changes to database...`);
       await this.applyChangesToDatabase(changes, patientId, encounterId);
+      console.log(`🏥 [DeltaService] Database changes applied successfully`);
 
       const processingTime = Date.now() - startTime;
+      console.log(`✅ [DeltaService] === DELTA PROCESSING COMPLETE ===`);
+      console.log(`✅ [DeltaService] Total time: ${processingTime}ms, Problems affected: ${changes.length}`);
 
       return {
         changes,
@@ -98,7 +115,8 @@ export class MedicalProblemsDeltaService {
       };
 
     } catch (error) {
-      console.error("Error processing SOAP delta:", error);
+      console.error(`❌ [DeltaService] Error in processSOAPDelta:`, error);
+      console.error(`❌ [DeltaService] Stack trace:`, error.stack);
       throw error;
     }
   }
