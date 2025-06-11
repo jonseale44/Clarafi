@@ -11,6 +11,7 @@ import {
 // Legacy import removed - using enhanced realtime service only
 import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
+import chartSectionsRoutes from "./chart-sections-routes";
 import multer from "multer";
 import OpenAI from "openai";
 
@@ -26,6 +27,9 @@ export function registerRoutes(app: Express): Server {
 
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);
+
+  // Chart sections routes
+  app.use("/api", chartSectionsRoutes);
 
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 
