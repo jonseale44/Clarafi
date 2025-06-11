@@ -42,7 +42,7 @@ export function MedicalProblemsSection({
   const queryClient = useQueryClient();
 
   // Fetch medical problems
-  const { data: medicalProblems = [], isLoading, error } = useQuery<Diagnosis[]>({
+  const { data: medicalProblems = [], isLoading, error } = useQuery<any[]>({
     queryKey: [`/api/patients/${patientId}/medical-problems`],
     enabled: !!patientId,
   });
