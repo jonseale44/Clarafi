@@ -130,10 +130,21 @@ export function MedicalProblemsSection({
   });
 
   const handleSubmit = (data: MedicalProblemFormData) => {
-    if (editingProblem) {
-      updateMutation.mutate({ problemId: editingProblem.id, data });
-    } else {
-      createMutation.mutate(data);
+    console.log('🔍 [MedicalProblems] Form submission started');
+    console.log('🔍 [MedicalProblems] Form data:', JSON.stringify(data, null, 2));
+    console.log('🔍 [MedicalProblems] Editing problem:', editingProblem);
+    console.log('🔍 [MedicalProblems] Form validation errors:', form.formState.errors);
+    
+    try {
+      if (editingProblem) {
+        console.log('🔍 [MedicalProblems] Updating existing problem ID:', editingProblem.id);
+        updateMutation.mutate({ problemId: editingProblem.id, data });
+      } else {
+        console.log('🔍 [MedicalProblems] Creating new problem');
+        createMutation.mutate(data);
+      }
+    } catch (error) {
+      console.error('❌ [MedicalProblems] Form submission error:', error);
     }
   };
 
@@ -349,19 +360,25 @@ export function MedicalProblemsSection({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Associated Encounter (Optional)</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                            <Select onValueChange={(value) => {
+                              console.log('🔍 [MedicalProblems] Select value changed:', value);
+                              field.onChange(value === "none" ? undefined : parseInt(value));
+                            }} value={field.value?.toString() || "none"}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select encounter" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">No encounter</SelectItem>
-                                {encounters.map((encounter: any) => (
-                                  <SelectItem key={encounter.id} value={encounter.id.toString()}>
-                                    {encounter.encounterType} - {formatDate(encounter.startTime)}
-                                  </SelectItem>
-                                ))}
+                                <SelectItem value="none">No encounter</SelectItem>
+                                {encounters.map((encounter: any) => {
+                                  console.log('🔍 [MedicalProblems] Rendering encounter:', encounter.id, encounter.encounterType);
+                                  return (
+                                    <SelectItem key={encounter.id} value={encounter.id.toString()}>
+                                      {encounter.encounterType} - {formatDate(encounter.startTime)}
+                                    </SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
                             <FormMessage />
