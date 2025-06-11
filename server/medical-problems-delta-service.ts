@@ -184,9 +184,11 @@ export class MedicalProblemsDeltaService {
     providerId: number
   ): Promise<ProblemChange[]> {
 
+    console.log(`🔍 [GPT] Building prompt with ${existingProblems.length} existing problems`);
+    
     const deltaPrompt = `
 CURRENT MEDICAL PROBLEMS (DO NOT REWRITE):
-${JSON.stringify(existingProblems.map(p => ({
+${existingProblems.length === 0 ? "NONE - This is a new patient with no existing medical problems" : JSON.stringify(existingProblems.map(p => ({
   id: p.id,
   title: p.problemTitle,
   current_icd10: p.currentIcd10Code,
@@ -221,12 +223,18 @@ RULES:
 3. Visit notes should be concise clinical summary for this encounter only
 4. Only include problems mentioned or affected in this SOAP note
 5. Use highest complexity ICD-10 code when conditions evolve
-6. Return empty changes array if no medical problems are discussed
+6. IMPORTANT: If new medical problems are diagnosed/mentioned in Assessment/Plan, CREATE them as NEW_PROBLEM
+7. Look for diagnoses in the Assessment/Plan section - these should become new medical problems
+8. Return empty changes array ONLY if truly no medical conditions are discussed
 
 Respond with ONLY the JSON, no other text.
 `;
 
     try {
+      console.log(`🤖 [GPT] Sending prompt to GPT-4o for delta analysis...`);
+      console.log(`🤖 [GPT] Existing problems count: ${existingProblems.length}`);
+      console.log(`🤖 [GPT] SOAP note contains Assessment/Plan: ${soapNote.includes('ASSESSMENT') || soapNote.includes('Assessment')}`);
+      
       const response = await this.openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{ role: "user", content: deltaPrompt }],
@@ -235,15 +243,30 @@ Respond with ONLY the JSON, no other text.
       });
 
       const content = response.choices[0].message.content?.trim();
+      console.log(`🤖 [GPT] Raw response from GPT:`, content);
+      
       if (!content) {
+        console.log(`🤖 [GPT] Empty response from GPT`);
         return [];
       }
 
       const result = JSON.parse(content);
+      console.log(`🤖 [GPT] Parsed result:`, result);
+      console.log(`🤖 [GPT] Changes detected: ${result.changes?.length || 0}`);
+      
+      if (result.changes && result.changes.length > 0) {
+        result.changes.forEach((change: any, index: number) => {
+          console.log(`🤖 [GPT] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing'} (${change.confidence})`);
+        });
+      }
+      
       return result.changes || [];
 
     } catch (error) {
-      console.error("Error generating delta changes:", error);
+      console.error("❌ [GPT] Error generating delta changes:", error);
+      if (error instanceof SyntaxError) {
+        console.error("❌ [GPT] JSON parsing error - invalid response format");
+      }
       return [];
     }
   }
