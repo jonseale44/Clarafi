@@ -424,6 +424,15 @@ export function EncounterDetailView({
       await queryClient.invalidateQueries({
         queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`],
       });
+      
+      // Invalidate medical problems cache since CPT codes trigger medical problems processing
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/patients/${patient.id}/medical-problems`],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`],
+      });
+      
       console.log("🔄 [EncounterView] Query invalidation completed");
 
       // Show enhanced toast notification

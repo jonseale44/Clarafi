@@ -437,7 +437,7 @@ export function MedicalProblemsSection({
         </Card>
       ) : (
         <div className="space-y-2">
-          {medicalProblems.map((problem: Diagnosis) => (
+          {medicalProblems.map((problem: any) => (
             <Card key={problem.id} className="hover:shadow-sm transition-shadow">
               <CardContent className="p-3">
                 <div className="flex items-start justify-between">
