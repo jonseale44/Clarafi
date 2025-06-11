@@ -281,16 +281,16 @@ export function EncounterDetailView({
   };
 
   const handleSOAPNoteComplete = async (note: string) => {
+    console.log(`🚨 [DEBUG] handleSOAPNoteComplete FUNCTION CALLED!!! This is the main trigger!`);
+    console.log(`🚨 [DEBUG] Stack trace to see who called this:`, new Error().stack);
+    
     const timestamp = new Date().toISOString();
-    console.log(`🔍 [EncounterView] === SOAP NOTE COMPLETION ===`);
+    console.log(`🔍 [EncounterView] === SOAP NOTE COMPLETION START ===`);
     console.log(`🔍 [EncounterView] Time: ${timestamp}`);
     console.log(`🔍 [EncounterView] Note length: ${note.length}`);
-    console.log(
-      `🔍 [EncounterView] Patient: ${patient.id}, Encounter: ${encounterId}`,
-    );
-    console.log(
-      `🔍 [EncounterView] About to save to encounter - checking for any triggered processing...`,
-    );
+    console.log(`🔍 [EncounterView] Patient: ${patient?.id || 'MISSING'}, Encounter: ${encounterId || 'MISSING'}`);
+    console.log(`🔍 [EncounterView] Patient object:`, patient);
+    console.log(`🔍 [EncounterView] About to save SOAP note to encounter...`);
 
     setSoapNote(note);
     if (editor && !editor.isDestroyed) {
@@ -322,6 +322,7 @@ export function EncounterDetailView({
       console.log(
         `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
       );
+      console.log(`🔍 [EncounterView] SOAP save completed successfully, starting medical problems processing...`);
       
       // Process medical problems with delta analysis
       try {
@@ -1830,6 +1831,37 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       if (editor && !editor.isDestroyed) {
         const formattedContent = formatSoapNoteContent(generatedSOAP);
         editor.commands.setContent(formattedContent);
+      }
+
+      // Trigger medical problems processing for transcription-based SOAP generation
+      console.log("🔄 [EncounterView] Triggering medical problems processing for transcription-based SOAP...");
+      try {
+        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            soapNote: generatedSOAP,
+            patientId: patient.id
+          })
+        });
+
+        if (medicalProblemsResponse.ok) {
+          const result = await medicalProblemsResponse.json();
+          console.log(`✅ [EncounterView] Medical problems processed: ${result.problemsAffected || result.total_problems_affected} problems affected`);
+          
+          // Invalidate medical problems queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          });
+        } else {
+          console.warn(`⚠️ [EncounterView] Medical problems processing failed:`, await medicalProblemsResponse.text());
+        }
+      } catch (medicalProblemsError) {
+        console.error("Failed to process medical problems for transcription SOAP:", medicalProblemsError);
       }
 
       // Invalidate caches to refresh data

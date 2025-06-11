@@ -98,10 +98,15 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
                 // Batch delivery - complete SOAP note arrives all at once (faster)
                 const completeSoap = data.text || "";
                 setSoapBuffer(completeSoap);
+                console.log("📝 [RealtimeSOAP] About to call onSOAPNoteUpdate with note length:", completeSoap.length);
                 onSOAPNoteUpdate(completeSoap);
+                
+                console.log("🎯 [RealtimeSOAP] About to call onSOAPNoteComplete - THIS SHOULD TRIGGER MEDICAL PROBLEMS");
+                console.log("🎯 [RealtimeSOAP] Patient ID:", patientId, "Encounter ID:", encounterId);
+                console.log("🎯 [RealtimeSOAP] SOAP note preview:", completeSoap.substring(0, 200));
                 onSOAPNoteComplete(completeSoap);
                 
-                console.log("✅ [RealtimeSOAP] SOAP note generation completed");
+                console.log("✅ [RealtimeSOAP] SOAP note generation completed - onSOAPNoteComplete called");
                 
                 toast({
                   title: "SOAP Note Generated",
