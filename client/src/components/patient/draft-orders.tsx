@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X } from "lucide-react";
+import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw } from "lucide-react";
 
 interface Order {
   id: number;
@@ -175,6 +175,41 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
     },
   });
 
+  // Update from SOAP mutation
+  const updateFromSOAPMutation = useMutation({
+    mutationFn: async () => {
+      if (!encounterId) {
+        throw new Error("No encounter ID available");
+      }
+      
+      const response = await fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to extract orders from SOAP note: ${errorData}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      toast({ 
+        title: "Orders Updated from SOAP", 
+        description: `Successfully extracted ${data.ordersCount || 0} orders from the SOAP note.` 
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to update from SOAP",
+        description: error.message,
+      });
+    },
+  });
+
   const handleSaveOrder = (order: Order) => {
     updateOrderMutation.mutate({ id: order.id, updates: order });
   };
@@ -229,6 +264,18 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
           )}
         </CardTitle>
         <div className="flex gap-2">
+          {encounterId && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => updateFromSOAPMutation.mutate()}
+              disabled={updateFromSOAPMutation.isPending}
+              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${updateFromSOAPMutation.isPending ? 'animate-spin' : ''}`} />
+              {updateFromSOAPMutation.isPending ? "Updating..." : "Update from SOAP"}
+            </Button>
+          )}
           {orders.length > 0 && (
             <Button 
               variant="outline" 

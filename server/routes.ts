@@ -929,6 +929,72 @@ export function registerRoutes(app: Express): Server {
 
   // CPT Codes and Diagnoses API endpoints for billing integration
 
+  // Extract orders from SOAP note
+  app.post(
+    "/api/encounters/:encounterId/extract-orders-from-soap",
+    async (req, res) => {
+      try {
+        if (!req.isAuthenticated()) return res.sendStatus(401);
+
+        const encounterId = parseInt(req.params.encounterId);
+        
+        // Get the encounter and SOAP note
+        const encounter = await storage.getEncounter(encounterId);
+        if (!encounter) {
+          return res.status(404).json({ message: "Encounter not found" });
+        }
+
+        if (!encounter.note || !encounter.note.trim()) {
+          return res.status(400).json({ 
+            message: "No SOAP note found for this encounter. Please save a SOAP note first." 
+          });
+        }
+
+        console.log(`📋 [ExtractOrders] Starting order extraction for encounter ${encounterId}`);
+
+        // Import and use the SOAPOrdersExtractor
+        const { SOAPOrdersExtractor } = await import("./soap-orders-extractor.js");
+        const extractor = new SOAPOrdersExtractor();
+
+        // Extract orders from the SOAP note
+        const extractedOrders = await extractor.extractOrders(
+          encounter.note,
+          encounter.patientId,
+          encounterId
+        );
+
+        console.log(`📋 [ExtractOrders] Extracted ${extractedOrders.length} orders`);
+
+        // Save the extracted orders
+        const savedOrders = [];
+        for (const orderData of extractedOrders) {
+          try {
+            const savedOrder = await storage.createOrder(orderData);
+            savedOrders.push(savedOrder);
+          } catch (error: any) {
+            console.error("❌ [ExtractOrders] Failed to save order:", error);
+            // Continue with other orders even if one fails
+          }
+        }
+
+        console.log(`📋 [ExtractOrders] Successfully saved ${savedOrders.length} orders`);
+
+        res.json({
+          message: "Orders extracted and saved successfully",
+          ordersCount: savedOrders.length,
+          orders: savedOrders
+        });
+
+      } catch (error: any) {
+        console.error("❌ [ExtractOrders] Error extracting orders from SOAP:", error);
+        res.status(500).json({
+          message: "Failed to extract orders from SOAP note",
+          error: error.message,
+        });
+      }
+    }
+  );
+
   // Extract CPT codes from SOAP note
   app.post(
     "/api/patients/:id/encounters/:encounterId/extract-cpt",
