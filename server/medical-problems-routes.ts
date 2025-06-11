@@ -229,7 +229,7 @@ router.get("/medical-problems/:problemId", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const problemId = parseInt(req.params.problemId);
-    const problem = await storage.getMedicalProblemById(problemId);
+    const problem = await storage.getMedicalProblem(problemId);
 
     if (!problem) {
       return res.status(404).json({ error: "Medical problem not found" });

@@ -1,5 +1,5 @@
 import { 
-  users, patients, encounters, vitals, medications, diagnoses,
+  users, patients, encounters, vitals, medications,
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems,
@@ -162,7 +162,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(vitals).where(eq(vitals.patientId, id));
     await db.delete(allergies).where(eq(allergies.patientId, id));
     await db.delete(medications).where(eq(medications.patientId, id));
-    await db.delete(diagnoses).where(eq(diagnoses.patientId, id));
+    await db.delete(medicalProblems).where(eq(medicalProblems.patientId, id));
     await db.delete(labResults).where(eq(labResults.patientId, id));
     await db.delete(labOrders).where(eq(labOrders.patientId, id));
     
