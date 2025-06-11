@@ -8,7 +8,6 @@ import { ChevronDown, ChevronRight, Plus, Search, Star, RefreshCw, Bot } from "l
 import { Patient } from "@shared/schema";
 import { EncountersTab } from "./encounters-tab";
 import { EncounterDetailView } from "./encounter-detail-view";
-import { SimpleChartSections } from "./simple-chart-sections";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +19,6 @@ interface PatientChartViewProps {
 
 const chartSections = [
   { id: "encounters", label: "Patient Encounters", icon: Star },
-  { id: "chart-sections", label: "Chart Sections (2-9)", icon: null },
   { id: "problems", label: "Medical Problems", icon: null },
   { id: "medication", label: "Medication", icon: null },
   { id: "allergies", label: "Allergies", icon: null },
@@ -167,8 +165,6 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
             />
           </div>
         );
-      case "chart-sections":
-        return <SimpleChartSections patientId={patientId} />;
       case "problems":
         return (
           <div className="space-y-4">

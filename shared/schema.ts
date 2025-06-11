@@ -884,91 +884,6 @@ export const insertUserAssistantThreadSchema = createInsertSchema(userAssistantT
   isActive: true,
 });
 
-// Chart section insert schemas
-export const insertMedicalHistorySchema = createInsertSchema(medicalHistory).pick({
-  patientId: true,
-  conditionCategory: true,
-  historyText: true,
-  lastUpdatedEncounter: true,
-});
-
-export const insertMedicationSchema = createInsertSchema(medications).pick({
-  patientId: true,
-  encounterId: true,
-  medicationName: true,
-  dosage: true,
-  frequency: true,
-  route: true,
-  startDate: true,
-  endDate: true,
-  prescriber: true,
-  status: true,
-  reasonForChange: true,
-  medicalProblem: true,
-});
-
-export const insertAllergySchema = createInsertSchema(allergies).pick({
-  patientId: true,
-  allergen: true,
-  reaction: true,
-  severity: true,
-  lastUpdatedEncounter: true,
-});
-
-export const insertLabOrderSchema = createInsertSchema(labOrders).pick({
-  patientId: true,
-  encounterId: true,
-  orderSetId: true,
-  testCode: true,
-  testName: true,
-  priority: true,
-  clinicalIndication: true,
-  orderedBy: true,
-  specimenType: true,
-  collectionInstructions: true,
-  fastingRequired: true,
-});
-
-export const insertImagingOrderSchema = createInsertSchema(imagingOrders).pick({
-  patientId: true,
-  encounterId: true,
-  studyType: true,
-  bodyPart: true,
-  laterality: true,
-  contrastNeeded: true,
-  clinicalIndication: true,
-  clinicalHistory: true,
-  relevantSymptoms: true,
-  orderedBy: true,
-  prepInstructions: true,
-  schedulingNotes: true,
-});
-
-export const insertFamilyHistorySchema = createInsertSchema(familyHistory).pick({
-  patientId: true,
-  familyMember: true,
-  medicalHistory: true,
-  lastUpdatedEncounter: true,
-});
-
-export const insertSocialHistorySchema = createInsertSchema(socialHistory).pick({
-  patientId: true,
-  category: true,
-  currentStatus: true,
-  historyNotes: true,
-  lastUpdatedEncounter: true,
-});
-
-export const insertDiagnosisSchema = createInsertSchema(diagnoses).pick({
-  patientId: true,
-  encounterId: true,
-  diagnosis: true,
-  icd10Code: true,
-  diagnosisDate: true,
-  status: true,
-  notes: true,
-});
-
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -996,11 +911,3 @@ export type SocialHistory = typeof socialHistory.$inferSelect;
 export type Allergy = typeof allergies.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
-export type InsertMedicalHistory = z.infer<typeof insertMedicalHistorySchema>;
-export type InsertMedication = z.infer<typeof insertMedicationSchema>;
-export type InsertAllergy = z.infer<typeof insertAllergySchema>;
-export type InsertLabOrder = z.infer<typeof insertLabOrderSchema>;
-export type InsertImagingOrder = z.infer<typeof insertImagingOrderSchema>;
-export type InsertFamilyHistory = z.infer<typeof insertFamilyHistorySchema>;
-export type InsertSocialHistory = z.infer<typeof insertSocialHistorySchema>;
-export type InsertDiagnosis = z.infer<typeof insertDiagnosisSchema>;
