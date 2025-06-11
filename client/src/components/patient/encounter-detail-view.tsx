@@ -1153,7 +1153,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           // Handle AI suggestions completion
           else if (message.type === "response.text.done") {
             console.log("✅ [EncounterView] AI suggestions completed");
-            // Suggestions are already accumulated via deltas
+            // Add line break after each completed response
+            setSuggestionsBuffer((prev) => prev + "\n");
           }
 
           // Handle transcription completion and trigger new AI suggestions
