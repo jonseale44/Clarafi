@@ -325,7 +325,18 @@ export const medicalProblems = pgTable("medical_problems", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Legacy diagnoses table removed - all diagnosis functionality consolidated into medicalProblems table
+// Diagnoses table - used for billing/CPT code mapping (keep until billing system migrated)
+export const diagnoses = pgTable("diagnoses", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  diagnosis: text("diagnosis").notNull(),
+  icd10Code: text("icd10_code"),
+  diagnosisDate: date("diagnosis_date"),
+  status: text("status").notNull(), // 'active', 'resolved', 'chronic', 'rule_out'
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // External Labs
 export const externalLabs = pgTable("external_labs", {

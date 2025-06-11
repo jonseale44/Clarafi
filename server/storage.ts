@@ -1,5 +1,5 @@
 import { 
-  users, patients, encounters, vitals, medications,
+  users, patients, encounters, vitals, medications, diagnoses,
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems,
@@ -74,6 +74,10 @@ export interface IStorage {
   updatePhysicalFinding(id: number, updates: any): Promise<any>;
   markPhysicalFindingConfirmed(id: number, encounterId: number): Promise<void>;
   markPhysicalFindingContradicted(id: number, encounterId: number): Promise<void>;
+  
+  // Diagnoses management (for billing/CPT system)
+  getPatientDiagnoses(patientId: number): Promise<any[]>;
+  createDiagnosis(diagnosis: any): Promise<any>;
   
   // Medical Problems management (Enhanced JSONB approach)
   getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]>;
