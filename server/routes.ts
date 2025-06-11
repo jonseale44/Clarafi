@@ -12,6 +12,7 @@ import {
 import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import medicalProblemsRoutes from "./medical-problems-routes";
+import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
 import multer from "multer";
 import OpenAI from "openai";
 

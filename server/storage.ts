@@ -2,10 +2,10 @@ import {
   users, patients, encounters, vitals, medications, diagnoses,
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
-  patientPhysicalFindings,
+  patientPhysicalFindings, medicalProblems,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals, type InsertVitals,
-  type Order, type InsertOrder
+  type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -74,6 +74,13 @@ export interface IStorage {
   updatePhysicalFinding(id: number, updates: any): Promise<any>;
   markPhysicalFindingConfirmed(id: number, encounterId: number): Promise<void>;
   markPhysicalFindingContradicted(id: number, encounterId: number): Promise<void>;
+  
+  // Medical Problems management (Enhanced JSONB approach)
+  getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]>;
+  getMedicalProblem(id: number): Promise<MedicalProblem | undefined>;
+  createMedicalProblem(problem: InsertMedicalProblem): Promise<MedicalProblem>;
+  updateMedicalProblem(id: number, updates: Partial<MedicalProblem>): Promise<MedicalProblem>;
+  getMedicalProblemVisitHistory(problemId: number): Promise<any[]>;
   
   sessionStore: session.SessionStore;
 }
@@ -436,6 +443,36 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(patientPhysicalFindings.id, id));
     }
+  }
+
+  // Medical Problems management (Enhanced JSONB approach)
+  async getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]> {
+    return await db.select().from(medicalProblems).where(eq(medicalProblems.patientId, patientId));
+  }
+
+  async getMedicalProblem(id: number): Promise<MedicalProblem | undefined> {
+    const [problem] = await db.select().from(medicalProblems).where(eq(medicalProblems.id, id));
+    return problem || undefined;
+  }
+
+  async createMedicalProblem(problem: InsertMedicalProblem): Promise<MedicalProblem> {
+    const [created] = await db.insert(medicalProblems).values(problem).returning();
+    return created;
+  }
+
+  async updateMedicalProblem(id: number, updates: Partial<MedicalProblem>): Promise<MedicalProblem> {
+    const [updated] = await db.update(medicalProblems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(medicalProblems.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getMedicalProblemVisitHistory(problemId: number): Promise<any[]> {
+    const [problem] = await db.select({ visitHistory: medicalProblems.visitHistory })
+      .from(medicalProblems)
+      .where(eq(medicalProblems.id, problemId));
+    return (problem?.visitHistory as any[]) || [];
   }
 }
 
