@@ -7,6 +7,7 @@ import {
   allergies,
   vitals,
   encounters as encountersTable,
+  type InsertOrder,
 } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { SOAPOrdersExtractor } from "./soap-orders-extractor.js";
@@ -303,10 +304,23 @@ IMPORTANT INSTRUCTIONS:
             new TextEncoder().encode(`data: ${completeData}\n\n`),
           );
 
-          // Orders may already be ready! Send them immediately if available
-          if (extractedOrders && extractedOrders.length > 0) {
-            // Save orders in parallel
-            const savePromises = extractedOrders.map((order) =>
+          // Now extract additional orders from the completed SOAP note and merge with deduplication
+          console.log("📋 [RealtimeSOAP] Extracting additional orders from SOAP note...");
+          const soapBasedOrders = await self.soapOrdersExtractor.extractOrders(
+            soapNote,
+            patientId,
+            parseInt(encounterId),
+          );
+
+          // Merge and deduplicate orders
+          const mergedOrders = self.mergeAndDeduplicateOrders(extractedOrders || [], soapBasedOrders || []);
+          console.log(
+            `📋 [RealtimeSOAP] Merged orders: ${extractedOrders?.length || 0} from transcription + ${soapBasedOrders?.length || 0} from SOAP = ${mergedOrders.length} total (after deduplication)`
+          );
+
+          // Save merged orders in parallel
+          if (mergedOrders && mergedOrders.length > 0) {
+            const savePromises = mergedOrders.map((order: InsertOrder) =>
               storage.createOrder(order).catch((error) => {
                 console.error(
                   `❌ [RealtimeSOAP] Failed to save order:`,
@@ -319,13 +333,13 @@ IMPORTANT INSTRUCTIONS:
 
             await Promise.allSettled(savePromises);
             console.log(
-              `⚡ [RealtimeSOAP] Fast-saved ${extractedOrders.length} orders`,
+              `⚡ [RealtimeSOAP] Saved ${mergedOrders.length} merged orders`,
             );
 
-            // Send orders to frontend immediately
+            // Send merged orders to frontend
             const ordersData = JSON.stringify({
               type: "draft_orders",
-              orders: extractedOrders,
+              orders: mergedOrders,
             });
             controller.enqueue(
               new TextEncoder().encode(`data: ${ordersData}\n\n`),
@@ -483,6 +497,76 @@ IMPORTANT INSTRUCTIONS:
         }
       },
     });
+  }
+
+  /**
+   * Merge and deduplicate orders from transcription and SOAP note
+   * Simple deduplication based on medication name, lab name, or imaging study type
+   */
+  private mergeAndDeduplicateOrders(transcriptionOrders: InsertOrder[], soapOrders: InsertOrder[]): InsertOrder[] {
+    console.log("🔄 [RealtimeSOAP] Starting order merge and deduplication...");
+    
+    // Start with transcription orders (these are faster and should take priority)
+    const mergedOrders = [...transcriptionOrders];
+    const existingOrderKeys = new Set();
+    
+    // Create keys for existing orders to check for duplicates
+    transcriptionOrders.forEach(order => {
+      let key = '';
+      switch (order.orderType) {
+        case 'medication':
+          key = `med_${order.medicationName?.toLowerCase().trim()}`;
+          break;
+        case 'lab':
+          key = `lab_${order.testName?.toLowerCase().trim() || order.labName?.toLowerCase().trim()}`;
+          break;
+        case 'imaging':
+          key = `img_${order.studyType?.toLowerCase().trim()}_${order.region?.toLowerCase().trim()}`;
+          break;
+        case 'referral':
+          key = `ref_${order.specialtyType?.toLowerCase().trim()}`;
+          break;
+        default:
+          key = `other_${order.orderType}_${JSON.stringify(order).substring(0, 50)}`;
+      }
+      existingOrderKeys.add(key);
+    });
+    
+    console.log(`📋 [RealtimeSOAP] Existing order keys from transcription:`, Array.from(existingOrderKeys));
+    
+    // Add SOAP orders that don't already exist
+    let addedFromSOAP = 0;
+    soapOrders.forEach(order => {
+      let key = '';
+      switch (order.orderType) {
+        case 'medication':
+          key = `med_${order.medicationName?.toLowerCase().trim()}`;
+          break;
+        case 'lab':
+          key = `lab_${order.testName?.toLowerCase().trim() || order.labName?.toLowerCase().trim()}`;
+          break;
+        case 'imaging':
+          key = `img_${order.studyType?.toLowerCase().trim()}_${order.region?.toLowerCase().trim()}`;
+          break;
+        case 'referral':
+          key = `ref_${order.specialtyType?.toLowerCase().trim()}`;
+          break;
+        default:
+          key = `other_${order.orderType}_${JSON.stringify(order).substring(0, 50)}`;
+      }
+      
+      if (!existingOrderKeys.has(key)) {
+        mergedOrders.push(order);
+        existingOrderKeys.add(key);
+        addedFromSOAP++;
+        console.log(`➕ [RealtimeSOAP] Added new order from SOAP: ${key}`);
+      } else {
+        console.log(`🚫 [RealtimeSOAP] Skipped duplicate order: ${key}`);
+      }
+    });
+    
+    console.log(`📋 [RealtimeSOAP] Deduplication complete: ${addedFromSOAP} new orders added from SOAP`);
+    return mergedOrders;
   }
 
   /**
