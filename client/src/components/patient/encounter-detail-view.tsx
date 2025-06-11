@@ -322,6 +322,36 @@ export function EncounterDetailView({
       console.log(
         `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
       );
+      
+      // Process medical problems with delta analysis
+      try {
+        console.log(`🏥 [EncounterView] Processing medical problems delta analysis...`);
+        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            soapNote: note,
+            patientId: patient.id
+          })
+        });
+
+        if (medicalProblemsResponse.ok) {
+          const result = await medicalProblemsResponse.json();
+          console.log(`✅ [EncounterView] Medical problems processed: ${result.problemsAffected} problems affected in ${result.processingTimeMs}ms`);
+          
+          // Invalidate medical problems queries to refresh UI
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          });
+        } else {
+          console.warn(`⚠️ [EncounterView] Medical problems processing failed:`, await medicalProblemsResponse.text());
+        }
+      } catch (medicalProblemsError) {
+        console.error("Failed to process medical problems:", medicalProblemsError);
+        // Don't show error toast for this - it's background processing
+      }
+      
       console.log(`🔍 [EncounterView] === SOAP SAVE COMPLETED ===`);
     } catch (error) {
       console.error(
