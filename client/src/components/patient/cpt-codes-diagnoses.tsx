@@ -226,10 +226,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
 
   // Initialize mappings between diagnoses and CPT codes with intelligent clinical logic
   const initializeMappings = (cptCodes: CPTCode[], diagnoses: DiagnosisCode[], gptMappings?: any[]) => {
-    console.log('🔗 [CPTComponent] Initializing mappings with intelligent clinical logic');
-    console.log('🔗 [CPTComponent] CPT codes:', cptCodes.map(c => `${c.code}(${c.id})`));
-    console.log('🔗 [CPTComponent] Diagnoses:', diagnoses.map(d => `${d.icd10Code}(${d.id})`));
-    
     const newMappings: CPTDiagnosisMapping[] = [];
     let selectedCount = 0;
     
@@ -345,7 +341,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
           selected: false
         });
       });
-      console.log("🔗 [CPTComponent] Added mappings for new diagnosis:", newMappings.length);
       return newMappings;
     });
   };
@@ -368,7 +363,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
   const startEditingCPT = (cptId: string) => {
     const cpt = cptCodes.find(c => c.id === cptId);
     if (cpt) {
-      console.log("✏️ [CPTComponent] Starting CPT edit for:", cpt.code);
       setEditingCPT(cptCodes.findIndex(c => c.id === cptId));
       setEditCPTValue(cpt.code);
       setEditCPTDescription(cpt.description);
