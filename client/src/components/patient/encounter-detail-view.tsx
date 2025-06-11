@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SOAPNoteEditor } from "@/components/ui/soap-note-editor";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { SharedChartSections } from "./shared-chart-sections";
 import Placeholder from "@tiptap/extension-placeholder";
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
@@ -1979,13 +1980,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="bg-white border-b border-gray-100 p-3 text-xs text-gray-600">
+                <div className="bg-white border-b border-gray-100 p-3">
                   {section.id === "encounters" ? (
-                    "Current encounter in progress"
+                    <div className="text-xs text-gray-600">Current encounter in progress</div>
                   ) : section.id === "ai-debug" ? (
                     <AIDebugSection patientId={patient.id} />
                   ) : (
-                    `${section.label} content`
+                    <SharedChartSections 
+                      patientId={patient.id} 
+                      mode="encounter" 
+                      encounterId={encounter?.id}
+                      isReadOnly={false}
+                      sectionId={section.id}
+                    />
                   )}
                 </div>
               </CollapsibleContent>

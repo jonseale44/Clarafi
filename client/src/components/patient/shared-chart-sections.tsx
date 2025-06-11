@@ -195,5 +195,11 @@ export function SharedChartSections({
     }
   };
 
+  // If sectionId is provided, render that specific section
+  if (sectionId) {
+    return <>{renderSectionContent(sectionId)}</>;
+  }
+
+  // Otherwise, return the render function for external use
   return <>{renderSectionContent}</>;
 }
