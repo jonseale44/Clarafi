@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight, Plus, Search, Star, RefreshCw, Bot } from "l
 import { Patient } from "@shared/schema";
 import { EncountersTab } from "./encounters-tab";
 import { EncounterDetailView } from "./encounter-detail-view";
+import { MedicalProblemsSection } from "./medical-problems-section";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -166,12 +167,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           </div>
         );
       case "problems":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Medical Problems</h2>
-            <div className="text-gray-500 text-center py-8">Medical problems management coming soon</div>
-          </div>
-        );
+        return <MedicalProblemsSection patientId={patientId} />;
       case "medication":
         return (
           <div className="space-y-4">
