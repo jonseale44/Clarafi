@@ -306,7 +306,26 @@ export const medications = pgTable("medications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Diagnoses
+// Enhanced Medical Problems with JSONB Visit History
+export const medicalProblems = pgTable("medical_problems", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  problemTitle: text("problem_title").notNull(),
+  currentIcd10Code: text("current_icd10_code"),
+  problemStatus: text("problem_status").default("active"), // 'active', 'resolved', 'chronic'
+  firstDiagnosedDate: date("first_diagnosed_date"),
+  firstEncounterId: integer("first_encounter_id").references(() => encounters.id),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id),
+  
+  // Enhanced JSONB fields for performance
+  visitHistory: jsonb("visit_history").default([]), // Chronological visit notes
+  changeLog: jsonb("change_log").default([]), // Audit trail of changes
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Legacy Diagnoses (keeping for backward compatibility)
 export const diagnoses = pgTable("diagnoses", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
@@ -601,6 +620,7 @@ export const patientsRelations = relations(patients, ({ many }) => ({
   vitals: many(vitals),
   medications: many(medications),
   diagnoses: many(diagnoses),
+  medicalProblems: many(medicalProblems),
   labOrders: many(labOrders),
   labResults: many(labResults),
   imagingOrders: many(imagingOrders),
@@ -753,6 +773,25 @@ export const ordersRelations = relations(orders, ({ one }) => ({
   }),
 }));
 
+export const medicalProblemsRelations = relations(medicalProblems, ({ one }) => ({
+  patient: one(patients, {
+    fields: [medicalProblems.patientId],
+    references: [patients.id],
+  }),
+  firstEncounter: one(encounters, {
+    fields: [medicalProblems.firstEncounterId],
+    references: [encounters.id],
+  }),
+  lastUpdatedEncounter: one(encounters, {
+    fields: [medicalProblems.lastUpdatedEncounterId],
+    references: [encounters.id],
+  }),
+}));
+
+// Medical Problems Types
+export type MedicalProblem = typeof medicalProblems.$inferSelect;
+export type InsertMedicalProblem = z.infer<typeof insertMedicalProblemSchema>;
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -844,6 +883,18 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   urgency: true,
   orderedBy: true,
   approvedBy: true,
+});
+
+export const insertMedicalProblemSchema = createInsertSchema(medicalProblems).pick({
+  patientId: true,
+  problemTitle: true,
+  currentIcd10Code: true,
+  problemStatus: true,
+  firstDiagnosedDate: true,
+  firstEncounterId: true,
+  lastUpdatedEncounterId: true,
+  visitHistory: true,
+  changeLog: true,
 });
 
 export const insertDiagnosisSchema = createInsertSchema(diagnoses).pick({
