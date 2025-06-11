@@ -3,6 +3,7 @@ import { db } from "./db.js";
 import { diagnoses, encounters } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { insertDiagnosisSchema } from "../shared/schema.js";
+import { storage } from "./storage.js";
 
 const router = Router();
 
@@ -13,23 +14,26 @@ const router = Router();
 router.get("/patients/:patientId/medical-problems", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
+    console.log(`🔍 [MedicalProblems] Fetching problems for patient ID: ${patientId}`);
     
-    const medicalProblems = await db
-      .select({
-        id: diagnoses.id,
-        diagnosis: diagnoses.diagnosis,
-        icd10Code: diagnoses.icd10Code,
-        diagnosisDate: diagnoses.diagnosisDate,
-        status: diagnoses.status,
-        notes: diagnoses.notes,
-        encounterId: diagnoses.encounterId,
-        createdAt: diagnoses.createdAt,
-      })
-      .from(diagnoses)
-      .where(eq(diagnoses.patientId, patientId))
-      .orderBy(desc(diagnoses.createdAt));
+    // Fetch from enhanced medical_problems table
+    const medicalProblems = await storage.getPatientMedicalProblems(patientId);
+    console.log(`🔍 [MedicalProblems] Found ${medicalProblems.length} problems`);
+    
+    // Format for compatibility with existing frontend
+    const formattedProblems = medicalProblems.map(problem => ({
+      id: problem.id,
+      diagnosis: problem.problemTitle,
+      icd10Code: problem.currentIcd10Code,
+      diagnosisDate: problem.firstDiagnosedDate,
+      status: problem.problemStatus,
+      notes: problem.visitHistory?.[0]?.notes || '',
+      encounterId: problem.firstEncounterId,
+      createdAt: problem.createdAt,
+    }));
 
-    res.json(medicalProblems);
+    console.log(`🔍 [MedicalProblems] Returning formatted problems:`, formattedProblems);
+    res.json(formattedProblems);
   } catch (error) {
     console.error("Error fetching medical problems:", error);
     res.status(500).json({ error: "Failed to fetch medical problems" });
