@@ -17,6 +17,9 @@ import { z } from "zod";
 
 interface MedicalProblemsSectionProps {
   patientId: number;
+  encounterId?: number;
+  mode?: "patient-chart" | "encounter";
+  isReadOnly?: boolean;
 }
 
 const medicalProblemFormSchema = insertDiagnosisSchema.extend({
@@ -25,7 +28,12 @@ const medicalProblemFormSchema = insertDiagnosisSchema.extend({
 
 type MedicalProblemFormData = z.infer<typeof medicalProblemFormSchema>;
 
-export function MedicalProblemsSection({ patientId }: MedicalProblemsSectionProps) {
+export function MedicalProblemsSection({ 
+  patientId, 
+  encounterId, 
+  mode = "patient-chart", 
+  isReadOnly = false 
+}: MedicalProblemsSectionProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProblem, setEditingProblem] = useState<Diagnosis | null>(null);
   const { toast } = useToast();
@@ -208,20 +216,24 @@ export function MedicalProblemsSection({ patientId }: MedicalProblemsSectionProp
     );
   }
 
+  const showAddButton = !isReadOnly;
+  const contextLabel = mode === "encounter" ? "Encounter Medical Problems" : "Medical Problems";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Medical Problems</h2>
-        <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-          setIsAddDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button className="bg-slate-700 hover:bg-slate-800 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Problem
-            </Button>
-          </DialogTrigger>
+        <h2 className="text-xl font-semibold">{contextLabel}</h2>
+        {showAddButton && (
+          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+            setIsAddDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="bg-slate-700 hover:bg-slate-800 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Problem
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
@@ -365,6 +377,7 @@ export function MedicalProblemsSection({ patientId }: MedicalProblemsSectionProp
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {medicalProblems.length === 0 ? (
