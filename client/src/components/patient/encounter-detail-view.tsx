@@ -792,7 +792,7 @@ Please provide medical suggestions based on what the patient is saying in this c
             type: "response.create",
             response: {
               modalities: ["text"],
-              instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++). You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+              instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
 
@@ -829,7 +829,7 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 
 Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
 
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).`,
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
               metadata: {
                 type: "suggestions",
               },
@@ -933,36 +933,44 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             }
 
             // NEW: Continuously update AI suggestions with live context
-            if (suggestionsStarted && transcriptionBuffer.length > 50 && realtimeWs) {
+            if (
+              suggestionsStarted &&
+              transcriptionBuffer.length > 50 &&
+              realtimeWs
+            ) {
               // Debounce to prevent too many rapid updates
               if (suggestionDebounceTimer.current) {
                 clearTimeout(suggestionDebounceTimer.current);
               }
-              
+
               suggestionDebounceTimer.current = setTimeout(() => {
-                console.log("🧠 [EncounterView] Updating AI context with live transcription");
-                
+                console.log(
+                  "🧠 [EncounterView] Updating AI context with live transcription",
+                );
+
                 // Send updated context to AI
                 const contextUpdate = {
                   type: "conversation.item.create",
                   item: {
                     type: "message",
                     role: "user",
-                    content: [{
-                      type: "input_text",
-                      text: `Updated conversation context: "${liveTranscriptionContent || transcriptionBuffer}"\n\nProvide relevant medical suggestions based on this updated context.`
-                    }]
-                  }
+                    content: [
+                      {
+                        type: "input_text",
+                        text: `Updated conversation context: "${liveTranscriptionContent || transcriptionBuffer}"\n\nProvide relevant medical suggestions based on this updated context.`,
+                      },
+                    ],
+                  },
                 };
-                
+
                 realtimeWs.send(JSON.stringify(contextUpdate));
-                
+
                 // Request new AI response
                 const responseRequest = {
                   type: "response.create",
                   response: {
                     modalities: ["text"],
-                    instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++). You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+                    instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
 
@@ -985,13 +993,13 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 
 Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
 
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\\n) after answering a user question.IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).`,
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\\n) after answering a user question.`,
                     metadata: {
-                      type: "suggestions"
-                    }
-                  }
+                      type: "suggestions",
+                    },
+                  },
                 };
-                
+
                 realtimeWs.send(JSON.stringify(responseRequest));
               }, 2000); // 2-second debounce
             }
@@ -1105,14 +1113,23 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   );
                 }
 
-                // Apply simple bullet point formatting - just add single line break before bullet points
+                // Apply simple bullet point formatting - clean up excessive spacing
                 formattedSuggestions = formattedSuggestions
-                  // Add single line break before bullet points (•) only
-                  .replace(/([^\n])(\s*•)/g, '$1\n$2')
+                  // Clean up double newlines that come from AI responses
+                  .replace(/\\n\\n/g, '\n')
+                  // Clean up any remaining multiple newlines
+                  .replace(/\n{3,}/g, '\n\n')
+                  // Add single line break before bullet points (•) only if not already present
+                  .replace(/([^\n])(\s*•)/g, "$1\n$2")
                   // Ensure proper spacing after header
-                  .replace(/🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g, '🩺 REAL-TIME CLINICAL INSIGHTS:\n\n');
-                
-                console.log("🧠 [EncounterView] Applied bullet point formatting");
+                  .replace(
+                    /🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g,
+                    "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n",
+                  );
+
+                console.log(
+                  "🧠 [EncounterView] Applied bullet point formatting",
+                );
 
                 console.log(
                   "🧠 [EncounterView] Final formatted suggestions length:",
@@ -1263,7 +1280,7 @@ Please provide medical suggestions based on this complete conversation context.`
                 type: "response.create",
                 response: {
                   modalities: ["text"],
-                  instructions: `IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+                  instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
 
 CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
 
@@ -1300,7 +1317,7 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 
 Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
 
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.IMPORTANT: Formatting requirement: add two plus signs at the end of each sentence (++).`,
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
                   metadata: {
                     type: "suggestions",
                   },
