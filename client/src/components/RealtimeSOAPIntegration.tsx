@@ -118,6 +118,17 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
               } else if (data.type === 'cpt_codes') {
                 console.log("🏥 [RealtimeSOAP] Received CPT codes:", data);
                 onCPTCodesReceived?.(data);
+                
+                // TRIGGER MEDICAL PROBLEMS PROCESSING HERE
+                // CPT codes are the final event in the stream, so SOAP note should be complete
+                console.log("🎯 [RealtimeSOAP] CPT codes received - triggering medical problems processing");
+                console.log("🎯 [RealtimeSOAP] Current SOAP buffer length:", soapBuffer.length);
+                if (soapBuffer && soapBuffer.trim().length > 100) {
+                  console.log("🎯 [RealtimeSOAP] Calling onSOAPNoteComplete with current SOAP buffer");
+                  onSOAPNoteComplete(soapBuffer);
+                } else {
+                  console.warn("🎯 [RealtimeSOAP] SOAP buffer too short to trigger medical problems processing");
+                }
               } else if (data.type === 'error') {
                 throw new Error(data.message);
               }
