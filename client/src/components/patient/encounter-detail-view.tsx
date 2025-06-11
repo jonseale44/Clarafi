@@ -1776,41 +1776,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         description: "SOAP note has been successfully generated from the transcription.",
       });
 
-      // Restart real-time transcription if it was active
-      if (isRecording) {
-        console.log("🔄 [EncounterView] Restarting real-time transcription after manual generation...");
-        
-        // Create a restart function that handles the async operations properly
-        const restartTranscription = async () => {
-          try {
-            console.log("🛑 [EncounterView] Stopping current recording session...");
-            await stopRecording();
-            
-            // Give time for WebSocket cleanup and browser resources to be released
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            console.log("▶️ [EncounterView] Restarting recording session...");
-            await startRecording();
-            
-            console.log("✅ [EncounterView] Real-time transcription restarted successfully");
-            toast({
-              title: "Transcription Restarted",
-              description: "Real-time recording is now active again.",
-            });
-          } catch (restartError) {
-            console.error("❌ [EncounterView] Failed to restart transcription:", restartError);
-            setIsRecording(false); // Ensure UI state is consistent
-            toast({
-              variant: "destructive", 
-              title: "Transcription Restart Failed",
-              description: "Please manually restart recording by clicking the microphone button.",
-            });
-          }
-        };
-
-        // Execute restart without blocking the UI
-        restartTranscription();
-      }
+      // Note: Real-time transcription continues running in the background
+      // No need to restart unless explicitly stopped by the user
 
     } catch (error) {
       console.error("❌ [EncounterView] Error generating SOAP from transcription:", error);
