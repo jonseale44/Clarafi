@@ -8,7 +8,7 @@ import { ChevronDown, ChevronRight, Plus, Search, Star, RefreshCw, Bot } from "l
 import { Patient } from "@shared/schema";
 import { EncountersTab } from "./encounters-tab";
 import { EncounterDetailView } from "./encounter-detail-view";
-import { MedicalProblemsSection } from "./medical-problems-section";
+import { SharedChartSections } from "./shared-chart-sections";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -167,7 +167,17 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           </div>
         );
       case "problems":
-        return <MedicalProblemsSection patientId={patientId} />;
+      case "medication":
+      case "allergies":
+      case "labs":
+      case "vitals":
+      case "imaging":
+      case "family-history":
+      case "social-history":
+      case "surgical-history":
+      case "attachments":
+      case "appointments":
+        return <SharedChartSections patientId={patientId} mode="patient-chart" isReadOnly={false} sectionId={activeSection} />;
       case "medication":
         return (
           <div className="space-y-4">

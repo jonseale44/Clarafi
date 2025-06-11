@@ -7,17 +7,19 @@ interface SharedChartSectionsProps {
   mode: "patient-chart" | "encounter";
   encounterId?: number;
   isReadOnly?: boolean;
+  sectionId?: string;
 }
 
 export function SharedChartSections({ 
   patientId, 
   mode, 
   encounterId,
-  isReadOnly = false 
+  isReadOnly = false,
+  sectionId 
 }: SharedChartSectionsProps) {
   
-  const renderSectionContent = (sectionId: string) => {
-    switch (sectionId) {
+  const renderSectionContent = (targetSectionId: string) => {
+    switch (targetSectionId) {
       case "problems":
         return (
           <MedicalProblemsSection 
