@@ -82,8 +82,8 @@ export class MedicalProblemsDeltaService {
         this.getEncounterInfo(encounterId),
         this.getPatientInfo(patientId)
       ]);
-      console.log(`🏥 [DeltaService] Patient: ${patient.first_name} ${patient.last_name}, Age: ${this.calculateAge(patient.date_of_birth)}`);
-      console.log(`🏥 [DeltaService] Encounter: ${encounter.encounter_type}, Status: ${encounter.encounter_status}`);
+      console.log(`🏥 [DeltaService] Patient: ${patient.firstName} ${patient.lastName}, Age: ${this.calculateAge(patient.dateOfBirth)}`);
+      console.log(`🏥 [DeltaService] Encounter: ${encounter.encounterType}, Status: ${encounter.encounterStatus}`);
 
       // Generate delta changes using GPT
       console.log(`🏥 [DeltaService] Starting GPT delta analysis...`);
