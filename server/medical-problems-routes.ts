@@ -1,28 +1,25 @@
 import { Router } from "express";
-import { db } from "./db.js";
-import { diagnoses, encounters } from "../shared/schema.js";
-import { eq, and, desc } from "drizzle-orm";
-import { insertDiagnosisSchema } from "../shared/schema.js";
-import { storage } from "./storage.js";
+import { storage } from "./storage";
+import { medicalProblemsDelta } from "./medical-problems-delta-service";
+import { insertMedicalProblemSchema } from "@shared/schema";
 
 const router = Router();
 
 /**
  * GET /api/patients/:patientId/medical-problems
- * Get all medical problems (diagnoses) for a patient
+ * Get all medical problems for a patient (backward compatible format)
  */
 router.get("/patients/:patientId/medical-problems", async (req, res) => {
   try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
     const patientId = parseInt(req.params.patientId);
     console.log(`🔍 [MedicalProblems] Fetching problems for patient ID: ${patientId}`);
     
-    // Fetch from enhanced medical_problems table
     const medicalProblems = await storage.getPatientMedicalProblems(patientId);
     console.log(`🔍 [MedicalProblems] Found ${medicalProblems.length} problems`);
     
-    // Visit history data is now correctly flowing through the system
-    
-    // Format with full visit history preserved
+    // Format for backward compatibility with existing UI components
     const formattedProblems = medicalProblems.map(problem => ({
       id: problem.id,
       diagnosis: problem.problemTitle,
@@ -32,7 +29,7 @@ router.get("/patients/:patientId/medical-problems", async (req, res) => {
       notes: (Array.isArray(problem.visitHistory) ? problem.visitHistory[0]?.notes : '') || '',
       encounterId: problem.firstEncounterId,
       createdAt: problem.createdAt,
-      // Preserve rich visit history data
+      // Include rich visit history data for enhanced components
       visitHistory: problem.visitHistory || [],
       changeLog: problem.changeLog || [],
     }));
@@ -46,25 +43,158 @@ router.get("/patients/:patientId/medical-problems", async (req, res) => {
 });
 
 /**
+ * GET /api/patients/:patientId/medical-problems-enhanced
+ * Get enhanced medical problems with visit history for a patient
+ */
+router.get("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const patientId = parseInt(req.params.patientId);
+    console.log(`🔍 [EnhancedMedicalProblems] Fetching problems for patient ID: ${patientId}`);
+    
+    const problems = await storage.getPatientMedicalProblems(patientId);
+    console.log(`🔍 [EnhancedMedicalProblems] Found ${problems.length} problems`);
+
+    // Format for frontend display with visit history
+    const formattedProblems = problems.map(problem => ({
+      id: problem.id,
+      problemTitle: problem.problemTitle,
+      currentIcd10Code: problem.currentIcd10Code,
+      problemStatus: problem.problemStatus,
+      firstDiagnosedDate: problem.firstDiagnosedDate,
+      visitHistory: problem.visitHistory || [],
+      changeLog: problem.changeLog || [],
+      lastUpdated: problem.updatedAt
+    }));
+
+    res.json(formattedProblems);
+  } catch (error) {
+    console.error("Error fetching enhanced medical problems:", error);
+    res.status(500).json({ error: "Failed to fetch medical problems" });
+  }
+});
+
+/**
+ * GET /api/medical-problems/:problemId/visit-history
+ * Get detailed visit history for a specific medical problem
+ */
+router.get("/medical-problems/:problemId/visit-history", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const problemId = parseInt(req.params.problemId);
+    const visitHistory = await storage.getMedicalProblemVisitHistory(problemId);
+
+    // Sort by date descending (newest first)
+    const sortedHistory = visitHistory.sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    res.json(sortedHistory);
+  } catch (error) {
+    console.error("Error fetching visit history:", error);
+    res.status(500).json({ error: "Failed to fetch visit history" });
+  }
+});
+
+/**
+ * POST /api/encounters/:encounterId/process-medical-problems
+ * Process SOAP note for medical problems using delta approach
+ */
+router.post("/encounters/:encounterId/process-medical-problems", async (req, res) => {
+  try {
+    console.log(`🏥 [MedicalProblemsAPI] === PROCESSING REQUEST START ===`);
+    console.log(`🏥 [MedicalProblemsAPI] Encounter ID: ${req.params.encounterId}`);
+    console.log(`🏥 [MedicalProblemsAPI] User authenticated: ${req.isAuthenticated()}`);
+    
+    if (!req.isAuthenticated()) {
+      console.log(`❌ [MedicalProblemsAPI] User not authenticated`);
+      return res.sendStatus(401);
+    }
+
+    const encounterId = parseInt(req.params.encounterId);
+    const { soapNote, patientId } = req.body;
+    const providerId = req.user!.id;
+
+    console.log(`🏥 [MedicalProblemsAPI] Parsed encounter ID: ${encounterId}`);
+    console.log(`🏥 [MedicalProblemsAPI] Patient ID: ${patientId}`);
+    console.log(`🏥 [MedicalProblemsAPI] Provider ID: ${providerId}`);
+    console.log(`🏥 [MedicalProblemsAPI] SOAP note length: ${soapNote?.length || 0} characters`);
+
+    if (!soapNote || !patientId) {
+      console.log(`❌ [MedicalProblemsAPI] Missing required fields - soapNote: ${!!soapNote}, patientId: ${!!patientId}`);
+      return res.status(400).json({ error: "SOAP note and patient ID are required" });
+    }
+
+    console.log(`🏥 [MedicalProblemsAPI] Calling delta processing service...`);
+    const startTime = Date.now();
+    
+    // Process medical problems incrementally
+    const result = await medicalProblemsDelta.processSOAPDelta(
+      patientId,
+      encounterId,
+      soapNote,
+      providerId
+    );
+
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ [MedicalProblemsAPI] Delta processing completed in ${totalTime}ms`);
+
+    const response = {
+      success: true,
+      changes: result.changes,
+      processingTimeMs: result.processing_time_ms,
+      problemsAffected: result.total_problems_affected
+    };
+    
+    console.log(`✅ [MedicalProblemsAPI] Sending response:`, response);
+    console.log(`🏥 [MedicalProblemsAPI] === PROCESSING REQUEST END ===`);
+    
+    res.json(response);
+
+  } catch (error) {
+    console.error(`❌ [MedicalProblemsAPI] Error processing medical problems:`, error);
+    res.status(500).json({ error: "Failed to process medical problems" });
+  }
+});
+
+/**
+ * POST /api/encounters/:encounterId/sign-medical-problems
+ * Sign encounter - finalize all medical problem visit entries
+ */
+router.post("/encounters/:encounterId/sign-medical-problems", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const encounterId = parseInt(req.params.encounterId);
+    const providerId = req.user!.id;
+
+    await medicalProblemsDelta.signEncounter(encounterId, providerId);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error signing encounter:", error);
+    res.status(500).json({ error: "Failed to sign encounter" });
+  }
+});
+
+/**
  * POST /api/patients/:patientId/medical-problems
- * Add a new medical problem for a patient
+ * Create new medical problem manually
  */
 router.post("/patients/:patientId/medical-problems", async (req, res) => {
   try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
     const patientId = parseInt(req.params.patientId);
-    
-    // Validate request body
-    const validatedData = insertDiagnosisSchema.parse({
+    const data = insertMedicalProblemSchema.parse({
       ...req.body,
-      patientId,
+      patientId
     });
 
-    const [newProblem] = await db
-      .insert(diagnoses)
-      .values(validatedData)
-      .returning();
-
-    res.status(201).json(newProblem);
+    const newProblem = await storage.createMedicalProblem(data);
+    res.json(newProblem);
   } catch (error) {
     console.error("Error creating medical problem:", error);
     res.status(500).json({ error: "Failed to create medical problem" });
@@ -72,36 +202,17 @@ router.post("/patients/:patientId/medical-problems", async (req, res) => {
 });
 
 /**
- * PUT /api/patients/:patientId/medical-problems/:problemId
- * Update an existing medical problem
+ * PUT /api/medical-problems/:problemId
+ * Update medical problem
  */
-router.put("/patients/:patientId/medical-problems/:problemId", async (req, res) => {
+router.put("/medical-problems/:problemId", async (req, res) => {
   try {
-    const patientId = parseInt(req.params.patientId);
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
     const problemId = parseInt(req.params.problemId);
-    
-    // Validate request body (exclude patientId and encounterId from updates)
-    const updateData = {
-      diagnosis: req.body.diagnosis,
-      icd10Code: req.body.icd10Code,
-      diagnosisDate: req.body.diagnosisDate,
-      status: req.body.status,
-      notes: req.body.notes,
-    };
+    const updates = req.body;
 
-    const [updatedProblem] = await db
-      .update(diagnoses)
-      .set(updateData)
-      .where(and(
-        eq(diagnoses.id, problemId),
-        eq(diagnoses.patientId, patientId)
-      ))
-      .returning();
-
-    if (!updatedProblem) {
-      return res.status(404).json({ error: "Medical problem not found" });
-    }
-
+    const updatedProblem = await storage.updateMedicalProblem(problemId, updates);
     res.json(updatedProblem);
   } catch (error) {
     console.error("Error updating medical problem:", error);
@@ -110,30 +221,24 @@ router.put("/patients/:patientId/medical-problems/:problemId", async (req, res) 
 });
 
 /**
- * DELETE /api/patients/:patientId/medical-problems/:problemId
- * Delete a medical problem
+ * GET /api/medical-problems/:problemId
+ * Get single medical problem with full details
  */
-router.delete("/patients/:patientId/medical-problems/:problemId", async (req, res) => {
+router.get("/medical-problems/:problemId", async (req, res) => {
   try {
-    const patientId = parseInt(req.params.patientId);
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
     const problemId = parseInt(req.params.problemId);
+    const problem = await storage.getMedicalProblemById(problemId);
 
-    const [deletedProblem] = await db
-      .delete(diagnoses)
-      .where(and(
-        eq(diagnoses.id, problemId),
-        eq(diagnoses.patientId, patientId)
-      ))
-      .returning();
-
-    if (!deletedProblem) {
+    if (!problem) {
       return res.status(404).json({ error: "Medical problem not found" });
     }
 
-    res.json({ message: "Medical problem deleted successfully" });
+    res.json(problem);
   } catch (error) {
-    console.error("Error deleting medical problem:", error);
-    res.status(500).json({ error: "Failed to delete medical problem" });
+    console.error("Error fetching medical problem:", error);
+    res.status(500).json({ error: "Failed to fetch medical problem" });
   }
 });
 
@@ -143,24 +248,15 @@ router.delete("/patients/:patientId/medical-problems/:problemId", async (req, re
  */
 router.get("/patients/:patientId/encounters", async (req, res) => {
   try {
-    const patientId = parseInt(req.params.patientId);
-    
-    const patientEncounters = await db
-      .select({
-        id: encounters.id,
-        encounterType: encounters.encounterType,
-        startTime: encounters.startTime,
-        encounterStatus: encounters.encounterStatus,
-      })
-      .from(encounters)
-      .where(eq(encounters.patientId, patientId))
-      .orderBy(desc(encounters.startTime))
-      .limit(20);
+    if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    res.json(patientEncounters);
+    const patientId = parseInt(req.params.patientId);
+    const encounters = await storage.getPatientEncounters(patientId);
+
+    res.json(encounters);
   } catch (error) {
     console.error("Error fetching patient encounters:", error);
-    res.status(500).json({ error: "Failed to fetch patient encounters" });
+    res.status(500).json({ error: "Failed to fetch encounters" });
   }
 });
 
