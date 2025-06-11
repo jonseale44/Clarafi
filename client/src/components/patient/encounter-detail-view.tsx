@@ -829,7 +829,7 @@ Produce insights that save the physician time or enhance their diagnostic/therap
 
 Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
 
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
+Format each bullet point on its own line with no extra spacing between them.`,
               metadata: {
                 type: "suggestions",
               },
@@ -1113,15 +1113,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   );
                 }
 
-                // Apply simple bullet point formatting - clean up excessive spacing
+                // Simple formatting - just ensure header spacing
                 formattedSuggestions = formattedSuggestions
-                  // Clean up double newlines that come from AI responses
-                  .replace(/\\n\\n/g, '\n')
-                  // Clean up any remaining multiple newlines
-                  .replace(/\n{3,}/g, '\n\n')
-                  // Add single line break before bullet points (•) only if not already present
-                  .replace(/([^\n])(\s*•)/g, "$1\n$2")
-                  // Ensure proper spacing after header
                   .replace(
                     /🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g,
                     "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n",
