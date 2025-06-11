@@ -176,6 +176,12 @@ export function EncounterDetailView({
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // Auto-save functionality
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string>("");
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "unsaved" | "">("");
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -185,6 +191,69 @@ export function EncounterDetailView({
 
   // Real-time SOAP generation ref
   const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
+
+  // Auto-save function with debouncing
+  const autoSaveSOAPNote = async (content: string) => {
+    if (!content.trim() || content === lastSaved) {
+      return; // Don't save empty content or unchanged content
+    }
+
+    setIsAutoSaving(true);
+    setAutoSaveStatus("saving");
+
+    try {
+      console.log("💾 [AutoSave] Saving SOAP note automatically...", content.length, "characters");
+
+      const response = await fetch(
+        `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            soapNote: content,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to auto-save SOAP note: ${response.statusText}`);
+      }
+
+      console.log("✅ [AutoSave] SOAP note auto-saved successfully");
+      setLastSaved(content);
+      setAutoSaveStatus("saved");
+
+      // Invalidate relevant caches
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/encounters/${encounterId}`],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/patients/${patient.id}/encounters`],
+      });
+
+    } catch (error) {
+      console.error("❌ [AutoSave] Failed to auto-save SOAP note:", error);
+      setAutoSaveStatus("unsaved");
+    } finally {
+      setIsAutoSaving(false);
+    }
+  };
+
+  // Debounced auto-save trigger
+  const triggerAutoSave = (content: string) => {
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+    }
+
+    setAutoSaveStatus("unsaved");
+
+    // Auto-save after 3 seconds of inactivity (like Microsoft Word)
+    autoSaveTimer.current = setTimeout(() => {
+      autoSaveSOAPNote(content);
+    }, 3000);
+  };
 
   // Handlers for Real-time SOAP Integration
   const handleSOAPNoteUpdate = (note: string) => {
@@ -308,6 +377,9 @@ export function EncounterDetailView({
       if (!editor.isDestroyed) {
         const newContent = editor.getHTML();
         setSoapNote(newContent);
+        
+        // Trigger auto-save with debouncing
+        triggerAutoSave(newContent);
       }
     },
   });
@@ -335,6 +407,15 @@ export function EncounterDetailView({
     );
   };
 
+  // Cleanup auto-save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
+    };
+  }, []);
+
   // Effect to load existing SOAP note from encounter data
   useEffect(() => {
     if (encounter?.note && editor && !editor.isDestroyed) {
@@ -345,6 +426,8 @@ export function EncounterDetailView({
       const currentContent = editor.getHTML();
       if (currentContent !== existingNote && existingNote.trim() !== "") {
         setSoapNote(existingNote);
+        setLastSaved(existingNote); // Set initial saved state
+        setAutoSaveStatus("saved");
 
         // Format the existing note for proper display
         const formattedContent = formatSoapNoteContent(existingNote);
@@ -1661,6 +1744,16 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       const data = await response.json();
       console.log("✅ [EncounterView] SOAP note saved successfully:", data);
 
+      // Update auto-save state to reflect manual save
+      setLastSaved(currentContent);
+      setAutoSaveStatus("saved");
+
+      // Clear any pending auto-save timer since we just saved manually
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = null;
+      }
+
       // Invalidate all relevant caches to ensure changes persist
       await queryClient.invalidateQueries({
         queryKey: [`/api/encounters/${encounterId}`],
@@ -1891,9 +1984,32 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           {/* Note Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">
-                Note
-              </h2>
+              <div className="flex items-center space-x-3">
+                <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                  Note
+                </h2>
+                {/* Auto-save status indicator */}
+                <div className="flex items-center text-sm">
+                  {autoSaveStatus === "saving" && (
+                    <div className="flex items-center text-blue-600">
+                      <div className="animate-spin h-3 w-3 mr-1 border border-blue-600 border-t-transparent rounded-full" />
+                      <span>Saving...</span>
+                    </div>
+                  )}
+                  {autoSaveStatus === "saved" && (
+                    <div className="flex items-center text-green-600">
+                      <div className="h-2 w-2 mr-1 bg-green-600 rounded-full" />
+                      <span>Saved</span>
+                    </div>
+                  )}
+                  {autoSaveStatus === "unsaved" && (
+                    <div className="flex items-center text-gray-500">
+                      <div className="h-2 w-2 mr-1 bg-gray-400 rounded-full" />
+                      <span>Unsaved changes</span>
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex items-center space-x-2">
                 {/* Real-time SOAP Integration */}
                 <RealtimeSOAPIntegration
@@ -1944,7 +2060,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Note
+                      Manual Save
                     </>
                   )}
                 </Button>
