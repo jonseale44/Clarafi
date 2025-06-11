@@ -32,6 +32,7 @@ import { SharedChartSections } from "./shared-chart-sections";
 import Placeholder from "@tiptap/extension-placeholder";
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
+import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
 import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
