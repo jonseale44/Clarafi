@@ -325,7 +325,7 @@ export const medicalProblems = pgTable("medical_problems", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Diagnoses table - used for billing/CPT code mapping (keep until billing system migrated)
+// Legacy Diagnoses (keeping for backward compatibility)
 export const diagnoses = pgTable("diagnoses", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
@@ -619,6 +619,7 @@ export const patientsRelations = relations(patients, ({ many }) => ({
   allergies: many(allergies),
   vitals: many(vitals),
   medications: many(medications),
+  diagnoses: many(diagnoses),
   medicalProblems: many(medicalProblems),
   labOrders: many(labOrders),
   labResults: many(labResults),
@@ -646,7 +647,7 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
   }),
   vitals: many(vitals),
   medications: many(medications),
-
+  diagnoses: many(diagnoses),
   labOrders: many(labOrders),
   imagingOrders: many(imagingOrders),
   orders: many(orders),

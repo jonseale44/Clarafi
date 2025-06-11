@@ -75,10 +75,6 @@ export interface IStorage {
   markPhysicalFindingConfirmed(id: number, encounterId: number): Promise<void>;
   markPhysicalFindingContradicted(id: number, encounterId: number): Promise<void>;
   
-  // Diagnoses management (for billing/CPT system)
-  getPatientDiagnoses(patientId: number): Promise<any[]>;
-  createDiagnosis(diagnosis: any): Promise<any>;
-  
   // Medical Problems management (Enhanced JSONB approach)
   getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]>;
   getMedicalProblem(id: number): Promise<MedicalProblem | undefined>;
@@ -166,7 +162,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(vitals).where(eq(vitals.patientId, id));
     await db.delete(allergies).where(eq(allergies.patientId, id));
     await db.delete(medications).where(eq(medications.patientId, id));
-    await db.delete(medicalProblems).where(eq(medicalProblems.patientId, id));
+    await db.delete(diagnoses).where(eq(diagnoses.patientId, id));
     await db.delete(labResults).where(eq(labResults.patientId, id));
     await db.delete(labOrders).where(eq(labOrders.patientId, id));
     

@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { db } from "./db.js";
 import {
   patients,
+  diagnoses,
   medications,
   allergies,
   vitals,
