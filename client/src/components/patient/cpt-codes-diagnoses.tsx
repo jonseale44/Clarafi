@@ -596,36 +596,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Debug Information Panel */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Info className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Debug Information</span>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-xs">
-                <div>
-                  <span className="font-medium">CPT Codes:</span> {cptCodes.length}
-                  <div className="text-blue-600">
-                    {cptCodes.map(cpt => `${cpt.code} (${cpt.id?.slice(-8) || 'no-id'})`).join(', ')}
-                  </div>
-                </div>
-                <div>
-                  <span className="font-medium">Diagnoses:</span> {diagnoses.length}
-                  <div className="text-blue-600">
-                    {diagnoses.map(diag => `${diag.icd10Code} (${diag.id?.slice(-8) || 'no-id'})`).join(', ')}
-                  </div>
-                </div>
-                <div>
-                  <span className="font-medium">Active Mappings:</span> {mappings.filter(m => m.selected).length} / {mappings.length}
-                  <div className="text-blue-600">
-                    Selected: {mappings.filter(m => m.selected).map(m => 
-                      `${m.diagnosisId?.slice(-4) || 'no-id'}-${m.cptCodeId?.slice(-4) || 'no-id'}`
-                    ).join(', ')}
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* CPT Codes and Diagnoses Mapping Table */}
             <TooltipProvider>
               <div className="border rounded-lg overflow-hidden">

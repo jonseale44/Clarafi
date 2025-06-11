@@ -2181,12 +2181,6 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     {isGeneratingSOAP ? "Generating..." : "Generate from Transcription"}
                   </Button>
                 )}
-                {isGeneratingSOAP && (
-                  <div className="flex items-center text-sm text-blue-600">
-                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
-                    Generating...
-                  </div>
-                )}
                 <Button
                   size="sm"
                   variant="outline"
