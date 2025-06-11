@@ -20,17 +20,7 @@ router.get("/patients/:patientId/medical-problems", async (req, res) => {
     const medicalProblems = await storage.getPatientMedicalProblems(patientId);
     console.log(`🔍 [MedicalProblems] Found ${medicalProblems.length} problems`);
     
-    // Debug: Log raw problem data to understand structure
-    medicalProblems.forEach((problem, index) => {
-      console.log(`🔍 [MedicalProblems] Problem ${index + 1} raw data:`, {
-        id: problem.id,
-        problemTitle: problem.problemTitle,
-        visitHistoryType: typeof problem.visitHistory,
-        visitHistoryValue: problem.visitHistory,
-        changeLogType: typeof problem.changeLog,
-        changeLogValue: problem.changeLog
-      });
-    });
+    // Visit history data is now correctly flowing through the system
     
     // Format with full visit history preserved
     const formattedProblems = medicalProblems.map(problem => ({
