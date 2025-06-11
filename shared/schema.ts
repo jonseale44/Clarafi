@@ -846,6 +846,16 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   approvedBy: true,
 });
 
+export const insertDiagnosisSchema = createInsertSchema(diagnoses).pick({
+  patientId: true,
+  encounterId: true,
+  diagnosis: true,
+  icd10Code: true,
+  diagnosisDate: true,
+  status: true,
+  notes: true,
+});
+
 export const insertPatientPhysicalFindingSchema = createInsertSchema(patientPhysicalFindings).pick({
   patientId: true,
   examSystem: true,
@@ -899,8 +909,9 @@ export type InsertEncounter = z.infer<typeof insertEncounterSchema>;
 export type Encounter = typeof encounters.$inferSelect;
 export type InsertVitals = z.infer<typeof insertVitalsSchema>;
 export type Vitals = typeof vitals.$inferSelect;
-export type Medication = typeof medications.$inferSelect;
+export type InsertDiagnosis = z.infer<typeof insertDiagnosisSchema>;
 export type Diagnosis = typeof diagnoses.$inferSelect;
+export type Medication = typeof medications.$inferSelect;
 export type LabOrder = typeof labOrders.$inferSelect;
 export type LabResult = typeof labResults.$inferSelect;
 export type ImagingOrder = typeof imagingOrders.$inferSelect;
