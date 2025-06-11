@@ -82,8 +82,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
 
   // Convert legacy data to new format with unique IDs
   const convertToUniqueIdFormat = (cptCodes: any[], diagnoses: any[]) => {
-    console.log("🔧 [CPTComponent] Converting legacy data to unique ID format");
-    
     const convertedCPTCodes: CPTCode[] = cptCodes.map((cpt, index) => ({
       id: cpt.id || `cpt-${index}-${Date.now()}`,
       code: cpt.code,
@@ -100,40 +98,27 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       isPrimary: diag.isPrimary
     }));
 
-    console.log("🔧 [CPTComponent] Converted CPT codes:", convertedCPTCodes.length);
-    console.log("🔧 [CPTComponent] Converted diagnoses:", convertedDiagnoses.length);
-    
     return { convertedCPTCodes, convertedDiagnoses };
   };
 
   // Load data when encounter data is available
   useEffect(() => {
-    console.log("🔍 [CPTComponent] Encounter data updated:", encounterData);
     if (encounterData && typeof encounterData === 'object' && 'encounter' in encounterData) {
       const encounter = (encounterData as any).encounter;
-      console.log("🔍 [CPTComponent] Raw encounter CPT codes:", encounter.cptCodes);
-      console.log("🔍 [CPTComponent] Raw encounter diagnoses:", encounter.draftDiagnoses);
       
       if (encounter.cptCodes && Array.isArray(encounter.cptCodes) && encounter.cptCodes.length > 0) {
         const { convertedCPTCodes } = convertToUniqueIdFormat(encounter.cptCodes, []);
-        console.log("🔍 [CPTComponent] Setting CPT codes with unique IDs:", convertedCPTCodes.length);
         setCPTCodes(convertedCPTCodes);
-      } else {
-        console.log("🔍 [CPTComponent] No CPT codes found, keeping existing:", cptCodes.length);
       }
       
       if (encounter.draftDiagnoses && Array.isArray(encounter.draftDiagnoses) && encounter.draftDiagnoses.length > 0) {
         const { convertedDiagnoses } = convertToUniqueIdFormat([], encounter.draftDiagnoses);
-        console.log("🔍 [CPTComponent] Setting diagnoses with unique IDs:", convertedDiagnoses.length);
         setDiagnoses(convertedDiagnoses);
-      } else {
-        console.log("🔍 [CPTComponent] No diagnoses found, keeping existing:", diagnoses.length);
       }
       
       // Initialize mappings with intelligent associations based on clinical relevance
       if (encounter.cptCodes && encounter.draftDiagnoses && 
           encounter.cptCodes.length > 0 && encounter.draftDiagnoses.length > 0) {
-        console.log("🔗 [CPTComponent] Initializing intelligent mappings for real-time data");
         const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(encounter.cptCodes, encounter.draftDiagnoses);
         initializeMappings(convertedCPTCodes, convertedDiagnoses);
         
@@ -179,8 +164,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
             });
           });
           setMappings(intelligentMappings);
-          console.log("🔗 [CPTComponent] Applied intelligent clinical mappings with unique IDs:", 
-                     intelligentMappings.filter(m => m.selected).length, "selected");
         }, 100);
       }
     }
@@ -216,13 +199,11 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       // Convert GPT data to unique ID format before setting state
       const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(data.cptCodes || [], data.diagnoses || []);
       
-      console.log('🔧 [CPTComponent] Converting GPT data to unique ID format');
       setCPTCodes(convertedCPTCodes);
       setDiagnoses(convertedDiagnoses);
       
       // Always use hardcoded intelligent mappings instead of GPT's decisions
       // GPT tends to be overly aggressive with associations, hardcoded logic is more accurate
-      console.log('🔗 [CPTComponent] Using hardcoded intelligent mappings (overriding GPT)');
       initializeMappings(convertedCPTCodes, convertedDiagnoses);
       
       toast({
@@ -296,7 +277,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
     });
     
     setMappings(newMappings);
-    console.log('🔗 [CPTComponent] Applied intelligent clinical mappings:', selectedCount, 'selected combinations');
   };
 
   // Toggle mapping between diagnosis and CPT code
@@ -321,7 +301,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
 
   // Add new CPT code with autocomplete
   const addCPTCodeFromAutocomplete = (cptData: CPTCodeData) => {
-    console.log("➕ [CPTComponent] Adding CPT code from autocomplete:", cptData);
     const newCPT: CPTCode = {
       id: generateId(),
       code: cptData.code,
@@ -330,11 +309,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
       category: cptData.category,
       baseRate: cptData.baseRate
     };
-    setCPTCodes(prev => {
-      const updated = [...prev, newCPT];
-      console.log("➕ [CPTComponent] Updated CPT codes list:", updated.length);
-      return updated;
-    });
+    setCPTCodes(prev => [...prev, newCPT]);
     
     // Initialize mappings for the new CPT code
     setMappings(prev => {
@@ -346,25 +321,19 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
           selected: false
         });
       });
-      console.log("🔗 [CPTComponent] Added mappings for new CPT code:", newMappings.length);
       return newMappings;
     });
   };
 
   // Add new diagnosis from autocomplete
   const addDiagnosisFromAutocomplete = (diagnosisData: { code: string; description: string; category?: string }) => {
-    console.log("➕ [CPTComponent] Adding diagnosis from autocomplete:", diagnosisData);
     const newDiagnosis: DiagnosisCode = {
       id: generateId(),
       diagnosis: diagnosisData.description,
       icd10Code: diagnosisData.code,
       isPrimary: false
     };
-    setDiagnoses(prev => {
-      const updated = [...prev, newDiagnosis];
-      console.log("➕ [CPTComponent] Updated diagnoses list:", updated.length);
-      return updated;
-    });
+    setDiagnoses(prev => [...prev, newDiagnosis]);
     
     // Initialize mappings for the new diagnosis
     setMappings(prev => {
