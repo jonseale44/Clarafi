@@ -112,7 +112,7 @@ Return a JSON object with these exact fields:
       }
 
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-mini",
         messages,
         response_format: { type: "json_object" },
         temperature: 0,

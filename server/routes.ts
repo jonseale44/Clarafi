@@ -1116,6 +1116,94 @@ export function registerRoutes(app: Express): Server {
     },
   );
 
+  // Generate SOAP note from transcription
+  app.post(
+    "/api/patients/:id/encounters/:encounterId/generate-soap-from-transcription",
+    async (req, res) => {
+      try {
+        if (!req.isAuthenticated()) return res.sendStatus(401);
+
+        const patientId = parseInt(req.params.id);
+        const encounterId = parseInt(req.params.encounterId);
+        const { transcription } = req.body;
+
+        if (!transcription || !transcription.trim()) {
+          return res.status(400).json({ 
+            message: "Transcription is required to generate SOAP note" 
+          });
+        }
+
+        console.log(`🔄 [GenerateSOAP] Generating SOAP note from transcription for encounter ${encounterId}`);
+
+        // Import the streaming SOAP service
+        const { RealtimeSOAPStreaming } = await import("./realtime-soap-streaming.js");
+        const soapStreaming = new RealtimeSOAPStreaming();
+
+        // Generate SOAP note using the same logic as real-time generation
+        const stream = await soapStreaming.generateSOAPNoteStream(
+          patientId,
+          encounterId.toString(),
+          transcription
+        );
+
+        // Read the stream to get the complete SOAP note
+        const reader = stream.getReader();
+        let soapNote = "";
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            // Parse the streamed data to extract SOAP note content
+            const chunk = new TextDecoder().decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.type === 'response.text.done' && data.text) {
+                    soapNote = data.text;
+                  }
+                } catch (parseError) {
+                  // Skip malformed JSON lines
+                }
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        if (!soapNote.trim()) {
+          throw new Error("Failed to generate SOAP note content");
+        }
+
+        // Save the generated SOAP note to the encounter
+        await storage.updateEncounter(encounterId, {
+          note: soapNote,
+        });
+
+        console.log(`✅ [GenerateSOAP] SOAP note generated and saved for encounter ${encounterId}`);
+
+        res.json({
+          soapNote,
+          message: "SOAP note generated successfully from transcription",
+          encounterId,
+          patientId
+        });
+
+      } catch (error: any) {
+        console.error("❌ [GenerateSOAP] Error generating SOAP from transcription:", error);
+        res.status(500).json({
+          message: "Failed to generate SOAP note from transcription",
+          error: error.message,
+        });
+      }
+    }
+  );
+
   // Save manually edited SOAP note (with physical exam learning analysis)
   app.put(
     "/api/patients/:id/encounters/:encounterId/soap-note",

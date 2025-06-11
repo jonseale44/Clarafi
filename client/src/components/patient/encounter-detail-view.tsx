@@ -1722,6 +1722,72 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     }
   };
 
+  // Generate SOAP Note from Transcription Function
+  const handleGenerateFromTranscription = async () => {
+    if (!transcription.trim()) {
+      toast({
+        variant: "destructive",
+        title: "No Transcription",
+        description: "No transcription available to generate SOAP note from. Please record some audio first.",
+      });
+      return;
+    }
+
+    setIsGeneratingSOAP(true);
+    try {
+      console.log("🔄 [EncounterView] Manually generating SOAP note from transcription...");
+
+      const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap-from-transcription`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcription: transcription,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate SOAP note: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const generatedSOAP = data.soapNote;
+
+      console.log("✅ [EncounterView] SOAP note generated from transcription");
+
+      // Update the SOAP note state and editor
+      setSoapNote(generatedSOAP);
+      setLastSaved(generatedSOAP);
+      setAutoSaveStatus("saved");
+
+      if (editor && !editor.isDestroyed) {
+        const formattedContent = formatSoapNoteContent(generatedSOAP);
+        editor.commands.setContent(formattedContent);
+      }
+
+      // Invalidate caches to refresh data
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/encounters/${encounterId}`],
+      });
+
+      toast({
+        title: "SOAP Note Generated",
+        description: "SOAP note has been successfully generated from the transcription.",
+      });
+
+    } catch (error) {
+      console.error("❌ [EncounterView] Error generating SOAP from transcription:", error);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Failed to generate SOAP note from transcription. Please try again.",
+      });
+    } finally {
+      setIsGeneratingSOAP(false);
+    }
+  };
+
   // SOAP Note Saving Function
   const handleSaveSOAP = async () => {
     if (!soapNote.trim()) {
@@ -2057,6 +2123,18 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   isRealtimeEnabled={useRealtimeAPI}
                 />
 
+                {transcription.trim() && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateFromTranscription}
+                    disabled={isGeneratingSOAP || !transcription.trim()}
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isGeneratingSOAP ? 'animate-spin' : ''}`} />
+                    {isGeneratingSOAP ? "Generating..." : "Generate from Transcription"}
+                  </Button>
+                )}
                 {isGeneratingSOAP && (
                   <div className="flex items-center text-sm text-blue-600">
                     <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
