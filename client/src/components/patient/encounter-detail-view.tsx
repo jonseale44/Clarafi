@@ -2349,6 +2349,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             autoTrigger={false}
           />
 
+          {/* Enhanced Medical Problems */}
+          <EnhancedMedicalProblems patientId={patient.id} encounterId={encounterId} />
+
           {/* Draft Orders */}
           <DraftOrders patientId={patient.id} encounterId={encounterId} />
 

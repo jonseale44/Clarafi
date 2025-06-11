@@ -11,10 +11,22 @@ const router = Router();
  */
 router.get("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    console.log(`🔍 [EnhancedMedicalProblems] GET request for patient ${req.params.patientId}`);
+    console.log(`🔍 [EnhancedMedicalProblems] User authenticated: ${req.isAuthenticated()}`);
+    
+    if (!req.isAuthenticated()) {
+      console.log(`❌ [EnhancedMedicalProblems] Authentication failed`);
+      return res.sendStatus(401);
+    }
 
     const patientId = parseInt(req.params.patientId);
+    console.log(`🔍 [EnhancedMedicalProblems] Fetching problems for patient ID: ${patientId}`);
+    
     const problems = await storage.getPatientMedicalProblems(patientId);
+    console.log(`🔍 [EnhancedMedicalProblems] Found ${problems.length} problems`);
+    problems.forEach((problem, index) => {
+      console.log(`🔍 [EnhancedMedicalProblems] Problem ${index + 1}: ${problem.problemTitle} (${problem.currentIcd10Code})`);
+    });
 
     // Format for frontend display with visit history
     const formattedProblems = problems.map(problem => ({
