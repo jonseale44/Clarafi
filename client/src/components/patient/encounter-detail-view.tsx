@@ -182,6 +182,9 @@ export function EncounterDetailView({
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string>("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "unsaved" | "">("");
+  
+  // Track automatic SOAP generation after stopping recording
+  const [isAutoGeneratingSOAP, setIsAutoGeneratingSOAP] = useState(false);
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -312,6 +315,9 @@ export function EncounterDetailView({
       setLastSaved(note);
       setAutoSaveStatus("saved");
       
+      // Reset the generating state to hide loading animation on "Generate from Transcription" button
+      setIsGeneratingSOAP(false);
+      
       console.log(
         `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
       );
@@ -322,6 +328,9 @@ export function EncounterDetailView({
         error,
       );
       setAutoSaveStatus("unsaved");
+      
+      // Reset the generating state even on error to prevent stuck loading animation
+      setIsGeneratingSOAP(false);
     }
   };
 
@@ -1633,6 +1642,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       console.log(
         "🩺 [EncounterView] Triggering Real-time SOAP generation after recording...",
       );
+
+      // Set the generating state to show loading animation on "Generate from Transcription" button
+      setIsGeneratingSOAP(true);
 
       // Set transcription for Real-time SOAP component
       setTranscription(transcriptionBuffer);
