@@ -238,6 +238,43 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
 
   const getOrdersByType = (type: string) => orders.filter((order: Order) => order.orderType === type);
 
+  // Sort and group orders for the "All" tab
+  const getSortedAndGroupedOrders = () => {
+    const orderTypeOrder = ['lab', 'imaging', 'medication', 'referral'];
+    
+    return orders
+      .slice() // Create a copy to avoid mutating original array
+      .sort((a: Order, b: Order) => {
+        // First, sort by order type according to our preferred order
+        const aTypeIndex = orderTypeOrder.indexOf(a.orderType);
+        const bTypeIndex = orderTypeOrder.indexOf(b.orderType);
+        
+        if (aTypeIndex !== bTypeIndex) {
+          return aTypeIndex - bTypeIndex;
+        }
+        
+        // Then sort alphabetically within each type
+        const getOrderName = (order: Order) => {
+          switch (order.orderType) {
+            case 'medication':
+              return order.medicationName || '';
+            case 'lab':
+              return order.testName || order.labName || '';
+            case 'imaging':
+              return order.studyType || '';
+            case 'referral':
+              return order.specialtyType || '';
+            default:
+              return '';
+          }
+        };
+        
+        const aName = getOrderName(a).toLowerCase();
+        const bName = getOrderName(b).toLowerCase();
+        return aName.localeCompare(bName);
+      });
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -336,7 +373,7 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
             </TabsList>
 
             <TabsContent value="all" className="space-y-2">
-              {orders.map((order: Order) => (
+              {getSortedAndGroupedOrders().map((order: Order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
