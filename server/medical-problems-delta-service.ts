@@ -250,7 +250,19 @@ Respond with ONLY the JSON, no other text.
         return [];
       }
 
-      const result = JSON.parse(content);
+      // Clean GPT response - remove markdown code blocks if present
+      let cleanedContent = content;
+      if (content.startsWith('```json')) {
+        cleanedContent = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        console.log(`🤖 [GPT] Cleaned markdown formatting from response`);
+      } else if (content.startsWith('```')) {
+        cleanedContent = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+        console.log(`🤖 [GPT] Cleaned generic markdown formatting from response`);
+      }
+      
+      console.log(`🤖 [GPT] Cleaned content for parsing:`, cleanedContent);
+
+      const result = JSON.parse(cleanedContent);
       console.log(`🤖 [GPT] Parsed result:`, result);
       console.log(`🤖 [GPT] Changes detected: ${result.changes?.length || 0}`);
       
