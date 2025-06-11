@@ -1105,14 +1105,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   );
                 }
 
-                // Apply bullet point formatting for better visual separation
+                // Apply simple bullet point formatting - just add single line break before bullet points
                 formattedSuggestions = formattedSuggestions
-                  // Add new line before bullet points (•, -, *, numbers)
-                  .replace(/([^\n])(\s*[•\-\*]|\s*\d+\.)\s*/g, '$1\n\n$2 ')
-                  // Add new line before "Consider" at start of suggestions
-                  .replace(/([^\n])(Consider\s)/g, '$1\n\n$2')
-                  // Clean up multiple consecutive newlines
-                  .replace(/\n{3,}/g, '\n\n')
+                  // Add single line break before bullet points (•) only
+                  .replace(/([^\n])(\s*•)/g, '$1\n$2')
                   // Ensure proper spacing after header
                   .replace(/🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g, '🩺 REAL-TIME CLINICAL INSIGHTS:\n\n');
                 
