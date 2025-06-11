@@ -241,8 +241,20 @@ export function EncounterDetailView({
     }
   };
 
+  // Helper function to check if there are actual unsaved changes
+  const hasUnsavedChanges = (currentContent: string): boolean => {
+    if (!currentContent.trim()) return false;
+    return currentContent !== lastSaved;
+  };
+
   // Debounced auto-save trigger
   const triggerAutoSave = (content: string) => {
+    // Only trigger auto-save if there are actual changes
+    if (!hasUnsavedChanges(content)) {
+      setAutoSaveStatus("saved");
+      return;
+    }
+
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
     }
@@ -295,6 +307,11 @@ export function EncounterDetailView({
           body: JSON.stringify({ soapNote: note }),
         },
       );
+      
+      // Update auto-save state when SOAP note is automatically generated and saved
+      setLastSaved(note);
+      setAutoSaveStatus("saved");
+      
       console.log(
         `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
       );
@@ -304,6 +321,7 @@ export function EncounterDetailView({
         "❌ [EncounterView] Error saving Real-time SOAP note:",
         error,
       );
+      setAutoSaveStatus("unsaved");
     }
   };
 
@@ -2049,13 +2067,28 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   size="sm"
                   variant="outline"
                   onClick={handleSaveSOAP}
-                  disabled={!soapNote.trim() || isSavingSOAP}
-                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                  disabled={
+                    !soapNote.trim() || 
+                    isSavingSOAP || 
+                    isAutoSaving ||
+                    autoSaveStatus === "saved" ||
+                    (editor?.getHTML() || soapNote) === lastSaved
+                  }
+                  className={`${
+                    autoSaveStatus === "saved" || (editor?.getHTML() || soapNote) === lastSaved
+                      ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                  }`}
                 >
-                  {isSavingSOAP ? (
+                  {isSavingSOAP || isAutoSaving ? (
                     <>
                       <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
                       Saving...
+                    </>
+                  ) : autoSaveStatus === "saved" || (editor?.getHTML() || soapNote) === lastSaved ? (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Saved
                     </>
                   ) : (
                     <>
