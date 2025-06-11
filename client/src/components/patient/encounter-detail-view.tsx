@@ -827,7 +827,7 @@ Output examples of bad insights (to avoid):
 
 Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
 
-Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
 
 Format each bullet point on its own line with no extra spacing between them.`,
               metadata: {
@@ -1001,7 +1001,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 };
 
                 realtimeWs.send(JSON.stringify(responseRequest));
-              }, 2000); // 2-second debounce
+              }, 5000); // 5-second debounce for more readable pace
             }
           }
 
