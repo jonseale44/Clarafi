@@ -912,7 +912,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
             // Start AI suggestions conversation when we have enough transcription (first time only)
             if (
-              transcriptionBuffer.length > 50 &&
+              transcriptionBuffer.length > 20 &&
               !suggestionsStarted &&
               !conversationActive &&
               realtimeWs
@@ -932,10 +932,10 @@ Format each bullet point on its own line with no extra spacing between them.`,
               startSuggestionsConversation(realtimeWs, patient);
             }
 
-            // NEW: Continuously update AI suggestions with live context
+            // REAL-TIME: Continuously update AI suggestions with live partial transcription
             if (
               suggestionsStarted &&
-              transcriptionBuffer.length > 50 &&
+              transcriptionBuffer.length > 20 &&
               realtimeWs
             ) {
               // Debounce to prevent too many rapid updates
@@ -945,10 +945,10 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
               suggestionDebounceTimer.current = setTimeout(() => {
                 console.log(
-                  "🧠 [EncounterView] Updating AI context with live transcription",
+                  "🧠 [EncounterView] Real-time AI context update with partial transcription",
                 );
 
-                // Send updated context to AI
+                // Send live partial transcription to AI
                 const contextUpdate = {
                   type: "conversation.item.create",
                   item: {
@@ -957,7 +957,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
                     content: [
                       {
                         type: "input_text",
-                        text: `Updated conversation context: "${liveTranscriptionContent || transcriptionBuffer}"\n\nProvide relevant medical suggestions based on this updated context.`,
+                        text: `Live partial transcription: "${transcriptionBuffer}"\n\nProvide immediate medical insights based on this ongoing conversation.`,
                       },
                     ],
                   },
@@ -1001,7 +1001,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 };
 
                 realtimeWs.send(JSON.stringify(responseRequest));
-              }, 5000); // 5-second debounce for more readable pace
+              }, 2000); // Reduced to 2-second debounce for faster real-time response
             }
           }
 
