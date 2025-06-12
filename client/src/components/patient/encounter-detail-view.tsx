@@ -34,6 +34,7 @@ import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
 import { EncounterSignaturePanel } from "./encounter-signature-panel";
+import { EncounterWorkflowControls } from "./encounter-workflow-controls";
 import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
