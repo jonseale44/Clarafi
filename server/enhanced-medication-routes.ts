@@ -144,11 +144,10 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
     console.log(`🏥 [EnhancedMedications] Patient ID: ${patientId}`);
     console.log(`🏥 [EnhancedMedications] SOAP note length: ${soapNote.length} characters`);
 
-    // Process medications using intelligent service
-    const result = await intelligentMedication.processMedicationsFromSOAP(
-      encounterId,
-      soapNote,
-      patientId
+    // Phase 1: Create pending medications from draft orders
+    const result = await intelligentMedication.createPendingMedicationsFromOrders(
+      patientId,
+      encounterId
     );
 
     console.log(`✅ [EnhancedMedications] Successfully processed ${result.medicationsAffected} medications`);

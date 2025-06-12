@@ -469,6 +469,191 @@ Return JSON array of mapping objects with medicationName, problemId, indication,
 
     return updatedCount;
   }
+
+  /**
+   * Phase 1: Create pending medications from draft orders
+   * Shows all medication options immediately after recording stops
+   */
+  async createPendingMedicationsFromOrders(
+    patientId: number,
+    encounterId: number
+  ): Promise<number> {
+    console.log(`🏥 [Phase1] Creating pending medications from draft orders for encounter ${encounterId}`);
+    
+    try {
+      // Get all draft medication orders for this encounter
+      const draftOrders = await storage.getDraftOrdersByEncounter(encounterId);
+      const medicationOrders = draftOrders.filter(order => order.orderType === 'medication');
+      
+      if (medicationOrders.length === 0) {
+        console.log(`🏥 [Phase1] No medication orders found for encounter ${encounterId}`);
+        return 0;
+      }
+
+      let createdCount = 0;
+
+      for (const order of medicationOrders) {
+        try {
+          // Parse order details for medication name
+          const medicationName = order.orderDetails?.medicationName || 
+                                order.description?.split(' - ')[0] || 
+                                order.description;
+
+          const medicationData = {
+            patientId,
+            encounterId,
+            medicationName,
+            genericName: order.orderDetails?.genericName || null,
+            brandName: order.orderDetails?.brandName || null,
+            dosage: order.orderDetails?.dosage || "As directed",
+            route: order.orderDetails?.route || "oral",
+            frequency: order.orderDetails?.frequency || "daily",
+            rxNormCode: order.orderDetails?.rxNormCode || null,
+            ndcCode: order.orderDetails?.ndcCode || null,
+            clinicalIndication: order.orderDetails?.indication || null,
+            startDate: new Date().toISOString().split('T')[0],
+            status: "pending", // Key: pending status until order is signed
+            firstEncounterId: encounterId,
+            lastUpdatedEncounterId: encounterId,
+            sourceOrderId: order.id, // Link to the draft order
+            medicationHistory: [],
+            changeLog: [{
+              timestamp: new Date().toISOString(),
+              action: 'pending_from_order',
+              encounterId,
+              orderId: order.id,
+              changes: `Pending medication created from draft order: ${order.description}`
+            }],
+            groupingStrategy: "medical_problem",
+            relatedMedications: [],
+            drugInteractions: []
+          };
+
+          await storage.createMedication(medicationData);
+          createdCount++;
+          
+          console.log(`✅ [Phase1] Created pending medication: ${medicationData.medicationName}`);
+        } catch (error) {
+          console.error(`❌ [Phase1] Failed to create pending medication for order ${order.id}:`, error);
+        }
+      }
+
+      console.log(`✅ [Phase1] Created ${createdCount} pending medications`);
+      return createdCount;
+    } catch (error) {
+      console.error(`❌ [Phase1] Error creating pending medications:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Phase 2: Update medications when orders are signed
+   * Finalizes medications based on signed orders and removes alternatives
+   */
+  async updateMedicationsFromSignedOrder(
+    patientId: number,
+    signedOrderId: number
+  ): Promise<void> {
+    console.log(`🏥 [Phase2] Updating medications from signed order ${signedOrderId}`);
+    
+    try {
+      // Get the signed order details
+      const signedOrder = await storage.getOrder(signedOrderId);
+      if (!signedOrder || signedOrder.orderType !== 'medication') {
+        console.log(`🏥 [Phase2] Order ${signedOrderId} is not a medication order`);
+        return;
+      }
+
+      // Find the pending medication linked to this order
+      const allMedications = await storage.getPatientMedications(patientId);
+      const pendingMedication = allMedications.find(med => 
+        med.sourceOrderId === signedOrderId && med.status === 'pending'
+      );
+      
+      if (!pendingMedication) {
+        console.log(`🏥 [Phase2] No pending medication found for order ${signedOrderId}`);
+        return;
+      }
+
+      // Update the pending medication to active status
+      const updatedMedicationData = {
+        ...pendingMedication,
+        status: "active",
+        changeLog: [
+          ...pendingMedication.changeLog,
+          {
+            timestamp: new Date().toISOString(),
+            action: 'activated_from_signed_order',
+            encounterId: signedOrder.encounterId,
+            orderId: signedOrderId,
+            changes: `Medication activated from signed order: ${signedOrder.description}`
+          }
+        ]
+      };
+
+      await storage.updateMedication(pendingMedication.id, updatedMedicationData);
+
+      // Remove alternative pending medications for the same medication class
+      await this.removeAlternativePendingMedications(
+        patientId, 
+        pendingMedication.medicationName,
+        signedOrderId
+      );
+
+      console.log(`✅ [Phase2] Activated medication: ${pendingMedication.medicationName}`);
+    } catch (error) {
+      console.error(`❌ [Phase2] Error updating medication from signed order:`, error);
+    }
+  }
+
+  /**
+   * Remove alternative pending medications when one is selected
+   */
+  private async removeAlternativePendingMedications(
+    patientId: number,
+    activatedMedicationName: string,
+    selectedOrderId: number
+  ): Promise<void> {
+    try {
+      // Get all pending medications for this patient with similar names
+      const allPendingMedications = await storage.getPatientMedications(patientId);
+      const pendingAlternatives = allPendingMedications.filter(med => 
+        med.status === 'pending' && 
+        med.sourceOrderId !== selectedOrderId &&
+        this.isSameMedicationClass(med.medicationName, activatedMedicationName)
+      );
+
+      for (const alternative of pendingAlternatives) {
+        // Mark as discontinued instead of deleting
+        await storage.updateMedication(alternative.id, {
+          ...alternative,
+          status: "discontinued",
+          changeLog: [
+            ...alternative.changeLog,
+            {
+              timestamp: new Date().toISOString(),
+              action: 'discontinued_alternative',
+              changes: `Alternative option discontinued when ${activatedMedicationName} was selected`
+            }
+          ]
+        });
+        
+        console.log(`🗑️ [Phase2] Discontinued alternative: ${alternative.medicationName}`);
+      }
+    } catch (error) {
+      console.error(`❌ [Phase2] Error removing alternative medications:`, error);
+    }
+  }
+
+  /**
+   * Check if two medications are the same class (e.g., both Amoxicillin)
+   */
+  private isSameMedicationClass(med1: string, med2: string): boolean {
+    // Extract base medication name (before dosage/strength)
+    const baseName1 = med1.toLowerCase().split(/\s+/)[0];
+    const baseName2 = med2.toLowerCase().split(/\s+/)[0];
+    return baseName1 === baseName2;
+  }
 }
 
 export const intelligentMedication = new IntelligentMedicationService();

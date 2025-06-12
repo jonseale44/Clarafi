@@ -453,6 +453,26 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(orders.patientId, patientId), eq(orders.orderStatus, "draft")));
   }
 
+  // Two-phase medication workflow support
+  async getDraftOrdersByEncounter(encounterId: number): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(and(
+        eq(orders.encounterId, encounterId),
+        eq(orders.orderStatus, "draft")
+      ))
+      .orderBy(orders.createdAt);
+  }
+
+  async findPendingMedicationByOrder(patientId: number, orderId: number): Promise<any> {
+    const medications = await db.select().from(patientMedications)
+      .where(and(
+        eq(patientMedications.patientId, patientId),
+        eq(patientMedications.status, "pending")
+      ));
+    
+    return medications.find(med => med.sourceOrderId === orderId);
+  }
+
   // Physical Findings management (GPT-driven persistent findings)
   async getPatientPhysicalFindings(patientId: number): Promise<any[]> {
     return await db.select().from(patientPhysicalFindings)
