@@ -187,6 +187,10 @@ export function EncounterDetailView({
   
   // Track automatic SOAP generation after stopping recording
   const [isAutoGeneratingSOAP, setIsAutoGeneratingSOAP] = useState(false);
+  
+  // Track automatic orders and billing generation after stopping recording
+  const [isAutoGeneratingOrders, setIsAutoGeneratingOrders] = useState(false);
+  const [isAutoGeneratingBilling, setIsAutoGeneratingBilling] = useState(false);
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -292,6 +296,12 @@ export function EncounterDetailView({
     console.log(`🔍 [EncounterView] Patient: ${patient?.id || 'MISSING'}, Encounter: ${encounterId || 'MISSING'}`);
     console.log(`🔍 [EncounterView] Patient object:`, patient);
     console.log(`🔍 [EncounterView] About to save SOAP note to encounter...`);
+    
+    // Reset all generating states when SOAP generation completes
+    setIsGeneratingSOAP(false);
+    setIsAutoGeneratingSOAP(false);
+    setIsAutoGeneratingOrders(false);
+    setIsAutoGeneratingBilling(false);
 
     setSoapNote(note);
     if (editor && !editor.isDestroyed) {
@@ -1708,8 +1718,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         "🩺 [EncounterView] Triggering Real-time SOAP generation after recording...",
       );
 
-      // Set the generating state to show loading animation on "Generate from Transcription" button
+      // Set the generating states to show loading animations for all sections
       setIsGeneratingSOAP(true);
+      setIsAutoGeneratingSOAP(true);
+      setIsAutoGeneratingOrders(true);
+      setIsAutoGeneratingBilling(true);
 
       // Set transcription for Real-time SOAP component
       setTranscription(transcriptionBuffer);

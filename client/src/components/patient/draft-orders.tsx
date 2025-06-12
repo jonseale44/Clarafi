@@ -62,6 +62,7 @@ interface Order {
 interface DraftOrdersProps {
   patientId: number;
   encounterId?: number;
+  isAutoGenerating?: boolean;
 }
 
 export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
