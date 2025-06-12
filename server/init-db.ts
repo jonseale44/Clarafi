@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { users } from "@shared/schema";
-import { hashPassword } from "./auth";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
 export async function initializeDatabase() {
   try {
@@ -37,11 +38,8 @@ export async function initializeDatabase() {
   }
 }
 
-// Hash password function (copied from auth.ts to avoid circular imports)
+// Hash password function
 async function hashPassword(password: string) {
-  const { scrypt, randomBytes } = await import("crypto");
-  const { promisify } = await import("util");
-  
   const scryptAsync = promisify(scrypt);
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;

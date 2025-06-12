@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { seedSampleData } from "./seed-data";
+import { initializeDatabase } from "./init-db";
 
 const app = express();
 app.use(express.json());
@@ -65,9 +65,13 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
-    // Seed sample data after server starts
-    seedSampleData().catch(console.error);
+    // Initialize database with default user
+    try {
+      await initializeDatabase();
+    } catch (error) {
+      console.error("Database initialization failed:", error);
+    }
   });
 })();
