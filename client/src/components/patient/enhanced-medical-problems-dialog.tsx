@@ -189,7 +189,10 @@ export function EnhancedMedicalProblemsDialog({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // Parse date as local date to avoid timezone conversion issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day); // month is 0-indexed
+    return localDate.toLocaleDateString('en-US', {
       month: 'numeric',
       day: 'numeric',
       year: '2-digit'
