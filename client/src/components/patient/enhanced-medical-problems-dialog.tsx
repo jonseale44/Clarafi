@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,7 +61,7 @@ export function EnhancedMedicalProblemsDialog({
   problem,
   encounters = []
 }: EnhancedMedicalProblemsDialogProps) {
-  const [visitHistory, setVisitHistory] = useState<VisitNote[]>(problem?.visitHistory || []);
+  const [visitHistory, setVisitHistory] = useState<VisitNote[]>([]);
   const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
   const [newVisitNote, setNewVisitNote] = useState<{ date: string; notes: string }>({
     date: new Date().toISOString().split('T')[0],
@@ -74,12 +74,38 @@ export function EnhancedMedicalProblemsDialog({
   const form = useForm({
     resolver: zodResolver(medicalProblemSchema),
     defaultValues: {
-      problemTitle: problem?.problemTitle || "",
-      currentIcd10Code: problem?.currentIcd10Code || "",
-      problemStatus: problem?.problemStatus || "active",
-      firstDiagnosedDate: problem?.firstDiagnosedDate || "",
+      problemTitle: "",
+      currentIcd10Code: "",
+      problemStatus: "active",
+      firstDiagnosedDate: "",
     },
   });
+
+  // Reset form and visit history when problem changes
+  useEffect(() => {
+    if (problem) {
+      form.reset({
+        problemTitle: problem.problemTitle || "",
+        currentIcd10Code: problem.currentIcd10Code || "",
+        problemStatus: problem.problemStatus || "active",
+        firstDiagnosedDate: problem.firstDiagnosedDate || "",
+      });
+      // Add unique IDs to visit history entries for editing
+      const historyWithIds = (problem.visitHistory || []).map((visit, index) => ({
+        ...visit,
+        id: visit.id || `visit-${index}-${Date.now()}`
+      }));
+      setVisitHistory(historyWithIds);
+    } else {
+      form.reset({
+        problemTitle: "",
+        currentIcd10Code: "",
+        problemStatus: "active",
+        firstDiagnosedDate: "",
+      });
+      setVisitHistory([]);
+    }
+  }, [problem, form]);
 
   // Visit note form
   const visitForm = useForm({
