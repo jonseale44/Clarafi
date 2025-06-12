@@ -80,6 +80,7 @@ export interface IStorage {
   getMedicalProblem(id: number): Promise<MedicalProblem | undefined>;
   createMedicalProblem(problem: InsertMedicalProblem): Promise<MedicalProblem>;
   updateMedicalProblem(id: number, updates: Partial<MedicalProblem>): Promise<MedicalProblem>;
+  deleteMedicalProblem(id: number): Promise<void>;
   getMedicalProblemVisitHistory(problemId: number): Promise<any[]>;
   
   sessionStore: session.SessionStore;
