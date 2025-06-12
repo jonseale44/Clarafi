@@ -218,15 +218,26 @@ TASK: Identify ONLY what changed in this visit. Return minimal updates in this e
   ]
 }
 
-RULES:
+CRITICAL MATCHING RULES:
+1. ALWAYS check if conditions mentioned in SOAP match existing problems using medical synonyms
+2. Common medical synonyms to recognize:
+   - "DM2", "Dm2", "Type 2 diabetes", "T2DM", "diabetes mellitus type 2" = SAME CONDITION
+   - "HTN", "Hypertension", "High blood pressure", "Elevated BP" = SAME CONDITION
+   - "CAD", "Coronary artery disease", "Heart disease", "Cardiac disease" = SAME CONDITION
+   - "COPD", "Chronic obstructive pulmonary disease", "Emphysema", "Chronic bronchitis" = SAME CONDITION
+   - "UTI", "Urinary tract infection", "Bladder infection", "Cystitis" = SAME CONDITION
+3. If SOAP mentions a condition that matches an existing problem (even with different wording), use ADD_VISIT with the existing problem_id
+4. Only use NEW_PROBLEM if the condition is genuinely new and doesn't match any existing problem
+5. DO NOT create duplicate problems for the same medical condition
+
+PROCESSING RULES:
 1. DO NOT return full problem lists - only changes from this visit
 2. If diabetes develops neuropathy, evolve E11.0 → E11.41 (your decision, not hardcoded)
 3. Visit notes should be concise clinical summary for this encounter only
 4. Only include problems mentioned or affected in this SOAP note
 5. Use highest complexity ICD-10 code when conditions evolve
-6. IMPORTANT: If new medical problems are diagnosed/mentioned in Assessment/Plan, CREATE them as NEW_PROBLEM
-7. Look for diagnoses in the Assessment/Plan section - these should become new medical problems
-8. Return empty changes array ONLY if truly no medical conditions are discussed
+6. Look for diagnoses in the Assessment/Plan section
+7. Return empty changes array ONLY if truly no medical conditions are discussed
 
 Respond with ONLY the JSON, no other text.
 `;
