@@ -314,8 +314,8 @@ export const medicalProblems = pgTable("medical_problems", {
   currentIcd10Code: text("current_icd10_code"),
   problemStatus: text("problem_status").default("active"), // 'active', 'resolved', 'chronic'
   firstDiagnosedDate: date("first_diagnosed_date"),
-  firstEncounterId: integer("first_encounter_id").references(() => encounters.id),
-  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id),
+  firstEncounterId: integer("first_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
   
   // Enhanced JSONB fields for performance
   visitHistory: jsonb("visit_history").default([]), // Chronological visit notes
