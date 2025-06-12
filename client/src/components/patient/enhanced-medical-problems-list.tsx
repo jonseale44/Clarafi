@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, Filter, Activity, Clock, CheckCircle2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -49,8 +50,7 @@ export function EnhancedMedicalProblemsList({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProblem, setEditingProblem] = useState<MedicalProblem | null>(null);
   const [expandedProblems, setExpandedProblems] = useState<Set<number>>(new Set());
-  const [showResolved, setShowResolved] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'chronic' | 'resolved'>('all');
+  const [activeTab, setActiveTab] = useState<'current' | 'resolved'>('current');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -122,19 +122,10 @@ export function EnhancedMedicalProblemsList({
     });
   };
 
-  // Filter problems based on status
-  const filteredProblems = medicalProblems.filter(problem => {
-    if (!showResolved && problem.problemStatus === 'resolved') {
-      return false;
-    }
-    if (statusFilter === 'all') return true;
-    return problem.problemStatus === statusFilter;
-  });
-
   // Separate problems by status for better organization
-  const activeProblems = filteredProblems.filter(p => p.problemStatus === 'active');
-  const chronicProblems = filteredProblems.filter(p => p.problemStatus === 'chronic');
-  const resolvedProblems = filteredProblems.filter(p => p.problemStatus === 'resolved');
+  const activeProblems = medicalProblems.filter(p => p.problemStatus === 'active');
+  const chronicProblems = medicalProblems.filter(p => p.problemStatus === 'chronic');
+  const resolvedProblems = medicalProblems.filter(p => p.problemStatus === 'resolved');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -295,43 +286,82 @@ export function EnhancedMedicalProblemsList({
     </Card>
   );
 
-  const resolvedCount = medicalProblems.filter(p => p.problemStatus === 'resolved').length;
+  const resolvedCount = resolvedProblems.length;
+  const currentProblemsCount = activeProblems.length + chronicProblems.length;
+
+  const renderCurrentProblems = () => (
+    <div className="space-y-6">
+      {/* Active Problems */}
+      {activeProblems.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
+            <Activity className="h-4 w-4" />
+            Active Problems ({activeProblems.length})
+          </div>
+          <div className="space-y-3 group">
+            {activeProblems.map(renderProblemCard)}
+          </div>
+        </div>
+      )}
+
+      {/* Chronic Problems */}
+      {chronicProblems.length > 0 && (
+        <div className="space-y-3">
+          {activeProblems.length > 0 && <Separator className="my-6" />}
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+            <Clock className="h-4 w-4" />
+            Chronic Conditions ({chronicProblems.length})
+          </div>
+          <div className="space-y-3 group">
+            {chronicProblems.map(renderProblemCard)}
+          </div>
+        </div>
+      )}
+
+      {/* No current problems */}
+      {currentProblemsCount === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No active medical problems</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderResolvedProblems = () => (
+    <div className="space-y-3">
+      {resolvedProblems.length > 0 ? (
+        <div className="space-y-3 group">
+          {resolvedProblems.map(renderProblemCard)}
+        </div>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No resolved problems</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
       {mode !== "encounter" && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h2>
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <span>{activeProblems.length + chronicProblems.length} active</span>
-              {resolvedCount > 0 && (
-                <>
-                  <span>•</span>
-                  <span>{resolvedCount} resolved</span>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {resolvedCount > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowResolved(!showResolved)}
-                className="text-xs"
-              >
-                {showResolved ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
-                {showResolved ? 'Hide' : 'Show'} Resolved ({resolvedCount})
-              </Button>
-            )}
-            {!isReadOnly && (
-              <Button onClick={handleAddNew} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Problem
-              </Button>
-            )}
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h2>
+          {!isReadOnly && (
+            <Button onClick={handleAddNew} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Problem
+            </Button>
+          )}
         </div>
       )}
 
@@ -345,68 +375,26 @@ export function EnhancedMedicalProblemsList({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {/* Active Problems */}
-          {activeProblems.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
-                <Activity className="h-4 w-4" />
-                Active Problems ({activeProblems.length})
-              </div>
-              <div className="space-y-3 group">
-                {activeProblems.map(renderProblemCard)}
-              </div>
-            </div>
-          )}
-
-          {/* Chronic Problems */}
-          {chronicProblems.length > 0 && (
-            <div className="space-y-3">
-              {activeProblems.length > 0 && <Separator className="my-6" />}
-              <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300">
-                <Clock className="h-4 w-4" />
-                Chronic Conditions ({chronicProblems.length})
-              </div>
-              <div className="space-y-3 group">
-                {chronicProblems.map(renderProblemCard)}
-              </div>
-            </div>
-          )}
-
-          {/* Resolved Problems (when shown) */}
-          {showResolved && resolvedProblems.length > 0 && (
-            <div className="space-y-3">
-              {(activeProblems.length > 0 || chronicProblems.length > 0) && <Separator className="my-6" />}
-              <div className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-300">
-                <CheckCircle2 className="h-4 w-4" />
-                Resolved Problems ({resolvedProblems.length})
-              </div>
-              <div className="space-y-3 opacity-75 group">
-                {resolvedProblems.map(renderProblemCard)}
-              </div>
-            </div>
-          )}
-
-          {/* No visible problems after filtering */}
-          {filteredProblems.length === 0 && medicalProblems.length > 0 && (
-            <Card className="border-dashed">
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No problems match current filters</p>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => setShowResolved(true)}
-                    className="text-xs mt-2"
-                  >
-                    Show all problems
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'current' | 'resolved')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="current" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Current ({currentProblemsCount})
+            </TabsTrigger>
+            <TabsTrigger value="resolved" className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Resolved ({resolvedCount})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="current" className="mt-6">
+            {renderCurrentProblems()}
+          </TabsContent>
+          
+          <TabsContent value="resolved" className="mt-6">
+            {renderResolvedProblems()}
+          </TabsContent>
+        </Tabs>
       )}
 
       <EnhancedMedicalProblemsDialog
