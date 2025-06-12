@@ -259,7 +259,7 @@ export class EncounterSignatureValidator {
 
     // Check for primary diagnosis
     if (diagnoses.length > 0) {
-      const hasPrimary = diagnoses.some(d => d.isPrimary === true);
+      const hasPrimary = diagnoses.some((d: any) => d.isPrimary === true);
       if (!hasPrimary) {
         result.errors.push({
           category: 'coding',
@@ -312,7 +312,7 @@ export class EncounterSignatureValidator {
     }
 
     // Check for orders with missing required fields
-    for (const order of orders) {
+    for (const order of ordersList) {
       if (order.orderType === 'medication') {
         if (!order.dosage || !order.sig || !order.quantity) {
           result.errors.push({
@@ -394,16 +394,16 @@ export class EncounterSignatureValidator {
    */
   private async validateMedicalProblems(encounter: any, result: ValidationResult): Promise<void> {
     // Check if medical problems have been addressed
-    const medicalProblems = await db.select()
+    const medicalProblemsList = await db.select()
       .from(medicalProblems)
       .where(eq(medicalProblems.patientId, encounter.patientId));
 
     // For encounters with medical problems processing, ensure they're signed
-    const problemsNeedingSigning = medicalProblems.filter(problem => {
+    const problemsNeedingSigning = medicalProblemsList.filter((problem: any) => {
       const visitHistory = problem.visitHistory as any[];
       if (!visitHistory || visitHistory.length === 0) return false;
       
-      return visitHistory.some(visit => 
+      return visitHistory.some((visit: any) => 
         visit.encounter_id === encounter.id && !visit.is_signed
       );
     });
@@ -416,7 +416,7 @@ export class EncounterSignatureValidator {
         field: 'medicalProblems',
         details: { 
           problemCount: problemsNeedingSigning.length,
-          problemIds: problemsNeedingSigning.map(p => p.id)
+          problemIds: problemsNeedingSigning.map((p: any) => p.id)
         }
       });
     }
@@ -466,7 +466,7 @@ export class EncounterSignatureValidator {
    */
   private async validateLegalRequirements(encounter: any, result: ValidationResult): Promise<void> {
     // Check encounter timing
-    const encounterAge = new Date().getTime() - new Date(encounter.createdAt).getTime();
+    const encounterAge = new Date().getTime() - new Date(encounter.createdAt || encounter.startTime).getTime();
     const daysSinceEncounter = encounterAge / (1000 * 60 * 60 * 24);
 
     if (daysSinceEncounter > 30) {

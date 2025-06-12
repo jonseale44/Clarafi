@@ -13,6 +13,7 @@ import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import medicalProblemsRoutes from "./medical-problems-routes";
 import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
+import encounterValidationRoutes from "./encounter-validation-routes";
 import multer from "multer";
 import OpenAI from "openai";
 
@@ -34,6 +35,9 @@ export function registerRoutes(app: Express): Server {
 
   // Enhanced medical problems routes (JSONB visit history)
   app.use("/api", enhancedMedicalProblemsRoutes);
+
+  // Encounter validation and signing routes
+  app.use("/api", encounterValidationRoutes);
 
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 

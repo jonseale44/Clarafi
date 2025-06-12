@@ -83,7 +83,7 @@ router.post("/encounters/:encounterId/validate-and-sign", async (req: Request, r
     }
 
     // Sign the encounter
-    const signedEncounter = await this.signEncounter(encounterId, userId, signatureNote);
+    const signedEncounter = await signEncounter(encounterId, userId, signatureNote);
 
     // Sign medical problems if they exist
     await medicalProblemsDelta.signEncounter(encounterId, userId);
