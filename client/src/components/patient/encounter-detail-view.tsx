@@ -2387,6 +2387,15 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             isAutoGenerating={isAutoGeneratingBilling}
           />
 
+          {/* Encounter Workflow Controls */}
+          <EncounterWorkflowControls
+            encounterId={encounterId}
+            encounterStatus={encounter?.encounterStatus || "in_progress"}
+            onStatusChange={() => {
+              queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
+            }}
+          />
+
           {/* Encounter Signature Panel */}
           <EncounterSignaturePanel
             encounterId={encounterId}

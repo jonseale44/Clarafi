@@ -2048,6 +2048,44 @@ Return only valid JSON without markdown formatting.`;
     }
   });
 
+  // Update encounter status
+  app.put("/api/encounters/:encounterId/status", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const encounterId = parseInt(req.params.encounterId);
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+
+      // Validate status values
+      const validStatuses = ['in_progress', 'pending_review', 'completed', 'signed'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: "Invalid status value" });
+      }
+
+      // Update encounter status
+      const updatedEncounter = await storage.updateEncounter(encounterId, {
+        encounterStatus: status,
+        updatedAt: new Date()
+      });
+
+      console.log(`✅ [Encounter Status] Updated encounter ${encounterId} to status: ${status}`);
+
+      res.json({
+        success: true,
+        encounter: updatedEncounter,
+        message: `Encounter status updated to ${status}`
+      });
+
+    } catch (error: any) {
+      console.error("❌ [Encounter Status] Error updating status:", error);
+      res.status(500).json({ error: "Failed to update encounter status" });
+    }
+  });
+
   // Register patient parser routes
   app.use("/api", parseRoutes);
 
