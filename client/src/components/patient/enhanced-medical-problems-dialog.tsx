@@ -79,6 +79,15 @@ export function EnhancedMedicalProblemsDialog({
     date: new Date().toISOString().split('T')[0],
     notes: ""
   });
+  
+  // GPT-powered intelligent diagnosis state
+  const [diagnosisSuggestions, setDiagnosisSuggestions] = useState<DiagnosisSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [standardizedDiagnosis, setStandardizedDiagnosis] = useState<DiagnosisSuggestion | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -102,6 +111,7 @@ export function EnhancedMedicalProblemsDialog({
         problemStatus: problem.problemStatus || "active",
         firstDiagnosedDate: problem.firstDiagnosedDate || "",
       });
+      setInputValue(problem.problemTitle || "");
       // Add unique IDs to visit history entries for editing
       const historyWithIds = (problem.visitHistory || []).map((visit, index) => ({
         ...visit,
@@ -115,9 +125,96 @@ export function EnhancedMedicalProblemsDialog({
         problemStatus: "active",
         firstDiagnosedDate: "",
       });
+      setInputValue("");
       setVisitHistory([]);
+      setDiagnosisSuggestions([]);
+      setStandardizedDiagnosis(null);
     }
   }, [problem, form]);
+
+  // Intelligent diagnosis suggestion functions
+  const fetchSuggestions = useCallback(async (input: string) => {
+    if (input.length < 2) {
+      setDiagnosisSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    try {
+      const response = await fetch(
+        `/api/intelligent-diagnosis/suggestions?input=${encodeURIComponent(input)}&patientId=${patientId}&limit=5`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDiagnosisSuggestions(data.suggestions || []);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error("Error fetching diagnosis suggestions:", error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, [patientId]);
+
+  const handleDiagnosisInputChange = useCallback((value: string) => {
+    setInputValue(value);
+    form.setValue("problemTitle", value);
+    
+    // Debounce API calls
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchSuggestions(value);
+    }, 300);
+  }, [fetchSuggestions, form]);
+
+  const selectSuggestion = useCallback((suggestion: DiagnosisSuggestion) => {
+    setInputValue(suggestion.standardTitle);
+    form.setValue("problemTitle", suggestion.standardTitle);
+    form.setValue("currentIcd10Code", suggestion.icd10Code);
+    setStandardizedDiagnosis(suggestion);
+    setShowSuggestions(false);
+    setDiagnosisSuggestions([]);
+    
+    toast({
+      title: "Smart Diagnosis Applied",
+      description: `Applied: ${suggestion.standardTitle} (${suggestion.icd10Code})`,
+    });
+  }, [form, toast]);
+
+  const standardizeDiagnosis = useCallback(async () => {
+    if (!inputValue || inputValue.length < 2) return;
+    
+    try {
+      const response = await fetch('/api/intelligent-diagnosis/standardize', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: inputValue, patientId })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.standardized) {
+          const standardized = data.standardized;
+          setInputValue(standardized.standardTitle);
+          form.setValue("problemTitle", standardized.standardTitle);
+          form.setValue("currentIcd10Code", standardized.icd10Code);
+          setStandardizedDiagnosis(standardized);
+          
+          toast({
+            title: "Diagnosis Standardized",
+            description: `Improved to: ${standardized.standardTitle} (${standardized.icd10Code})`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error standardizing diagnosis:", error);
+    }
+  }, [inputValue, patientId, form, toast]);
 
   // Visit note form
   const visitForm = useForm({
@@ -239,21 +336,99 @@ export function EnhancedMedicalProblemsDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {/* Basic Problem Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="problemTitle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Diagnosis *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g., Type 2 Diabetes" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+            {/* Intelligent Diagnosis Input */}
+            <div className="space-y-4">
+              <div className="relative">
+                <FormField
+                  control={form.control}
+                  name="problemTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-blue-500" />
+                        Diagnosis * 
+                        <Badge variant="secondary" className="text-xs">AI-Powered</Badge>
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            value={inputValue}
+                            onChange={(e) => handleDiagnosisInputChange(e.target.value)}
+                            placeholder="Start typing diagnosis... (e.g., diabetes, hypertension)"
+                            className="pr-10"
+                          />
+                          {isLoadingSuggestions && (
+                            <div className="absolute right-3 top-2.5">
+                              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                            </div>
+                          )}
+                          {inputValue && !isLoadingSuggestions && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={standardizeDiagnosis}
+                              className="absolute right-1 top-0.5 h-8 w-8 p-0"
+                              title="Standardize diagnosis"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            </Button>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                      
+                      {/* Intelligent Suggestions Dropdown */}
+                      {showSuggestions && diagnosisSuggestions.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {diagnosisSuggestions.map((suggestion, index) => (
+                            <div
+                              key={index}
+                              className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                              onClick={() => selectSuggestion(suggestion)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{suggestion.standardTitle}</div>
+                                  <div className="text-xs text-gray-500 mt-1">{suggestion.reasoning}</div>
+                                  {suggestion.aliases.length > 0 && (
+                                    <div className="flex gap-1 mt-2">
+                                      {suggestion.aliases.slice(0, 3).map((alias, aliasIndex) => (
+                                        <Badge key={aliasIndex} variant="outline" className="text-xs">
+                                          {alias}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="ml-3 text-right">
+                                  <div className="text-sm font-mono text-blue-600">{suggestion.icd10Code}</div>
+                                  <div className="text-xs text-gray-400">
+                                    {Math.round(suggestion.confidence * 100)}% match
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Standardization Status */}
+                {standardizedDiagnosis && (
+                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <div className="flex items-center gap-2 text-sm text-green-800">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="font-medium">Standardized Diagnosis Applied</span>
+                    </div>
+                    <div className="mt-1 text-xs text-green-600">
+                      {standardizedDiagnosis.reasoning}
+                    </div>
+                  </div>
                 )}
-              />
+              </div>
 
               <FormField
                 control={form.control}
@@ -262,7 +437,11 @@ export function EnhancedMedicalProblemsDialog({
                   <FormItem>
                     <FormLabel>ICD-10 Code</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., E11.9" />
+                      <Input 
+                        {...field} 
+                        placeholder="e.g., E11.9" 
+                        className={standardizedDiagnosis ? "bg-green-50 border-green-200" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
