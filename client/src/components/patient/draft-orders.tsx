@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw } from "lucide-react";
+import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool } from "lucide-react";
 
 interface Order {
   id: number;
@@ -171,6 +171,73 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       toast({
         variant: "destructive",
         title: "Failed to create order",
+        description: error.message,
+      });
+    },
+  });
+
+  // Sign individual order mutation
+  const signOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await fetch(`/api/orders/${orderId}/sign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to sign order');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
+      toast({ title: "Order signed successfully" });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to sign order",
+        description: error.message,
+      });
+    },
+  });
+
+  // Bulk sign orders by type mutation
+  const bulkSignMutation = useMutation({
+    mutationFn: async (orderType?: string) => {
+      const ordersToSign = orderType 
+        ? orders.filter(order => order.orderType === orderType && order.orderStatus === 'draft')
+        : orders.filter(order => order.orderStatus === 'draft');
+      
+      const orderIds = ordersToSign.map(order => order.id);
+      
+      const response = await fetch('/api/orders/bulk-sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to bulk sign orders');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, orderType) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
+      toast({ 
+        title: "Orders signed successfully",
+        description: orderType ? `All ${orderType} orders signed` : "All orders signed"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to bulk sign orders",
         description: error.message,
       });
     },
@@ -380,6 +447,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
                   order={order}
                   onEdit={setEditingOrder}
                   onDelete={handleDeleteOrder}
+                  onSign={(id) => signOrderMutation.mutate(id)}
                   isEditing={editingOrder?.id === order.id}
                   onSave={handleSaveOrder}
                   onCancelEdit={() => setEditingOrder(null)}
@@ -395,6 +463,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
                     order={order}
                     onEdit={setEditingOrder}
                     onDelete={handleDeleteOrder}
+                    onSign={(id) => signOrderMutation.mutate(id)}
                     isEditing={editingOrder?.id === order.id}
                     onSave={handleSaveOrder}
                     onCancelEdit={() => setEditingOrder(null)}
@@ -418,12 +487,13 @@ interface OrderCardProps {
   order: Order;
   onEdit: (order: Order) => void;
   onDelete: (id: number) => void;
+  onSign: (id: number) => void;
   isEditing: boolean;
   onSave: (order: Order) => void;
   onCancelEdit: () => void;
 }
 
-function OrderCard({ order, onEdit, onDelete, isEditing, onSave, onCancelEdit }: OrderCardProps) {
+function OrderCard({ order, onEdit, onDelete, onSign, isEditing, onSave, onCancelEdit }: OrderCardProps) {
   const [editedOrder, setEditedOrder] = useState<Order>(order);
 
   useEffect(() => {
@@ -471,6 +541,16 @@ function OrderCard({ order, onEdit, onDelete, isEditing, onSave, onCancelEdit }:
             </div>
           </div>
           <div className="flex gap-1">
+            {order.orderStatus === 'draft' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onSign(order.id)}
+                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              >
+                <PenTool className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               size="sm"
               variant="ghost"
