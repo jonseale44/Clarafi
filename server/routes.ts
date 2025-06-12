@@ -13,6 +13,7 @@ import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import medicalProblemsRoutes from "./medical-problems-routes";
 import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
+import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import multer from "multer";
@@ -36,6 +37,9 @@ export function registerRoutes(app: Express): Server {
 
   // Enhanced medical problems routes (JSONB visit history)
   app.use("/api", enhancedMedicalProblemsRoutes);
+
+  // Enhanced medications routes (GPT-powered standardization and grouping)
+  app.use("/api", enhancedMedicationRoutes);
 
   // Intelligent diagnosis routes (GPT-powered autocompletion)
   app.use("/api/intelligent-diagnosis", intelligentDiagnosisRoutes);
