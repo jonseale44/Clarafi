@@ -26,7 +26,7 @@ export class EncounterValidationService {
         hasSOAPNote: false,
         hasCPTCodes: false,
         hasDiagnoses: false,
-        hasSignedOrders: true, // Default to true since we don't require signed orders for basic encounters
+        hasSignedOrders: false, // Must validate actual order signatures
         hasCriticalResultsReviewed: true // Default to true since no critical results yet
       }
     };
@@ -88,17 +88,23 @@ export class EncounterValidationService {
         }
       }
 
-      // Check orders - for this system, draft orders are stored in encounter.draftOrders
-      // We'll validate that any pending orders are reasonable, but won't require signing for basic encounters
-      const draftOrders = Array.isArray(enc.draftOrders) ? enc.draftOrders : [];
-      console.log(`🔍 [Validation] Draft orders count: ${draftOrders.length}`);
+      // Check orders - get actual draft orders from orders table
+      const draftOrdersList = await db.select()
+        .from(orders)
+        .where(and(
+          eq(orders.patientId, enc.patientId),
+          eq(orders.orderStatus, 'draft')
+        ));
+
+      console.log(`🔍 [Validation] Found ${draftOrdersList.length} draft orders requiring signature`);
       
-      // For now, we don't require formal order signing for basic office visits
-      // This would be required for complex encounters with medications, labs, etc.
-      if (draftOrders.length > 0) {
-        result.warnings.push(`${draftOrders.length} draft orders present but not formally signed`);
+      if (draftOrdersList.length > 0) {
+        result.errors.push(`${draftOrdersList.length} orders require provider signature before encounter can be signed`);
+        result.canSign = false;
+      } else {
+        result.requirements.hasSignedOrders = true;
+        console.log(`✅ [Validation] All orders signed or no orders present`);
       }
-      result.requirements.hasSignedOrders = true; // Not requiring order signatures for basic encounters
 
       // Check critical results - currently no critical results system implemented
       // This would check for abnormal lab values requiring provider acknowledgment

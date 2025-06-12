@@ -2086,6 +2086,130 @@ Return only valid JSON without markdown formatting.`;
     }
   });
 
+  // Sign individual order
+  app.post("/api/orders/:orderId/sign", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const orderId = parseInt(req.params.orderId);
+      const userId = (req.user as any).id;
+      const { signatureNote } = req.body;
+
+      // Get the order
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Update order status and add approval
+      const updatedOrder = await storage.updateOrder(orderId, {
+        orderStatus: 'approved',
+        approvedBy: userId,
+        approvedAt: new Date(),
+        providerNotes: signatureNote ? `${order.providerNotes || ''}\n\nSignature Note: ${signatureNote}` : order.providerNotes
+      });
+
+      console.log(`✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`);
+
+      // For medication orders, create prescription record
+      if (order.orderType === 'medication') {
+        // Here you would integrate with pharmacy systems
+        console.log(`📋 [Medication] Signed medication: ${order.medicationName} - ${order.sig}`);
+      }
+
+      // For lab orders, send to laboratory
+      if (order.orderType === 'lab') {
+        // Here you would send to lab interface (HL7, etc.)
+        console.log(`🧪 [Lab] Signed lab order: ${order.testName}`);
+      }
+
+      res.json({
+        success: true,
+        order: updatedOrder,
+        message: `${order.orderType} order signed successfully`
+      });
+
+    } catch (error: any) {
+      console.error("❌ [Order Signing] Error signing order:", error);
+      res.status(500).json({ error: "Failed to sign order" });
+    }
+  });
+
+  // Bulk sign orders
+  app.post("/api/orders/bulk-sign", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const { orderIds, signatureNote } = req.body;
+      const userId = (req.user as any).id;
+
+      if (!Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ error: "Order IDs array is required" });
+      }
+
+      const signedOrders = [];
+      const errors = [];
+
+      for (const orderId of orderIds) {
+        try {
+          const order = await storage.getOrder(orderId);
+          if (!order) {
+            errors.push(`Order ${orderId} not found`);
+            continue;
+          }
+
+          const updatedOrder = await storage.updateOrder(orderId, {
+            orderStatus: 'approved',
+            approvedBy: userId,
+            approvedAt: new Date(),
+            providerNotes: signatureNote ? `${order.providerNotes || ''}\n\nBulk Signature Note: ${signatureNote}` : order.providerNotes
+          });
+
+          signedOrders.push(updatedOrder);
+          console.log(`✅ [Bulk Sign] Signed ${order.orderType} order ${orderId}`);
+
+        } catch (error: any) {
+          errors.push(`Failed to sign order ${orderId}: ${error.message}`);
+        }
+      }
+
+      res.json({
+        success: true,
+        signedOrders,
+        errors,
+        message: `Signed ${signedOrders.length} orders${errors.length > 0 ? ` with ${errors.length} errors` : ''}`
+      });
+
+    } catch (error: any) {
+      console.error("❌ [Bulk Sign] Error bulk signing orders:", error);
+      res.status(500).json({ error: "Failed to bulk sign orders" });
+    }
+  });
+
+  // Get unsigned orders for encounter
+  app.get("/api/encounters/:encounterId/unsigned-orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const encounterId = parseInt(req.params.encounterId);
+
+      // Get encounter to find patient ID
+      const encounter = await storage.getEncounter(encounterId);
+      if (!encounter) {
+        return res.status(404).json({ error: "Encounter not found" });
+      }
+
+      // Get all draft orders for this patient
+      const draftOrders = await storage.getPatientDraftOrders(encounter.patientId);
+
+      res.json(draftOrders);
+
+    } catch (error: any) {
+      console.error("❌ [Unsigned Orders] Error fetching unsigned orders:", error);
+      res.status(500).json({ error: "Failed to fetch unsigned orders" });
+    }
+  });
+
   // Register patient parser routes
   app.use("/api", parseRoutes);
 
