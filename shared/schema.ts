@@ -288,22 +288,67 @@ export const vitals = pgTable("vitals", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Medications
+// Enhanced Medications with EMR-standard fields
 export const medications = pgTable("medications", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  
+  // Core medication info
   medicationName: text("medication_name").notNull(),
+  brandName: text("brand_name"), // Trade name
+  genericName: text("generic_name"), // Generic equivalent
   dosage: text("dosage").notNull(),
+  strength: text("strength"), // Separated from dosage for standardization
+  dosageForm: text("dosage_form"), // tablet, capsule, liquid, etc.
+  route: text("route"), // 'oral', 'IV', 'topical', etc.
+  
+  // Prescription details
   frequency: text("frequency").notNull(),
-  route: text("route"), // 'oral', 'IV', 'topical'
+  quantity: integer("quantity"), // Number of units
+  daysSupply: integer("days_supply"), // Duration of prescription
+  refillsRemaining: integer("refills_remaining"),
+  totalRefills: integer("total_refills"),
+  sig: text("sig"), // Patient instructions
+  
+  // Standardization codes
+  rxNormCode: text("rxnorm_code"), // RxNorm concept ID
+  ndcCode: text("ndc_code"), // National Drug Code
+  sureScriptsId: text("surescripts_id"), // SureScripts identifier
+  
+  // Clinical context
+  clinicalIndication: text("clinical_indication"), // Why prescribed
+  problemMappings: jsonb("problem_mappings").default([]), // Link to medical problems
+  
+  // Dates and status
   startDate: date("start_date").notNull(),
   endDate: date("end_date"), // NULL means active
+  discontinuedDate: date("discontinued_date"),
+  status: text("status").default("active"), // 'active', 'discontinued', 'held', 'historical'
+  
+  // Provider info
   prescriber: text("prescriber"),
-  status: text("status").default("active"),
+  prescriberId: integer("prescriber_id").references(() => users.id),
+  firstEncounterId: integer("first_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
+  
+  // Change tracking
   reasonForChange: text("reason_for_change"),
-  medicalProblem: text("medical_problem"), // What this treats
+  medicationHistory: jsonb("medication_history").default([]), // Chronological changes
+  changeLog: jsonb("change_log").default([]), // Audit trail
+  
+  // GPT-driven organization
+  groupingStrategy: text("grouping_strategy").default("medical_problem"), // 'medical_problem', 'drug_class', 'alphabetical'
+  relatedMedications: jsonb("related_medications").default([]), // GPT-identified relationships
+  drugInteractions: jsonb("drug_interactions").default([]), // GPT-analyzed interactions
+  
+  // External integration
+  pharmacyOrderId: text("pharmacy_order_id"), // External pharmacy reference
+  insuranceAuthStatus: text("insurance_auth_status"), // 'approved', 'pending', 'denied'
+  priorAuthRequired: boolean("prior_auth_required").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Enhanced Medical Problems with JSONB Visit History
@@ -962,6 +1007,47 @@ export type InsertVitals = z.infer<typeof insertVitalsSchema>;
 export type Vitals = typeof vitals.$inferSelect;
 export type InsertDiagnosis = z.infer<typeof insertDiagnosisSchema>;
 export type Diagnosis = typeof diagnoses.$inferSelect;
+export const insertMedicationSchema = createInsertSchema(medications).pick({
+  patientId: true,
+  encounterId: true,
+  medicationName: true,
+  brandName: true,
+  genericName: true,
+  dosage: true,
+  strength: true,
+  dosageForm: true,
+  route: true,
+  frequency: true,
+  quantity: true,
+  daysSupply: true,
+  refillsRemaining: true,
+  totalRefills: true,
+  sig: true,
+  rxNormCode: true,
+  ndcCode: true,
+  sureScriptsId: true,
+  clinicalIndication: true,
+  problemMappings: true,
+  startDate: true,
+  endDate: true,
+  discontinuedDate: true,
+  status: true,
+  prescriber: true,
+  prescriberId: true,
+  firstEncounterId: true,
+  lastUpdatedEncounterId: true,
+  reasonForChange: true,
+  medicationHistory: true,
+  changeLog: true,
+  groupingStrategy: true,
+  relatedMedications: true,
+  drugInteractions: true,
+  pharmacyOrderId: true,
+  insuranceAuthStatus: true,
+  priorAuthRequired: true,
+});
+
+export type InsertMedication = z.infer<typeof insertMedicationSchema>;
 export type Medication = typeof medications.$inferSelect;
 export type LabOrder = typeof labOrders.$inferSelect;
 export type LabResult = typeof labResults.$inferSelect;

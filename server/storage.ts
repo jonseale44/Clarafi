@@ -5,7 +5,8 @@ import {
   patientPhysicalFindings, medicalProblems,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals, type InsertVitals,
-  type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem
+  type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
+  type Medication, type InsertMedication
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -43,7 +44,13 @@ export interface IStorage {
   
   // Patient chart data
   getPatientAllergies(patientId: number): Promise<any[]>;
-  getPatientMedications(patientId: number): Promise<any[]>;
+  // Enhanced medications methods
+  getPatientMedications(patientId: number): Promise<Medication[]>;
+  getPatientMedicationsEnhanced(patientId: number): Promise<Medication[]>;
+  createMedication(medication: InsertMedication): Promise<Medication>;
+  updateMedication(id: number, updates: Partial<Medication>): Promise<Medication>;
+  deleteMedication(id: number): Promise<void>;
+  getMedicationHistory(medicationId: number): Promise<any[]>;
   getPatientDiagnoses(patientId: number): Promise<any[]>;
   createDiagnosis(diagnosis: any): Promise<any>;
   getPatientFamilyHistory(patientId: number): Promise<any[]>;
@@ -233,10 +240,68 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(allergies.updatedAt));
   }
 
-  async getPatientMedications(patientId: number): Promise<any[]> {
+  async getPatientMedications(patientId: number): Promise<Medication[]> {
     return await db.select().from(medications)
       .where(eq(medications.patientId, patientId))
       .orderBy(desc(medications.createdAt));
+  }
+
+  async getPatientMedicationsEnhanced(patientId: number): Promise<Medication[]> {
+    console.log(`🔍 [STORAGE] Fetching enhanced medications for patient ID: ${patientId}`);
+    
+    const patientMedications = await db.select().from(medications)
+      .where(eq(medications.patientId, patientId))
+      .orderBy(desc(medications.createdAt));
+    
+    console.log(`🔍 [STORAGE] Found ${patientMedications.length} medications`);
+    return patientMedications;
+  }
+
+  async createMedication(medication: InsertMedication): Promise<Medication> {
+    console.log(`🔍 [STORAGE] Creating medication: ${medication.medicationName}`);
+    
+    const [newMedication] = await db.insert(medications)
+      .values(medication)
+      .returning();
+    
+    console.log(`✅ [STORAGE] Created medication with ID: ${newMedication.id}`);
+    return newMedication;
+  }
+
+  async updateMedication(id: number, updates: Partial<Medication>): Promise<Medication> {
+    console.log(`🔍 [STORAGE] Updating medication ID: ${id}`);
+    
+    const [updatedMedication] = await db.update(medications)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(medications.id, id))
+      .returning();
+    
+    console.log(`✅ [STORAGE] Updated medication: ${updatedMedication.medicationName}`);
+    return updatedMedication;
+  }
+
+  async deleteMedication(id: number): Promise<void> {
+    console.log(`🔍 [STORAGE] Deleting medication ID: ${id}`);
+    
+    await db.delete(medications)
+      .where(eq(medications.id, id));
+    
+    console.log(`✅ [STORAGE] Deleted medication`);
+  }
+
+  async getMedicationHistory(medicationId: number): Promise<any[]> {
+    console.log(`🔍 [STORAGE] Fetching medication history for ID: ${medicationId}`);
+    
+    const medication = await db.select()
+      .from(medications)
+      .where(eq(medications.id, medicationId))
+      .limit(1);
+    
+    if (medication.length === 0) {
+      return [];
+    }
+    
+    return medication[0].medicationHistory || [];
   }
 
   async getPatientDiagnoses(patientId: number): Promise<any[]> {
