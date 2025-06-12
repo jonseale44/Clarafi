@@ -153,26 +153,6 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
     setExpandedMedications(newExpanded);
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'active': return 'default';
-      case 'discontinued': return 'secondary';
-      case 'held': return 'outline';
-      case 'historical': return 'secondary';
-      default: return 'secondary';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <Activity className="h-3 w-3" />;
-      case 'discontinued': return <Clock className="h-3 w-3" />;
-      case 'held': return <AlertTriangle className="h-3 w-3" />;
-      case 'historical': return <FileText className="h-3 w-3" />;
-      default: return <Pill className="h-3 w-3" />;
-    }
-  };
-
   const groupMedicationsByProblem = (medications: Medication[]) => {
     if (groupingMode === 'alphabetical') {
       return { 'All Medications': medications.sort((a, b) => a.medicationName.localeCompare(b.medicationName)) };
@@ -368,6 +348,26 @@ interface MedicationCardProps {
 function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinue }: MedicationCardProps) {
   const [discontinueReason, setDiscontinueReason] = useState('');
   const [showDiscontinueForm, setShowDiscontinueForm] = useState(false);
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'active': return 'default';
+      case 'discontinued': return 'secondary';
+      case 'held': return 'outline';
+      case 'historical': return 'secondary';
+      default: return 'secondary';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <Activity className="h-3 w-3" />;
+      case 'discontinued': return <Clock className="h-3 w-3" />;
+      case 'held': return <AlertTriangle className="h-3 w-3" />;
+      case 'historical': return <FileText className="h-3 w-3" />;
+      default: return <Pill className="h-3 w-3" />;
+    }
+  };
 
   const handleDiscontinue = () => {
     if (discontinueReason.trim() && onDiscontinue) {
