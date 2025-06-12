@@ -67,11 +67,6 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
-    // Initialize database with default user
-    try {
-      await initializeDatabase();
-    } catch (error) {
-      console.error("Database initialization failed:", error);
-    }
+    log("Database ready - you can register a new account or use admin/admin123 if already created");
   });
 })();
