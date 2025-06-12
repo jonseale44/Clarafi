@@ -5,6 +5,13 @@ import { insertMedicalProblemSchema } from "@shared/schema";
 
 const router = Router();
 
+// Legacy compatibility redirect for old enhanced endpoint
+router.get("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
+  // Redirect to new problem list endpoint
+  const patientId = req.params.patientId;
+  res.redirect(301, `/api/patients/${patientId}/problem-list`);
+});
+
 /**
  * GET /api/patients/:patientId/problem-list
  * Get clinical problem list with visit history for a patient
@@ -180,10 +187,10 @@ router.post("/patients/:patientId/problem-list", async (req, res) => {
 });
 
 /**
- * PUT /api/medical-problems/:problemId
- * Update medical problem
+ * PUT /api/problem-list/:problemId
+ * Update clinical problem
  */
-router.put("/medical-problems/:problemId", async (req, res) => {
+router.put("/problem-list/:problemId", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -200,10 +207,10 @@ router.put("/medical-problems/:problemId", async (req, res) => {
 });
 
 /**
- * GET /api/medical-problems/:problemId
- * Get single medical problem with full details
+ * GET /api/problem-list/:problemId
+ * Get single clinical problem with full details
  */
-router.get("/medical-problems/:problemId", async (req, res) => {
+router.get("/problem-list/:problemId", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
