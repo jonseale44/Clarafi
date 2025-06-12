@@ -214,10 +214,9 @@ Return JSON array with standardization objects.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "o1-preview",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.1,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -271,10 +270,9 @@ Return JSON array of interaction objects.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "o1-preview",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.1,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -325,10 +323,9 @@ Return JSON array of grouping objects.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "o1-preview",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.2,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -361,10 +358,9 @@ Return JSON array of mapping objects with medicationName, problemId, indication,
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "o1-preview",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.1,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
