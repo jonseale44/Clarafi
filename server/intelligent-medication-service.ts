@@ -164,7 +164,7 @@ Return JSON array of medication objects with these fields.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "o1-preview",
+      model: "gpt-4.1",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
@@ -214,7 +214,7 @@ Return JSON array with standardization objects.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "o1-preview",
+      model: "gpt-4.1",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
@@ -270,7 +270,7 @@ Return JSON array of interaction objects.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "o1-preview",
+      model: "gpt-4.1",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
@@ -323,7 +323,7 @@ Return JSON array of grouping objects.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "o1-preview",
+      model: "gpt-4.1",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
@@ -358,7 +358,7 @@ Return JSON array of mapping objects with medicationName, problemId, indication,
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "o1-preview",
+      model: "gpt-4.1",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
