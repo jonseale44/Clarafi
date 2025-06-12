@@ -57,9 +57,10 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9
 interface CPTCodesProps {
   patientId: number;
   encounterId: number;
+  isAutoGenerating?: boolean;
 }
 
-export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
+export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = false }: CPTCodesProps) {
   const [cptCodes, setCPTCodes] = useState<CPTCode[]>([]);
   const [diagnoses, setDiagnoses] = useState<DiagnosisCode[]>([]);
   const [mappings, setMappings] = useState<CPTDiagnosisMapping[]>([]);
@@ -559,9 +560,9 @@ export function CPTCodesDiagnoses({ patientId, encounterId }: CPTCodesProps) {
               size="sm"
               variant="outline"
               onClick={generateCPTCodes}
-              disabled={isGenerating}
+              disabled={isGenerating || isAutoGenerating}
             >
-              {isGenerating ? (
+              {(isGenerating || isAutoGenerating) ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   Generating...

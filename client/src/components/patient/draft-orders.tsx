@@ -65,7 +65,7 @@ interface DraftOrdersProps {
   isAutoGenerating?: boolean;
 }
 
-export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
+export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }: DraftOrdersProps) {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [newOrderType, setNewOrderType] = useState<string>("medication");
@@ -307,11 +307,11 @@ export function DraftOrders({ patientId, encounterId }: DraftOrdersProps) {
               variant="outline" 
               size="sm"
               onClick={() => updateFromSOAPMutation.mutate()}
-              disabled={updateFromSOAPMutation.isPending}
+              disabled={updateFromSOAPMutation.isPending || isAutoGenerating}
               className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${updateFromSOAPMutation.isPending ? 'animate-spin' : ''}`} />
-              {updateFromSOAPMutation.isPending ? "Updating..." : "Update from SOAP"}
+              <RefreshCw className={`h-4 w-4 mr-2 ${(updateFromSOAPMutation.isPending || isAutoGenerating) ? 'animate-spin' : ''}`} />
+              {(updateFromSOAPMutation.isPending || isAutoGenerating) ? "Generating..." : "Update from SOAP"}
             </Button>
           )}
           {orders.length > 0 && (
