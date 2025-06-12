@@ -216,8 +216,8 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-3">
+        <div className="space-y-3">
           <CardTitle className="flex items-center gap-2">
             <Pill className="h-5 w-5" />
             Medications
@@ -227,13 +227,13 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
               </Badge>
             )}
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
             <Select value={groupingMode} onValueChange={(value: any) => setGroupingMode(value)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="medical_problem">By Problem</SelectItem>
+                <SelectItem value="medical_problem">By Medical Problem</SelectItem>
                 <SelectItem value="alphabetical">Alphabetical</SelectItem>
               </SelectContent>
             </Select>
@@ -382,47 +382,49 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
       <Card className="border-l-4 border-l-blue-500">
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors pb-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-medium text-base">{medication.medicationName}</h3>
-                  {medication.brandName && medication.brandName !== medication.medicationName && (
-                    <span className="text-sm text-gray-500">({medication.brandName})</span>
-                  )}
-                  <Badge variant={getStatusBadgeVariant(medication.status)} className="flex items-center gap-1">
-                    {getStatusIcon(medication.status)}
-                    {medication.status}
-                  </Badge>
+            <div className="space-y-2">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-medium text-base">{medication.medicationName}</h3>
+                    {medication.brandName && medication.brandName !== medication.medicationName && (
+                      <span className="text-sm text-gray-500">({medication.brandName})</span>
+                    )}
+                    <Badge variant={getStatusBadgeVariant(medication.status)} className="flex items-center gap-1">
+                      {getStatusIcon(medication.status)}
+                      {medication.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-                  <span className="font-medium">{medication.dosage} {medication.frequency}</span>
-                  {medication.clinicalIndication && (
-                    <span className="text-gray-500">for {medication.clinicalIndication}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {medication.drugInteractions?.length > 0 && (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {medication.drugInteractions.length} interaction{medication.drugInteractions.length !== 1 ? 's' : ''}
+                    </Badge>
                   )}
-                  {medication.startDate && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      Started {new Date(medication.startDate).toLocaleDateString()}
-                    </span>
+                  {medication.priorAuthRequired && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Prior Auth
+                    </Badge>
                   )}
+                  <Button variant="ghost" size="sm">
+                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {medication.drugInteractions?.length > 0 && (
-                  <Badge variant="destructive" className="flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    {medication.drugInteractions.length} interaction{medication.drugInteractions.length !== 1 ? 's' : ''}
-                  </Badge>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-medium">{medication.dosage} {medication.frequency}</span>
+                {medication.clinicalIndication && (
+                  <span className="text-gray-500">for {medication.clinicalIndication}</span>
                 )}
-                {medication.priorAuthRequired && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    Prior Auth
-                  </Badge>
+                {medication.startDate && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Started {new Date(medication.startDate).toLocaleDateString()}
+                  </span>
                 )}
-                <Button variant="ghost" size="sm">
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                </Button>
               </div>
             </div>
           </CardHeader>
