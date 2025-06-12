@@ -109,8 +109,8 @@ export class IntelligentDiagnosisService {
     // Extract current medications from orders
     const medications = currentOrders
       .filter(order => order.orderType === "medication" && order.orderStatus === "active")
-      .map(order => order.orderDetails || order.description)
-      .filter(Boolean);
+      .map(order => order.medicationName)
+      .filter((med): med is string => med !== null);
 
     // Extract existing problem titles
     const existingProblems = problems.map(p => p.problemTitle);
@@ -118,7 +118,7 @@ export class IntelligentDiagnosisService {
     // Extract recent clinical notes
     const recentNotes = recentEncounters
       .map(enc => enc.note)
-      .filter(Boolean)
+      .filter((note): note is string => note !== null)
       .slice(0, 2); // Last 2 encounters
 
     return {

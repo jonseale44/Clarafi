@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,12 +7,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Calendar, Plus, Edit, Trash2, Save, X } from "lucide-react";
+import { Calendar, Plus, Edit, Trash2, Save, X, Brain, CheckCircle, AlertTriangle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { apiRequest } from "@/lib/queryClient";
 
 // Visit note structure with DP as the authoritative date
 interface VisitNote {
@@ -32,6 +33,17 @@ interface MedicalProblemData {
   problemStatus: "active" | "resolved" | "chronic";
   firstDiagnosedDate?: string;
   visitHistory: VisitNote[];
+}
+
+// GPT-powered diagnosis suggestion interface
+interface DiagnosisSuggestion {
+  standardTitle: string;
+  icd10Code: string;
+  confidence: number;
+  reasoning: string;
+  severity?: "mild" | "moderate" | "severe";
+  complexity?: "simple" | "complex" | "chronic";
+  aliases: string[];
 }
 
 const medicalProblemSchema = z.object({

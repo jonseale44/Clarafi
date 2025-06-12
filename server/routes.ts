@@ -14,6 +14,7 @@ import dashboardRoutes from "./dashboard-routes";
 import medicalProblemsRoutes from "./medical-problems-routes";
 import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
 import validationRoutes from "./validation-routes";
+import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import multer from "multer";
 import OpenAI from "openai";
 
@@ -35,6 +36,9 @@ export function registerRoutes(app: Express): Server {
 
   // Enhanced medical problems routes (JSONB visit history)
   app.use("/api", enhancedMedicalProblemsRoutes);
+
+  // Intelligent diagnosis routes (GPT-powered autocompletion)
+  app.use("/api/intelligent-diagnosis", intelligentDiagnosisRoutes);
 
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
