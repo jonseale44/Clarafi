@@ -33,6 +33,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
+import { EncounterSignaturePanel } from "./encounter-signature-panel";
 import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
@@ -2384,6 +2385,22 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             patientId={patient.id} 
             encounterId={encounterId} 
             isAutoGenerating={isAutoGeneratingBilling}
+          />
+
+          {/* Encounter Signature Panel */}
+          <EncounterSignaturePanel
+            encounterId={encounterId}
+            encounterStatus={encounter?.encounterStatus || "in_progress"}
+            onSignatureComplete={() => {
+              // Refresh encounter data after signing
+              queryClient.invalidateQueries({
+                queryKey: [`/api/encounters/${encounterId}`],
+              });
+              toast({
+                title: "Encounter Signed",
+                description: "The encounter has been successfully signed and completed.",
+              });
+            }}
           />
         </div>
       </div>
