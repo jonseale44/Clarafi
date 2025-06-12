@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, Filter, Activity, Clock, CheckCircle2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
@@ -48,6 +49,8 @@ export function EnhancedMedicalProblemsList({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProblem, setEditingProblem] = useState<MedicalProblem | null>(null);
   const [expandedProblems, setExpandedProblems] = useState<Set<number>>(new Set());
+  const [showResolved, setShowResolved] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'chronic' | 'resolved'>('all');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -119,12 +122,35 @@ export function EnhancedMedicalProblemsList({
     });
   };
 
+  // Filter problems based on status
+  const filteredProblems = medicalProblems.filter(problem => {
+    if (!showResolved && problem.problemStatus === 'resolved') {
+      return false;
+    }
+    if (statusFilter === 'all') return true;
+    return problem.problemStatus === statusFilter;
+  });
+
+  // Separate problems by status for better organization
+  const activeProblems = filteredProblems.filter(p => p.problemStatus === 'active');
+  const chronicProblems = filteredProblems.filter(p => p.problemStatus === 'chronic');
+  const resolvedProblems = filteredProblems.filter(p => p.problemStatus === 'resolved');
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-red-100 text-red-800';
-      case 'chronic': return 'bg-orange-100 text-orange-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
+      case 'chronic': return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800';
+      case 'resolved': return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <Activity className="h-3 w-3" />;
+      case 'chronic': return <Clock className="h-3 w-3" />;
+      case 'resolved': return <CheckCircle2 className="h-3 w-3" />;
+      default: return null;
     }
   };
 
@@ -164,126 +190,222 @@ export function EnhancedMedicalProblemsList({
     );
   }
 
+  const renderProblemCard = (problem: MedicalProblem) => (
+    <Card key={problem.id} className="relative border-l-4 border-l-transparent hover:border-l-blue-400 transition-all duration-200 hover:shadow-md">
+      <Collapsible
+        open={expandedProblems.has(problem.id)}
+        onOpenChange={() => toggleProblemExpansion(problem.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-900/50 pb-3 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {expandedProblems.has(problem.id) ? (
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                )}
+                <div className="flex-1">
+                  <CardTitle className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight">
+                    {problem.problemTitle}
+                    {problem.currentIcd10Code && (
+                      <span className="ml-2 text-sm font-mono text-gray-500 dark:text-gray-400">
+                        {problem.currentIcd10Code}
+                      </span>
+                    )}
+                  </CardTitle>
+                  <div className="flex items-center gap-3 mt-2">
+                    <Badge className={`${getStatusColor(problem.problemStatus)} flex items-center gap-1 text-xs font-medium px-2 py-1`}>
+                      {getStatusIcon(problem.problemStatus)}
+                      {problem.problemStatus.charAt(0).toUpperCase() + problem.problemStatus.slice(1)}
+                    </Badge>
+                    {problem.firstDiagnosedDate && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Since {formatDate(problem.firstDiagnosedDate)}
+                      </span>
+                    )}
+                    {problem.visitHistory?.length > 0 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {problem.visitHistory.length} visit{problem.visitHistory.length === 1 ? '' : 's'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {!isReadOnly && (
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(problem)}
+                    className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(problem.id)}
+                    className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Calendar className="h-4 w-4" />
+                Visit History
+              </h4>
+              
+              {problem.visitHistory && problem.visitHistory.length > 0 ? (
+                <div className="space-y-3">
+                  {problem.visitHistory
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((visit, index) => (
+                    <div key={index} className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
+                        {getSourceBadge(visit.source)}
+                        {visit.providerName && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">by {visit.providerName}</span>
+                        )}
+                        {visit.encounterId && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Encounter #{visit.encounterId}</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">No visit history recorded</p>
+              )}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+
+  const resolvedCount = medicalProblems.filter(p => p.problemStatus === 'resolved').length;
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {mode !== "encounter" && (
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Medical Problems</h2>
-          {!isReadOnly && (
-            <Button onClick={handleAddNew} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Problem
-            </Button>
-          )}
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h2>
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <span>{activeProblems.length + chronicProblems.length} active</span>
+              {resolvedCount > 0 && (
+                <>
+                  <span>•</span>
+                  <span>{resolvedCount} resolved</span>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {resolvedCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowResolved(!showResolved)}
+                className="text-xs"
+              >
+                {showResolved ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+                {showResolved ? 'Hide' : 'Show'} Resolved ({resolvedCount})
+              </Button>
+            )}
+            {!isReadOnly && (
+              <Button onClick={handleAddNew} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Problem
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
       {medicalProblems.length === 0 ? (
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-center py-4 text-gray-500 text-sm">
-              No medical problems recorded
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No medical problems recorded</p>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {medicalProblems.map((problem) => (
-            <Card key={problem.id} className="relative">
-              <Collapsible
-                open={expandedProblems.has(problem.id)}
-                onOpenChange={() => toggleProblemExpansion(problem.id)}
-              >
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-gray-50 pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        {expandedProblems.has(problem.id) ? (
-                          <ChevronDown className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-500" />
-                        )}
-                        <div>
-                          <CardTitle className="text-base font-medium">
-                            {problem.problemTitle}
-                            {problem.currentIcd10Code && (
-                              <span className="ml-2 text-sm font-normal text-gray-500">
-                                ({problem.currentIcd10Code})
-                              </span>
-                            )}
-                          </CardTitle>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={getStatusColor(problem.problemStatus)}>
-                              {problem.problemStatus.toUpperCase()}
-                            </Badge>
-                            {problem.firstDiagnosedDate && (
-                              <span className="text-xs text-gray-500">
-                                First diagnosed: {formatDate(problem.firstDiagnosedDate)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {!isReadOnly && (
-                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(problem)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(problem.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
+        <div className="space-y-6">
+          {/* Active Problems */}
+          {activeProblems.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
+                <Activity className="h-4 w-4" />
+                Active Problems ({activeProblems.length})
+              </div>
+              <div className="space-y-3 group">
+                {activeProblems.map(renderProblemCard)}
+              </div>
+            </div>
+          )}
 
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <div className="border-t pt-3">
-                      <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Visit History
-                      </h4>
-                      
-                      {problem.visitHistory && problem.visitHistory.length > 0 ? (
-                        <div className="space-y-3">
-                          {problem.visitHistory
-                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                            .map((visit, index) => (
-                            <div key={index} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="font-medium text-sm">{formatDate(visit.date)}</span>
-                                {getSourceBadge(visit.source)}
-                                {visit.providerName && (
-                                  <span className="text-xs text-gray-500">by {visit.providerName}</span>
-                                )}
-                                {visit.encounterId && (
-                                  <span className="text-xs text-gray-500">Encounter #{visit.encounterId}</span>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-700">{visit.notes}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">No visit history recorded</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Collapsible>
+          {/* Chronic Problems */}
+          {chronicProblems.length > 0 && (
+            <div className="space-y-3">
+              {activeProblems.length > 0 && <Separator className="my-6" />}
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+                <Clock className="h-4 w-4" />
+                Chronic Conditions ({chronicProblems.length})
+              </div>
+              <div className="space-y-3 group">
+                {chronicProblems.map(renderProblemCard)}
+              </div>
+            </div>
+          )}
+
+          {/* Resolved Problems (when shown) */}
+          {showResolved && resolvedProblems.length > 0 && (
+            <div className="space-y-3">
+              {(activeProblems.length > 0 || chronicProblems.length > 0) && <Separator className="my-6" />}
+              <div className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-300">
+                <CheckCircle2 className="h-4 w-4" />
+                Resolved Problems ({resolvedProblems.length})
+              </div>
+              <div className="space-y-3 opacity-75 group">
+                {resolvedProblems.map(renderProblemCard)}
+              </div>
+            </div>
+          )}
+
+          {/* No visible problems after filtering */}
+          {filteredProblems.length === 0 && medicalProblems.length > 0 && (
+            <Card className="border-dashed">
+              <CardContent className="pt-6">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No problems match current filters</p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => setShowResolved(true)}
+                    className="text-xs mt-2"
+                  >
+                    Show all problems
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
-          ))}
+          )}
         </div>
       )}
 
