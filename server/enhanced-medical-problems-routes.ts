@@ -5,18 +5,11 @@ import { insertMedicalProblemSchema } from "@shared/schema";
 
 const router = Router();
 
-// Legacy compatibility redirect for old enhanced endpoint
-router.get("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
-  // Redirect to new problem list endpoint
-  const patientId = req.params.patientId;
-  res.redirect(301, `/api/patients/${patientId}/problem-list`);
-});
-
 /**
- * GET /api/patients/:patientId/problem-list
- * Get clinical problem list with visit history for a patient
+ * GET /api/patients/:patientId/medical-problems-enhanced
+ * Get enhanced medical problems with visit history for a patient
  */
-router.get("/patients/:patientId/problem-list", async (req, res) => {
+router.get("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
   try {
     console.log(`🔍 [EnhancedMedicalProblems] GET request for patient ${req.params.patientId}`);
     console.log(`🔍 [EnhancedMedicalProblems] User authenticated: ${req.isAuthenticated()}`);
@@ -55,10 +48,10 @@ router.get("/patients/:patientId/problem-list", async (req, res) => {
 });
 
 /**
- * GET /api/problem-list/:problemId/visit-history
- * Get detailed visit history for a specific clinical problem
+ * GET /api/medical-problems/:problemId/visit-history
+ * Get detailed visit history for a specific medical problem
  */
-router.get("/problem-list/:problemId/visit-history", async (req, res) => {
+router.get("/medical-problems/:problemId/visit-history", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -164,10 +157,10 @@ router.post("/encounters/:encounterId/sign-medical-problems", async (req, res) =
 });
 
 /**
- * POST /api/patients/:patientId/problem-list
- * Create new clinical problem manually
+ * POST /api/patients/:patientId/medical-problems-enhanced
+ * Create new medical problem manually
  */
-router.post("/patients/:patientId/problem-list", async (req, res) => {
+router.post("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -187,10 +180,10 @@ router.post("/patients/:patientId/problem-list", async (req, res) => {
 });
 
 /**
- * PUT /api/problem-list/:problemId
- * Update clinical problem
+ * PUT /api/medical-problems/:problemId
+ * Update medical problem
  */
-router.put("/problem-list/:problemId", async (req, res) => {
+router.put("/medical-problems/:problemId", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -207,10 +200,10 @@ router.put("/problem-list/:problemId", async (req, res) => {
 });
 
 /**
- * GET /api/problem-list/:problemId
- * Get single clinical problem with full details
+ * GET /api/medical-problems/:problemId
+ * Get single medical problem with full details
  */
-router.get("/problem-list/:problemId", async (req, res) => {
+router.get("/medical-problems/:problemId", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 

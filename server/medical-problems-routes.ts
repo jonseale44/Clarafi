@@ -7,18 +7,11 @@ import { storage } from "./storage.js";
 
 const router = Router();
 
-// Legacy compatibility redirect for old medical-problems endpoint
-router.get("/patients/:patientId/medical-problems", async (req, res) => {
-  // Redirect to problem list (clinical chart) as this was the intended use
-  const patientId = req.params.patientId;
-  res.redirect(301, `/api/patients/${patientId}/problem-list`);
-});
-
 /**
- * GET /api/patients/:patientId/billing-diagnoses
- * Get billing diagnoses for a patient (legacy endpoint - redirects to problem list)
+ * GET /api/patients/:patientId/medical-problems
+ * Get all medical problems (diagnoses) for a patient
  */
-router.get("/patients/:patientId/billing-diagnoses", async (req, res) => {
+router.get("/patients/:patientId/medical-problems", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     console.log(`🔍 [MedicalProblems] Fetching problems for patient ID: ${patientId}`);
@@ -53,10 +46,10 @@ router.get("/patients/:patientId/billing-diagnoses", async (req, res) => {
 });
 
 /**
- * POST /api/patients/:patientId/billing-diagnoses
- * Add a new billing diagnosis for a patient (encounter-specific)
+ * POST /api/patients/:patientId/medical-problems
+ * Add a new medical problem for a patient
  */
-router.post("/patients/:patientId/billing-diagnoses", async (req, res) => {
+router.post("/patients/:patientId/medical-problems", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     
@@ -79,10 +72,10 @@ router.post("/patients/:patientId/billing-diagnoses", async (req, res) => {
 });
 
 /**
- * PUT /api/patients/:patientId/billing-diagnoses/:problemId
- * Update an existing billing diagnosis
+ * PUT /api/patients/:patientId/medical-problems/:problemId
+ * Update an existing medical problem
  */
-router.put("/patients/:patientId/billing-diagnoses/:problemId", async (req, res) => {
+router.put("/patients/:patientId/medical-problems/:problemId", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     const problemId = parseInt(req.params.problemId);
@@ -117,10 +110,10 @@ router.put("/patients/:patientId/billing-diagnoses/:problemId", async (req, res)
 });
 
 /**
- * DELETE /api/patients/:patientId/billing-diagnoses/:problemId
- * Delete a billing diagnosis
+ * DELETE /api/patients/:patientId/medical-problems/:problemId
+ * Delete a medical problem
  */
-router.delete("/patients/:patientId/billing-diagnoses/:problemId", async (req, res) => {
+router.delete("/patients/:patientId/medical-problems/:problemId", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     const problemId = parseInt(req.params.problemId);
