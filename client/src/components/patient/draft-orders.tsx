@@ -191,8 +191,15 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       return response.json();
     },
     onSuccess: (data) => {
+      // Invalidate multiple related queries to ensure UI consistency
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "encounters"] });
+      
+      // Dispatch custom event to trigger immediate validation refresh
+      window.dispatchEvent(new CustomEvent('orderSigned'));
+      
       toast({ title: "Order signed successfully" });
     },
     onError: (error: any) => {
@@ -227,8 +234,15 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       return response.json();
     },
     onSuccess: (data, orderType) => {
+      // Invalidate multiple related queries to ensure UI consistency
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "encounters"] });
+      
+      // Dispatch custom event to trigger immediate validation refresh
+      window.dispatchEvent(new CustomEvent('orderSigned'));
+      
       toast({ 
         title: "Orders signed successfully",
         description: orderType ? `All ${orderType} orders signed` : "All orders signed"

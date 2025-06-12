@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,11 +46,27 @@ export function EncounterSignaturePanel({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query validation status
+  // Query validation status with auto-refresh
   const { data: validation, isLoading: validationLoading, refetch: refetchValidation } = useQuery<ValidationResult>({
     queryKey: [`/api/encounters/${encounterId}/validation`],
-    enabled: encounterStatus !== 'signed'
+    enabled: encounterStatus !== 'signed',
+    refetchInterval: 2000, // Refresh every 2 seconds to catch order status changes
+    refetchIntervalInBackground: true,
+    staleTime: 500, // Consider data stale after 500ms for more responsive updates
+    refetchOnWindowFocus: true, // Refresh when window gains focus
+    refetchOnMount: true // Always refresh on component mount
   });
+
+  // Listen for order signing events to trigger immediate validation refresh
+  useEffect(() => {
+    const handleOrderSigned = () => {
+      refetchValidation();
+    };
+    
+    // Listen for custom events from order signing
+    window.addEventListener('orderSigned', handleOrderSigned);
+    return () => window.removeEventListener('orderSigned', handleOrderSigned);
+  }, [refetchValidation]);
 
   // Sign encounter mutation
   const signEncounterMutation = useMutation({
