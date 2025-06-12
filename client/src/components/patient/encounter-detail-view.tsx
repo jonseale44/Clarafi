@@ -337,39 +337,47 @@ export function EncounterDetailView({
       );
       console.log(`🔍 [EncounterView] SOAP save completed successfully, starting medical problems processing...`);
       
-      // Process medical problems with delta analysis
+      // Process medical problems and medications in parallel with delta analysis
       try {
-        console.log(`🏥 [MedicalProblems] === MEDICAL PROBLEMS PROCESSING START ===`);
-        console.log(`🏥 [MedicalProblems] Patient ID: ${patient.id}`);
-        console.log(`🏥 [MedicalProblems] Encounter ID: ${encounterId}`);
-        console.log(`🏥 [MedicalProblems] SOAP Note length: ${note.length} characters`);
-        console.log(`🏥 [MedicalProblems] SOAP Note preview: ${note.substring(0, 200)}...`);
-        console.log(`🏥 [MedicalProblems] Making API call to: /api/encounters/${encounterId}/process-medical-problems`);
+        console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING START ===`);
+        console.log(`🏥 [ParallelProcessing] Patient ID: ${patient.id}`);
+        console.log(`🏥 [ParallelProcessing] Encounter ID: ${encounterId}`);
+        console.log(`🏥 [ParallelProcessing] SOAP Note length: ${note.length} characters`);
+        console.log(`🏥 [ParallelProcessing] SOAP Note preview: ${note.substring(0, 200)}...`);
         
         const requestBody = {
           soapNote: note,
           patientId: patient.id
         };
-        console.log(`🏥 [MedicalProblems] Request body:`, requestBody);
+        console.log(`🏥 [ParallelProcessing] Request body:`, requestBody);
         
-        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(requestBody)
-        });
+        // Process medical problems and medications in parallel for maximum efficiency
+        const [medicalProblemsResponse, medicationsResponse] = await Promise.all([
+          fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(requestBody)
+          }),
+          fetch(`/api/encounters/${encounterId}/process-medications`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(requestBody)
+          })
+        ]);
 
+        console.log(`🏥 [ParallelProcessing] Both requests completed`);
         console.log(`🏥 [MedicalProblems] Response status: ${medicalProblemsResponse.status}`);
-        console.log(`🏥 [MedicalProblems] Response ok: ${medicalProblemsResponse.ok}`);
+        console.log(`🏥 [Medications] Response status: ${medicationsResponse.status}`);
 
+        // Handle medical problems response
         if (medicalProblemsResponse.ok) {
           const result = await medicalProblemsResponse.json();
           console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
           console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
-          console.log(`✅ [MedicalProblems] Full result:`, result);
           
           // Invalidate medical problems queries to refresh UI
-          console.log(`🔄 [MedicalProblems] Invalidating cache for patient ${patient.id}`);
           await queryClient.invalidateQueries({ 
             queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
           });
@@ -382,10 +390,29 @@ export function EncounterDetailView({
           console.error(`❌ [MedicalProblems] FAILED with status ${medicalProblemsResponse.status}`);
           console.error(`❌ [MedicalProblems] Error response: ${errorText}`);
         }
-        console.log(`🏥 [MedicalProblems] === MEDICAL PROBLEMS PROCESSING END ===`);
-      } catch (medicalProblemsError) {
-        console.error(`❌ [MedicalProblems] EXCEPTION during processing:`, medicalProblemsError);
-        console.error(`❌ [MedicalProblems] Stack trace:`, medicalProblemsError.stack);
+
+        // Handle medications response
+        if (medicationsResponse.ok) {
+          const result = await medicationsResponse.json();
+          console.log(`✅ [Medications] SUCCESS: ${result.medicationsAffected} medications affected`);
+          console.log(`✅ [Medications] Processing time: ${result.processingTimeMs}ms`);
+          console.log(`✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`);
+          
+          // Invalidate medications queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+          });
+          console.log(`🔄 [Medications] Cache invalidation completed`);
+        } else {
+          const errorText = await medicationsResponse.text();
+          console.error(`❌ [Medications] FAILED with status ${medicationsResponse.status}`);
+          console.error(`❌ [Medications] Error response: ${errorText}`);
+        }
+        
+        console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
+      } catch (error) {
+        console.error(`❌ [ParallelProcessing] EXCEPTION during processing:`, error);
+        console.error(`❌ [ParallelProcessing] Stack trace:`, error.stack);
         // Don't show error toast for this - it's background processing
       }
       
@@ -1861,19 +1888,31 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         editor.commands.setContent(formattedContent);
       }
 
-      // Trigger medical problems processing for transcription-based SOAP generation
-      console.log("🔄 [EncounterView] Triggering medical problems processing for transcription-based SOAP...");
+      // Process medical problems and medications in parallel for transcription-based SOAP generation
+      console.log("🔄 [EncounterView] Triggering parallel processing for transcription-based SOAP...");
       try {
-        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            soapNote: generatedSOAP,
-            patientId: patient.id
+        const [medicalProblemsResponse, medicationsResponse] = await Promise.all([
+          fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              soapNote: generatedSOAP,
+              patientId: patient.id
+            })
+          }),
+          fetch(`/api/encounters/${encounterId}/process-medications`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              soapNote: generatedSOAP,
+              patientId: patient.id
+            })
           })
-        });
+        ]);
 
+        // Handle medical problems response
         if (medicalProblemsResponse.ok) {
           const result = await medicalProblemsResponse.json();
           console.log(`✅ [EncounterView] Medical problems processed: ${result.problemsAffected || result.total_problems_affected} problems affected`);
@@ -1888,8 +1927,22 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         } else {
           console.warn(`⚠️ [EncounterView] Medical problems processing failed:`, await medicalProblemsResponse.text());
         }
-      } catch (medicalProblemsError) {
-        console.error("Failed to process medical problems for transcription SOAP:", medicalProblemsError);
+
+        // Handle medications response
+        if (medicationsResponse.ok) {
+          const result = await medicationsResponse.json();
+          console.log(`✅ [EncounterView] Medications processed: ${result.medicationsAffected} medications affected`);
+          console.log(`✅ [EncounterView] Drug interactions found: ${result.drugInteractions?.length || 0}`);
+          
+          // Invalidate medications queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+          });
+        } else {
+          console.warn(`⚠️ [EncounterView] Medications processing failed:`, await medicationsResponse.text());
+        }
+      } catch (error) {
+        console.error("Failed to process medical problems and medications for transcription SOAP:", error);
       }
 
       // Invalidate caches to refresh data
