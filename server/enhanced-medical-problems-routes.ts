@@ -158,43 +158,123 @@ router.post("/encounters/:encounterId/sign-medical-problems", async (req, res) =
 
 /**
  * POST /api/patients/:patientId/medical-problems-enhanced
- * Create new medical problem manually
+ * Create new medical problem manually with visit history
  */
 router.post("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const patientId = parseInt(req.params.patientId);
-    const validatedData = insertMedicalProblemSchema.parse({
-      ...req.body,
-      patientId
-    });
+    const { problemTitle, currentIcd10Code, problemStatus, firstDiagnosedDate, visitHistory = [] } = req.body;
+    const providerId = req.user!.id;
 
-    const problem = await storage.createMedicalProblem(validatedData);
+    console.log(`🔍 [EnhancedMedicalProblems] Creating new problem for patient ${patientId}`);
+    console.log(`🔍 [EnhancedMedicalProblems] Problem data:`, { problemTitle, currentIcd10Code, problemStatus, firstDiagnosedDate });
+    console.log(`🔍 [EnhancedMedicalProblems] Visit history entries:`, visitHistory.length);
+
+    // Process visit history to ensure proper DP date handling
+    const processedVisitHistory = visitHistory.map((visit: any) => ({
+      date: visit.date, // DP - authoritative date
+      notes: visit.notes,
+      source: visit.source || "manual",
+      encounterId: visit.encounterId || null,
+      providerId: visit.providerId || providerId,
+      providerName: visit.providerName || req.user!.firstName + " " + req.user!.lastName,
+    }));
+
+    // Sort by date descending for consistent display
+    processedVisitHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const changeLog = [{
+      action: "created",
+      details: "Problem manually created with enhanced visit history",
+      timestamp: new Date().toISOString(),
+      providerId: providerId
+    }];
+
+    const problemData = {
+      patientId,
+      problemTitle,
+      currentIcd10Code: currentIcd10Code || null,
+      problemStatus: problemStatus || "active",
+      firstDiagnosedDate: firstDiagnosedDate || null,
+      visitHistory: processedVisitHistory,
+      changeLog: changeLog
+    };
+
+    const problem = await storage.createMedicalProblem(problemData);
+    console.log(`✅ [EnhancedMedicalProblems] Created problem with ID: ${problem.id}`);
+    
     res.status(201).json(problem);
 
   } catch (error) {
-    console.error("Error creating medical problem:", error);
+    console.error("Error creating enhanced medical problem:", error);
     res.status(500).json({ error: "Failed to create medical problem" });
   }
 });
 
 /**
  * PUT /api/medical-problems/:problemId
- * Update medical problem
+ * Update medical problem with enhanced visit history
  */
 router.put("/medical-problems/:problemId", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const problemId = parseInt(req.params.problemId);
-    const updates = req.body;
+    const { problemTitle, currentIcd10Code, problemStatus, firstDiagnosedDate, visitHistory = [] } = req.body;
+    const providerId = req.user!.id;
+
+    console.log(`🔍 [EnhancedMedicalProblems] Updating problem ${problemId}`);
+    console.log(`🔍 [EnhancedMedicalProblems] New visit history entries:`, visitHistory.length);
+
+    // Get existing problem to preserve change log
+    const existingProblem = await storage.getMedicalProblem(problemId);
+    if (!existingProblem) {
+      return res.status(404).json({ error: "Medical problem not found" });
+    }
+
+    // Process visit history with DP date handling
+    const processedVisitHistory = visitHistory.map((visit: any) => ({
+      date: visit.date, // DP - authoritative date
+      notes: visit.notes,
+      source: visit.source || "manual",
+      encounterId: visit.encounterId || null,
+      providerId: visit.providerId || providerId,
+      providerName: visit.providerName || req.user!.firstName + " " + req.user!.lastName,
+    }));
+
+    // Sort by date descending
+    processedVisitHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Add to change log
+    const updatedChangeLog = [
+      ...(existingProblem.changeLog as any[] || []),
+      {
+        action: "updated",
+        details: "Problem manually updated with enhanced visit history",
+        timestamp: new Date().toISOString(),
+        providerId: providerId
+      }
+    ];
+
+    const updates = {
+      problemTitle,
+      currentIcd10Code: currentIcd10Code || null,
+      problemStatus: problemStatus || "active",
+      firstDiagnosedDate: firstDiagnosedDate || null,
+      visitHistory: processedVisitHistory,
+      changeLog: updatedChangeLog,
+      updatedAt: new Date()
+    };
 
     const updatedProblem = await storage.updateMedicalProblem(problemId, updates);
+    console.log(`✅ [EnhancedMedicalProblems] Updated problem ${problemId}`);
+    
     res.json(updatedProblem);
 
   } catch (error) {
-    console.error("Error updating medical problem:", error);
+    console.error("Error updating enhanced medical problem:", error);
     res.status(500).json({ error: "Failed to update medical problem" });
   }
 });
