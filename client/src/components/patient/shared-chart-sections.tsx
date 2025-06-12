@@ -1,4 +1,4 @@
-import { MedicalProblemsSection } from "./medical-problems-section";
+import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
@@ -22,7 +22,7 @@ export function SharedChartSections({
     switch (targetSectionId) {
       case "problems":
         return (
-          <MedicalProblemsSection 
+          <EnhancedMedicalProblemsList 
             patientId={patientId} 
             encounterId={encounterId}
             mode={mode}
