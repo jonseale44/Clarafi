@@ -8,10 +8,10 @@ import { storage } from "./storage.js";
 const router = Router();
 
 /**
- * GET /api/patients/:patientId/medical-problems
- * Get all medical problems (diagnoses) for a patient
+ * GET /api/patients/:patientId/billing-diagnoses
+ * Get billing diagnoses for a patient (legacy endpoint - redirects to problem list)
  */
-router.get("/patients/:patientId/medical-problems", async (req, res) => {
+router.get("/patients/:patientId/billing-diagnoses", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     console.log(`🔍 [MedicalProblems] Fetching problems for patient ID: ${patientId}`);
@@ -46,10 +46,10 @@ router.get("/patients/:patientId/medical-problems", async (req, res) => {
 });
 
 /**
- * POST /api/patients/:patientId/medical-problems
- * Add a new medical problem for a patient
+ * POST /api/patients/:patientId/billing-diagnoses
+ * Add a new billing diagnosis for a patient (encounter-specific)
  */
-router.post("/patients/:patientId/medical-problems", async (req, res) => {
+router.post("/patients/:patientId/billing-diagnoses", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     
@@ -72,10 +72,10 @@ router.post("/patients/:patientId/medical-problems", async (req, res) => {
 });
 
 /**
- * PUT /api/patients/:patientId/medical-problems/:problemId
- * Update an existing medical problem
+ * PUT /api/patients/:patientId/billing-diagnoses/:problemId
+ * Update an existing billing diagnosis
  */
-router.put("/patients/:patientId/medical-problems/:problemId", async (req, res) => {
+router.put("/patients/:patientId/billing-diagnoses/:problemId", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     const problemId = parseInt(req.params.problemId);
@@ -110,10 +110,10 @@ router.put("/patients/:patientId/medical-problems/:problemId", async (req, res) 
 });
 
 /**
- * DELETE /api/patients/:patientId/medical-problems/:problemId
- * Delete a medical problem
+ * DELETE /api/patients/:patientId/billing-diagnoses/:problemId
+ * Delete a billing diagnosis
  */
-router.delete("/patients/:patientId/medical-problems/:problemId", async (req, res) => {
+router.delete("/patients/:patientId/billing-diagnoses/:problemId", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     const problemId = parseInt(req.params.problemId);
