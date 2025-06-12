@@ -208,10 +208,10 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
   const bulkSignMutation = useMutation({
     mutationFn: async (orderType?: string) => {
       const ordersToSign = orderType 
-        ? orders.filter(order => order.orderType === orderType && order.orderStatus === 'draft')
-        : orders.filter(order => order.orderStatus === 'draft');
+        ? orders.filter((order: Order) => order.orderType === orderType && order.orderStatus === 'draft')
+        : orders.filter((order: Order) => order.orderStatus === 'draft');
       
-      const orderIds = ordersToSign.map(order => order.id);
+      const orderIds = ordersToSign.map((order: Order) => order.id);
       
       const response = await fetch('/api/orders/bulk-sign', {
         method: 'POST',
@@ -381,6 +381,18 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
               {(updateFromSOAPMutation.isPending || isAutoGenerating) ? "Generating..." : "Update from SOAP"}
             </Button>
           )}
+          {orders.some((order: Order) => order.orderStatus === 'draft') && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => bulkSignMutation.mutate(undefined)}
+              disabled={bulkSignMutation.isPending}
+              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              <PenTool className="h-4 w-4 mr-2" />
+              {bulkSignMutation.isPending ? "Signing..." : "Sign All"}
+            </Button>
+          )}
           {orders.length > 0 && (
             <Button 
               variant="outline" 
@@ -457,6 +469,23 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
 
             {["medication", "lab", "imaging", "referral"].map((type) => (
               <TabsContent key={type} value={type} className="space-y-2">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="text-sm text-gray-600">
+                    {getOrdersByType(type).length} {type} orders
+                  </div>
+                  {getOrdersByType(type).some((order: Order) => order.orderStatus === 'draft') && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => bulkSignMutation.mutate(type)}
+                      disabled={bulkSignMutation.isPending}
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                    >
+                      <PenTool className="h-4 w-4 mr-2" />
+                      Sign All {type}
+                    </Button>
+                  )}
+                </div>
                 {getOrdersByType(type).map((order: Order) => (
                   <OrderCard
                     key={order.id}
@@ -531,6 +560,16 @@ function OrderCard({ order, onEdit, onDelete, onSign, isEditing, onSave, onCance
                 <Badge variant={order.priority === "urgent" ? "destructive" : "secondary"} className="text-xs">
                   {order.priority || "routine"}
                 </Badge>
+                {order.orderStatus === 'signed' && (
+                  <Badge className="text-xs bg-green-100 text-green-800 border-green-200">
+                    Signed
+                  </Badge>
+                )}
+                {order.orderStatus === 'draft' && (
+                  <Badge variant="outline" className="text-xs border-orange-200 text-orange-700">
+                    Requires Signature
+                  </Badge>
+                )}
               </div>
               <OrderContent order={order} />
               {order.clinicalIndication && (

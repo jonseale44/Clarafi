@@ -35,7 +35,6 @@ import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
 import { EncounterSignaturePanel } from "./encounter-signature-panel";
 import { EncounterWorkflowControls } from "./encounter-workflow-controls";
-import { OrderSigningPanel } from "./order-signing-panel";
 import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
@@ -2389,14 +2388,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             isAutoGenerating={isAutoGeneratingBilling}
           />
 
-          {/* Order Signing Panel */}
-          <OrderSigningPanel
-            encounterId={encounterId}
-            onOrdersSigned={() => {
-              queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
-              queryClient.invalidateQueries({ queryKey: [`/api/patients/${patient.id}/draft-orders`] });
-            }}
-          />
+
 
           {/* Encounter Workflow Controls */}
           <EncounterWorkflowControls
