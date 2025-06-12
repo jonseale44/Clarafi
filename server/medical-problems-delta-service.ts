@@ -117,7 +117,7 @@ export class MedicalProblemsDeltaService {
 
     } catch (error) {
       console.error(`❌ [DeltaService] Error in processSOAPDelta:`, error);
-      console.error(`❌ [DeltaService] Stack trace:`, error.stack);
+      console.error(`❌ [DeltaService] Stack trace:`, (error as Error).stack);
       throw error;
     }
   }
@@ -135,12 +135,12 @@ export class MedicalProblemsDeltaService {
       for (const problem of problems) {
         const visitHistory = problem.visitHistory as VisitHistoryEntry[];
         const updatedHistory = visitHistory.map(visit => {
-          if (visit.encounter_id === encounterId && !visit.is_signed) {
+          if (visit.encounterId === encounterId && !visit.isSigned) {
             return {
               ...visit,
-              is_signed: true,
-              signed_by: providerId,
-              signed_at: new Date().toISOString()
+              isSigned: true,
+              providerId: providerId,
+              signedAt: new Date().toISOString()
             };
           }
           return visit;
@@ -316,7 +316,7 @@ Respond with ONLY the JSON, no other text.
   }
 
   /**
-   * Create new medical problem with initial visit entry
+   * Create new medical problem with initial visit entry using DP structure
    */
   private async createNewProblem(
     change: ProblemChange,
@@ -324,15 +324,21 @@ Respond with ONLY the JSON, no other text.
     encounterId: number
   ): Promise<void> {
 
+    // Get encounter details for DP date
+    const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
+    const encounterDate = encounter[0]?.startTime || new Date();
+
     const visitEntry: VisitHistoryEntry = {
-      encounter_id: encounterId,
-      date: new Date().toISOString(),
+      date: encounterDate.toISOString().split('T')[0], // DP - authoritative medical event date
       notes: change.visit_notes || "",
-      icd10_at_visit: change.icd10_change?.to || "",
-      provider: "Dr. Provider", // TODO: Get actual provider name
-      changes_made: ["initial_diagnosis"],
+      source: "encounter",
+      encounterId: encounterId,
+      providerId: encounter[0]?.providerId,
+      providerName: "Auto-Generated", // TODO: Get actual provider name
+      icd10AtVisit: change.icd10_change?.to || "",
+      changesMade: ["initial_diagnosis"],
       confidence: change.confidence,
-      is_signed: false
+      isSigned: false
     };
 
     const changeLogEntry: ChangeLogEntry = {
@@ -377,16 +383,22 @@ Respond with ONLY the JSON, no other text.
     const visitHistory = existingProblem.visitHistory as VisitHistoryEntry[];
     const changeLog = existingProblem.changeLog as ChangeLogEntry[];
 
-    // Add new visit entry
+    // Get encounter details for DP date
+    const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
+    const encounterDate = encounter[0]?.startTime || new Date();
+
+    // Add new visit entry using DP structure
     const newVisitEntry: VisitHistoryEntry = {
-      encounter_id: encounterId,
-      date: new Date().toISOString(),
+      date: encounterDate.toISOString().split('T')[0], // DP - authoritative medical event date
       notes: change.visit_notes || "",
-      icd10_at_visit: change.icd10_change?.to || existingProblem.currentIcd10Code || "",
-      provider: "Dr. Provider", // TODO: Get actual provider name
-      changes_made: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
+      source: "encounter",
+      encounterId: encounterId,
+      providerId: encounter[0]?.providerId,
+      providerName: "Auto-Generated", // TODO: Get actual provider name
+      icd10AtVisit: change.icd10_change?.to || existingProblem.currentIcd10Code || "",
+      changesMade: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
       confidence: change.confidence,
-      is_signed: false
+      isSigned: false
     };
 
     const newChangeLogEntry: ChangeLogEntry = {
