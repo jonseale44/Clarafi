@@ -10,16 +10,17 @@ import { medicalProblems, encounters, patients } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
 export interface VisitHistoryEntry {
-  encounter_id: number;
-  date: string;
+  date: string; // DP - authoritative medical event date (encounter date)
   notes: string;
-  icd10_at_visit: string;
-  provider: string;
-  changes_made: string[];
-  confidence: number;
-  is_signed: boolean;
-  signed_by?: number;
-  signed_at?: string;
+  source: "encounter" | "manual" | "imported_record";
+  encounterId?: number;
+  providerId?: number;
+  providerName?: string;
+  icd10AtVisit?: string;
+  changesMade?: string[];
+  confidence?: number;
+  isSigned?: boolean;
+  signedAt?: string;
 }
 
 export interface ChangeLogEntry {

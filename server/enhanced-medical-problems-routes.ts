@@ -130,7 +130,7 @@ router.post("/encounters/:encounterId/process-medical-problems", async (req, res
 
   } catch (error) {
     console.error(`❌ [MedicalProblemsAPI] Error processing medical problems:`, error);
-    console.error(`❌ [MedicalProblemsAPI] Stack trace:`, error.stack);
+    console.error(`❌ [MedicalProblemsAPI] Stack trace:`, (error as Error).stack);
     res.status(500).json({ error: "Failed to process medical problems" });
   }
 });
@@ -183,7 +183,7 @@ router.post("/patients/:patientId/medical-problems-enhanced", async (req, res) =
     }));
 
     // Sort by date descending for consistent display
-    processedVisitHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    processedVisitHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const changeLog = [{
       action: "created",
@@ -245,7 +245,7 @@ router.put("/medical-problems/:problemId", async (req, res) => {
     }));
 
     // Sort by date descending
-    processedVisitHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    processedVisitHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Add to change log
     const updatedChangeLog = [

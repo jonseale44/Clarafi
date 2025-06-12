@@ -9,6 +9,7 @@ import { Patient } from "@shared/schema";
 import { EncountersTab } from "./encounters-tab";
 import { EncounterDetailView } from "./encounter-detail-view";
 import { SharedChartSections } from "./shared-chart-sections";
+import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -167,6 +168,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           </div>
         );
       case "problems":
+        return <EnhancedMedicalProblemsList patientId={patientId} mode="patient-chart" isReadOnly={false} />;
       case "medication":
       case "allergies":
       case "labs":
