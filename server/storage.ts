@@ -476,6 +476,10 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteMedicalProblem(id: number): Promise<void> {
+    await db.delete(medicalProblems).where(eq(medicalProblems.id, id));
+  }
+
   async getMedicalProblemVisitHistory(problemId: number): Promise<any[]> {
     const [problem] = await db.select({ visitHistory: medicalProblems.visitHistory })
       .from(medicalProblems)

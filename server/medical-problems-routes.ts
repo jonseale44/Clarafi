@@ -52,21 +52,39 @@ router.get("/patients/:patientId/medical-problems", async (req, res) => {
 router.post("/patients/:patientId/medical-problems", async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
+    console.log('🔍 [MedicalProblems] Creating new problem for patient:', patientId);
+    console.log('🔍 [MedicalProblems] Request body:', req.body);
     
-    // Validate request body
-    const validatedData = insertDiagnosisSchema.parse({
-      ...req.body,
+    // Map frontend fields to backend schema
+    const problemData = {
       patientId,
-    });
+      problemTitle: req.body.diagnosis,
+      currentIcd10Code: req.body.icd10Code || null,
+      problemStatus: req.body.status || 'active',
+      firstDiagnosedDate: req.body.diagnosisDate,
+      firstEncounterId: req.body.encounterId || null,
+      lastUpdatedEncounterId: req.body.encounterId || null,
+      visitHistory: req.body.notes ? [{
+        date: new Date().toISOString(),
+        notes: req.body.notes,
+        provider: 'Manual Entry',
+        encounter_id: req.body.encounterId || null
+      }] : [],
+      changeLog: [{
+        timestamp: new Date().toISOString(),
+        action: 'created',
+        details: 'Problem manually added'
+      }]
+    };
 
-    const [newProblem] = await db
-      .insert(diagnoses)
-      .values(validatedData)
-      .returning();
+    console.log('🔍 [MedicalProblems] Mapped problem data:', problemData);
+    
+    const newProblem = await storage.createMedicalProblem(problemData);
+    console.log('✅ [MedicalProblems] Created problem:', newProblem);
 
     res.status(201).json(newProblem);
   } catch (error) {
-    console.error("Error creating medical problem:", error);
+    console.error("❌ [MedicalProblems] Error creating medical problem:", error);
     res.status(500).json({ error: "Failed to create medical problem" });
   }
 });
@@ -79,32 +97,37 @@ router.put("/patients/:patientId/medical-problems/:problemId", async (req, res) 
   try {
     const patientId = parseInt(req.params.patientId);
     const problemId = parseInt(req.params.problemId);
+    console.log('🔍 [MedicalProblems] Updating problem:', problemId, 'for patient:', patientId);
     
-    // Validate request body (exclude patientId and encounterId from updates)
-    const updateData = {
-      diagnosis: req.body.diagnosis,
-      icd10Code: req.body.icd10Code,
-      diagnosisDate: req.body.diagnosisDate,
-      status: req.body.status,
-      notes: req.body.notes,
-    };
-
-    const [updatedProblem] = await db
-      .update(diagnoses)
-      .set(updateData)
-      .where(and(
-        eq(diagnoses.id, problemId),
-        eq(diagnoses.patientId, patientId)
-      ))
-      .returning();
-
-    if (!updatedProblem) {
+    // Get existing problem to preserve visit history
+    const existingProblem = await storage.getMedicalProblem(problemId);
+    if (!existingProblem || existingProblem.patientId !== patientId) {
       return res.status(404).json({ error: "Medical problem not found" });
     }
 
+    // Map frontend fields to backend schema
+    const updateData = {
+      problemTitle: req.body.diagnosis,
+      currentIcd10Code: req.body.icd10Code || null,
+      problemStatus: req.body.status,
+      firstDiagnosedDate: req.body.diagnosisDate,
+      // Add update to change log
+      changeLog: [
+        ...(Array.isArray(existingProblem.changeLog) ? existingProblem.changeLog : []),
+        {
+          timestamp: new Date().toISOString(),
+          action: 'updated',
+          details: 'Problem manually updated'
+        }
+      ]
+    };
+
+    const updatedProblem = await storage.updateMedicalProblem(problemId, updateData);
+    console.log('✅ [MedicalProblems] Updated problem:', updatedProblem);
+
     res.json(updatedProblem);
   } catch (error) {
-    console.error("Error updating medical problem:", error);
+    console.error("❌ [MedicalProblems] Error updating medical problem:", error);
     res.status(500).json({ error: "Failed to update medical problem" });
   }
 });
@@ -117,22 +140,20 @@ router.delete("/patients/:patientId/medical-problems/:problemId", async (req, re
   try {
     const patientId = parseInt(req.params.patientId);
     const problemId = parseInt(req.params.problemId);
+    console.log('🔍 [MedicalProblems] Deleting problem:', problemId, 'for patient:', patientId);
 
-    const [deletedProblem] = await db
-      .delete(diagnoses)
-      .where(and(
-        eq(diagnoses.id, problemId),
-        eq(diagnoses.patientId, patientId)
-      ))
-      .returning();
-
-    if (!deletedProblem) {
+    // Verify problem exists and belongs to patient
+    const existingProblem = await storage.getMedicalProblem(problemId);
+    if (!existingProblem || existingProblem.patientId !== patientId) {
       return res.status(404).json({ error: "Medical problem not found" });
     }
 
+    await storage.deleteMedicalProblem(problemId);
+    console.log('✅ [MedicalProblems] Deleted problem:', problemId);
+
     res.json({ message: "Medical problem deleted successfully" });
   } catch (error) {
-    console.error("Error deleting medical problem:", error);
+    console.error("❌ [MedicalProblems] Error deleting medical problem:", error);
     res.status(500).json({ error: "Failed to delete medical problem" });
   }
 });
