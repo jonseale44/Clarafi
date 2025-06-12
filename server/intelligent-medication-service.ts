@@ -164,10 +164,9 @@ Return JSON array of medication objects with these fields.
 `;
 
     const response = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "o1-preview",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.1,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
