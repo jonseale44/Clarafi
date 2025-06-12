@@ -2380,7 +2380,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           />
 
           {/* CPT Codes & Diagnoses */}
-          <CPTCodesDiagnoses patientId={patient.id} encounterId={encounterId} />
+          <CPTCodesDiagnoses 
+            patientId={patient.id} 
+            encounterId={encounterId} 
+            isAutoGenerating={isAutoGeneratingBilling}
+          />
         </div>
       </div>
     </div>
