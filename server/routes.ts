@@ -973,23 +973,24 @@ export function registerRoutes(app: Express): Server {
 
         console.log(`📋 [ExtractOrders] Extracted ${extractedOrders.length} orders`);
 
-        // Save the extracted orders with deduplication
-        console.log(`📋 [ExtractOrders] Saving ${extractedOrders.length} orders with deduplication...`);
-        
-        const deduplicationResult = await storage.createOrdersWithDeduplication(
-          extractedOrders, 
-          'encounter' // Use encounter scope for SOAP-based orders
-        );
+        // Save the extracted orders
+        const savedOrders = [];
+        for (const orderData of extractedOrders) {
+          try {
+            const savedOrder = await storage.createOrder(orderData);
+            savedOrders.push(savedOrder);
+          } catch (error: any) {
+            console.error("❌ [ExtractOrders] Failed to save order:", error);
+            // Continue with other orders even if one fails
+          }
+        }
 
-        console.log(`📋 [ExtractOrders] Deduplication complete: ${deduplicationResult.summary}`);
+        console.log(`📋 [ExtractOrders] Successfully saved ${savedOrders.length} orders`);
 
         res.json({
-          message: "Orders extracted and processed with deduplication",
-          ordersCount: deduplicationResult.created.length + deduplicationResult.merged.length,
-          created: deduplicationResult.created,
-          merged: deduplicationResult.merged,
-          skipped: deduplicationResult.skipped,
-          summary: deduplicationResult.summary
+          message: "Orders extracted and saved successfully",
+          ordersCount: savedOrders.length,
+          orders: savedOrders
         });
 
       } catch (error: any) {
@@ -1743,30 +1744,6 @@ export function registerRoutes(app: Express): Server {
       res.status(204).send();
     } catch (error: any) {
       console.error("[Orders API] Error deleting order:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
-
-  // Clean up duplicate orders for a patient
-  app.post("/api/patients/:patientId/orders/cleanup-duplicates", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const patientId = parseInt(req.params.patientId);
-      console.log(`🧹 [OrdersAPI] Starting duplicate cleanup for patient ${patientId}`);
-
-      const { OrderDeduplicationService } = await import("./order-deduplication-service.js");
-      const result = await OrderDeduplicationService.cleanupPatientDuplicates(patientId);
-
-      console.log(`✅ [OrdersAPI] Cleanup complete: ${result.duplicatesRemoved} duplicates removed`);
-
-      res.json({
-        message: "Duplicate cleanup completed",
-        duplicatesRemoved: result.duplicatesRemoved,
-        ordersProcessed: result.ordersProcessed
-      });
-    } catch (error: any) {
-      console.error("❌ [OrdersAPI] Error cleaning up duplicates:", error);
       res.status(500).json({ message: error.message });
     }
   });

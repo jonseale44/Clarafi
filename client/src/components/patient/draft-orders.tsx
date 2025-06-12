@@ -197,19 +197,9 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
-      
-      // Handle new deduplication response format
-      const totalProcessed = (data.created?.length || 0) + (data.merged?.length || 0);
-      const skippedCount = data.skipped?.length || 0;
-      
-      let description = `Processed ${totalProcessed} orders`;
-      if (skippedCount > 0) {
-        description += ` (${skippedCount} duplicates skipped)`;
-      }
-      
       toast({ 
         title: "Orders Updated from SOAP", 
-        description: data.summary || description
+        description: `Successfully extracted ${data.ordersCount || 0} orders from the SOAP note.` 
       });
     },
     onError: (error: any) => {
@@ -234,37 +224,6 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
   const handleDeleteAll = () => {
     if (confirm(`Are you sure you want to delete all ${orders.length} orders? This action cannot be undone.`)) {
       deleteAllOrdersMutation.mutate();
-    }
-  };
-
-  // Cleanup duplicates mutation
-  const cleanupDuplicatesMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`/api/patients/${patientId}/orders/cleanup-duplicates`, {
-        method: "POST",
-      });
-      if (!response.ok) throw new Error("Failed to cleanup duplicates");
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
-      toast({ 
-        title: "Duplicates Cleaned", 
-        description: `Removed ${data.duplicatesRemoved} duplicate orders from ${data.ordersProcessed} total orders` 
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Failed to cleanup duplicates",
-        description: error.message,
-      });
-    },
-  });
-
-  const handleCleanupDuplicates = () => {
-    if (confirm("Clean up duplicate orders? This will remove exact duplicates while preserving unique orders.")) {
-      cleanupDuplicatesMutation.mutate();
     }
   };
 
@@ -356,28 +315,16 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
             </Button>
           )}
           {orders.length > 0 && (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleCleanupDuplicates}
-                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                disabled={cleanupDuplicatesMutation.isPending}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${cleanupDuplicatesMutation.isPending ? 'animate-spin' : ''}`} />
-                {cleanupDuplicatesMutation.isPending ? "Cleaning..." : "Clean Duplicates"}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleDeleteAll}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                disabled={deleteAllOrdersMutation.isPending}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {deleteAllOrdersMutation.isPending ? "Deleting..." : "Delete All"}
-              </Button>
-            </>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleDeleteAll}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              disabled={deleteAllOrdersMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteAllOrdersMutation.isPending ? "Deleting..." : "Delete All"}
+            </Button>
           )}
           <Dialog open={showNewOrderDialog} onOpenChange={setShowNewOrderDialog}>
             <DialogTrigger asChild>

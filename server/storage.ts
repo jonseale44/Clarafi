@@ -63,8 +63,6 @@ export interface IStorage {
   getPatientOrders(patientId: number): Promise<Order[]>;
   getPatientDraftOrders(patientId: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
-  createOrderWithDeduplication(order: InsertOrder, scope?: 'encounter' | 'patient'): Promise<{order: Order | null; action: string; message: string}>;
-  createOrdersWithDeduplication(orders: InsertOrder[], scope?: 'encounter' | 'patient'): Promise<{created: Order[]; merged: Order[]; skipped: any[]; summary: string}>;
   updateOrder(id: number, updates: Partial<Order>): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
   deleteAllPatientDraftOrders(patientId: number): Promise<void>;
@@ -379,16 +377,6 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(orders)
       .where(and(eq(orders.patientId, patientId), eq(orders.orderStatus, "draft")));
-  }
-
-  async createOrderWithDeduplication(order: InsertOrder, scope: 'encounter' | 'patient' = 'patient'): Promise<{order: Order | null; action: string; message: string}> {
-    const { OrderDeduplicationService } = await import("./order-deduplication-service.js");
-    return await OrderDeduplicationService.createOrderWithDeduplication(order, scope);
-  }
-
-  async createOrdersWithDeduplication(orders: InsertOrder[], scope: 'encounter' | 'patient' = 'patient'): Promise<{created: Order[]; merged: Order[]; skipped: any[]; summary: string}> {
-    const { OrderDeduplicationService } = await import("./order-deduplication-service.js");
-    return await OrderDeduplicationService.createOrdersWithDeduplication(orders, scope);
   }
 
   // Physical Findings management (GPT-driven persistent findings)
