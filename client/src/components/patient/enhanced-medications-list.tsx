@@ -104,10 +104,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
 
   const createMedication = useMutation({
     mutationFn: async (medicationData: any) => {
-      return await apiRequest(`/api/patients/${patientId}/medications-enhanced`, {
-        method: 'POST',
-        body: medicationData,
-      });
+      return await apiRequest(`/api/patients/${patientId}/medications-enhanced`, 'POST', medicationData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
@@ -128,10 +125,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
 
   const discontinueMedication = useMutation({
     mutationFn: async ({ medicationId, reason }: { medicationId: number; reason: string }) => {
-      return await apiRequest(`/api/medications/${medicationId}`, {
-        method: 'DELETE',
-        body: { reasonForDiscontinuation: reason },
-      });
+      return await apiRequest(`/api/medications/${medicationId}`, 'DELETE', { reasonForDiscontinuation: reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
@@ -280,22 +274,26 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
       <CardContent className="space-y-4">
         {/* Status Tabs */}
         <Tabs value={activeStatusTab} onValueChange={(value: any) => setActiveStatusTab(value)}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="active" className="flex items-center gap-1">
+          <TabsList className="grid w-full grid-cols-4 h-auto">
+            <TabsTrigger value="active" className="flex flex-col items-center gap-1 p-2 text-xs">
               <Activity className="h-3 w-3" />
-              Active ({medicationData?.summary.active || 0})
+              <span>Active</span>
+              <span className="text-xs opacity-70">({medicationData?.summary.active || 0})</span>
             </TabsTrigger>
-            <TabsTrigger value="discontinued" className="flex items-center gap-1">
+            <TabsTrigger value="discontinued" className="flex flex-col items-center gap-1 p-2 text-xs">
               <Clock className="h-3 w-3" />
-              Discontinued ({medicationData?.summary.discontinued || 0})
+              <span>Discontinued</span>
+              <span className="text-xs opacity-70">({medicationData?.summary.discontinued || 0})</span>
             </TabsTrigger>
-            <TabsTrigger value="held" className="flex items-center gap-1">
+            <TabsTrigger value="held" className="flex flex-col items-center gap-1 p-2 text-xs">
               <AlertTriangle className="h-3 w-3" />
-              Held ({medicationData?.summary.held || 0})
+              <span>Held</span>
+              <span className="text-xs opacity-70">({medicationData?.summary.held || 0})</span>
             </TabsTrigger>
-            <TabsTrigger value="historical" className="flex items-center gap-1">
+            <TabsTrigger value="historical" className="flex flex-col items-center gap-1 p-2 text-xs">
               <FileText className="h-3 w-3" />
-              Historical ({medicationData?.summary.historical || 0})
+              <span>Historical</span>
+              <span className="text-xs opacity-70">({medicationData?.summary.historical || 0})</span>
             </TabsTrigger>
           </TabsList>
 
