@@ -4,6 +4,8 @@ import { db } from "./db.js";
 import { encounters, orders, medicalProblems } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import { medicalProblemsDelta } from "./medical-problems-delta-service.js";
+import { intelligentMedication } from "./intelligent-medication-service.js";
+import { storage } from "./storage.js";
 
 const router = Router();
 
@@ -87,6 +89,14 @@ router.post("/encounters/:encounterId/validate-and-sign", async (req: Request, r
 
     // Sign medical problems if they exist
     await medicalProblemsDelta.signEncounter(encounterId, userId);
+    
+    // Phase 2: Update medications from signed orders
+    const signedOrders = await storage.getEncounterOrders(encounterId);
+    for (const order of signedOrders) {
+      if (order.orderType === 'medication' && order.orderStatus === 'signed') {
+        await intelligentMedication.updateMedicationsFromSignedOrder(order.patientId, order.id);
+      }
+    }
 
     res.json({
       success: true,

@@ -150,21 +150,14 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
       encounterId
     );
 
-    console.log(`✅ [EnhancedMedications] Successfully processed ${result.medicationsAffected} medications`);
-    console.log(`✅ [EnhancedMedications] Processing time: ${result.processingTimeMs}ms`);
-    console.log(`✅ [EnhancedMedications] Drug interactions found: ${result.drugInteractions.length}`);
-    console.log(`✅ [EnhancedMedications] Medication groups: ${result.medicationGroupings.length}`);
+    console.log(`✅ [EnhancedMedications] Successfully created ${result} pending medications`);
 
     res.json({
       success: true,
       encounterId,
       patientId,
-      medicationsAffected: result.medicationsAffected,
-      processingTimeMs: result.processingTimeMs,
-      standardizedMedications: result.standardizedMedications,
-      drugInteractions: result.drugInteractions,
-      medicationGroupings: result.medicationGroupings,
-      problemMappings: result.problemMappings,
+      medicationsCreated: result,
+      phase: "pending_from_orders",
       timestamp: new Date().toISOString()
     });
 

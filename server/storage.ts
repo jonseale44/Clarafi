@@ -464,13 +464,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async findPendingMedicationByOrder(patientId: number, orderId: number): Promise<any> {
-    const medications = await db.select().from(patientMedications)
+    const medicationsList = await db.select().from(medications)
       .where(and(
-        eq(patientMedications.patientId, patientId),
-        eq(patientMedications.status, "pending")
+        eq(medications.patientId, patientId),
+        eq(medications.status, "pending")
       ));
     
-    return medications.find(med => med.sourceOrderId === orderId);
+    return medicationsList.find(med => med.sourceOrderId === orderId);
   }
 
   // Physical Findings management (GPT-driven persistent findings)

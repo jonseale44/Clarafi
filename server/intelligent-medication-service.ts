@@ -494,23 +494,21 @@ Return JSON array of mapping objects with medicationName, problemId, indication,
 
       for (const order of medicationOrders) {
         try {
-          // Parse order details for medication name
-          const medicationName = order.orderDetails?.medicationName || 
-                                order.description?.split(' - ')[0] || 
-                                order.description;
+          // Parse medication name from order
+          const medicationName = order.medicationName || order.sig || "Unknown medication";
 
           const medicationData = {
             patientId,
             encounterId,
             medicationName,
-            genericName: order.orderDetails?.genericName || null,
-            brandName: order.orderDetails?.brandName || null,
-            dosage: order.orderDetails?.dosage || "As directed",
-            route: order.orderDetails?.route || "oral",
-            frequency: order.orderDetails?.frequency || "daily",
-            rxNormCode: order.orderDetails?.rxNormCode || null,
-            ndcCode: order.orderDetails?.ndcCode || null,
-            clinicalIndication: order.orderDetails?.indication || null,
+            genericName: null,
+            brandName: null,
+            dosage: order.dosage || "As directed",
+            route: order.routeOfAdministration || "oral",
+            frequency: "daily",
+            rxNormCode: null,
+            ndcCode: null,
+            clinicalIndication: order.clinicalIndication || null,
             startDate: new Date().toISOString().split('T')[0],
             status: "pending", // Key: pending status until order is signed
             firstEncounterId: encounterId,
@@ -522,7 +520,7 @@ Return JSON array of mapping objects with medicationName, problemId, indication,
               action: 'pending_from_order',
               encounterId,
               orderId: order.id,
-              changes: `Pending medication created from draft order: ${order.description}`
+              changes: `Pending medication created from draft order: ${medicationName}`
             }],
             groupingStrategy: "medical_problem",
             relatedMedications: [],

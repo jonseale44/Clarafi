@@ -318,6 +318,9 @@ export const medications = pgTable("medications", {
   
   // Clinical context
   clinicalIndication: text("clinical_indication"), // Why prescribed
+  
+  // Two-phase workflow support
+  sourceOrderId: integer("source_order_id"), // Links to draft order that created this medication
   problemMappings: jsonb("problem_mappings").default([]), // Link to medical problems
   
   // Dates and status
