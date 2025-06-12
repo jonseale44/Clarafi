@@ -197,9 +197,19 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      
+      // Handle new deduplication response format
+      const totalProcessed = (data.created?.length || 0) + (data.merged?.length || 0);
+      const skippedCount = data.skipped?.length || 0;
+      
+      let description = `Processed ${totalProcessed} orders`;
+      if (skippedCount > 0) {
+        description += ` (${skippedCount} duplicates skipped)`;
+      }
+      
       toast({ 
         title: "Orders Updated from SOAP", 
-        description: `Successfully extracted ${data.ordersCount || 0} orders from the SOAP note.` 
+        description: data.summary || description
       });
     },
     onError: (error: any) => {

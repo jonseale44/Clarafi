@@ -21,6 +21,7 @@ const openai = new OpenAI({
 export class RealtimeSOAPStreaming {
   private soapOrdersExtractor: SOAPOrdersExtractor;
   private physicalExamLearningService: PhysicalExamLearningService;
+  private storage = storage;
 
   constructor() {
     this.soapOrdersExtractor = new SOAPOrdersExtractor();
@@ -312,38 +313,36 @@ IMPORTANT INSTRUCTIONS:
             parseInt(encounterId),
           );
 
-          // Merge and deduplicate orders
-          const mergedOrders = self.mergeAndDeduplicateOrders(extractedOrders || [], soapBasedOrders || []);
+          // Use advanced deduplication service instead of manual merging
+          const allOrders = [...(extractedOrders || []), ...(soapBasedOrders || [])];
           console.log(
-            `📋 [RealtimeSOAP] Merged orders: ${extractedOrders?.length || 0} from transcription + ${soapBasedOrders?.length || 0} from SOAP = ${mergedOrders.length} total (after deduplication)`
+            `📋 [RealtimeSOAP] Processing ${allOrders.length} total orders: ${extractedOrders?.length || 0} from transcription + ${soapBasedOrders?.length || 0} from SOAP`
           );
 
-          // Save merged orders in parallel
-          if (mergedOrders && mergedOrders.length > 0) {
-            const savePromises = mergedOrders.map((order: InsertOrder) =>
-              storage.createOrder(order).catch((error) => {
-                console.error(
-                  `❌ [RealtimeSOAP] Failed to save order:`,
-                  order.orderType,
-                  error,
-                );
-                return null;
-              }),
+          // Save all orders with comprehensive deduplication
+          if (allOrders && allOrders.length > 0) {
+            console.log("💾 [RealtimeSOAP] Saving orders with advanced deduplication...");
+            const deduplicationResult = await storage.createOrdersWithDeduplication(
+              allOrders, 
+              'patient' // Use patient scope for comprehensive deduplication across encounters
             );
+            
+            console.log(`✅ [RealtimeSOAP] Deduplication complete: ${deduplicationResult.summary}`);
+            if (deduplicationResult.skipped.length > 0) {
+              console.log(`⏭️ [RealtimeSOAP] Skipped duplicates:`, deduplicationResult.skipped.map(s => s.reason));
+            }
 
-            await Promise.allSettled(savePromises);
-            console.log(
-              `⚡ [RealtimeSOAP] Saved ${mergedOrders.length} merged orders`,
-            );
-
-            // Send merged orders to frontend
-            const ordersData = JSON.stringify({
-              type: "draft_orders",
-              orders: mergedOrders,
-            });
-            controller.enqueue(
-              new TextEncoder().encode(`data: ${ordersData}\n\n`),
-            );
+            // Send all processed orders (created + merged) to frontend
+            const finalOrders = [...deduplicationResult.created, ...deduplicationResult.merged];
+            if (finalOrders.length > 0) {
+              const ordersData = JSON.stringify({
+                type: "draft_orders",
+                orders: finalOrders,
+              });
+              controller.enqueue(
+                new TextEncoder().encode(`data: ${ordersData}\n\n`),
+              );
+            }
           }
 
           // Send CPT codes to frontend immediately if available
