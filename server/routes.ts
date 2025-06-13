@@ -1538,6 +1538,40 @@ export function registerRoutes(app: Express): Server {
         orders.map((orderData) => storage.createOrder(orderData)),
       );
 
+      // Process medication orders if any were created
+      const medicationOrders = createdOrders.filter(order => order.orderType === 'medication');
+      if (medicationOrders.length > 0) {
+        console.log(`💊 [Orders API] Processing ${medicationOrders.length} medication orders from batch`);
+        
+        // Group by encounter to trigger processing once per encounter
+        const encounterGroups = medicationOrders.reduce((groups, order) => {
+          if (order.encounterId) {
+            if (!groups[order.encounterId]) {
+              groups[order.encounterId] = { patientId: order.patientId, orders: [] };
+            }
+            groups[order.encounterId].orders.push(order);
+          }
+          return groups;
+        }, {} as Record<number, { patientId: number, orders: any[] }>);
+
+        // Process each encounter's medications
+        for (const [encounterId, { patientId, orders: encounterOrders }] of Object.entries(encounterGroups)) {
+          try {
+            console.log(`💊 [Orders API] Processing ${encounterOrders.length} medication orders for encounter ${encounterId}`);
+            const { medicationDelta } = await import("./medication-delta-service.js");
+            await medicationDelta.processOrderDelta(
+              patientId,
+              parseInt(encounterId),
+              req.user!.id
+            );
+            console.log(`✅ [Orders API] Medication processing completed for encounter ${encounterId}`);
+          } catch (medicationError) {
+            console.error(`❌ [Orders API] Medication processing failed for encounter ${encounterId}:`, medicationError);
+            // Don't fail the batch operation if medication processing fails
+          }
+        }
+      }
+
       res.status(201).json(createdOrders);
     } catch (error: any) {
       console.error("[Orders API] Error creating batch orders:", error);
