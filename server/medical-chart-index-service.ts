@@ -271,7 +271,7 @@ Return JSON: {
 }`;
 
     const response = await this.openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1",
       messages: [
         { role: "system", content: "You are a medical AI that creates concise, accurate summaries for clinical use. Always return valid JSON." },
         { role: "user", content: prompt }

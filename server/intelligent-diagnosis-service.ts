@@ -184,7 +184,7 @@ RULES:
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 1500,
@@ -244,7 +244,7 @@ RULES:
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 800,
