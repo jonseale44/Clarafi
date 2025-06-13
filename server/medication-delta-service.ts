@@ -413,7 +413,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   /**
-   * Create new medication record
+   * Create new medication record with complete prescription details from orders
    */
   private async createNewMedication(
     change: MedicationChange,
@@ -425,28 +425,40 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     console.log(`💊 [CreateMedication] === CREATING NEW MEDICATION ===`);
     console.log(`💊 [CreateMedication] Medication name: ${change.medication_name}`);
     console.log(`💊 [CreateMedication] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
-    console.log(`💊 [CreateMedication] Dosage: ${change.dosage_change?.to || 'As directed'}`);
-    console.log(`💊 [CreateMedication] Frequency: ${change.frequency_change?.to || 'daily'}`);
-    console.log(`💊 [CreateMedication] Indication: ${change.indication_change?.to || 'Not specified'}`);
-    console.log(`💊 [CreateMedication] Confidence: ${change.confidence}`);
-    console.log(`💊 [CreateMedication] Reasoning: ${change.reasoning || 'Not provided'}`);
 
+    // Look for matching medication order to get complete prescription details
+    const relatedOrder = await this.findMatchingMedicationOrder(change.medication_name!, encounterId);
+    
+    if (relatedOrder) {
+      console.log(`💊 [CreateMedication] ✅ Found matching order ID ${relatedOrder.id} with complete prescription details`);
+      console.log(`💊 [CreateMedication] Order details: ${relatedOrder.sig}, Qty: ${relatedOrder.quantity}, Refills: ${relatedOrder.refills}, Days: ${relatedOrder.daysSupply}`);
+    } else {
+      console.log(`💊 [CreateMedication] ⚠️ No matching order found for ${change.medication_name} - using SOAP note data only`);
+    }
+
+    // Build comprehensive medication data with prescription details
     const medicationData = {
       patientId,
       encounterId,
       medicationName: change.medication_name!,
-      genericName: null,
-      brandName: null,
-      dosage: change.dosage_change?.to || "As directed",
-      route: "oral",
+      genericName: relatedOrder?.medicationName?.includes('(') ? relatedOrder.medicationName.split('(')[0].trim() : null,
+      brandName: relatedOrder?.medicationName?.includes('(') ? relatedOrder.medicationName.match(/\(([^)]+)\)/)?.[1] : null,
+      dosage: relatedOrder?.dosage || change.dosage_change?.to || "As directed",
+      route: relatedOrder?.routeOfAdministration || "oral",
       frequency: change.frequency_change?.to || "daily",
+      sig: relatedOrder?.sig || null,
+      quantity: relatedOrder?.quantity || null,
+      refills: relatedOrder?.refills || null,
+      daysSupply: relatedOrder?.daysSupply || null,
+      form: relatedOrder?.form || null,
       rxNormCode: null,
       ndcCode: null,
-      clinicalIndication: change.indication_change?.to || null,
+      clinicalIndication: relatedOrder?.clinicalIndication || change.indication_change?.to || null,
       startDate: new Date().toISOString().split('T')[0],
       status: "active",
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
+      relatedOrderId: relatedOrder?.id || null,
       medicationHistory: [historyEntry],
       changeLog: [{
         encounter_id: encounterId,
