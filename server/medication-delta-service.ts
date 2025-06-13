@@ -141,12 +141,27 @@ export class MedicationDeltaService {
     patient: any,
     providerId: number
   ): Promise<MedicationChange[]> {
-    console.log(`💊 [GPT] Analyzing SOAP note for medication changes...`);
+    const gptStartTime = Date.now();
+    console.log(`💊 [GPT] === MEDICATION GPT ANALYSIS START ===`);
+    console.log(`💊 [GPT] Timestamp: ${new Date().toISOString()}`);
+    console.log(`💊 [GPT] Provider ID: ${providerId}`);
+    console.log(`💊 [GPT] Patient: ${patient?.firstName} ${patient?.lastName} (Age: ${this.calculateAge(patient?.dateOfBirth)})`);
+    console.log(`💊 [GPT] Existing medications count: ${existingMedications.length}`);
+    
+    // Log existing medications for context
+    existingMedications.forEach((med, index) => {
+      console.log(`💊 [GPT] Existing Med ${index + 1}: ${med.medicationName} - ${med.dosage || 'no dosage'} - Status: ${med.status} - Last updated: ${med.lastUpdatedEncounterId || 'never'}`);
+    });
 
     const systemPrompt = this.buildMedicationDeltaPrompt();
     const userPrompt = this.buildUserPrompt(existingMedications, soapNote, encounter, patient);
 
+    console.log(`💊 [GPT] System prompt length: ${systemPrompt.length} characters`);
+    console.log(`💊 [GPT] User prompt length: ${userPrompt.length} characters`);
+    console.log(`💊 [GPT] SOAP note segment for analysis: "${soapNote.substring(0, 200)}..."`);
+
     try {
+      console.log(`💊 [GPT] Calling OpenAI GPT-4o model...`);
       const completion = await this.openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -157,16 +172,52 @@ export class MedicationDeltaService {
         response_format: { type: "json_object" }
       });
 
+      const gptCallTime = Date.now() - gptStartTime;
+      console.log(`💊 [GPT] OpenAI API call completed in ${gptCallTime}ms`);
+
       const response = completion.choices[0].message.content;
+      console.log(`💊 [GPT] Raw response length: ${response?.length || 0} characters`);
+      console.log(`💊 [GPT] Raw GPT response: ${response?.substring(0, 500)}...`);
+
       const parsedResponse = JSON.parse(response || "{}");
       
-      console.log(`💊 [GPT] Raw GPT response parsed successfully`);
+      console.log(`💊 [GPT] Response parsed successfully`);
       console.log(`💊 [GPT] Changes identified: ${parsedResponse.changes?.length || 0}`);
+      
+      // Log each identified change in detail
+      if (parsedResponse.changes) {
+        parsedResponse.changes.forEach((change: MedicationChange, index: number) => {
+          console.log(`💊 [GPT] Change ${index + 1}:`);
+          console.log(`💊 [GPT]   - Action: ${change.action}`);
+          console.log(`💊 [GPT]   - Medication: ${change.medication_name || 'N/A'}`);
+          console.log(`💊 [GPT]   - Medication ID: ${change.medication_id || 'NEW'}`);
+          console.log(`💊 [GPT]   - Confidence: ${change.confidence}`);
+          console.log(`💊 [GPT]   - Reasoning: ${change.reasoning || 'No reasoning provided'}`);
+          console.log(`💊 [GPT]   - History Notes: ${change.history_notes || 'No notes'}`);
+          if (change.dosage_change) {
+            console.log(`💊 [GPT]   - Dosage Change: ${change.dosage_change.from} → ${change.dosage_change.to}`);
+          }
+          if (change.frequency_change) {
+            console.log(`💊 [GPT]   - Frequency Change: ${change.frequency_change.from} → ${change.frequency_change.to}`);
+          }
+          if (change.indication_change) {
+            console.log(`💊 [GPT]   - Indication Change: ${change.indication_change.from} → ${change.indication_change.to}`);
+          }
+        });
+      }
+
+      const totalGptTime = Date.now() - gptStartTime;
+      console.log(`💊 [GPT] === MEDICATION GPT ANALYSIS COMPLETE ===`);
+      console.log(`💊 [GPT] Total GPT processing time: ${totalGptTime}ms`);
 
       return parsedResponse.changes || [];
 
     } catch (error) {
-      console.error(`❌ [GPT] Error in GPT analysis:`, error);
+      const errorTime = Date.now() - gptStartTime;
+      console.error(`❌ [GPT] Error in GPT analysis after ${errorTime}ms:`, error);
+      console.error(`❌ [GPT] Error stack trace:`, (error as Error).stack);
+      console.error(`❌ [GPT] System prompt preview:`, systemPrompt.substring(0, 200));
+      console.error(`❌ [GPT] User prompt preview:`, userPrompt.substring(0, 200));
       return [];
     }
   }
@@ -268,14 +319,39 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     encounterId: number,
     providerId: number
   ): Promise<void> {
-    for (const change of changes) {
+    console.log(`💊 [DB] === DATABASE CHANGES APPLICATION START ===`);
+    console.log(`💊 [DB] Total changes to apply: ${changes.length}`);
+    console.log(`💊 [DB] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
+    
+    for (let i = 0; i < changes.length; i++) {
+      const change = changes[i];
+      const changeStartTime = Date.now();
+      
+      console.log(`💊 [DB] --- Processing Change ${i + 1}/${changes.length} ---`);
+      console.log(`💊 [DB] Change action: ${change.action}`);
+      console.log(`💊 [DB] Medication name: ${change.medication_name || 'N/A'}`);
+      console.log(`💊 [DB] Medication ID: ${change.medication_id || 'NEW'}`);
+      console.log(`💊 [DB] Confidence level: ${change.confidence}`);
+      
       try {
         await this.applyIndividualChange(change, patientId, encounterId, providerId);
-        console.log(`✅ [DB] Applied change: ${change.action} for ${change.medication_name}`);
+        
+        const changeTime = Date.now() - changeStartTime;
+        console.log(`✅ [DB] Successfully applied change ${i + 1} in ${changeTime}ms`);
+        console.log(`✅ [DB] Change details: ${change.action} for ${change.medication_name}`);
+        
       } catch (error) {
-        console.error(`❌ [DB] Failed to apply change for ${change.medication_name}:`, error);
+        const changeTime = Date.now() - changeStartTime;
+        console.error(`❌ [DB] Failed to apply change ${i + 1} after ${changeTime}ms`);
+        console.error(`❌ [DB] Failed change: ${change.action} for ${change.medication_name}`);
+        console.error(`❌ [DB] Error details:`, error);
+        console.error(`❌ [DB] Error stack:`, (error as Error).stack);
+        
+        // Continue with other changes even if one fails
       }
     }
+    
+    console.log(`💊 [DB] === DATABASE CHANGES APPLICATION COMPLETE ===`);
   }
 
   /**
@@ -345,6 +421,16 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     encounterId: number,
     historyEntry: MedicationHistoryEntry
   ): Promise<void> {
+    const createStartTime = Date.now();
+    console.log(`💊 [CreateMedication] === CREATING NEW MEDICATION ===`);
+    console.log(`💊 [CreateMedication] Medication name: ${change.medication_name}`);
+    console.log(`💊 [CreateMedication] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
+    console.log(`💊 [CreateMedication] Dosage: ${change.dosage_change?.to || 'As directed'}`);
+    console.log(`💊 [CreateMedication] Frequency: ${change.frequency_change?.to || 'daily'}`);
+    console.log(`💊 [CreateMedication] Indication: ${change.indication_change?.to || 'Not specified'}`);
+    console.log(`💊 [CreateMedication] Confidence: ${change.confidence}`);
+    console.log(`💊 [CreateMedication] Reasoning: ${change.reasoning || 'Not provided'}`);
+
     const medicationData = {
       patientId,
       encounterId,
@@ -373,7 +459,29 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       drugInteractions: []
     };
 
-    await storage.createMedication(medicationData);
+    console.log(`💊 [CreateMedication] Medication data prepared:`);
+    console.log(`💊 [CreateMedication]   - Name: ${medicationData.medicationName}`);
+    console.log(`💊 [CreateMedication]   - Status: ${medicationData.status}`);
+    console.log(`💊 [CreateMedication]   - Start Date: ${medicationData.startDate}`);
+    console.log(`💊 [CreateMedication]   - Route: ${medicationData.route}`);
+    console.log(`💊 [CreateMedication]   - History entries: ${medicationData.medicationHistory.length}`);
+    console.log(`💊 [CreateMedication]   - Change log entries: ${medicationData.changeLog.length}`);
+
+    try {
+      console.log(`💊 [CreateMedication] Calling storage.createMedication()...`);
+      await storage.createMedication(medicationData);
+      
+      const createTime = Date.now() - createStartTime;
+      console.log(`💊 [CreateMedication] ✅ Medication created successfully in ${createTime}ms`);
+      console.log(`💊 [CreateMedication] ✅ New medication "${change.medication_name}" added to patient ${patientId}`);
+      
+    } catch (error) {
+      const errorTime = Date.now() - createStartTime;
+      console.error(`💊 [CreateMedication] ❌ Failed to create medication after ${errorTime}ms`);
+      console.error(`💊 [CreateMedication] ❌ Error details:`, error);
+      console.error(`💊 [CreateMedication] ❌ Medication data that failed:`, JSON.stringify(medicationData, null, 2));
+      throw error;
+    }
   }
 
   /**
