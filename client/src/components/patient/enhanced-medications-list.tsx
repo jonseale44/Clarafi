@@ -413,7 +413,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpanded}>
-      <Card className="border-l-4 border-l-blue-500">
+      <Card className={`border-l-4 ${getCardBorderColor(medication.status)}`}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors pb-3">
             <div className="space-y-2">

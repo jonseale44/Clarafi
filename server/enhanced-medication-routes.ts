@@ -37,6 +37,7 @@ router.get("/patients/:patientId/medications-enhanced", async (req: Request, res
     // Group medications by status for EMR-standard display
     const groupedMedications = {
       active: medications.filter(m => m.status === 'active'),
+      pending: medications.filter(m => m.status === 'pending'),
       discontinued: medications.filter(m => m.status === 'discontinued'),
       held: medications.filter(m => m.status === 'held'),
       historical: medications.filter(m => m.status === 'historical')
@@ -84,6 +85,7 @@ router.get("/patients/:patientId/medications-enhanced", async (req: Request, res
       summary: {
         total: medications.length,
         active: groupedMedications.active.length,
+        pending: groupedMedications.pending.length,
         discontinued: groupedMedications.discontinued.length,
         held: groupedMedications.held.length,
         historical: groupedMedications.historical.length
