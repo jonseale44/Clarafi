@@ -654,8 +654,20 @@ Please analyze this SOAP note and identify medication changes that occurred duri
    * Get medication orders for an encounter
    */
   private async getMedicationOrders(encounterId: number) {
+    console.log(`💊 [GetOrders] === FETCHING MEDICATION ORDERS ===`);
+    console.log(`💊 [GetOrders] Encounter ID: ${encounterId}`);
+    
     const orders = await storage.getDraftOrdersByEncounter(encounterId);
-    return orders.filter((order: any) => order.orderType === 'medication');
+    console.log(`💊 [GetOrders] Total orders found: ${orders.length}`);
+    console.log(`💊 [GetOrders] All orders:`, orders.map(o => `${o.id}: ${o.orderType} - ${o.medicationName || o.labName || o.studyType}`));
+    
+    const medicationOrders = orders.filter((order: any) => order.orderType === 'medication');
+    console.log(`💊 [GetOrders] Medication orders found: ${medicationOrders.length}`);
+    medicationOrders.forEach((order, index) => {
+      console.log(`💊 [GetOrders] Medication ${index + 1}: ID ${order.id}, Name: ${order.medicationName}, Status: ${order.orderStatus}`);
+    });
+    
+    return medicationOrders;
   }
 
   /**
