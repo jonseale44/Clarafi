@@ -292,6 +292,10 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(medications.createdAt));
     
     console.log(`🔍 [STORAGE] Found ${patientMedications.length} medications`);
+    patientMedications.forEach((med, index) => {
+      console.log(`🔍 [STORAGE] Medication ${index + 1}: ${med.medicationName} (${med.status}) - Order ID: ${med.sourceOrderId}`);
+    });
+    
     return patientMedications;
   }
 

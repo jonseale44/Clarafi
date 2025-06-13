@@ -435,12 +435,26 @@ export function EncounterDetailView({
     }
   };
 
-  const handleDraftOrdersReceived = (orders: any[]) => {
+  const handleDraftOrdersReceived = async (orders: any[]) => {
     setDraftOrders(orders);
     console.log(
       "📋 [EncounterView] Real-time draft orders received:",
       orders.length,
     );
+    
+    // Check if any medication orders were received
+    const medicationOrders = orders.filter(order => order.orderType === 'medication');
+    if (medicationOrders.length > 0) {
+      console.log(
+        "💊 [EncounterView] Medication orders detected, invalidating medications cache"
+      );
+      
+      // Invalidate medications queries to refresh UI with new pending medications
+      await queryClient.invalidateQueries({ 
+        queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+      });
+      console.log("💊 [EncounterView] Medications cache invalidation completed");
+    }
   };
 
   const handleCPTCodesReceived = async (cptData: any) => {
