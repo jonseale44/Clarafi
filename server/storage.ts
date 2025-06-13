@@ -54,6 +54,7 @@ export interface IStorage {
   deleteMedication(id: number): Promise<void>;
   getMedicationHistory(medicationId: number): Promise<any[]>;
   getDraftOrdersByEncounter(encounterId: number): Promise<Order[]>;
+  getOrdersByEncounter(encounterId: number): Promise<Order[]>;
   getPatientDiagnoses(patientId: number): Promise<any[]>;
   createDiagnosis(diagnosis: any): Promise<any>;
   getPatientFamilyHistory(patientId: number): Promise<any[]>;
@@ -516,6 +517,12 @@ export class DatabaseStorage implements IStorage {
         eq(orders.encounterId, encounterId),
         eq(orders.orderStatus, "draft")
       ))
+      .orderBy(orders.createdAt);
+  }
+
+  async getOrdersByEncounter(encounterId: number): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(eq(orders.encounterId, encounterId))
       .orderBy(orders.createdAt);
   }
 

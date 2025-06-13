@@ -657,11 +657,13 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     console.log(`💊 [GetOrders] === FETCHING MEDICATION ORDERS ===`);
     console.log(`💊 [GetOrders] Encounter ID: ${encounterId}`);
     
-    const orders = await storage.getDraftOrdersByEncounter(encounterId);
-    console.log(`💊 [GetOrders] Total orders found: ${orders.length}`);
-    console.log(`💊 [GetOrders] All orders:`, orders.map(o => `${o.id}: ${o.orderType} - ${o.medicationName || o.labName || o.studyType}`));
+    // Get ALL orders for the encounter (not just draft)
+    const allOrders = await storage.getOrdersByEncounter(encounterId);
+    console.log(`💊 [GetOrders] Total orders found: ${allOrders.length}`);
+    console.log(`💊 [GetOrders] All orders:`, allOrders.map(o => `${o.id}: ${o.orderType} - ${o.medicationName || o.labName || o.studyType} (${o.orderStatus})`));
     
-    const medicationOrders = orders.filter((order: any) => order.orderType === 'medication');
+    // Filter for medication orders regardless of status
+    const medicationOrders = allOrders.filter((order: any) => order.orderType === 'medication');
     console.log(`💊 [GetOrders] Medication orders found: ${medicationOrders.length}`);
     medicationOrders.forEach((order, index) => {
       console.log(`💊 [GetOrders] Medication ${index + 1}: ID ${order.id}, Name: ${order.medicationName}, Status: ${order.orderStatus}`);
