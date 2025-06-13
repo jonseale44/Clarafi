@@ -1551,7 +1551,7 @@ export function registerRoutes(app: Express): Server {
           // Find and update corresponding medication record
           const medications = await storage.getPatientMedications(updatedOrder.patientId);
           const correspondingMedication = medications.find(med => 
-            med.relatedOrderId === orderId || 
+            med.sourceOrderId === orderId || 
             (med.medicationName?.toLowerCase().includes(updatedOrder.medicationName?.toLowerCase().split(' ')[0] || '') && 
              med.encounterId === updatedOrder.encounterId)
           );
@@ -1559,17 +1559,17 @@ export function registerRoutes(app: Express): Server {
           if (correspondingMedication) {
             // Update medication with latest order details
             const medicationUpdate = {
-              medicationName: updatedOrder.medicationName,
-              dosage: updatedOrder.dosage,
-              frequency: updatedOrder.frequency || "daily",
-              sig: updatedOrder.sig,
-              quantity: updatedOrder.quantity,
-              refillsRemaining: updatedOrder.refills,
-              daysSupply: updatedOrder.daysSupply,
-              route: updatedOrder.routeOfAdministration || "oral",
-              dosageForm: updatedOrder.form,
-              clinicalIndication: updatedOrder.clinicalIndication,
-              relatedOrderId: orderId,
+              medicationName: updatedOrder.medicationName || correspondingMedication.medicationName,
+              dosage: updatedOrder.dosage || correspondingMedication.dosage,
+              frequency: updatedOrder.frequency || correspondingMedication.frequency,
+              sig: updatedOrder.sig || correspondingMedication.sig,
+              quantity: updatedOrder.quantity || correspondingMedication.quantity,
+              refillsRemaining: updatedOrder.refills || correspondingMedication.refillsRemaining,
+              daysSupply: updatedOrder.daysSupply || correspondingMedication.daysSupply,
+              route: updatedOrder.routeOfAdministration || correspondingMedication.route || "oral",
+              dosageForm: updatedOrder.form || correspondingMedication.dosageForm,
+              clinicalIndication: updatedOrder.clinicalIndication || correspondingMedication.clinicalIndication,
+              sourceOrderId: orderId,
               lastUpdatedEncounterId: updatedOrder.encounterId
             };
             
