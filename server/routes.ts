@@ -1547,18 +1547,7 @@ export function registerRoutes(app: Express): Server {
 
 
 
-  app.delete("/api/orders/:id", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const orderId = parseInt(req.params.id);
-      await storage.deleteOrder(orderId);
-      res.json({ message: "Order deleted successfully" });
-    } catch (error: any) {
-      console.error("[Orders API] Error deleting order:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
 
   app.get("/api/orders/:id", async (req, res) => {
     try {
@@ -1772,7 +1761,12 @@ export function registerRoutes(app: Express): Server {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const orderId = parseInt(req.params.id);
-      await storage.deleteOrder(orderId);
+      console.log(`[Orders API] Deleting order ${orderId} with cascading deletion`);
+      
+      // Use storage method that handles cascading deletion
+      await storage.deleteOrderWithCascade(orderId);
+      console.log(`[Orders API] Successfully deleted order ${orderId} with cascade`);
+      
       res.status(204).send();
     } catch (error: any) {
       console.error("[Orders API] Error deleting order:", error);

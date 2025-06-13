@@ -506,6 +506,35 @@ export class DatabaseStorage implements IStorage {
     await db.delete(orders).where(eq(orders.id, id));
   }
 
+  async deleteOrderWithCascade(id: number): Promise<void> {
+    console.log(`🗑️ [STORAGE] Deleting order ${id} with cascading deletion`);
+    
+    // Get the order first to check if it's a medication order
+    const order = await this.getOrder(id);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    
+    // If it's a medication order, delete linked medications first
+    if (order.orderType === 'medication') {
+      console.log(`🗑️ [STORAGE] Finding linked medications for medication order ${id}`);
+      const linkedMedications = await this.getMedicationsByOrderId(id);
+      
+      console.log(`🗑️ [STORAGE] Found ${linkedMedications.length} linked medications to delete`);
+      for (const medication of linkedMedications) {
+        console.log(`🗑️ [STORAGE] Deleting medication ${medication.id} linked to order ${id}`);
+        await this.deleteMedication(medication.id);
+      }
+      
+      console.log(`🗑️ [STORAGE] Deleted ${linkedMedications.length} linked medications for order ${id}`);
+    }
+    
+    // Delete the order
+    console.log(`🗑️ [STORAGE] Deleting order ${id}`);
+    await this.deleteOrder(id);
+    console.log(`✅ [STORAGE] Successfully deleted order ${id} with cascade`);
+  }
+
   async deleteAllPatientDraftOrders(patientId: number): Promise<void> {
     await db
       .delete(orders)
