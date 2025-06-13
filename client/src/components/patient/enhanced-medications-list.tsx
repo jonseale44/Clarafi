@@ -415,7 +415,9 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-                <span className="font-medium">{medication.dosage} {medication.frequency}</span>
+                <span className="font-medium">
+                  {medication.sig || `${medication.dosage} ${medication.frequency}`}
+                </span>
                 {medication.clinicalIndication && (
                   <span className="text-gray-500">for {medication.clinicalIndication}</span>
                 )}
