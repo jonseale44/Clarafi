@@ -67,55 +67,58 @@ export class MedicationDeltaService {
   }
 
   /**
-   * Main delta processing method - mirrors medical problems approach
+   * Main order processing method - processes medication orders to update patient medications
    */
-  async processSOAPDelta(
+  async processOrderDelta(
     patientId: number,
     encounterId: number,
-    soapNote: string,
     providerId: number
   ): Promise<MedicationDeltaResult> {
     const startTime = Date.now();
-    console.log(`💊 [MedicationDelta] === DELTA PROCESSING START ===`);
+    console.log(`💊 [MedicationDelta] === ORDER PROCESSING START ===`);
     console.log(`💊 [MedicationDelta] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
-    console.log(`💊 [MedicationDelta] SOAP Note length: ${soapNote.length} characters`);
 
     try {
+      // Get medication orders for this encounter
+      console.log(`💊 [MedicationDelta] Fetching medication orders...`);
+      const medicationOrders = await this.getMedicationOrders(encounterId);
+      console.log(`💊 [MedicationDelta] Found ${medicationOrders.length} medication orders`);
+      
       // Get existing medications for context
       console.log(`💊 [MedicationDelta] Fetching existing medications...`);
       const existingMedications = await this.getExistingMedications(patientId);
       console.log(`💊 [MedicationDelta] Found ${existingMedications.length} existing medications`);
       
-      // Get encounter and patient info
-      console.log(`💊 [MedicationDelta] Fetching encounter and patient info...`);
-      const [encounter, patient] = await Promise.all([
-        this.getEncounterInfo(encounterId),
-        this.getPatientInfo(patientId)
-      ]);
-      console.log(`💊 [MedicationDelta] Patient: ${patient.firstName} ${patient.lastName}, Age: ${this.calculateAge(patient.dateOfBirth)}`);
-      console.log(`💊 [MedicationDelta] Encounter: ${encounter.encounterType}, Status: ${encounter.encounterStatus}`);
+      // Process each medication order
+      const changes: MedicationChange[] = [];
+      for (const order of medicationOrders) {
+        console.log(`💊 [MedicationDelta] Processing order: ${order.medicationName} (Status: ${order.orderStatus})`);
+        
+        const change = await this.processIndividualMedicationOrder(
+          order,
+          existingMedications,
+          patientId,
+          encounterId,
+          providerId
+        );
+        
+        if (change) {
+          changes.push(change);
+        }
+      }
 
-      // Generate delta changes using GPT
-      console.log(`💊 [MedicationDelta] Starting GPT delta analysis...`);
-      const changes = await this.generateDeltaChanges(
-        existingMedications,
-        soapNote,
-        encounter,
-        patient,
-        providerId
-      );
-      console.log(`💊 [MedicationDelta] GPT analysis completed. Generated ${changes.length} changes:`);
+      console.log(`💊 [MedicationDelta] Generated ${changes.length} medication changes`);
       changes.forEach((change, index) => {
-        console.log(`💊 [MedicationDelta] Change ${index + 1}: ${change.action} - ${change.medication_name || 'existing medication'} (confidence: ${change.confidence})`);
+        console.log(`💊 [MedicationDelta] Change ${index + 1}: ${change.action} - ${change.medication_name} (confidence: ${change.confidence})`);
       });
 
-      // Apply changes optimistically to database
+      // Apply changes to database
       console.log(`💊 [MedicationDelta] Applying ${changes.length} changes to database...`);
       await this.applyChangesToDatabase(changes, patientId, encounterId, providerId);
       console.log(`💊 [MedicationDelta] Database changes applied successfully`);
 
       const processingTime = Date.now() - startTime;
-      console.log(`✅ [MedicationDelta] === DELTA PROCESSING COMPLETE ===`);
+      console.log(`✅ [MedicationDelta] === ORDER PROCESSING COMPLETE ===`);
       console.log(`✅ [MedicationDelta] Total time: ${processingTime}ms, Medications affected: ${changes.length}`);
 
       return {
@@ -125,10 +128,24 @@ export class MedicationDeltaService {
       };
 
     } catch (error) {
-      console.error(`❌ [MedicationDelta] Error in processSOAPDelta:`, error);
+      console.error(`❌ [MedicationDelta] Error in processOrderDelta:`, error);
       console.error(`❌ [MedicationDelta] Stack trace:`, (error as Error).stack);
       throw error;
     }
+  }
+
+  /**
+   * Legacy SOAP processing method - kept for backward compatibility
+   * @deprecated Use processOrderDelta instead
+   */
+  async processSOAPDelta(
+    patientId: number,
+    encounterId: number,
+    soapNote: string,
+    providerId: number
+  ): Promise<MedicationDeltaResult> {
+    console.log(`💊 [MedicationDelta] SOAP processing is deprecated, redirecting to order processing`);
+    return this.processOrderDelta(patientId, encounterId, providerId);
   }
 
   /**
@@ -630,6 +647,197 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     } catch (error) {
       console.error(`💊 [OrderMatch] Error finding matching order:`, error);
       return null;
+    }
+  }
+
+  /**
+   * Get medication orders for an encounter
+   */
+  private async getMedicationOrders(encounterId: number) {
+    const orders = await storage.getDraftOrdersByEncounter(encounterId);
+    return orders.filter((order: any) => order.orderType === 'medication');
+  }
+
+  /**
+   * Process individual medication order to determine what action to take
+   */
+  private async processIndividualMedicationOrder(
+    order: any,
+    existingMedications: any[],
+    patientId: number,
+    encounterId: number,
+    providerId: number
+  ): Promise<MedicationChange | null> {
+    console.log(`💊 [ProcessOrder] Processing order ${order.id}: ${order.medicationName}`);
+    
+    // Find existing medication that matches this order
+    const existingMedication = this.findMatchingExistingMedication(order, existingMedications);
+    
+    if (existingMedication) {
+      console.log(`💊 [ProcessOrder] Found existing medication ID ${existingMedication.id}`);
+      
+      // Check if this is an update to existing medication
+      if (this.hasSignificantChanges(order, existingMedication)) {
+        return this.createUpdateChange(order, existingMedication);
+      } else {
+        return this.createHistoryChange(order, existingMedication);
+      }
+    } else {
+      console.log(`💊 [ProcessOrder] Creating new medication from order`);
+      return this.createNewMedicationChange(order);
+    }
+  }
+
+  /**
+   * Find existing medication that matches the order
+   */
+  private findMatchingExistingMedication(order: any, existingMedications: any[]) {
+    const orderMedName = order.medicationName?.toLowerCase() || '';
+    
+    return existingMedications.find(med => {
+      const medName = med.medicationName?.toLowerCase() || '';
+      
+      // Exact match
+      if (medName === orderMedName) return true;
+      
+      // Partial match
+      if (medName.includes(orderMedName) || orderMedName.includes(medName)) return true;
+      
+      // Clean name match (remove common suffixes)
+      const cleanMedName = medName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
+      const cleanOrderName = orderMedName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
+      
+      return cleanMedName === cleanOrderName;
+    });
+  }
+
+  /**
+   * Check if order has significant changes compared to existing medication
+   */
+  private hasSignificantChanges(order: any, existingMedication: any): boolean {
+    // Check dosage changes
+    if (order.dosage && order.dosage !== existingMedication.dosage) {
+      return true;
+    }
+    
+    // Check frequency changes (if available)
+    if (order.frequency && order.frequency !== existingMedication.frequency) {
+      return true;
+    }
+    
+    // Check clinical indication changes
+    if (order.clinicalIndication && order.clinicalIndication !== existingMedication.clinicalIndication) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Create update change for existing medication
+   */
+  private createUpdateChange(order: any, existingMedication: any): MedicationChange {
+    const change: MedicationChange = {
+      medication_id: existingMedication.id,
+      action: "UPDATE_DOSAGE",
+      medication_name: order.medicationName,
+      confidence: 0.95,
+      reasoning: `Order ${order.id} updates existing medication`
+    };
+
+    if (order.dosage !== existingMedication.dosage) {
+      change.dosage_change = {
+        from: existingMedication.dosage || "unknown",
+        to: order.dosage
+      };
+    }
+
+    if (order.frequency && order.frequency !== existingMedication.frequency) {
+      change.action = "MODIFY_FREQUENCY";
+      change.frequency_change = {
+        from: existingMedication.frequency || "unknown",
+        to: order.frequency
+      };
+    }
+
+    if (order.clinicalIndication !== existingMedication.clinicalIndication) {
+      change.action = "CHANGE_INDICATION";
+      change.indication_change = {
+        from: existingMedication.clinicalIndication || "unknown",
+        to: order.clinicalIndication
+      };
+    }
+
+    return change;
+  }
+
+  /**
+   * Create history entry for continuing medication
+   */
+  private createHistoryChange(order: any, existingMedication: any): MedicationChange {
+    return {
+      medication_id: existingMedication.id,
+      action: "ADD_HISTORY",
+      medication_name: order.medicationName,
+      history_notes: `Order ${order.id} continues existing medication`,
+      confidence: 0.9,
+      reasoning: "Medication continues from previous encounters"
+    };
+  }
+
+  /**
+   * Create new medication change
+   */
+  private createNewMedicationChange(order: any): MedicationChange {
+    return {
+      medication_id: null,
+      action: "NEW_MEDICATION",
+      medication_name: order.medicationName,
+      history_notes: `New medication prescribed via order ${order.id}`,
+      confidence: 0.95,
+      reasoning: "New medication order"
+    };
+  }
+
+  /**
+   * Sign orders and activate pending medications
+   */
+  async signMedicationOrders(encounterId: number, orderIds: number[], providerId: number): Promise<void> {
+    console.log(`💊 [SignOrders] Signing ${orderIds.length} medication orders for encounter ${encounterId}`);
+    
+    try {
+      // Get medications that are linked to these orders
+      const medications = await storage.getPatientMedicationsByEncounter(encounterId);
+      
+      for (const medication of medications) {
+        if (medication.status === 'pending' && medication.sourceOrderId && orderIds.includes(medication.sourceOrderId)) {
+          console.log(`💊 [SignOrders] Activating medication ${medication.id}: ${medication.medicationName}`);
+          
+          // Update medication to active status
+          const existingHistory = medication.medicationHistory as any[] || [];
+          const updatedHistory = existingHistory.map((entry: any) => {
+            if (entry.encounterId === encounterId && !entry.isSigned) {
+              return {
+                ...entry,
+                isSigned: true,
+                signedAt: new Date().toISOString(),
+                signedBy: providerId
+              };
+            }
+            return entry;
+          });
+
+          await storage.updateMedication(medication.id, {
+            status: 'active',
+            medicationHistory: updatedHistory
+          });
+        }
+      }
+      
+      console.log(`✅ [SignOrders] Successfully activated medications for signed orders`);
+    } catch (error) {
+      console.error(`❌ [SignOrders] Error activating medications:`, error);
+      throw error;
     }
   }
 
