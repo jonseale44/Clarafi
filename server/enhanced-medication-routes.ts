@@ -5,7 +5,7 @@
 
 import { Router } from "express";
 import { storage } from "./storage";
-import { intelligentMedication } from "./intelligent-medication-service";
+import { medicationDelta } from "./medication-delta-service";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -123,52 +123,66 @@ router.get("/medications/:medicationId/history", async (req: Request, res: Respo
 
 /**
  * POST /api/encounters/:encounterId/process-medications
- * Process SOAP note for medications using intelligent analysis
+ * Process SOAP note for medications using GPT-driven delta analysis
  */
 router.post("/encounters/:encounterId/process-medications", async (req: Request, res: Response) => {
   try {
+    console.log(`💊 [MedicationAPI] === PROCESSING REQUEST START ===`);
+    console.log(`💊 [MedicationAPI] Encounter ID: ${req.params.encounterId}`);
+    console.log(`💊 [MedicationAPI] Request body keys: ${Object.keys(req.body)}`);
+    console.log(`💊 [MedicationAPI] User authenticated: ${req.isAuthenticated()}`);
+    
     if (!req.isAuthenticated()) {
+      console.log(`❌ [MedicationAPI] User not authenticated`);
       return res.sendStatus(401);
     }
 
     const encounterId = parseInt(req.params.encounterId);
     const { soapNote, patientId } = req.body;
+    const providerId = req.user!.id;
+
+    console.log(`💊 [MedicationAPI] Parsed encounter ID: ${encounterId}`);
+    console.log(`💊 [MedicationAPI] Patient ID: ${patientId}`);
+    console.log(`💊 [MedicationAPI] Provider ID: ${providerId}`);
+    console.log(`💊 [MedicationAPI] SOAP note length: ${soapNote?.length || 0} characters`);
+    console.log(`💊 [MedicationAPI] SOAP note preview: ${soapNote?.substring(0, 100) || 'empty'}...`);
 
     if (!soapNote || !patientId) {
-      return res.status(400).json({ 
-        error: "SOAP note and patient ID are required" 
-      });
+      console.log(`❌ [MedicationAPI] Missing required fields - soapNote: ${!!soapNote}, patientId: ${!!patientId}`);
+      return res.status(400).json({ error: "SOAP note and patient ID are required" });
     }
 
-    console.log(`🏥 [EnhancedMedications] Processing medications for encounter ${encounterId}`);
-    console.log(`🏥 [EnhancedMedications] Patient ID: ${patientId}`);
-    console.log(`🏥 [EnhancedMedications] SOAP note length: ${soapNote.length} characters`);
-
-    // Phase 1: Create pending medications from draft orders
-    const result = await intelligentMedication.createPendingMedicationsFromOrders(
+    console.log(`💊 [MedicationAPI] Calling delta processing service...`);
+    const startTime = Date.now();
+    
+    // Process medications incrementally using GPT delta analysis
+    const result = await medicationDelta.processSOAPDelta(
       patientId,
-      encounterId
+      encounterId,
+      soapNote,
+      providerId
     );
 
-    console.log(`✅ [EnhancedMedications] Successfully created ${result} pending medications`);
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ [MedicationAPI] Delta processing completed in ${totalTime}ms`);
+    console.log(`✅ [MedicationAPI] Result:`, result);
 
-    res.json({
+    const response = {
       success: true,
-      encounterId,
-      patientId,
-      medicationsCreated: result,
-      phase: "pending_from_orders",
-      timestamp: new Date().toISOString()
-    });
+      changes: result.changes,
+      processingTimeMs: result.processing_time_ms,
+      medicationsAffected: result.total_medications_affected
+    };
+    
+    console.log(`✅ [MedicationAPI] Sending response:`, response);
+    console.log(`💊 [MedicationAPI] === PROCESSING REQUEST END ===`);
+    
+    res.json(response);
 
-  } catch (error: any) {
-    console.error(`❌ [EnhancedMedications] Processing failed for encounter ${req.params.encounterId}:`, error);
-    res.status(500).json({ 
-      success: false,
-      error: "Failed to process medications",
-      message: error.message,
-      encounterId: req.params.encounterId
-    });
+  } catch (error) {
+    console.error(`❌ [MedicationAPI] Error processing medications:`, error);
+    console.error(`❌ [MedicationAPI] Stack trace:`, (error as Error).stack);
+    res.status(500).json({ error: "Failed to process medications" });
   }
 });
 
@@ -178,32 +192,18 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
  */
 router.post("/encounters/:encounterId/sign-medications", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
-    }
+    if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const encounterId = parseInt(req.params.encounterId);
-    const { signatureNote } = req.body;
+    const providerId = req.user!.id;
 
-    console.log(`🔏 [EnhancedMedications] Signing medications for encounter ${encounterId}`);
+    await medicationDelta.signEncounter(encounterId, providerId);
 
-    // Here you would implement the medication signing logic
-    // This would mark all medications as finalized and locked
-    
-    res.json({
-      success: true,
-      encounterId,
-      signedAt: new Date().toISOString(),
-      signatureNote
-    });
+    res.json({ success: true, message: "Medications signed for encounter" });
 
-  } catch (error: any) {
-    console.error(`❌ [EnhancedMedications] Signing failed for encounter ${req.params.encounterId}:`, error);
-    res.status(500).json({ 
-      success: false,
-      error: "Failed to sign medications",
-      message: error.message
-    });
+  } catch (error) {
+    console.error("Error signing medications:", error);
+    res.status(500).json({ error: "Failed to sign medications" });
   }
 });
 

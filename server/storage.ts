@@ -47,10 +47,13 @@ export interface IStorage {
   // Enhanced medications methods
   getPatientMedications(patientId: number): Promise<Medication[]>;
   getPatientMedicationsEnhanced(patientId: number): Promise<Medication[]>;
+  getMedicationById(id: number): Promise<Medication | undefined>;
+  getPatientMedicationsByEncounter(encounterId: number): Promise<Medication[]>;
   createMedication(medication: InsertMedication): Promise<Medication>;
   updateMedication(id: number, updates: Partial<Medication>): Promise<Medication>;
   deleteMedication(id: number): Promise<void>;
   getMedicationHistory(medicationId: number): Promise<any[]>;
+  getDraftOrdersByEncounter(encounterId: number): Promise<Order[]>;
   getPatientDiagnoses(patientId: number): Promise<any[]>;
   createDiagnosis(diagnosis: any): Promise<any>;
   getPatientFamilyHistory(patientId: number): Promise<any[]>;
