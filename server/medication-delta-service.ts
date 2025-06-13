@@ -139,8 +139,10 @@ export class MedicationDeltaService {
    */
   private async getDraftMedicationOrders(encounterId: number) {
     try {
-      const orders = await storage.getPatientOrders(0, encounterId); // Get all orders for encounter
-      return orders.filter(order => 
+      // Get all orders and filter by encounter and medication type
+      const allOrders = await storage.getPatientOrders(0);
+      return allOrders.filter(order => 
+        order.encounterId === encounterId &&
         order.orderType === 'medication' && 
         order.orderStatus === 'draft'
       );
