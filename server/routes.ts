@@ -1500,6 +1500,24 @@ export function registerRoutes(app: Express): Server {
 
       const order = await storage.createOrder(standardizedOrder);
       console.log("[Orders API] Created enhanced order:", order);
+      
+      // Trigger medication processing for medication orders
+      if (order.orderType === "medication" && order.encounterId) {
+        console.log(`💊 [Orders API] Triggering medication processing for new medication order ${order.id}`);
+        try {
+          const { medicationDelta } = await import("./medication-delta-service.js");
+          await medicationDelta.processOrderDelta(
+            order.patientId,
+            order.encounterId,
+            req.user!.id
+          );
+          console.log(`✅ [Orders API] Medication processing completed for order ${order.id}`);
+        } catch (medicationError) {
+          console.error(`❌ [Orders API] Medication processing failed for order ${order.id}:`, medicationError);
+          // Don't fail the order creation if medication processing fails
+        }
+      }
+      
       res.status(201).json(order);
     } catch (error: any) {
       console.error("[Orders API] Error creating order:", error);
@@ -1539,47 +1557,19 @@ export function registerRoutes(app: Express): Server {
       
       const updatedOrder = await storage.updateOrder(orderId, updateData);
       
-      // If this is a medication order, sync changes to medications table
-      if (updatedOrder.orderType === 'medication') {
-        console.log(`🔄 [OrderSync] Medication order ${orderId} updated, syncing to medications table...`);
-        
+      // If this is a medication order, trigger medication processing
+      if (updatedOrder.orderType === 'medication' && updatedOrder.encounterId) {
+        console.log(`💊 [Orders API] Triggering medication processing for updated medication order ${orderId}`);
         try {
-          // Import medication delta service
-          const { MedicationDeltaService } = await import("./medication-delta-service.js");
-          const medicationDelta = new MedicationDeltaService();
-          
-          // Find and update corresponding medication record
-          const medications = await storage.getPatientMedications(updatedOrder.patientId);
-          const correspondingMedication = medications.find(med => 
-            med.sourceOrderId === orderId || 
-            (med.medicationName?.toLowerCase().includes(updatedOrder.medicationName?.toLowerCase().split(' ')[0] || '') && 
-             med.encounterId === updatedOrder.encounterId)
+          const { medicationDelta } = await import("./medication-delta-service.js");
+          await medicationDelta.processOrderDelta(
+            updatedOrder.patientId,
+            updatedOrder.encounterId,
+            req.user!.id
           );
-          
-          if (correspondingMedication) {
-            // Update medication with latest order details
-            const medicationUpdate = {
-              medicationName: updatedOrder.medicationName || correspondingMedication.medicationName,
-              dosage: updatedOrder.dosage || correspondingMedication.dosage,
-              frequency: updatedOrder.frequency || correspondingMedication.frequency,
-              sig: updatedOrder.sig || correspondingMedication.sig,
-              quantity: updatedOrder.quantity || correspondingMedication.quantity,
-              refillsRemaining: updatedOrder.refills || correspondingMedication.refillsRemaining,
-              daysSupply: updatedOrder.daysSupply || correspondingMedication.daysSupply,
-              route: updatedOrder.routeOfAdministration || correspondingMedication.route || "oral",
-              dosageForm: updatedOrder.form || correspondingMedication.dosageForm,
-              clinicalIndication: updatedOrder.clinicalIndication || correspondingMedication.clinicalIndication,
-              sourceOrderId: orderId,
-              lastUpdatedEncounterId: updatedOrder.encounterId
-            };
-            
-            await storage.updateMedication(correspondingMedication.id, medicationUpdate);
-            console.log(`✅ [OrderSync] Updated medication record ${correspondingMedication.id} with order changes`);
-          } else {
-            console.log(`⚠️ [OrderSync] No corresponding medication found for order ${orderId}`);
-          }
-        } catch (syncError) {
-          console.error(`❌ [OrderSync] Failed to sync medication for order ${orderId}:`, syncError);
+          console.log(`✅ [Orders API] Medication processing completed for updated order ${orderId}`);
+        } catch (medicationError) {
+          console.error(`❌ [Orders API] Medication processing failed for updated order ${orderId}:`, medicationError);
           // Continue with response even if sync fails
         }
       }

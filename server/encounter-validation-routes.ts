@@ -166,6 +166,23 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       .where(eq(orders.id, orderId))
       .returning();
 
+    // If this is a medication order, activate the corresponding medication
+    if (signedOrder.orderType === "medication" && signedOrder.encounterId) {
+      console.log(`💊 [OrderSign] Activating medication for signed order ${orderId}`);
+      try {
+        const { medicationDelta } = await import("./medication-delta-service.js");
+        await medicationDelta.signMedicationOrders(
+          signedOrder.encounterId,
+          [orderId],
+          userId
+        );
+        console.log(`✅ [OrderSign] Medication activated for order ${orderId}`);
+      } catch (medicationError) {
+        console.error(`❌ [OrderSign] Failed to activate medication for order ${orderId}:`, medicationError);
+        // Continue with response - order is still signed
+      }
+    }
+
     res.json({
       success: true,
       order: signedOrder,

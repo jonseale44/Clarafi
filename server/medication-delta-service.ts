@@ -473,15 +473,15 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       ndcCode: null,
       clinicalIndication: relatedOrder?.clinicalIndication || change.indication_change?.to || null,
       startDate: new Date().toISOString().split('T')[0],
-      status: "active",
+      status: "pending", // Start as pending until order is signed
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
-      relatedOrderId: relatedOrder?.id || null,
+      sourceOrderId: relatedOrder?.id || null, // Link to source order
       medicationHistory: [historyEntry],
       changeLog: [{
         encounter_id: encounterId,
         timestamp: new Date().toISOString(),
-        change_type: "medication_started",
+        change_type: "medication_pending",
         processing_time_ms: 0
       }],
       groupingStrategy: "medical_problem",
