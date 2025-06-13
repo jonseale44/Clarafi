@@ -1545,41 +1545,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/orders/:id", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const orderId = parseInt(req.params.id);
-      const updateData = req.body;
-      
-      // Get the original order to check if it's a medication
-      const originalOrder = await storage.getOrder(orderId);
-      
-      const updatedOrder = await storage.updateOrder(orderId, updateData);
-      
-      // If this is a medication order, trigger medication processing
-      if (updatedOrder.orderType === 'medication' && updatedOrder.encounterId) {
-        console.log(`💊 [Orders API] Triggering medication processing for updated medication order ${orderId}`);
-        try {
-          const { medicationDelta } = await import("./medication-delta-service.js");
-          await medicationDelta.processOrderDelta(
-            updatedOrder.patientId,
-            updatedOrder.encounterId,
-            req.user!.id
-          );
-          console.log(`✅ [Orders API] Medication processing completed for updated order ${orderId}`);
-        } catch (medicationError) {
-          console.error(`❌ [Orders API] Medication processing failed for updated order ${orderId}:`, medicationError);
-          // Continue with response even if sync fails
-        }
-      }
-      
-      res.json(updatedOrder);
-    } catch (error: any) {
-      console.error("[Orders API] Error updating order:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
 
   app.delete("/api/orders/:id", async (req, res) => {
     try {
@@ -1774,6 +1740,24 @@ export function registerRoutes(app: Express): Server {
 
       const order = await storage.updateOrder(orderId, cleanedUpdates);
       console.log(`[Orders API] Successfully updated order ${orderId}`);
+      
+      // If this is a medication order, trigger medication processing
+      if (order.orderType === 'medication' && order.encounterId) {
+        console.log(`💊 [Orders API] Triggering medication processing for updated medication order ${orderId}`);
+        try {
+          const { medicationDelta } = await import("./medication-delta-service.js");
+          await medicationDelta.processOrderDelta(
+            order.patientId,
+            order.encounterId,
+            req.user!.id
+          );
+          console.log(`✅ [Orders API] Medication processing completed for updated order ${orderId}`);
+        } catch (medicationError) {
+          console.error(`❌ [Orders API] Medication processing failed for updated order ${orderId}:`, medicationError);
+          // Continue with response even if sync fails
+        }
+      }
+      
       res.json(order);
     } catch (error: any) {
       console.error("[Orders API] Error updating order:", error);

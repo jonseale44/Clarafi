@@ -447,13 +447,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(orders.createdAt));
   }
 
-  async updateOrder(id: number, updates: Partial<Order>): Promise<Order> {
-    const [updated] = await db.update(orders)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(orders.id, id))
-      .returning();
-    return updated;
-  }
+
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     // Track all order creation sources with detailed logging
