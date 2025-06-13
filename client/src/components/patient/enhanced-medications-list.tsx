@@ -71,6 +71,7 @@ interface MedicationResponse {
   medications: Medication[];
   groupedByStatus: {
     active: Medication[];
+    pending: Medication[];
     discontinued: Medication[];
     held: Medication[];
     historical: Medication[];
@@ -78,6 +79,7 @@ interface MedicationResponse {
   summary: {
     total: number;
     active: number;
+    pending: number;
     discontinued: number;
     held: number;
     historical: number;
@@ -92,7 +94,7 @@ interface EnhancedMedicationsListProps {
 export function EnhancedMedicationsList({ patientId, readOnly = false }: EnhancedMedicationsListProps) {
   const [isAddingMedication, setIsAddingMedication] = useState(false);
   const [expandedMedications, setExpandedMedications] = useState<Set<number>>(new Set());
-  const [activeStatusTab, setActiveStatusTab] = useState<'active' | 'discontinued' | 'held' | 'historical'>('active');
+  const [activeStatusTab, setActiveStatusTab] = useState<'current' | 'discontinued' | 'held' | 'historical'>('current');
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const { toast } = useToast();
 
@@ -211,7 +213,26 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
     );
   }
 
-  const currentMedications = medicationData?.groupedByStatus[activeStatusTab] || [];
+  // Combine active and pending medications for "current" tab
+  const getCurrentMedications = () => {
+    if (activeStatusTab === 'current') {
+      const active = medicationData?.groupedByStatus.active || [];
+      const pending = medicationData?.groupedByStatus.pending || [];
+      return [...active, ...pending];
+    }
+    if (activeStatusTab === 'discontinued') {
+      return medicationData?.groupedByStatus.discontinued || [];
+    }
+    if (activeStatusTab === 'held') {
+      return medicationData?.groupedByStatus.held || [];
+    }
+    if (activeStatusTab === 'historical') {
+      return medicationData?.groupedByStatus.historical || [];
+    }
+    return [];
+  };
+  
+  const currentMedications = getCurrentMedications();
   const groupedMedications = groupMedicationsByProblem(currentMedications);
 
   return (
@@ -223,7 +244,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
             Medications
             {medicationData?.summary && (
               <Badge variant="outline" className="ml-2">
-                {medicationData.summary.active} active
+                {(medicationData.summary.active || 0) + (medicationData.summary.pending || 0)} current
               </Badge>
             )}
           </CardTitle>
@@ -255,10 +276,10 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
         {/* Status Tabs */}
         <Tabs value={activeStatusTab} onValueChange={(value: any) => setActiveStatusTab(value)}>
           <TabsList className="grid w-full grid-cols-4 h-auto">
-            <TabsTrigger value="active" className="flex flex-col items-center gap-1 p-2 text-xs">
+            <TabsTrigger value="current" className="flex flex-col items-center gap-1 p-2 text-xs">
               <Activity className="h-3 w-3" />
-              <span>Active</span>
-              <span className="text-xs opacity-70">({medicationData?.summary.active || 0})</span>
+              <span>Current</span>
+              <span className="text-xs opacity-70">({(medicationData?.summary.active || 0) + (medicationData?.summary.pending || 0)})</span>
             </TabsTrigger>
             <TabsTrigger value="discontinued" className="flex flex-col items-center gap-1 p-2 text-xs">
               <Clock className="h-3 w-3" />
@@ -282,7 +303,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Pill className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No {activeStatusTab} medications found</p>
-                {activeStatusTab === 'active' && !readOnly && (
+                {activeStatusTab === 'current' && !readOnly && (
                   <Button 
                     onClick={() => setIsAddingMedication(true)}
                     variant="outline" 
@@ -352,6 +373,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active': return 'default';
+      case 'pending': return 'outline';
       case 'discontinued': return 'secondary';
       case 'held': return 'outline';
       case 'historical': return 'secondary';
@@ -362,10 +384,22 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active': return <Activity className="h-3 w-3" />;
+      case 'pending': return <Clock className="h-3 w-3 text-amber-500" />;
       case 'discontinued': return <Clock className="h-3 w-3" />;
       case 'held': return <AlertTriangle className="h-3 w-3" />;
       case 'historical': return <FileText className="h-3 w-3" />;
       default: return <Pill className="h-3 w-3" />;
+    }
+  };
+
+  const getCardBorderColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'border-l-green-500';
+      case 'pending': return 'border-l-amber-500';
+      case 'discontinued': return 'border-l-gray-400';
+      case 'held': return 'border-l-red-500';
+      case 'historical': return 'border-l-gray-300';
+      default: return 'border-l-blue-500';
     }
   };
 
