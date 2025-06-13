@@ -436,8 +436,11 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     const medication = await storage.getMedicationById(change.medication_id);
     if (!medication) return;
 
-    const updatedHistory = [...(medication.medicationHistory || []), historyEntry];
-    const updatedChangeLog = [...(medication.changeLog || []), {
+    const existingHistory = medication.medicationHistory as any[] || [];
+    const existingChangeLog = medication.changeLog as any[] || [];
+
+    const updatedHistory = [...existingHistory, historyEntry];
+    const updatedChangeLog = [...existingChangeLog, {
       encounter_id: historyEntry.encounterId!,
       timestamp: new Date().toISOString(),
       change_type: "medication_discontinued",
@@ -517,7 +520,8 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       const medications = await storage.getPatientMedicationsByEncounter(encounterId);
       
       for (const medication of medications) {
-        const updatedHistory = medication.medicationHistory?.map((entry: MedicationHistoryEntry) => {
+        const existingHistory = medication.medicationHistory as any[] || [];
+        const updatedHistory = existingHistory.map((entry: MedicationHistoryEntry) => {
           if (entry.encounterId === encounterId && !entry.isSigned) {
             return {
               ...entry,
@@ -526,7 +530,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
             };
           }
           return entry;
-        }) || [];
+        });
 
         await storage.updateMedication(medication.id, {
           medicationHistory: updatedHistory
