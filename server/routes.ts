@@ -2143,10 +2143,16 @@ Return only valid JSON without markdown formatting.`;
 
       console.log(`✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`);
 
-      // For medication orders, create prescription record
+      // For medication orders, activate pending medications
       if (order.orderType === 'medication') {
-        // Here you would integrate with pharmacy systems
-        console.log(`📋 [Medication] Signed medication: ${order.medicationName} - ${order.sig}`);
+        try {
+          const { medicationDelta } = await import("./medication-delta-service.js");
+          await medicationDelta.signMedicationOrders(order.encounterId || 0, [orderId], userId);
+          console.log(`📋 [Medication] Activated signed medication: ${order.medicationName} - ${order.sig}`);
+        } catch (medicationError) {
+          console.error(`❌ [Medication] Failed to activate medication for order ${orderId}:`, medicationError);
+          // Continue with response even if activation fails
+        }
       }
 
       // For lab orders, send to laboratory
