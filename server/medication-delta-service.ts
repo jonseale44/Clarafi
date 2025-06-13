@@ -448,9 +448,10 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       frequency: change.frequency_change?.to || "daily",
       sig: relatedOrder?.sig || null,
       quantity: relatedOrder?.quantity || null,
-      refills: relatedOrder?.refills || null,
+      totalRefills: relatedOrder?.refills || null,
+      refillsRemaining: relatedOrder?.refills || null,
       daysSupply: relatedOrder?.daysSupply || null,
-      form: relatedOrder?.form || null,
+      dosageForm: relatedOrder?.form || null,
       rxNormCode: null,
       ndcCode: null,
       clinicalIndication: relatedOrder?.clinicalIndication || change.indication_change?.to || null,
@@ -574,6 +575,62 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       changeLog: updatedChangeLog,
       lastUpdatedEncounterId: historyEntry.encounterId
     });
+  }
+
+  /**
+   * Find matching medication order to get complete prescription details
+   */
+  private async findMatchingMedicationOrder(medicationName: string, encounterId: number): Promise<any | null> {
+    try {
+      console.log(`💊 [OrderMatch] Searching for medication order matching "${medicationName}" in encounter ${encounterId}`);
+      
+      // Get all medication orders for this encounter
+      const orders = await storage.getDraftOrdersByEncounter(encounterId);
+      const medicationOrders = orders.filter((order: any) => order.orderType === 'medication');
+      
+      console.log(`💊 [OrderMatch] Found ${medicationOrders.length} medication orders in encounter ${encounterId}`);
+      
+      if (medicationOrders.length === 0) {
+        console.log(`💊 [OrderMatch] No medication orders found in encounter ${encounterId}`);
+        return null;
+      }
+      
+      // Smart matching - look for exact matches, partial matches, generic/brand equivalents
+      for (const order of medicationOrders) {
+        const orderMedName = (order as any).medicationName?.toLowerCase() || '';
+        const targetMedName = medicationName.toLowerCase();
+        
+        console.log(`💊 [OrderMatch] Comparing "${orderMedName}" with "${targetMedName}"`);
+        
+        // Exact match
+        if (orderMedName === targetMedName) {
+          console.log(`💊 [OrderMatch] ✅ Exact match found: Order ID ${order.id}`);
+          return order;
+        }
+        
+        // Partial match (contains)
+        if (orderMedName.includes(targetMedName) || targetMedName.includes(orderMedName)) {
+          console.log(`💊 [OrderMatch] ✅ Partial match found: Order ID ${order.id}`);
+          return order;
+        }
+        
+        // Remove common suffixes/prefixes for better matching
+        const cleanOrderName = orderMedName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
+        const cleanTargetName = targetMedName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
+        
+        if (cleanOrderName === cleanTargetName) {
+          console.log(`💊 [OrderMatch] ✅ Clean name match found: Order ID ${order.id} ("${cleanOrderName}" = "${cleanTargetName}")`);
+          return order;
+        }
+      }
+      
+      console.log(`💊 [OrderMatch] ❌ No matching order found for "${medicationName}"`);
+      return null;
+      
+    } catch (error) {
+      console.error(`💊 [OrderMatch] Error finding matching order:`, error);
+      return null;
+    }
   }
 
   /**
