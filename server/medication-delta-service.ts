@@ -288,8 +288,9 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     providerId: number
   ): Promise<void> {
     const encounter = await this.getEncounterInfo(encounterId);
+    const encounterDate = encounter?.startTime;
     const historyEntry: MedicationHistoryEntry = {
-      date: encounter.startTime,
+      date: typeof encounterDate === 'string' ? encounterDate : new Date().toISOString(),
       action: this.mapActionToHistoryAction(change.action),
       notes: change.history_notes || change.reasoning || `${change.action} - ${change.medication_name}`,
       encounterId,
@@ -387,8 +388,11 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     const medication = await storage.getMedicationById(change.medication_id);
     if (!medication) return;
 
-    const updatedHistory = [...(medication.medicationHistory || []), historyEntry];
-    const updatedChangeLog = [...(medication.changeLog || []), {
+    const existingHistory = medication.medicationHistory as any[] || [];
+    const existingChangeLog = medication.changeLog as any[] || [];
+    
+    const updatedHistory = [...existingHistory, historyEntry];
+    const updatedChangeLog = [...existingChangeLog, {
       encounter_id: historyEntry.encounterId!,
       timestamp: new Date().toISOString(),
       change_type: this.mapActionToChangeType(change.action),

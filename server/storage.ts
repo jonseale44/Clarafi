@@ -307,6 +307,25 @@ export class DatabaseStorage implements IStorage {
     return medication[0].medicationHistory || [];
   }
 
+  async getMedicationById(id: number): Promise<Medication | undefined> {
+    console.log(`🔍 [STORAGE] Fetching medication by ID: ${id}`);
+    
+    const [medication] = await db.select()
+      .from(medications)
+      .where(eq(medications.id, id));
+    
+    return medication || undefined;
+  }
+
+  async getPatientMedicationsByEncounter(encounterId: number): Promise<Medication[]> {
+    console.log(`🔍 [STORAGE] Fetching medications by encounter ID: ${encounterId}`);
+    
+    return await db.select()
+      .from(medications)
+      .where(eq(medications.encounterId, encounterId))
+      .orderBy(desc(medications.createdAt));
+  }
+
   async getPatientDiagnoses(patientId: number): Promise<any[]> {
     return await db.select().from(diagnoses)
       .where(eq(diagnoses.patientId, patientId))
