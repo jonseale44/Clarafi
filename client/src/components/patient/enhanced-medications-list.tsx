@@ -52,7 +52,7 @@ interface Medication {
   startDate: string;
   endDate?: string;
   discontinuedDate?: string;
-  status: 'active' | 'discontinued' | 'held' | 'historical';
+  status: 'active' | 'discontinued' | 'held' | 'historical' | 'pending';
   prescriber?: string;
   rxNormCode?: string;
   ndcCode?: string;
