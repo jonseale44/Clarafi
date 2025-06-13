@@ -65,7 +65,7 @@ export class GPTOrderDeduplicationService {
       };
 
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
         messages: [
           {
             role: "system",
@@ -225,7 +225,7 @@ Return a JSON object with this exact structure:
   async areOrdersDuplicate(order1: InsertOrder, order2: InsertOrder): Promise<boolean> {
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
         messages: [
           {
             role: "system",

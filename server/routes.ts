@@ -2013,7 +2013,7 @@ Return only valid JSON without markdown formatting.`;
       }
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",
