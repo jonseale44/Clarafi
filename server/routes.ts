@@ -2145,12 +2145,14 @@ Return only valid JSON without markdown formatting.`;
 
       // For medication orders, activate pending medications
       if (order.orderType === 'medication') {
+        console.log(`📋 [Medication] Processing medication order activation for order ${orderId}`);
         try {
           const { medicationDelta } = await import("./medication-delta-service.js");
           await medicationDelta.signMedicationOrders(order.encounterId || 0, [orderId], userId);
           console.log(`📋 [Medication] Activated signed medication: ${order.medicationName} - ${order.sig}`);
         } catch (medicationError) {
           console.error(`❌ [Medication] Failed to activate medication for order ${orderId}:`, medicationError);
+          console.error(`❌ [Medication] Medication error stack:`, medicationError.stack);
           // Continue with response even if activation fails
         }
       }
@@ -2208,6 +2210,25 @@ Return only valid JSON without markdown formatting.`;
 
         } catch (error: any) {
           errors.push(`Failed to sign order ${orderId}: ${error.message}`);
+        }
+      }
+
+      // Activate any medication orders that were signed
+      const medicationOrderIds = signedOrders
+        .filter(order => order.orderType === 'medication')
+        .map(order => order.id);
+
+      if (medicationOrderIds.length > 0) {
+        try {
+          const { medicationDelta } = await import("./medication-delta-service.js");
+          const encounterId = signedOrders[0]?.encounterId;
+          if (encounterId) {
+            await medicationDelta.signMedicationOrders(encounterId, medicationOrderIds, userId);
+            console.log(`📋 [Bulk Sign] Activated ${medicationOrderIds.length} medication orders`);
+          }
+        } catch (medicationError) {
+          console.error(`❌ [Bulk Sign] Failed to activate medications:`, medicationError);
+          // Continue with response even if activation fails
         }
       }
 

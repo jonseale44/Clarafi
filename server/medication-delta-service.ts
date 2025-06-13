@@ -817,15 +817,25 @@ Please analyze this SOAP note and identify medication changes that occurred duri
    * Sign orders and activate pending medications
    */
   async signMedicationOrders(encounterId: number, orderIds: number[], providerId: number): Promise<void> {
-    console.log(`💊 [SignOrders] Signing ${orderIds.length} medication orders for encounter ${encounterId}`);
+    console.log(`💊 [SignOrders] === MEDICATION ACTIVATION STARTING ===`);
+    console.log(`💊 [SignOrders] Encounter ID: ${encounterId}`);
+    console.log(`💊 [SignOrders] Order IDs to sign: [${orderIds.join(', ')}]`);
+    console.log(`💊 [SignOrders] Provider ID: ${providerId}`);
     
     try {
       // Get medications that are linked to these orders
       const medications = await storage.getPatientMedicationsByEncounter(encounterId);
+      console.log(`💊 [SignOrders] Found ${medications.length} medications for encounter ${encounterId}`);
       
       for (const medication of medications) {
+        console.log(`💊 [SignOrders] Checking medication ${medication.id}:`);
+        console.log(`💊 [SignOrders] - Name: ${medication.medicationName}`);
+        console.log(`💊 [SignOrders] - Status: ${medication.status}`);
+        console.log(`💊 [SignOrders] - Source Order ID: ${medication.sourceOrderId}`);
+        console.log(`💊 [SignOrders] - Order IDs to activate: [${orderIds.join(', ')}]`);
+        
         if (medication.status === 'pending' && medication.sourceOrderId && orderIds.includes(medication.sourceOrderId)) {
-          console.log(`💊 [SignOrders] Activating medication ${medication.id}: ${medication.medicationName}`);
+          console.log(`💊 [SignOrders] ✅ ACTIVATING medication ${medication.id}: ${medication.medicationName}`);
           
           // Update medication to active status
           const existingHistory = medication.medicationHistory as any[] || [];
@@ -845,6 +855,19 @@ Please analyze this SOAP note and identify medication changes that occurred duri
             status: 'active',
             medicationHistory: updatedHistory
           });
+          
+          console.log(`💊 [SignOrders] ✅ Successfully activated medication ${medication.id}`);
+        } else {
+          console.log(`💊 [SignOrders] ❌ Skipping medication ${medication.id} - not eligible for activation`);
+          if (medication.status !== 'pending') {
+            console.log(`💊 [SignOrders] - Reason: Status is '${medication.status}', not 'pending'`);
+          }
+          if (!medication.sourceOrderId) {
+            console.log(`💊 [SignOrders] - Reason: No source order ID`);
+          }
+          if (medication.sourceOrderId && !orderIds.includes(medication.sourceOrderId)) {
+            console.log(`💊 [SignOrders] - Reason: Source order ${medication.sourceOrderId} not in sign list`);
+          }
         }
       }
       
