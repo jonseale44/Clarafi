@@ -423,7 +423,11 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-medium text-base">{medication.medicationName}</h3>
+                    <h3 className="font-medium text-base">
+                      {medication.medicationName}
+                      {medication.dosage && ` ${medication.dosage}`}
+                      {medication.strength && medication.strength !== medication.dosage && ` ${medication.strength}`}
+                    </h3>
                     {medication.brandName && medication.brandName !== medication.medicationName && (
                       <span className="text-sm text-gray-500">({medication.brandName})</span>
                     )}
