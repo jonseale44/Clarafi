@@ -1176,14 +1176,32 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
     orderType,
     priority: "routine",
   });
+  const [entryMode, setEntryMode] = useState<"ai" | "standard">("ai");
+  const [aiText, setAiText] = useState("");
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [aiParsedData, setAiParsedData] = useState<any>(null);
+
   useEffect(() => {
     setOrderData({ orderType, priority: "routine" });
+    setAiParsedData(null);
+    setAiText("");
   }, [orderType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[NewOrderForm] Submitting order:", orderData);
-    onSubmit(orderData);
+    
+    if (aiParsedData && aiParsedData.orders) {
+      // Submit multiple orders from AI parsing
+      console.log("[NewOrderForm] Submitting multiple AI-parsed orders:", aiParsedData.orders);
+      aiParsedData.orders.forEach((order: any) => {
+        onSubmit(order);
+      });
+    } else {
+      // Submit single manual order
+      const finalData = aiParsedData || orderData;
+      console.log("[NewOrderForm] Submitting single order:", finalData);
+      onSubmit(finalData);
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {

@@ -67,27 +67,24 @@ export class MedicationDeltaService {
   }
 
   /**
-   * Main delta processing method - analyzes structured orders instead of SOAP notes
+   * Main delta processing method - mirrors medical problems approach
    */
-  async processOrdersDelta(
+  async processSOAPDelta(
     patientId: number,
     encounterId: number,
+    soapNote: string,
     providerId: number
   ): Promise<MedicationDeltaResult> {
     const startTime = Date.now();
-    console.log(`💊 [MedicationDelta] === ORDERS DELTA PROCESSING START ===`);
+    console.log(`💊 [MedicationDelta] === DELTA PROCESSING START ===`);
     console.log(`💊 [MedicationDelta] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
+    console.log(`💊 [MedicationDelta] SOAP Note length: ${soapNote.length} characters`);
 
     try {
       // Get existing medications for context
       console.log(`💊 [MedicationDelta] Fetching existing medications...`);
       const existingMedications = await this.getExistingMedications(patientId);
       console.log(`💊 [MedicationDelta] Found ${existingMedications.length} existing medications`);
-      
-      // Get draft medication orders for this encounter (structured data source)
-      console.log(`💊 [MedicationDelta] Fetching draft medication orders...`);
-      const draftOrders = await this.getDraftMedicationOrders(encounterId);
-      console.log(`💊 [MedicationDelta] Found ${draftOrders.length} draft medication orders`);
       
       // Get encounter and patient info
       console.log(`💊 [MedicationDelta] Fetching encounter and patient info...`);
@@ -98,16 +95,16 @@ export class MedicationDeltaService {
       console.log(`💊 [MedicationDelta] Patient: ${patient.firstName} ${patient.lastName}, Age: ${this.calculateAge(patient.dateOfBirth)}`);
       console.log(`💊 [MedicationDelta] Encounter: ${encounter.encounterType}, Status: ${encounter.encounterStatus}`);
 
-      // Generate delta changes by analyzing structured orders
-      console.log(`💊 [MedicationDelta] Starting orders delta analysis...`);
-      const changes = await this.generateOrdersDeltaChanges(
+      // Generate delta changes using GPT
+      console.log(`💊 [MedicationDelta] Starting GPT delta analysis...`);
+      const changes = await this.generateDeltaChanges(
         existingMedications,
-        draftOrders,
+        soapNote,
         encounter,
         patient,
         providerId
       );
-      console.log(`💊 [MedicationDelta] Orders analysis completed. Generated ${changes.length} changes:`);
+      console.log(`💊 [MedicationDelta] GPT analysis completed. Generated ${changes.length} changes:`);
       changes.forEach((change, index) => {
         console.log(`💊 [MedicationDelta] Change ${index + 1}: ${change.action} - ${change.medication_name || 'existing medication'} (confidence: ${change.confidence})`);
       });
@@ -118,7 +115,7 @@ export class MedicationDeltaService {
       console.log(`💊 [MedicationDelta] Database changes applied successfully`);
 
       const processingTime = Date.now() - startTime;
-      console.log(`✅ [MedicationDelta] === ORDERS DELTA PROCESSING COMPLETE ===`);
+      console.log(`✅ [MedicationDelta] === DELTA PROCESSING COMPLETE ===`);
       console.log(`✅ [MedicationDelta] Total time: ${processingTime}ms, Medications affected: ${changes.length}`);
 
       return {
@@ -128,200 +125,14 @@ export class MedicationDeltaService {
       };
 
     } catch (error) {
-      console.error(`❌ [MedicationDelta] Error in processOrdersDelta:`, error);
+      console.error(`❌ [MedicationDelta] Error in processSOAPDelta:`, error);
       console.error(`❌ [MedicationDelta] Stack trace:`, (error as Error).stack);
       throw error;
     }
   }
 
   /**
-   * Get draft medication orders for an encounter
-   */
-  private async getDraftMedicationOrders(encounterId: number) {
-    try {
-      // Get all orders and filter by encounter and medication type
-      const allOrders = await storage.getPatientOrders(0);
-      return allOrders.filter(order => 
-        order.encounterId === encounterId &&
-        order.orderType === 'medication' && 
-        order.orderStatus === 'draft'
-      );
-    } catch (error) {
-      console.error(`❌ [MedicationDelta] Error fetching draft medication orders:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Generate medication delta changes by analyzing structured orders instead of SOAP notes
-   */
-  private async generateOrdersDeltaChanges(
-    existingMedications: any[],
-    draftOrders: any[],
-    encounter: any,
-    patient: any,
-    providerId: number
-  ): Promise<MedicationChange[]> {
-    console.log(`💊 [MedicationDelta] Analyzing ${draftOrders.length} draft medication orders...`);
-    
-    // If no draft orders, return empty changes
-    if (draftOrders.length === 0) {
-      console.log(`💊 [MedicationDelta] No draft medication orders found, returning empty changes`);
-      return [];
-    }
-
-    try {
-      const systemPrompt = this.buildOrdersDeltaPrompt();
-      const userPrompt = this.buildOrdersUserPrompt(
-        existingMedications,
-        draftOrders,
-        encounter,
-        patient
-      );
-
-      console.log(`💊 [MedicationDelta] Sending orders analysis to GPT...`);
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.1,
-        max_tokens: 2000
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        console.error(`❌ [MedicationDelta] Empty response from GPT`);
-        return [];
-      }
-
-      console.log(`💊 [MedicationDelta] GPT response received, parsing changes...`);
-      
-      try {
-        const parsedResponse = JSON.parse(content);
-        
-        if (!parsedResponse.changes || !Array.isArray(parsedResponse.changes)) {
-          console.error(`❌ [MedicationDelta] Invalid response structure from GPT`);
-          return [];
-        }
-
-        // Validate and clean changes
-        const validChanges: MedicationChange[] = [];
-        parsedResponse.changes.forEach((change: MedicationChange, index: number) => {
-          if (change.action && typeof change.confidence === 'number') {
-            validChanges.push(change);
-          } else {
-            console.warn(`⚠️ [MedicationDelta] Skipping invalid change at index ${index}:`, change);
-          }
-        });
-
-        console.log(`💊 [MedicationDelta] Successfully parsed ${validChanges.length} valid changes`);
-        return validChanges;
-
-      } catch (parseError) {
-        console.error(`❌ [MedicationDelta] Error parsing GPT response:`, parseError);
-        console.error(`❌ [MedicationDelta] Raw response:`, content);
-        return [];
-      }
-
-    } catch (error) {
-      console.error(`❌ [MedicationDelta] Error in GPT analysis:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Build system prompt for orders-based delta analysis
-   */
-  private buildOrdersDeltaPrompt(): string {
-    return `You are a clinical medication analysis AI that processes structured medication orders to update patient medication lists.
-
-TASK: Analyze draft medication orders and determine what changes need to be made to the patient's medication list.
-
-INPUT: You will receive:
-1. Existing medications in the patient's current medication list
-2. Draft medication orders from the current encounter (structured data with dosage, sig, quantity, refills)
-3. Patient and encounter context
-
-OUTPUT: JSON object with this structure:
-{
-  "changes": [
-    {
-      "action": "NEW_MEDICATION" | "UPDATE_DOSAGE" | "DISCONTINUE" | "ADD_HISTORY",
-      "medication_name": "exact medication name",
-      "medication_id": null | existing_id,
-      "history_notes": "description of change for this encounter",
-      "dosage_change": { "from": "old", "to": "new" } | null,
-      "frequency_change": { "from": "old", "to": "new" } | null,
-      "confidence": 0.0-1.0,
-      "reasoning": "brief explanation"
-    }
-  ]
-}
-
-RULES:
-1. Each draft order should typically result in one medication change
-2. If an order matches an existing medication exactly, use ADD_HISTORY action
-3. If an order matches an existing medication but with different dosage/frequency, use UPDATE_DOSAGE or MODIFY_FREQUENCY
-4. If it's a completely new medication, use NEW_MEDICATION
-5. Use structured order data (medicationName, dosage, sig, quantity, refills) rather than parsing text
-6. Be precise with medication names - use exact names from the orders
-7. Set high confidence (0.8-1.0) since orders are structured data
-8. Keep history_notes concise but informative
-
-Focus on accuracy since these orders represent what the provider intends to prescribe.`;
-  }
-
-  /**
-   * Build user prompt with structured orders context
-   */
-  private buildOrdersUserPrompt(
-    existingMedications: any[],
-    draftOrders: any[],
-    encounter: any,
-    patient: any
-  ): string {
-    const patientAge = this.calculateAge(patient.dateOfBirth);
-    
-    let prompt = `PATIENT CONTEXT:
-- Name: ${patient.firstName} ${patient.lastName}
-- Age: ${patientAge}
-- DOB: ${patient.dateOfBirth}
-
-ENCOUNTER CONTEXT:
-- Type: ${encounter.encounterType}
-- Date: ${encounter.encounterDate || 'Current'}
-- Status: ${encounter.encounterStatus}
-
-EXISTING MEDICATIONS (${existingMedications.length}):
-`;
-
-    existingMedications.forEach((med, index) => {
-      prompt += `${index + 1}. ID: ${med.id} | Name: ${med.medicationName} | Dosage: ${med.dosage || 'N/A'} | Status: ${med.status}\n`;
-    });
-
-    prompt += `\nDRAFT MEDICATION ORDERS (${draftOrders.length}):
-`;
-
-    draftOrders.forEach((order, index) => {
-      prompt += `${index + 1}. Name: ${order.medicationName || 'N/A'}
-   Dosage: ${order.dosage || 'N/A'}
-   Sig: ${order.sig || 'N/A'}
-   Quantity: ${order.quantity || 'N/A'}
-   Refills: ${order.refills || 'N/A'}
-   Priority: ${order.priority || 'N/A'}
-   
-`;
-    });
-
-    prompt += `\nAnalyze these draft orders and determine what changes should be made to the patient's medication list. Each order represents a provider's intent to prescribe.`;
-
-    return prompt;
-  }
-
-  /**
-   * Generate medication delta changes using GPT analysis (LEGACY - kept for compatibility)
+   * Generate medication delta changes using GPT analysis
    */
   private async generateDeltaChanges(
     existingMedications: any[],

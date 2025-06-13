@@ -155,10 +155,11 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
     console.log(`💊 [MedicationAPI] Calling delta processing service...`);
     const startTime = Date.now();
     
-    // Process medications incrementally using orders delta analysis
-    const result = await medicationDelta.processOrdersDelta(
+    // Process medications incrementally using GPT delta analysis
+    const result = await medicationDelta.processSOAPDelta(
       patientId,
       encounterId,
+      soapNote,
       providerId
     );
 
