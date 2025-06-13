@@ -98,9 +98,6 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const { toast } = useToast();
 
-  console.log(`🔍 [EnhancedMedicationsList] Component rendering for patient ID: ${patientId}`);
-  console.log(`🔍 [EnhancedMedicationsList] ReadOnly mode: ${readOnly}`);
-
   // Fetch enhanced medications
   const { data: medicationData, isLoading, error } = useQuery<MedicationResponse>({
     queryKey: [`/api/patients/${patientId}/medications-enhanced`],
@@ -109,10 +106,6 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
     refetchOnMount: true,
     staleTime: 0, // Always refetch to ensure we get latest medication data
   });
-
-  console.log(`🔍 [EnhancedMedicationsList] Query state - Loading: ${isLoading}, Error:`, error);
-  console.log(`🔍 [EnhancedMedicationsList] Medication data:`, medicationData);
-  console.log(`🔍 [EnhancedMedicationsList] Query enabled: ${!!patientId}`);
 
   const createMedication = useMutation({
     mutationFn: async (medicationData: any) => {

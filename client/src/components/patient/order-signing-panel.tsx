@@ -33,10 +33,11 @@ interface Order {
 
 interface OrderSigningPanelProps {
   encounterId: number;
+  patientId: number;
   onOrdersSigned: () => void;
 }
 
-export function OrderSigningPanel({ encounterId, onOrdersSigned }: OrderSigningPanelProps) {
+export function OrderSigningPanel({ encounterId, patientId, onOrdersSigned }: OrderSigningPanelProps) {
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [signatureNote, setSignatureNote] = useState("");
   const [selectAll, setSelectAll] = useState(false);
@@ -72,11 +73,8 @@ export function OrderSigningPanel({ encounterId, onOrdersSigned }: OrderSigningP
       refetch();
       onOrdersSigned();
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
-      // Get patient ID from the signed order and invalidate medications
-      const signedOrder = unsignedOrders?.find(order => order.id === orderId);
-      if (signedOrder) {
-        queryClient.invalidateQueries({ queryKey: [`/api/patients/${signedOrder.patientId}/medications-enhanced`] });
-      }
+      // Invalidate medications using the patientId parameter
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
     },
     onError: (error: any) => {
       toast({
@@ -116,6 +114,8 @@ export function OrderSigningPanel({ encounterId, onOrdersSigned }: OrderSigningP
       refetch();
       onOrdersSigned();
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
+      // Invalidate medications using the patientId parameter
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
     },
     onError: (error: any) => {
       toast({
