@@ -476,6 +476,27 @@ export class DatabaseStorage implements IStorage {
       .returning();
       
     console.log(`✅ [STORAGE] Order created with ID: ${order.id} at ${timestamp}`);
+    
+    // Trigger automatic medication processing for medication orders
+    if (order.orderType === 'medication' && order.patientId && order.encounterId) {
+      console.log(`🔄 [STORAGE] Triggering automatic medication processing for order ${order.id}`);
+      
+      // Import and trigger medication delta processing (async, non-blocking)
+      setImmediate(async () => {
+        try {
+          const { medicationDelta } = await import('./medication-delta-service.js');
+          await medicationDelta.processOrderDelta(
+            order.patientId!,
+            order.encounterId!,
+            2 // Default provider ID for automatic processing
+          );
+          console.log(`✅ [STORAGE] Automatic medication processing completed for order ${order.id}`);
+        } catch (error) {
+          console.error(`❌ [STORAGE] Automatic medication processing failed for order ${order.id}:`, error);
+        }
+      });
+    }
+    
     return order;
   }
 
