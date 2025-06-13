@@ -762,6 +762,14 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   private findMatchingExistingMedication(order: any, existingMedications: any[]) {
     const orderMedName = order.medicationName?.toLowerCase() || '';
     
+    // First, check for exact order ID match to prevent duplicates
+    const exactOrderMatch = existingMedications.find(med => med.sourceOrderId === order.id);
+    if (exactOrderMatch) {
+      console.log(`💊 [FindMatch] Found exact order ID match: medication ${exactOrderMatch.id} for order ${order.id}`);
+      return exactOrderMatch;
+    }
+    
+    // Then check for medication name matches
     return existingMedications.find(med => {
       const medName = med.medicationName?.toLowerCase() || '';
       
