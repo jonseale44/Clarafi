@@ -428,6 +428,13 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                       {medication.dosage && ` ${medication.dosage}`}
                       {medication.strength && medication.strength !== medication.dosage && ` ${medication.strength}`}
                     </h3>
+                    {/* Debug logging */}
+                    {console.log('🔍 [MedicationCard] Medication data:', {
+                      medicationName: medication.medicationName,
+                      dosage: medication.dosage,
+                      strength: medication.strength,
+                      id: medication.id
+                    })}
                     {medication.brandName && medication.brandName !== medication.medicationName && (
                       <span className="text-sm text-gray-500">({medication.brandName})</span>
                     )}
