@@ -96,6 +96,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "medications-enhanced"] });
       setEditingOrder(null);
       toast({ title: "Order updated successfully" });
     },
