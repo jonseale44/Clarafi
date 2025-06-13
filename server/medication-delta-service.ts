@@ -135,6 +135,60 @@ export class MedicationDeltaService {
   }
 
   /**
+   * Synchronize existing medication records with updated order data
+   * Called when orders are directly updated (not via SOAP processing)
+   */
+  async syncMedicationWithOrder(orderId: number): Promise<void> {
+    console.log(`🔄 [MedicationSync] === SYNCING MEDICATION WITH ORDER ${orderId} ===`);
+    
+    try {
+      // Get the updated order
+      const order = await this.storage.getOrderById(orderId);
+      if (!order || order.orderType !== 'medication') {
+        console.log(`🔄 [MedicationSync] Order ${orderId} not found or not a medication order - skipping sync`);
+        return;
+      }
+
+      // Find medication records linked to this order
+      const linkedMedications = await this.storage.getMedicationsByOrderId(orderId);
+      
+      if (linkedMedications.length === 0) {
+        console.log(`🔄 [MedicationSync] No medications linked to order ${orderId} - skipping sync`);
+        return;
+      }
+
+      // Update each linked medication with current order data
+      for (const medication of linkedMedications) {
+        console.log(`🔄 [MedicationSync] Updating medication ${medication.id} with order ${orderId} data`);
+        
+        const updatedMedicationData = {
+          medicationName: order.medicationName || medication.medicationName,
+          dosage: order.dosage || medication.dosage,
+          sig: order.sig || medication.sig,
+          quantity: order.quantity || medication.quantity,
+          totalRefills: order.refills || medication.totalRefills,
+          refillsRemaining: order.refills || medication.refillsRemaining,
+          daysSupply: order.daysSupply || medication.daysSupply,
+          dosageForm: order.form || medication.dosageForm,
+          route: order.routeOfAdministration || medication.route,
+          clinicalIndication: order.clinicalIndication || medication.clinicalIndication,
+          updatedAt: new Date(),
+          lastUpdatedEncounterId: order.encounterId
+        };
+
+        await this.storage.updateMedication(medication.id, updatedMedicationData);
+        console.log(`✅ [MedicationSync] Updated medication ${medication.id} with current order data`);
+      }
+
+      console.log(`✅ [MedicationSync] Completed sync for order ${orderId} - updated ${linkedMedications.length} medications`);
+      
+    } catch (error) {
+      console.error(`❌ [MedicationSync] Error syncing medication with order ${orderId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Legacy SOAP processing method - kept for backward compatibility
    * @deprecated Use processOrderDelta instead
    */

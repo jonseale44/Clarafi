@@ -654,6 +654,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(medicalProblems.id, problemId));
     return (problem?.visitHistory as any[]) || [];
   }
+
+  // Medication synchronization methods
+  async getMedicationsByOrderId(orderId: number): Promise<Medication[]> {
+    return await db.select().from(medications).where(eq(medications.sourceOrderId, orderId));
+  }
 }
 
 export const storage = new DatabaseStorage();
