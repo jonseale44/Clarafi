@@ -161,6 +161,9 @@ export class MedicationDeltaService {
       for (const medication of linkedMedications) {
         console.log(`🔄 [MedicationSync] Updating medication ${medication.id} with order ${orderId} data`);
         
+        // Map order status to medication status
+        const medicationStatus = this.mapOrderStatusToMedicationStatus(order.orderStatus);
+        
         const updatedMedicationData = {
           medicationName: order.medicationName || medication.medicationName,
           dosage: order.dosage || medication.dosage,
@@ -172,6 +175,7 @@ export class MedicationDeltaService {
           dosageForm: order.form || medication.dosageForm,
           route: order.routeOfAdministration || medication.route,
           clinicalIndication: order.clinicalIndication || medication.clinicalIndication,
+          status: medicationStatus,
           updatedAt: new Date(),
           lastUpdatedEncounterId: order.encounterId
         };
@@ -1025,6 +1029,31 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     } catch (error) {
       console.error(`❌ [MedicationDelta] Error signing encounter:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Map order status to medication status
+   */
+  private mapOrderStatusToMedicationStatus(orderStatus: string): string {
+    switch (orderStatus?.toLowerCase()) {
+      case 'draft':
+      case 'pending':
+        return 'pending';
+      case 'approved':
+      case 'signed':
+      case 'active':
+        return 'active';
+      case 'discontinued':
+      case 'cancelled':
+      case 'canceled':
+        return 'discontinued';
+      case 'on_hold':
+      case 'paused':
+        return 'on_hold';
+      default:
+        console.log(`🔄 [MedicationSync] Unknown order status: ${orderStatus}, defaulting to pending`);
+        return 'pending';
     }
   }
 }
