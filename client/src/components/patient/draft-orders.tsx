@@ -117,6 +117,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       toast({ title: "Order deleted successfully" });
     },
     onError: (error: any) => {
@@ -136,6 +137,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       toast({ title: "All orders deleted successfully" });
     },
     onError: (error: any) => {
@@ -165,6 +167,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       setShowNewOrderDialog(false);
       toast({ title: "Order created successfully" });
     },
@@ -194,6 +197,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     onSuccess: (data) => {
       // Invalidate multiple related queries to ensure UI consistency
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "encounters"] });
@@ -237,6 +241,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     onSuccess: (data, orderType) => {
       // Invalidate multiple related queries to ensure UI consistency
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "encounters"] });
@@ -279,6 +284,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       toast({ 
         title: "Orders Updated from SOAP", 
         description: `Successfully extracted ${data.ordersCount || 0} orders from the SOAP note.` 

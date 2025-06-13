@@ -72,6 +72,11 @@ export function OrderSigningPanel({ encounterId, onOrdersSigned }: OrderSigningP
       refetch();
       onOrdersSigned();
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
+      // Get patient ID from the signed order and invalidate medications
+      const signedOrder = unsignedOrders?.find(order => order.id === orderId);
+      if (signedOrder) {
+        queryClient.invalidateQueries({ queryKey: [`/api/patients/${signedOrder.patientId}/medications-enhanced`] });
+      }
     },
     onError: (error: any) => {
       toast({
