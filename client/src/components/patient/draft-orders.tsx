@@ -95,8 +95,8 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "medications-enhanced"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       setEditingOrder(null);
       toast({ title: "Order updated successfully" });
     },
@@ -116,7 +116,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       if (!response.ok) throw new Error("Failed to delete order");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       toast({ title: "Order deleted successfully" });
     },
@@ -136,7 +136,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       if (!response.ok) throw new Error("Failed to delete all orders");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       toast({ title: "All orders deleted successfully" });
     },
@@ -166,7 +166,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       setShowNewOrderDialog(false);
       toast({ title: "Order created successfully" });
@@ -196,11 +196,11 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: (data) => {
       // Invalidate multiple related queries to ensure UI consistency
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "encounters"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
       
       // Dispatch custom event to trigger immediate validation refresh
       window.dispatchEvent(new CustomEvent('orderSigned'));
