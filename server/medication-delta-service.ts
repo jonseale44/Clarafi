@@ -790,7 +790,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
    */
   private createNewMedicationChange(order: any): MedicationChange {
     return {
-      medication_id: null,
+      medication_id: undefined,
       action: "NEW_MEDICATION",
       medication_name: order.medicationName,
       history_notes: `New medication prescribed via order ${order.id}`,

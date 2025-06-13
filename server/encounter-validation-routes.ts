@@ -276,6 +276,42 @@ router.post("/orders/bulk-sign", async (req: Request, res: Response) => {
       }
     }
 
+    // Activate medications for signed medication orders
+    const medicationOrderIds = results.signed
+      .filter((order: any) => order.orderType === "medication" && order.encounterId)
+      .map((order: any) => order.id);
+
+    if (medicationOrderIds.length > 0) {
+      console.log(`💊 [BulkSign] Activating medications for ${medicationOrderIds.length} signed medication orders`);
+      try {
+        const { medicationDelta } = await import("./medication-delta-service.js");
+        
+        // Group by encounter for efficient processing
+        const ordersByEncounter = results.signed
+          .filter((order: any) => order.orderType === "medication" && order.encounterId)
+          .reduce((acc: any, order: any) => {
+            if (!acc[order.encounterId]) {
+              acc[order.encounterId] = [];
+            }
+            acc[order.encounterId].push(order.id);
+            return acc;
+          }, {});
+
+        for (const [encounterId, orderIds] of Object.entries(ordersByEncounter)) {
+          await medicationDelta.signMedicationOrders(
+            parseInt(encounterId),
+            orderIds as number[],
+            userId
+          );
+        }
+        
+        console.log(`✅ [BulkSign] Medications activated for all signed orders`);
+      } catch (medicationError) {
+        console.error(`❌ [BulkSign] Failed to activate medications:`, medicationError);
+        // Continue with response - orders are still signed
+      }
+    }
+
     res.json({
       success: true,
       results,

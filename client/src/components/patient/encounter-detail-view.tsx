@@ -345,11 +345,17 @@ export function EncounterDetailView({
         console.log(`🏥 [ParallelProcessing] SOAP Note length: ${note.length} characters`);
         console.log(`🏥 [ParallelProcessing] SOAP Note preview: ${note.substring(0, 200)}...`);
         
-        const requestBody = {
+        const medicalProblemsRequestBody = {
           soapNote: note,
           patientId: patient.id
         };
-        console.log(`🏥 [ParallelProcessing] Request body:`, requestBody);
+        
+        const medicationsRequestBody = {
+          patientId: patient.id
+        };
+        
+        console.log(`🏥 [ParallelProcessing] Medical problems request body:`, medicalProblemsRequestBody);
+        console.log(`🏥 [ParallelProcessing] Medications request body:`, medicationsRequestBody);
         
         // Process medical problems and medications in parallel for maximum efficiency
         const [medicalProblemsResponse, medicationsResponse] = await Promise.all([
@@ -357,13 +363,13 @@ export function EncounterDetailView({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(medicalProblemsRequestBody)
           }),
           fetch(`/api/encounters/${encounterId}/process-medications`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(medicationsRequestBody)
           })
         ]);
 

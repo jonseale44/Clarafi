@@ -123,13 +123,12 @@ router.get("/medications/:medicationId/history", async (req: Request, res: Respo
 
 /**
  * POST /api/encounters/:encounterId/process-medications
- * Process SOAP note for medications using GPT-driven delta analysis
+ * Process medication orders using order-driven delta analysis
  */
 router.post("/encounters/:encounterId/process-medications", async (req: Request, res: Response) => {
   try {
-    console.log(`💊 [MedicationAPI] === PROCESSING REQUEST START ===`);
+    console.log(`💊 [MedicationAPI] === ORDER PROCESSING REQUEST START ===`);
     console.log(`💊 [MedicationAPI] Encounter ID: ${req.params.encounterId}`);
-    console.log(`💊 [MedicationAPI] Request body keys: ${Object.keys(req.body)}`);
     console.log(`💊 [MedicationAPI] User authenticated: ${req.isAuthenticated()}`);
     
     if (!req.isAuthenticated()) {
@@ -138,33 +137,30 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
     }
 
     const encounterId = parseInt(req.params.encounterId);
-    const { soapNote, patientId } = req.body;
+    const { patientId } = req.body;
     const providerId = req.user!.id;
 
     console.log(`💊 [MedicationAPI] Parsed encounter ID: ${encounterId}`);
     console.log(`💊 [MedicationAPI] Patient ID: ${patientId}`);
     console.log(`💊 [MedicationAPI] Provider ID: ${providerId}`);
-    console.log(`💊 [MedicationAPI] SOAP note length: ${soapNote?.length || 0} characters`);
-    console.log(`💊 [MedicationAPI] SOAP note preview: ${soapNote?.substring(0, 100) || 'empty'}...`);
 
-    if (!soapNote || !patientId) {
-      console.log(`❌ [MedicationAPI] Missing required fields - soapNote: ${!!soapNote}, patientId: ${!!patientId}`);
-      return res.status(400).json({ error: "SOAP note and patient ID are required" });
+    if (!patientId) {
+      console.log(`❌ [MedicationAPI] Missing required field - patientId: ${!!patientId}`);
+      return res.status(400).json({ error: "Patient ID is required" });
     }
 
-    console.log(`💊 [MedicationAPI] Calling delta processing service...`);
+    console.log(`💊 [MedicationAPI] Calling order-based delta processing...`);
     const startTime = Date.now();
     
-    // Process medications incrementally using GPT delta analysis
-    const result = await medicationDelta.processSOAPDelta(
+    // Process medications based on orders using new order-driven approach
+    const result = await medicationDelta.processOrderDelta(
       patientId,
       encounterId,
-      soapNote,
       providerId
     );
 
     const totalTime = Date.now() - startTime;
-    console.log(`✅ [MedicationAPI] Delta processing completed in ${totalTime}ms`);
+    console.log(`✅ [MedicationAPI] Order processing completed in ${totalTime}ms`);
     console.log(`✅ [MedicationAPI] Result:`, result);
 
     const response = {
@@ -175,7 +171,7 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
     };
     
     console.log(`✅ [MedicationAPI] Sending response:`, response);
-    console.log(`💊 [MedicationAPI] === PROCESSING REQUEST END ===`);
+    console.log(`💊 [MedicationAPI] === ORDER PROCESSING REQUEST END ===`);
     
     res.json(response);
 
