@@ -162,7 +162,9 @@ export class MedicationDeltaService {
         console.log(`🔄 [MedicationSync] Updating medication ${medication.id} with order ${orderId} data`);
         
         // Map order status to medication status
-        const medicationStatus = this.mapOrderStatusToMedicationStatus(order.orderStatus);
+        const orderStatus = order.orderStatus || 'pending';
+        const medicationStatus = this.mapOrderStatusToMedicationStatus(orderStatus);
+        console.log(`🔄 [MedicationSync] Order status: ${orderStatus} -> Medication status: ${medicationStatus}`);
         
         const updatedMedicationData = {
           medicationName: order.medicationName || medication.medicationName,
