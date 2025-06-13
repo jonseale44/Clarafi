@@ -240,11 +240,11 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
     },
     onSuccess: (data, orderType) => {
       // Invalidate multiple related queries to ensure UI consistency
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "encounters"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
       
       // Dispatch custom event to trigger immediate validation refresh
       window.dispatchEvent(new CustomEvent('orderSigned'));
@@ -283,7 +283,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "draft-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       toast({ 
         title: "Orders Updated from SOAP", 
