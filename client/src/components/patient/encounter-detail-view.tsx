@@ -30,7 +30,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { SharedChartSections } from "./shared-chart-sections";
 import Placeholder from "@tiptap/extension-placeholder";
-import { DraftOrders } from "./draft-orders";
+import { DraftOrders } from "./draft-orders-clean";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
 import { EncounterSignaturePanel } from "./encounter-signature-panel";
