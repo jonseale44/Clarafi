@@ -163,25 +163,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePatient(id: number): Promise<void> {
-    // Delete in proper order to handle foreign key constraints
-    // Only delete from tables that actually exist in the database
+    console.log(`🗑️ [Storage] Starting cascading deletion for patient ${id}`);
     
-    // Delete orders (references encounters)
-    await db.delete(orders).where(eq(orders.patientId, id));
-    
-    // Delete patient-related data
-    await db.delete(vitals).where(eq(vitals.patientId, id));
-    await db.delete(allergies).where(eq(allergies.patientId, id));
-    await db.delete(medications).where(eq(medications.patientId, id));
-    await db.delete(diagnoses).where(eq(diagnoses.patientId, id));
-    await db.delete(labResults).where(eq(labResults.patientId, id));
-    await db.delete(labOrders).where(eq(labOrders.patientId, id));
-    
-    // Delete encounters (main foreign key constraint)
-    await db.delete(encounters).where(eq(encounters.patientId, id));
-    
-    // Finally, delete the patient
-    await db.delete(patients).where(eq(patients.id, id));
+    try {
+      // Delete in proper order to handle foreign key constraints
+      // Medications reference orders through source_order_id, so delete medications first
+      
+      // Delete patient-related data first
+      await db.delete(vitals).where(eq(vitals.patientId, id));
+      console.log(`🗑️ [Storage] Deleted vitals for patient ${id}`);
+      
+      await db.delete(allergies).where(eq(allergies.patientId, id));
+      console.log(`🗑️ [Storage] Deleted allergies for patient ${id}`);
+      
+      await db.delete(medications).where(eq(medications.patientId, id)); // Delete before orders
+      console.log(`🗑️ [Storage] Deleted medications for patient ${id}`);
+      
+      await db.delete(diagnoses).where(eq(diagnoses.patientId, id));
+      console.log(`🗑️ [Storage] Deleted diagnoses for patient ${id}`);
+      
+      await db.delete(medicalProblems).where(eq(medicalProblems.patientId, id));
+      console.log(`🗑️ [Storage] Deleted medical problems for patient ${id}`);
+      
+      await db.delete(familyHistory).where(eq(familyHistory.patientId, id));
+      console.log(`🗑️ [Storage] Deleted family history for patient ${id}`);
+      
+      await db.delete(medicalHistory).where(eq(medicalHistory.patientId, id));
+      console.log(`🗑️ [Storage] Deleted medical history for patient ${id}`);
+      
+      await db.delete(socialHistory).where(eq(socialHistory.patientId, id));
+      console.log(`🗑️ [Storage] Deleted social history for patient ${id}`);
+      
+      await db.delete(labResults).where(eq(labResults.patientId, id));
+      console.log(`🗑️ [Storage] Deleted lab results for patient ${id}`);
+      
+      await db.delete(labOrders).where(eq(labOrders.patientId, id));
+      console.log(`🗑️ [Storage] Deleted lab orders for patient ${id}`);
+      
+      // Delete orders after medications (due to foreign key reference)
+      await db.delete(orders).where(eq(orders.patientId, id));
+      console.log(`🗑️ [Storage] Deleted orders for patient ${id}`);
+      
+      // Delete encounters (main foreign key constraint)
+      await db.delete(encounters).where(eq(encounters.patientId, id));
+      console.log(`🗑️ [Storage] Deleted encounters for patient ${id}`);
+      
+      // Finally, delete the patient
+      await db.delete(patients).where(eq(patients.id, id));
+      console.log(`✅ [Storage] Successfully deleted patient ${id}`);
+      
+    } catch (error) {
+      console.error(`❌ [Storage] Failed to delete patient ${id}:`, error);
+      throw error;
+    }
   }
 
   // Encounter management
