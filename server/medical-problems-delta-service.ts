@@ -243,12 +243,12 @@ Respond with ONLY the JSON, no other text.
 `;
 
     try {
-      console.log(`🤖 [GPT] Sending prompt to GPT-4o for delta analysis...`);
+      console.log(`🤖 [GPT] Sending prompt to GPT-4.1 for delta analysis...`);
       console.log(`🤖 [GPT] Existing problems count: ${existingProblems.length}`);
       console.log(`🤖 [GPT] SOAP note contains Assessment/Plan: ${soapNote.includes('ASSESSMENT') || soapNote.includes('Assessment')}`);
       
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1",
         messages: [{ role: "user", content: deltaPrompt }],
         temperature: 0.1,
         max_tokens: 1000

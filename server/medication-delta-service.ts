@@ -161,9 +161,9 @@ export class MedicationDeltaService {
     console.log(`💊 [GPT] SOAP note segment for analysis: "${soapNote.substring(0, 200)}..."`);
 
     try {
-      console.log(`💊 [GPT] Calling OpenAI GPT-4o model...`);
+      console.log(`💊 [GPT] Calling OpenAI GPT-4.1 model...`);
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
