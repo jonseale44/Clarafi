@@ -166,7 +166,8 @@ Return a JSON object with this exact structure:
       }
 
       // Add unique orders that weren't part of any merge
-      for (const uniqueId of analysisResult.analysis.unique_orders || []) {
+      const uniqueOrders = (analysisResult.analysis.unique_orders || []) as string[];
+      for (const uniqueId of uniqueOrders) {
         if (!processedIds.has(uniqueId)) {
           if (uniqueId.startsWith('T')) {
             const index = parseInt(uniqueId.substring(1)) - 1;
