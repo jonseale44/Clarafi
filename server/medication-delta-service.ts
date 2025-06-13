@@ -143,14 +143,14 @@ export class MedicationDeltaService {
     
     try {
       // Get the updated order
-      const order = await this.storage.getOrderById(orderId);
+      const order = await storage.getOrder(orderId);
       if (!order || order.orderType !== 'medication') {
         console.log(`🔄 [MedicationSync] Order ${orderId} not found or not a medication order - skipping sync`);
         return;
       }
 
       // Find medication records linked to this order
-      const linkedMedications = await this.storage.getMedicationsByOrderId(orderId);
+      const linkedMedications = await storage.getMedicationsByOrderId(orderId);
       
       if (linkedMedications.length === 0) {
         console.log(`🔄 [MedicationSync] No medications linked to order ${orderId} - skipping sync`);
@@ -176,7 +176,7 @@ export class MedicationDeltaService {
           lastUpdatedEncounterId: order.encounterId
         };
 
-        await this.storage.updateMedication(medication.id, updatedMedicationData);
+        await storage.updateMedication(medication.id, updatedMedicationData);
         console.log(`✅ [MedicationSync] Updated medication ${medication.id} with current order data`);
       }
 

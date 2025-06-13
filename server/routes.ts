@@ -1741,19 +1741,15 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.updateOrder(orderId, cleanedUpdates);
       console.log(`[Orders API] Successfully updated order ${orderId}`);
       
-      // If this is a medication order, trigger medication processing
-      if (order.orderType === 'medication' && order.encounterId) {
-        console.log(`💊 [Orders API] Triggering medication processing for updated medication order ${orderId}`);
+      // If this is a medication order, trigger medication synchronization
+      if (order.orderType === 'medication') {
+        console.log(`💊 [Orders API] Triggering medication synchronization for updated medication order ${orderId}`);
         try {
           const { medicationDelta } = await import("./medication-delta-service.js");
-          await medicationDelta.processOrderDelta(
-            order.patientId,
-            order.encounterId,
-            req.user!.id
-          );
-          console.log(`✅ [Orders API] Medication processing completed for updated order ${orderId}`);
+          await medicationDelta.syncMedicationWithOrder(orderId);
+          console.log(`✅ [Orders API] Medication synchronization completed for updated order ${orderId}`);
         } catch (medicationError) {
-          console.error(`❌ [Orders API] Medication processing failed for updated order ${orderId}:`, medicationError);
+          console.error(`❌ [Orders API] Medication synchronization failed for updated order ${orderId}:`, medicationError);
           // Continue with response even if sync fails
         }
       }
