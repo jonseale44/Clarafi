@@ -17,14 +17,24 @@ const router = Router();
 router.get("/patients/:patientId/medications-enhanced", async (req: Request, res: Response) => {
   try {
     console.log(`🔍 [EnhancedMedications] GET request for patient ${req.params.patientId}`);
+    console.log(`🔍 [EnhancedMedications] Request headers:`, req.headers);
     console.log(`🔍 [EnhancedMedications] User authenticated: ${req.isAuthenticated()}`);
+    console.log(`🔍 [EnhancedMedications] Request session:`, req.session);
     
     if (!req.isAuthenticated()) {
       console.log(`❌ [EnhancedMedications] Authentication failed`);
       return res.sendStatus(401);
     }
 
-    const patientId = parseInt(req.params.patientId);
+    const patientIdParam = req.params.patientId;
+    console.log(`🔍 [EnhancedMedications] Raw patientId param: "${patientIdParam}"`);
+    
+    if (!patientIdParam || isNaN(parseInt(patientIdParam))) {
+      console.log(`❌ [EnhancedMedications] Invalid patient ID: "${patientIdParam}"`);
+      return res.status(400).json({ error: "Invalid patient ID" });
+    }
+
+    const patientId = parseInt(patientIdParam);
     console.log(`🔍 [EnhancedMedications] Fetching medications for patient ID: ${patientId}`);
     
     const medications = await storage.getPatientMedicationsEnhanced(patientId);
