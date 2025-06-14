@@ -646,6 +646,54 @@ export const orders = pgTable("orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Medication Formulary - 500 Most Commonly Prescribed Medications
+export const medicationFormulary = pgTable("medication_formulary", {
+  id: serial("id").primaryKey(),
+  
+  // Core medication identification
+  genericName: text("generic_name").notNull(),
+  brandNames: text("brand_names").array(), // Common brand names
+  commonNames: text("common_names").array(), // Alternative names/abbreviations
+  
+  // Physical characteristics
+  standardStrengths: text("standard_strengths").array().notNull(), // ['25 mg', '50 mg']
+  availableForms: text("available_forms").array().notNull(), // ['tablet', 'capsule']
+  formRoutes: jsonb("form_routes").notNull(), // {'tablet': ['oral'], 'cream': ['topical']}
+  
+  // Prescribing templates
+  sigTemplates: jsonb("sig_templates").notNull(), // {'25 mg-tablet-oral': 'Take 1 tablet...'}
+  commonDoses: text("common_doses").array(), // ['25 mg once daily', '50 mg twice daily']
+  maxDailyDose: text("max_daily_dose"), // '100 mg'
+  
+  // Clinical information
+  therapeuticClass: text("therapeutic_class").notNull(),
+  indication: text("indication").notNull(),
+  blackBoxWarning: text("black_box_warning"),
+  ageRestrictions: text("age_restrictions"),
+  
+  // Regulatory and pharmacy
+  prescriptionType: text("prescription_type").notNull(), // 'rx' or 'otc'
+  isControlled: boolean("is_controlled").default(false),
+  controlledSchedule: text("controlled_schedule"), // 'CII', 'CIII', etc.
+  requiresPriorAuth: boolean("requires_prior_auth").default(false),
+  
+  // Clinical adjustments
+  renalAdjustment: boolean("renal_adjustment").default(false),
+  hepaticAdjustment: boolean("hepatic_adjustment").default(false),
+  
+  // Usage statistics for optimization
+  prescriptionVolume: integer("prescription_volume").default(0), // Annual prescription count
+  popularityRank: integer("popularity_rank"), // 1-500 ranking
+  
+  // Data management
+  dataSource: text("data_source").notNull(), // 'FDA', 'RxNorm', 'Clinical'
+  lastVerified: timestamp("last_verified").defaultNow(),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   encounters: many(encounters),
@@ -840,6 +888,10 @@ export const medicalProblemsRelations = relations(medicalProblems, ({ one }) => 
 export type MedicalProblem = typeof medicalProblems.$inferSelect;
 export type InsertMedicalProblem = z.infer<typeof insertMedicalProblemSchema>;
 
+// Medication Formulary Types
+export type MedicationFormulary = typeof medicationFormulary.$inferSelect;
+export type InsertMedicationFormulary = z.infer<typeof insertMedicationFormularySchema>;
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -1010,6 +1062,31 @@ export type InsertVitals = z.infer<typeof insertVitalsSchema>;
 export type Vitals = typeof vitals.$inferSelect;
 export type InsertDiagnosis = z.infer<typeof insertDiagnosisSchema>;
 export type Diagnosis = typeof diagnoses.$inferSelect;
+export const insertMedicationFormularySchema = createInsertSchema(medicationFormulary).pick({
+  genericName: true,
+  brandNames: true,
+  commonNames: true,
+  standardStrengths: true,
+  availableForms: true,
+  formRoutes: true,
+  sigTemplates: true,
+  commonDoses: true,
+  maxDailyDose: true,
+  therapeuticClass: true,
+  indication: true,
+  blackBoxWarning: true,
+  ageRestrictions: true,
+  prescriptionType: true,
+  isControlled: true,
+  controlledSchedule: true,
+  requiresPriorAuth: true,
+  renalAdjustment: true,
+  hepaticAdjustment: true,
+  prescriptionVolume: true,
+  popularityRank: true,
+  dataSource: true,
+});
+
 export const insertMedicationSchema = createInsertSchema(medications).pick({
   patientId: true,
   encounterId: true,
