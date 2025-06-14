@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool } from "lucide-react";
+import { MedicationInputHelper } from "./medication-input-helper";
 
 interface Order {
   id: number;
@@ -780,6 +781,14 @@ function OrderEditForm({ order, onChange, onSave, onCancel }: {
 }
 
 function MedicationEditFields({ order, onChange }: { order: Order; onChange: (field: string, value: any) => void }) {
+  const handleStandardizedUpdate = (standardized: any) => {
+    // Apply all standardized values at once
+    if (standardized.medicationName) onChange("medicationName", standardized.medicationName);
+    if (standardized.strength) onChange("dosage", standardized.strength);
+    if (standardized.dosageForm) onChange("form", standardized.dosageForm);
+    if (standardized.route) onChange("routeOfAdministration", standardized.route);
+  };
+
   return (
     <>
       <div className="grid grid-cols-3 gap-4">
@@ -806,6 +815,17 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           <div className="text-xs text-gray-500 mt-1">Include unit (mg, mcg, etc.)</div>
         </div>
       </div>
+
+      {/* Medication Input Helper for validation and standardization */}
+      <MedicationInputHelper
+        medicationName={order.medicationName || ""}
+        dosage={order.dosage || ""}
+        form={order.form || ""}
+        onMedicationChange={(name) => onChange("medicationName", name)}
+        onDosageChange={(dosage) => onChange("dosage", dosage)}
+        onFormChange={(form) => onChange("form", form)}
+        onStandardize={handleStandardizedUpdate}
+      />
       
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -843,13 +863,19 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
             <SelectContent>
               <SelectItem value="oral">Oral (PO)</SelectItem>
               <SelectItem value="topical">Topical</SelectItem>
-              <SelectItem value="injection">Injection (IM/IV/SQ)</SelectItem>
+              <SelectItem value="injection">Injection</SelectItem>
+              <SelectItem value="intramuscular">Intramuscular (IM)</SelectItem>
+              <SelectItem value="intravenous">Intravenous (IV)</SelectItem>
+              <SelectItem value="subcutaneous">Subcutaneous (SQ)</SelectItem>
               <SelectItem value="inhalation">Inhalation</SelectItem>
-              <SelectItem value="ophthalmic">Ophthalmic</SelectItem>
+              <SelectItem value="ophthalmic">Ophthalmic (Eye)</SelectItem>
               <SelectItem value="otic">Otic (Ear)</SelectItem>
               <SelectItem value="nasal">Nasal</SelectItem>
               <SelectItem value="rectal">Rectal</SelectItem>
+              <SelectItem value="vaginal">Vaginal</SelectItem>
               <SelectItem value="transdermal">Transdermal</SelectItem>
+              <SelectItem value="sublingual">Sublingual</SelectItem>
+              <SelectItem value="buccal">Buccal</SelectItem>
             </SelectContent>
           </Select>
         </div>
