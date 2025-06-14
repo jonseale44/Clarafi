@@ -191,7 +191,7 @@ export function FastMedicationIntelligence({
               {medicationData?.standardStrengths?.map((str: string) => (
                 <SelectItem key={str} value={str}>{str}</SelectItem>
               )) ?? (
-                <SelectItem value={strength || ''}>{strength || 'Custom strength'}</SelectItem>
+                strength && <SelectItem value={strength}>{strength}</SelectItem>
               )}
             </SelectContent>
           </Select>
@@ -208,7 +208,7 @@ export function FastMedicationIntelligence({
               {medicationData?.availableForms?.map((formOption: string) => (
                 <SelectItem key={formOption} value={formOption}>{formOption}</SelectItem>
               )) ?? (
-                <SelectItem value={form || ''}>{form || 'Custom form'}</SelectItem>
+                form && <SelectItem value={form}>{form}</SelectItem>
               )}
             </SelectContent>
           </Select>
@@ -225,7 +225,7 @@ export function FastMedicationIntelligence({
               {medicationData?.formRoutes?.[form]?.map((routeOption: string) => (
                 <SelectItem key={routeOption} value={routeOption}>{routeOption}</SelectItem>
               )) ?? (
-                <SelectItem value={route || ''}>{route || 'Custom route'}</SelectItem>
+                route && <SelectItem value={route}>{route}</SelectItem>
               )}
             </SelectContent>
           </Select>

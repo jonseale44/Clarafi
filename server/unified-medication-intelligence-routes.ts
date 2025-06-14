@@ -5,6 +5,7 @@
 
 import { Router } from "express";
 import { MedicationIntelligenceService } from "./medication-intelligence-service";
+import { APIResponseHandler } from "./api-response-handler";
 import type { Request, Response } from "express";
 
 const router = Router();
