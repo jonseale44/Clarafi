@@ -17,6 +17,7 @@ import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
 import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";
+import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import multer from "multer";
@@ -52,6 +53,9 @@ export function registerRoutes(app: Express): Server {
 
   // Unified medication intelligence routes
   app.use("/api", unifiedMedicationIntelligenceRoutes);
+
+  // Medication formulary routes (500-medication database)
+  app.use("/api/formulary", medicationFormularyRoutes);
 
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
