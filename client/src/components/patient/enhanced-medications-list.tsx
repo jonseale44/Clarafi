@@ -100,7 +100,7 @@ interface IntelligentAddMedicationFormProps {
   isLoading: boolean;
 }
 
-function IntelligentAddMedicationForm({ onSubmit, onCancel, isLoading }: IntelligentAddMedicationFormProps) {
+const IntelligentAddMedicationForm: React.FC<IntelligentAddMedicationFormProps> = ({ onSubmit, onCancel, isLoading }) => {
   const [medicationName, setMedicationName] = useState('');
   const [clinicalIndication, setClinicalIndication] = useState('');
   const [formData, setFormData] = useState({
