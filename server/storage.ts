@@ -475,8 +475,25 @@ export class DatabaseStorage implements IStorage {
       
     console.log(`✅ [STORAGE] Order created with ID: ${order.id} at ${timestamp}`);
     
-    // Note: Automatic medication processing is handled by the delta service when needed
-    // to prevent duplicate medication creation
+    // Trigger medication processing automatically for medication orders
+    if (insertOrder.orderType === 'medication') {
+      console.log(`💊 [STORAGE] Triggering medication processing for new medication order`);
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { medicationDelta } = await import("./medication-delta-service.js");
+        // Use setImmediate to run after current execution cycle completes
+        setImmediate(async () => {
+          try {
+            await medicationDelta.processOrderDelta(insertOrder.patientId, insertOrder.encounterId || 0, 1);
+            console.log(`✅ [STORAGE] Medication processing completed for order ${order.id}`);
+          } catch (medicationError) {
+            console.error(`❌ [STORAGE] Medication processing failed for order ${order.id}:`, medicationError);
+          }
+        });
+      } catch (importError) {
+        console.error(`❌ [STORAGE] Failed to import medication service:`, importError);
+      }
+    }
     
     return order;
   }
