@@ -580,7 +580,7 @@ export function FastMedicationIntelligence({
   const [manualSigEdit, setManualSigEdit] = useState(false);
   const [isLoadingMedication, setIsLoadingMedication] = useState(false);
 
-  // Brand name to generic conversion function
+  // Brand name to generic conversion function (moved outside useMemo to prevent initialization issues)
   const findGenericFromBrandName = useCallback((brandName: string): string | null => {
     const lowerBrand = brandName.toLowerCase();
     
@@ -604,7 +604,17 @@ export function FastMedicationIntelligence({
     }
     
     // Priority 2: Brand name lookup (convert brand to generic)
-    const genericFromBrand = findGenericFromBrandName(normalizedName);
+    const lowerBrand = normalizedName.toLowerCase();
+    let genericFromBrand = null;
+    
+    // Search through all medications to find matching brand names
+    for (const [genericName, data] of Object.entries(MEDICATION_DATABASE)) {
+      if (data.brandNames.some(brand => brand.toLowerCase() === lowerBrand)) {
+        genericFromBrand = genericName;
+        break;
+      }
+    }
+    
     if (genericFromBrand && MEDICATION_DATABASE[genericFromBrand]) {
       return MEDICATION_DATABASE[genericFromBrand];
     }
@@ -617,7 +627,7 @@ export function FastMedicationIntelligence({
     
     // Return null if not found - triggers progressive loading
     return null;
-  }, [medicationName, findGenericFromBrandName]);
+  }, [medicationName]);
 
   // Progressive enhancement with background loading
   useEffect(() => {
