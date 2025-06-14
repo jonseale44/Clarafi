@@ -1,9 +1,13 @@
 /**
  * Medication Intelligence Service
  * 
- * Provides intelligent medication suggestions, validations, and automatic updates
- * Based on real-world medication databases and clinical decision support
+ * Hybrid medication intelligence system:
+ * 1. Fast local lookup from 500-medication formulary database
+ * 2. AI fallback for comprehensive coverage
+ * 3. Intelligent caching and learning
  */
+
+import { medicationFormularyService, type FormularyMedication } from './medication-formulary-service.js';
 
 export interface MedicationIntelligence {
   // Standard strengths available for this medication (unified naming)
