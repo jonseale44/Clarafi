@@ -1839,9 +1839,9 @@ Return a JSON object with arrays for each order type found:
 {
   "medications": [
     {
-      "medication_name": "string",
-      "dosage": "string", 
-      "sig": "string",
+      "medication_name": "PROPER CASE medication name (e.g., Aspirin, Lisinopril, Hydrochlorothiazide)",
+      "dosage": "strength only (e.g., 10 mg, 25 mg, 81 mg)", 
+      "sig": "standardized patient instructions using tablet/capsule count, NOT strength amount",
       "quantity": number,
       "refills": number,
       "form": "string",
@@ -1875,6 +1875,18 @@ Return a JSON object with arrays for each order type found:
     }
   ]
 }
+
+CRITICAL MEDICATION RULES:
+- ALWAYS use proper case medication names (Aspirin, Lisinopril, Hydrochlorothiazide, NOT aspirin, lisinopril, hctz)
+- ALWAYS generate sig instructions based on dosage form count, NOT strength amount
+- Examples of CORRECT sig instructions:
+  * "Take 1 tablet by mouth once daily" (NOT "Take 81 mg by mouth once daily")
+  * "Take 2 capsules by mouth twice daily" (NOT "Take 40 mg by mouth twice daily")
+  * "Apply 1 patch topically once daily" (NOT "Apply 25 mg topically once daily")
+- Always expand common abbreviations to full generic names:
+  * HCTZ → Hydrochlorothiazide
+  * ASA → Aspirin
+  * APAP → Acetaminophen
 
 Instructions:
 - Extract ALL orders mentioned, even if there are multiple of the same type
