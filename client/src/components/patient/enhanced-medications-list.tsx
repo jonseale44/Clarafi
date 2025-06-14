@@ -28,6 +28,7 @@ import {
   Shield,
   Activity,
   FileText,
+  Edit,
   Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -496,11 +497,13 @@ interface MedicationCardProps {
   isExpanded: boolean;
   onToggleExpanded: () => void;
   onDiscontinue?: (reason: string) => void;
+  onEdit?: (medicationData: any) => void;
 }
 
-function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinue }: MedicationCardProps) {
+function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinue, onEdit }: MedicationCardProps) {
   const [discontinueReason, setDiscontinueReason] = useState('');
   const [showDiscontinueForm, setShowDiscontinueForm] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -675,18 +678,77 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
               </div>
             )}
 
-            {/* Actions */}
-            {onDiscontinue && medication.status === 'active' && (
-              <div className="flex items-center gap-2">
-                {!showDiscontinueForm ? (
+            {/* Edit Form */}
+            {isEditMode && (
+              <div className="mt-4 p-4 border border-blue-200 rounded-lg bg-blue-50/50">
+                <h4 className="font-medium mb-3 text-blue-800">Edit Medication</h4>
+                <FastMedicationIntelligence
+                  medicationName={medication.medicationName}
+                  initialStrength={medication.strength || medication.dosage || ''}
+                  initialForm={medication.dosageForm || medication.form || ''}
+                  initialRoute={medication.route || ''}
+                  initialSig={medication.sig || ''}
+                  initialQuantity={medication.quantity || 30}
+                  initialRefills={medication.refillsRemaining || 2}
+                  initialDaysSupply={medication.daysSupply || 90}
+                  onChange={(updates) => {
+                    // Handle medication updates here
+                    console.log('Medication updates:', updates);
+                  }}
+                />
+                <div className="flex justify-end gap-2 mt-4">
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setShowDiscontinueForm(true)}
+                    onClick={() => setIsEditMode(false)}
                   >
-                    Discontinue
+                    Cancel
                   </Button>
-                ) : (
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      // Handle save here
+                      if (onEdit) {
+                        onEdit({
+                          id: medication.id,
+                          // Include updated medication data
+                        });
+                      }
+                      setIsEditMode(false);
+                    }}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            {(onEdit || onDiscontinue) && (medication.status === 'active' || medication.status === 'pending') && (
+              <div className="flex items-center gap-2">
+                {!showDiscontinueForm && !isEditMode ? (
+                  <div className="flex items-center gap-2">
+                    {onEdit && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsEditMode(true)}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                    {onDiscontinue && medication.status === 'active' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowDiscontinueForm(true)}
+                      >
+                        Discontinue
+                      </Button>
+                    )}
+                  </div>
+                ) : showDiscontinueForm ? (
                   <div className="flex items-center gap-2 w-full">
                     <Input
                       placeholder="Reason for discontinuation"
@@ -710,6 +772,16 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                       }}
                     >
                       Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsEditMode(false)}
+                    >
+                      Cancel Edit
                     </Button>
                   </div>
                 )}
