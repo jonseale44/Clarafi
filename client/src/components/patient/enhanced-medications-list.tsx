@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { FastMedicationIntelligence } from './fast-medication-intelligence';
 
 interface Medication {
   id: number;
@@ -91,6 +92,139 @@ interface EnhancedMedicationsListProps {
   readOnly?: boolean;
 }
 
+// Intelligent Add Medication Form Component (defined first for proper scope)
+interface IntelligentAddMedicationFormProps {
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}
+
+function IntelligentAddMedicationForm({ onSubmit, onCancel, isLoading }: IntelligentAddMedicationFormProps) {
+  const [medicationName, setMedicationName] = useState('');
+  const [clinicalIndication, setClinicalIndication] = useState('');
+  const [formData, setFormData] = useState({
+    dosage: '',
+    form: '',
+    routeOfAdministration: '',
+    sig: '',
+    quantity: 30,
+    refills: 2,
+    daysSupply: 90,
+  });
+
+  const handleIntelligentUpdate = (updates: any) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!medicationName.trim()) return;
+
+    // Submit with enhanced medication format
+    onSubmit({
+      medicationName: medicationName.trim(),
+      dosage: formData.dosage,
+      frequency: extractFrequencyFromSig(formData.sig),
+      route: formData.routeOfAdministration,
+      dosageForm: formData.form,
+      quantity: formData.quantity,
+      daysSupply: formData.daysSupply,
+      refills: formData.refills,
+      sig: formData.sig,
+      clinicalIndication: clinicalIndication.trim() || null,
+      startDate: new Date().toISOString().split('T')[0],
+      status: 'active',
+    });
+  };
+
+  // Extract frequency from sig for backwards compatibility
+  const extractFrequencyFromSig = (sig: string): string => {
+    if (sig.includes('once daily') || sig.includes('daily')) return 'once daily';
+    if (sig.includes('twice daily') || sig.includes('twice a day')) return 'twice daily';
+    if (sig.includes('three times daily') || sig.includes('three times a day')) return 'three times daily';
+    if (sig.includes('four times daily') || sig.includes('four times a day')) return 'four times daily';
+    if (sig.includes('every 6 hours')) return 'every 6 hours';
+    if (sig.includes('every 8 hours')) return 'every 8 hours';
+    if (sig.includes('every 12 hours')) return 'every 12 hours';
+    if (sig.includes('as needed')) return 'as needed';
+    return 'once daily'; // default
+  };
+
+  return (
+    <Card className="border-blue-200 dark:border-blue-800">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Zap className="h-4 w-4 text-blue-600" />
+          Add New Medication (AI-Powered)
+        </CardTitle>
+        <p className="text-sm text-gray-600">
+          Enter medication name to activate intelligent dosing with preloaded data and auto-generated instructions
+        </p>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Medication Name Input */}
+          <div>
+            <Label htmlFor="medicationName">Medication Name *</Label>
+            <Input
+              id="medicationName"
+              value={medicationName}
+              onChange={(e) => setMedicationName(e.target.value)}
+              placeholder="e.g., Lisinopril, Hydrochlorothiazide, Metformin"
+              required
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Enter generic name only - intelligent dosing will activate automatically
+            </div>
+          </div>
+
+          {/* Fast Medication Intelligence - Only shows when medication name is entered */}
+          {medicationName.trim() && (
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/50">
+              <FastMedicationIntelligence
+                medicationName={medicationName}
+                initialStrength={formData.dosage}
+                initialForm={formData.form}
+                initialRoute={formData.routeOfAdministration}
+                initialSig={formData.sig}
+                initialQuantity={formData.quantity}
+                initialRefills={formData.refills}
+                initialDaysSupply={formData.daysSupply}
+                onChange={handleIntelligentUpdate}
+              />
+            </div>
+          )}
+
+          {/* Clinical Indication */}
+          <div>
+            <Label htmlFor="clinicalIndication">Clinical Indication</Label>
+            <Input
+              id="clinicalIndication"
+              value={clinicalIndication}
+              onChange={(e) => setClinicalIndication(e.target.value)}
+              placeholder="e.g., Hypertension, Type 2 Diabetes"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isLoading || !medicationName.trim() || !formData.dosage}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? 'Adding...' : 'Add Medication'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function EnhancedMedicationsList({ patientId, readOnly = false }: EnhancedMedicationsListProps) {
   const [isAddingMedication, setIsAddingMedication] = useState(false);
   const [expandedMedications, setExpandedMedications] = useState<Set<number>>(new Set());
@@ -98,82 +232,96 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const { toast } = useToast();
 
-  // Fetch enhanced medications
-  const { data: medicationData, isLoading, error } = useQuery<MedicationResponse>({
-    queryKey: [`/api/patients/${patientId}/medications-enhanced`],
-    enabled: !!patientId,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 0, // Always refetch to ensure we get latest medication data
+  // Fetch medications with enhanced data
+  const { data: medicationData, isLoading, error } = useQuery({
+    queryKey: ['enhanced-medications', patientId],
+    queryFn: () => apiRequest(`/api/patients/${patientId}/medications-enhanced`)
   });
 
+  // Create medication mutation
   const createMedication = useMutation({
-    mutationFn: async (medicationData: any) => {
-      return await apiRequest(`/api/patients/${patientId}/medications-enhanced`, 'POST', medicationData);
-    },
+    mutationFn: (data: any) => 
+      apiRequest(`/api/patients/${patientId}/medications-enhanced`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-medications', patientId] });
       setIsAddingMedication(false);
       toast({
-        title: "Medication added",
-        description: "The medication has been added successfully.",
+        title: "Medication Added",
+        description: "New medication has been added to the patient's medication list.",
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Error adding medication",
-        description: error.message || "Failed to add medication",
+        title: "Error",
+        description: "Failed to add medication. Please try again.",
         variant: "destructive",
       });
     },
   });
 
+  // Discontinue medication mutation
   const discontinueMedication = useMutation({
-    mutationFn: async ({ medicationId, reason }: { medicationId: number; reason: string }) => {
-      return await apiRequest(`/api/medications/${medicationId}`, 'DELETE', { reasonForDiscontinuation: reason });
-    },
+    mutationFn: ({ medicationId, reason }: { medicationId: number; reason: string }) =>
+      apiRequest(`/api/medications/${medicationId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          status: 'discontinued',
+          discontinuedDate: new Date().toISOString().split('T')[0],
+          discontinueReason: reason
+        })
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-medications', patientId] });
       toast({
-        title: "Medication discontinued",
-        description: "The medication has been discontinued successfully.",
+        title: "Medication Discontinued",
+        description: "Medication has been discontinued.",
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Error discontinuing medication",
-        description: error.message || "Failed to discontinue medication",
+        title: "Error", 
+        description: "Failed to discontinue medication. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const toggleMedicationExpanded = (medicationId: number) => {
-    const newExpanded = new Set(expandedMedications);
-    if (newExpanded.has(medicationId)) {
-      newExpanded.delete(medicationId);
-    } else {
-      newExpanded.add(medicationId);
-    }
-    setExpandedMedications(newExpanded);
-  };
-
-  const groupMedicationsByProblem = (medications: Medication[]) => {
-    if (groupingMode === 'alphabetical') {
-      return { 'All Medications': medications.sort((a, b) => a.medicationName.localeCompare(b.medicationName)) };
-    }
-
-    const grouped = medications.reduce((acc, medication) => {
-      const problem = medication.problemMappings?.[0]?.indication || medication.clinicalIndication || 'General Medications';
-      if (!acc[problem]) {
-        acc[problem] = [];
+    setExpandedMedications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(medicationId)) {
+        newSet.delete(medicationId);
+      } else {
+        newSet.add(medicationId);
       }
-      acc[problem].push(medication);
-      return acc;
-    }, {} as Record<string, Medication[]>);
-
-    return grouped;
+      return newSet;
+    });
   };
+
+  // Filter medications by active status tab
+  const currentMedications = medicationData?.groupedByStatus?.[
+    activeStatusTab === 'current' ? 'active' : activeStatusTab
+  ] || [];
+
+  // Group medications based on grouping mode
+  const groupedMedications = currentMedications.reduce((groups: Record<string, Medication[]>, medication) => {
+    let groupKey = 'Ungrouped';
+    
+    if (groupingMode === 'medical_problem') {
+      groupKey = medication.clinicalIndication || 'No indication specified';
+    } else if (groupingMode === 'alphabetical') {
+      groupKey = medication.medicationName.charAt(0).toUpperCase();
+    }
+    
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+    }
+    groups[groupKey].push(medication);
+    return groups;
+  }, {});
 
   if (isLoading) {
     return (
@@ -185,10 +333,8 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-            ))}
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">Loading medications...</div>
           </div>
         </CardContent>
       </Card>
@@ -216,44 +362,20 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
     );
   }
 
-  // Combine active and pending medications for "current" tab
-  const getCurrentMedications = () => {
-    if (activeStatusTab === 'current') {
-      const active = medicationData?.groupedByStatus.active || [];
-      const pending = medicationData?.groupedByStatus.pending || [];
-      return [...active, ...pending];
-    }
-    if (activeStatusTab === 'discontinued') {
-      return medicationData?.groupedByStatus.discontinued || [];
-    }
-    if (activeStatusTab === 'held') {
-      return medicationData?.groupedByStatus.held || [];
-    }
-    if (activeStatusTab === 'historical') {
-      return medicationData?.groupedByStatus.historical || [];
-    }
-    return [];
-  };
-  
-  const currentMedications = getCurrentMedications();
-  const groupedMedications = groupMedicationsByProblem(currentMedications);
-
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="space-y-3">
+      <CardHeader>
+        <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Pill className="h-5 w-5" />
             Medications
-            {medicationData?.summary && (
-              <Badge variant="outline" className="ml-2">
-                {(medicationData.summary.active || 0) + (medicationData.summary.pending || 0)} current
-              </Badge>
-            )}
+            <Badge variant="outline" className="ml-2">
+              {medicationData?.summary.total || 0}
+            </Badge>
           </CardTitle>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Select value={groupingMode} onValueChange={(value: any) => setGroupingMode(value)}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -351,7 +473,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
 
         {/* Add Medication Form */}
         {isAddingMedication && (
-          <AddMedicationForm
+          <IntelligentAddMedicationForm
             onSubmit={(medicationData) => createMedication.mutate(medicationData)}
             onCancel={() => setIsAddingMedication(false)}
             isLoading={createMedication.isPending}
@@ -590,164 +712,5 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
         </CollapsibleContent>
       </Card>
     </Collapsible>
-  );
-}
-
-interface AddMedicationFormProps {
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-}
-
-function AddMedicationForm({ onSubmit, onCancel, isLoading }: AddMedicationFormProps) {
-  const [formData, setFormData] = useState({
-    medicationName: '',
-    genericName: '',
-    brandName: '',
-    dosage: '',
-    frequency: '',
-    route: 'oral',
-    quantity: '',
-    daysSupply: '',
-    refills: '',
-    sig: '',
-    clinicalIndication: '',
-    startDate: new Date().toISOString().split('T')[0],
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      quantity: formData.quantity ? parseInt(formData.quantity) : null,
-      daysSupply: formData.daysSupply ? parseInt(formData.daysSupply) : null,
-      refills: formData.refills ? parseInt(formData.refills) : 0,
-    });
-  };
-
-  return (
-    <Card className="border-blue-200 dark:border-blue-800">
-      <CardHeader>
-        <CardTitle className="text-base">Add New Medication</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="medicationName">Medication Name *</Label>
-              <Input
-                id="medicationName"
-                value={formData.medicationName}
-                onChange={(e) => setFormData({ ...formData, medicationName: e.target.value })}
-                placeholder="e.g., Lisinopril"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="dosage">Dosage/Strength *</Label>
-              <Input
-                id="dosage"
-                value={formData.dosage}
-                onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                placeholder="e.g., 10mg"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="frequency">Frequency *</Label>
-              <Input
-                id="frequency"
-                value={formData.frequency}
-                onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                placeholder="e.g., once daily"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="route">Route</Label>
-              <Select value={formData.route} onValueChange={(value) => setFormData({ ...formData, route: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="oral">Oral</SelectItem>
-                  <SelectItem value="topical">Topical</SelectItem>
-                  <SelectItem value="injection">Injection</SelectItem>
-                  <SelectItem value="inhalation">Inhalation</SelectItem>
-                  <SelectItem value="ophthalmic">Ophthalmic</SelectItem>
-                  <SelectItem value="otic">Otic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                placeholder="30"
-              />
-            </div>
-            <div>
-              <Label htmlFor="daysSupply">Days Supply</Label>
-              <Input
-                id="daysSupply"
-                type="number"
-                value={formData.daysSupply}
-                onChange={(e) => setFormData({ ...formData, daysSupply: e.target.value })}
-                placeholder="30"
-              />
-            </div>
-            <div>
-              <Label htmlFor="refills">Refills</Label>
-              <Input
-                id="refills"
-                type="number"
-                value={formData.refills}
-                onChange={(e) => setFormData({ ...formData, refills: e.target.value })}
-                placeholder="2"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="sig">Patient Instructions</Label>
-            <Textarea
-              id="sig"
-              value={formData.sig}
-              onChange={(e) => setFormData({ ...formData, sig: e.target.value })}
-              placeholder="Take one tablet by mouth once daily"
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="clinicalIndication">Clinical Indication</Label>
-            <Input
-              id="clinicalIndication"
-              value={formData.clinicalIndication}
-              onChange={(e) => setFormData({ ...formData, clinicalIndication: e.target.value })}
-              placeholder="e.g., Hypertension"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Adding...' : 'Add Medication'}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
   );
 }
