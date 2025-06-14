@@ -70,7 +70,13 @@ export function FastMedicationIntelligence({
         console.info(`No intelligence data available for ${medicationName}:`, 'API responded with 404');
         return null;
       }
-      return await response.json();
+      const result = await response.json();
+      
+      // Extract data from standardized API response format
+      const data = result.success ? result.data : null;
+      console.log('🧠 [FastMedicationIntelligence] API Response:', result);
+      console.log('🧠 [FastMedicationIntelligence] Extracted Data:', data);
+      return data;
     },
     enabled: !!medicationName.trim(),
     staleTime: 1000 * 60 * 15, // Cache for 15 minutes
