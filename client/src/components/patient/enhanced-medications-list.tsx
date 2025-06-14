@@ -268,6 +268,28 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
     },
   });
 
+  // Update medication mutation
+  const updateMedication = useMutation({
+    mutationFn: async (medicationData: any) => {
+      const response = await apiRequest('PUT', `/api/medications/${medicationData.id}`, medicationData);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enhanced-medications', patientId] });
+      toast({
+        title: "Medication Updated",
+        description: "Medication has been successfully updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update medication. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Discontinue medication mutation
   const discontinueMedication = useMutation({
     mutationFn: async ({ medicationId, reason }: { medicationId: number; reason: string }) => {
@@ -466,6 +488,9 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
                           onDiscontinue={readOnly ? undefined : (reason: string) => 
                             discontinueMedication.mutate({ medicationId: medication.id, reason })
                           }
+                          onEdit={readOnly ? undefined : (medicationData) => 
+                            updateMedication.mutate(medicationData)
+                          }
                         />
                       ))}
                     </div>
@@ -504,6 +529,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
   const [discontinueReason, setDiscontinueReason] = useState('');
   const [showDiscontinueForm, setShowDiscontinueForm] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>(null);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -685,15 +711,15 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                 <FastMedicationIntelligence
                   medicationName={medication.medicationName}
                   initialStrength={medication.strength || medication.dosage || ''}
-                  initialForm={medication.dosageForm || medication.form || ''}
+                  initialForm={medication.dosageForm || ''}
                   initialRoute={medication.route || ''}
                   initialSig={medication.sig || ''}
                   initialQuantity={medication.quantity || 30}
                   initialRefills={medication.refillsRemaining || 2}
                   initialDaysSupply={medication.daysSupply || 90}
                   onChange={(updates) => {
-                    // Handle medication updates here
-                    console.log('Medication updates:', updates);
+                    // Store updates for saving
+                    setEditFormData(updates);
                   }}
                 />
                 <div className="flex justify-end gap-2 mt-4">
@@ -707,14 +733,14 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                   <Button 
                     size="sm"
                     onClick={() => {
-                      // Handle save here
-                      if (onEdit) {
+                      if (onEdit && editFormData) {
                         onEdit({
                           id: medication.id,
-                          // Include updated medication data
+                          ...editFormData
                         });
                       }
                       setIsEditMode(false);
+                      setEditFormData(null);
                     }}
                   >
                     Save Changes
