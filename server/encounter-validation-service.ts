@@ -151,6 +151,23 @@ export class EncounterValidationService {
       .where(eq(orders.id, orderId))
       .returning();
 
+    // For medication orders, activate pending medications
+    if (signedOrder.orderType === "medication" && signedOrder.encounterId) {
+      console.log(`💊 [ValidationService] Activating medication for signed order ${orderId}`);
+      try {
+        const { medicationDelta } = await import("./medication-delta-service.js");
+        await medicationDelta.signMedicationOrders(
+          signedOrder.encounterId,
+          [orderId],
+          userId
+        );
+        console.log(`✅ [ValidationService] Successfully activated medication for order ${orderId}`);
+      } catch (medicationError) {
+        console.error(`❌ [ValidationService] Failed to activate medication for order ${orderId}:`, medicationError);
+        // Continue - order is still signed even if medication activation fails
+      }
+    }
+
     return signedOrder;
   }
 }
