@@ -235,16 +235,18 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
   // Fetch medications with enhanced data
   const { data: medicationData, isLoading, error } = useQuery({
     queryKey: ['enhanced-medications', patientId],
-    queryFn: () => apiRequest(`/api/patients/${patientId}/medications-enhanced`)
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/patients/${patientId}/medications-enhanced`);
+      return await response.json();
+    }
   });
 
   // Create medication mutation
   const createMedication = useMutation({
-    mutationFn: (data: any) => 
-      apiRequest(`/api/patients/${patientId}/medications-enhanced`, {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', `/api/patients/${patientId}/medications-enhanced`, data);
+      return await response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['enhanced-medications', patientId] });
       setIsAddingMedication(false);
