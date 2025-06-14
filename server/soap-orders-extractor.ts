@@ -213,6 +213,20 @@ export class SOAPOrdersExtractor {
         `[SOAPExtractor] Extracted ${orderInserts.length} total orders: ${orderInserts.filter((o) => o.orderType === "medication").length} medications, ${orderInserts.filter((o) => o.orderType === "lab").length} labs, ${orderInserts.filter((o) => o.orderType === "imaging").length} imaging, ${orderInserts.filter((o) => o.orderType === "referral").length} referrals`,
       );
 
+      // Check if we have medication orders that need medication processing
+      const medicationOrders = orderInserts.filter((o) => o.orderType === "medication");
+      if (medicationOrders.length > 0) {
+        console.log(`💊 [SOAPExtractor] Triggering medication processing for ${medicationOrders.length} medication orders`);
+        try {
+          const { medicationDelta } = await import("./medication-delta-service.js");
+          await medicationDelta.processOrderDelta(patientId, encounterId, null);
+          console.log(`✅ [SOAPExtractor] Medication processing completed for voice-extracted orders`);
+        } catch (medicationError) {
+          console.error(`❌ [SOAPExtractor] Medication processing failed for voice-extracted orders:`, medicationError);
+          // Continue - don't fail order extraction if medication processing fails
+        }
+      }
+
       return orderInserts;
     } catch (error: any) {
       console.error("[SOAPExtractor] Error extracting orders:", error);
