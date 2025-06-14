@@ -9,6 +9,8 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -578,7 +580,7 @@ export function FastMedicationIntelligence({
   const [refills, setRefills] = useState(initialRefills);
   const [daysSupply, setDaysSupply] = useState(initialDaysSupply);
   const [manualSigEdit, setManualSigEdit] = useState(false);
-  const [isLoadingMedication, setIsLoadingMedication] = useState(false);
+  // Removed - using React Query's medicationDataLoading instead
 
   // Brand name to generic conversion function (moved outside useMemo to prevent initialization issues)
   const findGenericFromBrandName = useCallback((brandName: string): string | null => {
@@ -594,88 +596,26 @@ export function FastMedicationIntelligence({
     return null;
   }, []);
 
-  // Smart medication data retrieval with brand name recognition
-  const medicationData = useMemo(() => {
-    const normalizedName = medicationName.toLowerCase().trim();
-    
-    // Priority 1: Preloaded database (instant access)
-    if (MEDICATION_DATABASE[normalizedName]) {
-      return MEDICATION_DATABASE[normalizedName];
-    }
-    
-    // Priority 2: Brand name lookup (convert brand to generic)
-    const lowerBrand = normalizedName.toLowerCase();
-    let genericFromBrand = null;
-    
-    // Search through all medications to find matching brand names
-    for (const [genericName, data] of Object.entries(MEDICATION_DATABASE)) {
-      if (data.brandNames.some(brand => brand.toLowerCase() === lowerBrand)) {
-        genericFromBrand = genericName;
-        break;
-      }
-    }
-    
-    if (genericFromBrand && MEDICATION_DATABASE[genericFromBrand]) {
-      return MEDICATION_DATABASE[genericFromBrand];
-    }
-    
-    // Priority 3: Smart cache (memory + localStorage)
-    const cachedData = medicationCache.get(normalizedName);
-    if (cachedData) {
-      return cachedData;
-    }
-    
-    // Return null if not found - triggers progressive loading
-    return null;
-  }, [medicationName]);
-
-  // Progressive enhancement with background loading
-  useEffect(() => {
-    const normalizedName = medicationName.toLowerCase().trim();
-    
-    if (medicationName && !medicationData && !medicationCache.has(normalizedName)) {
-      setIsLoadingMedication(true);
+  // Get medication intelligence data from unified API
+  const { data: medicationData, isLoading: medicationDataLoading } = useQuery({
+    queryKey: ['medication-intelligence', medicationName],
+    queryFn: async () => {
+      if (!medicationName.trim()) return null;
       
-      // Progressive API call with intelligent fallback
-      fetch(`/api/medications/${encodeURIComponent(medicationName)}/intelligence`)
-        .then(res => {
-          if (res.ok) {
-            return res.json();
-          }
-          throw new Error(`API responded with ${res.status}`);
-        })
-        .then(data => {
-          if (data && Object.keys(data).length > 0) {
-            // Cache successful API responses
-            medicationCache.set(normalizedName, data);
-            setIsLoadingMedication(false);
-          } else {
-            // Handle empty responses gracefully
-            setIsLoadingMedication(false);
-          }
-        })
-        .catch(error => {
-          console.info(`No intelligence data available for ${medicationName}:`, error.message);
-          setIsLoadingMedication(false);
-        });
-    }
-  }, [medicationName, medicationData]);
-
-  // Background cleanup of expired cache (runs once per session)
-  useEffect(() => {
-    const cleanup = () => {
-      try {
-        medicationCache.cleanupExpired();
-      } catch (error) {
-        console.warn('Background cache cleanup failed:', error);
+      const response = await apiRequest('GET', `/api/medication-intelligence/${encodeURIComponent(medicationName.toLowerCase().trim())}`);
+      if (response.status === 404) {
+        console.info(`No intelligence data available for ${medicationName}:`, 'API responded with 404');
+        return null;
       }
-    };
-    
-    // Run cleanup after component mounts (low priority)
-    const timeoutId = setTimeout(cleanup, 2000);
-    
-    return () => clearTimeout(timeoutId);
-  }, []);
+      return await response.json();
+    },
+    enabled: !!medicationName.trim(),
+    staleTime: 1000 * 60 * 15, // Cache for 15 minutes
+  });
+
+  // No longer needed - replaced by React Query unified API
+
+  // No longer needed - React Query handles caching
 
   // Auto-generate sig when components change
   useEffect(() => {
