@@ -580,6 +580,20 @@ export function FastMedicationIntelligence({
   const [manualSigEdit, setManualSigEdit] = useState(false);
   const [isLoadingMedication, setIsLoadingMedication] = useState(false);
 
+  // Brand name to generic conversion function
+  const findGenericFromBrandName = useCallback((brandName: string): string | null => {
+    const lowerBrand = brandName.toLowerCase();
+    
+    // Search through all medications to find matching brand names
+    for (const [genericName, data] of Object.entries(MEDICATION_DATABASE)) {
+      if (data.brandNames.some(brand => brand.toLowerCase() === lowerBrand)) {
+        return genericName;
+      }
+    }
+    
+    return null;
+  }, []);
+
   // Smart medication data retrieval with brand name recognition
   const medicationData = useMemo(() => {
     const normalizedName = medicationName.toLowerCase().trim();
@@ -603,21 +617,7 @@ export function FastMedicationIntelligence({
     
     // Return null if not found - triggers progressive loading
     return null;
-  }, [medicationName]);
-
-  // Brand name to generic conversion function
-  const findGenericFromBrandName = useCallback((brandName: string): string | null => {
-    const lowerBrand = brandName.toLowerCase();
-    
-    // Search through all medications to find matching brand names
-    for (const [genericName, data] of Object.entries(MEDICATION_DATABASE)) {
-      if (data.brandNames.some(brand => brand.toLowerCase() === lowerBrand)) {
-        return genericName;
-      }
-    }
-    
-    return null;
-  }, []);
+  }, [medicationName, findGenericFromBrandName]);
 
   // Progressive enhancement with background loading
   useEffect(() => {
@@ -846,7 +846,7 @@ export function FastMedicationIntelligence({
                 <SelectValue placeholder="Select strength" />
               </SelectTrigger>
               <SelectContent>
-                {availableStrengths.map((str) => (
+                {availableStrengths.map((str: string) => (
                   <SelectItem key={str} value={str}>
                     {str}
                   </SelectItem>
@@ -875,7 +875,7 @@ export function FastMedicationIntelligence({
               <SelectValue placeholder="Select form" />
             </SelectTrigger>
             <SelectContent>
-              {availableForms.map((formOption) => (
+              {availableForms.map((formOption: string) => (
                 <SelectItem key={formOption} value={formOption}>
                   {formOption.charAt(0).toUpperCase() + formOption.slice(1)}
                 </SelectItem>
