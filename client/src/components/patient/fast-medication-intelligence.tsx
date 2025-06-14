@@ -749,13 +749,13 @@ export function FastMedicationIntelligence({
     const warnings: string[] = [];
     
     if (medicationData) {
-      if (strength && !medicationData.standardStrengths.includes(strength)) {
+      if (strength && medicationData.standardStrengths && !medicationData.standardStrengths.includes(strength)) {
         warnings.push(`${strength} is not a standard strength`);
       }
-      if (form && !medicationData.availableForms.includes(form)) {
+      if (form && medicationData.availableForms && !medicationData.availableForms.includes(form)) {
         warnings.push(`${form} is not available for ${medicationName}`);
       }
-      if (form && route && medicationData.formRoutes[form] && !medicationData.formRoutes[form].includes(route)) {
+      if (form && route && medicationData.formRoutes && medicationData.formRoutes[form] && !medicationData.formRoutes[form].includes(route)) {
         warnings.push(`${route} route not appropriate for ${form}`);
       }
     }

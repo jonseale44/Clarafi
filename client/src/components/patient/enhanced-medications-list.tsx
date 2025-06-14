@@ -241,8 +241,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
     },
     refetchInterval: 2000, // Poll every 2 seconds for order changes
     refetchIntervalInBackground: true,
-    staleTime: 0, // Always consider data stale for fresh updates
-    cacheTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
+    staleTime: 0 // Always consider data stale for fresh updates
   });
 
   // Create medication mutation
