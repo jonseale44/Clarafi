@@ -820,44 +820,6 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
         />
       )}
       
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="quantity">Quantity *</Label>
-          <Input
-            id="quantity"
-            type="number"
-            value={order.quantity || ""}
-            onChange={(e) => onChange("quantity", parseInt(e.target.value) || 0)}
-            placeholder="30"
-            min="1"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="refills">Refills</Label>
-          <Input
-            id="refills"
-            type="number"
-            value={order.refills || ""}
-            onChange={(e) => onChange("refills", parseInt(e.target.value) || 0)}
-            placeholder="0"
-            min="0"
-            max="11"
-          />
-        </div>
-        <div>
-          <Label htmlFor="daysSupply">Days Supply</Label>
-          <Input
-            id="daysSupply"
-            type="number"
-            value={order.daysSupply || ""}
-            onChange={(e) => onChange("daysSupply", parseInt(e.target.value) || 0)}
-            placeholder="30"
-            min="1"
-          />
-        </div>
-      </div>
-      
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="diagnosisCode">Diagnosis Code (ICD-10)</Label>
