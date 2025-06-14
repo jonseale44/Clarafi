@@ -81,6 +81,49 @@ export class MedicationStandardizationService {
     console.log(`🔧 [MedStandardization] Standardized result:`, result);
     return result;
   }
+
+  /**
+   * Fix AI-generated sig instructions to use dosage form count instead of strength
+   * Converts "Take 25 mg by mouth once daily" to "Take 1 tablet by mouth once daily"
+   */
+  static standardizeSigInstruction(rawSig: string, dosageForm: string, strength: string): string {
+    if (!rawSig || !dosageForm) return rawSig;
+    
+    console.log(`🔧 [SigStandardization] Input: "${rawSig}", form: "${dosageForm}", strength: "${strength}"`);
+    
+    // Pattern to match strength-based sig instructions
+    const strengthPattern = /take\s+(\d+(?:\.\d+)?)\s*(mg|mcg|g|mL|units?|IU|%)\s+by\s+mouth/i;
+    const match = rawSig.match(strengthPattern);
+    
+    if (match) {
+      const mentionedStrength = match[1] + ' ' + match[2];
+      
+      // Check if mentioned strength matches medication strength
+      if (strength.toLowerCase().includes(mentionedStrength.toLowerCase())) {
+        // Replace with "1 [dosage form]" for standard single-unit dosing
+        const standardizedSig = rawSig.replace(strengthPattern, `Take 1 ${dosageForm} by mouth`);
+        console.log(`🔧 [SigStandardization] Converted: "${rawSig}" → "${standardizedSig}"`);
+        return standardizedSig;
+      }
+    }
+    
+    // Handle other routes (topical, etc.)
+    const topicalPattern = /apply\s+(\d+(?:\.\d+)?)\s*(mg|mcg|g|mL|units?|IU|%)\s+topically/i;
+    const topicalMatch = rawSig.match(topicalPattern);
+    
+    if (topicalMatch) {
+      const mentionedStrength = topicalMatch[1] + ' ' + topicalMatch[2];
+      
+      if (strength.toLowerCase().includes(mentionedStrength.toLowerCase())) {
+        const standardizedSig = rawSig.replace(topicalPattern, `Apply 1 ${dosageForm} topically`);
+        console.log(`🔧 [SigStandardization] Converted topical: "${rawSig}" → "${standardizedSig}"`);
+        return standardizedSig;
+      }
+    }
+    
+    // Return original if no standardization needed
+    return rawSig;
+  }
   
   /**
    * Standardize medication name to proper case

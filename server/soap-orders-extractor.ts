@@ -100,6 +100,13 @@ export class SOAPOrdersExtractor {
           
           console.log(`[SOAPExtractor] Standardized medication:`, standardized);
           
+          // Fix AI-generated sig instructions to use dosage form count instead of strength
+          const standardizedSig = MedicationStandardizationService.standardizeSigInstruction(
+            med.sig,
+            standardized.dosageForm || med.form || 'tablet',
+            standardized.strength || med.dosage
+          );
+          
           const rawOrder = {
             patientId,
             encounterId,
@@ -108,7 +115,7 @@ export class SOAPOrdersExtractor {
             medicationName: standardized.medicationName || med.medication_name,
             dosage: standardized.strength || med.dosage,
             quantity: med.quantity,
-            sig: med.sig,
+            sig: standardizedSig,
             refills: med.refills,
             form: standardized.dosageForm || med.form,
             routeOfAdministration: standardized.route || med.route_of_administration,
@@ -262,10 +269,10 @@ Extract all medical orders and provide complete standardized parameters required
 {
   "medications": [
     {
-      "medication_name": "exact medication name",
-      "dosage": "strength (e.g., 10mg, 250mg)",
+      "medication_name": "PROPER CASE medication name (e.g., Lisinopril, Hydrochlorothiazide, Montelukast)",
+      "dosage": "strength only (e.g., 10 mg, 25 mg, 250 mg)",
       "quantity": number_of_units,
-      "sig": "complete patient instructions",
+      "sig": "standardized patient instructions using tablet/capsule count, NOT strength",
       "refills": number_of_refills,
       "form": "tablet/capsule/liquid/injection/cream/ointment/patch/inhaler/drops",
       "route_of_administration": "oral/topical/injection/inhalation/ophthalmic/otic/nasal/rectal/transdermal",
@@ -308,7 +315,16 @@ Extract all medical orders and provide complete standardized parameters required
 }
 
 CRITICAL EXTRACTION RULES:
-1. MEDICATIONS: Always include dosage form and route - these are required for pharmacy NDC lookup
+1. MEDICATIONS: 
+   - ALWAYS use proper case medication names (Lisinopril, NOT lisinopril)
+   - ALWAYS generate sig instructions based on dosage form count, NOT strength amount
+   - Examples of CORRECT sig instructions:
+     * "Take 1 tablet by mouth once daily" (NOT "Take 10 mg by mouth once daily")
+     * "Take 2 capsules by mouth twice daily" (NOT "Take 40 mg by mouth twice daily")
+     * "Apply 1 patch topically once daily" (NOT "Apply 25 mg topically once daily")
+     * "Take 1 tablet by mouth every 12 hours" (NOT "Take 500 mg by mouth every 12 hours")
+   - Always include dosage form and route - these are required for pharmacy NDC lookup
+   - Separate medication name from strength (e.g., "Hydrochlorothiazide" + "25 mg", NOT "HCTZ 25mg")
 2. LABS: MUST include LOINC codes for ALL tests - required for EMR integration and lab ordering systems
    - CBC = 58410-2
    - CMP/Comprehensive Metabolic Panel = 24323-8  
@@ -331,6 +347,16 @@ CRITICAL EXTRACTION RULES:
 8. PRIORITIES: Map clinical urgency to standard values (STAT, URGENT, ROUTINE)
 9. FORMS: Use standardized pharmaceutical forms for accurate dispensing
 10. ROUTES: Use standard administration routes for safety verification
+
+MEDICATION NAME STANDARDIZATION:
+- Always expand common abbreviations to full generic names:
+  * HCTZ → Hydrochlorothiazide
+  * ASA → Aspirin
+  * APAP → Acetaminophen
+  * ACE → Lisinopril (or specific ACE inhibitor mentioned)
+  * CCB → Amlodipine (or specific calcium channel blocker mentioned)
+  * PPI → Omeprazole (or specific proton pump inhibitor mentioned)
+  * ARB → Losartan (or specific angiotensin receptor blocker mentioned)
 
 DEFAULTS FOR MISSING INFO:
 - For medications: 
