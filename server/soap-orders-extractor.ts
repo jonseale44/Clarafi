@@ -219,7 +219,7 @@ export class SOAPOrdersExtractor {
         console.log(`💊 [SOAPExtractor] Triggering medication processing for ${medicationOrders.length} medication orders`);
         try {
           const { medicationDelta } = await import("./medication-delta-service.js");
-          await medicationDelta.processOrderDelta(patientId, encounterId, null);
+          await medicationDelta.processOrderDelta(patientId, encounterId, 1);
           console.log(`✅ [SOAPExtractor] Medication processing completed for voice-extracted orders`);
         } catch (medicationError) {
           console.error(`❌ [SOAPExtractor] Medication processing failed for voice-extracted orders:`, medicationError);

@@ -337,6 +337,20 @@ IMPORTANT INSTRUCTIONS:
               `⚡ [RealtimeSOAP] Saved ${mergedOrders.length} merged orders`,
             );
 
+            // Check if we have medication orders that need medication processing
+            const medicationOrders = mergedOrders.filter((o) => o.orderType === "medication");
+            if (medicationOrders.length > 0) {
+              console.log(`💊 [RealtimeSOAP] Triggering medication processing for ${medicationOrders.length} medication orders`);
+              try {
+                const { medicationDelta } = await import("./medication-delta-service.js");
+                await medicationDelta.processOrderDelta(patientId, parseInt(encounterId), 1);
+                console.log(`✅ [RealtimeSOAP] Medication processing completed for voice-extracted orders`);
+              } catch (medicationError) {
+                console.error(`❌ [RealtimeSOAP] Medication processing failed for voice-extracted orders:`, medicationError);
+                // Continue - don't fail order extraction if medication processing fails
+              }
+            }
+
             // Send merged orders to frontend
             const ordersData = JSON.stringify({
               type: "draft_orders",
