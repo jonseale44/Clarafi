@@ -167,21 +167,42 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       .returning();
 
     // If this is a medication order, activate the corresponding medication
+    console.log(`🔍 [ValidationSign] === INDIVIDUAL ORDER SIGNED ===`);
+    console.log(`🔍 [ValidationSign] Order ID: ${orderId}, Type: ${signedOrder.orderType}`);
+    console.log(`🔍 [ValidationSign] Encounter ID: ${signedOrder.encounterId}`);
+    console.log(`🔍 [ValidationSign] Condition check: orderType='${signedOrder.orderType}' && encounterId=${signedOrder.encounterId}`);
+    
     if (signedOrder.orderType === "medication" && signedOrder.encounterId) {
-      console.log(`💊 [OrderSign] Activating medication for signed order ${orderId}`);
+      console.log(`💊 [ValidationSign] ✅ CONDITION MET - Activating medication for signed order ${orderId}`);
       try {
         const { medicationDelta } = await import("./medication-delta-service.js");
+        
+        console.log(`💊 [ValidationSign] Calling signMedicationOrders with:`);
+        console.log(`💊 [ValidationSign] - Encounter: ${signedOrder.encounterId}`);
+        console.log(`💊 [ValidationSign] - Order IDs: [${orderId}]`);
+        console.log(`💊 [ValidationSign] - Provider: ${userId}`);
+        
         await medicationDelta.signMedicationOrders(
           signedOrder.encounterId,
           [orderId],
           userId
         );
-        console.log(`✅ [OrderSign] Medication activated for order ${orderId}`);
+        console.log(`✅ [ValidationSign] Successfully activated medication for order ${orderId}`);
       } catch (medicationError) {
-        console.error(`❌ [OrderSign] Failed to activate medication for order ${orderId}:`, medicationError);
+        console.error(`❌ [ValidationSign] Failed to activate medication for order ${orderId}:`, medicationError);
+        console.error(`❌ [ValidationSign] Error stack:`, (medicationError as Error).stack);
         // Continue with response - order is still signed
       }
+    } else {
+      console.log(`❌ [ValidationSign] CONDITION NOT MET - No medication activation`);
+      if (signedOrder.orderType !== "medication") {
+        console.log(`❌ [ValidationSign] - Reason: Order type is '${signedOrder.orderType}', not 'medication'`);
+      }
+      if (!signedOrder.encounterId) {
+        console.log(`❌ [ValidationSign] - Reason: No encounter ID present`);
+      }
     }
+    console.log(`🔍 [ValidationSign] === END INDIVIDUAL ORDER SIGNING ===`);
 
     res.json({
       success: true,
