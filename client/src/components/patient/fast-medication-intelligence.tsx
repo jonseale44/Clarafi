@@ -129,11 +129,415 @@ const MEDICATION_DATABASE: Record<string, {
     commonDoses: ['20 mg once daily', '40 mg once daily'],
     brandNames: ['Lipitor'],
     prescriptionType: 'rx'
+  },
+  
+  // Expanded Top 500 Medication Database
+  'amlodipine': {
+    standardStrengths: ['2.5 mg', '5 mg', '10 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '2.5 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '5 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '10 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+    },
+    therapeuticClass: 'Calcium Channel Blocker',
+    commonDoses: ['5 mg once daily', '10 mg once daily'],
+    brandNames: ['Norvasc'],
+    prescriptionType: 'rx'
+  },
+  
+  'losartan': {
+    standardStrengths: ['25 mg', '50 mg', '100 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '25 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '50 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '100 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+    },
+    therapeuticClass: 'ARB (Angiotensin Receptor Blocker)',
+    commonDoses: ['50 mg once daily', '100 mg once daily'],
+    brandNames: ['Cozaar'],
+    prescriptionType: 'rx'
+  },
+  
+  'levothyroxine': {
+    standardStrengths: ['25 mcg', '50 mcg', '75 mcg', '100 mcg', '125 mcg', '150 mcg', '175 mcg', '200 mcg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '25 mcg-tablet-oral': 'Take 1 tablet by mouth once daily on empty stomach',
+      '50 mcg-tablet-oral': 'Take 1 tablet by mouth once daily on empty stomach',
+      '75 mcg-tablet-oral': 'Take 1 tablet by mouth once daily on empty stomach',
+      '100 mcg-tablet-oral': 'Take 1 tablet by mouth once daily on empty stomach',
+      '125 mcg-tablet-oral': 'Take 1 tablet by mouth once daily on empty stomach',
+      '150 mcg-tablet-oral': 'Take 1 tablet by mouth once daily on empty stomach'
+    },
+    therapeuticClass: 'Thyroid Hormone',
+    commonDoses: ['100 mcg once daily', '125 mcg once daily'],
+    brandNames: ['Synthroid', 'Levoxyl'],
+    prescriptionType: 'rx'
+  },
+  
+  'sertraline': {
+    standardStrengths: ['25 mg', '50 mg', '100 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '25 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '50 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '100 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+    },
+    therapeuticClass: 'SSRI Antidepressant',
+    commonDoses: ['50 mg once daily', '100 mg once daily'],
+    brandNames: ['Zoloft'],
+    prescriptionType: 'rx'
+  },
+  
+  'hydroxychloroquine': {
+    standardStrengths: ['200 mg', '400 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '200 mg-tablet-oral': 'Take 1 tablet by mouth twice daily with food',
+      '400 mg-tablet-oral': 'Take 1 tablet by mouth once daily with food'
+    },
+    therapeuticClass: 'Antimalarial/DMARD',
+    commonDoses: ['200 mg twice daily', '400 mg once daily'],
+    brandNames: ['Plaquenil'],
+    prescriptionType: 'rx'
+  },
+  
+  'prednisone': {
+    standardStrengths: ['1 mg', '2.5 mg', '5 mg', '10 mg', '20 mg', '50 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '5 mg-tablet-oral': 'Take 1 tablet by mouth once daily with food',
+      '10 mg-tablet-oral': 'Take 1 tablet by mouth once daily with food',
+      '20 mg-tablet-oral': 'Take 1 tablet by mouth once daily with food'
+    },
+    therapeuticClass: 'Corticosteroid',
+    commonDoses: ['5 mg once daily', '10 mg once daily', '20 mg once daily'],
+    brandNames: ['Deltasone'],
+    prescriptionType: 'rx'
+  },
+  
+  'albuterol': {
+    standardStrengths: ['90 mcg/actuation', '2.5 mg/3 mL', '5 mg/mL'],
+    availableForms: ['inhaler', 'nebulizer solution', 'tablet'],
+    formRoutes: { 'inhaler': ['inhalation'], 'nebulizer solution': ['inhalation'], 'tablet': ['oral'] },
+    sigTemplates: {
+      '90 mcg/actuation-inhaler-inhalation': 'Inhale 2 puffs by mouth every 4 hours as needed for shortness of breath',
+      '2.5 mg/3 mL-nebulizer solution-inhalation': 'Inhale contents of 1 vial every 4 hours as needed for shortness of breath'
+    },
+    therapeuticClass: 'Beta-2 Agonist Bronchodilator',
+    commonDoses: ['2 puffs every 4 hours as needed', '2.5 mg nebulized every 4 hours as needed'],
+    brandNames: ['ProAir', 'Ventolin', 'Proventil'],
+    prescriptionType: 'rx'
+  },
+  
+  'gabapentin': {
+    standardStrengths: ['100 mg', '300 mg', '400 mg', '600 mg', '800 mg'],
+    availableForms: ['capsule', 'tablet'],
+    formRoutes: { 'capsule': ['oral'], 'tablet': ['oral'] },
+    sigTemplates: {
+      '100 mg-capsule-oral': 'Take 1 capsule by mouth three times daily',
+      '300 mg-capsule-oral': 'Take 1 capsule by mouth three times daily',
+      '400 mg-capsule-oral': 'Take 1 capsule by mouth three times daily',
+      '600 mg-tablet-oral': 'Take 1 tablet by mouth three times daily'
+    },
+    therapeuticClass: 'Anticonvulsant/Neuropathic Pain',
+    commonDoses: ['300 mg three times daily', '600 mg three times daily'],
+    brandNames: ['Neurontin'],
+    prescriptionType: 'rx'
+  },
+  
+  'tramadol': {
+    standardStrengths: ['50 mg', '100 mg'],
+    availableForms: ['tablet', 'extended-release tablet'],
+    formRoutes: { 'tablet': ['oral'], 'extended-release tablet': ['oral'] },
+    sigTemplates: {
+      '50 mg-tablet-oral': 'Take 1 tablet by mouth every 6 hours as needed for pain',
+      '100 mg-extended-release tablet-oral': 'Take 1 extended-release tablet by mouth once daily'
+    },
+    therapeuticClass: 'Opioid Analgesic',
+    commonDoses: ['50 mg every 6 hours as needed', '100 mg extended-release once daily'],
+    brandNames: ['Ultram'],
+    prescriptionType: 'rx'
+  },
+  
+  'furosemide': {
+    standardStrengths: ['20 mg', '40 mg', '80 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '20 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '40 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+      '80 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+    },
+    therapeuticClass: 'Loop Diuretic',
+    commonDoses: ['20 mg once daily', '40 mg once daily'],
+    brandNames: ['Lasix'],
+    prescriptionType: 'rx'
+  },
+  
+  'warfarin': {
+    standardStrengths: ['1 mg', '2 mg', '2.5 mg', '3 mg', '4 mg', '5 mg', '6 mg', '7.5 mg', '10 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '1 mg-tablet-oral': 'Take 1 tablet by mouth once daily at the same time each day',
+      '2 mg-tablet-oral': 'Take 1 tablet by mouth once daily at the same time each day',
+      '2.5 mg-tablet-oral': 'Take 1 tablet by mouth once daily at the same time each day',
+      '5 mg-tablet-oral': 'Take 1 tablet by mouth once daily at the same time each day'
+    },
+    therapeuticClass: 'Anticoagulant',
+    commonDoses: ['2.5 mg once daily', '5 mg once daily'],
+    brandNames: ['Coumadin', 'Jantoven'],
+    prescriptionType: 'rx'
+  },
+  
+  'clopidogrel': {
+    standardStrengths: ['75 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '75 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+    },
+    therapeuticClass: 'Antiplatelet',
+    commonDoses: ['75 mg once daily'],
+    brandNames: ['Plavix'],
+    prescriptionType: 'rx'
+  },
+  
+  'pantoprazole': {
+    standardStrengths: ['20 mg', '40 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '20 mg-tablet-oral': 'Take 1 tablet by mouth once daily before breakfast',
+      '40 mg-tablet-oral': 'Take 1 tablet by mouth once daily before breakfast'
+    },
+    therapeuticClass: 'Proton Pump Inhibitor',
+    commonDoses: ['40 mg once daily'],
+    brandNames: ['Protonix'],
+    prescriptionType: 'rx'
+  },
+  
+  'insulin glargine': {
+    standardStrengths: ['100 units/mL'],
+    availableForms: ['injection'],
+    formRoutes: { 'injection': ['subcutaneous'] },
+    sigTemplates: {
+      '100 units/mL-injection-subcutaneous': 'Inject prescribed units subcutaneously once daily at the same time'
+    },
+    therapeuticClass: 'Long-Acting Insulin',
+    commonDoses: ['10-20 units once daily', 'per provider instructions'],
+    brandNames: ['Lantus', 'Basaglar'],
+    prescriptionType: 'rx'
+  },
+  
+  'fluticasone': {
+    standardStrengths: ['50 mcg/actuation', '110 mcg/actuation', '220 mcg/actuation'],
+    availableForms: ['inhaler', 'nasal spray'],
+    formRoutes: { 'inhaler': ['inhalation'], 'nasal spray': ['nasal'] },
+    sigTemplates: {
+      '110 mcg/actuation-inhaler-inhalation': 'Inhale 2 puffs by mouth twice daily',
+      '50 mcg/actuation-nasal spray-nasal': 'Spray 2 sprays in each nostril once daily'
+    },
+    therapeuticClass: 'Corticosteroid',
+    commonDoses: ['2 puffs twice daily', '2 sprays each nostril once daily'],
+    brandNames: ['Flovent', 'Flonase'],
+    prescriptionType: 'rx'
+  },
+  
+  'ciprofloxacin': {
+    standardStrengths: ['250 mg', '500 mg', '750 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '250 mg-tablet-oral': 'Take 1 tablet by mouth twice daily',
+      '500 mg-tablet-oral': 'Take 1 tablet by mouth twice daily',
+      '750 mg-tablet-oral': 'Take 1 tablet by mouth twice daily'
+    },
+    therapeuticClass: 'Fluoroquinolone Antibiotic',
+    commonDoses: ['500 mg twice daily', '750 mg twice daily'],
+    brandNames: ['Cipro'],
+    prescriptionType: 'rx'
+  },
+  
+  'azithromycin': {
+    standardStrengths: ['250 mg', '500 mg'],
+    availableForms: ['tablet', 'z-pack'],
+    formRoutes: { 'tablet': ['oral'], 'z-pack': ['oral'] },
+    sigTemplates: {
+      '250 mg-tablet-oral': 'Take 2 tablets by mouth on day 1, then 1 tablet daily for 4 days',
+      '500 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+    },
+    therapeuticClass: 'Macrolide Antibiotic',
+    commonDoses: ['Z-pack regimen', '500 mg once daily'],
+    brandNames: ['Zithromax', 'Z-pack'],
+    prescriptionType: 'rx'
+  },
+  
+  'amoxicillin': {
+    standardStrengths: ['250 mg', '500 mg', '875 mg'],
+    availableForms: ['capsule', 'tablet'],
+    formRoutes: { 'capsule': ['oral'], 'tablet': ['oral'] },
+    sigTemplates: {
+      '250 mg-capsule-oral': 'Take 1 capsule by mouth three times daily',
+      '500 mg-capsule-oral': 'Take 1 capsule by mouth three times daily',
+      '875 mg-tablet-oral': 'Take 1 tablet by mouth twice daily'
+    },
+    therapeuticClass: 'Penicillin Antibiotic',
+    commonDoses: ['500 mg three times daily', '875 mg twice daily'],
+    brandNames: ['Amoxil'],
+    prescriptionType: 'rx'
+  },
+  
+  'ibuprofen': {
+    standardStrengths: ['200 mg', '400 mg', '600 mg', '800 mg'],
+    availableForms: ['tablet', 'capsule'],
+    formRoutes: { 'tablet': ['oral'], 'capsule': ['oral'] },
+    sigTemplates: {
+      '200 mg-tablet-oral': 'Take 1-2 tablets by mouth every 6 hours as needed for pain',
+      '400 mg-tablet-oral': 'Take 1 tablet by mouth every 6 hours as needed for pain',
+      '600 mg-tablet-oral': 'Take 1 tablet by mouth every 6 hours as needed for pain',
+      '800 mg-tablet-oral': 'Take 1 tablet by mouth every 8 hours as needed for pain'
+    },
+    therapeuticClass: 'NSAID',
+    commonDoses: ['400 mg every 6 hours as needed', '800 mg every 8 hours as needed'],
+    brandNames: ['Advil', 'Motrin'],
+    prescriptionType: 'otc'
+  },
+  
+  'acetaminophen': {
+    standardStrengths: ['325 mg', '500 mg', '650 mg'],
+    availableForms: ['tablet', 'capsule'],
+    formRoutes: { 'tablet': ['oral'], 'capsule': ['oral'] },
+    sigTemplates: {
+      '325 mg-tablet-oral': 'Take 1-2 tablets by mouth every 4-6 hours as needed for pain',
+      '500 mg-tablet-oral': 'Take 1-2 tablets by mouth every 6 hours as needed for pain',
+      '650 mg-tablet-oral': 'Take 1 tablet by mouth every 6 hours as needed for pain'
+    },
+    therapeuticClass: 'Analgesic/Antipyretic',
+    commonDoses: ['500 mg every 6 hours as needed', '650 mg every 6 hours as needed'],
+    brandNames: ['Tylenol'],
+    prescriptionType: 'otc'
+  },
+  
+  'alprazolam': {
+    standardStrengths: ['0.25 mg', '0.5 mg', '1 mg', '2 mg'],
+    availableForms: ['tablet'],
+    formRoutes: { 'tablet': ['oral'] },
+    sigTemplates: {
+      '0.25 mg-tablet-oral': 'Take 1 tablet by mouth as needed for anxiety',
+      '0.5 mg-tablet-oral': 'Take 1 tablet by mouth as needed for anxiety',
+      '1 mg-tablet-oral': 'Take 1 tablet by mouth as needed for anxiety'
+    },
+    therapeuticClass: 'Benzodiazepine',
+    commonDoses: ['0.5 mg as needed', '1 mg as needed'],
+    brandNames: ['Xanax'],
+    prescriptionType: 'rx'
   }
 };
 
-// In-memory cache for dynamically loaded medications
-const medicationCache = new Map<string, any>();
+// Smart caching system with localStorage persistence
+const CACHE_PREFIX = 'medication_intelligence_';
+const CACHE_EXPIRY_HOURS = 24;
+
+class MedicationCache {
+  private memoryCache = new Map<string, any>();
+
+  // Check if cached data is still valid
+  private isValidCache(cacheData: any): boolean {
+    if (!cacheData.timestamp || !cacheData.data) return false;
+    const hoursSinceCache = (Date.now() - cacheData.timestamp) / (1000 * 60 * 60);
+    return hoursSinceCache < CACHE_EXPIRY_HOURS;
+  }
+
+  // Get medication data from cache (memory first, then localStorage)
+  get(medicationName: string): any {
+    const key = medicationName.toLowerCase().trim();
+    
+    // Check memory cache first (fastest)
+    if (this.memoryCache.has(key)) {
+      return this.memoryCache.get(key);
+    }
+    
+    // Check localStorage cache
+    try {
+      const stored = localStorage.getItem(CACHE_PREFIX + key);
+      if (stored) {
+        const cacheData = JSON.parse(stored);
+        if (this.isValidCache(cacheData)) {
+          // Move to memory cache for faster future access
+          this.memoryCache.set(key, cacheData.data);
+          return cacheData.data;
+        } else {
+          // Remove expired cache
+          localStorage.removeItem(CACHE_PREFIX + key);
+        }
+      }
+    } catch (error) {
+      console.warn('Cache read error:', error);
+    }
+    
+    return null;
+  }
+
+  // Store medication data in both memory and localStorage
+  set(medicationName: string, data: any): void {
+    const key = medicationName.toLowerCase().trim();
+    
+    // Store in memory cache
+    this.memoryCache.set(key, data);
+    
+    // Store in localStorage with timestamp
+    try {
+      const cacheData = {
+        data,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(cacheData));
+    } catch (error) {
+      console.warn('Cache write error:', error);
+    }
+  }
+
+  // Check if medication exists in cache
+  has(medicationName: string): boolean {
+    return this.get(medicationName) !== null;
+  }
+
+  // Clear expired cache entries (background cleanup)
+  cleanupExpired(): void {
+    try {
+      const keysToRemove: string[] = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith(CACHE_PREFIX)) {
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            const cacheData = JSON.parse(stored);
+            if (!this.isValidCache(cacheData)) {
+              keysToRemove.push(key);
+            }
+          }
+        }
+      }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    } catch (error) {
+      console.warn('Cache cleanup error:', error);
+    }
+  }
+}
+
+const medicationCache = new MedicationCache();
 
 interface FastMedicationIntelligenceProps {
   medicationName: string;
@@ -176,47 +580,92 @@ export function FastMedicationIntelligence({
   const [manualSigEdit, setManualSigEdit] = useState(false);
   const [isLoadingMedication, setIsLoadingMedication] = useState(false);
 
-  // Smart medication data retrieval with instant fallback
+  // Smart medication data retrieval with brand name recognition
   const medicationData = useMemo(() => {
     const normalizedName = medicationName.toLowerCase().trim();
     
-    // First check preloaded database (instant)
+    // Priority 1: Preloaded database (instant access)
     if (MEDICATION_DATABASE[normalizedName]) {
       return MEDICATION_DATABASE[normalizedName];
     }
     
-    // Then check cache (also instant)
-    if (medicationCache.has(normalizedName)) {
-      return medicationCache.get(normalizedName);
+    // Priority 2: Brand name lookup (convert brand to generic)
+    const genericFromBrand = findGenericFromBrandName(normalizedName);
+    if (genericFromBrand && MEDICATION_DATABASE[genericFromBrand]) {
+      return MEDICATION_DATABASE[genericFromBrand];
     }
     
-    // Return null if not found - triggers background loading
+    // Priority 3: Smart cache (memory + localStorage)
+    const cachedData = medicationCache.get(normalizedName);
+    if (cachedData) {
+      return cachedData;
+    }
+    
+    // Return null if not found - triggers progressive loading
     return null;
   }, [medicationName]);
 
-  // Background loading for unknown medications
+  // Brand name to generic conversion function
+  const findGenericFromBrandName = useCallback((brandName: string): string | null => {
+    const lowerBrand = brandName.toLowerCase();
+    
+    // Search through all medications to find matching brand names
+    for (const [genericName, data] of Object.entries(MEDICATION_DATABASE)) {
+      if (data.brandNames.some(brand => brand.toLowerCase() === lowerBrand)) {
+        return genericName;
+      }
+    }
+    
+    return null;
+  }, []);
+
+  // Progressive enhancement with background loading
   useEffect(() => {
     const normalizedName = medicationName.toLowerCase().trim();
     
     if (medicationName && !medicationData && !medicationCache.has(normalizedName)) {
       setIsLoadingMedication(true);
       
-      // Background API call - doesn't block the UI
+      // Progressive API call with intelligent fallback
       fetch(`/api/medications/${encodeURIComponent(medicationName)}/intelligence`)
-        .then(res => res.ok ? res.json() : null)
+        .then(res => {
+          if (res.ok) {
+            return res.json();
+          }
+          throw new Error(`API responded with ${res.status}`);
+        })
         .then(data => {
-          if (data) {
+          if (data && Object.keys(data).length > 0) {
+            // Cache successful API responses
             medicationCache.set(normalizedName, data);
-            // Trigger re-render by updating a state
+            setIsLoadingMedication(false);
+          } else {
+            // Handle empty responses gracefully
             setIsLoadingMedication(false);
           }
         })
-        .catch(() => {
-          // Silently fail - user can still enter data manually
+        .catch(error => {
+          console.info(`No intelligence data available for ${medicationName}:`, error.message);
           setIsLoadingMedication(false);
         });
     }
   }, [medicationName, medicationData]);
+
+  // Background cleanup of expired cache (runs once per session)
+  useEffect(() => {
+    const cleanup = () => {
+      try {
+        medicationCache.cleanupExpired();
+      } catch (error) {
+        console.warn('Background cache cleanup failed:', error);
+      }
+    };
+    
+    // Run cleanup after component mounts (low priority)
+    const timeoutId = setTimeout(cleanup, 2000);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   // Auto-generate sig when components change
   useEffect(() => {
