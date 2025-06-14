@@ -6,23 +6,17 @@
  */
 
 export interface MedicationIntelligence {
-  // Standard strengths available for this medication
-  availableStrengths: string[];
+  // Standard strengths available for this medication (unified naming)
+  standardStrengths: string[];
   
   // Available dosage forms for this medication
   availableForms: string[];
   
-  // Standard routes for each form
-  formRouteMapping: { [form: string]: string[] };
+  // Standard routes for each form (unified naming)
+  formRoutes: { [form: string]: string[] };
   
-  // Standard sig templates for this medication
-  standardSigs: {
-    strength: string;
-    form: string;
-    route: string;
-    frequency: string;
-    sig: string;
-  }[];
+  // Standard sig templates for this medication (unified naming)
+  sigTemplates: { [key: string]: string };
   
   // Clinical information
   therapeuticClass: string;
@@ -34,6 +28,7 @@ export interface MedicationIntelligence {
   requiresPriorAuth: boolean;
   isControlled: boolean;
   brandNames: string[];
+  prescriptionType: 'rx' | 'otc';
   
   // Contraindications and warnings
   blackBoxWarning?: string;
@@ -53,18 +48,17 @@ export class MedicationIntelligenceService {
     // Comprehensive medication database with real-world clinical data
     const medicationDatabase: { [key: string]: MedicationIntelligence } = {
       'hydrochlorothiazide': {
-        availableStrengths: ['12.5 mg', '25 mg', '50 mg'],
+        standardStrengths: ['12.5 mg', '25 mg', '50 mg'],
         availableForms: ['tablet', 'capsule'],
-        formRouteMapping: {
+        formRoutes: {
           'tablet': ['oral'],
           'capsule': ['oral']
         },
-        standardSigs: [
-          { strength: '12.5 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' },
-          { strength: '25 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' },
-          { strength: '25 mg', form: 'tablet', route: 'oral', frequency: 'twice daily', sig: 'Take 1 tablet by mouth twice daily' },
-          { strength: '50 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' }
-        ],
+        sigTemplates: {
+          '12.5 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '25 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '50 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+        },
         therapeuticClass: 'Thiazide Diuretic',
         indication: 'Hypertension, Edema',
         commonDoses: ['25 mg once daily', '50 mg once daily'],
@@ -72,22 +66,23 @@ export class MedicationIntelligenceService {
         requiresPriorAuth: false,
         isControlled: false,
         brandNames: ['Microzide'],
+        prescriptionType: 'rx',
         renalAdjustment: true
       },
       
       'lisinopril': {
-        availableStrengths: ['2.5 mg', '5 mg', '10 mg', '20 mg', '30 mg', '40 mg'],
+        standardStrengths: ['2.5 mg', '5 mg', '10 mg', '20 mg', '30 mg', '40 mg'],
         availableForms: ['tablet'],
-        formRouteMapping: {
+        formRoutes: {
           'tablet': ['oral']
         },
-        standardSigs: [
-          { strength: '2.5 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' },
-          { strength: '5 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' },
-          { strength: '10 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' },
-          { strength: '20 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' },
-          { strength: '40 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' }
-        ],
+        sigTemplates: {
+          '2.5 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '5 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '10 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '20 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '40 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+        },
         therapeuticClass: 'ACE Inhibitor',
         indication: 'Hypertension, Heart Failure, Post-MI',
         commonDoses: ['10 mg once daily', '20 mg once daily'],
@@ -95,66 +90,69 @@ export class MedicationIntelligenceService {
         requiresPriorAuth: false,
         isControlled: false,
         brandNames: ['Prinivil', 'Zestril'],
+        prescriptionType: 'rx',
         renalAdjustment: true
       },
       
       'aspirin': {
-        availableStrengths: ['81 mg', '325 mg', '500 mg', '650 mg'],
+        standardStrengths: ['81 mg', '325 mg', '500 mg', '650 mg'],
         availableForms: ['tablet', 'chewable tablet', 'enteric-coated tablet'],
-        formRouteMapping: {
+        formRoutes: {
           'tablet': ['oral'],
           'chewable tablet': ['oral'],
           'enteric-coated tablet': ['oral']
         },
-        standardSigs: [
-          { strength: '81 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily' },
-          { strength: '81 mg', form: 'chewable tablet', route: 'oral', frequency: 'once daily', sig: 'Chew 1 tablet by mouth once daily' },
-          { strength: '325 mg', form: 'tablet', route: 'oral', frequency: 'every 6 hours', sig: 'Take 1 tablet by mouth every 6 hours as needed for pain' },
-          { strength: '325 mg', form: 'enteric-coated tablet', route: 'oral', frequency: 'twice daily', sig: 'Take 1 enteric-coated tablet by mouth twice daily' }
-        ],
+        sigTemplates: {
+          '81 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '81 mg-chewable tablet-oral': 'Chew 1 tablet by mouth once daily',
+          '325 mg-tablet-oral': 'Take 1 tablet by mouth every 6 hours as needed for pain',
+          '325 mg-enteric-coated tablet-oral': 'Take 1 enteric-coated tablet by mouth twice daily'
+        },
         therapeuticClass: 'Antiplatelet/NSAID',
         indication: 'Cardioprotection, Pain Relief, Anti-inflammatory',
         commonDoses: ['81 mg once daily', '325 mg twice daily'],
         requiresPriorAuth: false,
         isControlled: false,
-        brandNames: ['Bayer', 'Ecotrin', 'Bufferin']
+        brandNames: ['Bayer', 'Ecotrin', 'Bufferin'],
+        prescriptionType: 'otc'
       },
       
       'montelukast': {
-        availableStrengths: ['4 mg', '5 mg', '10 mg'],
+        standardStrengths: ['4 mg', '5 mg', '10 mg'],
         availableForms: ['tablet', 'chewable tablet', 'granules'],
-        formRouteMapping: {
+        formRoutes: {
           'tablet': ['oral'],
           'chewable tablet': ['oral'],
           'granules': ['oral']
         },
-        standardSigs: [
-          { strength: '4 mg', form: 'chewable tablet', route: 'oral', frequency: 'once daily', sig: 'Chew 1 tablet by mouth once daily in the evening' },
-          { strength: '5 mg', form: 'chewable tablet', route: 'oral', frequency: 'once daily', sig: 'Chew 1 tablet by mouth once daily in the evening' },
-          { strength: '10 mg', form: 'tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 tablet by mouth once daily in the evening' }
-        ],
+        sigTemplates: {
+          '4 mg-chewable tablet-oral': 'Chew 1 tablet by mouth once daily in the evening',
+          '5 mg-chewable tablet-oral': 'Chew 1 tablet by mouth once daily in the evening',
+          '10 mg-tablet-oral': 'Take 1 tablet by mouth once daily in the evening'
+        },
         therapeuticClass: 'Leukotriene Receptor Antagonist',
         indication: 'Asthma, Allergic Rhinitis',
         commonDoses: ['10 mg once daily (adults)', '5 mg once daily (children 6-14)', '4 mg once daily (children 2-5)'],
         requiresPriorAuth: false,
         isControlled: false,
         brandNames: ['Singulair'],
+        prescriptionType: 'rx',
         blackBoxWarning: 'Neuropsychiatric events including agitation, aggression, anxiousness, dream abnormalities, hallucinations, depression, insomnia, irritability, restlessness, suicidal thinking and behavior, and tremor'
       },
       
       'metformin': {
-        availableStrengths: ['500 mg', '850 mg', '1000 mg'],
+        standardStrengths: ['500 mg', '850 mg', '1000 mg'],
         availableForms: ['tablet', 'extended-release tablet'],
-        formRouteMapping: {
+        formRoutes: {
           'tablet': ['oral'],
           'extended-release tablet': ['oral']
         },
-        standardSigs: [
-          { strength: '500 mg', form: 'tablet', route: 'oral', frequency: 'twice daily', sig: 'Take 1 tablet by mouth twice daily with meals' },
-          { strength: '850 mg', form: 'tablet', route: 'oral', frequency: 'twice daily', sig: 'Take 1 tablet by mouth twice daily with meals' },
-          { strength: '1000 mg', form: 'tablet', route: 'oral', frequency: 'twice daily', sig: 'Take 1 tablet by mouth twice daily with meals' },
-          { strength: '500 mg', form: 'extended-release tablet', route: 'oral', frequency: 'once daily', sig: 'Take 1 extended-release tablet by mouth once daily with dinner' }
-        ],
+        sigTemplates: {
+          '500 mg-tablet-oral': 'Take 1 tablet by mouth twice daily with meals',
+          '850 mg-tablet-oral': 'Take 1 tablet by mouth twice daily with meals',
+          '1000 mg-tablet-oral': 'Take 1 tablet by mouth twice daily with meals',
+          '500 mg-extended-release tablet-oral': 'Take 1 extended-release tablet by mouth once daily with dinner'
+        },
         therapeuticClass: 'Biguanide Antidiabetic',
         indication: 'Type 2 Diabetes Mellitus',
         commonDoses: ['500 mg twice daily', '1000 mg twice daily'],
@@ -162,7 +160,29 @@ export class MedicationIntelligenceService {
         requiresPriorAuth: false,
         isControlled: false,
         brandNames: ['Glucophage', 'Fortamet'],
+        prescriptionType: 'rx',
         renalAdjustment: true
+      },
+
+      'hydroxychloroquine': {
+        standardStrengths: ['200 mg', '400 mg'],
+        availableForms: ['tablet'],
+        formRoutes: {
+          'tablet': ['oral']
+        },
+        sigTemplates: {
+          '200 mg-tablet-oral': 'Take 1 tablet by mouth twice daily',
+          '400 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+        },
+        therapeuticClass: 'Antimalarial/DMARD',
+        indication: 'Rheumatoid Arthritis, Lupus, Malaria Prevention',
+        commonDoses: ['200 mg twice daily', '400 mg once daily'],
+        maxDailyDose: '400 mg',
+        requiresPriorAuth: true,
+        isControlled: false,
+        brandNames: ['Plaquenil'],
+        prescriptionType: 'rx',
+        blackBoxWarning: 'Retinal toxicity - requires regular ophthalmologic monitoring'
       }
     };
     
