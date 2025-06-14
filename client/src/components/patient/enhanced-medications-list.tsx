@@ -303,9 +303,12 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
   };
 
   // Filter medications by active status tab
-  const currentMedications = (medicationData as MedicationResponse)?.groupedByStatus?.[
-    activeStatusTab === 'current' ? 'active' : activeStatusTab
-  ] || [];
+  const currentMedications = activeStatusTab === 'current' 
+    ? [
+        ...((medicationData as MedicationResponse)?.groupedByStatus?.active || []),
+        ...((medicationData as MedicationResponse)?.groupedByStatus?.pending || [])
+      ]
+    : ((medicationData as MedicationResponse)?.groupedByStatus?.[activeStatusTab] || []);
 
   // Group medications based on grouping mode
   const groupedMedications = currentMedications.reduce((groups: Record<string, Medication[]>, medication: Medication) => {
