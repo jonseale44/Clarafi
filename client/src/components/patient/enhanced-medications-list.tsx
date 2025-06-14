@@ -224,7 +224,7 @@ const IntelligentAddMedicationForm: React.FC<IntelligentAddMedicationFormProps> 
       </CardContent>
     </Card>
   );
-}
+};
 
 export function EnhancedMedicationsList({ patientId, readOnly = false }: EnhancedMedicationsListProps) {
   const [isAddingMedication, setIsAddingMedication] = useState(false);
