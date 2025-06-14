@@ -183,6 +183,32 @@ export class MedicationIntelligenceService {
         brandNames: ['Plaquenil'],
         prescriptionType: 'rx',
         blackBoxWarning: 'Retinal toxicity - requires regular ophthalmologic monitoring'
+      },
+
+      'prednisone': {
+        standardStrengths: ['1 mg', '2.5 mg', '5 mg', '10 mg', '20 mg', '50 mg'],
+        availableForms: ['tablet', 'oral solution'],
+        formRoutes: {
+          'tablet': ['oral'],
+          'oral solution': ['oral']
+        },
+        sigTemplates: {
+          '1 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '2.5 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '5 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '10 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '20 mg-tablet-oral': 'Take 1 tablet by mouth once daily',
+          '50 mg-tablet-oral': 'Take 1 tablet by mouth once daily'
+        },
+        therapeuticClass: 'Corticosteroid',
+        indication: 'Inflammation, Autoimmune disorders, Allergic reactions',
+        commonDoses: ['5 mg once daily', '10 mg once daily', '20 mg once daily'],
+        maxDailyDose: '80 mg',
+        requiresPriorAuth: false,
+        isControlled: false,
+        brandNames: ['Deltasone', 'Rayos'],
+        prescriptionType: 'rx',
+        blackBoxWarning: 'Long-term use may cause adrenal suppression and increased infection risk'
       }
     };
     
@@ -196,16 +222,12 @@ export class MedicationIntelligenceService {
     const intelligence = this.getMedicationIntelligence(medicationName);
     
     if (intelligence) {
-      // Find matching standard sig
-      const matchingSig = intelligence.standardSigs.find(sig => 
-        sig.strength === strength && 
-        sig.form === form && 
-        sig.route === route &&
-        (!frequency || sig.frequency === frequency)
-      );
+      // Find matching standard sig using template key
+      const templateKey = `${strength}-${form}-${route}`;
+      const matchingSig = intelligence.sigTemplates[templateKey];
       
       if (matchingSig) {
-        return matchingSig.sig;
+        return matchingSig;
       }
       
       // If no exact match, generate based on form and route
@@ -316,9 +338,9 @@ export class MedicationIntelligenceService {
     }
     
     // Validate strength
-    if (!intelligence.availableStrengths.includes(strength)) {
+    if (!intelligence.standardStrengths.includes(strength)) {
       warnings.push(`${strength} is not a standard strength for ${medicationName}`);
-      suggestions.push(`Available strengths: ${intelligence.availableStrengths.join(', ')}`);
+      suggestions.push(`Available strengths: ${intelligence.standardStrengths.join(', ')}`);
     }
     
     // Validate form
@@ -328,9 +350,9 @@ export class MedicationIntelligenceService {
     }
     
     // Validate route for form
-    if (intelligence.formRouteMapping[form] && !intelligence.formRouteMapping[form].includes(route)) {
+    if (intelligence.formRoutes[form] && !intelligence.formRoutes[form].includes(route)) {
       warnings.push(`${route} route is not appropriate for ${form} form`);
-      suggestions.push(`Appropriate routes for ${form}: ${intelligence.formRouteMapping[form].join(', ')}`);
+      suggestions.push(`Appropriate routes for ${form}: ${intelligence.formRoutes[form].join(', ')}`);
     }
     
     return {

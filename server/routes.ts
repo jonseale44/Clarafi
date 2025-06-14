@@ -15,7 +15,7 @@ import medicalProblemsRoutes from "./medical-problems-routes";
 import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
-import medicationIntelligenceRoutes from "./medication-intelligence-routes";
+import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import multer from "multer";
@@ -49,8 +49,8 @@ export function registerRoutes(app: Express): Server {
   // Intelligent diagnosis routes (GPT-powered autocompletion)
   app.use("/api/intelligent-diagnosis", intelligentDiagnosisRoutes);
 
-  // Medication intelligence routes
-  app.use("/api", medicationIntelligenceRoutes);
+  // Unified medication intelligence routes
+  app.use("/api", unifiedMedicationIntelligenceRoutes);
 
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
