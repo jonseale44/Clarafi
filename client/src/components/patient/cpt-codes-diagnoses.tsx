@@ -203,9 +203,8 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       setCPTCodes(convertedCPTCodes);
       setDiagnoses(convertedDiagnoses);
       
-      // Always use hardcoded intelligent mappings instead of GPT's decisions
-      // GPT tends to be overly aggressive with associations, hardcoded logic is more accurate
-      initializeMappings(convertedCPTCodes, convertedDiagnoses);
+      // Use GPT's intelligent mappings with clinical rationale - GPT is smarter than hardcoded rules
+      initializeMappings(convertedCPTCodes, convertedDiagnoses, data.intelligentMappings);
       
       toast({
         title: "CPT Codes Generated",
@@ -225,53 +224,62 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
     }
   };
 
-  // Initialize mappings between diagnoses and CPT codes with intelligent clinical logic
+  // Initialize mappings between diagnoses and CPT codes using GPT's intelligent clinical decisions
   const initializeMappings = (cptCodes: CPTCode[], diagnoses: DiagnosisCode[], gptMappings?: any[]) => {
     const newMappings: CPTDiagnosisMapping[] = [];
-    let selectedCount = 0;
     
-    diagnoses.forEach((diagnosis) => {
-      cptCodes.forEach((cpt) => {
-        // Apply intelligent clinical mapping logic (ignoring GPT's decisions)
-        let shouldSelect = false;
-        
-        // Problem-focused E&M codes (99212-99215, 99202-99205) pair ONLY with clinical diagnoses
-        if (['99212', '99213', '99214', '99215', '99202', '99203', '99204', '99205'].includes(cpt.code)) {
-          shouldSelect = !diagnosis.icd10Code?.startsWith('Z') && 
-                        !diagnosis.diagnosis?.toLowerCase().includes('routine') &&
-                        !diagnosis.diagnosis?.toLowerCase().includes('examination');
-        }
-        
-        // Preventive medicine codes (99381-99397) pair ONLY with wellness diagnoses
-        else if (['99381', '99382', '99383', '99384', '99385', '99386', '99387',
-                  '99391', '99392', '99393', '99394', '99395', '99396', '99397'].includes(cpt.code)) {
-          shouldSelect = diagnosis.icd10Code?.startsWith('Z00') ||
-                        diagnosis.diagnosis?.toLowerCase().includes('routine') ||
-                        diagnosis.diagnosis?.toLowerCase().includes('examination');
-        }
-        
-        // Procedure codes pair with specific diagnoses
-        else if (['17110', '17111'].includes(cpt.code)) {
-          shouldSelect = diagnosis.icd10Code?.startsWith('B07') || 
-                        diagnosis.icd10Code?.startsWith('D23') ||
-                        diagnosis.diagnosis?.toLowerCase().includes('wart') ||
-                        diagnosis.diagnosis?.toLowerCase().includes('lesion');
-        }
-        
-        // Default: primary diagnoses map to other codes
-        else {
-          shouldSelect = diagnosis.isPrimary === true && !diagnosis.icd10Code?.startsWith('Z');
-        }
-        
-        if (shouldSelect) selectedCount++;
-        
-        newMappings.push({
-          diagnosisId: diagnosis.id,
-          cptCodeId: cpt.id,
-          selected: shouldSelect
+    // If GPT provided intelligent mappings with clinical rationale, use them
+    if (gptMappings && gptMappings.length > 0) {
+      console.log('🧠 Using GPT intelligent mappings with clinical rationale:', gptMappings);
+      
+      // Initialize all mappings as unselected first
+      diagnoses.forEach((diagnosis, diagnosisIdx) => {
+        cptCodes.forEach((cpt, cptIdx) => {
+          newMappings.push({
+            diagnosisId: diagnosis.id,
+            cptCodeId: cpt.id,
+            selected: false
+          });
         });
       });
-    });
+      
+      // Apply GPT's intelligent selections
+      gptMappings.forEach((mapping) => {
+        const diagnosisIdx = mapping.diagnosisIndex;
+        const cptIdx = mapping.cptIndex;
+        
+        if (diagnosisIdx < diagnoses.length && cptIdx < cptCodes.length) {
+          const diagnosis = diagnoses[diagnosisIdx];
+          const cpt = cptCodes[cptIdx];
+          
+          console.log(`🧠 GPT mapping: ${diagnosis.diagnosis} (${diagnosis.icd10Code}) → ${cpt.code} (${cpt.description})`);
+          console.log(`🧠 Clinical rationale: ${mapping.clinicalRationale}`);
+          
+          const mappingIndex = newMappings.findIndex(m => 
+            m.diagnosisId === diagnosis.id && m.cptCodeId === cpt.id
+          );
+          
+          if (mappingIndex !== -1) {
+            newMappings[mappingIndex].selected = mapping.shouldSelect;
+          }
+        }
+      });
+    } else {
+      // Fallback: minimal default mappings if GPT didn't provide intelligent mappings
+      console.log('⚠️ No GPT mappings provided, using minimal defaults');
+      diagnoses.forEach((diagnosis) => {
+        cptCodes.forEach((cpt) => {
+          // Only select primary diagnosis with first CPT code as minimal fallback
+          const shouldSelect = diagnosis.isPrimary === true && cpt === cptCodes[0];
+          
+          newMappings.push({
+            diagnosisId: diagnosis.id,
+            cptCodeId: cpt.id,
+            selected: shouldSelect
+          });
+        });
+      });
+    }
     
     setMappings(newMappings);
   };
