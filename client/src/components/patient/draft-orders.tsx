@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool } from "lucide-react";
 import { MedicationInputHelper } from "./medication-input-helper";
+import { FastMedicationIntelligence } from "./fast-medication-intelligence";
 
 interface Order {
   id: number;
@@ -781,117 +782,43 @@ function OrderEditForm({ order, onChange, onSave, onCancel }: {
 }
 
 function MedicationEditFields({ order, onChange }: { order: Order; onChange: (field: string, value: any) => void }) {
-  const handleStandardizedUpdate = (standardized: any) => {
-    // Apply all standardized values at once
-    if (standardized.medicationName) onChange("medicationName", standardized.medicationName);
-    if (standardized.strength) onChange("dosage", standardized.strength);
-    if (standardized.dosageForm) onChange("form", standardized.dosageForm);
-    if (standardized.route) onChange("routeOfAdministration", standardized.route);
+  const handleIntelligentUpdate = (updates: any) => {
+    // Apply intelligent medication updates
+    Object.keys(updates).forEach(key => {
+      if (updates[key] !== undefined) {
+        onChange(key, updates[key]);
+      }
+    });
   };
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
-          <Label htmlFor="medicationName">Medication Name *</Label>
-          <Input
-            id="medicationName"
-            value={order.medicationName || ""}
-            onChange={(e) => onChange("medicationName", e.target.value)}
-            placeholder="e.g., Montelukast (generic name only)"
-            required
-          />
-          <div className="text-xs text-gray-500 mt-1">Enter generic name only - no strength or form</div>
-        </div>
-        <div>
-          <Label htmlFor="dosage">Strength *</Label>
-          <Input
-            id="dosage"
-            value={order.dosage || ""}
-            onChange={(e) => onChange("dosage", e.target.value)}
-            placeholder="e.g., 10 mg"
-            required
-          />
-          <div className="text-xs text-gray-500 mt-1">Include unit (mg, mcg, etc.)</div>
-        </div>
+      <div className="mb-4">
+        <Label htmlFor="medicationName">Medication Name *</Label>
+        <Input
+          id="medicationName"
+          value={order.medicationName || ""}
+          onChange={(e) => onChange("medicationName", e.target.value)}
+          placeholder="e.g., Hydrochlorothiazide"
+          required
+        />
+        <div className="text-xs text-gray-500 mt-1">Enter generic name only - intelligent dosing will activate</div>
       </div>
 
-      {/* Medication Input Helper for validation and standardization */}
-      <MedicationInputHelper
-        medicationName={order.medicationName || ""}
-        dosage={order.dosage || ""}
-        form={order.form || ""}
-        onMedicationChange={(name) => onChange("medicationName", name)}
-        onDosageChange={(dosage) => onChange("dosage", dosage)}
-        onFormChange={(form) => onChange("form", form)}
-        onStandardize={handleStandardizedUpdate}
-      />
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="form">Dosage Form *</Label>
-          <Select value={order.form || ""} onValueChange={(value) => onChange("form", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select dosage form" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tablet">Tablet</SelectItem>
-              <SelectItem value="capsule">Capsule</SelectItem>
-              <SelectItem value="caplet">Caplet</SelectItem>
-              <SelectItem value="solution">Solution</SelectItem>
-              <SelectItem value="suspension">Suspension</SelectItem>
-              <SelectItem value="syrup">Syrup</SelectItem>
-              <SelectItem value="injection">Injection</SelectItem>
-              <SelectItem value="cream">Cream</SelectItem>
-              <SelectItem value="ointment">Ointment</SelectItem>
-              <SelectItem value="gel">Gel</SelectItem>
-              <SelectItem value="lotion">Lotion</SelectItem>
-              <SelectItem value="patch">Patch</SelectItem>
-              <SelectItem value="inhaler">Inhaler</SelectItem>
-              <SelectItem value="drops">Drops</SelectItem>
-              <SelectItem value="spray">Spray</SelectItem>
-              <SelectItem value="powder">Powder</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="routeOfAdministration">Route *</Label>
-          <Select value={order.routeOfAdministration || ""} onValueChange={(value) => onChange("routeOfAdministration", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select route" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="oral">Oral (PO)</SelectItem>
-              <SelectItem value="topical">Topical</SelectItem>
-              <SelectItem value="injection">Injection</SelectItem>
-              <SelectItem value="intramuscular">Intramuscular (IM)</SelectItem>
-              <SelectItem value="intravenous">Intravenous (IV)</SelectItem>
-              <SelectItem value="subcutaneous">Subcutaneous (SQ)</SelectItem>
-              <SelectItem value="inhalation">Inhalation</SelectItem>
-              <SelectItem value="ophthalmic">Ophthalmic (Eye)</SelectItem>
-              <SelectItem value="otic">Otic (Ear)</SelectItem>
-              <SelectItem value="nasal">Nasal</SelectItem>
-              <SelectItem value="rectal">Rectal</SelectItem>
-              <SelectItem value="vaginal">Vaginal</SelectItem>
-              <SelectItem value="transdermal">Transdermal</SelectItem>
-              <SelectItem value="sublingual">Sublingual</SelectItem>
-              <SelectItem value="buccal">Buccal</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="sig">Patient Instructions (Sig) *</Label>
-        <Textarea
-          id="sig"
-          value={order.sig || ""}
-          onChange={(e) => onChange("sig", e.target.value)}
-          placeholder="e.g., Take 1 tablet by mouth once daily with food"
-          required
-          rows={2}
+      {/* Fast Medication Intelligence System - Instant dropdowns and auto-sig */}
+      {order.medicationName && (
+        <FastMedicationIntelligence
+          medicationName={order.medicationName}
+          initialStrength={order.dosage || ""}
+          initialForm={order.form || ""}
+          initialRoute={order.routeOfAdministration || ""}
+          initialSig={order.sig || ""}
+          initialQuantity={order.quantity || 30}
+          initialRefills={order.refills || 2}
+          initialDaysSupply={order.daysSupply || 90}
+          onChange={handleIntelligentUpdate}
         />
-      </div>
+      )}
       
       <div className="grid grid-cols-3 gap-4">
         <div>
