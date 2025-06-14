@@ -553,9 +553,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAllPatientDraftOrders(patientId: number): Promise<void> {
+    console.log(`🗑️ [STORAGE] Deleting all draft orders for patient ${patientId} with cascading deletion`);
+    
+    // Get all draft orders for this patient first
+    const draftOrders = await db.select().from(orders)
+      .where(and(eq(orders.patientId, patientId), eq(orders.orderStatus, "draft")));
+    
+    console.log(`🗑️ [STORAGE] Found ${draftOrders.length} draft orders to delete`);
+    
+    // Delete linked medications for medication orders
+    let medicationsDeleted = 0;
+    for (const order of draftOrders) {
+      if (order.orderType === 'medication') {
+        console.log(`🗑️ [STORAGE] Checking for linked medications for order ${order.id}`);
+        const linkedMedications = await this.getMedicationsByOrderId(order.id);
+        
+        for (const medication of linkedMedications) {
+          console.log(`🗑️ [STORAGE] Deleting linked medication ${medication.id} for order ${order.id}`);
+          await this.deleteMedication(medication.id);
+          medicationsDeleted++;
+        }
+      }
+    }
+    
+    // Delete all draft orders
     await db
       .delete(orders)
       .where(and(eq(orders.patientId, patientId), eq(orders.orderStatus, "draft")));
+    
+    console.log(`✅ [STORAGE] Successfully deleted ${draftOrders.length} draft orders and ${medicationsDeleted} linked medications for patient ${patientId}`);
   }
 
   // Two-phase medication workflow support

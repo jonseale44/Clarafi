@@ -1,7 +1,8 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { APIResponseHandler } from "./api-response-handler.js";
 import {
   insertPatientSchema,
   insertEncounterSchema,
@@ -1634,29 +1635,28 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Delete all draft orders for a patient
-  app.delete("/api/patients/:patientId/draft-orders", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const patientId = parseInt(req.params.patientId);
-      console.log(
-        `[Orders API] Deleting all draft orders for patient ${patientId}`,
-      );
-
-      await storage.deleteAllPatientDraftOrders(patientId);
-      console.log(
-        `[Orders API] Successfully deleted all draft orders for patient ${patientId}`,
-      );
-
-      res.json({ message: "All draft orders deleted successfully" });
-    } catch (error: any) {
-      console.error(
-        "[Orders API] Error deleting all patient draft orders:",
-        error,
-      );
-      res.status(500).json({ message: error.message });
+  app.delete("/api/patients/:patientId/draft-orders", APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return APIResponseHandler.unauthorized(res);
     }
-  });
+
+    const patientId = parseInt(req.params.patientId);
+    
+    if (isNaN(patientId)) {
+      return APIResponseHandler.badRequest(res, "Invalid patient ID");
+    }
+
+    console.log(`[Orders API] Deleting all draft orders for patient ${patientId}`);
+
+    await storage.deleteAllPatientDraftOrders(patientId);
+    
+    console.log(`[Orders API] Successfully deleted all draft orders for patient ${patientId}`);
+
+    return APIResponseHandler.success(res, { 
+      message: "All draft orders deleted successfully",
+      patientId 
+    });
+  }));
 
   // Create a new order
   app.post("/api/orders", async (req, res) => {
