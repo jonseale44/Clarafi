@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { InsertOrder } from "../shared/schema.js";
 import { OrderStandardizationService } from "./order-standardization-service.js";
 import { LOINCLookupService } from "./loinc-lookup-service.js";
+import { MedicationStandardizationService } from "./medication-standardization-service.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -86,20 +87,31 @@ export class SOAPOrdersExtractor {
         );
         for (const med of extractedOrders.medications) {
           console.log(
-            `[SOAPExtractor] Medication: ${med.medication_name} - ${med.dosage}`,
+            `[SOAPExtractor] Processing medication: ${med.medication_name} - ${med.dosage}`,
           );
+          
+          // Standardize medication using the new service
+          const standardized = MedicationStandardizationService.standardizeMedicationFromAI(
+            med.medication_name,
+            med.dosage,
+            med.form,
+            med.route_of_administration
+          );
+          
+          console.log(`[SOAPExtractor] Standardized medication:`, standardized);
+          
           const rawOrder = {
             patientId,
             encounterId,
             orderType: "medication",
             orderStatus: "draft",
-            medicationName: med.medication_name,
-            dosage: med.dosage,
+            medicationName: standardized.medicationName || med.medication_name,
+            dosage: standardized.strength || med.dosage,
             quantity: med.quantity,
             sig: med.sig,
             refills: med.refills,
-            form: med.form,
-            routeOfAdministration: med.route_of_administration,
+            form: standardized.dosageForm || med.form,
+            routeOfAdministration: standardized.route || med.route_of_administration,
             daysSupply: med.days_supply,
             diagnosisCode: med.diagnosis_code,
             requiresPriorAuth: med.requires_prior_auth || false,

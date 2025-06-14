@@ -1,0 +1,234 @@
+/**
+ * Medication Standardization Service
+ * 
+ * Handles proper parsing and standardization of medication names according to EMR standards
+ * Used by both AI-parsed orders and manual entry to ensure consistency
+ */
+
+export interface StandardizedMedication {
+  medicationName: string;        // Clean medication name (e.g., "Montelukast")
+  brandName?: string;           // Brand name if applicable (e.g., "Singulair")
+  genericName?: string;         // Generic name if different from medication name
+  strength: string;             // Standardized strength (e.g., "10 mg")
+  dosageForm: string;          // Standardized form (e.g., "tablet")
+  route: string;               // Standardized route (e.g., "oral")
+  sig: string;                 // Patient instructions
+  quantity: number;            // Quantity to dispense
+  refills: number;             // Number of refills
+  daysSupply: number;          // Days supply
+  clinicalIndication?: string; // Why prescribed
+  diagnosisCode?: string;      // ICD-10 code
+  requiresPriorAuth?: boolean; // Prior auth required
+  rxNormCode?: string;         // RxNorm concept ID
+  ndcCode?: string;           // National Drug Code
+}
+
+export class MedicationStandardizationService {
+  
+  /**
+   * Parse and standardize medication from AI-extracted text
+   * Handles cases like "Montelukast 10 mg tablet" or "HCTZ 25mg tablet"
+   */
+  static standardizeMedicationFromAI(rawMedicationName: string, rawDosage?: string, rawForm?: string, rawRoute?: string): Partial<StandardizedMedication> {
+    console.log(`🔧 [MedStandardization] Standardizing AI medication: "${rawMedicationName}", dosage: "${rawDosage}", form: "${rawForm}"`);
+    
+    let medicationName = rawMedicationName;
+    let strength = rawDosage || '';
+    let dosageForm = rawForm || '';
+    let route = rawRoute || 'oral';
+    
+    // Parse compound medication name that includes strength and form
+    const compoundPattern = /^([A-Za-z\s]+?)\s*(\d+(?:\.\d+)?\s*(?:mg|mcg|g|mL|units?|IU|%)?)\s*(tablet|capsule|liquid|injection|cream|ointment|patch|inhaler|drops)?$/i;
+    const match = rawMedicationName.match(compoundPattern);
+    
+    if (match) {
+      medicationName = match[1].trim();
+      const extractedStrength = match[2].trim();
+      const extractedForm = match[3]?.toLowerCase();
+      
+      // Use extracted strength if no separate dosage provided
+      if (!rawDosage || rawDosage === extractedStrength) {
+        strength = extractedStrength;
+      }
+      
+      // Use extracted form if no separate form provided  
+      if (!rawForm && extractedForm) {
+        dosageForm = extractedForm;
+      }
+      
+      console.log(`🔧 [MedStandardization] Parsed compound name: "${medicationName}" + "${strength}" + "${dosageForm}"`);
+    }
+    
+    // Standardize medication name (proper case)
+    medicationName = this.standardizeMedicationName(medicationName);
+    
+    // Standardize strength format
+    strength = this.standardizeStrength(strength);
+    
+    // Standardize dosage form
+    dosageForm = this.standardizeDosageForm(dosageForm);
+    
+    // Standardize route
+    route = this.standardizeRoute(route);
+    
+    const result = {
+      medicationName,
+      strength,
+      dosageForm,
+      route
+    };
+    
+    console.log(`🔧 [MedStandardization] Standardized result:`, result);
+    return result;
+  }
+  
+  /**
+   * Standardize medication name to proper case
+   */
+  private static standardizeMedicationName(name: string): string {
+    if (!name) return '';
+    
+    // Handle common abbreviations and brand names
+    const commonMedications: { [key: string]: string } = {
+      'hctz': 'Hydrochlorothiazide',
+      'lisinopril': 'Lisinopril',
+      'montelukast': 'Montelukast',
+      'singulair': 'Montelukast', // Brand to generic
+      'metformin': 'Metformin',
+      'glucophage': 'Metformin',
+      'amlodipine': 'Amlodipine',
+      'norvasc': 'Amlodipine',
+      'atorvastatin': 'Atorvastatin',
+      'lipitor': 'Atorvastatin',
+      'simvastatin': 'Simvastatin',
+      'zocor': 'Simvastatin'
+    };
+    
+    const normalizedName = name.toLowerCase().trim();
+    if (commonMedications[normalizedName]) {
+      return commonMedications[normalizedName];
+    }
+    
+    // Default to proper case
+    return name.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  
+  /**
+   * Standardize strength format (e.g., "10mg" -> "10 mg")
+   */
+  private static standardizeStrength(strength: string): string {
+    if (!strength) return '';
+    
+    // Add space between number and unit if missing
+    return strength.replace(/(\d+(?:\.\d+)?)(mg|mcg|g|mL|units?|IU|%)/gi, '$1 $2')
+                  .replace(/\s+/g, ' ')
+                  .trim();
+  }
+  
+  /**
+   * Standardize dosage form
+   */
+  private static standardizeDosageForm(form: string): string {
+    if (!form) return 'tablet'; // Default form
+    
+    const formMap: { [key: string]: string } = {
+      'tab': 'tablet',
+      'tabs': 'tablet',
+      'cap': 'capsule',
+      'caps': 'capsule',
+      'sol': 'solution',
+      'susp': 'suspension',
+      'inj': 'injection',
+      'top': 'topical',
+      'inh': 'inhaler'
+    };
+    
+    const normalizedForm = form.toLowerCase().trim();
+    return formMap[normalizedForm] || normalizedForm;
+  }
+  
+  /**
+   * Standardize route of administration
+   */
+  private static standardizeRoute(route: string): string {
+    if (!route) return 'oral';
+    
+    const routeMap: { [key: string]: string } = {
+      'po': 'oral',
+      'by mouth': 'oral',
+      'orally': 'oral',
+      'topical': 'topical',
+      'top': 'topical',
+      'im': 'injection',
+      'iv': 'injection',
+      'sq': 'injection',
+      'subq': 'injection',
+      'subcutaneous': 'injection',
+      'intramuscular': 'injection',
+      'intravenous': 'injection',
+      'inh': 'inhalation',
+      'inhaled': 'inhalation'
+    };
+    
+    const normalizedRoute = route.toLowerCase().trim();
+    return routeMap[normalizedRoute] || normalizedRoute;
+  }
+  
+  /**
+   * Validate medication data for completeness
+   */
+  static validateMedication(med: Partial<StandardizedMedication>): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!med.medicationName) {
+      errors.push('Medication name is required');
+    }
+    
+    if (!med.strength) {
+      errors.push('Strength/dosage is required');
+    }
+    
+    if (!med.dosageForm) {
+      errors.push('Dosage form is required');
+    }
+    
+    if (!med.sig) {
+      errors.push('Patient instructions (sig) are required');
+    }
+    
+    if (!med.quantity || med.quantity <= 0) {
+      errors.push('Valid quantity is required');
+    }
+    
+    if (med.refills === undefined || med.refills < 0) {
+      errors.push('Refills must be specified (0 or more)');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+  
+  /**
+   * Format medication for display in EMR interface
+   */
+  static formatMedicationDisplay(med: Partial<StandardizedMedication>): {
+    primaryName: string;
+    strengthAndForm: string;
+    fullDescription: string;
+  } {
+    const primaryName = med.medicationName || 'Unknown Medication';
+    const strengthAndForm = `${med.strength || ''} ${med.dosageForm || ''}`.trim();
+    const route = med.route && med.route !== 'oral' ? ` - ${med.route}` : '';
+    const fullDescription = `${primaryName} ${strengthAndForm}${route}`.trim();
+    
+    return {
+      primaryName,
+      strengthAndForm,
+      fullDescription
+    };
+  }
+}

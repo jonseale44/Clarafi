@@ -637,21 +637,21 @@ function OrderContent({ order }: { order: Order }) {
     case "medication":
       return (
         <div>
-          <div className="font-medium">{order.medicationName}</div>
-          <div className="text-sm text-gray-600">
-            {order.dosage} {order.form && `(${order.form})`} - {order.routeOfAdministration || 'oral'}
+          <div className="font-medium text-gray-900">{order.medicationName}</div>
+          <div className="text-sm text-gray-700 font-medium">
+            {order.dosage} {order.form ? `${order.form}` : 'tablet'} {order.routeOfAdministration && order.routeOfAdministration !== 'oral' ? `- ${order.routeOfAdministration}` : ''}
           </div>
-          <div className="text-sm text-gray-600 mb-1">{order.sig}</div>
-          <div className="text-xs text-gray-500 space-x-4">
-            <span>Qty: {order.quantity}</span>
-            <span>Refills: {order.refills}</span>
-            {order.daysSupply && <span>Days: {order.daysSupply}</span>}
+          <div className="text-sm text-gray-600 mb-2 italic">{order.sig}</div>
+          <div className="text-xs text-gray-500 grid grid-cols-3 gap-2">
+            <span><strong>Qty:</strong> {order.quantity}</span>
+            <span><strong>Refills:</strong> {order.refills}</span>
+            {order.daysSupply && <span><strong>Days:</strong> {order.daysSupply}</span>}
           </div>
           {order.diagnosisCode && (
-            <div className="text-xs text-blue-600 mt-1">ICD-10: {order.diagnosisCode}</div>
+            <div className="text-xs text-blue-600 mt-1 font-medium">ICD-10: {order.diagnosisCode}</div>
           )}
           {order.requiresPriorAuth && (
-            <div className="text-xs text-orange-600 mt-1 font-medium">Prior Authorization Required</div>
+            <div className="text-xs text-orange-600 mt-1 font-medium bg-orange-50 px-2 py-1 rounded">Prior Authorization Required</div>
           )}
         </div>
       );
@@ -782,26 +782,28 @@ function OrderEditForm({ order, onChange, onSave, onCancel }: {
 function MedicationEditFields({ order, onChange }: { order: Order; onChange: (field: string, value: any) => void }) {
   return (
     <>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2">
           <Label htmlFor="medicationName">Medication Name *</Label>
           <Input
             id="medicationName"
             value={order.medicationName || ""}
             onChange={(e) => onChange("medicationName", e.target.value)}
-            placeholder="e.g., Lisinopril"
+            placeholder="e.g., Montelukast (generic name only)"
             required
           />
+          <div className="text-xs text-gray-500 mt-1">Enter generic name only - no strength or form</div>
         </div>
         <div>
-          <Label htmlFor="dosage">Dosage/Strength *</Label>
+          <Label htmlFor="dosage">Strength *</Label>
           <Input
             id="dosage"
             value={order.dosage || ""}
             onChange={(e) => onChange("dosage", e.target.value)}
-            placeholder="e.g., 10mg"
+            placeholder="e.g., 10 mg"
             required
           />
+          <div className="text-xs text-gray-500 mt-1">Include unit (mg, mcg, etc.)</div>
         </div>
       </div>
       
@@ -815,13 +817,20 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
             <SelectContent>
               <SelectItem value="tablet">Tablet</SelectItem>
               <SelectItem value="capsule">Capsule</SelectItem>
-              <SelectItem value="liquid">Liquid/Solution</SelectItem>
+              <SelectItem value="caplet">Caplet</SelectItem>
+              <SelectItem value="solution">Solution</SelectItem>
+              <SelectItem value="suspension">Suspension</SelectItem>
+              <SelectItem value="syrup">Syrup</SelectItem>
               <SelectItem value="injection">Injection</SelectItem>
-              <SelectItem value="cream">Topical Cream</SelectItem>
+              <SelectItem value="cream">Cream</SelectItem>
               <SelectItem value="ointment">Ointment</SelectItem>
-              <SelectItem value="patch">Transdermal Patch</SelectItem>
+              <SelectItem value="gel">Gel</SelectItem>
+              <SelectItem value="lotion">Lotion</SelectItem>
+              <SelectItem value="patch">Patch</SelectItem>
               <SelectItem value="inhaler">Inhaler</SelectItem>
-              <SelectItem value="drops">Eye/Ear Drops</SelectItem>
+              <SelectItem value="drops">Drops</SelectItem>
+              <SelectItem value="spray">Spray</SelectItem>
+              <SelectItem value="powder">Powder</SelectItem>
             </SelectContent>
           </Select>
         </div>
