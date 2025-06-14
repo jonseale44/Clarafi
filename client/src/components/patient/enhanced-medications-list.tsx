@@ -266,15 +266,14 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
 
   // Discontinue medication mutation
   const discontinueMedication = useMutation({
-    mutationFn: ({ medicationId, reason }: { medicationId: number; reason: string }) =>
-      apiRequest(`/api/medications/${medicationId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ 
-          status: 'discontinued',
-          discontinuedDate: new Date().toISOString().split('T')[0],
-          discontinueReason: reason
-        })
-      }),
+    mutationFn: async ({ medicationId, reason }: { medicationId: number; reason: string }) => {
+      const response = await apiRequest('PUT', `/api/medications/${medicationId}`, { 
+        status: 'discontinued',
+        discontinuedDate: new Date().toISOString().split('T')[0],
+        discontinueReason: reason
+      });
+      return await response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['enhanced-medications', patientId] });
       toast({
@@ -304,12 +303,12 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
   };
 
   // Filter medications by active status tab
-  const currentMedications = medicationData?.groupedByStatus?.[
+  const currentMedications = (medicationData as MedicationResponse)?.groupedByStatus?.[
     activeStatusTab === 'current' ? 'active' : activeStatusTab
   ] || [];
 
   // Group medications based on grouping mode
-  const groupedMedications = currentMedications.reduce((groups: Record<string, Medication[]>, medication) => {
+  const groupedMedications = currentMedications.reduce((groups: Record<string, Medication[]>, medication: Medication) => {
     let groupKey = 'Ungrouped';
     
     if (groupingMode === 'medical_problem') {
@@ -372,7 +371,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
             <Pill className="h-5 w-5" />
             Medications
             <Badge variant="outline" className="ml-2">
-              {medicationData?.summary.total || 0}
+              {(medicationData as MedicationResponse)?.summary.total || 0}
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -406,22 +405,22 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
             <TabsTrigger value="current" className="flex flex-col items-center gap-1 p-2 text-xs">
               <Activity className="h-3 w-3" />
               <span>Current</span>
-              <span className="text-xs opacity-70">({(medicationData?.summary.active || 0) + (medicationData?.summary.pending || 0)})</span>
+              <span className="text-xs opacity-70">({((medicationData as MedicationResponse)?.summary.active || 0) + ((medicationData as MedicationResponse)?.summary.pending || 0)})</span>
             </TabsTrigger>
             <TabsTrigger value="discontinued" className="flex flex-col items-center gap-1 p-2 text-xs">
               <Clock className="h-3 w-3" />
               <span>Discontinued</span>
-              <span className="text-xs opacity-70">({medicationData?.summary.discontinued || 0})</span>
+              <span className="text-xs opacity-70">({(medicationData as MedicationResponse)?.summary.discontinued || 0})</span>
             </TabsTrigger>
             <TabsTrigger value="held" className="flex flex-col items-center gap-1 p-2 text-xs">
               <AlertTriangle className="h-3 w-3" />
               <span>Held</span>
-              <span className="text-xs opacity-70">({medicationData?.summary.held || 0})</span>
+              <span className="text-xs opacity-70">({(medicationData as MedicationResponse)?.summary.held || 0})</span>
             </TabsTrigger>
             <TabsTrigger value="historical" className="flex flex-col items-center gap-1 p-2 text-xs">
               <FileText className="h-3 w-3" />
               <span>Historical</span>
-              <span className="text-xs opacity-70">({medicationData?.summary.historical || 0})</span>
+              <span className="text-xs opacity-70">({(medicationData as MedicationResponse)?.summary.historical || 0})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -451,7 +450,7 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
                       </h3>
                     )}
                     <div className="space-y-2">
-                      {medications.map((medication) => (
+                      {medications.map((medication: Medication) => (
                         <MedicationCard
                           key={medication.id}
                           medication={medication}
