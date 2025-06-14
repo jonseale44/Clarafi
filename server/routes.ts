@@ -2169,16 +2169,28 @@ Return only valid JSON without markdown formatting.`;
 
       // For medication orders, activate pending medications
       if (order.orderType === 'medication') {
-        console.log(`📋 [Medication] Processing medication order activation for order ${orderId}`);
+        console.log(`📋 [IndividualSign] === INDIVIDUAL MEDICATION ORDER SIGNING ===`);
+        console.log(`📋 [IndividualSign] Order ID: ${orderId}, Type: ${order.orderType}`);
+        console.log(`📋 [IndividualSign] Medication: ${order.medicationName}, Dosage: ${order.dosage}`);
+        console.log(`📋 [IndividualSign] Encounter ID: ${order.encounterId}, Patient ID: ${order.patientId}`);
+        console.log(`📋 [IndividualSign] User ID: ${userId}`);
+        
         try {
           const { medicationDelta } = await import("./medication-delta-service.js");
+          
+          console.log(`📋 [IndividualSign] Calling signMedicationOrders with:`);
+          console.log(`📋 [IndividualSign] - Encounter: ${order.encounterId || 0}`);
+          console.log(`📋 [IndividualSign] - Order IDs: [${orderId}]`);
+          console.log(`📋 [IndividualSign] - Provider: ${userId}`);
+          
           await medicationDelta.signMedicationOrders(order.encounterId || 0, [orderId], userId);
-          console.log(`📋 [Medication] Activated signed medication: ${order.medicationName} - ${order.sig}`);
+          console.log(`✅ [IndividualSign] Successfully activated medication: ${order.medicationName}`);
         } catch (medicationError) {
-          console.error(`❌ [Medication] Failed to activate medication for order ${orderId}:`, medicationError);
-          console.error(`❌ [Medication] Medication error stack:`, medicationError.stack);
+          console.error(`❌ [IndividualSign] Failed to activate medication for order ${orderId}:`, medicationError);
+          console.error(`❌ [IndividualSign] Medication error stack:`, (medicationError as Error).stack);
           // Continue with response even if activation fails
         }
+        console.log(`📋 [IndividualSign] === END INDIVIDUAL MEDICATION SIGNING ===`);
       }
 
       // For lab orders, send to laboratory
