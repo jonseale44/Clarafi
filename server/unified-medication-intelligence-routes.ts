@@ -14,9 +14,11 @@ const router = Router();
  * GET /api/medication-intelligence/:medicationName
  * Get comprehensive medication intelligence for a specific medication
  */
-router.get("/medication-intelligence/:medicationName", async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+router.get("/medication-intelligence/:medicationName", APIResponseHandler.asyncHandler(
+  async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return APIResponseHandler.unauthorized(res);
+    }
 
     const { medicationName } = req.params;
     console.log(`🧠 [MedicationIntelligence] Getting intelligence for: ${medicationName}`);
@@ -25,30 +27,29 @@ router.get("/medication-intelligence/:medicationName", async (req: Request, res:
     
     if (!intelligence) {
       console.log(`🧠 [MedicationIntelligence] No intelligence data found for: ${medicationName}`);
-      return res.status(404).json({ 
-        error: "No intelligence data available",
-        medicationName 
-      });
+      return APIResponseHandler.notFound(res, `Medication intelligence for '${medicationName}'`);
     }
     
     console.log(`🧠 [MedicationIntelligence] Intelligence found for: ${medicationName}`);
-    res.json(intelligence);
-    
-  } catch (error) {
-    console.error("❌ [MedicationIntelligence] Error getting intelligence:", error);
-    res.status(500).json({ message: "Failed to get medication intelligence" });
+    return APIResponseHandler.success(res, intelligence);
   }
-});
+));
 
 /**
  * POST /api/medication-intelligence/generate-sig
  * Generate appropriate sig based on medication components
  */
-router.post("/medication-intelligence/generate-sig", async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+router.post("/medication-intelligence/generate-sig", APIResponseHandler.asyncHandler(
+  async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return APIResponseHandler.unauthorized(res);
+    }
 
     const { medicationName, strength, form, route, frequency } = req.body;
+    
+    if (!medicationName || !strength || !form || !route) {
+      return APIResponseHandler.badRequest(res, "Missing required fields: medicationName, strength, form, route");
+    }
     
     console.log(`🧠 [SigGeneration] Generating sig for: ${medicationName} ${strength} ${form} ${route}`);
     
@@ -62,23 +63,25 @@ router.post("/medication-intelligence/generate-sig", async (req: Request, res: R
     
     console.log(`🧠 [SigGeneration] Generated sig: ${sig}`);
     
-    res.json({ sig });
-    
-  } catch (error) {
-    console.error("❌ [SigGeneration] Error generating sig:", error);
-    res.status(500).json({ message: "Failed to generate sig" });
+    return APIResponseHandler.success(res, { sig });
   }
-});
+));
 
 /**
  * POST /api/medication-intelligence/validate
  * Validate medication combination and provide suggestions
  */
-router.post("/medication-intelligence/validate", async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+router.post("/medication-intelligence/validate", APIResponseHandler.asyncHandler(
+  async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return APIResponseHandler.unauthorized(res);
+    }
 
     const { medicationName, strength, form, route } = req.body;
+    
+    if (!medicationName || !strength || !form || !route) {
+      return APIResponseHandler.badRequest(res, "Missing required fields: medicationName, strength, form, route");
+    }
     
     console.log(`🧠 [MedValidation] Validating: ${medicationName} ${strength} ${form} ${route}`);
     
@@ -91,12 +94,8 @@ router.post("/medication-intelligence/validate", async (req: Request, res: Respo
     
     console.log(`🧠 [MedValidation] Validation result:`, validation);
     
-    res.json(validation);
-    
-  } catch (error) {
-    console.error("❌ [MedValidation] Error validating medication:", error);
-    res.status(500).json({ message: "Failed to validate medication" });
+    return APIResponseHandler.success(res, validation);
   }
-});
+));
 
 export default router;
