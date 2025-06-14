@@ -232,13 +232,17 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const { toast } = useToast();
 
-  // Fetch medications with enhanced data
+  // Fetch medications with enhanced data - with aggressive refetching for real-time updates
   const { data: medicationData, isLoading, error } = useQuery({
     queryKey: ['enhanced-medications', patientId],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/patients/${patientId}/medications-enhanced`);
       return await response.json();
-    }
+    },
+    refetchInterval: 2000, // Poll every 2 seconds for order changes
+    refetchIntervalInBackground: true,
+    staleTime: 0, // Always consider data stale for fresh updates
+    cacheTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
 
   // Create medication mutation
