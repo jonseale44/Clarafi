@@ -236,6 +236,17 @@ Format each bullet point on its own line with no extra spacing between them.`,
     ws.send(JSON.stringify(suggestionsMessage));
   };
 
+  // Generate smart suggestions function - EXACT COPY from provider view
+  const generateSmartSuggestions = () => {
+    setGptSuggestions(
+      "AI-generated nursing suggestions based on the encounter...",
+    );
+    toast({
+      title: "Smart Suggestions Generated",
+      description: "GPT analysis complete",
+    });
+  };
+
   // Function to get real-time suggestions during recording - EXACT COPY from provider view
   const getLiveAISuggestions = async (transcription: string) => {
     if (transcription.length < 15) return; // Process smaller chunks for faster response
@@ -693,7 +704,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             }
           }
 
-          // Handle AI response text deltas for suggestions - EXACT COPY from provider view
+          // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
             console.log(
@@ -701,18 +712,148 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               deltaText,
             );
             console.log("🧠 [NursingView] Delta length:", deltaText.length);
+            console.log(
+              "🧠 [NursingView] Current suggestions buffer length:",
+              suggestionsBuffer.length,
+            );
+            console.log(
+              "🧠 [NursingView] Current live suggestions length:",
+              liveSuggestions.length,
+            );
 
-            // Accumulate AI suggestions like transcription
-            setSuggestionsBuffer(prev => {
-              const newSuggestions = prev + deltaText;
-              console.log("🧠 [NursingView] AI suggestions buffer updated to length:", newSuggestions.length);
-              
-              // Update live suggestions display
-              setLiveSuggestions(newSuggestions);
-              setGptSuggestions(newSuggestions);
-              
-              return newSuggestions;
-            });
+            // Apply external system's content filtering to prevent cross-contamination
+            const shouldFilterContent = (content: string): boolean => {
+              // Filter out SOAP note patterns
+              const soapPatterns = [
+                "Patient Visit Summary",
+                "PATIENT VISIT SUMMARY",
+                "Visit Summary",
+                "VISIT SUMMARY",
+                "Chief Complaint:",
+                "**Chief Complaint:**",
+                "History of Present Illness:",
+                "**History of Present Illness:**",
+                "Vital Signs:",
+                "**Vital Signs:**",
+                "Review of Systems:",
+                "**Review of Systems:**",
+                "Physical Examination:",
+                "**Physical Examination:**",
+                "Assessment:",
+                "**Assessment:**",
+                "Plan:",
+                "**Plan:**",
+                "Diagnosis:",
+                "**Diagnosis:**",
+                "Impression:",
+                "**Impression:**",
+                "SUBJECTIVE:",
+                "OBJECTIVE:",
+                "ASSESSMENT:",
+                "PLAN:",
+                "S:",
+                "O:",
+                "A:",
+                "P:",
+                "SOAP Note",
+                "Clinical Note",
+                "Progress Note",
+              ];
+
+              // Filter out order patterns
+              const orderPatterns = [
+                "Lab: [",
+                "Imaging: [",
+                "Medication: [",
+                "Labs:",
+                "Imaging:",
+                "Medications:",
+                "Laboratory:",
+                "Radiology:",
+                "Prescriptions:",
+              ];
+
+              return (
+                soapPatterns.some((pattern) => content.includes(pattern)) ||
+                orderPatterns.some((pattern) => content.includes(pattern))
+              );
+            };
+
+            // Only process if content passes filtering
+            if (!shouldFilterContent(deltaText)) {
+              console.log(
+                "🧠 [NursingView] Content passed filtering, processing delta",
+              );
+
+              // Accumulate suggestions buffer with delta text using state
+              setSuggestionsBuffer((prev) => {
+                const newBuffer = prev + deltaText;
+                console.log(
+                  "🧠 [NursingView] Buffer updated from length",
+                  prev.length,
+                  "to",
+                  newBuffer.length,
+                );
+                console.log(
+                  "🧠 [NursingView] New buffer content preview:",
+                  newBuffer.substring(0, 200),
+                );
+
+                // Format the complete accumulated suggestions with header and bullet point separation
+                let formattedSuggestions;
+                if (!newBuffer.includes("🩺 REAL-TIME NURSING INSIGHTS:")) {
+                  formattedSuggestions =
+                    "🩺 REAL-TIME NURSING INSIGHTS:\n\n" + newBuffer;
+                  console.log("🧠 [NursingView] Added header to suggestions");
+                } else {
+                  formattedSuggestions = newBuffer;
+                  console.log(
+                    "🧠 [NursingView] Header already present, using buffer as-is",
+                  );
+                }
+
+                // Simple formatting - just ensure header spacing
+                formattedSuggestions = formattedSuggestions
+                  .replace(
+                    /🩺 REAL-TIME NURSING INSIGHTS:\n+/g,
+                    "🩺 REAL-TIME NURSING INSIGHTS:\n\n",
+                  );
+
+                console.log(
+                  "🧠 [NursingView] Applied bullet point formatting",
+                );
+
+                console.log(
+                  "🧠 [NursingView] Final formatted suggestions length:",
+                  formattedSuggestions.length,
+                );
+                console.log(
+                  "🧠 [NursingView] Final formatted suggestions preview:",
+                  formattedSuggestions.substring(0, 300),
+                );
+
+                // Update the display with accumulated content
+                setLiveSuggestions(formattedSuggestions);
+                setGptSuggestions(formattedSuggestions);
+                console.log(
+                  "🧠 [NursingView] Updated both live and GPT suggestions display",
+                );
+
+                return newBuffer;
+              });
+            } else {
+              console.warn(
+                "🧠 [NursingView] Content FILTERED OUT - contains SOAP/order patterns:",
+                deltaText.substring(0, 100),
+              );
+            }
+          }
+
+          // Handle AI suggestions completion
+          else if (message.type === "response.text.done") {
+            console.log("✅ [NursingView] AI suggestions completed");
+            // Add line break after each completed response
+            setSuggestionsBuffer((prev) => prev + "\n");
           }
 
           if (message.type === "conversation.item.input_audio_transcription.completed") {
@@ -1278,13 +1419,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 AI Suggestions
               </h2>
               <Button
-                onClick={() => {
-                  setGptSuggestions("AI-generated nursing suggestions based on the encounter...");
-                  toast({
-                    title: "Smart Suggestions Generated",
-                    description: "GPT analysis complete",
-                  });
-                }}
+                onClick={generateSmartSuggestions}
                 size="sm"
                 variant="outline"
               >
