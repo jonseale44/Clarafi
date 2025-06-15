@@ -105,6 +105,118 @@ export function NursingEncounterView({
   const isContentProcessed = (content: string) => processedContent.current.has(content);
   const markContentAsProcessed = (content: string) => processedContent.current.add(content);
 
+  // MISSING: Add the startSuggestionsConversation function from provider view
+  const startSuggestionsConversation = async (
+    ws: WebSocket | null,
+    patientData: any,
+  ) => {
+    if (!ws) return;
+
+    console.log("[NursingView] Starting AI suggestions conversation");
+
+    // 1. Fetch full patient chart data like external implementation
+    let patientChart = null;
+    try {
+      console.log(
+        "[NursingView] Fetching patient chart data for context injection",
+      );
+      const chartResponse = await fetch(
+        `/api/patients/${patientData.id}/chart`,
+      );
+      if (chartResponse.ok) {
+        patientChart = await chartResponse.json();
+        console.log(
+          "[NursingView] Patient chart data fetched successfully",
+        );
+      } else {
+        console.warn(
+          "[NursingView] Failed to fetch patient chart, continuing without context",
+        );
+      }
+    } catch (error) {
+      console.error("[NursingView] Error fetching patient chart:", error);
+    }
+
+    // 2. Build comprehensive patient context
+    const patientContext = `Patient: ${patientData.firstName} ${patientData.lastName}
+Age: ${patientData.dateOfBirth ? new Date().getFullYear() - new Date(patientData.dateOfBirth).getFullYear() : 'Unknown'}
+Gender: ${patientData.gender || 'Unknown'}
+MRN: ${patientData.mrn || 'Unknown'}
+
+${patientChart ? `
+Active Problems: ${patientChart.activeProblems?.map((p: any) => p.title).join(', ') || 'None documented'}
+Current Medications: ${patientChart.medications?.map((m: any) => `${m.name} ${m.dosage}`).join(', ') || 'None documented'}
+Allergies: ${patientChart.allergies?.map((a: any) => a.allergen).join(', ') || 'NKDA'}
+Recent Vitals: ${patientChart.vitals?.length > 0 ? `BP: ${patientChart.vitals[0].systolic}/${patientChart.vitals[0].diastolic}, HR: ${patientChart.vitals[0].heartRate}, Temp: ${patientChart.vitals[0].temperature}°F` : 'Not available'}
+` : 'Limited patient data available'}`;
+
+    // 3. Send patient context to OpenAI for AI suggestions
+    const currentTranscription = liveTranscriptionContent || transcriptionBuffer || "";
+
+    const contextWithTranscription = `${patientContext}
+
+CURRENT LIVE CONVERSATION:
+${currentTranscription}
+
+Please provide nursing suggestions based on what the patient is saying in this current conversation.`;
+
+    const contextMessage = {
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: contextWithTranscription,
+          },
+        ],
+      },
+    };
+
+    console.log(
+      "🧠 [NursingView] Injecting patient context for AI suggestions",
+    );
+    ws.send(JSON.stringify(contextMessage));
+
+    // 4. Create response for AI suggestions with nursing-specific instructions
+    const suggestionsMessage = {
+      type: "response.create",
+      response: {
+        modalities: ["text"],
+        instructions: `You are a nursing AI assistant. ALWAYS RESPOND IN ENGLISH ONLY. Provide concise, single-line nursing insights exclusively for registered nurses.
+
+Consider nursing assessments, interventions, patient safety, comfort measures, patient education, and care coordination. Focus on practical nursing actions and observations.
+
+Good nursing insights examples:
+• Monitor pain level q2h and document response to interventions
+• Assess fall risk factors and implement appropriate precautions
+• Patient education needed on medication compliance and side effects
+• Consider social work consultation for discharge planning
+• Monitor for signs of infection at surgical site
+
+Output examples of bad insights (to avoid):
+• Encourage deep breathing exercises for relaxation
+• Provide emotional support and active listening
+• Ensure adequate nutrition and hydration
+
+Produce insights that save the nurse time or enhance their clinical decision-making. No filler or overly obvious advice.
+
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
+
+Format each bullet point on its own line with no extra spacing between them.`,
+        metadata: {
+          type: "suggestions",
+        },
+      },
+    };
+
+    console.log(
+      "🧠 [NursingView] Creating AI suggestions conversation",
+    );
+    ws.send(JSON.stringify(suggestionsMessage));
+  };
+
   // Function to get real-time suggestions during recording - EXACT COPY from provider view
   const getLiveAISuggestions = async (transcription: string) => {
     if (transcription.length < 15) return; // Process smaller chunks for faster response
@@ -388,6 +500,10 @@ export function NursingEncounterView({
           realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
         };
 
+        // Add conversation state management like provider view
+        let conversationActive = false;
+        let suggestionsStarted = false;
+
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [NursingView] OpenAI message type:", message.type);
@@ -416,8 +532,6 @@ export function NursingEncounterView({
           if (message.type === "conversation.item.input_audio_transcription.delta") {
             const deltaText = message.transcript || message.delta || "";
             console.log("📝 [NursingView] Transcription delta received:", deltaText);
-            console.log("📝 [NursingView] Delta contains '+' symbol:", deltaText.includes("+"));
-            console.log("📝 [NursingView] Delta ends with '+':", deltaText.endsWith("+"));
 
             // For delta updates, append the delta text to existing transcription
             transcriptionBuffer += deltaText;
@@ -429,13 +543,124 @@ export function NursingEncounterView({
             // CRITICAL: Update unified transcription content for AI suggestions
             setLiveTranscriptionContent((prev) => prev + deltaText);
 
+            console.log(
+              "📝 [NursingView] Updated transcription buffer:",
+              transcriptionBuffer,
+            );
+            console.log(
+              "📝 [NursingView] Buffer contains '+' symbols:",
+              (transcriptionBuffer.match(/\+/g) || []).length,
+            );
+
+            // Start AI suggestions conversation when we have enough transcription (first time only)
+            if (
+              transcriptionBuffer.length > 20 &&
+              !suggestionsStarted &&
+              !conversationActive &&
+              realtimeWs
+            ) {
+              suggestionsStarted = true;
+              conversationActive = true;
+              console.log(
+                "🧠 [NursingView] TRIGGERING AI suggestions conversation - transcription buffer length:",
+                transcriptionBuffer.length,
+              );
+              console.log(
+                "🧠 [NursingView] Suggestions started:",
+                suggestionsStarted,
+                "Conversation active:",
+                conversationActive,
+              );
+              startSuggestionsConversation(realtimeWs, patient);
+            }
+
+            // REAL-TIME: Continuously update AI suggestions with live partial transcription
+            if (
+              suggestionsStarted &&
+              transcriptionBuffer.length > 20 &&
+              realtimeWs
+            ) {
+              // Debounce to prevent too many rapid updates
+              if (suggestionDebounceTimer.current) {
+                clearTimeout(suggestionDebounceTimer.current);
+              }
+
+              suggestionDebounceTimer.current = setTimeout(() => {
+                console.log(
+                  "🧠 [NursingView] Sending real-time AI update for buffer length:",
+                  transcriptionBuffer.length,
+                );
+
+                const currentTranscription = liveTranscriptionContent || transcriptionBuffer || "";
+
+                const contextWithTranscription = `Patient context: ${patient.firstName} ${patient.lastName}, ${patient.gender}, Age: ${patient.dateOfBirth ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear() : 'Unknown'}
+
+CURRENT LIVE CONVERSATION:
+${currentTranscription}
+
+Please provide nursing suggestions based on what the patient is saying in this current conversation.`;
+
+                const contextMessage = {
+                  type: "conversation.item.create",
+                  item: {
+                    type: "message",
+                    role: "user",
+                    content: [
+                      {
+                        type: "input_text",
+                        text: contextWithTranscription,
+                      },
+                    ],
+                  },
+                };
+
+                realtimeWs.send(JSON.stringify(contextMessage));
+
+                const responseRequest = {
+                  type: "response.create",
+                  response: {
+                    modalities: ["text"],
+                    instructions: `You are a nursing AI assistant. Provide concise, single-line nursing insights based on what the patient is describing RIGHT NOW. Focus on nursing assessments, interventions, patient safety, comfort measures, patient education, and care coordination.
+
+Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
+
+Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\\n) after answering a user question.`,
+                    metadata: {
+                      type: "suggestions",
+                    },
+                  },
+                };
+
+                realtimeWs.send(JSON.stringify(responseRequest));
+              }, 2000); // Reduced to 2-second debounce for faster real-time response
+            }
+
             // Trigger live AI suggestions exactly like provider view
             if (transcriptionBuffer.length > 15) {
               getLiveAISuggestions(transcriptionBuffer);
             }
+          }
 
-            console.log("📝 [NursingView] Updated transcription buffer:", transcriptionBuffer);
-            console.log("📝 [NursingView] Buffer contains '+' symbols:", (transcriptionBuffer.match(/\+/g) || []).length);
+          // Handle AI response text deltas for suggestions - EXACT COPY from provider view
+          else if (message.type === "response.text.delta") {
+            const deltaText = message.delta || "";
+            console.log(
+              "🧠 [NursingView] AI suggestions delta received:",
+              deltaText,
+            );
+            console.log("🧠 [NursingView] Delta length:", deltaText.length);
+
+            // Accumulate AI suggestions like transcription
+            setSuggestionsBuffer(prev => {
+              const newSuggestions = prev + deltaText;
+              console.log("🧠 [NursingView] AI suggestions buffer updated to length:", newSuggestions.length);
+              
+              // Update live suggestions display
+              setLiveSuggestions(newSuggestions);
+              setGptSuggestions(newSuggestions);
+              
+              return newSuggestions;
+            });
           }
 
           if (message.type === "conversation.item.input_audio_transcription.completed") {
@@ -459,6 +684,11 @@ export function NursingEncounterView({
 
           if (message.type === "error") {
             console.error("❌ [NursingView] OpenAI error:", message.error);
+            if (message.error?.code === "conversation_already_has_active_response") {
+              console.log("🔄 [NursingView] Resetting conversation state due to race condition");
+              conversationActive = false;
+              suggestionsStarted = false;
+            }
             toast({
               variant: "destructive",
               title: "Transcription Error",
