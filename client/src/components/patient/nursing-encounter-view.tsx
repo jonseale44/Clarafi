@@ -37,9 +37,22 @@ import {
   RealtimeNursingRef,
 } from "@/components/RealtimeNursingIntegration";
 import {
-  ContinuousNursingAssessment,
-  ContinuousNursingRef,
-} from "@/components/ContinuousNursingAssessment";
+  NursingTemplateAssessment,
+  NursingTemplateRef,
+} from "@/components/NursingTemplateAssessment";
+
+interface NursingTemplateData {
+  cc: string;
+  hpi: string;
+  pmh: string;
+  meds: string;
+  allergies: string;
+  famHx: string;
+  soHx: string;
+  psh: string;
+  ros: string;
+  vitals: string;
+}
 import type { Patient, User as UserType } from "@shared/schema";
 
 interface NursingEncounterViewProps {
@@ -82,12 +95,12 @@ export function NursingEncounterView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
-  const [continuousAssessment, setContinuousAssessment] = useState("");
+  const [templateData, setTemplateData] = useState<NursingTemplateData | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
   const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
-  const continuousNursingRef = useRef<ContinuousNursingRef>(null);
+  const nursingTemplateRef = useRef<NursingTemplateRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get current user for role-based functionality
@@ -1431,30 +1444,22 @@ Format each bullet point on its own line with no extra spacing between them.`,
                 />
               </div>
 
-              {/* Continuous Nursing Assessment Section */}
+              {/* Nursing Template Assessment Section */}
               <div className="mt-4">
-                <ContinuousNursingAssessment
-                  ref={continuousNursingRef}
+                <NursingTemplateAssessment
+                  ref={nursingTemplateRef}
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
                   isRecording={isRecording}
                   transcription={transcription}
-                  onAssessmentUpdate={(assessment) => {
-                    setContinuousAssessment(assessment);
-                  }}
-                  onAssessmentComplete={(assessment) => {
-                    setContinuousAssessment(assessment);
-                    toast({
-                      title: "Continuous Assessment Complete",
-                      description: "Real-time nursing assessment finalized",
-                    });
+                  onTemplateUpdate={(template) => {
+                    setTemplateData(template);
                   }}
                   autoStart={true}
                 />
               </div>
 
-              <div>
-              </div>
+
 
               {/* Transcription Content */}
               <div className="space-y-2">
