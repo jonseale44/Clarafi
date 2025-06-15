@@ -61,7 +61,7 @@ router.post('/generate-nursing-content', APIResponseHandler.asyncHandler(async (
 
   } catch (error) {
     console.error('🚨 [NursingContent] Generation error:', error);
-    return APIResponseHandler.error(res, 'GENERATION_FAILED', 'Failed to generate nursing content', 500);
+    return APIResponseHandler.error(res, 'Failed to generate nursing content', 500, 'GENERATION_FAILED');
   }
 }));
 
@@ -144,27 +144,13 @@ Format as professional nursing intervention documentation.`
  * Parse generated nursing content based on type
  */
 function parseNursingContent(content: string, type: string) {
-  // For now, return the full content for each field
-  // In the future, could parse into specific sections
+  const typeMap: Record<string, any> = {
+    'nursing_assessment': { nursingAssessment: content },
+    'care_plan': { nursingInterventions: content },
+    'interventions': { nursingInterventions: content }
+  };
   
-  switch (type) {
-    case 'nursing_assessment':
-      return {
-        nursingAssessment: content
-      };
-    case 'care_plan':
-      return {
-        nursingInterventions: content
-      };
-    case 'interventions':
-      return {
-        nursingInterventions: content
-      };
-    default:
-      return {
-        nursingNotes: content
-      };
-  }
+  return typeMap[type] || { nursingNotes: content };
 }
 
 export default router;

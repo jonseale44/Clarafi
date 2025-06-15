@@ -20,6 +20,7 @@ import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligen
 import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
+import nursingContentRoutes from "./nursing-content-routes";
 import multer from "multer";
 import OpenAI from "openai";
 
@@ -59,6 +60,9 @@ export function registerRoutes(app: Express): Server {
 
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
+
+  // Nursing content generation routes
+  app.use("/api", nursingContentRoutes);
 
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 
