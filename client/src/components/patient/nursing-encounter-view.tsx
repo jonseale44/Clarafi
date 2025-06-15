@@ -65,9 +65,11 @@ export function NursingEncounterView({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // State management
+  // State management - matching provider view exactly
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState("");
+  const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
+  const [liveTranscriptionContent, setLiveTranscriptionContent] = useState("");
   const [nursingAssessment, setNursingAssessment] = useState("");
   const [nursingInterventions, setNursingInterventions] = useState("");
   const [nursingNotes, setNursingNotes] = useState("");
@@ -89,9 +91,6 @@ export function NursingEncounterView({
     enabled: !!encounterId,
   });
 
-  // Recording state and references - using same approach as provider view
-  const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
-
   // Deduplication tracking for WebSocket messages
   const processedEvents = useRef(new Set<string>());
   const processedContent = useRef(new Set<string>());
@@ -105,9 +104,10 @@ export function NursingEncounterView({
   const startRecording = async () => {
     console.log("🎤 [NursingView] Starting REAL-TIME voice recording for patient:", patient.id);
 
-    // Clear previous transcription when starting new recording
+    // Clear previous transcription when starting new recording - match provider view exactly
     setTranscription("");
     setTranscriptionBuffer("");
+    setLiveTranscriptionContent("");
 
     try {
       // Create direct WebSocket connection to OpenAI like provider view
@@ -223,6 +223,10 @@ export function NursingEncounterView({
           const message = JSON.parse(event.data);
           console.log("📨 [NursingView] OpenAI message type:", message.type);
 
+          // Log all incoming messages for debugging
+          console.log("📥 [API-IN] Complete OpenAI message:");
+          console.log(JSON.stringify(message, null, 2));
+
           // Add deduplication checks
           if (message.event_id && isEventProcessed(message.event_id)) {
             console.log("🚫 [NursingView] Skipping duplicate event:", message.event_id);
@@ -239,14 +243,25 @@ export function NursingEncounterView({
           if (message.event_id) markEventAsProcessed(message.event_id);
           if (content) markContentAsProcessed(content);
 
-          // Handle transcription events - accumulate deltas
+          // Handle transcription events - accumulate deltas exactly like provider view
           if (message.type === "conversation.item.input_audio_transcription.delta") {
             const deltaText = message.transcript || message.delta || "";
             console.log("📝 [NursingView] Transcription delta received:", deltaText);
-            
+            console.log("📝 [NursingView] Delta contains '+' symbol:", deltaText.includes("+"));
+            console.log("📝 [NursingView] Delta ends with '+':", deltaText.endsWith("+"));
+
+            // For delta updates, append the delta text to existing transcription
             transcriptionBuffer += deltaText;
             setTranscriptionBuffer(transcriptionBuffer);
-            setTranscription(transcriptionBuffer);
+
+            // Append delta to existing transcription (don't replace)
+            setTranscription((prev) => prev + deltaText);
+
+            // CRITICAL: Update unified transcription content for AI suggestions
+            setLiveTranscriptionContent((prev) => prev + deltaText);
+
+            console.log("📝 [NursingView] Updated transcription buffer:", transcriptionBuffer);
+            console.log("📝 [NursingView] Buffer contains '+' symbols:", (transcriptionBuffer.match(/\+/g) || []).length);
           }
 
           if (message.type === "conversation.item.input_audio_transcription.completed") {
@@ -255,7 +270,8 @@ export function NursingEncounterView({
             if (completedText && completedText !== transcriptionBuffer) {
               transcriptionBuffer = completedText;
               setTranscriptionBuffer(transcriptionBuffer);
-              setTranscription(transcriptionBuffer);
+              setTranscription(completedText);
+              setLiveTranscriptionContent(completedText);
             }
           }
 
@@ -291,68 +307,101 @@ export function NursingEncounterView({
           setIsRecording(false);
         };
 
-        // Step 3: Start audio capture and streaming like provider view
+        // Step 3: Start audio capture using exact same method as provider view
         console.log("🎤 [NursingView] Requesting microphone access...");
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
-            sampleRate: 24000,
+            sampleRate: 16000,
           },
         });
+        console.log("🎤 [NursingView] ✅ Microphone access granted");
 
-        console.log("🎵 [NursingView] Microphone access granted");
+        // Set up audio processing exactly like provider view
+        const audioContext = new AudioContext({ sampleRate: 16000 });
+        const source = audioContext.createMediaStreamSource(stream);
+        const bufferSize = 4096; // Same as provider view
+        const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
 
-        // Create MediaRecorder to capture audio
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "audio/webm;codecs=opus",
-        });
+        processor.onaudioprocess = async (e) => {
+          if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
 
-        let audioChunks: Blob[] = [];
+          const inputData = e.inputBuffer.getChannelData(0);
 
-        mediaRecorder.ondataavailable = async (event) => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-            console.log("🔊 [NursingView] Audio chunk captured, size:", event.data.size);
+          // Convert to PCM16 exactly like provider view
+          const pcm16Data = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            const sample = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16Data[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+          }
 
-            // Convert to PCM16 and send to OpenAI
+          // Create audio blob and send exactly like provider view
+          const audioBlob = new Blob([pcm16Data], { type: "audio/pcm" });
+
+          // Convert to base64 exactly like provider view
+          const reader = new FileReader();
+          reader.onload = () => {
             try {
-              const audioBlob = new Blob([event.data], { type: "audio/webm" });
-              const arrayBuffer = await audioBlob.arrayBuffer();
-              
-              // Convert to base64 for transmission
+              const arrayBuffer = reader.result as ArrayBuffer;
               const uint8Array = new Uint8Array(arrayBuffer);
-              let binaryString = '';
+              let binary = "";
               for (let i = 0; i < uint8Array.length; i++) {
-                binaryString += String.fromCharCode(uint8Array[i]);
+                binary += String.fromCharCode(uint8Array[i]);
               }
-              const base64Audio = btoa(binaryString);
-              
-              if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
-                realtimeWs.send(JSON.stringify({
+              const base64Audio = btoa(binary);
+
+              // Send audio buffer exactly like provider view
+              realtimeWs!.send(
+                JSON.stringify({
                   type: "input_audio_buffer.append",
                   audio: base64Audio,
-                }));
-              }
+                }),
+              );
+
+              console.log(
+                "🎵 [NursingView] Sent audio buffer:",
+                base64Audio.length,
+                "bytes",
+              );
             } catch (error) {
-              console.error("❌ [NursingView] Error processing audio chunk:", error);
+              console.error("❌ [NursingView] Error processing audio:", error);
             }
+          };
+          reader.readAsArrayBuffer(audioBlob);
+        };
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+
+        const mediaRecorder = new MediaRecorder(stream);
+        const audioChunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
           }
         };
 
-        mediaRecorder.onstop = () => {
-          console.log("🎬 [NursingView] MediaRecorder stopped");
-          stream.getTracks().forEach(track => track.stop());
+        mediaRecorder.onstop = async () => {
+          console.log("🎤 [NursingView] Recording stopped");
+
+          // Clean up audio processing
+          if (processor) {
+            processor.disconnect();
+            source.disconnect();
+            audioContext.close();
+          }
+
+          stream.getTracks().forEach((track) => track.stop());
         };
 
-        // Store references for cleanup
+        mediaRecorder.start(1500); // Collect chunks every 1.5 seconds like provider view
+        setIsRecording(true);
+
         (window as any).currentMediaRecorder = mediaRecorder;
         (window as any).currentRealtimeWs = realtimeWs;
-
-        // Start recording
-        mediaRecorder.start(250); // Capture every 250ms
-        setIsRecording(true);
 
         console.log("🎬 [NursingView] Recording started successfully");
 
@@ -397,16 +446,9 @@ export function NursingEncounterView({
   const stopRecording = async () => {
     console.log("🎤 [NursingView] Stopping recording...");
     const mediaRecorder = (window as any).currentMediaRecorder;
-    const realtimeWs = (window as any).currentRealtimeWs;
-
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.stop();
       console.log("🎤 [NursingView] MediaRecorder stopped");
-    }
-
-    if (realtimeWs) {
-      realtimeWs.close();
-      console.log("🔌 [NursingView] WebSocket closed");
     }
 
     setIsRecording(false);
@@ -414,6 +456,8 @@ export function NursingEncounterView({
     // Trigger nursing assessment generation after recording stops
     if (transcriptionBuffer && transcriptionBuffer.trim()) {
       console.log("🩺 [NursingView] Triggering nursing assessment generation after recording...");
+
+      // Set transcription for Real-time nursing component
       setTranscription(transcriptionBuffer);
 
       // Trigger Real-time nursing assessment generation
