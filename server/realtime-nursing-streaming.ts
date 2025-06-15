@@ -111,10 +111,10 @@ export class RealtimeNursingStreaming {
     if (useRealtimeApi) {
       console.log(`🩺 [RealtimeNursing] Using OpenAI Realtime API WebSocket connection`);
       return this.generateNursingAssessmentStreamRealtime(nursingPrompt, transcription);
-    } else {
-      console.log(`🩺 [RealtimeNursing] Using OpenAI REST API streaming fallback`);
     }
 
+    console.log(`🩺 [RealtimeNursing] Using OpenAI REST API streaming fallback`);
+    
     // Create streaming response using REST API fallback
     const self = this;
     return new ReadableStream({
