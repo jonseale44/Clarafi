@@ -236,6 +236,9 @@ Formatting Guidelines:
   • Vitals: [details].
 
   The above are just formatting examples. You're intelligent, not a robot. This isn't just a cookbook. Use your reasoning skills to provide information relevant to the nurse screening this patient. Remember you're providing information for a NURSE, not a doctor. You don't want to provide differential diagnoses or complex ordering suggestions (athough some basic things like strep swab, flu swab, urinalysis, EKG are fine).
+
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
+
 Format each bullet point on its own line with no extra spacing between them.`,
         metadata: {
           type: "suggestions",
@@ -721,7 +724,11 @@ Formatting Guidelines:
   • Allergies: [list].
   • Vitals: [details].
 
-  The above are just formatting examples. You're intelligent, not a robot. This isn't just a cookbook. Use your reasoning skills to provide information relevant to the nurse screening this patient. Remember you're providing information for a NURSE, not a doctor. You don't want to provide differential diagnoses or complex ordering suggestions (athough some basic things like strep swab, flu swab, urinalysis, EKG are fine). Format each bullet point on its own line with no extra spacing between them.`,
+  The above are just formatting examples. You're intelligent, not a robot. This isn't just a cookbook. Use your reasoning skills to provide information relevant to the nurse screening this patient. Remember you're providing information for a NURSE, not a doctor. You don't want to provide differential diagnoses or complex ordering suggestions (athough some basic things like strep swab, flu swab, urinalysis, EKG are fine).
+
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
+
+Format each bullet point on its own line with no extra spacing between them.`,
                     metadata: {
                       type: "suggestions",
                     },
