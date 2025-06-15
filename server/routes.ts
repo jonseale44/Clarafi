@@ -25,7 +25,6 @@ import multer from "multer";
 import OpenAI from "openai";
 
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
-import { realtimeNursingStreaming } from "./realtime-nursing-streaming";
 
 // Fast medical routes removed - functionality moved to frontend WebSocket
 
@@ -965,58 +964,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Real-time Nursing streaming endpoint
-  app.post("/api/realtime-nursing/stream", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const { patientId, encounterId, transcription } = req.body;
-
-      if (!patientId || !encounterId || !transcription) {
-        return res.status(400).json({
-          message:
-            "Missing required fields: patientId, encounterId, transcription",
-        });
-      }
-
-      console.log(
-        `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}, encounter ${encounterId}`,
-      );
-
-      const stream = await realtimeNursingStreaming.generateNursingAssessmentStream(
-        parseInt(patientId),
-        encounterId,
-        transcription,
-      );
-
-      // Set headers for Server-Sent Events
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("Access-Control-Allow-Origin", "*");
-
-      // Pipe the stream to the response
-      const reader = stream.getReader();
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          res.write(value);
-        }
-      } finally {
-        reader.releaseLock();
-        res.end();
-      }
-    } catch (error: any) {
-      console.error("❌ [RealtimeNursing] Error in streaming endpoint:", error);
-      res.status(500).json({
-        message: "Failed to generate streaming nursing assessment",
-        error: error.message,
-      });
-    }
-  });
 
 
 
