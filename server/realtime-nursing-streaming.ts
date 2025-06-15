@@ -166,7 +166,7 @@ export class RealtimeNursingStreaming {
           );
 
           // Generate draft orders (same as provider)
-          const draftOrders = await self.soapOrdersExtractor.extractOrdersFromSOAP(
+          const draftOrders = await self.soapOrdersExtractor.extractOrders(
             fullAssessment,
             patientId,
             parseInt(encounterId),

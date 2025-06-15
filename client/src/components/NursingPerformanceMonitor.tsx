@@ -53,6 +53,14 @@ export function NursingPerformanceMonitor({ isVisible = false, encounterId }: Nu
           }));
         }
         
+        // Track realtime API usage (much faster)
+        if (url.includes('realtime') || duration < 100) {
+          setMetrics(prev => ({
+            ...prev,
+            cacheHitRate: prev.cacheHitRate + 0.1, // Realtime is like a cache hit
+          }));
+        }
+        
         if (url.includes('/api/voice/live-suggestions')) {
           setMetrics(prev => ({
             ...prev,

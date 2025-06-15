@@ -120,48 +120,150 @@ export const TemplateNursingAssessment = forwardRef<TemplateNursingRef, Template
     if (!currentTranscription.trim()) return;
 
     setIsAnalyzing(true);
-    console.log(`📋 [TemplateNursing] Analyzing transcription for template updates`);
+    console.log(`📋 [TemplateNursing] Analyzing via Realtime API (no separate API calls)`);
 
     try {
-      const response = await fetch('/api/nursing/analyze-template', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          patientId,
-          encounterId,
-          transcription: currentTranscription,
-          currentTemplate: template,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      // Use existing realtime WebSocket connection instead of separate API calls
+      const realtimeWs = (window as any).currentRealtimeWs;
       
-      if (result.updates && Object.keys(result.updates).length > 0) {
-        const updatedTemplate = { ...template, ...result.updates, lastUpdate: new Date() };
-        setTemplate(updatedTemplate);
-        onTemplateUpdate(updatedTemplate);
+      if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+        console.log(`⚡ [TemplateNursing] Using existing Realtime connection - MUCH FASTER!`);
+        
+        const templateAnalysisPrompt = `
+Update nursing assessment template from this transcription. Only include fields with new information.
 
-        // Track newly completed fields
-        const newCompletedFields = new Set(completedFields);
-        Object.keys(result.updates).forEach(key => {
-          if (result.updates[key] && result.updates[key].trim() && !completedFields.has(key)) {
-            newCompletedFields.add(key);
+Current Template:
+- CC: ${template.cc || 'empty'}
+- HPI: ${template.hpi || 'empty'}  
+- PMH: ${template.pmh || 'empty'}
+- Meds: ${template.meds || 'empty'}
+- Allergies: ${template.allergies || 'empty'}
+- Family Hx: ${template.famHx || 'empty'}
+- Social Hx: ${template.soHx || 'empty'}
+- Past Surgical Hx: ${template.psh || 'empty'}
+- ROS: ${template.ros || 'empty'}
+- Vitals: ${template.vitals || 'empty'}
+
+New transcription: "${currentTranscription.slice(-400)}"
+
+Return ONLY JSON with updates, example: {"cc":"New complaint","hpi":"Additional history"}`;
+
+        // Create a temporary listener for the response
+        const responseListener = (event: MessageEvent) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'response.text.delta' && data.delta) {
+              // Accumulate response text
+              if (!realtimeWs._templateResponseBuffer) {
+                realtimeWs._templateResponseBuffer = '';
+              }
+              realtimeWs._templateResponseBuffer += data.delta;
+            }
+            
+            if (data.type === 'response.text.done') {
+              const responseText = realtimeWs._templateResponseBuffer || '';
+              realtimeWs._templateResponseBuffer = '';
+              
+              console.log(`📋 [TemplateNursing] Realtime response received:`, responseText.substring(0, 200));
+              
+              // Parse JSON response
+              try {
+                let jsonStr = responseText.trim();
+                
+                // Handle markdown code blocks
+                if (jsonStr.includes('```json')) {
+                  jsonStr = jsonStr.split('```json')[1].split('```')[0].trim();
+                } else if (jsonStr.includes('```')) {
+                  jsonStr = jsonStr.split('```')[1].split('```')[0].trim();
+                }
+                
+                const updates = JSON.parse(jsonStr);
+                
+                if (updates && Object.keys(updates).length > 0) {
+                  const updatedTemplate = { ...template, ...updates, lastUpdate: new Date() };
+                  setTemplate(updatedTemplate);
+                  onTemplateUpdate(updatedTemplate);
+
+                  // Track newly completed fields
+                  const newCompletedFields = new Set(completedFields);
+                  Object.keys(updates).forEach(key => {
+                    if (updates[key] && updates[key].trim() && !completedFields.has(key)) {
+                      newCompletedFields.add(key);
+                    }
+                  });
+                  setCompletedFields(newCompletedFields);
+
+                  console.log(`⚡ [TemplateNursing] REALTIME Updated fields: ${Object.keys(updates).join(', ')}`);
+                }
+              } catch (parseError) {
+                console.warn(`📋 [TemplateNursing] Failed to parse realtime response:`, parseError);
+              }
+              
+              // Remove listener
+              realtimeWs.removeEventListener('message', responseListener);
+              setIsAnalyzing(false);
+            }
+          } catch (error) {
+            console.error(`📋 [TemplateNursing] Error processing realtime response:`, error);
           }
-        });
-        setCompletedFields(newCompletedFields);
+        };
 
-        console.log(`✅ [TemplateNursing] Updated fields: ${Object.keys(result.updates).join(', ')}`);
+        // Add temporary listener
+        realtimeWs.addEventListener('message', responseListener);
+
+        // Send the request
+        realtimeWs.send(JSON.stringify({
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [{ type: "text", text: templateAnalysisPrompt }],
+          },
+        }));
+
+        realtimeWs.send(JSON.stringify({
+          type: "response.create",
+          response: { modalities: ["text"], temperature: 0.1 },
+        }));
+
+      } else {
+        console.warn(`📋 [TemplateNursing] No realtime connection, using fallback API`);
+        
+        // Fallback to REST API only if realtime is unavailable
+        const response = await fetch('/api/nursing/analyze-template', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patientId, encounterId, transcription: currentTranscription, currentTemplate: template,
+          }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        
+        const result = await response.json();
+        
+        if (result.updates && Object.keys(result.updates).length > 0) {
+          const updatedTemplate = { ...template, ...result.updates, lastUpdate: new Date() };
+          setTemplate(updatedTemplate);
+          onTemplateUpdate(updatedTemplate);
+
+          const newCompletedFields = new Set(completedFields);
+          Object.keys(result.updates).forEach(key => {
+            if (result.updates[key] && result.updates[key].trim() && !completedFields.has(key)) {
+              newCompletedFields.add(key);
+            }
+          });
+          setCompletedFields(newCompletedFields);
+
+          console.log(`✅ [TemplateNursing] Fallback updated fields: ${Object.keys(result.updates).join(', ')}`);
+        }
+        
+        setIsAnalyzing(false);
       }
 
     } catch (error) {
       console.error("❌ [TemplateNursing] Error analyzing transcription:", error);
-    } finally {
       setIsAnalyzing(false);
     }
   };
