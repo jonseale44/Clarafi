@@ -97,16 +97,96 @@ export const NursingTemplateAssessment = forwardRef<NursingTemplateRef, NursingT
     console.log(`🏥 [NursingTemplate] Starting template assessment for session ${sessionIdRef.current}`);
     
     try {
-      // Connect to OpenAI Realtime API
+      // Get API key from environment
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
       if (!apiKey) {
         throw new Error("OpenAI API key not configured");
       }
 
-      const ws = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01", [
+      // Step 1: Create session like working implementation
+      console.log("🔧 [NursingTemplate] Creating OpenAI session...");
+      const sessionConfig = {
+        model: "gpt-4o-mini-realtime-preview",
+        modalities: ["text"],
+        instructions: `You are a nursing documentation assistant that extracts structured information from patient conversations.
+
+INSTRUCTIONS:
+- Listen to patient-nurse conversations and extract relevant information for nursing assessment fields
+- Only provide information that is explicitly mentioned or clearly implied in the conversation
+- Return updates in JSON format with only the fields that have new information
+- Be concise and professional in your responses
+- Do not make assumptions or add information not mentioned
+
+TEMPLATE FIELDS:
+- cc: Chief Complaint (main reason for visit)
+- hpi: History of Present Illness (timeline, symptoms, characteristics)
+- pmh: Past Medical History (previous diagnoses, conditions)
+- meds: Current Medications (names, dosages, frequency)
+- allergies: Known Allergies (medications, foods, environmental)
+- famHx: Family History (genetic predispositions, family medical conditions)
+- soHx: Social History (smoking, alcohol, occupation, living situation)
+- psh: Past Surgical History (previous surgeries, procedures)
+- ros: Review of Systems (systematic symptom review)
+- vitals: Vital Signs (BP, HR, temp, resp rate, O2 sat, pain score)
+
+RESPONSE FORMAT:
+Always respond with valid JSON containing only fields with new information:
+{"cc": "stomach pain", "vitals": "BP 140/90, HR 85"}
+
+Do not include fields that have no new information.`,
+        input_audio_format: "pcm16",
+        input_audio_transcription: {
+          model: "whisper-1",
+          language: "en",
+        },
+        turn_detection: {
+          type: "server_vad",
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500,
+          create_response: true,
+        },
+      };
+
+      const sessionResponse = await fetch(
+        "https://api.openai.com/v1/realtime/sessions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+            "OpenAI-Beta": "realtime=v1",
+          },
+          body: JSON.stringify(sessionConfig),
+        },
+      );
+
+      if (!sessionResponse.ok) {
+        const error = await sessionResponse.json();
+        console.log("❌ [NursingTemplate] Session creation failed:", error);
+        throw new Error(
+          `Failed to create session: ${error.message || "Unknown error"}`,
+        );
+      }
+
+      const session = await sessionResponse.json();
+      console.log("✅ [NursingTemplate] Session created:", session.id);
+
+      // Step 2: Connect via WebSocket with proper protocols
+      const protocols = [
         "realtime",
-        "openai-insecure-api-key." + apiKey,
-      ]);
+        `openai-insecure-api-key.${apiKey}`,
+        "openai-beta.realtime-v1",
+      ];
+
+      const params = new URLSearchParams({
+        model: "gpt-4o-mini-realtime-preview",
+      });
+
+      const ws = new WebSocket(
+        `wss://api.openai.com/v1/realtime?${params.toString()}`,
+        protocols,
+      );
 
       wsRef.current = ws;
 
@@ -115,11 +195,10 @@ export const NursingTemplateAssessment = forwardRef<NursingTemplateRef, NursingT
         setIsConnected(true);
         setIsActive(true);
 
-        // Configure session for nursing template extraction
-        ws.send(JSON.stringify({
+        // Configure session for nursing template extraction like working implementation
+        const sessionUpdateMessage = {
           type: "session.update",
           session: {
-            modalities: ["text"],
             instructions: `You are a nursing documentation assistant that extracts structured information from patient conversations.
 
 INSTRUCTIONS:
@@ -146,18 +225,23 @@ Always respond with valid JSON containing only fields with new information:
 {"cc": "stomach pain", "vitals": "BP 140/90, HR 85"}
 
 Do not include fields that have no new information.`,
+            modalities: ["text"],
+            input_audio_format: "pcm16",
+            input_audio_transcription: {
+              model: "whisper-1",
+              language: "en",
+            },
             turn_detection: {
               type: "server_vad",
-              threshold: 0.5,
+              threshold: 0.3,
               prefix_padding_ms: 300,
               silence_duration_ms: 500,
-              create_response: false
+              create_response: false,
             },
-            input_audio_transcription: {
-              model: "whisper-1"
-            }
-          }
-        }));
+          },
+        };
+
+        ws.send(JSON.stringify(sessionUpdateMessage));
 
         toast({
           title: "Template Assessment Started",
@@ -244,6 +328,8 @@ Do not include fields that have no new information.`,
   };
 
   const handleRealtimeMessage = (message: any) => {
+    console.log(`📨 [NursingTemplate] OpenAI message type: ${message.type}`);
+
     switch (message.type) {
       case "session.created":
         console.log("✅ [NursingTemplate] Session created successfully");
@@ -253,20 +339,48 @@ Do not include fields that have no new information.`,
         console.log("✅ [NursingTemplate] Session updated successfully");
         break;
 
+      case "response.audio_transcript.delta":
+      case "conversation.item.input_audio_transcription.delta":
+        // Handle transcription deltas - not needed for template extraction
+        break;
+
       case "response.text.delta":
         // Accumulate text deltas for complete response
+        const deltaContent = message.delta || message.text || "";
+        if (deltaContent) {
+          console.log("📝 [NursingTemplate] Text delta:", deltaContent.substring(0, 50));
+        }
         break;
 
       case "response.text.done":
         try {
-          const content = message.text;
-          console.log("📝 [NursingTemplate] Received template update:", content);
+          const content = message.text || "";
+          console.log("📝 [NursingTemplate] Complete response received:", content);
           
-          // Parse the JSON response and update template fields
-          const updates = JSON.parse(content);
-          updateTemplateFields(updates);
+          // Try to parse as JSON and update template fields
+          if (content.trim()) {
+            // Clean up the response to extract JSON
+            const jsonMatch = content.match(/\{.*\}/s);
+            if (jsonMatch) {
+              const updates = JSON.parse(jsonMatch[0]);
+              console.log("📝 [NursingTemplate] Parsed updates:", updates);
+              updateTemplateFields(updates);
+            } else {
+              console.log("📝 [NursingTemplate] No JSON found in response");
+            }
+          }
         } catch (error) {
           console.error("❌ [NursingTemplate] Error parsing template updates:", error);
+        }
+        break;
+
+      case "conversation.item.input_audio_transcription.completed":
+        const finalTranscript = message.transcript || "";
+        console.log("✅ [NursingTemplate] Transcription completed:", finalTranscript);
+        
+        // Process the complete transcription for template extraction
+        if (finalTranscript.trim() && wsRef.current) {
+          processTranscriptionForTemplate(finalTranscript);
         }
         break;
 
@@ -282,6 +396,43 @@ Do not include fields that have no new information.`,
       default:
         console.log(`📊 [NursingTemplate] Unhandled message type: ${message.type}`);
     }
+  };
+
+  const processTranscriptionForTemplate = (transcriptText: string) => {
+    if (!wsRef.current || !isConnected) return;
+
+    console.log(`🔍 [NursingTemplate] Processing transcript for template extraction`);
+    
+    // Create a conversation item with the transcription
+    const contextMessage = {
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [{
+          type: "text",
+          text: `Extract nursing assessment information from this conversation transcript. Only include fields with new information. Return as JSON:
+
+${transcriptText}`
+        }]
+      }
+    };
+
+    wsRef.current.send(JSON.stringify(contextMessage));
+
+    // Request a response
+    const responseRequest = {
+      type: "response.create",
+      response: {
+        modalities: ["text"],
+        instructions: `Extract nursing assessment data from the conversation and return as JSON with only populated fields. Use this exact format:
+{"cc": "value", "hpi": "value", "pmh": "value", "meds": "value", "allergies": "value", "famHx": "value", "soHx": "value", "psh": "value", "ros": "value", "vitals": "value"}
+
+Only include fields that have information mentioned in the conversation.`
+      }
+    };
+
+    wsRef.current.send(JSON.stringify(responseRequest));
   };
 
   const updateTemplateFields = (updates: Partial<NursingTemplateData>) => {
