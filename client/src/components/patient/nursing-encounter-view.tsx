@@ -37,9 +37,9 @@ import {
   RealtimeNursingRef,
 } from "@/components/RealtimeNursingIntegration";
 import {
-  ContinuousNursingAssessment,
-  ContinuousNursingRef,
-} from "@/components/ContinuousNursingAssessment";
+  TemplateNursingAssessment,
+  TemplateNursingRef,
+} from "@/components/TemplateNursingAssessment";
 import type { Patient, User as UserType } from "@shared/schema";
 
 interface NursingEncounterViewProps {
@@ -92,7 +92,7 @@ export function NursingEncounterView({
     new Set(["encounters"]),
   );
   const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
-  const continuousNursingRef = useRef<ContinuousNursingRef>(null);
+  const templateNursingRef = useRef<TemplateNursingRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get current user for role-based functionality
@@ -1504,25 +1504,17 @@ Format each bullet point on its own line with no extra spacing between them.`,
                 />
               </div>
 
-              {/* Continuous Nursing Assessment Section */}
+              {/* Template Nursing Assessment Section */}
               <div className="mt-4">
-                <ContinuousNursingAssessment
-                  ref={continuousNursingRef}
+                <TemplateNursingAssessment
+                  ref={templateNursingRef}
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
                   isRecording={isRecording}
                   transcription={transcription}
-                  onAssessmentUpdate={(assessment) => {
-                    setNursingAssessment(assessment);
+                  onTemplateUpdate={(template) => {
+                    setContinuousAssessment(JSON.stringify(template, null, 2));
                   }}
-                  onAssessmentComplete={(assessment) => {
-                    setNursingAssessment(assessment);
-                    toast({
-                      title: "Continuous Assessment Complete",
-                      description: "Real-time nursing assessment finalized",
-                    });
-                  }}
-                  autoStart={true}
                 />
               </div>
 
