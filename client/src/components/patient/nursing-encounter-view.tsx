@@ -1503,6 +1503,31 @@ Format each bullet point on its own line with no extra spacing between them.`,
                 />
               </div>
 
+              {/* Continuous Nursing Assessment Section */}
+              <div className="mt-4">
+                <ContinuousNursingAssessment
+                  ref={continuousNursingRef}
+                  patientId={patient.id.toString()}
+                  encounterId={encounterId.toString()}
+                  isRecording={isRecording}
+                  transcription={transcription}
+                  onAssessmentUpdate={(assessment) => {
+                    setNursingAssessment(assessment);
+                  }}
+                  onAssessmentComplete={(assessment) => {
+                    setNursingAssessment(assessment);
+                    toast({
+                      title: "Continuous Assessment Complete",
+                      description: "Real-time nursing assessment finalized",
+                    });
+                  }}
+                  autoStart={true}
+                />
+              </div>
+
+              <div>
+              </div>
+
               {/* Transcription Content */}
               <div className="space-y-2">
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
