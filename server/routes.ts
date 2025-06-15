@@ -65,6 +65,9 @@ export function registerRoutes(app: Express): Server {
   // Nursing content generation routes
   app.use("/api", nursingContentRoutes);
 
+  // Nursing summary routes
+  app.use("/api/encounters", nursingSummaryRoutes);
+
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 
   // Users routes

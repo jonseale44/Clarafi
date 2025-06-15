@@ -37,7 +37,7 @@ router.post("/:encounterId/generate-nursing-summary", async (req, res) => {
 
   } catch (error) {
     console.error("❌ [NursingSummaryAPI] Error generating summary:", error);
-    return APIResponseHandler.error(res, "SUMMARY_GENERATION_FAILED", "Failed to generate nursing summary");
+    return APIResponseHandler.error(res, error as Error, 500, "SUMMARY_GENERATION_FAILED");
   }
 });
 
@@ -58,7 +58,7 @@ router.get("/:encounterId/nursing-summary", async (req, res) => {
 
   } catch (error) {
     console.error("❌ [NursingSummaryAPI] Error retrieving summary:", error);
-    return APIResponseHandler.error(res, "SUMMARY_RETRIEVAL_FAILED", "Failed to retrieve nursing summary");
+    return APIResponseHandler.error(res, error as Error, 500, "SUMMARY_RETRIEVAL_FAILED");
   }
 });
 
@@ -100,7 +100,7 @@ router.put("/:encounterId/nursing-summary", async (req, res) => {
 
   } catch (error) {
     console.error("❌ [NursingSummaryAPI] Error updating summary:", error);
-    return APIResponseHandler.error(res, "SUMMARY_UPDATE_FAILED", "Failed to update nursing summary");
+    return APIResponseHandler.error(res, "SUMMARY_UPDATE_FAILED", "Failed to update nursing summary", error);
   }
 });
 
