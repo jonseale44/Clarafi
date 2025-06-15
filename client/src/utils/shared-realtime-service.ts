@@ -99,7 +99,7 @@ export class SharedRealtimeService {
   private buildRoleSpecificPrompt(request: AIContentRequest): string {
     const basePrompt = `Patient ID: ${this.config.patientId}\nContent: ${request.content}\n\n`;
     
-    const rolePrompts = {
+    const rolePrompts: Record<string, Record<string, string>> = {
       provider: {
         soap_note: basePrompt + "Generate a comprehensive SOAP note focusing on medical diagnosis, treatment planning, and billing optimization.",
         orders: basePrompt + "Generate appropriate medical orders including medications, labs, and imaging studies."
@@ -108,6 +108,12 @@ export class SharedRealtimeService {
         nursing_assessment: basePrompt + "Generate a nursing assessment focusing on patient safety, comfort, education needs, and nursing interventions.",
         care_plan: basePrompt + "Create a nursing care plan with patient-centered goals, interventions, and evaluation criteria.",
         interventions: basePrompt + "Document nursing interventions performed and patient responses."
+      },
+      admin: {
+        notes: basePrompt + "Generate administrative notes and workflow documentation."
+      },
+      staff: {
+        notes: basePrompt + "Generate staff notes and task documentation."
       }
     };
 

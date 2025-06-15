@@ -82,20 +82,22 @@ export function NursingEncounterView({
   // Load existing nursing documentation
   useEffect(() => {
     if (encounter) {
-      setNursingAssessment(encounter.nurseAssessment || "");
-      setNursingInterventions(encounter.nurseInterventions || "");
-      setNursingNotes(encounter.nurseNotes || "");
+      setNursingAssessment((encounter as any).nurseAssessment || "");
+      setNursingInterventions((encounter as any).nurseInterventions || "");
+      setNursingNotes((encounter as any).nurseNotes || "");
     }
   }, [encounter]);
 
   // Save nursing content mutation
   const saveContentMutation = useMutation({
     mutationFn: async (data: { field: string; content: string }) => {
-      const response = await apiRequest(`/api/encounters/${encounterId}`, {
+      const response = await fetch(`/api/encounters/${encounterId}`, {
         method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [data.field]: data.content })
       });
-      return response;
+      if (!response.ok) throw new Error('Failed to save');
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -225,7 +227,7 @@ export function NursingEncounterView({
                 Nursing Encounter - {patient.firstName} {patient.lastName}
               </h1>
               <p className="text-sm text-gray-600">
-                {encounter?.encounterType} • {new Date(encounter?.startTime).toLocaleDateString()}
+                {(encounter as any)?.encounterType} • {encounter && new Date((encounter as any).startTime).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -235,8 +237,8 @@ export function NursingEncounterView({
               <Stethoscope className="w-3 h-3 mr-1" />
               Nursing View
             </Badge>
-            <Badge variant={encounter?.encounterStatus === 'completed' ? 'default' : 'secondary'}>
-              {encounter?.encounterStatus?.replace('_', ' ') || 'In Progress'}
+            <Badge variant={(encounter as any)?.encounterStatus === 'completed' ? 'default' : 'secondary'}>
+              {(encounter as any)?.encounterStatus?.replace('_', ' ') || 'In Progress'}
             </Badge>
           </div>
         </div>

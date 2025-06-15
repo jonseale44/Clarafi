@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { EncounterDetailView } from "@/components/patient/encounter-detail-view";
+import { RoleBasedEncounterView } from "@/components/patient/role-based-encounter-view";
 import { useQuery } from "@tanstack/react-query";
 import { Patient, Encounter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,7 @@ export function EncounterView() {
 
   return (
     <div className="h-screen bg-background">
-      <EncounterDetailView 
+      <RoleBasedEncounterView 
         patient={patient} 
         encounterId={encounterId} 
         encounter={encounter}
