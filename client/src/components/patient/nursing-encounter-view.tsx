@@ -89,8 +89,15 @@ export function NursingEncounterView({
     enabled: !!encounterId,
   });
 
-  // Initialize shared real-time service
-  const { service } = useSharedRealtimeService({
+  // Initialize shared real-time service with WebSocket transcription
+  const { 
+    startRecording, 
+    stopRecording, 
+    isConnected,
+    isRecording: realtimeIsRecording,
+    transcription: realtimeTranscription,
+    connectionState 
+  } = useSharedRealtimeService({
     patientId: patient.id.toString(),
     encounterId: encounterId.toString(),
     userRole: 'nurse',
@@ -109,6 +116,17 @@ export function NursingEncounterView({
       }
     }
   });
+
+  // Sync transcription states
+  useEffect(() => {
+    if (realtimeTranscription) {
+      setTranscription(realtimeTranscription);
+    }
+  }, [realtimeTranscription]);
+
+  useEffect(() => {
+    setIsRecording(realtimeIsRecording);
+  }, [realtimeIsRecording]);
 
   // Load existing nursing documentation
   useEffect(() => {
