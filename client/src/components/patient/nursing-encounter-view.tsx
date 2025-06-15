@@ -28,6 +28,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useSharedRealtimeService } from "@/utils/shared-realtime-service";
 import { SharedChartSections } from "@/components/patient/shared-chart-sections";
+import {
+  RealtimeNursingIntegration,
+  RealtimeNursingRef,
+} from "@/components/RealtimeNursingIntegration";
 import type { Patient, User as UserType } from "@shared/schema";
 
 interface NursingEncounterViewProps {
@@ -72,6 +76,7 @@ export function NursingEncounterView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"])
   );
+  const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
 
   // Get current user for role-based functionality
   const { data: currentUser } = useQuery<UserType>({
