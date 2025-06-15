@@ -212,19 +212,19 @@ Return ONLY JSON with updates, example: {"cc":"New complaint","hpi":"Additional 
         // Add temporary listener
         realtimeWs.addEventListener('message', responseListener);
 
-        // Send the request
+        // Send the request with correct OpenAI Realtime API format
         realtimeWs.send(JSON.stringify({
           type: "conversation.item.create",
           item: {
             type: "message",
             role: "user",
-            content: [{ type: "text", text: templateAnalysisPrompt }],
+            content: [{ type: "input_text", text: templateAnalysisPrompt }],
           },
         }));
 
         realtimeWs.send(JSON.stringify({
           type: "response.create",
-          response: { modalities: ["text"], temperature: 0.1 },
+          response: { modalities: ["text"], temperature: 0.6 },
         }));
 
       } else {

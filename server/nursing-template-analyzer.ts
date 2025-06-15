@@ -6,16 +6,16 @@ const openai = new OpenAI({
 });
 
 export interface NursingTemplate {
-  cc: string;           // Chief Complaint
-  hpi: string;          // History of Present Illness
-  pmh: string;          // Past Medical History
-  meds: string;         // Medications
-  allergies: string;    // Allergies
-  famHx: string;        // Family History
-  soHx: string;         // Social History
-  psh: string;          // Past Surgical History
-  ros: string;          // Review of Systems
-  vitals: string;       // Vital Signs
+  cc: string; // Chief Complaint
+  hpi: string; // History of Present Illness
+  pmh: string; // Past Medical History
+  meds: string; // Medications
+  allergies: string; // Allergies
+  famHx: string; // Family History
+  soHx: string; // Social History
+  psh: string; // Past Surgical History
+  ros: string; // Review of Systems
+  vitals: string; // Vital Signs
 }
 
 export class NursingTemplateAnalyzer {
@@ -26,13 +26,21 @@ export class NursingTemplateAnalyzer {
     encounterId?: string,
   ): Promise<{ updates: Partial<NursingTemplate>; confidence: number }> {
     const startTime = Date.now();
-    console.log(`📋 [TemplateAnalyzer] Analyzing transcription for nursing template updates`);
+    console.log(
+      `📋 [TemplateAnalyzer] Analyzing transcription for nursing template updates`,
+    );
 
     // Check cache first
     if (encounterId) {
-      const cached = nursingTemplateCache.getCached(patientId, encounterId, transcription);
+      const cached = nursingTemplateCache.getCached(
+        patientId,
+        encounterId,
+        transcription,
+      );
       if (cached) {
-        console.log(`⚡ [TemplateAnalyzer] Cache hit - ${Date.now() - startTime}ms`);
+        console.log(
+          `⚡ [TemplateAnalyzer] Cache hit - ${Date.now() - startTime}ms`,
+        );
         return cached;
       }
     }
@@ -65,42 +73,68 @@ Return a JSON object with only the fields that have new or updated information. 
       });
 
       const content = response.choices[0]?.message?.content || "";
-      
+
       try {
         // Clean the response by removing markdown code blocks if present
         let cleanContent = content.trim();
-        if (cleanContent.startsWith('```json')) {
-          cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-        } else if (cleanContent.startsWith('```')) {
-          cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        if (cleanContent.startsWith("```json")) {
+          cleanContent = cleanContent
+            .replace(/^```json\s*/, "")
+            .replace(/\s*```$/, "");
+        } else if (cleanContent.startsWith("```")) {
+          cleanContent = cleanContent
+            .replace(/^```\s*/, "")
+            .replace(/\s*```$/, "");
         }
-        
+
         // Try to parse the cleaned JSON response
         const result = JSON.parse(cleanContent);
-        
+
         // Validate the response format
-        if (result && typeof result === 'object') {
+        if (result && typeof result === "object") {
           const updates: Partial<NursingTemplate> = {};
           let hasUpdates = false;
 
           // Only include valid template fields that have meaningful content
-          const validFields = ['cc', 'hpi', 'pmh', 'meds', 'allergies', 'famHx', 'soHx', 'psh', 'ros', 'vitals'];
-          
+          const validFields = [
+            "cc",
+            "hpi",
+            "pmh",
+            "meds",
+            "allergies",
+            "famHx",
+            "soHx",
+            "psh",
+            "ros",
+            "vitals",
+          ];
+
           for (const field of validFields) {
-            if (result[field] && typeof result[field] === 'string' && result[field].trim()) {
+            if (
+              result[field] &&
+              typeof result[field] === "string" &&
+              result[field].trim()
+            ) {
               const newValue = result[field].trim();
-              const currentValue = currentTemplate[field as keyof NursingTemplate] || '';
-              
+              const currentValue =
+                currentTemplate[field as keyof NursingTemplate] || "";
+
               // Only include if it's genuinely new or significantly different
-              if (!currentValue || (newValue !== currentValue && newValue.length > currentValue.length + 10)) {
+              if (
+                !currentValue ||
+                (newValue !== currentValue &&
+                  newValue.length > currentValue.length + 10)
+              ) {
                 updates[field as keyof NursingTemplate] = newValue;
                 hasUpdates = true;
               }
             }
           }
 
-          console.log(`✅ [TemplateAnalyzer] Found ${Object.keys(updates).length} field updates - ${Date.now() - startTime}ms`);
-          
+          console.log(
+            `✅ [TemplateAnalyzer] Found ${Object.keys(updates).length} field updates - ${Date.now() - startTime}ms`,
+          );
+
           const finalResult = {
             updates: hasUpdates ? updates : {},
             confidence: result.confidence || 0.8,
@@ -108,25 +142,38 @@ Return a JSON object with only the fields that have new or updated information. 
 
           // Cache the result
           if (encounterId) {
-            nursingTemplateCache.setCached(patientId, encounterId, transcription, finalResult);
+            nursingTemplateCache.setCached(
+              patientId,
+              encounterId,
+              transcription,
+              finalResult,
+            );
           }
 
           return finalResult;
         }
       } catch (parseError) {
-        console.error("❌ [TemplateAnalyzer] Failed to parse JSON response:", parseError);
+        console.error(
+          "❌ [TemplateAnalyzer] Failed to parse JSON response:",
+          parseError,
+        );
         console.log("Raw response:", content);
       }
 
       return { updates: {}, confidence: 0 };
-
     } catch (error) {
-      console.error("❌ [TemplateAnalyzer] Error analyzing transcription:", error);
+      console.error(
+        "❌ [TemplateAnalyzer] Error analyzing transcription:",
+        error,
+      );
       return { updates: {}, confidence: 0 };
     }
   }
 
-  private buildAnalysisPrompt(transcription: string, currentTemplate: NursingTemplate): string {
+  private buildAnalysisPrompt(
+    transcription: string,
+    currentTemplate: NursingTemplate,
+  ): string {
     return `You are an expert nursing assessment analyzer. Your job is to extract specific medical information from patient conversations and organize it into a structured nursing assessment template.
 
 **INSTRUCTIONS:**
