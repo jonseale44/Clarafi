@@ -229,13 +229,26 @@ export class RealtimeNursingStreaming {
 
           // Create session configuration for nursing assessment
           const sessionConfig = {
-            model: "gpt-4o-mini-realtime-preview",
+            model: "gpt-4o-realtime-preview",
             modalities: ["text"],
             instructions: nursingPrompt,
-            temperature: 0.6,
+            voice: "alloy",
+            input_audio_format: "pcm16",
+            output_audio_format: "pcm16",
+            input_audio_transcription: {
+              model: "whisper-1"
+            },
             turn_detection: {
-              type: "none", // Manual turn detection for text-only assessment
-            }
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500,
+              create_response: false
+            },
+            tools: [],
+            tool_choice: "auto",
+            temperature: 0.6,
+            max_response_output_tokens: 4096
           };
 
           // Create session first
@@ -250,8 +263,13 @@ export class RealtimeNursingStreaming {
           });
 
           if (!sessionResponse.ok) {
-            const error = await sessionResponse.json();
-            throw new Error(`Failed to create session: ${error.message || "Unknown error"}`);
+            const errorText = await sessionResponse.text();
+            console.error(`❌ [RealtimeNursing] Session creation failed:`, {
+              status: sessionResponse.status,
+              statusText: sessionResponse.statusText,
+              error: errorText
+            });
+            throw new Error(`Failed to create session: ${sessionResponse.status} ${sessionResponse.statusText}`);
           }
 
           const session = await sessionResponse.json();

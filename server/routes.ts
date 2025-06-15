@@ -1020,10 +1020,21 @@ export function registerRoutes(app: Express): Server {
       }
     } catch (error: any) {
       console.error("❌ [RealtimeNursing] Error in streaming endpoint:", error);
-      res.status(500).json({
-        message: "Failed to generate streaming nursing assessment",
-        error: error.message,
-      });
+      
+      // Only send error response if headers haven't been sent
+      if (!res.headersSent) {
+        res.status(500).json({
+          message: "Failed to generate streaming nursing assessment",
+          error: error.message,
+        });
+      } else {
+        // Stream an error message if already streaming
+        res.write(`data: ${JSON.stringify({
+          type: "error",
+          message: error.message
+        })}\n\n`);
+        res.end();
+      }
     }
   });
 
