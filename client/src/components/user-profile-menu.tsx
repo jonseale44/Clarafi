@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
-  User, 
+  User as UserIcon, 
   LogOut, 
   Settings, 
   Shield, 
   ChevronDown,
   Edit3
 } from "lucide-react";
-import type { SelectUser } from "@shared/schema";
+import type { User as UserType } from "@shared/schema";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,13 +32,17 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
   const queryClient = useQueryClient();
 
   // Fetch current user data
-  const { data: user, isLoading } = useQuery<SelectUser>({
+  const { data: user, isLoading } = useQuery<UserType>({
     queryKey: ["/api/user"],
   });
 
   // Logout mutation
   const logoutMutation = useMutation({
-    mutationFn: () => apiRequest("/api/logout", { method: "POST" }),
+    mutationFn: async () => {
+      const response = await fetch("/api/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Logout failed");
+      return response;
+    },
     onSuccess: () => {
       // Clear all cached data
       queryClient.clear();
@@ -87,11 +91,11 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
       case "admin":
         return <Shield className="w-3 h-3" />;
       case "provider":
-        return <User className="w-3 h-3" />;
+        return <UserIcon className="w-3 h-3" />;
       case "nurse":
-        return <User className="w-3 h-3" />;
+        return <UserIcon className="w-3 h-3" />;
       default:
-        return <User className="w-3 h-3" />;
+        return <UserIcon className="w-3 h-3" />;
     }
   };
 
@@ -103,7 +107,6 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
           className={`flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 ${className}`}
         >
           <Avatar className="w-8 h-8">
-            <AvatarImage src={user.profilePhoto} alt={user.firstName} />
             <AvatarFallback className="text-xs bg-primary text-white">
               {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'U'}
             </AvatarFallback>
