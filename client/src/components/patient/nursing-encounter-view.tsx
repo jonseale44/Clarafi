@@ -873,42 +873,16 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   if (trimmedLine && !trimmedLine.startsWith('•') && !trimmedLine.startsWith('-') && !trimmedLine.startsWith('*')) {
                     // Fix common formatting issues in AI responses
                     
-                    // Enhanced punctuation and structure correction
-                    
-                    // Fix common medical terminology patterns
-                    trimmedLine = trimmedLine
-                      // Add colons after medical terms that should have them
-                      .replace(/\b(Medication|History|Assessment|Plan|Chief complaint|Recent changes|Mental status|Diagnostic tests)\s+([A-Z])/g, '$1: $2')
-                      // Add periods after age descriptors
-                      .replace(/\b(\d+-year-old)\s+([A-Z])/g, '$1. $2')
-                      // Fix common assessment patterns
-                      .replace(/\b(Assess|Inquire|Confirm|Arrange|Review)\s+([a-z])/g, '$1 $2')
-                      // Add proper spacing after periods
-                      .replace(/\.([A-Z])/g, '. $1');
-                    
-                    // Split on patterns that indicate separate suggestions
+                    // Add proper punctuation to questions that are missing it
                     if (trimmedLine.includes('Duration') || trimmedLine.includes('Location') || 
                         trimmedLine.includes('Quality') || trimmedLine.includes('Any ') ||
-                        trimmedLine.includes('History') || trimmedLine.includes('Associated') ||
-                        trimmedLine.includes('Medication') || trimmedLine.includes('Mental status') ||
-                        trimmedLine.includes('Recent changes') || trimmedLine.includes('Chief complaint')) {
-                      
-                      // Split on medical assessment patterns and capital letters
-                      const parts = trimmedLine.split(/(?=\b(?:Duration|Location|Quality|Any |History|Associated|Medication|Mental status|Recent changes|Chief complaint|Assess|Inquire|Confirm|Arrange|Review|Diagnostic tests))/);
-                      
+                        trimmedLine.includes('History') || trimmedLine.includes('Associated')) {
+                      // Split on capital letters that should be separate questions
+                      const parts = trimmedLine.split(/(?=[A-Z][a-z])/);
                       const formattedParts = parts.map(part => {
-                        let cleanPart = part.trim();
-                        if (cleanPart) {
-                          // Add appropriate punctuation based on content
-                          if (cleanPart.includes('?') || cleanPart.endsWith('?')) {
-                            // Already has question mark
-                          } else if (cleanPart.includes('Duration') || cleanPart.includes('Location') || 
-                                   cleanPart.includes('Quality') || cleanPart.includes('Any ') ||
-                                   cleanPart.includes('level of') || cleanPart.includes('about')) {
-                            cleanPart += '?';
-                          } else if (!cleanPart.endsWith('.') && !cleanPart.endsWith(':')) {
-                            cleanPart += '.';
-                          }
+                        const cleanPart = part.trim();
+                        if (cleanPart && !cleanPart.endsWith('?') && !cleanPart.endsWith('.')) {
+                          return cleanPart + '?';
                         }
                         return cleanPart;
                       }).filter(part => part.length > 0);
