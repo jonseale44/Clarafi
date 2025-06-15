@@ -89,44 +89,170 @@ export function NursingEncounterView({
     enabled: !!encounterId,
   });
 
-  // Initialize shared real-time service with WebSocket transcription
-  const { 
-    startRecording, 
-    stopRecording, 
-    isConnected,
-    isRecording: realtimeIsRecording,
-    transcription: realtimeTranscription,
-    connectionState 
-  } = useSharedRealtimeService({
-    patientId: patient.id.toString(),
-    encounterId: encounterId.toString(),
-    userRole: 'nurse',
-    onTranscriptionUpdate: (newTranscription) => {
-      setTranscription(newTranscription);
-    },
-    onContentGenerated: (content) => {
-      if (content.nursingAssessment) {
-        setNursingAssessment(content.nursingAssessment);
-      }
-      if (content.nursingInterventions) {
-        setNursingInterventions(content.nursingInterventions);
-      }
-      if (content.nursingNotes) {
-        setNursingNotes(content.nursingNotes);
-      }
-    }
-  });
+  // Initialize WebSocket transcription (same as provider view)
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState('disconnected');
+  const wsRef = useRef<WebSocket | null>(null);
+  const transcriptionBufferRef = useRef("");
 
-  // Sync transcription states
-  useEffect(() => {
-    if (realtimeTranscription) {
-      setTranscription(realtimeTranscription);
-    }
-  }, [realtimeTranscription]);
+  // WebSocket transcription functions (matching provider implementation)
+  const startRecording = async () => {
+    try {
+      console.log("🎤 [NursingView] Starting REAL-TIME voice recording for patient:", patient.id);
+      console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
 
-  useEffect(() => {
-    setIsRecording(realtimeIsRecording);
-  }, [realtimeIsRecording]);
+      // Check API key
+      const apiKeyCheck = import.meta.env.VITE_OPENAI_API_KEY;
+      console.log("🔑 [NursingView] API key check:", {
+        hasApiKey: !!apiKeyCheck,
+        keyLength: apiKeyCheck?.length || 0,
+        keyPrefix: apiKeyCheck?.substring(0, 7) || 'none'
+      });
+
+      if (!apiKeyCheck) {
+        throw new Error("OpenAI API key not found");
+      }
+
+      // Create OpenAI session
+      console.log("🔧 [NursingView] Creating OpenAI session...");
+      const sessionResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKeyCheck}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini-realtime-preview',
+          modalities: ['text'],
+          instructions: 'You are a medical transcription assistant for nursing documentation. Provide accurate transcription of medical conversations. Translate all languages into English.',
+          input_audio_format: 'pcm16',
+          input_audio_transcription: {
+            model: 'whisper-1',
+            language: 'en'
+          },
+          turn_detection: {
+            type: 'server_vad',
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 500,
+            create_response: true
+          }
+        })
+      });
+
+      if (!sessionResponse.ok) {
+        throw new Error(`Session creation failed: ${sessionResponse.status}`);
+      }
+
+      const sessionData = await sessionResponse.json();
+      const wsUrl = `${sessionData.url}?model=gpt-4o-mini-realtime-preview`;
+
+      // Create WebSocket connection
+      const ws = new WebSocket(wsUrl);
+
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log("✅ [NursingView] WebSocket connected");
+        setIsConnected(true);
+        setConnectionState('connected');
+        setIsRecording(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === 'input_audio_buffer.speech_started') {
+            console.log("🎤 [NursingView] Speech detected");
+          }
+          
+          if (data.type === 'conversation.item.input_audio_transcription.completed') {
+            const newTranscription = data.transcript;
+            transcriptionBufferRef.current += newTranscription + " ";
+            setTranscription(transcriptionBufferRef.current);
+            console.log("📝 [NursingView] Transcription update:", newTranscription);
+          }
+        } catch (error) {
+          console.error("❌ [NursingView] WebSocket message error:", error);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log("🔌 [NursingView] WebSocket disconnected");
+        setIsConnected(false);
+        setConnectionState('disconnected');
+        setIsRecording(false);
+      };
+
+      ws.onerror = (error) => {
+        console.error("❌ [NursingView] WebSocket error:", error);
+        setIsConnected(false);
+        setConnectionState('error');
+        setIsRecording(false);
+      };
+
+      // Start audio capture
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          sampleRate: 24000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
+        } 
+      });
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm'
+      });
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+          // Convert to PCM16 and send to WebSocket
+          const reader = new FileReader();
+          reader.onload = () => {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            ws.send(arrayBuffer);
+          };
+          reader.readAsArrayBuffer(event.data);
+        }
+      };
+
+      mediaRecorder.start(100); // Send data every 100ms
+      (window as any).currentNursingMediaRecorder = mediaRecorder;
+      (window as any).currentNursingStream = stream;
+
+    } catch (error) {
+      console.error("❌ [NursingView] Recording start error:", error);
+      toast({
+        title: "Recording Failed",
+        description: "Failed to start nursing transcription",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    console.log("🎤 [NursingView] Stopping recording...");
+    
+    const mediaRecorder = (window as any).currentNursingMediaRecorder;
+    const stream = (window as any).currentNursingStream;
+    
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+    }
+    
+    if (stream) {
+      stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+    }
+    
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+    
+    setIsRecording(false);
+    console.log("🧠 [NursingView] WebSocket remains open for ongoing AI suggestions");
+  };
 
   // Load existing nursing documentation
   useEffect(() => {
@@ -222,54 +348,25 @@ export function NursingEncounterView({
   };
 
   const handleStartRecording = () => {
-    setIsRecording(true);
-    // Integration with existing voice recording would go here
+    startRecording();
     toast({
       title: "Recording Started",
-      description: "Speak your nursing assessment or interventions.",
+      description: "Your voice is being transcribed in real-time",
     });
   };
 
   const handleStopRecording = () => {
-    setIsRecording(false);
-    // Process the recorded audio through the shared real-time service
-    if (transcription) {
-      service.processTranscription(transcription);
-    }
+    stopRecording();
+    // Trigger nursing-specific AI processing after recording stops
+    realtimeNursingRef.current?.generateNursingAssessment();
     toast({
       title: "Recording Stopped",
-      description: "Processing your nursing documentation...",
+      description: "Processing nursing assessment...",
     });
   };
 
-  const generateAIAssessment = async () => {
-    if (!transcription) {
-      toast({
-        variant: "destructive",
-        title: "No Transcription",
-        description: "Please record some content first.",
-      });
-      return;
-    }
-
-    try {
-      await service.generateContent({
-        type: 'nursing_assessment',
-        content: transcription,
-        context: { patientId: patient.id, encounterId }
-      });
-      
-      toast({
-        title: "AI Assessment Generated",
-        description: "Nursing assessment has been generated from your transcription.",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Generation Failed",
-        description: "Failed to generate nursing assessment.",
-      });
-    }
+  const generateAIAssessment = () => {
+    realtimeNursingRef.current?.generateNursingAssessment();
   };
 
   if (isLoading) {
