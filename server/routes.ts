@@ -21,6 +21,7 @@ import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import nursingContentRoutes from "./nursing-content-routes";
+import nursingSummaryRoutes from "./nursing-summary-routes";
 import multer from "multer";
 import OpenAI from "openai";
 

@@ -193,7 +193,7 @@ export const encounters = pgTable("encounters", {
   // Nursing documentation (same encounter, different view)
   nurseAssessment: text("nurse_assessment"),
   nurseInterventions: text("nurse_interventions"),
-  nurseNotes: text("nurse_notes"),
+  nurseNotes: text("nurse_notes"), // Generated summary from nursing template assessment
   
   // Voice workflow support
   transcriptionRaw: text("transcription_raw"),
