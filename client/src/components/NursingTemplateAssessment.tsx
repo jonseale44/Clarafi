@@ -103,6 +103,40 @@ export const NursingTemplateAssessment = forwardRef<
       }
     }, [isRecording, autoStart]);
 
+    // Load existing nursing summary on component mount
+    useEffect(() => {
+      const loadExistingSummary = async () => {
+        try {
+          const response = await fetch(`/api/encounters/${encounterId}/nursing-summary`, {
+            credentials: "include",
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.data?.nursingSummary) {
+              setNursingSummary(data.data.nursingSummary);
+            }
+          }
+        } catch (error) {
+          console.error("❌ [NursingTemplate] Error loading existing summary:", error);
+        }
+      };
+
+      if (encounterId) {
+        loadExistingSummary();
+      }
+    }, [encounterId]);
+
+    // Auto-generate summary when template is sufficiently complete
+    useEffect(() => {
+      const completedFields = Object.values(templateData).filter(v => v.trim()).length;
+      const shouldAutoGenerate = completedFields >= 5 && !nursingSummary && !isGeneratingSummary;
+      
+      if (shouldAutoGenerate) {
+        console.log("🏥 [NursingTemplate] Auto-generating summary (5+ fields completed)");
+        generateSummary();
+      }
+    }, [templateData, nursingSummary, isGeneratingSummary]);
+
     // Process new transcription when it changes
     useEffect(() => {
       if (
