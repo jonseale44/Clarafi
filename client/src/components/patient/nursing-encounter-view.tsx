@@ -40,6 +40,7 @@ import {
   TemplateNursingAssessment,
   TemplateNursingRef,
 } from "@/components/TemplateNursingAssessment";
+import { NursingPerformanceMonitor } from "@/components/NursingPerformanceMonitor";
 import type { Patient, User as UserType } from "@shared/schema";
 
 interface NursingEncounterViewProps {
@@ -1458,6 +1459,12 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Performance Monitor */}
+          <NursingPerformanceMonitor 
+            isVisible={true} 
+            encounterId={encounterId.toString()} 
+          />
+
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">

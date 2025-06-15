@@ -59,13 +59,18 @@ export class NursingTemplateCache {
   }
 
   setCached(patientId: number, encounterId: string, transcription: string, result: any): void {
+    if (!transcription || transcription.trim().length === 0) return;
+    
     const key = `${patientId}-${encounterId}`;
     const transcriptionHash = this.hashTranscription(transcription);
     
     // Clean up old entries if cache is getting too large
     if (this.cache.size >= this.MAX_CACHE_SIZE) {
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      const iterator = this.cache.keys();
+      const oldestEntry = iterator.next();
+      if (!oldestEntry.done && oldestEntry.value) {
+        this.cache.delete(oldestEntry.value);
+      }
     }
     
     this.cache.set(key, {
