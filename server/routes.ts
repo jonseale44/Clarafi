@@ -1173,6 +1173,7 @@ export function registerRoutes(app: Express): Server {
         transcription,
         currentTemplate,
         parseInt(patientId),
+        encounterId,
       );
 
       res.json(result);

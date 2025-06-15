@@ -98,15 +98,21 @@ export const TemplateNursingAssessment = forwardRef<TemplateNursingRef, Template
       return;
     }
 
-    // Debounce analysis - only analyze after transcription stops changing for 3 seconds
+    // Debounce analysis - only analyze after transcription stops changing for 8 seconds
+    // AND only if there's substantial new content (50+ characters)
+    const newContentLength = transcription.length - lastTranscriptionRef.current.length;
+    
     if (analysisTimeoutRef.current) {
       clearTimeout(analysisTimeoutRef.current);
     }
 
-    analysisTimeoutRef.current = setTimeout(() => {
-      analyzeTranscriptionForTemplate(transcription);
-      lastTranscriptionRef.current = transcription;
-    }, 3000);
+    // Only analyze if there's meaningful new content
+    if (newContentLength > 50) {
+      analysisTimeoutRef.current = setTimeout(() => {
+        analyzeTranscriptionForTemplate(transcription);
+        lastTranscriptionRef.current = transcription;
+      }, 8000); // Increased to 8 seconds to reduce API calls
+    }
 
   }, [transcription, isRecording]);
 

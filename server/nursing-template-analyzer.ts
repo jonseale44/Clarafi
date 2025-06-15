@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { nursingTemplateCache } from "./nursing-template-cache";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -22,8 +23,19 @@ export class NursingTemplateAnalyzer {
     transcription: string,
     currentTemplate: NursingTemplate,
     patientId: number,
+    encounterId?: string,
   ): Promise<{ updates: Partial<NursingTemplate>; confidence: number }> {
+    const startTime = Date.now();
     console.log(`📋 [TemplateAnalyzer] Analyzing transcription for nursing template updates`);
+
+    // Check cache first
+    if (encounterId) {
+      const cached = nursingTemplateCache.getCached(patientId, encounterId, transcription);
+      if (cached) {
+        console.log(`⚡ [TemplateAnalyzer] Cache hit - ${Date.now() - startTime}ms`);
+        return cached;
+      }
+    }
 
     try {
       const prompt = this.buildAnalysisPrompt(transcription, currentTemplate);
@@ -49,7 +61,7 @@ Return a JSON object with only the fields that have new or updated information. 
           },
         ],
         temperature: 0.1,
-        max_tokens: 2000,
+        max_tokens: 800, // Reduced from 2000 to speed up response
       });
 
       const content = response.choices[0]?.message?.content || "";
@@ -87,12 +99,19 @@ Return a JSON object with only the fields that have new or updated information. 
             }
           }
 
-          console.log(`✅ [TemplateAnalyzer] Found ${Object.keys(updates).length} field updates`);
+          console.log(`✅ [TemplateAnalyzer] Found ${Object.keys(updates).length} field updates - ${Date.now() - startTime}ms`);
           
-          return {
+          const finalResult = {
             updates: hasUpdates ? updates : {},
             confidence: result.confidence || 0.8,
           };
+
+          // Cache the result
+          if (encounterId) {
+            nursingTemplateCache.setCached(patientId, encounterId, transcription, finalResult);
+          }
+
+          return finalResult;
         }
       } catch (parseError) {
         console.error("❌ [TemplateAnalyzer] Failed to parse JSON response:", parseError);
