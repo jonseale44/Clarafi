@@ -972,7 +972,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const { patientId, encounterId, transcription } = req.body;
+      const { patientId, encounterId, transcription, useRealtimeApi } = req.body;
 
       if (!patientId || !encounterId || !transcription) {
         return res.status(400).json({
@@ -982,13 +982,14 @@ export function registerRoutes(app: Express): Server {
       }
 
       console.log(
-        `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}, encounter ${encounterId}`,
+        `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}, encounter ${encounterId}, Realtime API: ${useRealtimeApi}`,
       );
 
       const stream = await realtimeNursingStreaming.generateNursingAssessmentStream(
         parseInt(patientId),
         encounterId,
         transcription,
+        useRealtimeApi,
       );
 
       // Set headers for Server-Sent Events

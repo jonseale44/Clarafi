@@ -32,6 +32,7 @@ export class RealtimeNursingStreaming {
     patientId: number,
     encounterId: string,
     transcription: string,
+    useRealtimeApi: boolean = false,
   ): Promise<ReadableStream> {
     console.log(
       `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}`,
@@ -107,9 +108,14 @@ export class RealtimeNursingStreaming {
       age,
     );
 
-    console.log(`🩺 [RealtimeNursing] Starting OpenAI streaming request`);
+    if (useRealtimeApi) {
+      console.log(`🩺 [RealtimeNursing] Using OpenAI Realtime API WebSocket connection`);
+      return this.generateNursingAssessmentStreamRealtime(nursingPrompt, transcription);
+    } else {
+      console.log(`🩺 [RealtimeNursing] Using OpenAI REST API streaming fallback`);
+    }
 
-    // Create streaming response
+    // Create streaming response using REST API fallback
     const self = this;
     return new ReadableStream({
       async start(controller) {
