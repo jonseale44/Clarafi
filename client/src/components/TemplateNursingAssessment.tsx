@@ -126,8 +126,14 @@ export const TemplateNursingAssessment = forwardRef<TemplateNursingRef, Template
       // Use existing realtime WebSocket connection instead of separate API calls
       const realtimeWs = (window as any).currentRealtimeWs;
       
-      if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+      // Check for active WebSocket connection more thoroughly
+      const isConnectionReady = realtimeWs && 
+                                realtimeWs.readyState === WebSocket.OPEN && 
+                                typeof realtimeWs.send === 'function';
+      
+      if (isConnectionReady) {
         console.log(`⚡ [TemplateNursing] Using existing Realtime connection - MUCH FASTER!`);
+        console.log(`📊 [TemplateNursing] WebSocket state:`, realtimeWs.readyState, 'URL:', realtimeWs.url);
         
         const templateAnalysisPrompt = `
 Update nursing assessment template from this transcription. Only include fields with new information.
@@ -148,28 +154,26 @@ New transcription: "${currentTranscription.slice(-400)}"
 
 Return ONLY JSON with updates, example: {"cc":"New complaint","hpi":"Additional history"}`;
 
-        // Create a temporary listener for the response
+        // Create a temporary listener for the response - using successful pattern from provider view
+        const templateResponseBuffer = { content: '' };
         const responseListener = (event: MessageEvent) => {
           try {
-            const data = JSON.parse(event.data);
+            const message = JSON.parse(event.data);
             
-            if (data.type === 'response.text.delta' && data.delta) {
-              // Accumulate response text
-              if (!realtimeWs._templateResponseBuffer) {
-                realtimeWs._templateResponseBuffer = '';
-              }
-              realtimeWs._templateResponseBuffer += data.delta;
+            // Handle text deltas from realtime API
+            if (message.type === 'response.text.delta' && message.delta) {
+              templateResponseBuffer.content += message.delta;
             }
             
-            if (data.type === 'response.text.done') {
-              const responseText = realtimeWs._templateResponseBuffer || '';
-              realtimeWs._templateResponseBuffer = '';
+            // Handle response completion
+            if (message.type === 'response.text.done' || message.type === 'response.done') {
+              const responseText = templateResponseBuffer.content.trim();
               
               console.log(`📋 [TemplateNursing] Realtime response received:`, responseText.substring(0, 200));
               
               // Parse JSON response
               try {
-                let jsonStr = responseText.trim();
+                let jsonStr = responseText;
                 
                 // Handle markdown code blocks
                 if (jsonStr.includes('```json')) {
@@ -180,7 +184,7 @@ Return ONLY JSON with updates, example: {"cc":"New complaint","hpi":"Additional 
                 
                 const updates = JSON.parse(jsonStr);
                 
-                if (updates && Object.keys(updates).length > 0) {
+                if (updates && typeof updates === 'object' && Object.keys(updates).length > 0) {
                   const updatedTemplate = { ...template, ...updates, lastUpdate: new Date() };
                   setTemplate(updatedTemplate);
                   onTemplateUpdate(updatedTemplate);
@@ -195,12 +199,23 @@ Return ONLY JSON with updates, example: {"cc":"New complaint","hpi":"Additional 
                   setCompletedFields(newCompletedFields);
 
                   console.log(`⚡ [TemplateNursing] REALTIME Updated fields: ${Object.keys(updates).join(', ')}`);
+                } else {
+                  console.warn(`📋 [TemplateNursing] No valid updates in response:`, responseText);
                 }
               } catch (parseError) {
                 console.warn(`📋 [TemplateNursing] Failed to parse realtime response:`, parseError);
+                console.log(`📋 [TemplateNursing] Raw response:`, responseText);
               }
               
-              // Remove listener
+              // Clean up and remove listener
+              templateResponseBuffer.content = '';
+              realtimeWs.removeEventListener('message', responseListener);
+              setIsAnalyzing(false);
+            }
+            
+            // Handle errors
+            if (message.type === 'error') {
+              console.error(`📋 [TemplateNursing] Realtime API error:`, message);
               realtimeWs.removeEventListener('message', responseListener);
               setIsAnalyzing(false);
             }
