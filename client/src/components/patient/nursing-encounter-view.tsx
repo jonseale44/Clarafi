@@ -92,7 +92,9 @@ export function NursingEncounterView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
-  const [templateData, setTemplateData] = useState<NursingTemplateData | null>(null);
+  const [templateData, setTemplateData] = useState<NursingTemplateData | null>(
+    null,
+  );
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
@@ -871,51 +873,78 @@ Format each bullet point on its own line with no extra spacing between them.`,
                 );
 
                 // Enhanced formatting for nursing suggestions with punctuation and structure
-                const lines = formattedSuggestions.split('\n');
+                const lines = formattedSuggestions.split("\n");
                 const formattedLines = lines.map((line, index) => {
                   // Skip header lines and empty lines
-                  if (line.includes('🩺 REAL-TIME NURSING INSIGHTS:') || line.trim() === '') {
+                  if (
+                    line.includes("🩺 REAL-TIME NURSING INSIGHTS:") ||
+                    line.trim() === ""
+                  ) {
                     return line;
                   }
-                  
+
                   let trimmedLine = line.trim();
-                  
+
                   // If line has content but no bullet, add one
-                  if (trimmedLine && !trimmedLine.startsWith('•') && !trimmedLine.startsWith('-') && !trimmedLine.startsWith('*')) {
+                  if (
+                    trimmedLine &&
+                    !trimmedLine.startsWith("•") &&
+                    !trimmedLine.startsWith("-") &&
+                    !trimmedLine.startsWith("*")
+                  ) {
                     // Fix common formatting issues in AI responses
-                    
+
                     // Add proper punctuation to questions that are missing it
-                    if (trimmedLine.includes('Duration') || trimmedLine.includes('Location') || 
-                        trimmedLine.includes('Quality') || trimmedLine.includes('Any ') ||
-                        trimmedLine.includes('History') || trimmedLine.includes('Associated')) {
+                    if (
+                      trimmedLine.includes("Duration") ||
+                      trimmedLine.includes("Location") ||
+                      trimmedLine.includes("Quality") ||
+                      trimmedLine.includes("Any ") ||
+                      trimmedLine.includes("History") ||
+                      trimmedLine.includes("Associated")
+                    ) {
                       // Split on capital letters that should be separate questions
                       const parts = trimmedLine.split(/(?=[A-Z][a-z])/);
-                      const formattedParts = parts.map(part => {
-                        const cleanPart = part.trim();
-                        if (cleanPart && !cleanPart.endsWith('?') && !cleanPart.endsWith('.')) {
-                          return cleanPart + '?';
-                        }
-                        return cleanPart;
-                      }).filter(part => part.length > 0);
-                      
+                      const formattedParts = parts
+                        .map((part) => {
+                          const cleanPart = part.trim();
+                          if (
+                            cleanPart &&
+                            !cleanPart.endsWith("?") &&
+                            !cleanPart.endsWith(".")
+                          ) {
+                            return cleanPart + "?";
+                          }
+                          return cleanPart;
+                        })
+                        .filter((part) => part.length > 0);
+
                       // Return as separate bullet points
-                      return formattedParts.map(part => `• ${part}`).join('\n');
+                      return formattedParts
+                        .map((part) => `• ${part}`)
+                        .join("\n");
                     }
-                    
+
                     // Ensure proper punctuation for other lines
-                    if (!trimmedLine.endsWith('?') && !trimmedLine.endsWith('.') && !trimmedLine.endsWith(':')) {
-                      trimmedLine += '.';
+                    if (
+                      !trimmedLine.endsWith("?") &&
+                      !trimmedLine.endsWith(".") &&
+                      !trimmedLine.endsWith(":")
+                    ) {
+                      trimmedLine += ".";
                     }
-                    
+
                     return `• ${trimmedLine}`;
                   }
-                  
+
                   return line;
                 });
-                
-                formattedSuggestions = formattedLines.join('\n');
 
-                console.log("🧠 [NursingView] Applied enhanced bullet point formatting");
+                formattedSuggestions = formattedLines.join("\n");
+
+                console.log(
+                  "🧠 [NursingView] Applied enhanced bullet point formatting",
+                );
 
                 console.log(
                   "🧠 [NursingView] Final formatted suggestions length:",
@@ -1175,10 +1204,6 @@ Format each bullet point on its own line with no extra spacing between them.`,
     }
   };
 
-
-
-
-
   // Helper functions for left panel
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -1435,8 +1460,6 @@ Format each bullet point on its own line with no extra spacing between them.`,
                 />
               </div>
 
-
-
               {/* Transcription Content */}
               <div className="space-y-2">
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
@@ -1469,8 +1492,6 @@ Format each bullet point on its own line with no extra spacing between them.`,
               {gptSuggestions || "AI analysis will appear here..."}
             </div>
           </Card>
-
-
         </div>
       </div>
     </div>
