@@ -1163,9 +1163,9 @@ Format each bullet point on its own line with no extra spacing between them.`,
       // Set transcription for Real-time nursing component
       setTranscription(transcriptionBuffer);
 
-      // Trigger Real-time nursing assessment generation
-      if (realtimeNursingRef.current) {
-        realtimeNursingRef.current.generateNursingAssessment();
+      // Trigger template-based nursing assessment generation
+      if (nursingTemplateRef.current) {
+        nursingTemplateRef.current.startTemplateAssessment();
       }
     } else {
       toast({
@@ -1210,16 +1210,15 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
   const handleStopRecording = () => {
     stopRecording();
-    // Trigger nursing-specific AI processing after recording stops
-    realtimeNursingRef.current?.generateNursingAssessment();
     toast({
       title: "Recording Stopped",
-      description: "Processing nursing assessment...",
+      description: "Processing nursing assessment template...",
     });
   };
 
   const generateAIAssessment = () => {
-    realtimeNursingRef.current?.generateNursingAssessment();
+    // Trigger template-based nursing assessment
+    nursingTemplateRef.current?.startTemplateAssessment();
   };
 
   if (isLoading) {
@@ -1418,27 +1417,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   {isRecording ? "Stop Recording" : "Start Recording"}
                 </Button>
 
-                <RealtimeNursingIntegration
-                  ref={realtimeNursingRef}
-                  patientId={patient.id.toString()}
-                  encounterId={encounterId.toString()}
-                  transcription={transcription}
-                  onNursingAssessmentUpdate={(assessment) => {
-                    console.log("Legacy nursing assessment update:", assessment.substring(0, 100));
-                  }}
-                  onNursingAssessmentComplete={(assessment) => {
-                    console.log("Legacy nursing assessment complete:", assessment.substring(0, 100));
-                    toast({
-                      title: "Legacy Assessment Complete",
-                      description: "Traditional nursing assessment generated successfully",
-                    });
-                  }}
-                  onDraftOrdersReceived={(orders) => {
-                    console.log("Received draft orders:", orders);
-                  }}
-                  isRealtimeEnabled={true}
-                  autoTrigger={false}
-                />
+                {/* Removed legacy RealtimeNursingIntegration - functionality replaced by NursingTemplateAssessment */}
               </div>
 
               {/* Nursing Template Assessment Section */}
