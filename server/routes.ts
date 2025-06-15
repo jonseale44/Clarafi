@@ -984,6 +984,12 @@ export function registerRoutes(app: Express): Server {
       console.log(
         `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}, encounter ${encounterId}, Realtime API: ${useRealtimeApi}`,
       );
+      
+      if (useRealtimeApi) {
+        console.log(`✅ [RealtimeNursing] CONFIRMED: Will use OpenAI Realtime WebSocket API`);
+      } else {
+        console.log(`⚠️ [RealtimeNursing] CONFIRMED: Will use REST API fallback`);
+      }
 
       const stream = await realtimeNursingStreaming.generateNursingAssessmentStream(
         parseInt(patientId),

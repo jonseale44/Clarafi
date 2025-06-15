@@ -58,8 +58,8 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
       // Instead of creating a new REST API call, we'll request the parent to handle this
       // via the established WebSocket for true real-time performance
       
-      // For now, fall back to optimized REST API but mark for WebSocket integration
-      console.log("🔄 [RealtimeNursing] Using REST API fallback - should integrate with parent WebSocket");
+      // Send request with Realtime API flag
+      console.log("🚀 [RealtimeNursing] Sending request with useRealtimeApi: true flag");
       
       const response = await fetch('/api/realtime-nursing/stream', {
         method: 'POST',
