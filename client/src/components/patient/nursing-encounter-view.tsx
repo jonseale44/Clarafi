@@ -859,7 +859,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   "🩺 REAL-TIME NURSING INSIGHTS:\n\n",
                 );
 
-                // Fix bullet point formatting for nursing suggestions
+                // Enhanced formatting for nursing suggestions with punctuation and structure
                 const lines = formattedSuggestions.split('\n');
                 const formattedLines = lines.map((line, index) => {
                   // Skip header lines and empty lines
@@ -867,9 +867,35 @@ Format each bullet point on its own line with no extra spacing between them.`,
                     return line;
                   }
                   
+                  let trimmedLine = line.trim();
+                  
                   // If line has content but no bullet, add one
-                  const trimmedLine = line.trim();
                   if (trimmedLine && !trimmedLine.startsWith('•') && !trimmedLine.startsWith('-') && !trimmedLine.startsWith('*')) {
+                    // Fix common formatting issues in AI responses
+                    
+                    // Add proper punctuation to questions that are missing it
+                    if (trimmedLine.includes('Duration') || trimmedLine.includes('Location') || 
+                        trimmedLine.includes('Quality') || trimmedLine.includes('Any ') ||
+                        trimmedLine.includes('History') || trimmedLine.includes('Associated')) {
+                      // Split on capital letters that should be separate questions
+                      const parts = trimmedLine.split(/(?=[A-Z][a-z])/);
+                      const formattedParts = parts.map(part => {
+                        const cleanPart = part.trim();
+                        if (cleanPart && !cleanPart.endsWith('?') && !cleanPart.endsWith('.')) {
+                          return cleanPart + '?';
+                        }
+                        return cleanPart;
+                      }).filter(part => part.length > 0);
+                      
+                      // Return as separate bullet points
+                      return formattedParts.map(part => `• ${part}`).join('\n');
+                    }
+                    
+                    // Ensure proper punctuation for other lines
+                    if (!trimmedLine.endsWith('?') && !trimmedLine.endsWith('.') && !trimmedLine.endsWith(':')) {
+                      trimmedLine += '.';
+                    }
+                    
                     return `• ${trimmedLine}`;
                   }
                   
