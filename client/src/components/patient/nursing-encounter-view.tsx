@@ -82,12 +82,7 @@ export function NursingEncounterView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
-  const [nursingAssessment, setNursingAssessment] = useState("");
   const [continuousAssessment, setContinuousAssessment] = useState("");
-  const [nursingInterventions, setNursingInterventions] = useState("");
-  const [nursingNotes, setNursingNotes] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("assessment");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
@@ -1170,79 +1165,9 @@ Format each bullet point on its own line with no extra spacing between them.`,
     }
   };
 
-  // Load existing nursing documentation
-  useEffect(() => {
-    if (encounter) {
-      setNursingAssessment((encounter as any).nurseAssessment || "");
-      setNursingInterventions((encounter as any).nurseInterventions || "");
-      setNursingNotes((encounter as any).nurseNotes || "");
-    }
-  }, [encounter]);
 
-  // Save nursing content mutation
-  const saveContentMutation = useMutation({
-    mutationFn: async (data: { field: string; content: string }) => {
-      const response = await fetch(`/api/encounters/${encounterId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [data.field]: data.content }),
-      });
-      if (!response.ok) throw new Error("Failed to save");
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Saved Successfully",
-        description: "Nursing documentation has been saved.",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/encounters/${encounterId}`],
-      });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: "Failed to save nursing documentation.",
-      });
-    },
-  });
 
-  const handleSaveAssessment = async () => {
-    setIsSaving(true);
-    try {
-      await saveContentMutation.mutateAsync({
-        field: "nurseAssessment",
-        content: nursingAssessment,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
-  const handleSaveInterventions = async () => {
-    setIsSaving(true);
-    try {
-      await saveContentMutation.mutateAsync({
-        field: "nurseInterventions",
-        content: nursingInterventions,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleSaveNotes = async () => {
-    setIsSaving(true);
-    try {
-      await saveContentMutation.mutateAsync({
-        field: "nurseNotes",
-        content: nursingNotes,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   // Helper functions for left panel
   const toggleSection = (sectionId: string) => {
@@ -1488,12 +1413,14 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
                   transcription={transcription}
-                  onNursingAssessmentUpdate={setNursingAssessment}
+                  onNursingAssessmentUpdate={(assessment) => {
+                    console.log("Legacy nursing assessment update:", assessment.substring(0, 100));
+                  }}
                   onNursingAssessmentComplete={(assessment) => {
-                    setNursingAssessment(assessment);
+                    console.log("Legacy nursing assessment complete:", assessment.substring(0, 100));
                     toast({
-                      title: "Assessment Complete",
-                      description: "Nursing assessment generated successfully",
+                      title: "Legacy Assessment Complete",
+                      description: "Traditional nursing assessment generated successfully",
                     });
                   }}
                   onDraftOrdersReceived={(orders) => {
@@ -1513,10 +1440,10 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   isRecording={isRecording}
                   transcription={transcription}
                   onAssessmentUpdate={(assessment) => {
-                    setNursingAssessment(assessment);
+                    setContinuousAssessment(assessment);
                   }}
                   onAssessmentComplete={(assessment) => {
-                    setNursingAssessment(assessment);
+                    setContinuousAssessment(assessment);
                     toast({
                       title: "Continuous Assessment Complete",
                       description: "Real-time nursing assessment finalized",
@@ -1562,96 +1489,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
             </div>
           </Card>
 
-          {/* Nursing Documentation Tabs */}
-          <Card className="p-6">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="assessment">Assessment</TabsTrigger>
-                <TabsTrigger value="interventions">Interventions</TabsTrigger>
-                <TabsTrigger value="notes">Nursing Notes</TabsTrigger>
-              </TabsList>
 
-              <TabsContent value="assessment" className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Nursing Assessment</h3>
-                  <Button
-                    onClick={handleSaveAssessment}
-                    disabled={isSaving}
-                    size="sm"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? "Saving..." : "Save"}
-                  </Button>
-                </div>
-                <Textarea
-                  placeholder="Document your nursing assessment including patient's current condition, vital signs, pain level, mobility, safety concerns, and educational needs..."
-                  value={nursingAssessment}
-                  onChange={(e) => setNursingAssessment(e.target.value)}
-                  className="min-h-[400px] resize-none"
-                />
-                <div className="flex items-center text-sm text-gray-500">
-                  <FileText className="w-4 h-4 mr-1" />
-                  {nursingAssessment.length} characters
-                </div>
-              </TabsContent>
-
-              <TabsContent value="interventions" className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">
-                    Nursing Interventions
-                  </h3>
-                  <Button
-                    onClick={handleSaveInterventions}
-                    disabled={isSaving}
-                    size="sm"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? "Saving..." : "Save"}
-                  </Button>
-                </div>
-                <Textarea
-                  placeholder="Document nursing interventions performed, medications administered, patient education provided, and patient responses to interventions..."
-                  value={nursingInterventions}
-                  onChange={(e) => setNursingInterventions(e.target.value)}
-                  className="min-h-[400px] resize-none"
-                />
-                <div className="flex items-center text-sm text-gray-500">
-                  <Activity className="w-4 h-4 mr-1" />
-                  {nursingInterventions.length} characters
-                </div>
-              </TabsContent>
-
-              <TabsContent value="notes" className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">
-                    General Nursing Notes
-                  </h3>
-                  <Button
-                    onClick={handleSaveNotes}
-                    disabled={isSaving}
-                    size="sm"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? "Saving..." : "Save"}
-                  </Button>
-                </div>
-                <Textarea
-                  placeholder="Additional nursing notes, observations, patient interactions, family communications, and care coordination notes..."
-                  value={nursingNotes}
-                  onChange={(e) => setNursingNotes(e.target.value)}
-                  className="min-h-[400px] resize-none"
-                />
-                <div className="flex items-center text-sm text-gray-500">
-                  <FileText className="w-4 h-4 mr-1" />
-                  {nursingNotes.length} characters
-                </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
         </div>
       </div>
     </div>
