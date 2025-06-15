@@ -39,6 +39,7 @@ import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
 } from "@/components/RealtimeSOAPIntegration";
+import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -2204,6 +2205,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Nursing Summary Section */}
+          <NursingSummaryDisplay 
+            encounterId={encounterId} 
+            patientId={patient.id} 
+          />
+
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">

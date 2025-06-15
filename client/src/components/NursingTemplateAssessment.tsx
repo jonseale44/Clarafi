@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Play, Square, Activity, Edit2, Save } from "lucide-react";
+import { Play, Square, Activity, Edit2, Save, FileText, RefreshCw } from "lucide-react";
 
 interface NursingTemplateData {
   cc: string; // Chief Complaint
