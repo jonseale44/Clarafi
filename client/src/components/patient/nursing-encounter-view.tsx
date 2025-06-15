@@ -36,6 +36,10 @@ import {
   RealtimeNursingIntegration,
   RealtimeNursingRef,
 } from "@/components/RealtimeNursingIntegration";
+import {
+  ContinuousNursingAssessment,
+  ContinuousNursingRef,
+} from "@/components/ContinuousNursingAssessment";
 import type { Patient, User as UserType } from "@shared/schema";
 
 interface NursingEncounterViewProps {
@@ -87,6 +91,7 @@ export function NursingEncounterView({
     new Set(["encounters"]),
   );
   const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
+  const continuousNursingRef = useRef<ContinuousNursingRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get current user for role-based functionality
