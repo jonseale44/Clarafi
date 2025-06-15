@@ -376,7 +376,12 @@ export class RealtimeNursingStreaming {
 
           ws.on('close', () => {
             console.log(`🔗 [RealtimeNursing] WebSocket connection closed`);
-            controller.close();
+            try {
+              controller.close();
+            } catch (error) {
+              // Controller may already be closed, ignore the error
+              console.log(`🔗 [RealtimeNursing] Controller already closed`);
+            }
           });
 
         } catch (error) {
