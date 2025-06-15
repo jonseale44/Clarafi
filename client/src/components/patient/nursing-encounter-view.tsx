@@ -6,13 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { 
-  Mic, 
-  MicOff, 
-  Save, 
-  FileText, 
-  Heart, 
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Mic,
+  MicOff,
+  Save,
+  FileText,
+  Heart,
   Activity,
   Shield,
   Clock,
@@ -23,7 +27,7 @@ import {
   ArrowLeft,
   Search,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSharedRealtimeService } from "@/utils/shared-realtime-service";
@@ -57,14 +61,14 @@ const nursingChartSections = [
   { id: "care-plans", label: "Care Plans" },
 ];
 
-export function NursingEncounterView({ 
-  patient, 
-  encounterId, 
-  onBackToChart 
+export function NursingEncounterView({
+  patient,
+  encounterId,
+  onBackToChart,
 }: NursingEncounterViewProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // State management - matching provider view exactly including AI suggestions
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState("");
@@ -80,7 +84,7 @@ export function NursingEncounterView({
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("assessment");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["encounters"])
+    new Set(["encounters"]),
   );
   const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -100,10 +104,14 @@ export function NursingEncounterView({
   const processedEvents = useRef(new Set<string>());
   const processedContent = useRef(new Set<string>());
 
-  const isEventProcessed = (eventId: string) => processedEvents.current.has(eventId);
-  const markEventAsProcessed = (eventId: string) => processedEvents.current.add(eventId);
-  const isContentProcessed = (content: string) => processedContent.current.has(content);
-  const markContentAsProcessed = (content: string) => processedContent.current.add(content);
+  const isEventProcessed = (eventId: string) =>
+    processedEvents.current.has(eventId);
+  const markEventAsProcessed = (eventId: string) =>
+    processedEvents.current.add(eventId);
+  const isContentProcessed = (content: string) =>
+    processedContent.current.has(content);
+  const markContentAsProcessed = (content: string) =>
+    processedContent.current.add(content);
 
   // MISSING: Add the startSuggestionsConversation function from provider view
   const startSuggestionsConversation = async (
@@ -125,9 +133,7 @@ export function NursingEncounterView({
       );
       if (chartResponse.ok) {
         patientChart = await chartResponse.json();
-        console.log(
-          "[NursingView] Patient chart data fetched successfully",
-        );
+        console.log("[NursingView] Patient chart data fetched successfully");
       } else {
         console.warn(
           "[NursingView] Failed to fetch patient chart, continuing without context",
@@ -139,19 +145,24 @@ export function NursingEncounterView({
 
     // 2. Build comprehensive patient context
     const patientContext = `Patient: ${patientData.firstName} ${patientData.lastName}
-Age: ${patientData.dateOfBirth ? new Date().getFullYear() - new Date(patientData.dateOfBirth).getFullYear() : 'Unknown'}
-Gender: ${patientData.gender || 'Unknown'}
-MRN: ${patientData.mrn || 'Unknown'}
+Age: ${patientData.dateOfBirth ? new Date().getFullYear() - new Date(patientData.dateOfBirth).getFullYear() : "Unknown"}
+Gender: ${patientData.gender || "Unknown"}
+MRN: ${patientData.mrn || "Unknown"}
 
-${patientChart ? `
-Active Problems: ${patientChart.activeProblems?.map((p: any) => p.title).join(', ') || 'None documented'}
-Current Medications: ${patientChart.medications?.map((m: any) => `${m.name} ${m.dosage}`).join(', ') || 'None documented'}
-Allergies: ${patientChart.allergies?.map((a: any) => a.allergen).join(', ') || 'NKDA'}
-Recent Vitals: ${patientChart.vitals?.length > 0 ? `BP: ${patientChart.vitals[0].systolic}/${patientChart.vitals[0].diastolic}, HR: ${patientChart.vitals[0].heartRate}, Temp: ${patientChart.vitals[0].temperature}°F` : 'Not available'}
-` : 'Limited patient data available'}`;
+${
+  patientChart
+    ? `
+Active Problems: ${patientChart.activeProblems?.map((p: any) => p.title).join(", ") || "None documented"}
+Current Medications: ${patientChart.medications?.map((m: any) => `${m.name} ${m.dosage}`).join(", ") || "None documented"}
+Allergies: ${patientChart.allergies?.map((a: any) => a.allergen).join(", ") || "NKDA"}
+Recent Vitals: ${patientChart.vitals?.length > 0 ? `BP: ${patientChart.vitals[0].systolic}/${patientChart.vitals[0].diastolic}, HR: ${patientChart.vitals[0].heartRate}, Temp: ${patientChart.vitals[0].temperature}°F` : "Not available"}
+`
+    : "Limited patient data available"
+}`;
 
     // 3. Send patient context to OpenAI for AI suggestions
-    const currentTranscription = liveTranscriptionContent || transcriptionBuffer || "";
+    const currentTranscription =
+      liveTranscriptionContent || transcriptionBuffer || "";
 
     const contextWithTranscription = `${patientContext}
 
@@ -184,45 +195,47 @@ Please provide nursing suggestions based on what the patient is saying in this c
       type: "response.create",
       response: {
         modalities: ["text"],
-        instructions: `You are a nursing AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line nursing insights exclusively for registered nurses.
+        instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
 
-CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
+Language: Always respond in English only.
 
-Instructions:
+Response Style: Provide concise, single-line medical prompts and information. Avoid any explanations or pleasantries.
 
-Focus on high-value, evidence-based, nursing assessment, intervention, and care coordination insights based on what the patient is saying RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
+Patient Evaluation Focus:
+  -If a patient presents with a chief complaint, provide a complete set of key questions upfront. Additional information about crafting helpful questions is outlined in the "Formatting Guidelines" section below.
+  -Respond again only at the conclusion of a logical line of questioning unless explicitly asked for more information.
+  -These prompts are designed to help the nurse gather valuable information for the doctor. Recognize that the nurse may still be referring to the original suggestions while questioning the patient. Therefore, providing further responses during this time may be distracting. Wait until the current line of questioning is complete, the conversation has moved on, or you are explicitly asked to provide additional insights.
 
-Base your suggestions on:
-1. CURRENT symptoms described in the live conversation
-2. CURRENT presentation and patient statements
-3. Only reference past history if directly relevant to current symptoms
+Information Access:
+  -When asked, provide succinct and relevant details from the patient's medical records (e.g., past medical history, medications, allergies, vitals).
+  -If information is unavailable, indicate plainly: "Information not available."
 
-Do NOT suggest interventions for conditions not mentioned in the current encounter.
+Formatting Guidelines:
+  -Start each insight on a new line.
+  -Prefix each line with a bullet (•), dash (-), or number.
+  -Avoid merging multiple ideas into a single line.
+  -Ensure a line break (\n) after responding to user questions.
 
-Avoid restating general knowledge or overly simplistic recommendations a nurse would already know (e.g., "provide emotional support").
-Prioritize specifics: detailed nursing assessments, specific monitoring parameters, safety protocols, and evidence-based interventions. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
+  Example Triggers and Responses:
 
-Additional details for nursing recommendations:
+  Patient with chest pain:
 
-Always include specific frequency, parameters, and protocols when applicable.
-Output examples of good insights:
+  • History: Duration? Location? Quality? Modifying factors? (etc.) 
+  • Associated sx: SOB? Palpitations? (etc.)
+  • Relevant history: CAD? Stents? 
+  
+  Patient with abdominal pain:
+  • History: Duration? Location? Quality? Modifying factors? (etc.) 
+  • Associated sx: SOB? Palpitations? (etc.)
+  
+  Accessing patient record information:
 
-• Monitor pain level q2h using 0-10 scale; document response to interventions
-• Assess fall risk using Morse scale; implement bed alarm and non-slip socks
-• Check surgical site q4h for signs of infection: redness, warmth, drainage
-• Patient education on medication compliance: teach-back method for understanding
-• Neuro checks q15min x 4, then q30min x 2 for head injury monitoring
+  • History: [short details].
+  • Meds: [list].
+  • Allergies: [list].
+  • Vitals: [details].
 
-Output examples of bad insights (to avoid):
-
-• Encourage deep breathing exercises for relaxation
-• Provide emotional support and active listening
-• Ensure adequate nutrition and hydration
-
-Produce insights that save the nurse time or enhance their clinical decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
-
+  The above are just formatting examples. You're intelligent, not a robot. This isn't just a cookbook. Use your reasoning skills to provide information relevant to the nurse screening this patient. Remember you're providing information for a NURSE, not a doctor. You don't want to provide differential diagnoses or complex ordering suggestions (athough some basic things like strep swab, flu swab, urinalysis, EKG are fine).
 Format each bullet point on its own line with no extra spacing between them.`,
         metadata: {
           type: "suggestions",
@@ -230,9 +243,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
       },
     };
 
-    console.log(
-      "🧠 [NursingView] Creating AI suggestions conversation",
-    );
+    console.log("🧠 [NursingView] Creating AI suggestions conversation");
     ws.send(JSON.stringify(suggestionsMessage));
   };
 
@@ -370,9 +381,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
                 );
               });
             } else {
-              console.log(
-                "🔧 [NursingView] No new suggestions to accumulate",
-              );
+              console.log("🔧 [NursingView] No new suggestions to accumulate");
             }
           }
 
@@ -410,7 +419,10 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
   // Start recording using same OpenAI Realtime API as provider view
   const startRecording = async () => {
-    console.log("🎤 [NursingView] Starting REAL-TIME voice recording for patient:", patient.id);
+    console.log(
+      "🎤 [NursingView] Starting REAL-TIME voice recording for patient:",
+      patient.id,
+    );
 
     // Clear previous transcription and suggestions when starting new recording
     setGptSuggestions("");
@@ -445,7 +457,8 @@ Format each bullet point on its own line with no extra spacing between them.`,
         const sessionConfig = {
           model: "gpt-4o-mini-realtime-preview",
           modalities: ["text"],
-          instructions: "You are a medical transcription assistant for nursing documentation. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations with focus on nursing assessment details.",
+          instructions:
+            "You are a medical transcription assistant for nursing documentation. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations with focus on nursing assessment details.",
           input_audio_format: "pcm16",
           input_audio_transcription: {
             model: "whisper-1",
@@ -460,20 +473,25 @@ Format each bullet point on its own line with no extra spacing between them.`,
           },
         };
 
-        const sessionResponse = await fetch("https://api.openai.com/v1/realtime/sessions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-            "OpenAI-Beta": "realtime=v1",
+        const sessionResponse = await fetch(
+          "https://api.openai.com/v1/realtime/sessions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+              "OpenAI-Beta": "realtime=v1",
+            },
+            body: JSON.stringify(sessionConfig),
           },
-          body: JSON.stringify(sessionConfig),
-        });
+        );
 
         if (!sessionResponse.ok) {
           const error = await sessionResponse.json();
           console.log("❌ [NursingView] Session creation failed:", error);
-          throw new Error(`Failed to create session: ${error.message || "Unknown error"}`);
+          throw new Error(
+            `Failed to create session: ${error.message || "Unknown error"}`,
+          );
         }
 
         const session = await sessionResponse.json();
@@ -544,13 +562,20 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
           // Add deduplication checks
           if (message.event_id && isEventProcessed(message.event_id)) {
-            console.log("🚫 [NursingView] Skipping duplicate event:", message.event_id);
+            console.log(
+              "🚫 [NursingView] Skipping duplicate event:",
+              message.event_id,
+            );
             return;
           }
 
-          const content = message.delta || message.transcript || message.text || "";
+          const content =
+            message.delta || message.transcript || message.text || "";
           if (content && isContentProcessed(content)) {
-            console.log("🚫 [NursingView] Skipping duplicate content:", content.substring(0, 30));
+            console.log(
+              "🚫 [NursingView] Skipping duplicate content:",
+              content.substring(0, 30),
+            );
             return;
           }
 
@@ -559,9 +584,14 @@ Format each bullet point on its own line with no extra spacing between them.`,
           if (content) markContentAsProcessed(content);
 
           // Handle transcription events - accumulate deltas exactly like provider view
-          if (message.type === "conversation.item.input_audio_transcription.delta") {
+          if (
+            message.type === "conversation.item.input_audio_transcription.delta"
+          ) {
             const deltaText = message.transcript || message.delta || "";
-            console.log("📝 [NursingView] Transcription delta received:", deltaText);
+            console.log(
+              "📝 [NursingView] Transcription delta received:",
+              deltaText,
+            );
 
             // For delta updates, append the delta text to existing transcription
             transcriptionBuffer += deltaText;
@@ -621,9 +651,10 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   transcriptionBuffer.length,
                 );
 
-                const currentTranscription = liveTranscriptionContent || transcriptionBuffer || "";
+                const currentTranscription =
+                  liveTranscriptionContent || transcriptionBuffer || "";
 
-                const contextWithTranscription = `Patient context: ${patient.firstName} ${patient.lastName}, ${patient.gender}, Age: ${patient.dateOfBirth ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear() : 'Unknown'}
+                const contextWithTranscription = `Patient context: ${patient.firstName} ${patient.lastName}, ${patient.gender}, Age: ${patient.dateOfBirth ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear() : "Unknown"}
 
 CURRENT LIVE CONVERSATION:
 ${currentTranscription}
@@ -650,44 +681,47 @@ Please provide nursing suggestions based on what the patient is saying in this c
                   type: "response.create",
                   response: {
                     modalities: ["text"],
-                    instructions: `You are a nursing AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line nursing insights exclusively for registered nurses.
+                    instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
 
-CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
+Language: Always respond in English only.
 
-Focus on high-value, evidence-based, nursing assessment, intervention, and care coordination insights based on what the patient is describing RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
+Response Style: Provide concise, single-line medical prompts and information. Avoid any explanations or pleasantries.
 
-Base your suggestions on:
-1. CURRENT symptoms described in the live conversation
-2. CURRENT presentation and patient statements
-3. Only reference past history if directly relevant to current symptoms
+Patient Evaluation Focus:
+  -If a patient presents with a chief complaint, provide a complete set of key questions upfront. Additional information about crafting helpful questions is outlined in the "Formatting Guidelines" section below.
+  -Respond again only at the conclusion of a logical line of questioning unless explicitly asked for more information.
+  -These prompts are designed to help the nurse gather valuable information for the doctor. Recognize that the nurse may still be referring to the original suggestions while questioning the patient. Therefore, providing further responses during this time may be distracting. Wait until the current line of questioning is complete, the conversation has moved on, or you are explicitly asked to provide additional insights.
 
-Do NOT suggest interventions for conditions not mentioned in the current encounter.
+Information Access:
+  -When asked, provide succinct and relevant details from the patient's medical records (e.g., past medical history, medications, allergies, vitals).
+  -If information is unavailable, indicate plainly: "Information not available."
 
-Avoid restating general knowledge or overly simplistic recommendations a nurse would already know (e.g., "provide emotional support").
-Prioritize specifics: detailed nursing assessments, specific monitoring parameters, safety protocols, and evidence-based interventions. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
+Formatting Guidelines:
+  -Start each insight on a new line.
+  -Prefix each line with a bullet (•), dash (-), or number.
+  -Avoid merging multiple ideas into a single line.
+  -Ensure a line break (\n) after responding to user questions.
 
-Additional details for nursing recommendations:
+  Example Triggers and Responses:
 
-Always include specific frequency, parameters, and protocols when applicable.
-Output examples of good insights:
+  Patient with chest pain:
 
-• Monitor pain level q2h using 0-10 scale; document response to interventions
-• Assess fall risk using Morse scale; implement bed alarm and non-slip socks
-• Check surgical site q4h for signs of infection: redness, warmth, drainage
-• Patient education on medication compliance: teach-back method for understanding
-• Neuro checks q15min x 4, then q30min x 2 for head injury monitoring
+  • History: Duration? Location? Quality? Modifying factors? (etc.) 
+  • Associated sx: SOB? Palpitations? (etc.)
+  • Relevant history: CAD? Stents? 
+  
+  Patient with abdominal pain:
+  • History: Duration? Location? Quality? Modifying factors? (etc.) 
+  • Associated sx: SOB? Palpitations? (etc.)
+  
+  Accessing patient record information:
 
-Output examples of bad insights (to avoid):
+  • History: [short details].
+  • Meds: [list].
+  • Allergies: [list].
+  • Vitals: [details].
 
-• Encourage deep breathing exercises for relaxation
-• Provide emotional support and active listening
-• Ensure adequate nutrition and hydration
-
-Produce insights that save the nurse time or enhance their clinical decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
-
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\\n) after answering a user question.`,
+  The above are just formatting examples. You're intelligent, not a robot. This isn't just a cookbook. Use your reasoning skills to provide information relevant to the nurse screening this patient. Remember you're providing information for a NURSE, not a doctor. You don't want to provide differential diagnoses or complex ordering suggestions (athough some basic things like strep swab, flu swab, urinalysis, EKG are fine). Format each bullet point on its own line with no extra spacing between them.`,
                     metadata: {
                       type: "suggestions",
                     },
@@ -812,16 +846,32 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   );
                 }
 
-                // Simple formatting - just ensure header spacing
-                formattedSuggestions = formattedSuggestions
-                  .replace(
-                    /🩺 REAL-TIME NURSING INSIGHTS:\n+/g,
-                    "🩺 REAL-TIME NURSING INSIGHTS:\n\n",
-                  );
-
-                console.log(
-                  "🧠 [NursingView] Applied bullet point formatting",
+                // Enhanced formatting - ensure header spacing and proper bullet points
+                formattedSuggestions = formattedSuggestions.replace(
+                  /🩺 REAL-TIME NURSING INSIGHTS:\n+/g,
+                  "🩺 REAL-TIME NURSING INSIGHTS:\n\n",
                 );
+
+                // Fix bullet point formatting for nursing suggestions
+                const lines = formattedSuggestions.split('\n');
+                const formattedLines = lines.map((line, index) => {
+                  // Skip header lines and empty lines
+                  if (line.includes('🩺 REAL-TIME NURSING INSIGHTS:') || line.trim() === '') {
+                    return line;
+                  }
+                  
+                  // If line has content but no bullet, add one
+                  const trimmedLine = line.trim();
+                  if (trimmedLine && !trimmedLine.startsWith('•') && !trimmedLine.startsWith('-') && !trimmedLine.startsWith('*')) {
+                    return `• ${trimmedLine}`;
+                  }
+                  
+                  return line;
+                });
+                
+                formattedSuggestions = formattedLines.join('\n');
+
+                console.log("🧠 [NursingView] Applied enhanced bullet point formatting");
 
                 console.log(
                   "🧠 [NursingView] Final formatted suggestions length:",
@@ -856,7 +906,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             setSuggestionsBuffer((prev) => prev + "\n");
           }
 
-          if (message.type === "conversation.item.input_audio_transcription.completed") {
+          if (
+            message.type ===
+            "conversation.item.input_audio_transcription.completed"
+          ) {
             console.log("✅ [NursingView] Transcription segment completed");
             const completedText = message.transcript || "";
             if (completedText && completedText !== transcriptionBuffer) {
@@ -877,8 +930,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
           if (message.type === "error") {
             console.error("❌ [NursingView] OpenAI error:", message.error);
-            if (message.error?.code === "conversation_already_has_active_response") {
-              console.log("🔄 [NursingView] Resetting conversation state due to race condition");
+            if (
+              message.error?.code === "conversation_already_has_active_response"
+            ) {
+              console.log(
+                "🔄 [NursingView] Resetting conversation state due to race condition",
+              );
               conversationActive = false;
               suggestionsStarted = false;
             }
@@ -900,7 +957,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         };
 
         realtimeWs.onclose = (event) => {
-          console.log("🔌 [NursingView] WebSocket closed:", event.code, event.reason);
+          console.log(
+            "🔌 [NursingView] WebSocket closed:",
+            event.code,
+            event.reason,
+          );
           setIsRecording(false);
         };
 
@@ -1006,7 +1067,6 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           title: "Recording Started",
           description: "Nursing transcription active",
         });
-
       } catch (error) {
         console.error("❌ [NursingView] DETAILED ERROR in recording:", {
           error,
@@ -1052,7 +1112,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
     // Trigger nursing assessment generation after recording stops
     if (transcriptionBuffer && transcriptionBuffer.trim()) {
-      console.log("🩺 [NursingView] Triggering nursing assessment generation after recording...");
+      console.log(
+        "🩺 [NursingView] Triggering nursing assessment generation after recording...",
+      );
 
       // Set transcription for Real-time nursing component
       setTranscription(transcriptionBuffer);
@@ -1082,11 +1144,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
   const saveContentMutation = useMutation({
     mutationFn: async (data: { field: string; content: string }) => {
       const response = await fetch(`/api/encounters/${encounterId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [data.field]: data.content })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [data.field]: data.content }),
       });
-      if (!response.ok) throw new Error('Failed to save');
+      if (!response.ok) throw new Error("Failed to save");
       return response.json();
     },
     onSuccess: () => {
@@ -1094,7 +1156,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         title: "Saved Successfully",
         description: "Nursing documentation has been saved.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/encounters/${encounterId}`],
+      });
     },
     onError: () => {
       toast({
@@ -1102,15 +1166,15 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         title: "Save Failed",
         description: "Failed to save nursing documentation.",
       });
-    }
+    },
   });
 
   const handleSaveAssessment = async () => {
     setIsSaving(true);
     try {
       await saveContentMutation.mutateAsync({
-        field: 'nurseAssessment',
-        content: nursingAssessment
+        field: "nurseAssessment",
+        content: nursingAssessment,
       });
     } finally {
       setIsSaving(false);
@@ -1121,8 +1185,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     setIsSaving(true);
     try {
       await saveContentMutation.mutateAsync({
-        field: 'nurseInterventions',
-        content: nursingInterventions
+        field: "nurseInterventions",
+        content: nursingInterventions,
       });
     } finally {
       setIsSaving(false);
@@ -1133,8 +1197,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     setIsSaving(true);
     try {
       await saveContentMutation.mutateAsync({
-        field: 'nurseNotes',
-        content: nursingNotes
+        field: "nurseNotes",
+        content: nursingNotes,
       });
     } finally {
       setIsSaving(false);
@@ -1153,7 +1217,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
   };
 
   const formatDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
+    const [year, month, day] = dateString.split("-").map(Number);
     const localDate = new Date(year, month - 1, day);
     return localDate.toLocaleDateString("en-US", {
       year: "numeric",
@@ -1252,14 +1316,16 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               Nursing Encounter
             </div>
             <div className="text-green-700">
-              Encounter #{encounterId} - {(encounter as any)?.encounterType || 'Office Visit'}
+              Encounter #{encounterId} -{" "}
+              {(encounter as any)?.encounterType || "Office Visit"}
             </div>
             <div className="flex items-center mt-2">
               <Badge
                 variant="outline"
                 className="bg-green-100 text-green-800 border-green-300"
               >
-                {(encounter as any)?.encounterStatus?.replace('_', ' ') || 'In Progress'}
+                {(encounter as any)?.encounterStatus?.replace("_", " ") ||
+                  "In Progress"}
               </Badge>
             </div>
           </div>
@@ -1276,8 +1342,6 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             />
           </div>
         </div>
-
-
 
         {/* Chart Sections */}
         <div className="flex-1 overflow-y-auto">
@@ -1300,7 +1364,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               <CollapsibleContent>
                 <div className="bg-white border-b border-gray-100 p-3">
                   {section.id === "encounters" ? (
-                    <div className="text-xs text-gray-600">Current nursing encounter in progress</div>
+                    <div className="text-xs text-gray-600">
+                      Current nursing encounter in progress
+                    </div>
                   ) : section.id === "nursing-assessments" ? (
                     <div className="text-xs text-gray-600">
                       <div className="space-y-1">
@@ -1320,9 +1386,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                       </div>
                     </div>
                   ) : (
-                    <SharedChartSections 
-                      patientId={patient.id} 
-                      mode="encounter" 
+                    <SharedChartSections
+                      patientId={patient.id}
+                      mode="encounter"
                       encounterId={(encounter as any)?.id}
                       isReadOnly={false}
                       sectionId={section.id}
@@ -1346,7 +1412,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             </div>
           </div>
           <div className="text-sm text-gray-500 mt-1">
-            Nursing assessments, interventions, and care planning for this encounter.
+            Nursing assessments, interventions, and care planning for this
+            encounter.
           </div>
         </div>
 
@@ -1433,7 +1500,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
           {/* Nursing Documentation Tabs */}
           <Card className="p-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="assessment">Assessment</TabsTrigger>
                 <TabsTrigger value="interventions">Interventions</TabsTrigger>
@@ -1443,13 +1514,13 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               <TabsContent value="assessment" className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Nursing Assessment</h3>
-                  <Button 
-                    onClick={handleSaveAssessment} 
+                  <Button
+                    onClick={handleSaveAssessment}
                     disabled={isSaving}
                     size="sm"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? "Saving..." : "Save"}
                   </Button>
                 </div>
                 <Textarea
@@ -1466,14 +1537,16 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
               <TabsContent value="interventions" className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Nursing Interventions</h3>
-                  <Button 
-                    onClick={handleSaveInterventions} 
+                  <h3 className="text-lg font-semibold">
+                    Nursing Interventions
+                  </h3>
+                  <Button
+                    onClick={handleSaveInterventions}
                     disabled={isSaving}
                     size="sm"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? "Saving..." : "Save"}
                   </Button>
                 </div>
                 <Textarea
@@ -1490,14 +1563,16 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
               <TabsContent value="notes" className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">General Nursing Notes</h3>
-                  <Button 
-                    onClick={handleSaveNotes} 
+                  <h3 className="text-lg font-semibold">
+                    General Nursing Notes
+                  </h3>
+                  <Button
+                    onClick={handleSaveNotes}
                     disabled={isSaving}
                     size="sm"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? "Saving..." : "Save"}
                   </Button>
                 </div>
                 <Textarea
