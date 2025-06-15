@@ -32,10 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useSharedRealtimeService } from "@/utils/shared-realtime-service";
 import { SharedChartSections } from "@/components/patient/shared-chart-sections";
-import {
-  RealtimeNursingIntegration,
-  RealtimeNursingRef,
-} from "@/components/RealtimeNursingIntegration";
+
 import {
   NursingTemplateAssessment,
   NursingTemplateRef,
@@ -99,7 +96,7 @@ export function NursingEncounterView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
-  const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
+
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 

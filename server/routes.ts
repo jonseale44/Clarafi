@@ -26,7 +26,6 @@ import OpenAI from "openai";
 
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
 import { realtimeNursingStreaming } from "./realtime-nursing-streaming";
-import { realtimeNursingContinuous } from "./realtime-nursing-continuous";
 
 // Fast medical routes removed - functionality moved to frontend WebSocket
 
@@ -1019,137 +1018,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Continuous Real-time Nursing Assessment endpoint
-  app.post("/api/realtime-nursing/continuous/start", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const { patientId, encounterId, sessionId } = req.body;
-
-      if (!patientId || !encounterId || !sessionId) {
-        return res.status(400).json({
-          message: "Missing required fields: patientId, encounterId, sessionId",
-        });
-      }
-
-      console.log(
-        `🔄 [ContinuousNursing] Starting continuous assessment for patient ${patientId}, session ${sessionId}`,
-      );
-
-      const stream = await realtimeNursingContinuous.startContinuousAssessment(
-        parseInt(patientId),
-        encounterId,
-        sessionId,
-      );
-
-      // Set headers for Server-Sent Events
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("Access-Control-Allow-Origin", "*");
-
-      // Pipe the stream to the response
-      const reader = stream.getReader();
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          res.write(value);
-        }
-      } finally {
-        reader.releaseLock();
-        res.end();
-      }
-    } catch (error: any) {
-      console.error("❌ [ContinuousNursing] Error in continuous stream:", error);
-      res.status(500).json({
-        message: "Failed to start continuous nursing assessment",
-        error: error.message,
-      });
-    }
-  });
-
-  // Update transcription for continuous assessment
-  app.post("/api/realtime-nursing/continuous/update", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const { sessionId, transcription } = req.body;
-
-      if (!sessionId || !transcription) {
-        return res.status(400).json({
-          message: "Missing required fields: sessionId, transcription",
-        });
-      }
-
-      await realtimeNursingContinuous.updateTranscription(sessionId, transcription);
-      
-      res.json({ 
-        success: true, 
-        message: "Transcription updated successfully" 
-      });
-    } catch (error: any) {
-      console.error("❌ [ContinuousNursing] Error updating transcription:", error);
-      res.status(500).json({
-        message: "Failed to update transcription",
-        error: error.message,
-      });
-    }
-  });
-
-  // Stop continuous assessment
-  app.post("/api/realtime-nursing/continuous/stop", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const { sessionId } = req.body;
-
-      if (!sessionId) {
-        return res.status(400).json({
-          message: "Missing required field: sessionId",
-        });
-      }
-
-      realtimeNursingContinuous.stopContinuousAssessment(sessionId);
-      
-      res.json({ 
-        success: true, 
-        message: "Continuous assessment stopped" 
-      });
-    } catch (error: any) {
-      console.error("❌ [ContinuousNursing] Error stopping assessment:", error);
-      res.status(500).json({
-        message: "Failed to stop continuous assessment",
-        error: error.message,
-      });
-    }
-  });
-
-  // Get current assessment for a session
-  app.get("/api/realtime-nursing/continuous/:sessionId/current", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const { sessionId } = req.params;
-      const assessment = realtimeNursingContinuous.getCurrentAssessment(sessionId);
-      const isActive = realtimeNursingContinuous.isSessionActive(sessionId);
-      
-      res.json({ 
-        sessionId,
-        assessment,
-        isActive,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      console.error("❌ [ContinuousNursing] Error getting current assessment:", error);
-      res.status(500).json({
-        message: "Failed to get current assessment",
-        error: error.message,
-      });
-    }
-  });
 
   // CPT Codes and Diagnoses API endpoints for billing integration
 
