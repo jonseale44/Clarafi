@@ -428,7 +428,7 @@ export function NursingEncounterView({
                     <SharedChartSections 
                       patientId={patient.id} 
                       mode="encounter" 
-                      encounterId={encounter?.id}
+                      encounterId={(encounter as any)?.id}
                       isReadOnly={false}
                       sectionId={section.id}
                     />
