@@ -1498,8 +1498,14 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   onNursingAssessmentUpdate={setNursingAssessment}
                   onNursingAssessmentComplete={(assessment) => {
                     setNursingAssessment(assessment);
+                    
+                    // Trigger template extraction from the completed assessment
+                    if (templateNursingRef.current && assessment) {
+                      templateNursingRef.current.extractFromNursingAssessment(assessment);
+                    }
+                    
                     toast({
-                      title: "Assessment Complete",
+                      title: "Assessment Complete", 
                       description: "Nursing assessment generated successfully",
                     });
                   }}

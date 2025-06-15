@@ -15,6 +15,7 @@ interface TemplateNursingAssessmentProps {
 export interface TemplateNursingRef {
   getTemplate: () => NursingTemplate;
   resetTemplate: () => void;
+  extractFromNursingAssessment: (assessment: string) => Promise<void>;
 }
 
 interface NursingTemplate {
@@ -115,6 +116,70 @@ export const TemplateNursingAssessment = forwardRef<TemplateNursingRef, Template
     }
 
   }, [transcription, isRecording]);
+
+  // Method to extract template fields from a comprehensive nursing assessment
+  const extractFromNursingAssessment = async (assessment: string) => {
+    console.log(`📋 [TemplateNursing] Extracting template fields from nursing assessment`);
+    
+    setIsAnalyzing(true);
+    
+    try {
+      const extractionPrompt = `
+Extract nursing assessment template fields from this comprehensive assessment. Only include information that is explicitly mentioned.
+
+Assessment:
+${assessment}
+
+Return JSON with these fields only if information is available:
+{
+  "cc": "Chief complaint or reason for visit",
+  "hpi": "History of present illness details", 
+  "pmh": "Past medical history",
+  "meds": "Current medications",
+  "allergies": "Known allergies",
+  "famHx": "Family history",
+  "soHx": "Social history", 
+  "psh": "Past surgical history",
+  "ros": "Review of systems findings",
+  "vitals": "Vital signs measurements"
+}`;
+
+      const response = await fetch('/api/nursing/analyze-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId,
+          encounterId,
+          transcription: extractionPrompt,
+          currentTemplate: template,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.updates && Object.keys(result.updates).length > 0) {
+          const updatedTemplate = { ...template, ...result.updates, lastUpdate: new Date() };
+          setTemplate(updatedTemplate);
+          onTemplateUpdate(updatedTemplate);
+
+          const newCompletedFields = new Set(completedFields);
+          Object.keys(result.updates).forEach(key => {
+            if (result.updates[key] && result.updates[key].trim()) {
+              newCompletedFields.add(key);
+            }
+          });
+          setCompletedFields(newCompletedFields);
+
+          console.log(`✅ [TemplateNursing] Extracted from assessment: ${Object.keys(result.updates).join(', ')}`);
+        }
+      }
+    } catch (error) {
+      console.error("❌ [TemplateNursing] Error extracting from assessment:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const analyzeTranscriptionForTemplate = async (currentTranscription: string) => {
     if (!currentTranscription.trim()) return;
@@ -305,6 +370,19 @@ Return ONLY JSON with updates, example: {"cc":"New complaint","hpi":"Additional 
   const completionPercentage = Math.round(
     (Object.values(template).filter(value => value && typeof value === 'string' && value.trim()).length / TEMPLATE_FIELDS.length) * 100
   );
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    getTemplate: () => template,
+    resetTemplate: () => {
+      setTemplate({
+        cc: '', hpi: '', pmh: '', meds: '', allergies: '',
+        famHx: '', soHx: '', psh: '', ros: '', vitals: '', lastUpdate: null,
+      });
+      setCompletedFields(new Set());
+    },
+    extractFromNursingAssessment: extractFromNursingAssessment,
+  }));
 
   return (
     <Card className="p-4 border-purple-200 bg-purple-50">
