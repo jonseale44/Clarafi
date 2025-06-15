@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight, Plus, Search, Star, RefreshCw, Bot } from "l
 import { Patient } from "@shared/schema";
 import { EncountersTab } from "./encounters-tab";
 import { EncounterDetailView } from "./encounter-detail-view";
+import { NursingEncounterView } from "./nursing-encounter-view";
 import { SharedChartSections } from "./shared-chart-sections";
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,11 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const [showEncounterDetail, setShowEncounterDetail] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Get current user to determine role-based routing
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
+  });
 
   // Fetch encounters with automatic refresh
   const { data: encounters = [], refetch: refetchEncounters } = useQuery({
@@ -190,15 +196,34 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
     }
   };
 
-  // Show encounter detail view if in encounter mode
+  // Show role-based encounter view if in encounter mode
   if (showEncounterDetail && currentEncounterId) {
-    return (
-      <EncounterDetailView 
-        patient={patient} 
-        encounterId={currentEncounterId} 
-        onBackToChart={handleBackToChart}
-      />
-    );
+    const userRole = (currentUser as any)?.role;
+    const isNurse = userRole === "nurse";
+
+    console.log("🔍 [PatientChart] Current user:", currentUser);
+    console.log("🔍 [PatientChart] User role:", userRole);
+    console.log("🔍 [PatientChart] Is nurse?", isNurse);
+
+    if (isNurse) {
+      console.log("🩺 [PatientChart] Routing to NursingEncounterView");
+      return (
+        <NursingEncounterView 
+          patient={patient} 
+          encounterId={currentEncounterId} 
+          onBackToChart={handleBackToChart}
+        />
+      );
+    } else {
+      console.log("🏥 [PatientChart] Routing to EncounterDetailView (provider)");
+      return (
+        <EncounterDetailView 
+          patient={patient} 
+          encounterId={currentEncounterId} 
+          onBackToChart={handleBackToChart}
+        />
+      );
+    }
   }
 
   return (
