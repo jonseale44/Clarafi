@@ -100,7 +100,7 @@ router.put("/:encounterId/nursing-summary", async (req, res) => {
 
   } catch (error) {
     console.error("❌ [NursingSummaryAPI] Error updating summary:", error);
-    return APIResponseHandler.error(res, "SUMMARY_UPDATE_FAILED", "Failed to update nursing summary", error);
+    return APIResponseHandler.error(res, error as Error, 500, "SUMMARY_UPDATE_FAILED");
   }
 });
 

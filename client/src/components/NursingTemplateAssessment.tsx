@@ -41,6 +41,7 @@ export interface NursingTemplateRef {
   stopTemplateAssessment: () => void;
   getCurrentTemplate: () => NursingTemplateData;
   saveTemplate: () => void;
+  generateSummary: () => void;
 }
 
 export const NursingTemplateAssessment = forwardRef<
@@ -61,6 +62,9 @@ export const NursingTemplateAssessment = forwardRef<
     const [isActive, setIsActive] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [editingField, setEditingField] = useState<string | null>(null);
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [nursingSummary, setNursingSummary] = useState<string>("");
+    const [isEditingSummary, setIsEditingSummary] = useState(false);
     const [templateData, setTemplateData] = useState<NursingTemplateData>({
       cc: "",
       hpi: "",
@@ -87,6 +91,7 @@ export const NursingTemplateAssessment = forwardRef<
       stopTemplateAssessment,
       getCurrentTemplate: () => templateData,
       saveTemplate,
+      generateSummary,
     }));
 
     // Auto-start when recording begins
@@ -553,6 +558,75 @@ Only include fields that have information mentioned in the conversation.`,
       }
     };
 
+    const generateSummary = async () => {
+      setIsGeneratingSummary(true);
+      try {
+        console.log("🏥 [NursingTemplate] Generating nursing summary...");
+        
+        const response = await fetch(`/api/encounters/${encounterId}/generate-nursing-summary`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            templateData,
+            transcription,
+            patientId: parseInt(patientId),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to generate nursing summary: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setNursingSummary(data.data.nursingSummary);
+        
+        toast({
+          title: "Summary Generated",
+          description: "Nursing summary has been created and saved",
+        });
+
+        console.log("✅ [NursingTemplate] Summary generated successfully");
+      } catch (error) {
+        console.error("❌ [NursingTemplate] Error generating summary:", error);
+        toast({
+          variant: "destructive",
+          title: "Generation Failed",
+          description: "Failed to generate nursing summary",
+        });
+      } finally {
+        setIsGeneratingSummary(false);
+      }
+    };
+
+    const saveSummary = async () => {
+      try {
+        const response = await fetch(`/api/encounters/${encounterId}/nursing-summary`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ nursingSummary }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save nursing summary");
+        }
+
+        toast({
+          title: "Summary Saved",
+          description: "Nursing summary updated successfully",
+        });
+        setIsEditingSummary(false);
+      } catch (error) {
+        console.error("❌ [NursingTemplate] Error saving summary:", error);
+        toast({
+          variant: "destructive",
+          title: "Save Failed",
+          description: "Failed to save nursing summary",
+        });
+      }
+    };
+
     const fieldLabels = {
       cc: "Chief Complaint",
       hpi: "History of Present Illness",
@@ -670,6 +744,91 @@ Only include fields that have information mentioned in the conversation.`,
                 )}
               </div>
             ))}
+          </div>
+
+          <Separator />
+
+          {/* Nursing Summary Section */}
+          <div className="space-y-4 mt-6">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-blue-900">Nursing Summary</h4>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={generateSummary}
+                  size="sm"
+                  variant="default"
+                  disabled={isGeneratingSummary || Object.values(templateData).filter(v => v.trim()).length === 0}
+                  className="h-8"
+                >
+                  {isGeneratingSummary ? (
+                    <>
+                      <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-3 w-3 mr-1" />
+                      Generate Summary
+                    </>
+                  )}
+                </Button>
+                {nursingSummary && (
+                  <Button
+                    onClick={() => setIsEditingSummary(!isEditingSummary)}
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                  >
+                    <Edit2 className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {nursingSummary ? (
+              <div className="space-y-2">
+                {isEditingSummary ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={nursingSummary}
+                      onChange={(e) => setNursingSummary(e.target.value)}
+                      className="min-h-[200px] text-sm font-mono"
+                      placeholder="Edit nursing summary..."
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        onClick={() => setIsEditingSummary(false)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={saveSummary}
+                        size="sm"
+                        variant="default"
+                      >
+                        <Save className="h-3 w-3 mr-1" />
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-white border rounded-md">
+                    <pre className="text-sm whitespace-pre-wrap text-gray-800">
+                      {nursingSummary}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-50 border rounded-md text-center">
+                <p className="text-sm text-gray-600">
+                  Complete template fields and click "Generate Summary" to create a structured nursing assessment summary
+                </p>
+              </div>
+            )}
           </div>
 
           <Separator />
