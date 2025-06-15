@@ -108,21 +108,21 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
         >
           <Avatar className="w-8 h-8">
             <AvatarFallback className="text-xs bg-primary text-white">
-              {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'U'}
+              {user?.firstName?.[0] || 'U'}{user?.lastName?.[0] || 'U'}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex flex-col items-start">
             <span className="text-sm font-medium text-gray-900">
-              {user.firstName} {user.lastName}
+              {user?.firstName} {user?.lastName}
             </span>
             <div className="flex items-center space-x-1">
               <Badge 
                 variant="outline" 
-                className={`text-xs px-1.5 py-0.5 h-5 ${getRoleColor(user.role)}`}
+                className={`text-xs px-1.5 py-0.5 h-5 ${getRoleColor(user?.role || '')}`}
               >
-                {getRoleIcon(user.role)}
-                <span className="ml-1 capitalize">{user.role}</span>
+                {getRoleIcon(user?.role || '')}
+                <span className="ml-1 capitalize">{user?.role}</span>
               </Badge>
             </div>
           </div>
@@ -135,17 +135,17 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <div className="font-medium">
-              {user.firstName} {user.lastName}
+              {user?.firstName} {user?.lastName}
             </div>
             <div className="text-xs text-gray-500 font-normal">
-              {user.email}
+              {user?.email}
             </div>
-            {user.credentials && (
+            {user?.credentials && (
               <div className="text-xs text-gray-500 font-normal">
                 {user.credentials}
               </div>
             )}
-            {user.npi && (
+            {user?.npi && (
               <div className="text-xs text-gray-500 font-normal">
                 NPI: {user.npi}
               </div>

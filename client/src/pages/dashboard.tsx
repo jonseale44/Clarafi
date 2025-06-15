@@ -363,9 +363,7 @@ export default function Dashboard() {
                 Create Patient
               </Button>
             </Link>
-            <div className="text-sm text-gray-600">
-              Jonathan Seale
-            </div>
+            <UserProfileMenu />
           </div>
         </div>
       </div>
