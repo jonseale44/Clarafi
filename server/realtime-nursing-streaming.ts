@@ -110,6 +110,7 @@ export class RealtimeNursingStreaming {
     console.log(`🩺 [RealtimeNursing] Starting OpenAI streaming request`);
 
     // Create streaming response
+    const self = this;
     return new ReadableStream({
       async start(controller) {
         try {
@@ -150,7 +151,7 @@ export class RealtimeNursingStreaming {
           );
 
           // Generate nursing interventions based on assessment
-          const interventions = await this.generateNursingInterventions(
+          const interventions = await self.generateNursingInterventions(
             fullAssessment,
             medicalContext,
           );
@@ -165,7 +166,7 @@ export class RealtimeNursingStreaming {
           );
 
           // Generate draft orders (same as provider)
-          const draftOrders = await this.soapOrdersExtractor.extractOrdersFromSOAP(
+          const draftOrders = await self.soapOrdersExtractor.extractOrdersFromSOAP(
             fullAssessment,
             patientId,
             parseInt(encounterId),

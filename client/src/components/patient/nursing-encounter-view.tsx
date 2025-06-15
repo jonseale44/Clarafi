@@ -83,6 +83,7 @@ export function NursingEncounterView({
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
   const [nursingAssessment, setNursingAssessment] = useState("");
+  const [continuousAssessment, setContinuousAssessment] = useState("");
   const [nursingInterventions, setNursingInterventions] = useState("");
   const [nursingNotes, setNursingNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
