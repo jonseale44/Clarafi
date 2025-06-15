@@ -137,6 +137,21 @@ export const NursingTemplateAssessment = forwardRef<
       }
     }, [templateData, nursingSummary, isGeneratingSummary]);
 
+    // Format nursing summary text with proper HTML formatting
+    const formatNursingSummary = (text: string): string => {
+      if (!text) return '';
+      
+      return text
+        // Convert **text** to <strong>text</strong>
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+        // Convert bullet points to proper list items with spacing
+        .replace(/^- (.*?)$/gm, '<div class="ml-4 mb-1">• $1</div>')
+        // Add spacing between sections (double line breaks)
+        .replace(/\n\n/g, '<div class="mb-4"></div>')
+        // Convert single line breaks to <br>
+        .replace(/\n/g, '<br>');
+    };
+
     // Process new transcription when it changes
     useEffect(() => {
       if (
@@ -850,9 +865,12 @@ Only include fields that have information mentioned in the conversation.`,
                   </div>
                 ) : (
                   <div className="p-4 bg-white border rounded-md">
-                    <pre className="text-sm whitespace-pre-wrap text-gray-800">
-                      {nursingSummary}
-                    </pre>
+                    <div 
+                      className="text-sm text-gray-800 font-sans leading-relaxed"
+                      dangerouslySetInnerHTML={{ 
+                        __html: formatNursingSummary(nursingSummary) 
+                      }}
+                    />
                   </div>
                 )}
               </div>

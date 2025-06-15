@@ -17,6 +17,21 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
 
   const nursingSummary = (nursingSummaryData as any)?.data?.nursingSummary;
 
+  // Local function to format nursing summary text with proper HTML formatting
+  const formatNursingSummary = (text: string): string => {
+    if (!text) return '';
+    
+    return text
+      // Convert **text** to <strong>text</strong>
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+      // Convert bullet points to proper list items with spacing
+      .replace(/^- (.*?)$/gm, '<div class="ml-4 mb-1">• $1</div>')
+      // Add spacing between sections (double line breaks)
+      .replace(/\n\n/g, '<div class="mb-4"></div>')
+      // Convert single line breaks to <br>
+      .replace(/\n/g, '<br>');
+  };
+
   if (isLoading) {
     return (
       <Card className="border-green-200 bg-green-50">
@@ -96,9 +111,12 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
       </CardHeader>
       <CardContent>
         <div className="p-4 bg-white border rounded-md">
-          <pre className="text-sm whitespace-pre-wrap text-gray-800 font-sans leading-relaxed">
-            {nursingSummary}
-          </pre>
+          <div 
+            className="text-sm text-gray-800 font-sans leading-relaxed"
+            dangerouslySetInnerHTML={{ 
+              __html: formatNursingSummary(nursingSummary) 
+            }}
+          />
         </div>
         <div className="mt-2 text-xs text-green-600">
           This summary was generated from the nursing template assessment and is read-only for providers.
