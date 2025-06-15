@@ -309,22 +309,33 @@ Do not include fields that have no new information.`,
 
     console.log(`📝 [NursingTemplate] Processing transcription update`);
     
-    // Send transcription to OpenAI for field extraction
-    wsRef.current.send(JSON.stringify({
+    // Send transcription to OpenAI for field extraction using correct format
+    const contextMessage = {
       type: "conversation.item.create",
       item: {
         type: "message",
         role: "user",
         content: [{
-          type: "text",
+          type: "input_text",
           text: `Extract nursing assessment information from this conversation transcript. Only include fields with new information:\n\n${newTranscription}`
         }]
       }
-    }));
+    };
 
-    wsRef.current.send(JSON.stringify({
-      type: "response.create"
-    }));
+    wsRef.current.send(JSON.stringify(contextMessage));
+
+    const responseRequest = {
+      type: "response.create",
+      response: {
+        modalities: ["text"],
+        instructions: `Extract nursing assessment data from the conversation and return as JSON with only populated fields. Use this exact format:
+{"cc": "value", "hpi": "value", "pmh": "value", "meds": "value", "allergies": "value", "famHx": "value", "soHx": "value", "psh": "value", "ros": "value", "vitals": "value"}
+
+Only include fields that have information mentioned in the conversation.`
+      }
+    };
+
+    wsRef.current.send(JSON.stringify(responseRequest));
   };
 
   const handleRealtimeMessage = (message: any) => {
@@ -360,7 +371,7 @@ Do not include fields that have no new information.`,
           // Try to parse as JSON and update template fields
           if (content.trim()) {
             // Clean up the response to extract JSON
-            const jsonMatch = content.match(/\{.*\}/s);
+            const jsonMatch = content.match(/\{[^}]*\}/);
             if (jsonMatch) {
               const updates = JSON.parse(jsonMatch[0]);
               console.log("📝 [NursingTemplate] Parsed updates:", updates);
@@ -410,7 +421,7 @@ Do not include fields that have no new information.`,
         type: "message",
         role: "user",
         content: [{
-          type: "text",
+          type: "input_text",
           text: `Extract nursing assessment information from this conversation transcript. Only include fields with new information. Return as JSON:
 
 ${transcriptText}`
