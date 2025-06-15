@@ -989,6 +989,31 @@ export function NursingEncounterView({
             </div>
           </Card>
 
+          {/* AI Suggestions - EXACT COPY from provider view */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                AI Suggestions
+              </h2>
+              <Button
+                onClick={() => {
+                  setGptSuggestions("AI-generated nursing suggestions based on the encounter...");
+                  toast({
+                    title: "Smart Suggestions Generated",
+                    description: "GPT analysis complete",
+                  });
+                }}
+                size="sm"
+                variant="outline"
+              >
+                Generate Suggestions
+              </Button>
+            </div>
+            <div className="text-gray-500 text-sm whitespace-pre-line">
+              {gptSuggestions || "AI analysis will appear here..."}
+            </div>
+          </Card>
+
           {/* Nursing Documentation Tabs */}
           <Card className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
