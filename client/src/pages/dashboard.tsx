@@ -4,6 +4,7 @@ import { QuickStats } from "@/components/patient/quick-stats";
 import { EncountersTab } from "@/components/patient/encounters-tab";
 import { PatientChartView } from "@/components/patient/patient-chart-view";
 import { ProviderDashboard } from "@/components/dashboard/provider-dashboard";
+import { UserProfileMenu } from "@/components/user-profile-menu";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
