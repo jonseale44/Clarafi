@@ -32,27 +32,31 @@ export function RoleBasedEncounterView({
     );
   }
 
+  // Debug logging for role-based routing
+  console.log("🔍 [RoleBasedEncounter] Current user:", currentUser);
+  console.log("🔍 [RoleBasedEncounter] User role:", currentUser?.role);
+  console.log("🔍 [RoleBasedEncounter] Is nurse?", currentUser?.role === 'nurse');
+
   // Route to appropriate encounter view based on user role
-  switch (currentUser?.role) {
-    case 'nurse':
-      return (
-        <NursingEncounterView
-          patient={patient}
-          encounterId={encounterId}
-          onBackToChart={onBackToChart}
-        />
-      );
-    
-    case 'provider':
-    case 'admin':
-    default:
-      return (
-        <EncounterDetailView
-          patient={patient}
-          encounterId={encounterId}
-          encounter={encounter}
-          onBackToChart={onBackToChart}
-        />
-      );
+  if (currentUser?.role === 'nurse') {
+    console.log("🩺 [RoleBasedEncounter] Routing to NursingEncounterView");
+    return (
+      <NursingEncounterView
+        patient={patient}
+        encounterId={encounterId}
+        onBackToChart={onBackToChart}
+      />
+    );
   }
+
+  // Default to provider view for all other roles
+  console.log("🏥 [RoleBasedEncounter] Routing to EncounterDetailView (provider)");
+  return (
+    <EncounterDetailView
+      patient={patient}
+      encounterId={encounterId}
+      encounter={encounter}
+      onBackToChart={onBackToChart}
+    />
+  );
 }
