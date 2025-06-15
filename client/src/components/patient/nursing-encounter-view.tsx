@@ -89,117 +89,300 @@ export function NursingEncounterView({
     enabled: !!encounterId,
   });
 
-  // Recording state and references
-  const wsRef = useRef<WebSocket | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  // Recording state and references - using same approach as provider view
+  const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
 
-  // Start recording with detailed logging
+  // Deduplication tracking for WebSocket messages
+  const processedEvents = useRef(new Set<string>());
+  const processedContent = useRef(new Set<string>());
+
+  const isEventProcessed = (eventId: string) => processedEvents.current.has(eventId);
+  const markEventAsProcessed = (eventId: string) => processedEvents.current.add(eventId);
+  const isContentProcessed = (content: string) => processedContent.current.has(content);
+  const markContentAsProcessed = (content: string) => processedContent.current.add(content);
+
+  // Start recording using same OpenAI Realtime API as provider view
   const startRecording = async () => {
+    console.log("🎤 [NursingView] Starting REAL-TIME voice recording for patient:", patient.id);
+
+    // Clear previous transcription when starting new recording
+    setTranscription("");
+    setTranscriptionBuffer("");
+
     try {
-      console.log("🎤 [NursingView] Starting transcription recording");
-      console.log("🔍 [NursingView] Patient:", patient.id, "Encounter:", encounterId);
+      // Create direct WebSocket connection to OpenAI like provider view
+      let realtimeWs: WebSocket | null = null;
+      let transcriptionBuffer = "";
 
-      // Connect to the shared WebSocket service that powers provider transcription
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      console.log("🌐 [NursingView] Connecting to WebSocket:", wsUrl);
+      try {
+        console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
 
-      const websocket = new WebSocket(wsUrl);
+        // Get API key from environment
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        console.log("🔑 [NursingView] API key check:", {
+          hasApiKey: !!apiKey,
+          keyLength: apiKey?.length || 0,
+          keyPrefix: apiKey?.substring(0, 7) || "none",
+        });
 
-      websocket.onopen = async () => {
-        console.log("✅ [NursingView] WebSocket connected successfully");
-        setIsRecording(true);
-        
-        // Initialize transcription session
-        websocket.send(JSON.stringify({
-          type: 'start_transcription',
-          patientId: patient.id.toString(),
-          encounterId: encounterId.toString(),
-          userRole: 'nurse'
-        }));
+        if (!apiKey) {
+          throw new Error("OpenAI API key not available in environment");
+        }
 
-        try {
-          // Start audio capture
-          console.log("🎤 [NursingView] Requesting microphone access...");
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-              sampleRate: 16000
-            }
-          });
+        // Step 1: Create session exactly like provider view
+        console.log("🔧 [NursingView] Creating OpenAI session...");
+        const sessionConfig = {
+          model: "gpt-4o-mini-realtime-preview",
+          modalities: ["text"],
+          instructions: "You are a medical transcription assistant for nursing documentation. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations with focus on nursing assessment details.",
+          input_audio_format: "pcm16",
+          input_audio_transcription: {
+            model: "whisper-1",
+            language: "en",
+          },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 500,
+            create_response: true,
+          },
+        };
 
-          streamRef.current = stream;
-          console.log("🎵 [NursingView] Microphone access granted");
+        const sessionResponse = await fetch("https://api.openai.com/v1/realtime/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+            "OpenAI-Beta": "realtime=v1",
+          },
+          body: JSON.stringify(sessionConfig),
+        });
 
-          // Create MediaRecorder
-          const mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'audio/webm;codecs=opus'
-          });
-          mediaRecorderRef.current = mediaRecorder;
+        if (!sessionResponse.ok) {
+          const error = await sessionResponse.json();
+          console.log("❌ [NursingView] Session creation failed:", error);
+          throw new Error(`Failed to create session: ${error.message || "Unknown error"}`);
+        }
 
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0 && websocket.readyState === WebSocket.OPEN) {
-              console.log("🔊 [NursingView] Sending audio chunk, size:", event.data.size);
-              websocket.send(event.data);
-            }
+        const session = await sessionResponse.json();
+        console.log("✅ [NursingView] Session created:", session.id);
+
+        // Step 2: Connect via WebSocket with session token like provider view
+        const protocols = [
+          "realtime",
+          `openai-insecure-api-key.${apiKey}`,
+          "openai-beta.realtime-v1",
+        ];
+
+        const params = new URLSearchParams({
+          model: "gpt-4o-mini-realtime-preview",
+        });
+
+        realtimeWs = new WebSocket(
+          `wss://api.openai.com/v1/realtime?${params.toString()}`,
+          protocols,
+        );
+
+        realtimeWs.onopen = () => {
+          console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API");
+
+          // Session configuration: Focus on transcription for nursing
+          const sessionUpdateMessage = {
+            type: "session.update",
+            session: {
+              instructions: `You are a medical transcription assistant specialized in nursing documentation and clinical conversations. 
+              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH.
+              Pay special attention to:
+              - Nursing assessment terminology and observations
+              - Vital signs and measurements
+              - Patient comfort and care interventions
+              - Medication administration details
+              - Patient education and communication
+              Format with bullet points for natural conversation flow.`,
+              modalities: ["text", "audio"],
+              input_audio_format: "pcm16",
+              input_audio_transcription: {
+                model: "whisper-1",
+                language: "en",
+              },
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.3,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 500,
+                create_response: false,
+              },
+            },
           };
 
-          mediaRecorder.start(250); // Send chunks every 250ms
-          console.log("🎬 [NursingView] MediaRecorder started successfully");
+          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
+        };
 
-        } catch (audioError) {
-          console.error("❌ [NursingView] Microphone access failed:", audioError);
-          toast({
-            variant: "destructive",
-            title: "Microphone Access Failed",
-            description: "Please allow microphone access to use transcription.",
-          });
-          setIsRecording(false);
-        }
-      };
+        realtimeWs.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          console.log("📨 [NursingView] OpenAI message type:", message.type);
 
-      websocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("📥 [NursingView] Received message type:", data.type);
-
-          if (data.type === 'transcription') {
-            console.log("📝 [NursingView] Transcription received:", data.text);
-            setTranscription(data.text || "");
+          // Add deduplication checks
+          if (message.event_id && isEventProcessed(message.event_id)) {
+            console.log("🚫 [NursingView] Skipping duplicate event:", message.event_id);
+            return;
           }
 
-          if (data.type === 'error') {
-            console.error("❌ [NursingView] Server error:", data.message);
+          const content = message.delta || message.transcript || message.text || "";
+          if (content && isContentProcessed(content)) {
+            console.log("🚫 [NursingView] Skipping duplicate content:", content.substring(0, 30));
+            return;
+          }
+
+          // Mark as processed
+          if (message.event_id) markEventAsProcessed(message.event_id);
+          if (content) markContentAsProcessed(content);
+
+          // Handle transcription events - accumulate deltas
+          if (message.type === "conversation.item.input_audio_transcription.delta") {
+            const deltaText = message.transcript || message.delta || "";
+            console.log("📝 [NursingView] Transcription delta received:", deltaText);
+            
+            transcriptionBuffer += deltaText;
+            setTranscriptionBuffer(transcriptionBuffer);
+            setTranscription(transcriptionBuffer);
+          }
+
+          if (message.type === "conversation.item.input_audio_transcription.completed") {
+            console.log("✅ [NursingView] Transcription segment completed");
+            const completedText = message.transcript || "";
+            if (completedText && completedText !== transcriptionBuffer) {
+              transcriptionBuffer = completedText;
+              setTranscriptionBuffer(transcriptionBuffer);
+              setTranscription(transcriptionBuffer);
+            }
+          }
+
+          if (message.type === "session.created") {
+            console.log("✅ [NursingView] Session created successfully");
+          }
+
+          if (message.type === "session.updated") {
+            console.log("✅ [NursingView] Session updated successfully");
+          }
+
+          if (message.type === "error") {
+            console.error("❌ [NursingView] OpenAI error:", message.error);
             toast({
               variant: "destructive",
               title: "Transcription Error",
-              description: data.message,
+              description: message.error?.message || "Unknown error occurred",
             });
           }
-        } catch (parseError) {
-          console.error("❌ [NursingView] Failed to parse message:", parseError);
-        }
-      };
+        };
 
-      websocket.onerror = (error) => {
-        console.error("❌ [NursingView] WebSocket error:", error);
-        toast({
-          variant: "destructive",
-          title: "Connection Error",
-          description: "Failed to connect to transcription service",
+        realtimeWs.onerror = (error) => {
+          console.error("❌ [NursingView] WebSocket error:", error);
+          toast({
+            variant: "destructive",
+            title: "Connection Error",
+            description: "Failed to connect to transcription service",
+          });
+        };
+
+        realtimeWs.onclose = (event) => {
+          console.log("🔌 [NursingView] WebSocket closed:", event.code, event.reason);
+          setIsRecording(false);
+        };
+
+        // Step 3: Start audio capture and streaming like provider view
+        console.log("🎤 [NursingView] Requesting microphone access...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 24000,
+          },
         });
-      };
 
-      websocket.onclose = (event) => {
-        console.log("🔌 [NursingView] WebSocket closed:", event.code, event.reason);
-        setIsRecording(false);
-      };
+        console.log("🎵 [NursingView] Microphone access granted");
 
-      wsRef.current = websocket;
+        // Create MediaRecorder to capture audio
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "audio/webm;codecs=opus",
+        });
 
+        let audioChunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = async (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+            console.log("🔊 [NursingView] Audio chunk captured, size:", event.data.size);
+
+            // Convert to PCM16 and send to OpenAI
+            try {
+              const audioBlob = new Blob([event.data], { type: "audio/webm" });
+              const arrayBuffer = await audioBlob.arrayBuffer();
+              
+              // Convert to base64 for transmission
+              const uint8Array = new Uint8Array(arrayBuffer);
+              let binaryString = '';
+              for (let i = 0; i < uint8Array.length; i++) {
+                binaryString += String.fromCharCode(uint8Array[i]);
+              }
+              const base64Audio = btoa(binaryString);
+              
+              if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+                realtimeWs.send(JSON.stringify({
+                  type: "input_audio_buffer.append",
+                  audio: base64Audio,
+                }));
+              }
+            } catch (error) {
+              console.error("❌ [NursingView] Error processing audio chunk:", error);
+            }
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          console.log("🎬 [NursingView] MediaRecorder stopped");
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        // Store references for cleanup
+        (window as any).currentMediaRecorder = mediaRecorder;
+        (window as any).currentRealtimeWs = realtimeWs;
+
+        // Start recording
+        mediaRecorder.start(250); // Capture every 250ms
+        setIsRecording(true);
+
+        console.log("🎬 [NursingView] Recording started successfully");
+
+        toast({
+          title: "Recording Started",
+          description: "Nursing transcription active",
+        });
+
+      } catch (error) {
+        console.error("❌ [NursingView] DETAILED ERROR in recording:", {
+          error,
+          message: (error as any)?.message,
+          name: (error as any)?.name,
+          stack: (error as any)?.stack,
+          patientId: patient.id,
+        });
+
+        let errorMessage = "Unknown error occurred";
+        if ((error as any)?.message) {
+          errorMessage = (error as any).message;
+        } else if (typeof error === "string") {
+          errorMessage = error;
+        }
+
+        toast({
+          title: "Recording Failed",
+          description: `Transcription error: ${errorMessage}`,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("❌ [NursingView] Failed to start recording:", error);
       toast({
@@ -211,32 +394,37 @@ export function NursingEncounterView({
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     console.log("🎤 [NursingView] Stopping recording...");
-    
-    // Stop MediaRecorder
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-      console.log("🎬 [NursingView] MediaRecorder stopped");
+    const mediaRecorder = (window as any).currentMediaRecorder;
+    const realtimeWs = (window as any).currentRealtimeWs;
+
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      console.log("🎤 [NursingView] MediaRecorder stopped");
     }
-    
-    // Stop audio stream
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-      console.log("🎵 [NursingView] Audio stream stopped");
-    }
-    
-    // Close WebSocket
-    if (wsRef.current) {
-      wsRef.current.close();
+
+    if (realtimeWs) {
+      realtimeWs.close();
       console.log("🔌 [NursingView] WebSocket closed");
     }
-    
+
     setIsRecording(false);
-    
+
     // Trigger nursing assessment generation after recording stops
-    if (transcription.trim()) {
-      realtimeNursingRef.current?.generateNursingAssessment();
+    if (transcriptionBuffer && transcriptionBuffer.trim()) {
+      console.log("🩺 [NursingView] Triggering nursing assessment generation after recording...");
+      setTranscription(transcriptionBuffer);
+
+      // Trigger Real-time nursing assessment generation
+      if (realtimeNursingRef.current) {
+        realtimeNursingRef.current.generateNursingAssessment();
+      }
+    } else {
+      toast({
+        title: "Recording Stopped",
+        description: "Processing audio...",
+      });
     }
   };
 
@@ -537,7 +725,7 @@ export function NursingEncounterView({
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <Button
-                  onClick={isRecording ? handleStopRecording : handleStartRecording}
+                  onClick={isRecording ? stopRecording : startRecording}
                   className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} text-white`}
                 >
                   {isRecording ? (
