@@ -65,11 +65,15 @@ export function NursingEncounterView({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // State management - matching provider view exactly
+  // State management - matching provider view exactly including AI suggestions
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState("");
   const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
   const [liveTranscriptionContent, setLiveTranscriptionContent] = useState("");
+  const [gptSuggestions, setGptSuggestions] = useState("");
+  const [liveSuggestions, setLiveSuggestions] = useState("");
+  const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
+  const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
   const [nursingAssessment, setNursingAssessment] = useState("");
   const [nursingInterventions, setNursingInterventions] = useState("");
   const [nursingNotes, setNursingNotes] = useState("");
@@ -79,6 +83,7 @@ export function NursingEncounterView({
     new Set(["encounters"])
   );
   const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
+  const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get current user for role-based functionality
   const { data: currentUser } = useQuery<UserType>({
@@ -100,11 +105,175 @@ export function NursingEncounterView({
   const isContentProcessed = (content: string) => processedContent.current.has(content);
   const markContentAsProcessed = (content: string) => processedContent.current.add(content);
 
+  // Function to get real-time suggestions during recording - EXACT COPY from provider view
+  const getLiveAISuggestions = async (transcription: string) => {
+    if (transcription.length < 15) return; // Process smaller chunks for faster response
+
+    // Debounce suggestions to prevent too many rapid API calls
+    const now = Date.now();
+    if (now - lastSuggestionTime < 1000) {
+      // Clear any existing timeout and set a new one
+      if (suggestionDebounceTimer.current) {
+        clearTimeout(suggestionDebounceTimer.current);
+      }
+      suggestionDebounceTimer.current = setTimeout(() => {
+        getLiveAISuggestions(transcription);
+      }, 1000);
+      return;
+    }
+
+    setLastSuggestionTime(now);
+
+    try {
+      console.log(
+        "🧠 [NursingView] Getting live AI suggestions for transcription:",
+        transcription.substring(0, 100) + "...",
+      );
+
+      const requestBody = {
+        patientId: patient.id.toString(),
+        userRole: "nurse",
+        isLiveChunk: "true",
+        transcription: transcription,
+      };
+
+      console.log(
+        "🧠 [NursingView] Sending live suggestions request to /api/voice/live-suggestions",
+      );
+      console.log("🧠 [NursingView] Request body:", requestBody);
+
+      const response = await fetch("/api/voice/live-suggestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log(
+        "🧠 [NursingView] Live suggestions response status:",
+        response.status,
+      );
+      console.log(
+        "🧠 [NursingView] Live suggestions response headers:",
+        Object.fromEntries(response.headers.entries()),
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("🧠 [NursingView] Live AI suggestions received:", data);
+
+        if (data.aiSuggestions) {
+          console.log(
+            "🔧 [NursingView] Processing live suggestions, existing:",
+            liveSuggestions?.length || 0,
+            "chars",
+          );
+          console.log(
+            "🔧 [NursingView] New suggestions count:",
+            data.aiSuggestions.realTimePrompts?.length || 0,
+          );
+
+          // Get existing live suggestions to append to them (like transcription buffer)
+          const existingLiveSuggestions = liveSuggestions || "";
+          let suggestionsText = existingLiveSuggestions;
+
+          // If this is the first suggestion, add the header
+          if (
+            !existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
+          ) {
+            suggestionsText = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n";
+            console.log("🔧 [NursingView] First suggestion - added header");
+          }
+
+          // Only append new suggestions if they exist and aren't empty
+          if (data.aiSuggestions.realTimePrompts?.length > 0) {
+            // Filter out empty suggestions and ones already in the buffer
+            const newSuggestions = data.aiSuggestions.realTimePrompts.filter(
+              (prompt: string) => {
+                if (
+                  !prompt ||
+                  !prompt.trim() ||
+                  prompt.trim() === "Continue recording for more context..."
+                ) {
+                  return false;
+                }
+                // Check if this suggestion is already in our accumulated text
+                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, "").trim();
+                return !existingLiveSuggestions.includes(cleanPrompt);
+              },
+            );
+
+            if (newSuggestions.length > 0) {
+              console.log(
+                "🔧 [NursingView] Adding",
+                newSuggestions.length,
+                "new suggestions to existing",
+                existingLiveSuggestions.length,
+                "chars",
+              );
+
+              // Append each new suggestion (like transcription delta accumulation)
+              newSuggestions.forEach((prompt: string) => {
+                const formattedPrompt =
+                  prompt.startsWith("•") ||
+                  prompt.startsWith("-") ||
+                  prompt.startsWith("*")
+                    ? prompt
+                    : `• ${prompt}`;
+                suggestionsText += `${formattedPrompt}\n`;
+                console.log(
+                  "🔧 [NursingView] Accumulated suggestion:",
+                  formattedPrompt.substring(0, 50) + "...",
+                );
+              });
+            } else {
+              console.log(
+                "🔧 [NursingView] No new suggestions to accumulate",
+              );
+            }
+          }
+
+          console.log(
+            "🔧 [NursingView] Final live suggestions length:",
+            suggestionsText.length,
+          );
+          setLiveSuggestions(suggestionsText);
+          setGptSuggestions(suggestionsText); // Also update the display
+          console.log(
+            "🔧 [NursingView] Live suggestions updated, length:",
+            suggestionsText.length,
+          );
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(
+          "❌ [NursingView] Live suggestions HTTP error:",
+          response.status,
+        );
+        console.error("❌ [NursingView] Full HTML response:", errorText);
+        throw new Error(
+          `HTTP ${response.status}: ${errorText.substring(0, 200)}`,
+        );
+      }
+    } catch (error) {
+      console.error("❌ [NursingView] Live suggestions failed:", error);
+      console.error("❌ [NursingView] Error details:", {
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        stack: (error as any)?.stack,
+      });
+    }
+  };
+
   // Start recording using same OpenAI Realtime API as provider view
   const startRecording = async () => {
     console.log("🎤 [NursingView] Starting REAL-TIME voice recording for patient:", patient.id);
 
-    // Clear previous transcription when starting new recording - match provider view exactly
+    // Clear previous transcription and suggestions when starting new recording
+    setGptSuggestions("");
+    setLiveSuggestions(""); // Clear live suggestions for new encounter
+    setSuggestionsBuffer(""); // Clear suggestions buffer for fresh accumulation
     setTranscription("");
     setTranscriptionBuffer("");
     setLiveTranscriptionContent("");
@@ -259,6 +428,11 @@ export function NursingEncounterView({
 
             // CRITICAL: Update unified transcription content for AI suggestions
             setLiveTranscriptionContent((prev) => prev + deltaText);
+
+            // Trigger live AI suggestions exactly like provider view
+            if (transcriptionBuffer.length > 15) {
+              getLiveAISuggestions(transcriptionBuffer);
+            }
 
             console.log("📝 [NursingView] Updated transcription buffer:", transcriptionBuffer);
             console.log("📝 [NursingView] Buffer contains '+' symbols:", (transcriptionBuffer.match(/\+/g) || []).length);
