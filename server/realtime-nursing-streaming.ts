@@ -32,7 +32,6 @@ export class RealtimeNursingStreaming {
     patientId: number,
     encounterId: string,
     transcription: string,
-    useRealtimeApi: boolean = false,
   ): Promise<ReadableStream> {
     console.log(
       `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}`,
@@ -108,14 +107,9 @@ export class RealtimeNursingStreaming {
       age,
     );
 
-    if (useRealtimeApi) {
-      console.log(`🩺 [RealtimeNursing] Using OpenAI Realtime API WebSocket connection`);
-      return this.generateNursingAssessmentStreamRealtime(nursingPrompt, transcription);
-    }
+    console.log(`🩺 [RealtimeNursing] Starting OpenAI streaming request`);
 
-    console.log(`🩺 [RealtimeNursing] Using OpenAI REST API streaming fallback`);
-    
-    // Create streaming response using REST API fallback
+    // Create streaming response
     const self = this;
     return new ReadableStream({
       async start(controller) {
@@ -172,7 +166,7 @@ export class RealtimeNursingStreaming {
           );
 
           // Generate draft orders (same as provider)
-          const draftOrders = await self.soapOrdersExtractor.extractOrders(
+          const draftOrders = await self.soapOrdersExtractor.extractOrdersFromSOAP(
             fullAssessment,
             patientId,
             parseInt(encounterId),
@@ -203,190 +197,6 @@ export class RealtimeNursingStreaming {
             ),
           );
           controller.close();
-        }
-      },
-    });
-  }
-
-  private async generateNursingAssessmentStreamRealtime(
-    nursingPrompt: string,
-    transcription: string,
-  ): Promise<ReadableStream> {
-    const self = this;
-    
-    return new ReadableStream({
-      async start(controller) {
-        try {
-          console.log(`🔗 [RealtimeNursing] Creating WebSocket connection to OpenAI Realtime API`);
-          
-          // Use WebSocket to connect directly to OpenAI Realtime API
-          const WebSocket = (await import('ws')).default;
-          
-          const apiKey = process.env.OPENAI_API_KEY;
-          if (!apiKey) {
-            throw new Error("OpenAI API key not available");
-          }
-
-          // Create session configuration for nursing assessment
-          const sessionConfig = {
-            model: "gpt-4o-realtime-preview",
-            modalities: ["text"],
-            instructions: nursingPrompt,
-            voice: "alloy",
-            input_audio_format: "pcm16",
-            output_audio_format: "pcm16",
-            input_audio_transcription: {
-              model: "whisper-1"
-            },
-            turn_detection: {
-              type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500,
-              create_response: false
-            },
-            tools: [],
-            tool_choice: "auto",
-            temperature: 0.6,
-            max_response_output_tokens: 4096
-          };
-
-          // Create session first
-          const sessionResponse = await fetch("https://api.openai.com/v1/realtime/sessions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-              "OpenAI-Beta": "realtime=v1",
-            },
-            body: JSON.stringify(sessionConfig),
-          });
-
-          if (!sessionResponse.ok) {
-            const errorText = await sessionResponse.text();
-            console.error(`❌ [RealtimeNursing] Session creation failed:`, {
-              status: sessionResponse.status,
-              statusText: sessionResponse.statusText,
-              error: errorText
-            });
-            throw new Error(`Failed to create session: ${sessionResponse.status} ${sessionResponse.statusText}`);
-          }
-
-          const session = await sessionResponse.json();
-          console.log(`✅ [RealtimeNursing] Session created: ${session.id}`);
-
-          // Connect via WebSocket
-          const protocols = [
-            "realtime",
-            `openai-insecure-api-key.${apiKey}`,
-            "openai-beta.realtime-v1",
-          ];
-
-          const params = new URLSearchParams({
-            model: "gpt-4o-mini-realtime-preview",
-          });
-
-          const ws = new WebSocket(
-            `wss://api.openai.com/v1/realtime?${params.toString()}`,
-            protocols,
-          );
-
-          let assessmentContent = "";
-
-          ws.on('open', () => {
-            console.log(`🔗 [RealtimeNursing] WebSocket connected`);
-            
-            // Send conversation item with nursing assessment request
-            const conversationMessage = {
-              type: "conversation.item.create",
-              item: {
-                type: "message",
-                role: "user",
-                content: [
-                  {
-                    type: "input_text",
-                    text: `Please generate a comprehensive nursing assessment based on this transcription:\n\n${transcription}`,
-                  },
-                ],
-              },
-            };
-
-            ws.send(JSON.stringify(conversationMessage));
-
-            // Create response
-            const responseMessage = {
-              type: "response.create",
-              response: {
-                modalities: ["text"],
-                temperature: 0.6,
-              },
-            };
-
-            ws.send(JSON.stringify(responseMessage));
-          });
-
-          ws.on('message', (data) => {
-            try {
-              const message = JSON.parse(data.toString());
-              
-              if (message.type === 'response.text.delta') {
-                // Stream text chunks
-                assessmentContent += message.delta || "";
-              } else if (message.type === 'response.text.done') {
-                // Complete assessment received
-                const responseData = {
-                  type: "response.text.done",
-                  text: assessmentContent,
-                };
-
-                controller.enqueue(
-                  new TextEncoder().encode(`data: ${JSON.stringify(responseData)}\n\n`),
-                );
-
-                // Generate nursing interventions and orders (using existing methods)
-                self.generateNursingInterventions(assessmentContent, "")
-                  .then((interventions) => {
-                    controller.enqueue(
-                      new TextEncoder().encode(
-                        `data: ${JSON.stringify({
-                          type: "nursing_interventions",
-                          interventions,
-                        })}\n\n`,
-                      ),
-                    );
-                  })
-                  .catch(console.error);
-
-                ws.close();
-                controller.close();
-              } else if (message.type === 'error') {
-                console.error(`❌ [RealtimeNursing] WebSocket error:`, message);
-                ws.close();
-                controller.error(new Error(message.error?.message || "WebSocket error"));
-              }
-            } catch (parseError) {
-              console.error(`❌ [RealtimeNursing] Message parse error:`, parseError);
-            }
-          });
-
-          ws.on('error', (error) => {
-            console.error(`❌ [RealtimeNursing] WebSocket connection error:`, error);
-            controller.error(error);
-          });
-
-          ws.on('close', () => {
-            console.log(`🔗 [RealtimeNursing] WebSocket connection closed`);
-            try {
-              controller.close();
-            } catch (error) {
-              // Controller may already be closed, ignore the error
-              console.log(`🔗 [RealtimeNursing] Controller already closed`);
-            }
-          });
-
-        } catch (error) {
-          console.error("❌ [RealtimeNursing] Error in Realtime API streaming:", error);
-          controller.error(error);
         }
       },
     });

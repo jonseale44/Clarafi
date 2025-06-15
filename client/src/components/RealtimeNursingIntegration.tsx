@@ -33,7 +33,7 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
   const [assessmentBuffer, setAssessmentBuffer] = useState("");
   const { toast } = useToast();
 
-  // Generate nursing assessment using existing Realtime WebSocket connection
+  // Generate nursing assessment using Real-time API for streaming delivery
   const generateNursingAssessment = async () => {
     if (!transcription?.trim()) {
       toast({
@@ -44,7 +44,7 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
       return;
     }
 
-    console.log("🩺 [RealtimeNursing] Starting Realtime WebSocket nursing assessment generation");
+    console.log("🩺 [RealtimeNursing] Starting Real-time nursing assessment generation");
     setIsGenerating(true);
     setAssessmentBuffer("");
     
@@ -54,13 +54,7 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
     });
     
     try {
-      // Use the parent component's existing Realtime WebSocket connection
-      // Instead of creating a new REST API call, we'll request the parent to handle this
-      // via the established WebSocket for true real-time performance
-      
-      // Send request with Realtime API flag
-      console.log("🚀 [RealtimeNursing] Sending request with useRealtimeApi: true flag");
-      
+      // Send complete transcription to Real-time API for streaming nursing assessment generation
       const response = await fetch('/api/realtime-nursing/stream', {
         method: 'POST',
         headers: {
@@ -70,8 +64,7 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
           patientId,
           encounterId,
           transcription: transcription.trim(),
-          action: 'generate_nursing_assessment',
-          useRealtimeApi: true // Flag to indicate preference for Realtime API
+          action: 'generate_nursing_assessment'
         })
       });
 
@@ -79,6 +72,7 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
+      // Stream the response for character-by-character "typing" effect
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('No response body reader available');
@@ -91,6 +85,7 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
         const { done, value } = await reader.read();
         if (done) break;
 
+        // Parse streaming chunks from Real-time API
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n').filter(line => line.trim());
         
@@ -100,6 +95,7 @@ export const RealtimeNursingIntegration = forwardRef<RealtimeNursingRef, Realtim
               const data = JSON.parse(line.slice(6));
               
               if (data.type === 'response.text.done') {
+                // Batch delivery - complete nursing assessment arrives all at once
                 const completeAssessment = data.text || "";
                 setAssessmentBuffer(completeAssessment);
                 console.log("📝 [RealtimeNursing] About to call onNursingAssessmentUpdate with assessment length:", completeAssessment.length);

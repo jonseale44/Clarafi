@@ -27,7 +27,6 @@ import OpenAI from "openai";
 import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
 import { realtimeNursingStreaming } from "./realtime-nursing-streaming";
 import { realtimeNursingContinuous } from "./realtime-nursing-continuous";
-import { nursingTemplateAnalyzer } from "./nursing-template-analyzer";
 
 // Fast medical routes removed - functionality moved to frontend WebSocket
 
@@ -972,7 +971,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const { patientId, encounterId, transcription, useRealtimeApi } = req.body;
+      const { patientId, encounterId, transcription } = req.body;
 
       if (!patientId || !encounterId || !transcription) {
         return res.status(400).json({
@@ -982,20 +981,13 @@ export function registerRoutes(app: Express): Server {
       }
 
       console.log(
-        `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}, encounter ${encounterId}, Realtime API: ${useRealtimeApi}`,
+        `🩺 [RealtimeNursing] Starting streaming nursing assessment generation for patient ${patientId}, encounter ${encounterId}`,
       );
-      
-      if (useRealtimeApi) {
-        console.log(`✅ [RealtimeNursing] CONFIRMED: Will use OpenAI Realtime WebSocket API`);
-      } else {
-        console.log(`⚠️ [RealtimeNursing] CONFIRMED: Will use REST API fallback`);
-      }
 
       const stream = await realtimeNursingStreaming.generateNursingAssessmentStream(
         parseInt(patientId),
         encounterId,
         transcription,
-        useRealtimeApi,
       );
 
       // Set headers for Server-Sent Events
@@ -1020,21 +1012,10 @@ export function registerRoutes(app: Express): Server {
       }
     } catch (error: any) {
       console.error("❌ [RealtimeNursing] Error in streaming endpoint:", error);
-      
-      // Only send error response if headers haven't been sent
-      if (!res.headersSent) {
-        res.status(500).json({
-          message: "Failed to generate streaming nursing assessment",
-          error: error.message,
-        });
-      } else {
-        // Stream an error message if already streaming
-        res.write(`data: ${JSON.stringify({
-          type: "error",
-          message: error.message
-        })}\n\n`);
-        res.end();
-      }
+      res.status(500).json({
+        message: "Failed to generate streaming nursing assessment",
+        error: error.message,
+      });
     }
   });
 
@@ -1165,40 +1146,6 @@ export function registerRoutes(app: Express): Server {
       console.error("❌ [ContinuousNursing] Error getting current assessment:", error);
       res.status(500).json({
         message: "Failed to get current assessment",
-        error: error.message,
-      });
-    }
-  });
-
-  // Nursing Template Analysis endpoint
-  app.post("/api/nursing/analyze-template", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const { patientId, encounterId, transcription, currentTemplate } = req.body;
-
-      if (!patientId || !encounterId || !transcription || !currentTemplate) {
-        return res.status(400).json({
-          message: "Missing required fields: patientId, encounterId, transcription, currentTemplate",
-        });
-      }
-
-      console.log(
-        `📋 [NursingTemplate] Analyzing template for patient ${patientId}, encounter ${encounterId}`,
-      );
-
-      const result = await nursingTemplateAnalyzer.analyzeTranscriptionForTemplate(
-        transcription,
-        currentTemplate,
-        parseInt(patientId),
-        encounterId,
-      );
-
-      res.json(result);
-    } catch (error: any) {
-      console.error("❌ [NursingTemplate] Error analyzing template:", error);
-      res.status(500).json({
-        message: "Failed to analyze nursing template",
         error: error.message,
       });
     }

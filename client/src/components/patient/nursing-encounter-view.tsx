@@ -37,10 +37,9 @@ import {
   RealtimeNursingRef,
 } from "@/components/RealtimeNursingIntegration";
 import {
-  TemplateNursingAssessment,
-  TemplateNursingRef,
-} from "@/components/TemplateNursingAssessment";
-import { NursingPerformanceMonitor } from "@/components/NursingPerformanceMonitor";
+  ContinuousNursingAssessment,
+  ContinuousNursingRef,
+} from "@/components/ContinuousNursingAssessment";
 import type { Patient, User as UserType } from "@shared/schema";
 
 interface NursingEncounterViewProps {
@@ -93,7 +92,7 @@ export function NursingEncounterView({
     new Set(["encounters"]),
   );
   const realtimeNursingRef = useRef<RealtimeNursingRef>(null);
-  const templateNursingRef = useRef<TemplateNursingRef>(null);
+  const continuousNursingRef = useRef<ContinuousNursingRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get current user for role-based functionality
@@ -1459,12 +1458,6 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Performance Monitor */}
-          <NursingPerformanceMonitor 
-            isVisible={true} 
-            encounterId={encounterId.toString()} 
-          />
-
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -1498,14 +1491,8 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   onNursingAssessmentUpdate={setNursingAssessment}
                   onNursingAssessmentComplete={(assessment) => {
                     setNursingAssessment(assessment);
-                    
-                    // Trigger template extraction from the completed assessment
-                    if (templateNursingRef.current && assessment) {
-                      templateNursingRef.current.extractFromNursingAssessment(assessment);
-                    }
-                    
                     toast({
-                      title: "Assessment Complete", 
+                      title: "Assessment Complete",
                       description: "Nursing assessment generated successfully",
                     });
                   }}
@@ -1517,17 +1504,25 @@ Format each bullet point on its own line with no extra spacing between them.`,
                 />
               </div>
 
-              {/* Template Nursing Assessment Section */}
+              {/* Continuous Nursing Assessment Section */}
               <div className="mt-4">
-                <TemplateNursingAssessment
-                  ref={templateNursingRef}
+                <ContinuousNursingAssessment
+                  ref={continuousNursingRef}
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
                   isRecording={isRecording}
                   transcription={transcription}
-                  onTemplateUpdate={(template) => {
-                    setContinuousAssessment(JSON.stringify(template, null, 2));
+                  onAssessmentUpdate={(assessment) => {
+                    setNursingAssessment(assessment);
                   }}
+                  onAssessmentComplete={(assessment) => {
+                    setNursingAssessment(assessment);
+                    toast({
+                      title: "Continuous Assessment Complete",
+                      description: "Real-time nursing assessment finalized",
+                    });
+                  }}
+                  autoStart={true}
                 />
               </div>
 
