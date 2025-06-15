@@ -55,8 +55,16 @@ Return a JSON object with only the fields that have new or updated information. 
       const content = response.choices[0]?.message?.content || "";
       
       try {
-        // Try to parse the JSON response
-        const result = JSON.parse(content);
+        // Clean the response by removing markdown code blocks if present
+        let cleanContent = content.trim();
+        if (cleanContent.startsWith('```json')) {
+          cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        } else if (cleanContent.startsWith('```')) {
+          cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+        
+        // Try to parse the cleaned JSON response
+        const result = JSON.parse(cleanContent);
         
         // Validate the response format
         if (result && typeof result === 'object') {
@@ -123,15 +131,10 @@ Return a JSON object with only the fields that have new or updated information. 
 - vitals: Vital Signs (blood pressure, heart rate, temperature, etc.)
 
 **OUTPUT FORMAT:**
-Return a JSON object with only the fields that contain new information. Include a confidence score (0-1).
+Return ONLY a valid JSON object with no markdown formatting, code blocks, or additional text. Include only the fields that contain new information and a confidence score (0-1).
 
 Example:
-{
-  "cc": "Chest pain for 2 hours",
-  "hpi": "Patient reports sudden onset chest pain, 8/10 severity, radiating to left arm",
-  "meds": "Lisinopril 10mg daily, Metformin 500mg twice daily",
-  "confidence": 0.9
-}
+{"cc": "Chest pain for 2 hours", "hpi": "Patient reports sudden onset chest pain, 8/10 severity, radiating to left arm", "meds": "Lisinopril 10mg daily, Metformin 500mg twice daily", "confidence": 0.9}
 
 **IMPORTANT:**
 - Only include fields with meaningful, specific information
