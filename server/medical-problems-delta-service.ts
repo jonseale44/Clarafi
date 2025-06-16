@@ -101,13 +101,16 @@ export class MedicalProblemsDeltaService {
 
       // Generate delta changes using GPT
       console.log(`🏥 [DeltaService] Starting GPT delta analysis...`);
-      const changes = await this.generateDeltaChanges(
+      const deltaResult = await this.generateDeltaChanges(
         existingProblems,
         soapNote,
         encounter,
         patient,
         providerId
       );
+      const changes = Array.isArray(deltaResult) ? deltaResult : deltaResult.changes || [];
+      const tokenAnalysis = Array.isArray(deltaResult) ? undefined : deltaResult.tokenAnalysis;
+      
       console.log(`🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`);
       changes.forEach((change, index) => {
         console.log(`🏥 [DeltaService] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing problem'} (confidence: ${change.confidence})`);
@@ -125,7 +128,8 @@ export class MedicalProblemsDeltaService {
       return {
         changes,
         processing_time_ms: processingTime,
-        total_problems_affected: changes.length
+        total_problems_affected: changes.length,
+        tokenAnalysis
       };
 
     } catch (error) {
