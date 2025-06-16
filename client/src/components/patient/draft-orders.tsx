@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool } from "lucide-react";
 import { MedicationInputHelper } from "./medication-input-helper";
 import { FastMedicationIntelligence } from "./fast-medication-intelligence";
-import { TokenAnalysisBanner } from "@/components/ui/token-analysis-banner";
 
 interface Order {
   id: number;
@@ -66,16 +65,9 @@ interface DraftOrdersProps {
   patientId: number;
   encounterId?: number;
   isAutoGenerating?: boolean;
-  tokenAnalysis?: {
-    inputTokens: number;
-    outputTokens: number;
-    totalTokens: number;
-    estimatedCost: number;
-    processingTime: number;
-  };
 }
 
-export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, tokenAnalysis }: DraftOrdersProps) {
+export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }: DraftOrdersProps) {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [newOrderType, setNewOrderType] = useState<string>("medication");
@@ -392,12 +384,6 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
 
   return (
     <Card>
-      {tokenAnalysis && (
-        <TokenAnalysisBanner 
-          tokenAnalysis={tokenAnalysis}
-          serviceName="Orders Processing"
-        />
-      )}
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           Orders

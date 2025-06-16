@@ -56,18 +56,6 @@ export interface MedicationDeltaResult {
   changes: MedicationChange[];
   processing_time_ms: number;
   total_medications_affected: number;
-  tokenAnalysis?: {
-    totalTokens: number;
-    inputTokens: number;
-    outputTokens: number;
-    totalCost: number;
-    model: string;
-    projections: {
-      daily: number;
-      monthly: number;
-      yearly: number;
-    };
-  };
 }
 
 export class MedicationDeltaService {
@@ -230,7 +218,7 @@ export class MedicationDeltaService {
     encounter: any,
     patient: any,
     providerId: number
-  ): Promise<{ changes: MedicationChange[]; tokenAnalysis?: any }> {
+  ): Promise<MedicationChange[]> {
     const gptStartTime = Date.now();
     console.log(`💊 [GPT] === MEDICATION GPT ANALYSIS START ===`);
     console.log(`💊 [GPT] Timestamp: ${new Date().toISOString()}`);
@@ -264,42 +252,6 @@ export class MedicationDeltaService {
 
       const gptCallTime = Date.now() - gptStartTime;
       console.log(`💊 [GPT] OpenAI API call completed in ${gptCallTime}ms`);
-
-      // Log comprehensive token usage and cost analysis
-      let tokenAnalysis;
-      if (completion.usage) {
-        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
-          'MedicationDelta',
-          completion.usage,
-          'gpt-4.1',
-          {
-            existingMedicationsCount: existingMedications.length,
-            soapNoteLength: soapNote.length,
-            patientAge: this.calculateAge(patient.dateOfBirth)
-          }
-        );
-        
-        // Log cost projections for business planning
-        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50);
-        console.log(`💰 [MedicationDelta] COST PROJECTIONS:`);
-        console.log(`💰 [MedicationDelta] Daily (50 encounters): ${projections.formatted.daily}`);
-        console.log(`💰 [MedicationDelta] Monthly: ${projections.formatted.monthly}`);
-        console.log(`💰 [MedicationDelta] Yearly: ${projections.formatted.yearly}`);
-
-        // Store token analysis for UI display
-        tokenAnalysis = {
-          totalTokens: completion.usage.total_tokens,
-          inputTokens: completion.usage.prompt_tokens,
-          outputTokens: completion.usage.completion_tokens,
-          totalCost: costAnalysis.totalCost,
-          model: 'gpt-4.1',
-          projections: {
-            daily: projections.daily,
-            monthly: projections.monthly,
-            yearly: projections.yearly
-          }
-        };
-      }
 
       const response = completion.choices[0].message.content;
       console.log(`💊 [GPT] Raw response length: ${response?.length || 0} characters`);
@@ -336,7 +288,7 @@ export class MedicationDeltaService {
       console.log(`💊 [GPT] === MEDICATION GPT ANALYSIS COMPLETE ===`);
       console.log(`💊 [GPT] Total GPT processing time: ${totalGptTime}ms`);
 
-      return { changes: parsedResponse.changes || [], tokenAnalysis };
+      return parsedResponse.changes || [];
 
     } catch (error) {
       const errorTime = Date.now() - gptStartTime;
@@ -344,7 +296,7 @@ export class MedicationDeltaService {
       console.error(`❌ [GPT] Error stack trace:`, (error as Error).stack);
       console.error(`❌ [GPT] System prompt preview:`, systemPrompt.substring(0, 200));
       console.error(`❌ [GPT] User prompt preview:`, userPrompt.substring(0, 200));
-      return { changes: [], tokenAnalysis: undefined };
+      return [];
     }
   }
 

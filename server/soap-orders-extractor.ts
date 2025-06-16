@@ -393,6 +393,27 @@ Return only the JSON object, no markdown formatting or additional text.`;
         max_tokens: 2000,
       });
 
+      // Log comprehensive token usage and cost analysis
+      if (response.usage) {
+        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
+          'Orders_Extractor',
+          response.usage,
+          'gpt-4.1',
+          {
+            soapNoteLength: soapNote.length,
+            maxTokensRequested: 2000,
+            temperature: 0.1
+          }
+        );
+        
+        // Log cost projections for operational planning
+        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50);
+        console.log(`💰 [Orders_Extractor] COST PROJECTIONS:`);
+        console.log(`💰 [Orders_Extractor] Daily (50 encounters): ${projections.formatted.daily}`);
+        console.log(`💰 [Orders_Extractor] Monthly: ${projections.formatted.monthly}`);
+        console.log(`💰 [Orders_Extractor] Yearly: ${projections.formatted.yearly}`);
+      }
+
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response from GPT");

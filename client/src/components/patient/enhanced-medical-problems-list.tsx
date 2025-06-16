@@ -9,7 +9,6 @@ import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, E
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
-import { TokenAnalysisBanner } from "@/components/ui/token-analysis-banner";
 
 interface VisitNote {
   date: string;
@@ -40,15 +39,13 @@ interface EnhancedMedicalProblemsListProps {
   encounterId?: number;
   mode?: "patient-chart" | "encounter";
   isReadOnly?: boolean;
-  tokenAnalysisData?: any;
 }
 
 export function EnhancedMedicalProblemsList({ 
   patientId, 
   encounterId, 
   mode = "patient-chart", 
-  isReadOnly = false,
-  tokenAnalysisData 
+  isReadOnly = false 
 }: EnhancedMedicalProblemsListProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProblem, setEditingProblem] = useState<MedicalProblem | null>(null);
@@ -366,16 +363,6 @@ export function EnhancedMedicalProblemsList({
             </Button>
           )}
         </div>
-      )}
-
-      {/* Token Analysis Banner for Medical Problems AI Processing */}
-      {tokenAnalysisData && (
-        <TokenAnalysisBanner
-          tokenAnalysis={tokenAnalysisData}
-          serviceName="Medical Problems"
-          variant="compact"
-          className="mb-4"
-        />
       )}
 
       {medicalProblems.length === 0 ? (

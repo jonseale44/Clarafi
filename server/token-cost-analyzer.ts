@@ -30,6 +30,7 @@ export const OPENAI_PRICING = {
   }
 } as const;
 
+// OpenAI CompletionUsage interface compatibility
 export interface TokenUsage {
   prompt_tokens: number;
   completion_tokens: number;

@@ -46,18 +46,6 @@ export interface DeltaProcessingResult {
   changes: ProblemChange[];
   processing_time_ms: number;
   total_problems_affected: number;
-  tokenAnalysis?: {
-    totalTokens: number;
-    inputTokens: number;
-    outputTokens: number;
-    totalCost: number;
-    model: string;
-    projections: {
-      daily: number;
-      monthly: number;
-      yearly: number;
-    };
-  };
 }
 
 export class MedicalProblemsDeltaService {
@@ -101,16 +89,13 @@ export class MedicalProblemsDeltaService {
 
       // Generate delta changes using GPT
       console.log(`🏥 [DeltaService] Starting GPT delta analysis...`);
-      const deltaResult = await this.generateDeltaChanges(
+      const changes = await this.generateDeltaChanges(
         existingProblems,
         soapNote,
         encounter,
         patient,
         providerId
       );
-      const changes = Array.isArray(deltaResult) ? deltaResult : deltaResult.changes || [];
-      const tokenAnalysis = Array.isArray(deltaResult) ? undefined : deltaResult.tokenAnalysis;
-      
       console.log(`🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`);
       changes.forEach((change, index) => {
         console.log(`🏥 [DeltaService] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing problem'} (confidence: ${change.confidence})`);
@@ -128,8 +113,7 @@ export class MedicalProblemsDeltaService {
       return {
         changes,
         processing_time_ms: processingTime,
-        total_problems_affected: changes.length,
-        tokenAnalysis
+        total_problems_affected: changes.length
       };
 
     } catch (error) {
@@ -272,7 +256,6 @@ Respond with ONLY the JSON, no other text.
       });
 
       // Log comprehensive token usage and cost analysis
-      let tokenAnalysis;
       if (response.usage) {
         const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
           'MedicalProblems',
@@ -291,20 +274,6 @@ Respond with ONLY the JSON, no other text.
         console.log(`💰 [MedicalProblems] Daily (50 encounters): ${projections.formatted.daily}`);
         console.log(`💰 [MedicalProblems] Monthly: ${projections.formatted.monthly}`);
         console.log(`💰 [MedicalProblems] Yearly: ${projections.formatted.yearly}`);
-
-        // Store token analysis for UI display
-        tokenAnalysis = {
-          totalTokens: response.usage.total_tokens,
-          inputTokens: response.usage.prompt_tokens,
-          outputTokens: response.usage.completion_tokens,
-          totalCost: costAnalysis.totalCost,
-          model: 'gpt-4.1',
-          projections: {
-            daily: projections.daily,
-            monthly: projections.monthly,
-            yearly: projections.yearly
-          }
-        };
       }
 
       const content = response.choices[0].message.content?.trim();
@@ -337,14 +306,14 @@ Respond with ONLY the JSON, no other text.
         });
       }
       
-      return { changes: result.changes || [], tokenAnalysis };
+      return result.changes || [];
 
     } catch (error) {
       console.error("❌ [GPT] Error generating delta changes:", error);
       if (error instanceof SyntaxError) {
         console.error("❌ [GPT] JSON parsing error - invalid response format");
       }
-      return { changes: [], tokenAnalysis: undefined };
+      return [];
     }
   }
 

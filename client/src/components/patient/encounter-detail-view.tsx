@@ -41,7 +41,6 @@ import {
 } from "@/components/RealtimeSOAPIntegration";
 
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
-import { TokenAnalysisBanner } from "@/components/ui/token-analysis-banner";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -123,19 +122,6 @@ export function EncounterDetailView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
-  
-  // Token analysis state for AI processing costs
-  const [tokenAnalysisData, setTokenAnalysisData] = useState<{
-    medicalProblems?: any;
-    medications?: any;
-    orders?: any;
-    cpt?: any;
-  }>({});
-
-  // Debug logging for token analysis data changes
-  useEffect(() => {
-    console.log(`🔍 [TokenAnalysis] Current token data state:`, tokenAnalysisData);
-  }, [tokenAnalysisData]);
 
   // Deduplication system
   const processedEvents = useRef(new Set<string>());
@@ -297,6 +283,10 @@ export function EncounterDetailView({
   // Handlers for Real-time SOAP Integration
   const handleSOAPNoteUpdate = (note: string) => {
     setSoapNote(note);
+    if (editor && !editor.isDestroyed) {
+      const formattedContent = formatSoapNoteContent(note);
+      editor.commands.setContent(formattedContent);
+    }
   };
 
   const handleSOAPNoteComplete = async (note: string) => {
@@ -318,6 +308,10 @@ export function EncounterDetailView({
     setIsAutoGeneratingBilling(false);
 
     setSoapNote(note);
+    if (editor && !editor.isDestroyed) {
+      const formattedContent = formatSoapNoteContent(note);
+      editor.commands.setContent(formattedContent);
+    }
 
     // Save the SOAP note to the encounter
     try {
@@ -367,7 +361,7 @@ export function EncounterDetailView({
         };
         
         const cptRequestBody = {
-          soapNote: note
+          // CPT extraction reads from encounter SOAP note
         };
         
         console.log(`🏥 [ParallelProcessing] Medical problems request body:`, medicalProblemsRequestBody);
@@ -395,7 +389,7 @@ export function EncounterDetailView({
             credentials: 'include',
             body: JSON.stringify(ordersRequestBody)
           }),
-          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`, {
+          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt-codes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -411,37 +405,18 @@ export function EncounterDetailView({
 
         // Handle medical problems response
         if (medicalProblemsResponse.ok) {
-          try {
-            const result = await medicalProblemsResponse.json();
-            console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
-            console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
-            
-            // Store token analysis data for UI display
-            if (result.tokenAnalysis) {
-              setTokenAnalysisData(prev => {
-                const newData = {
-                  ...prev,
-                  medicalProblems: result.tokenAnalysis
-                };
-                console.log(`💰 [MedicalProblems] Token analysis stored:`, result.tokenAnalysis);
-                console.log(`💰 [MedicalProblems] Updated tokenAnalysisData:`, newData);
-                return newData;
-              });
-            }
-            
-            // Invalidate medical problems queries to refresh UI
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
-            });
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/patients/${patient.id}/medical-problems`] 
-            });
-            console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
-          } catch (parseError) {
-            console.error(`❌ [MedicalProblems] JSON parsing error:`, parseError);
-            const errorText = await medicalProblemsResponse.text();
-            console.error(`❌ [MedicalProblems] Response was not JSON:`, errorText.substring(0, 200));
-          }
+          const result = await medicalProblemsResponse.json();
+          console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
+          console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
+          
+          // Invalidate medical problems queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          });
+          console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
         } else {
           const errorText = await medicalProblemsResponse.text();
           console.error(`❌ [MedicalProblems] FAILED with status ${medicalProblemsResponse.status}`);
@@ -450,31 +425,16 @@ export function EncounterDetailView({
 
         // Handle medications response
         if (medicationsResponse.ok) {
-          try {
-            const result = await medicationsResponse.json();
-            console.log(`✅ [Medications] SUCCESS: ${result.medicationsAffected} medications affected`);
-            console.log(`✅ [Medications] Processing time: ${result.processingTimeMs}ms`);
-            console.log(`✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`);
-            
-            // Store token analysis data for UI display
-            if (result.tokenAnalysis) {
-              setTokenAnalysisData(prev => ({
-                ...prev,
-                medications: result.tokenAnalysis
-              }));
-              console.log(`💰 [Medications] Token analysis stored:`, result.tokenAnalysis);
-            }
-            
-            // Invalidate medications queries to refresh UI
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
-            });
-            console.log(`🔄 [Medications] Cache invalidation completed`);
-          } catch (parseError) {
-            console.error(`❌ [Medications] JSON parsing error:`, parseError);
-            const errorText = await medicationsResponse.text();
-            console.error(`❌ [Medications] Response was not JSON:`, errorText.substring(0, 200));
-          }
+          const result = await medicationsResponse.json();
+          console.log(`✅ [Medications] SUCCESS: ${result.medicationsAffected} medications affected`);
+          console.log(`✅ [Medications] Processing time: ${result.processingTimeMs}ms`);
+          console.log(`✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`);
+          
+          // Invalidate medications queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+          });
+          console.log(`🔄 [Medications] Cache invalidation completed`);
         } else {
           const errorText = await medicationsResponse.text();
           console.error(`❌ [Medications] FAILED with status ${medicationsResponse.status}`);
@@ -483,33 +443,18 @@ export function EncounterDetailView({
 
         // Handle orders response
         if (ordersResponse.ok) {
-          try {
-            const result = await ordersResponse.json();
-            console.log(`✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`);
-            console.log(`✅ [Orders] Message: ${result.message}`);
-            
-            // Store token analysis data for UI display
-            if (result.tokenAnalysis) {
-              setTokenAnalysisData(prev => ({
-                ...prev,
-                orders: result.tokenAnalysis
-              }));
-              console.log(`💰 [Orders] Token analysis stored:`, result.tokenAnalysis);
-            }
-            
-            // Invalidate orders queries to refresh UI
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/patients/${patient.id}/draft-orders`] 
-            });
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/encounters/${encounterId}/validation`] 
-            });
-            console.log(`🔄 [Orders] Cache invalidation completed`);
-          } catch (parseError) {
-            console.error(`❌ [Orders] JSON parsing error:`, parseError);
-            const errorText = await ordersResponse.text();
-            console.error(`❌ [Orders] Response was not JSON:`, errorText.substring(0, 200));
-          }
+          const result = await ordersResponse.json();
+          console.log(`✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`);
+          console.log(`✅ [Orders] Message: ${result.message}`);
+          
+          // Invalidate orders queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/draft-orders`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/encounters/${encounterId}/validation`] 
+          });
+          console.log(`🔄 [Orders] Cache invalidation completed`);
         } else {
           const errorText = await ordersResponse.text();
           console.error(`❌ [Orders] FAILED with status ${ordersResponse.status}`);
@@ -518,46 +463,22 @@ export function EncounterDetailView({
 
         // Handle CPT response
         if (cptResponse.ok) {
-          try {
-            const result = await cptResponse.json();
-            console.log(`✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`);
-            console.log(`✅ [CPT] Processing details:`, result);
-            
-            // Store token analysis data for UI display
-            if (result.tokenAnalysis) {
-              setTokenAnalysisData(prev => ({
-                ...prev,
-                cpt: result.tokenAnalysis
-              }));
-              console.log(`💰 [CPT] Token analysis stored:`, result.tokenAnalysis);
-            }
-            
-            // Invalidate billing queries to refresh UI
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
-            });
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/encounters/${encounterId}/validation`] 
-            });
-            console.log(`🔄 [CPT] Cache invalidation completed`);
-          } catch (parseError) {
-            console.error(`❌ [CPT] JSON parsing error:`, parseError);
-            try {
-              // Clone response to avoid "body stream already read" error
-              const errorText = await cptResponse.clone().text();
-              console.error(`❌ [CPT] Response was not JSON:`, errorText.substring(0, 200));
-            } catch (textError) {
-              console.error(`❌ [CPT] Could not read error response:`, textError);
-            }
-          }
+          const result = await cptResponse.json();
+          console.log(`✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`);
+          console.log(`✅ [CPT] Processing details:`, result);
+          
+          // Invalidate billing queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/encounters/${encounterId}/validation`] 
+          });
+          console.log(`🔄 [CPT] Cache invalidation completed`);
         } else {
-          try {
-            const errorText = await cptResponse.text();
-            console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
-            console.error(`❌ [CPT] Error response: ${errorText}`);
-          } catch (textError) {
-            console.error(`❌ [CPT] Could not read error response:`, textError);
-          }
+          const errorText = await cptResponse.text();
+          console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
+          console.error(`❌ [CPT] Error response: ${errorText}`);
         }
         
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
@@ -2245,7 +2166,6 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                       encounterId={encounter?.id}
                       isReadOnly={false}
                       sectionId={section.id}
-                      tokenAnalysisData={tokenAnalysisData}
                     />
                   )}
                 </div>
@@ -2540,14 +2460,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             isAutoGenerating={isAutoGeneratingBilling}
           />
 
-          {/* Medical Problems with Token Analysis */}
-          <SharedChartSections
-            patientId={patient.id}
-            mode="encounter"
-            encounterId={encounterId}
-            sectionId="problems"
-            tokenAnalysisData={tokenAnalysisData}
-          />
+
 
           {/* Encounter Workflow Controls */}
           <EncounterWorkflowControls

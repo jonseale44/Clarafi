@@ -9,12 +9,6 @@ interface SharedChartSectionsProps {
   encounterId?: number;
   isReadOnly?: boolean;
   sectionId?: string;
-  tokenAnalysisData?: {
-    medicalProblems?: any;
-    medications?: any;
-    orders?: any;
-    cpt?: any;
-  };
 }
 
 export function SharedChartSections({ 
@@ -22,8 +16,7 @@ export function SharedChartSections({
   mode, 
   encounterId,
   isReadOnly = false,
-  sectionId,
-  tokenAnalysisData 
+  sectionId 
 }: SharedChartSectionsProps) {
   
   const renderSectionContent = (targetSectionId: string) => {
@@ -35,7 +28,6 @@ export function SharedChartSections({
             encounterId={encounterId}
             mode={mode}
             isReadOnly={isReadOnly}
-            tokenAnalysisData={tokenAnalysisData?.medicalProblems}
           />
         );
       
