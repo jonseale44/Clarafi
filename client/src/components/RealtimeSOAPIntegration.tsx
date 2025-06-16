@@ -94,7 +94,14 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
 
   // Generate SOAP note using Real-time API for streaming delivery
   const generateSOAPNote = async (forceGeneration = false) => {
+    console.log("🩺 [RealtimeSOAP] generateSOAPNote called with:", {
+      forceGeneration,
+      transcriptionLength: transcription?.length || 0,
+      transcriptionPreview: transcription?.substring(0, 100) || 'empty'
+    });
+
     if (!transcription?.trim()) {
+      console.log("🩺 [RealtimeSOAP] No transcription available - showing toast");
       toast({
         variant: "destructive",
         title: "No Transcription",
