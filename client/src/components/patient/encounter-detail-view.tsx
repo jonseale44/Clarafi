@@ -1780,9 +1780,35 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       // Trigger all existing dependencies that rely on SOAP completion
       await handleSOAPNoteComplete(soapNote);
       
+      // Trigger automatic orders extraction from the completed SOAP note
+      console.log("📋 [EncounterView] Triggering automatic orders extraction...");
+      try {
+        const extractResponse = await fetch(`/api/encounters/${encounterId}/extract-orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (extractResponse.ok) {
+          const result = await extractResponse.json();
+          console.log(`✅ [EncounterView] Orders extraction completed: ${result.ordersCount || 0} orders`);
+          
+          // Invalidate draft orders cache to refresh UI
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/draft-orders`] 
+          });
+        } else {
+          console.warn("⚠️ [EncounterView] Orders extraction failed:", extractResponse.statusText);
+        }
+      } catch (error) {
+        console.error("❌ [EncounterView] Error during automatic orders extraction:", error);
+        // Don't show error toast - this is background processing
+      }
+      
       toast({
         title: "Recording Complete",
-        description: "SOAP note updated in real-time and saved with medical data processing",
+        description: "SOAP note updated in real-time with automatic orders and medical data processing",
       });
     } else {
       console.log("🩺 [EncounterView] No SOAP content to process");
