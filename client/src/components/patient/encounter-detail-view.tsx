@@ -1772,13 +1772,25 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
     setIsRecording(false);
 
-    // Real-time SOAP streaming handles everything automatically - no post-recording generation needed
-    console.log("🩺 [EncounterView] Recording stopped - real-time SOAP streaming will continue updating");
-    
-    toast({
-      title: "Recording Stopped",
-      description: "SOAP note has been updating in real-time during conversation",
-    });
+    // Real-time streaming has been updating SOAP note during recording
+    // Now trigger completion workflow to save and process dependencies
+    if (soapNote && soapNote.trim()) {
+      console.log("🩺 [EncounterView] Processing final SOAP note through completion workflow...");
+      
+      // Trigger all existing dependencies that rely on SOAP completion
+      await handleSOAPNoteComplete(soapNote);
+      
+      toast({
+        title: "Recording Complete",
+        description: "SOAP note updated in real-time and saved with medical data processing",
+      });
+    } else {
+      console.log("🩺 [EncounterView] No SOAP content to process");
+      toast({
+        title: "Recording Stopped",
+        description: "No SOAP content was generated during recording",
+      });
+    }
   };
 
   const generateSmartSuggestions = () => {
@@ -2432,7 +2444,24 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             </div>
           </Card>
 
-          {/* Real-time SOAP Integration (hidden, works in background) */}
+          {/* Real-time SOAP Streaming (incremental updates during recording) */}
+          <RealtimeSOAPStreaming
+            ref={realtimeSOAPStreamingRef}
+            patientId={patient.id.toString()}
+            encounterId={encounterId.toString()}
+            isRecording={isRecording}
+            transcription={transcription}
+            onSOAPUpdate={(soapNote) => {
+              // Update editor content with streaming SOAP note during recording
+              setSoapNote(soapNote);
+              if (editor && !editor.isDestroyed) {
+                editor.commands.setContent(soapNote);
+              }
+            }}
+            autoStart={true}
+          />
+
+          {/* Real-time SOAP Integration (fallback and completion handling) */}
           <RealtimeSOAPIntegration
             ref={realtimeSOAPRef}
             patientId={patient.id.toString()}
