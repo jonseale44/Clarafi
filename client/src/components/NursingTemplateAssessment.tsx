@@ -65,6 +65,22 @@ export const NursingTemplateAssessment = forwardRef<
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [nursingSummary, setNursingSummary] = useState<string>("");
     const [isEditingSummary, setIsEditingSummary] = useState(false);
+
+    // Format nursing summary text with proper HTML formatting
+    const formatNursingSummary = (text: string): string => {
+      if (!text) return '';
+      
+      return text
+        // Convert **text** to <strong>text</strong>
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+        // Convert bullet points to proper list items with spacing
+        .replace(/^- (.*?)$/gm, '<div class="ml-4 mb-1">• $1</div>')
+        // Add spacing between sections (double line breaks)
+        .replace(/\n\n/g, '<div class="mb-4"></div>')
+        // Convert single line breaks to <br>
+        .replace(/\n/g, '<br>');
+    };
+
     const [templateData, setTemplateData] = useState<NursingTemplateData>({
       cc: "",
       hpi: "",
@@ -136,21 +152,6 @@ export const NursingTemplateAssessment = forwardRef<
         generateSummary();
       }
     }, [templateData, nursingSummary, isGeneratingSummary]);
-
-    // Format nursing summary text with proper HTML formatting
-    const formatNursingSummary = (text: string): string => {
-      if (!text) return '';
-      
-      return text
-        // Convert **text** to <strong>text</strong>
-        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-        // Convert bullet points to proper list items with spacing
-        .replace(/^- (.*?)$/gm, '<div class="ml-4 mb-1">• $1</div>')
-        // Add spacing between sections (double line breaks)
-        .replace(/\n\n/g, '<div class="mb-4"></div>')
-        // Convert single line breaks to <br>
-        .replace(/\n/g, '<br>');
-    };
 
     // Process new transcription when it changes
     useEffect(() => {
