@@ -41,6 +41,7 @@ import {
 } from "@/components/RealtimeSOAPIntegration";
 
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
+import { TokenAnalysisBanner } from "@/components/ui/token-analysis-banner";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -122,6 +123,14 @@ export function EncounterDetailView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
+  
+  // Token analysis state for AI processing costs
+  const [tokenAnalysisData, setTokenAnalysisData] = useState<{
+    medicalProblems?: any;
+    medications?: any;
+    orders?: any;
+    cpt?: any;
+  }>({});
 
   // Deduplication system
   const processedEvents = useRef(new Set<string>());
@@ -408,6 +417,15 @@ export function EncounterDetailView({
           const result = await medicalProblemsResponse.json();
           console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
           console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
+          
+          // Store token analysis data for UI display
+          if (result.tokenAnalysis) {
+            setTokenAnalysisData(prev => ({
+              ...prev,
+              medicalProblems: result.tokenAnalysis
+            }));
+            console.log(`💰 [MedicalProblems] Token analysis stored:`, result.tokenAnalysis);
+          }
           
           // Invalidate medical problems queries to refresh UI
           await queryClient.invalidateQueries({ 
