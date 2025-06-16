@@ -986,8 +986,8 @@ CURRENT ENCOUNTER FOCUS:
 - Provide suggestions based on what the patient is saying NOW
 - Do not rely heavily on past medical history unless directly relevant to current symptoms
 
-Critical Allergies: ${chart?.allergies?.length > 0 ? chart.allergies.map((a) => a.allergen).join(", ") : "None documented"}
-Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedications.map((m) => m.name).join(", ") : "None documented"}`;
+Critical Allergies: ${chart?.allergies?.length > 0 ? chart.allergies.map((a: any) => a.allergen).join(", ") : "None documented"}
+Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedications.map((m: any) => m.name).join(", ") : "None documented"}`;
 
             return basicInfo;
           };
@@ -1202,7 +1202,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   },
                 };
 
-                realtimeWs.send(JSON.stringify(contextUpdate));
+                realtimeWs?.send(JSON.stringify(contextUpdate));
 
                 // Request new AI response
                 const responseRequest = {
@@ -1239,7 +1239,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   },
                 };
 
-                realtimeWs.send(JSON.stringify(responseRequest));
+                realtimeWs?.send(JSON.stringify(responseRequest));
               }, 2000); // Reduced to 2-second debounce for faster real-time response
             }
           }
