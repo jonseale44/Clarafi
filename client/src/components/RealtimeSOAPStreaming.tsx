@@ -50,8 +50,6 @@ export const RealtimeSOAPStreaming = forwardRef<
     const lastTranscriptionRef = useRef("");
     const soapBufferRef = useRef<string>("");
     const isActiveRef = useRef(false);
-    const isProcessingRef = useRef(false);
-    const lastRequestTimeRef = useRef<number>(0);
     const { toast } = useToast();
 
     // Expose methods to parent component  
@@ -281,16 +279,6 @@ RESPONSE BEHAVIOR:
 
     const processTranscriptionUpdate = (newTranscription: string) => {
       if (!wsRef.current || !isActiveRef.current) return;
-
-      // Prevent concurrent requests that cause "Conversation already has an active response" error
-      const now = Date.now();
-      if (isProcessingRef.current || (now - lastRequestTimeRef.current) < 2000) {
-        console.log(`⏳ [RealtimeSOAP] Throttling request - last request ${now - lastRequestTimeRef.current}ms ago`);
-        return;
-      }
-
-      isProcessingRef.current = true;
-      lastRequestTimeRef.current = now;
 
       console.log(`📝 [RealtimeSOAP] Processing transcription update`);
 
