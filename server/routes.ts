@@ -24,8 +24,7 @@ import nursingContentRoutes from "./nursing-content-routes";
 import nursingSummaryRoutes from "./nursing-summary-routes";
 import multer from "multer";
 import OpenAI from "openai";
-import { SOAPOrdersExtractor } from "./soap-orders-extractor.js";
-import { PhysicalExamLearningService } from "./physical-exam-learning-service.js";
+// Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
 import { db } from "./db.js";
 import { patients, diagnoses, medications, allergies, vitals, encounters as encountersTable } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
@@ -238,17 +237,20 @@ IMPORTANT INSTRUCTIONS:
     note: soapNote,
   });
 
-  // Process orders and CPT codes in background
-  const soapOrdersExtractor = new SOAPOrdersExtractor();
-  const physicalExamLearningService = new PhysicalExamLearningService();
-  
-  // Background processing (don't await)
-  Promise.allSettled([
-    soapOrdersExtractor.extractOrders(transcription, patientId, parseInt(encounterId)),
-    physicalExamLearningService.analyzeSOAPNoteForPersistentFindings(patientId, parseInt(encounterId), soapNote),
-  ]).catch(error => {
-    console.warn("Background processing failed:", error);
-  });
+  // Legacy automatic processing removed - now handled by frontend parallel processing
+  // Physical exam learning service still runs for persistent findings analysis
+  try {
+    const { PhysicalExamLearningService } = await import("./physical-exam-learning-service.js");
+    const physicalExamLearningService = new PhysicalExamLearningService();
+    
+    // Run in background (don't await)
+    physicalExamLearningService.analyzeSOAPNoteForPersistentFindings(patientId, parseInt(encounterId), soapNote)
+      .catch(error => {
+        console.warn("Physical exam learning service failed:", error);
+      });
+  } catch (error) {
+    console.warn("Failed to load physical exam learning service:", error);
+  }
 
   return soapNote;
 }

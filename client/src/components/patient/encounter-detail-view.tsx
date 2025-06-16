@@ -339,7 +339,7 @@ export function EncounterDetailView({
       );
       console.log(`🔍 [EncounterView] SOAP save completed successfully, starting medical problems processing...`);
       
-      // Process medical problems and medications in parallel with delta analysis
+      // Process medical problems, medications, orders, and billing in parallel with delta analysis
       try {
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING START ===`);
         console.log(`🏥 [ParallelProcessing] Patient ID: ${patient.id}`);
@@ -356,11 +356,21 @@ export function EncounterDetailView({
           patientId: patient.id
         };
         
+        const ordersRequestBody = {
+          // Orders extraction doesn't need additional data as it reads from encounter SOAP note
+        };
+        
+        const cptRequestBody = {
+          // CPT extraction reads from encounter SOAP note
+        };
+        
         console.log(`🏥 [ParallelProcessing] Medical problems request body:`, medicalProblemsRequestBody);
         console.log(`🏥 [ParallelProcessing] Medications request body:`, medicationsRequestBody);
+        console.log(`🏥 [ParallelProcessing] Orders request body:`, ordersRequestBody);
+        console.log(`🏥 [ParallelProcessing] CPT request body:`, cptRequestBody);
         
-        // Process medical problems and medications in parallel for maximum efficiency
-        const [medicalProblemsResponse, medicationsResponse] = await Promise.all([
+        // Process all services in parallel for maximum efficiency
+        const [medicalProblemsResponse, medicationsResponse, ordersResponse, cptResponse] = await Promise.all([
           fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -372,12 +382,26 @@ export function EncounterDetailView({
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify(medicationsRequestBody)
+          }),
+          fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(ordersRequestBody)
+          }),
+          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt-codes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(cptRequestBody)
           })
         ]);
 
-        console.log(`🏥 [ParallelProcessing] Both requests completed`);
+        console.log(`🏥 [ParallelProcessing] All requests completed`);
         console.log(`🏥 [MedicalProblems] Response status: ${medicalProblemsResponse.status}`);
         console.log(`🏥 [Medications] Response status: ${medicationsResponse.status}`);
+        console.log(`🏥 [Orders] Response status: ${ordersResponse.status}`);
+        console.log(`🏥 [CPT] Response status: ${cptResponse.status}`);
 
         // Handle medical problems response
         if (medicalProblemsResponse.ok) {
@@ -415,6 +439,46 @@ export function EncounterDetailView({
           const errorText = await medicationsResponse.text();
           console.error(`❌ [Medications] FAILED with status ${medicationsResponse.status}`);
           console.error(`❌ [Medications] Error response: ${errorText}`);
+        }
+
+        // Handle orders response
+        if (ordersResponse.ok) {
+          const result = await ordersResponse.json();
+          console.log(`✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`);
+          console.log(`✅ [Orders] Message: ${result.message}`);
+          
+          // Invalidate orders queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/draft-orders`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/encounters/${encounterId}/validation`] 
+          });
+          console.log(`🔄 [Orders] Cache invalidation completed`);
+        } else {
+          const errorText = await ordersResponse.text();
+          console.error(`❌ [Orders] FAILED with status ${ordersResponse.status}`);
+          console.error(`❌ [Orders] Error response: ${errorText}`);
+        }
+
+        // Handle CPT response
+        if (cptResponse.ok) {
+          const result = await cptResponse.json();
+          console.log(`✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`);
+          console.log(`✅ [CPT] Processing details:`, result);
+          
+          // Invalidate billing queries to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/encounters/${encounterId}/validation`] 
+          });
+          console.log(`🔄 [CPT] Cache invalidation completed`);
+        } else {
+          const errorText = await cptResponse.text();
+          console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
+          console.error(`❌ [CPT] Error response: ${errorText}`);
         }
         
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
