@@ -46,6 +46,18 @@ export interface DeltaProcessingResult {
   changes: ProblemChange[];
   processing_time_ms: number;
   total_problems_affected: number;
+  tokenAnalysis?: {
+    totalTokens: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalCost: number;
+    model: string;
+    projections: {
+      daily: number;
+      monthly: number;
+      yearly: number;
+    };
+  };
 }
 
 export class MedicalProblemsDeltaService {
@@ -256,6 +268,7 @@ Respond with ONLY the JSON, no other text.
       });
 
       // Log comprehensive token usage and cost analysis
+      let tokenAnalysis;
       if (response.usage) {
         const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
           'MedicalProblems',
@@ -274,6 +287,20 @@ Respond with ONLY the JSON, no other text.
         console.log(`💰 [MedicalProblems] Daily (50 encounters): ${projections.formatted.daily}`);
         console.log(`💰 [MedicalProblems] Monthly: ${projections.formatted.monthly}`);
         console.log(`💰 [MedicalProblems] Yearly: ${projections.formatted.yearly}`);
+
+        // Store token analysis for UI display
+        tokenAnalysis = {
+          totalTokens: response.usage.total_tokens,
+          inputTokens: response.usage.prompt_tokens,
+          outputTokens: response.usage.completion_tokens,
+          totalCost: costAnalysis.totalCost,
+          model: 'gpt-4.1',
+          projections: {
+            daily: projections.daily,
+            monthly: projections.monthly,
+            yearly: projections.yearly
+          }
+        };
       }
 
       const content = response.choices[0].message.content?.trim();
@@ -306,14 +333,14 @@ Respond with ONLY the JSON, no other text.
         });
       }
       
-      return result.changes || [];
+      return { changes: result.changes || [], tokenAnalysis };
 
     } catch (error) {
       console.error("❌ [GPT] Error generating delta changes:", error);
       if (error instanceof SyntaxError) {
         console.error("❌ [GPT] JSON parsing error - invalid response format");
       }
-      return [];
+      return { changes: [], tokenAnalysis: undefined };
     }
   }
 

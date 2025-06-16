@@ -31,10 +31,10 @@ export const OPENAI_PRICING = {
 } as const;
 
 export interface TokenUsage {
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-  cachedTokens?: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  cached_tokens?: number;
 }
 
 export interface CostAnalysis {
@@ -63,9 +63,9 @@ export class TokenCostAnalyzer {
       throw new Error(`Unknown model: ${model}`);
     }
 
-    const inputTokens = usage.promptTokens;
-    const outputTokens = usage.completionTokens;
-    const cachedTokens = usage.cachedTokens || 0;
+    const inputTokens = usage.prompt_tokens;
+    const outputTokens = usage.completion_tokens;
+    const cachedTokens = usage.cached_tokens || 0;
 
     // Calculate costs (pricing is per 1M tokens)
     const inputCost = (inputTokens / 1_000_000) * pricing.input;
@@ -118,7 +118,7 @@ export class TokenCostAnalyzer {
     if (analysis.costBreakdown.cachedTokens > 0) {
       console.log(`💰 [${service}] Cached tokens: ${analysis.costBreakdown.cachedTokens.toLocaleString()}`);
     }
-    console.log(`💰 [${service}] Total tokens: ${usage.totalTokens.toLocaleString()}`);
+    console.log(`💰 [${service}] Total tokens: ${usage.total_tokens.toLocaleString()}`);
     console.log(`💰 [${service}] Input cost: $${analysis.inputCost.toFixed(6)}`);
     console.log(`💰 [${service}] Output cost: $${analysis.outputCost.toFixed(6)}`);
     if (analysis.cachedCost > 0) {
