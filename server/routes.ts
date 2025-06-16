@@ -26,6 +26,9 @@ import multer from "multer";
 import OpenAI from "openai";
 import { SOAPOrdersExtractor } from "./soap-orders-extractor.js";
 import { PhysicalExamLearningService } from "./physical-exam-learning-service.js";
+import { db } from "./db.js";
+import { patients, diagnoses, medications, allergies, vitals, encounters as encountersTable } from "../shared/schema.js";
+import { eq, desc } from "drizzle-orm";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -54,19 +57,19 @@ async function generateSOAPNoteDirect(patientId: number, encounterId: string, tr
   
   // Build medical context
   const currentDiagnoses = diagnosisList.length > 0 
-    ? diagnosisList.map((d) => `- ${d.condition} (${d.icd10Code || "unspecified"})`).join("\n")
+    ? diagnosisList.map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`).join("\n")
     : "- No active diagnoses on file";
 
   const currentMedications = meds.length > 0
-    ? meds.map((m) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
+    ? meds.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
     : "- No current medications on file";
 
   const knownAllergies = allergiesList.length > 0
-    ? allergiesList.map((a) => `- ${a.allergen}: ${a.reaction}`).join("\n")
+    ? allergiesList.map((a: any) => `- ${a.allergen}: ${a.reaction}`).join("\n")
     : "- NKDA (No Known Drug Allergies)";
 
   const recentVitals = vitalsList.length > 0
-    ? vitalsList.map((v) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
+    ? vitalsList.map((v: any) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
     : "- No recent vitals on file";
 
   // Create comprehensive SOAP prompt
@@ -1030,26 +1033,13 @@ export function registerRoutes(app: Express): Server {
       // Generate SOAP note directly using OpenAI API
       const soapNote = await generateSOAPNoteDirect(parseInt(patientId), encounterId, transcription);
 
-      // Set headers for Server-Sent Events
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("Access-Control-Allow-Origin", "*");
-
-      // Pipe the stream to the response
-      const reader = stream.getReader();
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          res.write(value);
-        }
-      } finally {
-        reader.releaseLock();
-        res.end();
-      }
+      // Return the complete SOAP note as JSON
+      res.json({
+        soapNote,
+        patientId: parseInt(patientId),
+        encounterId,
+        generatedAt: new Date().toISOString(),
+      });
     } catch (error: any) {
       console.error("❌ [RealtimeSOAP] Error in streaming endpoint:", error);
       res.status(500).json({
@@ -1271,55 +1261,12 @@ export function registerRoutes(app: Express): Server {
 
         console.log(`🔄 [GenerateSOAP] Generating SOAP note from transcription for encounter ${encounterId}`);
 
-        // Import the streaming SOAP service
-        const { RealtimeSOAPStreaming } = await import("./realtime-soap-streaming.js");
-        const soapStreaming = new RealtimeSOAPStreaming();
-
-        // Generate SOAP note using the same logic as real-time generation
-        const stream = await soapStreaming.generateSOAPNoteStream(
-          patientId,
-          encounterId.toString(),
-          transcription
-        );
-
-        // Read the stream to get the complete SOAP note
-        const reader = stream.getReader();
-        let soapNote = "";
-        
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            // Parse the streamed data to extract SOAP note content
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n');
-            
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.type === 'response.text.done' && data.text) {
-                    soapNote = data.text;
-                  }
-                } catch (parseError) {
-                  // Skip malformed JSON lines
-                }
-              }
-            }
-          }
-        } finally {
-          reader.releaseLock();
-        }
+        // Generate SOAP note using direct API call
+        const soapNote = await generateSOAPNoteDirect(patientId, encounterId, transcription);
 
         if (!soapNote.trim()) {
           throw new Error("Failed to generate SOAP note content");
         }
-
-        // Save the generated SOAP note to the encounter
-        await storage.updateEncounter(encounterId, {
-          note: soapNote,
-        });
 
         console.log(`✅ [GenerateSOAP] SOAP note generated and saved for encounter ${encounterId}`);
 
