@@ -419,8 +419,8 @@ export function EncounterDetailView({
         
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
       } catch (error) {
-        console.error(`❌ [ParallelProcessing] EXCEPTION during processing:`, error);
-        console.error(`❌ [ParallelProcessing] Stack trace:`, error.stack);
+        console.error(`❌ [ParallelProcessing] EXCEPTION during processing:`, error as Error);
+        console.error(`❌ [ParallelProcessing] Stack trace:`, (error as Error).stack);
         // Don't show error toast for this - it's background processing
       }
       
@@ -1871,118 +1871,18 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       return;
     }
 
-    setIsGeneratingSOAP(true);
-    try {
-      console.log("🔄 [EncounterView] Manually generating SOAP note from transcription...");
-
-      const response = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/generate-soap-from-transcription`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transcription: transcription,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to generate SOAP note: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      const generatedSOAP = data.soapNote;
-
-      console.log("✅ [EncounterView] SOAP note generated from transcription");
-
-      // Update the SOAP note state and editor
-      setSoapNote(generatedSOAP);
-      setLastSaved(generatedSOAP);
-      setAutoSaveStatus("saved");
-
-      if (editor && !editor.isDestroyed) {
-        const formattedContent = formatSoapNoteContent(generatedSOAP);
-        editor.commands.setContent(formattedContent);
-      }
-
-      // Process medical problems and medications in parallel for transcription-based SOAP generation
-      console.log("🔄 [EncounterView] Triggering parallel processing for transcription-based SOAP...");
-      try {
-        const [medicalProblemsResponse, medicationsResponse] = await Promise.all([
-          fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              soapNote: generatedSOAP,
-              patientId: patient.id
-            })
-          }),
-          fetch(`/api/encounters/${encounterId}/process-medications`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              soapNote: generatedSOAP,
-              patientId: patient.id
-            })
-          })
-        ]);
-
-        // Handle medical problems response
-        if (medicalProblemsResponse.ok) {
-          const result = await medicalProblemsResponse.json();
-          console.log(`✅ [EncounterView] Medical problems processed: ${result.problemsAffected || result.total_problems_affected} problems affected`);
-          
-          // Invalidate medical problems queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
-          });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
-          });
-        } else {
-          console.warn(`⚠️ [EncounterView] Medical problems processing failed:`, await medicalProblemsResponse.text());
-        }
-
-        // Handle medications response
-        if (medicationsResponse.ok) {
-          const result = await medicationsResponse.json();
-          console.log(`✅ [EncounterView] Medications processed: ${result.medicationsAffected} medications affected`);
-          console.log(`✅ [EncounterView] Drug interactions found: ${result.drugInteractions?.length || 0}`);
-          
-          // Invalidate medications queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
-          });
-        } else {
-          console.warn(`⚠️ [EncounterView] Medications processing failed:`, await medicationsResponse.text());
-        }
-      } catch (error) {
-        console.error("Failed to process medical problems and medications for transcription SOAP:", error);
-      }
-
-      // Invalidate caches to refresh data
-      await queryClient.invalidateQueries({
-        queryKey: [`/api/encounters/${encounterId}`],
-      });
-
-      toast({
-        title: "SOAP Note Generated",
-        description: "SOAP note has been successfully generated from the transcription.",
-      });
-
-      // Note: Real-time transcription continues running in the background
-      // No need to restart unless explicitly stopped by the user
-
-    } catch (error) {
-      console.error("❌ [EncounterView] Error generating SOAP from transcription:", error);
+    console.log("🔄 [EncounterView] Manually triggering SOAP note generation from transcription...");
+    
+    // Use the unified streaming system with force generation
+    if (realtimeSOAPRef.current) {
+      realtimeSOAPRef.current.generateSOAPNote(true); // Force generation bypasses intelligent streaming checks
+    } else {
+      console.error("❌ [EncounterView] RealtimeSOAPIntegration ref not available");
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description: "Failed to generate SOAP note from transcription. Please try again.",
+        description: "Unable to access SOAP generation system. Please try again.",
       });
-    } finally {
-      setIsGeneratingSOAP(false);
     }
   };
 
