@@ -305,7 +305,7 @@ Patient Context:
 - Active Problems: ${patientChart.activeProblems?.map((p: any) => p.description).join(", ") || "None documented"}
 ` : "";
 
-        // Send transcription to OpenAI for SOAP generation
+        // Send transcription to OpenAI for SOAP generation using EXACT same prompt as original system
         const contextMessage = {
           type: "conversation.item.create",
           item: {
@@ -314,12 +314,81 @@ Patient Context:
             content: [
               {
                 type: "input_text",
-                text: `${patientContext}
+                text: `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
 
-CONVERSATION TRANSCRIPT:
+PATIENT CONTEXT:
+${patientContext}
+
+ENCOUNTER TRANSCRIPTION:
 ${newTranscription}
 
-Generate a comprehensive SOAP note based on this conversation transcript. Return the complete SOAP note with all sections formatted exactly as specified.`,
+Generate a complete, professional SOAP note with the following sections:
+
+**SUBJECTIVE:**
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
+
+**OBJECTIVE:** Organize this section as follows:
+
+Vitals: List all vital signs in a single line, formatted as:
+
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+- If the physical exam is completely normal, use the following full, pre-defined template verbatim:
+
+Physical Exam:
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
+
+Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded
+
+Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
+
+Use concise, structured phrases. Avoid full sentences and narrative explanations.
+
+**ASSESSMENT/PLAN:**
+
+[Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
+[Plan item 1]
+[Plan item 2]
+[Plan item 3 (if applicable)]
+
+**ORDERS:** 
+
+For all orders, follow this highly-structured format:
+
+Medications:
+
+Each medication order must follow this exact template:
+
+Medication: [name, include specific formulation and strength]
+
+Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
+
+Dispense: [quantity, clearly written in terms of formulation (e.g., "1 inhaler (200 metered doses)" or "30 tablets")]
+
+Refills: [number of refills allowed]
+
+Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+
+Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+
+Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+
+Patient Education: Summarize key educational topics discussed with the patient.
+
+Follow-up: Provide clear next steps and timeline for follow-up appointments or assessments.
+
+IMPORTANT INSTRUCTIONS:
+- Keep the note concise yet comprehensive.
+- Use professional medical language throughout.
+- Ensure all clinical reasoning is evidence-based and logical.
+- Include pertinent negatives where clinically relevant.
+- Format the note for easy reading and clinical handoff.`,
               },
             ],
           },
