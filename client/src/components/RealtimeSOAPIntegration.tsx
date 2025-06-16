@@ -162,85 +162,46 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // Stream the response for character-by-character "typing" effect
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body reader available');
-      }
-
-      let accumulatedSoap = "";
-      const decoder = new TextDecoder();
+      // Handle JSON response instead of streaming
+      const responseData = await response.json();
+      console.log("🔍 [RealtimeSOAP] Received JSON response:", responseData);
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        // Parse streaming chunks from Real-time API
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.trim());
+      if (responseData.soapNote) {
+        const completeSoap = responseData.soapNote;
+        setSoapBuffer(completeSoap);
         
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              if (data.type === 'response.text.done') {
-                // Batch delivery - complete SOAP note arrives all at once (faster)
-                const completeSoap = data.text || "";
-                setSoapBuffer(completeSoap);
-                
-                // Apply intelligent change detection for UI updates
-                if (enableIntelligentStreaming && shouldTriggerUpdate(lastSOAPContent, completeSoap)) {
-                  console.log("📝 [IntelligentStreaming] Meaningful change detected - updating UI");
-                  setLastSOAPContent(completeSoap);
-                  onSOAPNoteUpdate(completeSoap);
-                } else if (!enableIntelligentStreaming) {
-                  // Traditional behavior - always update
-                  console.log("📝 [RealtimeSOAP] Traditional update - no change detection");
-                  onSOAPNoteUpdate(completeSoap);
-                } else {
-                  console.log("📝 [IntelligentStreaming] No meaningful change - skipping UI update");
-                }
-                
-                console.log("🎯 [RealtimeSOAP] About to call onSOAPNoteComplete - THIS SHOULD TRIGGER MEDICAL PROBLEMS");
-                console.log("🎯 [RealtimeSOAP] Patient ID:", patientId, "Encounter ID:", encounterId);
-                console.log("🎯 [RealtimeSOAP] SOAP note preview:", completeSoap.substring(0, 200));
-                onSOAPNoteComplete(completeSoap);
-                
-                console.log("✅ [RealtimeSOAP] SOAP note generation completed - onSOAPNoteComplete called");
-                
-                // Only show success toast for manual generation or significant changes
-                if (forceGeneration || (!enableIntelligentStreaming)) {
-                  toast({
-                    title: "SOAP Note Generated",
-                    description: "Clinical documentation completed successfully",
-                  });
-                }
-              } else if (data.type === 'draft_orders') {
-                console.log("📋 [RealtimeSOAP] Received draft orders:", data.orders?.length || 0);
-                onDraftOrdersReceived(data.orders || []);
-              } else if (data.type === 'cpt_codes') {
-                console.log("🏥 [RealtimeSOAP] Received CPT codes:", data);
-                onCPTCodesReceived?.(data);
-                
-                // TRIGGER MEDICAL PROBLEMS PROCESSING HERE
-                // CPT codes are the final event in the stream, so SOAP note should be complete
-                console.log("🎯 [RealtimeSOAP] CPT codes received - triggering medical problems processing");
-                console.log("🎯 [RealtimeSOAP] Current SOAP buffer length:", soapBuffer.length);
-                if (soapBuffer && soapBuffer.trim().length > 100) {
-                  console.log("🎯 [RealtimeSOAP] Calling onSOAPNoteComplete with current SOAP buffer");
-                  onSOAPNoteComplete(soapBuffer);
-                } else {
-                  console.warn("🎯 [RealtimeSOAP] SOAP buffer too short to trigger medical problems processing");
-                }
-              } else if (data.type === 'error') {
-                throw new Error(data.message);
-              }
-            } catch (e) {
-              console.warn("Could not parse streaming data:", line);
-            }
-          }
+        console.log("📝 [RealtimeSOAP] Processing SOAP note from JSON response");
+        console.log("📝 [RealtimeSOAP] SOAP note length:", completeSoap.length);
+        
+        // Apply intelligent change detection for UI updates
+        if (enableIntelligentStreaming && shouldTriggerUpdate(lastSOAPContent, completeSoap)) {
+          console.log("📝 [IntelligentStreaming] Meaningful change detected - updating UI");
+          setLastSOAPContent(completeSoap);
+          onSOAPNoteUpdate(completeSoap);
+        } else if (!enableIntelligentStreaming) {
+          // Traditional behavior - always update
+          console.log("📝 [RealtimeSOAP] Traditional update - no change detection");
+          onSOAPNoteUpdate(completeSoap);
+        } else {
+          console.log("📝 [IntelligentStreaming] No meaningful change - skipping UI update");
         }
+        
+        console.log("🎯 [RealtimeSOAP] About to call onSOAPNoteComplete - THIS SHOULD TRIGGER MEDICAL PROBLEMS");
+        console.log("🎯 [RealtimeSOAP] Patient ID:", patientId, "Encounter ID:", encounterId);
+        console.log("🎯 [RealtimeSOAP] SOAP note preview:", completeSoap.substring(0, 200));
+        onSOAPNoteComplete(completeSoap);
+        
+        console.log("✅ [RealtimeSOAP] SOAP note generation completed - onSOAPNoteComplete called");
+        
+        // Only show success toast for manual generation or significant changes
+        if (forceGeneration || (!enableIntelligentStreaming)) {
+          toast({
+            title: "SOAP Note Generated",
+            description: "Clinical documentation completed successfully",
+          });
+        }
+      } else {
+        throw new Error("No SOAP note received in response");
       }
       
     } catch (error) {
