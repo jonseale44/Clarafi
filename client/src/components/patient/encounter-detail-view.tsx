@@ -132,6 +132,11 @@ export function EncounterDetailView({
     cpt?: any;
   }>({});
 
+  // Debug logging for token analysis data changes
+  useEffect(() => {
+    console.log(`🔍 [TokenAnalysis] Current token data state:`, tokenAnalysisData);
+  }, [tokenAnalysisData]);
+
   // Deduplication system
   const processedEvents = useRef(new Set<string>());
   const processedContent = useRef(new Set<string>());
@@ -362,7 +367,7 @@ export function EncounterDetailView({
         };
         
         const cptRequestBody = {
-          soapNote: soapNoteContent
+          soapNote: note
         };
         
         console.log(`🏥 [ParallelProcessing] Medical problems request body:`, medicalProblemsRequestBody);
@@ -413,11 +418,15 @@ export function EncounterDetailView({
             
             // Store token analysis data for UI display
             if (result.tokenAnalysis) {
-              setTokenAnalysisData(prev => ({
-                ...prev,
-                medicalProblems: result.tokenAnalysis
-              }));
-              console.log(`💰 [MedicalProblems] Token analysis stored:`, result.tokenAnalysis);
+              setTokenAnalysisData(prev => {
+                const newData = {
+                  ...prev,
+                  medicalProblems: result.tokenAnalysis
+                };
+                console.log(`💰 [MedicalProblems] Token analysis stored:`, result.tokenAnalysis);
+                console.log(`💰 [MedicalProblems] Updated tokenAnalysisData:`, newData);
+                return newData;
+              });
             }
             
             // Invalidate medical problems queries to refresh UI
