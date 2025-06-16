@@ -1780,20 +1780,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       // Trigger all existing dependencies that rely on SOAP completion
       await handleSOAPNoteComplete(soapNote);
       
-      // Trigger automatic orders and billing extraction from the completed SOAP note
+      // Trigger automatic orders and billing extraction using the correct endpoints
       console.log("📋 [EncounterView] Triggering automatic orders and billing extraction...");
       
       try {
         // Extract orders and billing codes in parallel for maximum efficiency
         const [ordersResponse, billingResponse] = await Promise.all([
-          fetch(`/api/encounters/${encounterId}/extract-orders`, {
+          fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
           }),
           fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ soapNote: soapNote }),
           })
         ]);
 
@@ -1807,20 +1806,30 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             queryKey: [`/api/patients/${patient.id}/draft-orders`] 
           });
         } else {
-          console.warn("⚠️ [EncounterView] Orders extraction failed:", ordersResponse.statusText);
+          console.warn("⚠️ [EncounterView] Orders extraction failed:", ordersResponse.status, ordersResponse.statusText);
+          const ordersErrorText = await ordersResponse.text();
+          console.error("❌ [EncounterView] Orders error response:", ordersErrorText);
         }
 
         // Handle billing extraction
         if (billingResponse.ok) {
-          const billingResult = await billingResponse.json();
-          console.log(`✅ [EncounterView] Billing extraction completed: ${billingResult.cptCodes?.length || 0} CPT codes, ${billingResult.diagnoses?.length || 0} diagnoses`);
-          
-          // Invalidate encounter cache to refresh billing UI
-          queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
-          });
+          try {
+            const billingResult = await billingResponse.json();
+            console.log(`✅ [EncounterView] Billing extraction completed: ${billingResult.cptCodes?.length || 0} CPT codes, ${billingResult.diagnoses?.length || 0} diagnoses`);
+            
+            // Invalidate encounter cache to refresh billing UI
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
+            });
+          } catch (jsonError) {
+            console.error("❌ [EncounterView] Failed to parse billing response as JSON:", jsonError);
+            const responseText = await billingResponse.text();
+            console.error("❌ [EncounterView] Raw billing response:", responseText);
+          }
         } else {
-          console.warn("⚠️ [EncounterView] Billing extraction failed:", billingResponse.statusText);
+          console.warn("⚠️ [EncounterView] Billing extraction failed:", billingResponse.status, billingResponse.statusText);
+          const errorText = await billingResponse.text();
+          console.error("❌ [EncounterView] Billing error response:", errorText);
         }
       } catch (error) {
         console.error("❌ [EncounterView] Error during automatic extraction:", error);
