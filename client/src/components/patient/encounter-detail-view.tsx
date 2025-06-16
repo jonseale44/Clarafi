@@ -414,27 +414,33 @@ export function EncounterDetailView({
 
         // Handle medical problems response
         if (medicalProblemsResponse.ok) {
-          const result = await medicalProblemsResponse.json();
-          console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
-          console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
-          
-          // Store token analysis data for UI display
-          if (result.tokenAnalysis) {
-            setTokenAnalysisData(prev => ({
-              ...prev,
-              medicalProblems: result.tokenAnalysis
-            }));
-            console.log(`💰 [MedicalProblems] Token analysis stored:`, result.tokenAnalysis);
+          try {
+            const result = await medicalProblemsResponse.json();
+            console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
+            console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
+            
+            // Store token analysis data for UI display
+            if (result.tokenAnalysis) {
+              setTokenAnalysisData(prev => ({
+                ...prev,
+                medicalProblems: result.tokenAnalysis
+              }));
+              console.log(`💰 [MedicalProblems] Token analysis stored:`, result.tokenAnalysis);
+            }
+            
+            // Invalidate medical problems queries to refresh UI
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+            });
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+            });
+            console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
+          } catch (parseError) {
+            console.error(`❌ [MedicalProblems] JSON parsing error:`, parseError);
+            const errorText = await medicalProblemsResponse.text();
+            console.error(`❌ [MedicalProblems] Response was not JSON:`, errorText.substring(0, 200));
           }
-          
-          // Invalidate medical problems queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
-          });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
-          });
-          console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
         } else {
           const errorText = await medicalProblemsResponse.text();
           console.error(`❌ [MedicalProblems] FAILED with status ${medicalProblemsResponse.status}`);
@@ -443,25 +449,31 @@ export function EncounterDetailView({
 
         // Handle medications response
         if (medicationsResponse.ok) {
-          const result = await medicationsResponse.json();
-          console.log(`✅ [Medications] SUCCESS: ${result.medicationsAffected} medications affected`);
-          console.log(`✅ [Medications] Processing time: ${result.processingTimeMs}ms`);
-          console.log(`✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`);
-          
-          // Store token analysis data for UI display
-          if (result.tokenAnalysis) {
-            setTokenAnalysisData(prev => ({
-              ...prev,
-              medications: result.tokenAnalysis
-            }));
-            console.log(`💰 [Medications] Token analysis stored:`, result.tokenAnalysis);
+          try {
+            const result = await medicationsResponse.json();
+            console.log(`✅ [Medications] SUCCESS: ${result.medicationsAffected} medications affected`);
+            console.log(`✅ [Medications] Processing time: ${result.processingTimeMs}ms`);
+            console.log(`✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`);
+            
+            // Store token analysis data for UI display
+            if (result.tokenAnalysis) {
+              setTokenAnalysisData(prev => ({
+                ...prev,
+                medications: result.tokenAnalysis
+              }));
+              console.log(`💰 [Medications] Token analysis stored:`, result.tokenAnalysis);
+            }
+            
+            // Invalidate medications queries to refresh UI
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+            });
+            console.log(`🔄 [Medications] Cache invalidation completed`);
+          } catch (parseError) {
+            console.error(`❌ [Medications] JSON parsing error:`, parseError);
+            const errorText = await medicationsResponse.text();
+            console.error(`❌ [Medications] Response was not JSON:`, errorText.substring(0, 200));
           }
-          
-          // Invalidate medications queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
-          });
-          console.log(`🔄 [Medications] Cache invalidation completed`);
         } else {
           const errorText = await medicationsResponse.text();
           console.error(`❌ [Medications] FAILED with status ${medicationsResponse.status}`);
@@ -470,27 +482,33 @@ export function EncounterDetailView({
 
         // Handle orders response
         if (ordersResponse.ok) {
-          const result = await ordersResponse.json();
-          console.log(`✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`);
-          console.log(`✅ [Orders] Message: ${result.message}`);
-          
-          // Store token analysis data for UI display
-          if (result.tokenAnalysis) {
-            setTokenAnalysisData(prev => ({
-              ...prev,
-              orders: result.tokenAnalysis
-            }));
-            console.log(`💰 [Orders] Token analysis stored:`, result.tokenAnalysis);
+          try {
+            const result = await ordersResponse.json();
+            console.log(`✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`);
+            console.log(`✅ [Orders] Message: ${result.message}`);
+            
+            // Store token analysis data for UI display
+            if (result.tokenAnalysis) {
+              setTokenAnalysisData(prev => ({
+                ...prev,
+                orders: result.tokenAnalysis
+              }));
+              console.log(`💰 [Orders] Token analysis stored:`, result.tokenAnalysis);
+            }
+            
+            // Invalidate orders queries to refresh UI
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/draft-orders`] 
+            });
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/encounters/${encounterId}/validation`] 
+            });
+            console.log(`🔄 [Orders] Cache invalidation completed`);
+          } catch (parseError) {
+            console.error(`❌ [Orders] JSON parsing error:`, parseError);
+            const errorText = await ordersResponse.text();
+            console.error(`❌ [Orders] Response was not JSON:`, errorText.substring(0, 200));
           }
-          
-          // Invalidate orders queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/draft-orders`] 
-          });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/encounters/${encounterId}/validation`] 
-          });
-          console.log(`🔄 [Orders] Cache invalidation completed`);
         } else {
           const errorText = await ordersResponse.text();
           console.error(`❌ [Orders] FAILED with status ${ordersResponse.status}`);
