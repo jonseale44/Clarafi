@@ -390,7 +390,7 @@ export function EncounterDetailView({
             credentials: 'include',
             body: JSON.stringify(ordersRequestBody)
           }),
-          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt-codes`, {
+          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -533,13 +533,22 @@ export function EncounterDetailView({
             console.log(`🔄 [CPT] Cache invalidation completed`);
           } catch (parseError) {
             console.error(`❌ [CPT] JSON parsing error:`, parseError);
-            const errorText = await cptResponse.text();
-            console.error(`❌ [CPT] Response was not JSON:`, errorText.substring(0, 200));
+            try {
+              // Clone response to avoid "body stream already read" error
+              const errorText = await cptResponse.clone().text();
+              console.error(`❌ [CPT] Response was not JSON:`, errorText.substring(0, 200));
+            } catch (textError) {
+              console.error(`❌ [CPT] Could not read error response:`, textError);
+            }
           }
         } else {
-          const errorText = await cptResponse.text();
-          console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
-          console.error(`❌ [CPT] Error response: ${errorText}`);
+          try {
+            const errorText = await cptResponse.text();
+            console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
+            console.error(`❌ [CPT] Error response: ${errorText}`);
+          } catch (textError) {
+            console.error(`❌ [CPT] Could not read error response:`, textError);
+          }
         }
         
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
