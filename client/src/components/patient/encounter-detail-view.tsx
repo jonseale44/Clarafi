@@ -2478,7 +2478,14 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             isAutoGenerating={isAutoGeneratingBilling}
           />
 
-
+          {/* Medical Problems with Token Analysis */}
+          <SharedChartSections
+            patientId={patient.id}
+            mode="encounter"
+            encounterId={encounterId}
+            sectionId="problems"
+            tokenAnalysisData={tokenAnalysisData}
+          />
 
           {/* Encounter Workflow Controls */}
           <EncounterWorkflowControls

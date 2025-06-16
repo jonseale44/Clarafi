@@ -368,6 +368,16 @@ export function EnhancedMedicalProblemsList({
         </div>
       )}
 
+      {/* Token Analysis Banner for Medical Problems AI Processing */}
+      {tokenAnalysisData && (
+        <TokenAnalysisBanner
+          tokenAnalysis={tokenAnalysisData}
+          serviceName="Medical Problems"
+          variant="compact"
+          className="mb-4"
+        />
+      )}
+
       {medicalProblems.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="pt-6">
