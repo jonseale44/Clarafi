@@ -2211,6 +2211,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                       encounterId={encounter?.id}
                       isReadOnly={false}
                       sectionId={section.id}
+                      tokenAnalysisData={tokenAnalysisData}
                     />
                   )}
                 </div>
