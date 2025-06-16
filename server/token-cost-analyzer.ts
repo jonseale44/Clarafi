@@ -136,6 +136,14 @@ export class TokenCostAnalyzer {
       console.warn(`⚠️  [${service}] HIGH COST OPERATION: $${analysis.totalCost.toFixed(6)}`);
     }
 
+    // Record usage in dashboard for tracking
+    try {
+      const { TokenUsageDashboard } = require('./token-usage-dashboard.js');
+      TokenUsageDashboard.recordUsage(service, usage.prompt_tokens, usage.completion_tokens, analysis.totalCost);
+    } catch (error) {
+      // Dashboard integration is optional - don't fail if it's not available
+    }
+
     return analysis;
   }
 

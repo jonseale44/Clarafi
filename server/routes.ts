@@ -22,6 +22,7 @@ import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import nursingContentRoutes from "./nursing-content-routes";
 import nursingSummaryRoutes from "./nursing-summary-routes";
+import { TokenUsageDashboard } from "./token-usage-dashboard.js";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
