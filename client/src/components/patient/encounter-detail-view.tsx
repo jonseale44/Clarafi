@@ -40,10 +40,9 @@ import {
   RealtimeSOAPRef,
 } from "@/components/RealtimeSOAPIntegration";
 import { 
-  RealtimeSOAPTemplate,
-  RealtimeSOAPTemplateRef,
-  SOAPTemplateData 
-} from "@/components/RealtimeSOAPTemplate";
+  RealtimeSOAPStreaming,
+  RealtimeSOAPStreamingRef
+} from "@/components/RealtimeSOAPStreaming";
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
 
 interface EncounterDetailViewProps {
@@ -208,6 +207,9 @@ export function EncounterDetailView({
 
   // Real-time SOAP generation ref
   const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
+  
+  // Real-time SOAP streaming ref for incremental updates
+  const realtimeSOAPStreamingRef = useRef<RealtimeSOAPStreamingRef>(null);
 
   // Auto-save function with debouncing
   const autoSaveSOAPNote = async (content: string) => {
@@ -1770,31 +1772,13 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
     setIsRecording(false);
 
-    // Trigger Real-time SOAP generation after recording stops
-    if (transcriptionBuffer && transcriptionBuffer.trim()) {
-      console.log(
-        "🩺 [EncounterView] Triggering Real-time SOAP generation after recording...",
-      );
-
-      // Set the generating states to show loading animations for all sections
-      setIsGeneratingSOAP(true);
-      setIsAutoGeneratingSOAP(true);
-      setIsAutoGeneratingOrders(true);
-      setIsAutoGeneratingBilling(true);
-
-      // Set transcription for Real-time SOAP component
-      setTranscription(transcriptionBuffer);
-
-      // Trigger Real-time streaming SOAP generation
-      if (realtimeSOAPRef.current) {
-        realtimeSOAPRef.current.generateSOAPNote();
-      }
-    } else {
-      toast({
-        title: "Recording Stopped",
-        description: "Processing audio...",
-      });
-    }
+    // Real-time SOAP streaming handles everything automatically - no post-recording generation needed
+    console.log("🩺 [EncounterView] Recording stopped - real-time SOAP streaming will continue updating");
+    
+    toast({
+      title: "Recording Stopped",
+      description: "SOAP note has been updating in real-time during conversation",
+    });
   };
 
   const generateSmartSuggestions = () => {

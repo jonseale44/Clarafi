@@ -1,59 +1,36 @@
 /**
- * Real-time SOAP Template Component
+ * Real-time SOAP Streaming Component
  * 
- * Updates SOAP sections incrementally during conversation like nursing template system
- * Eliminates the post-recording bottleneck by streaming updates in real-time
+ * Streams SOAP note updates incrementally during conversation using OpenAI Realtime API
+ * Maintains existing single SOAP note structure and endpoints
+ * Eliminates the post-recording bottleneck by building SOAP note in real-time
  */
 
 import React, { 
-  useState, 
   useRef, 
   useEffect, 
   useImperativeHandle, 
   forwardRef 
 } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Activity, 
-  Play, 
-  Square, 
-  Save, 
-  FileText,
-  Edit3
-} from 'lucide-react';
 
-export interface SOAPTemplateData {
-  subjective: string;
-  objective: string;
-  assessment: string;
-  plan: string;
-}
-
-interface RealtimeSOAPTemplateProps {
+interface RealtimeSOAPStreamingProps {
   patientId: string;
   encounterId: string;
   isRecording: boolean;
   transcription: string;
-  onSOAPUpdate: (soap: SOAPTemplateData) => void;
-  onFullSOAPGenerated: (soapNote: string) => void;
+  onSOAPUpdate: (soapNote: string) => void;
   autoStart?: boolean;
 }
 
-export interface RealtimeSOAPTemplateRef {
+export interface RealtimeSOAPStreamingRef {
   startRealtimeSOAP: () => void;
   stopRealtimeSOAP: () => void;
-  getCurrentSOAP: () => SOAPTemplateData;
-  generateFullSOAP: () => void;
-  saveSOAP: () => void;
 }
 
-export const RealtimeSOAPTemplate = forwardRef<
-  RealtimeSOAPTemplateRef,
-  RealtimeSOAPTemplateProps
+export const RealtimeSOAPStreaming = forwardRef<
+  RealtimeSOAPStreamingRef,
+  RealtimeSOAPStreamingProps
 >(
   (
     {
@@ -62,28 +39,16 @@ export const RealtimeSOAPTemplate = forwardRef<
       isRecording,
       transcription,
       onSOAPUpdate,
-      onFullSOAPGenerated,
       autoStart = false,
     },
     ref,
   ) => {
-    const [isActive, setIsActive] = useState(false);
-    const [isConnected, setIsConnected] = useState(false);
-    const [editingSection, setEditingSection] = useState<string | null>(null);
-    const [isGeneratingFull, setIsGeneratingFull] = useState(false);
-
-    const [soapData, setSOAPData] = useState<SOAPTemplateData>({
-      subjective: "",
-      objective: "",
-      assessment: "",
-      plan: "",
-    });
-
     const wsRef = useRef<WebSocket | null>(null);
     const sessionIdRef = useRef<string>(
       `realtime_soap_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     );
     const lastTranscriptionRef = useRef("");
+    const soapBufferRef = useRef<string>("");
     const { toast } = useToast();
 
     // Expose methods to parent component
