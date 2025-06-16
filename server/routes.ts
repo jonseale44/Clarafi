@@ -72,9 +72,8 @@ async function generateSOAPNoteDirect(patientId: number, encounterId: string, tr
     ? vitalsList.map((v: any) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
     : "- No recent vitals on file";
 
-  // Create comprehensive SOAP prompt with sophisticated medical reasoning
-  const soapPrompt = `You are an expert attending physician with extensive clinical experience creating comprehensive, evidence-based SOAP notes. Your documentation directly impacts patient care, billing accuracy, and medical-legal protection.
-
+  // Build comprehensive medical context
+  const medicalContext = `
 PATIENT CONTEXT:
 - Name: ${patientData.firstName} ${patientData.lastName}
 - Age: ${age} years old
@@ -92,121 +91,134 @@ ${knownAllergies}
 
 RECENT VITALS:
 ${recentVitals}
+  `.trim();
+
+  // Create sophisticated SOAP prompt with your finely-tuned specifications
+  const soapPrompt = `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
 
 ENCOUNTER TRANSCRIPTION:
 ${transcription}
 
-CLINICAL DOCUMENTATION STANDARDS:
-Create a comprehensive SOAP note that meets hospital accreditation, billing compliance, and medical-legal requirements. Apply sophisticated clinical reasoning, differential diagnosis consideration, and evidence-based medicine principles.
+Generate a complete, professional SOAP note with the following sections:
 
-EXACT FORMATTING REQUIREMENTS:
+**SUBJECTIVE:**
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
 
-**Chief Complaint:**
-[Single sentence capturing patient's primary concern in their own words]
+**OBJECTIVE:** Organize this section as follows:
 
-**History of Present Illness:**
-Apply OLDCARTS methodology systematically:
-- Onset: Precise timing and circumstances of symptom initiation
-- Location: Anatomical specificity with radiation patterns if applicable
-- Duration: Exact timeframes with symptom evolution
-- Character: Detailed symptom quality using patient's descriptors
-- Aggravating factors: Environmental, positional, and activity-related triggers
-- Relieving factors: Interventions, medications, or positions providing relief
-- Timing: Frequency, periodicity, and circadian patterns
-- Severity: Quantified using appropriate scales (0-10 pain, functional impact)
+Vitals: List all vital signs in a single line, formatted as:
 
-Include associated symptoms, prior similar episodes, and relevant review of systems.
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
 
-**Review of Systems:**
-Organize by organ system with pertinent positives and significant negatives:
-- Constitutional: Weight changes, fatigue, fever, night sweats
-- HEENT: Vision changes, hearing loss, rhinorrhea, throat pain
-- Cardiovascular: Chest pain, palpitations, dyspnea on exertion, orthopnea
-- Pulmonary: Cough, shortness of breath, wheezing, hemoptysis
-- Gastrointestinal: Nausea, vomiting, abdominal pain, bowel changes
-- Genitourinary: Dysuria, frequency, hematuria, discharge
-- Musculoskeletal: Joint pain, stiffness, weakness, functional limitations
-- Neurological: Headaches, dizziness, numbness, cognitive changes
-- Psychiatric: Mood changes, anxiety, sleep disturbances
-- Endocrine: Heat/cold intolerance, polydipsia, polyuria
-- Hematologic: Easy bruising, bleeding, lymphadenopathy
-- Dermatologic: Rashes, lesions, changes in existing marks
+- If the physical exam is completely normal, use the following full, pre-defined template verbatim:
 
-**Past Medical History:**
-[Chronologically organized significant diagnoses with dates when available]
+Physical Exam:
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
 
-**Medications:**
-[Current medications with generic names, exact dosages, frequencies, and routes]
+Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded
 
-**Allergies:**
-[Specific allergens with reaction types and severity]
+Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
 
-**Social History:**
-[Tobacco use (pack-years), alcohol consumption (drinks/week), illicit substances, occupation, living situation, travel history, sexual history when relevant]
+Use concise, structured phrases. Avoid full sentences and narrative explanations.
 
-**Family History:**
-[Relevant hereditary conditions affecting differential diagnosis]
+Example 1: 
+Transcription: "2 cm actinic keratosis on right forearm."
 
-**Vitals:**
-[If documented: BP (with position), HR, Temp (route), RR, SpO2 (on room air vs supplemental O2), BMI when available]
+✅ Good outcome (Objective, No Diagnosis):
+Skin: **Right forearm with a 2 cm rough, scaly, erythematous plaque with adherent keratotic scale**, without ulceration, bleeding, or induration.
 
-**Physical Exam:**
-Apply systematic examination with appropriate detail for clinical scenario:
+🚫 Bad outcome (Incorrect Use of Diagnosis, no bolding):
+Skin: Actinic keratosis right forearm.
 
-General: Appearance, distress level, positioning, cooperation
-HEENT: Normocephalic/atraumatic, pupils equal round reactive to light, extraocular movements intact, tympanic membranes, oropharynx
-Neck: Jugular venous distension, thyromegaly, lymphadenopathy, carotid bruits
-Cardiovascular: Rate, rhythm, murmurs (grade/location), gallops, peripheral pulses, edema
-Pulmonary: Effort, symmetry, breath sounds by zone, adventitious sounds
-Abdominal: Inspection, bowel sounds, palpation by quadrant, organomegaly, tenderness, guarding
-Extremities: Range of motion, deformity, edema, pulses, capillary refill
-Neurological: Mental status, cranial nerves, motor strength by group, sensation, reflexes, gait, coordination (as clinically indicated)
-Skin: Color, temperature, turgor, lesions, rashes
+Example 2:
+Transcription: "Pneumonia right lung."
 
-**Assessment/Plan:**
-For each diagnosis (primary first, then secondary):
+✅ Good outcome (Objective, No Diagnosis):
+Lungs: Normal work of breathing. **Diminished breath sounds over the right lung base with scattered rhonchi.** No wheezes, rales.
 
-1. [Primary Diagnosis with ICD-10 code when appropriate]
-   Clinical reasoning: [Evidence supporting diagnosis, risk factors present, differential considerations ruled out]
-   Severity assessment: [Staging, functional impact, prognosis]
-   
-   Management plan:
-   - Pharmacologic: [Specific medications with dosing rationale, contraindication considerations]
-   - Non-pharmacologic: [Lifestyle modifications, physical therapy, dietary changes]
-   - Monitoring: [Follow-up parameters, laboratory surveillance, imaging intervals]
-   - Patient education: [Disease understanding, warning signs, compliance strategies]
+🚫 Bad outcome (Incorrect Use of Diagnosis, bolding entire organ system):
+**Lungs: Sounds of pneumonia right lung.**
 
-2. [Secondary diagnoses with similar systematic approach]
+Example 3: 
+Transcription: "Cellulitis left lower leg."
 
-**Orders:**
-Organized by category with clinical rationale:
-- Laboratory: [Specific tests with timing and clinical indication]
-- Imaging: [Modality selection with clinical justification]
-- Medications: [New prescriptions with dosing, quantity, refills]
-- Referrals: [Specialty consultations with specific questions]
-- Procedures: [Interventions with consent requirements]
-- Follow-up: [Timeline and parameters for reassessment]
+✅ Good outcome (Objective, No Diagnosis):
+Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bullae, ulceration, or fluctuance.
 
-ADVANCED CLINICAL REASONING REQUIREMENTS:
-- Apply evidence-based medicine principles with consideration of clinical guidelines
-- Include differential diagnosis reasoning and rule-out criteria
-- Address preventive care opportunities and health maintenance
-- Consider drug interactions, allergies, and contraindications
-- Incorporate patient preferences and shared decision-making
-- Ensure cultural sensitivity and health literacy considerations
-- Apply appropriate billing and coding considerations
-- Include relevant quality metrics and performance measures
+🚫 Bad outcome (Incorrect Use of Diagnosis):
+Skin: Cellulitis on the left lower leg.
 
-DOCUMENTATION QUALITY STANDARDS:
-- Use precise medical terminology with appropriate specificity
-- Avoid vague descriptors ("some," "mild," "moderate" without quantification)
-- Include pertinent negatives that support diagnostic reasoning
-- Ensure chronological consistency and logical flow
-- Maintain professional tone while capturing patient voice
-- Support all clinical decisions with documented rationale
-- Address all presenting complaints and incidental findings
+**ASSESSMENT/PLAN:**
 
-Generate a SOAP note that exemplifies excellence in clinical documentation, demonstrating the sophisticated medical reasoning and comprehensive patient care that characterizes expert clinical practice.`;
+[Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
+[Plan item 1]
+[Plan item 2]
+[Plan item 3 (if applicable)]
+Example:
+
+Chest Tightness, Suspected Airway Constriction (R06.4):
+
+Trial low-dose inhaler therapy to address potential airway constriction.
+Monitor response to inhaler and reassess in 2 weeks.
+Patient education on environmental triggers (e.g., dust exposure).
+Fatigue, Work-Related Stress (Z73.0):
+
+Counsel patient on stress management and lifestyle modifications.
+Encourage gradual increase in physical activity.
+Family History of Cardiovascular Disease (Z82.49):
+
+Document family history and assess cardiovascular risk factors as part of ongoing care.
+(preceded by FOUR blank lines)**ORDERS:** 
+
+For all orders, follow this highly-structured format:
+
+Medications:
+
+Each medication order must follow this exact template:
+
+Medication: [name, include specific formulation and strength]
+
+Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
+
+Dispense: [quantity, clearly written in terms of formulation (e.g., "1 inhaler (200 metered doses)" or "30 tablets")]
+
+Refills: [number of refills allowed]
+
+Example:
+
+Medication: Albuterol sulfate HFA Inhaler (90 mcg/actuation)
+
+Sig: 2 puffs by mouth every 4-6 hours as needed for shortness of breath or wheezing. May use 2 puffs 15-30 minutes before exercise if needed. Do not exceed 12 puffs in a 24-hour period.
+
+Dispense: 1 inhaler (200 metered doses)
+
+Refills: 1
+
+Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+
+Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+
+Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+
+Patient Education: Summarize key educational topics discussed with the patient.
+
+Follow-up: Provide clear next steps and timeline for follow-up appointments or assessments.
+
+IMPORTANT INSTRUCTIONS:
+- Keep the note concise yet comprehensive.
+- Use professional medical language throughout.
+- Ensure all clinical reasoning is evidence-based and logical.
+- Include pertinent negatives where clinically relevant.
+- Format the note for easy reading and clinical handoff.`;
 
   // Generate SOAP note
   const soapCompletion = await openai.chat.completions.create({
