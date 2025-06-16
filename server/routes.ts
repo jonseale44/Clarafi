@@ -913,50 +913,16 @@ export function registerRoutes(app: Express): Server {
           `[PersonalizedSOAP] Generating for user ${userId}, patient ${patientId}, encounter ${encounterId}`,
         );
 
-        if (usePersonalization) {
-          // Use personalized SOAP generation with user preferences
-          const { UserSOAPPreferenceService } = await import(
-            "./user-soap-preference-service.js"
-          );
-          const preferenceService = new UserSOAPPreferenceService();
-
-          // Get patient context
-          const patient = await storage.getPatient(patientId);
-          if (!patient) {
-            return res.status(404).json({ message: "Patient not found" });
-          }
-
-          const soapNote = await preferenceService.generatePersonalizedSOAP(
-            userId,
-            patientId,
-            transcription,
-            { patient },
-          );
-
-          console.log(
-            `✅ [PersonalizedSOAP] Generated personalized SOAP (${soapNote.length} characters)`,
-          );
-
-          res.json({
-            soapNote,
-            patientId,
-            encounterId,
-            userId,
-            personalized: true,
-            generatedAt: new Date().toISOString(),
-          });
-        } else {
-          // Generate SOAP note using direct OpenAI API call
-          const soapNote = await generateSOAPNoteDirect(patientId, encounterId.toString(), transcription);
-          
-          res.json({
-            soapNote,
-            patientId,
-            encounterId,
-            personalized: false,
-            generatedAt: new Date().toISOString(),
-          });
-        }
+        // Always use direct SOAP generation with standardized formatting
+        const soapNote = await generateSOAPNoteDirect(patientId, encounterId.toString(), transcription);
+        
+        res.json({
+          soapNote,
+          patientId,
+          encounterId,
+          personalized: false,
+          generatedAt: new Date().toISOString(),
+        });
       } catch (error: any) {
         console.error("❌ [PersonalizedSOAP] Error:", error);
         res.status(500).json({
@@ -987,30 +953,11 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      const { UserSOAPPreferenceService } = await import(
-        "./user-soap-preference-service.js"
-      );
-      const preferenceService = new UserSOAPPreferenceService();
-
-      const analysis = await preferenceService.analyzeUserEdit(
-        userId,
-        originalText,
-        editedText,
-        sectionType,
-      );
-
-      if (analysis) {
-        console.log(`✅ [EditAnalysis] Pattern detected: ${analysis.rule}`);
-        res.json({
-          analysis,
-          learned: true,
-        });
-      } else {
-        res.json({
-          analysis: null,
-          learned: false,
-        });
-      }
+      // Edit analysis functionality disabled - no phantom functions
+      res.json({
+        analysis: null,
+        learned: false,
+      });
     } catch (error: any) {
       console.error("❌ [EditAnalysis] Error:", error);
       res.status(500).json({
