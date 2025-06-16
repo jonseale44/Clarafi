@@ -292,10 +292,6 @@ export function EncounterDetailView({
   // Handlers for Real-time SOAP Integration
   const handleSOAPNoteUpdate = (note: string) => {
     setSoapNote(note);
-    if (editor && !editor.isDestroyed) {
-      const formattedContent = formatSoapNoteContent(note);
-      editor.commands.setContent(formattedContent);
-    }
   };
 
   const handleSOAPNoteComplete = async (note: string) => {
@@ -317,10 +313,6 @@ export function EncounterDetailView({
     setIsAutoGeneratingBilling(false);
 
     setSoapNote(note);
-    if (editor && !editor.isDestroyed) {
-      const formattedContent = formatSoapNoteContent(note);
-      editor.commands.setContent(formattedContent);
-    }
 
     // Save the SOAP note to the encounter
     try {
@@ -517,27 +509,33 @@ export function EncounterDetailView({
 
         // Handle CPT response
         if (cptResponse.ok) {
-          const result = await cptResponse.json();
-          console.log(`✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`);
-          console.log(`✅ [CPT] Processing details:`, result);
-          
-          // Store token analysis data for UI display
-          if (result.tokenAnalysis) {
-            setTokenAnalysisData(prev => ({
-              ...prev,
-              cpt: result.tokenAnalysis
-            }));
-            console.log(`💰 [CPT] Token analysis stored:`, result.tokenAnalysis);
+          try {
+            const result = await cptResponse.json();
+            console.log(`✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`);
+            console.log(`✅ [CPT] Processing details:`, result);
+            
+            // Store token analysis data for UI display
+            if (result.tokenAnalysis) {
+              setTokenAnalysisData(prev => ({
+                ...prev,
+                cpt: result.tokenAnalysis
+              }));
+              console.log(`💰 [CPT] Token analysis stored:`, result.tokenAnalysis);
+            }
+            
+            // Invalidate billing queries to refresh UI
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
+            });
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/encounters/${encounterId}/validation`] 
+            });
+            console.log(`🔄 [CPT] Cache invalidation completed`);
+          } catch (parseError) {
+            console.error(`❌ [CPT] JSON parsing error:`, parseError);
+            const errorText = await cptResponse.text();
+            console.error(`❌ [CPT] Response was not JSON:`, errorText.substring(0, 200));
           }
-          
-          // Invalidate billing queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
-          });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/encounters/${encounterId}/validation`] 
-          });
-          console.log(`🔄 [CPT] Cache invalidation completed`);
         } else {
           const errorText = await cptResponse.text();
           console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
