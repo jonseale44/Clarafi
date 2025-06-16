@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, E
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
+import { TokenAnalysisBanner } from "@/components/ui/token-analysis-banner";
 
 interface VisitNote {
   date: string;
@@ -39,13 +40,15 @@ interface EnhancedMedicalProblemsListProps {
   encounterId?: number;
   mode?: "patient-chart" | "encounter";
   isReadOnly?: boolean;
+  tokenAnalysisData?: any;
 }
 
 export function EnhancedMedicalProblemsList({ 
   patientId, 
   encounterId, 
   mode = "patient-chart", 
-  isReadOnly = false 
+  isReadOnly = false,
+  tokenAnalysisData 
 }: EnhancedMedicalProblemsListProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProblem, setEditingProblem] = useState<MedicalProblem | null>(null);
