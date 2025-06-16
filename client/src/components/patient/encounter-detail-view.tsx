@@ -2379,6 +2379,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             isRealtimeEnabled={true}
             autoTrigger={true}
             enableIntelligentStreaming={true}
+            isRecording={isRecording}
           />
 
           {/* Draft Orders */}

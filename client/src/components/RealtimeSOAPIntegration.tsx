@@ -13,6 +13,7 @@ interface RealtimeSOAPIntegrationProps {
   isRealtimeEnabled: boolean;
   autoTrigger?: boolean;
   enableIntelligentStreaming?: boolean;
+  isRecording?: boolean;
 }
 
 export interface RealtimeSOAPRef {
@@ -29,7 +30,8 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   onCPTCodesReceived,
   isRealtimeEnabled,
   autoTrigger = false,
-  enableIntelligentStreaming = false
+  enableIntelligentStreaming = false,
+  isRecording = false
 }, ref) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [soapBuffer, setSoapBuffer] = useState("");
@@ -245,15 +247,16 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
 
     if (!enableIntelligentStreaming) {
       console.log("🔍 [IntelligentStreaming] Intelligent streaming disabled, using traditional auto-trigger");
-      // Traditional auto-trigger behavior
-      if (autoTrigger && transcription?.trim() && !isGenerating) {
+      // Traditional auto-trigger behavior - but only when recording
+      if (autoTrigger && transcription?.trim() && !isGenerating && isRecording) {
         console.log("🔄 [RealtimeSOAP] Auto-triggering SOAP generation (traditional mode)");
         generateSOAPNote();
       } else {
         console.log("🔍 [IntelligentStreaming] Traditional auto-trigger conditions not met:", {
           autoTrigger,
           hasTranscription: !!transcription?.trim(),
-          isGenerating
+          isGenerating,
+          isRecording
         });
       }
       return;
@@ -271,10 +274,11 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       clearTimeout(streamingTimeoutRef.current);
     }
 
-    if (!transcription?.trim() || isGenerating) {
-      console.log("🔍 [IntelligentStreaming] Skipping - no transcription or already generating:", {
+    if (!transcription?.trim() || isGenerating || !isRecording) {
+      console.log("🔍 [IntelligentStreaming] Skipping - no transcription, already generating, or not recording:", {
         hasTranscription: !!transcription?.trim(),
-        isGenerating
+        isGenerating,
+        isRecording
       });
       return;
     }
