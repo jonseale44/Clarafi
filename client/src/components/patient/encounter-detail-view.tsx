@@ -1137,12 +1137,23 @@ Format each bullet point on its own line with no extra spacing between them.`,
             // Append delta to existing transcription (don't replace)
             setTranscription((prev) => {
               const newTranscription = prev + deltaText;
-              console.log("📝 [EncounterView] Transcription updated:", {
+              console.log("📝 [EncounterView] Real-time transcription update:", {
                 previousLength: prev.length,
                 deltaLength: deltaText.length,
                 newLength: newTranscription.length,
-                preview: newTranscription.substring(0, 100)
+                preview: newTranscription.substring(0, 100),
+                containsMedicalKeywords: /\b(pain|symptoms?|medication|treatment|diagnosis|chest|headache|fever|nausea|dizzy|shortness of breath|allergic|prescription|blood pressure|heart rate|exam|vital|lab|test|drug|pill|tablet|injection|therapy|surgery|procedure|complaint|history)\b/i.test(deltaText)
               });
+              
+              // Trigger intelligent streaming check for medical content
+              if (newTranscription.length > 50 && /\b(pain|symptoms?|medication|treatment|diagnosis|chest|headache|fever|nausea|dizzy|shortness of breath|allergic|prescription|blood pressure|heart rate|exam|vital|lab|test|drug|pill|tablet|injection|therapy|surgery|procedure|complaint|history)\b/i.test(deltaText)) {
+                console.log("🔥 [EncounterView] Medical keywords detected in real-time - triggering intelligent streaming");
+                setTimeout(() => {
+                  // Force re-evaluation of intelligent streaming
+                  setTranscription(current => current);
+                }, 500);
+              }
+              
               return newTranscription;
             });
 
@@ -1458,9 +1469,17 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 .join("\n");
 
               // Simple append to existing transcription - deduplication prevents duplicates
-              setTranscription((prev) =>
-                prev ? prev + "\n" + newBullets : newBullets,
-              );
+              setTranscription((prev) => {
+                const newTranscription = prev ? prev + "\n" + newBullets : newBullets;
+                console.log("🔥 [EncounterView] Transcription updated during recording - triggering intelligent streaming check");
+                
+                // Force a re-render to trigger intelligent streaming
+                setTimeout(() => {
+                  console.log("🔥 [EncounterView] Forcing component update for intelligent streaming");
+                }, 100);
+                
+                return newTranscription;
+              });
 
               // Clear the buffer since we've processed this content
               transcriptionBuffer = "";
