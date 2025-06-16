@@ -362,7 +362,7 @@ export function EncounterDetailView({
         };
         
         const cptRequestBody = {
-          // CPT extraction reads from encounter SOAP note
+          soapNote: soapNoteContent
         };
         
         console.log(`🏥 [ParallelProcessing] Medical problems request body:`, medicalProblemsRequestBody);
