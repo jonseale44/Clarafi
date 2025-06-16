@@ -72,10 +72,10 @@ async function generateSOAPNoteDirect(patientId: number, encounterId: string, tr
     ? vitalsList.map((v: any) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
     : "- No recent vitals on file";
 
-  // Create comprehensive SOAP prompt
-  const soapPrompt = `You are an experienced physician creating a comprehensive SOAP note. Generate a detailed, professional SOAP note based on the following patient encounter:
+  // Create comprehensive SOAP prompt with real-time system formatting
+  const soapPrompt = `You are an experienced physician creating a comprehensive SOAP note. Generate a detailed, professional SOAP note based on the following patient encounter.
 
-PATIENT INFORMATION:
+PATIENT CONTEXT:
 - Name: ${patientData.firstName} ${patientData.lastName}
 - Age: ${age} years old
 - Gender: ${patientData.gender}
@@ -96,38 +96,48 @@ ${recentVitals}
 ENCOUNTER TRANSCRIPTION:
 ${transcription}
 
-Generate a comprehensive SOAP note with the following structure:
+Generate a comprehensive SOAP note using this EXACT format structure:
 
-SUBJECTIVE:
-- Chief complaint
-- History of present illness (HPI) with OLDCARTS elements where applicable
-- Review of systems (ROS) - include pertinent positives and negatives
-- Past medical history, medications, allergies, social history as relevant
+**Chief Complaint:**
+[Brief description of primary concern]
 
-OBJECTIVE:
-- Vital signs (if documented)
-- Physical examination findings organized by system
-- Relevant diagnostic results (labs, imaging, etc.)
+**History of Present Illness:**
+[Detailed HPI with OLDCARTS elements]
 
-ASSESSMENT:
-- Primary diagnosis with ICD-10 code
-- Secondary diagnoses with ICD-10 codes
-- Clinical reasoning and differential diagnosis considerations
+**Review of Systems:**
+[Pertinent positives and negatives organized by system]
 
-PLAN:
-- Medications: Include specific dosing, frequency, duration, and quantity to dispense
-- Labs: List specific tests needed
-- Imaging: Specify modality and clinical indication
-- Referrals: Include specialty and reason
-- Patient education: Key points discussed
-- Follow-up: Timeline and specific instructions
+**Past Medical History:**
+[Relevant past medical history]
 
-IMPORTANT FORMATTING:
-- Use professional medical terminology
+**Medications:**
+[Current medications with dosing]
+
+**Allergies:**
+[Known allergies and reactions]
+
+**Social History:**
+[Relevant social history]
+
+**Vitals:** [Vital signs if documented]
+**Physical Exam:**
+[Organized by system - Gen, HEENT, CV, Lungs, Abd, Ext, Neuro, Skin as appropriate]
+
+**Assessment/Plan:**
+[Primary and secondary diagnoses with ICD-10 codes where appropriate]
+[Detailed plan including medications with specific dosing, labs, imaging, referrals, patient education, follow-up]
+
+**Orders:**
+[Specific orders including medications, labs, imaging, referrals]
+
+CRITICAL FORMATTING REQUIREMENTS:
+- Use markdown bold formatting (**text**) for section headers
+- Do NOT use "PATIENT NAME:", "SUBJECTIVE:", "OBJECTIVE:", "ASSESSMENT:", "PLAN:" as headers
+- Use the specific header format shown above
+- Keep professional medical terminology
 - Include pertinent negatives
 - Ensure clinical reasoning is evidence-based
-- Format for easy reading and clinical handoff
-- Keep concise yet comprehensive`;
+- Format for easy reading and clinical handoff`;
 
   // Generate SOAP note
   const soapCompletion = await openai.chat.completions.create({
@@ -937,7 +947,7 @@ export function registerRoutes(app: Express): Server {
           });
         } else {
           // Generate SOAP note using direct OpenAI API call
-          const soapNote = await generateSOAPNoteDirect(patientId, encounterId, transcription);
+          const soapNote = await generateSOAPNoteDirect(patientId, encounterId.toString(), transcription);
           
           res.json({
             soapNote,
@@ -1262,7 +1272,7 @@ export function registerRoutes(app: Express): Server {
         console.log(`🔄 [GenerateSOAP] Generating SOAP note from transcription for encounter ${encounterId}`);
 
         // Generate SOAP note using direct API call
-        const soapNote = await generateSOAPNoteDirect(patientId, encounterId, transcription);
+        const soapNote = await generateSOAPNoteDirect(patientId, encounterId.toString(), transcription);
 
         if (!soapNote.trim()) {
           throw new Error("Failed to generate SOAP note content");
