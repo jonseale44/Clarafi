@@ -6,10 +6,8 @@ import {
   Settings, 
   Shield, 
   ChevronDown,
-  Edit3,
-  DollarSign
+  Edit3
 } from "lucide-react";
-import { Link } from "wouter";
 import type { User as UserType } from "@shared/schema";
 import {
   DropdownMenu,
@@ -166,13 +164,6 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
           <Settings className="w-4 h-4 mr-2" />
           Account Settings
         </DropdownMenuItem>
-        
-        <Link href="/token-dashboard">
-          <DropdownMenuItem className="cursor-pointer">
-            <DollarSign className="w-4 h-4 mr-2" />
-            Token Cost Dashboard
-          </DropdownMenuItem>
-        </Link>
         
         <DropdownMenuSeparator />
         

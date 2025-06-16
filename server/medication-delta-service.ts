@@ -8,8 +8,8 @@ import OpenAI from "openai";
 import { db } from "./db";
 import { medications, encounters, patients } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 import { storage } from "./storage";
+import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 
 export interface MedicationHistoryEntry {
   date: string; // Authoritative medical event date (encounter date)
@@ -252,28 +252,6 @@ export class MedicationDeltaService {
 
       const gptCallTime = Date.now() - gptStartTime;
       console.log(`💊 [GPT] OpenAI API call completed in ${gptCallTime}ms`);
-
-      // Log comprehensive token usage and cost analysis
-      if (completion.usage) {
-        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
-          'Medication_Delta',
-          completion.usage,
-          'gpt-4.1',
-          {
-            existingMedicationsCount: existingMedications.length,
-            soapNoteLength: soapNote.length,
-            patientAge: this.calculateAge(patient?.dateOfBirth),
-            temperature: 0.1
-          }
-        );
-        
-        // Log cost projections for budget planning
-        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50);
-        console.log(`💰 [Medication_Delta] COST PROJECTIONS:`);
-        console.log(`💰 [Medication_Delta] Daily (50 encounters): ${projections.formatted.daily}`);
-        console.log(`💰 [Medication_Delta] Monthly: ${projections.formatted.monthly}`);
-        console.log(`💰 [Medication_Delta] Yearly: ${projections.formatted.yearly}`);
-      }
 
       const response = completion.choices[0].message.content;
       console.log(`💊 [GPT] Raw response length: ${response?.length || 0} characters`);

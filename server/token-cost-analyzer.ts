@@ -30,12 +30,11 @@ export const OPENAI_PRICING = {
   }
 } as const;
 
-// OpenAI CompletionUsage interface compatibility
 export interface TokenUsage {
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-  cached_tokens?: number;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  cachedTokens?: number;
 }
 
 export interface CostAnalysis {
@@ -64,9 +63,9 @@ export class TokenCostAnalyzer {
       throw new Error(`Unknown model: ${model}`);
     }
 
-    const inputTokens = usage.prompt_tokens;
-    const outputTokens = usage.completion_tokens;
-    const cachedTokens = usage.cached_tokens || 0;
+    const inputTokens = usage.promptTokens;
+    const outputTokens = usage.completionTokens;
+    const cachedTokens = usage.cachedTokens || 0;
 
     // Calculate costs (pricing is per 1M tokens)
     const inputCost = (inputTokens / 1_000_000) * pricing.input;
@@ -119,7 +118,7 @@ export class TokenCostAnalyzer {
     if (analysis.costBreakdown.cachedTokens > 0) {
       console.log(`💰 [${service}] Cached tokens: ${analysis.costBreakdown.cachedTokens.toLocaleString()}`);
     }
-    console.log(`💰 [${service}] Total tokens: ${usage.total_tokens.toLocaleString()}`);
+    console.log(`💰 [${service}] Total tokens: ${usage.totalTokens.toLocaleString()}`);
     console.log(`💰 [${service}] Input cost: $${analysis.inputCost.toFixed(6)}`);
     console.log(`💰 [${service}] Output cost: $${analysis.outputCost.toFixed(6)}`);
     if (analysis.cachedCost > 0) {
@@ -134,14 +133,6 @@ export class TokenCostAnalyzer {
     // Warning for high-cost operations
     if (analysis.totalCost > 0.01) { // More than 1 cent
       console.warn(`⚠️  [${service}] HIGH COST OPERATION: $${analysis.totalCost.toFixed(6)}`);
-    }
-
-    // Record usage in dashboard for tracking
-    try {
-      const { TokenUsageDashboard } = require('./token-usage-dashboard.js');
-      TokenUsageDashboard.recordUsage(service, usage.prompt_tokens, usage.completion_tokens, analysis.totalCost);
-    } catch (error) {
-      // Dashboard integration is optional - don't fail if it's not available
     }
 
     return analysis;

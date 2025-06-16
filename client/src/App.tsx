@@ -11,7 +11,6 @@ import { PatientCreation } from "@/pages/PatientCreation";
 import UserSettingsPage from "@/pages/user-settings-page";
 import { PatientView } from "@/pages/patient-view";
 import { EncounterView } from "@/pages/encounter-view";
-import TokenCostDashboard from "@/components/dashboard/token-cost-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,7 +21,6 @@ function Router() {
       <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />
       <ProtectedRoute path="/encounters/:id" component={EncounterView} />
-      <ProtectedRoute path="/token-dashboard" component={TokenCostDashboard} />
       <ProtectedRoute path="/settings" component={UserSettingsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />

@@ -22,7 +22,6 @@ import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import nursingContentRoutes from "./nursing-content-routes";
 import nursingSummaryRoutes from "./nursing-summary-routes";
-import { TokenUsageDashboard } from "./token-usage-dashboard.js";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -2436,61 +2435,6 @@ Return only valid JSON without markdown formatting.`;
     } catch (error: any) {
       console.error("❌ [Unsigned Orders] Error fetching unsigned orders:", error);
       res.status(500).json({ error: "Failed to fetch unsigned orders" });
-    }
-  });
-
-  // Token Usage Dashboard API endpoints
-  app.get("/api/token-usage/dashboard", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      
-      const dashboard = TokenUsageDashboard.generateDashboard();
-      res.json(dashboard);
-    } catch (error: any) {
-      console.error("❌ [Token Dashboard] Error generating dashboard:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
-
-  app.get("/api/token-usage/metrics", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      
-      const metrics = TokenUsageDashboard.exportMetrics();
-      res.json(metrics);
-    } catch (error: any) {
-      console.error("❌ [Token Metrics] Error exporting metrics:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
-
-  app.post("/api/token-usage/reset", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      
-      TokenUsageDashboard.resetMetrics();
-      res.json({ message: "Token usage metrics reset successfully" });
-    } catch (error: any) {
-      console.error("❌ [Token Reset] Error resetting metrics:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
-
-  app.get("/api/token-usage/summary", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      
-      // Log dashboard summary and return it
-      TokenUsageDashboard.logDashboardSummary();
-      const dashboard = TokenUsageDashboard.generateDashboard();
-      
-      res.json({
-        summary: "Token usage dashboard logged to console",
-        data: dashboard
-      });
-    } catch (error: any) {
-      console.error("❌ [Token Summary] Error generating summary:", error);
-      res.status(500).json({ message: error.message });
     }
   });
 

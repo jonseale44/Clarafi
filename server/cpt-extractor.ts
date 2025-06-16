@@ -4,7 +4,6 @@ import {
   PROCEDURE_CPT_CODES,
   CPT_REIMBURSEMENT_RATES,
 } from "./medical-coding-guidelines.js";
-import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 
 interface CPTCode {
   code: string;
@@ -101,28 +100,6 @@ export class CPTExtractor {
         response_format: { type: "json_object" },
         temperature: 0.1,
       });
-
-      // Log comprehensive token usage and cost analysis
-      if (response.usage) {
-        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
-          'CPT_Extractor',
-          response.usage,
-          'gpt-4.1',
-          {
-            clinicalTextLength: clinicalText.length,
-            isNewPatient: patientContext?.isNewPatient,
-            patientAge: patientContext?.patientAge,
-            previousEncounters: patientContext?.previousEncounterCount
-          }
-        );
-        
-        // Log cost projections for billing optimization
-        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50);
-        console.log(`💰 [CPT_Extractor] COST PROJECTIONS:`);
-        console.log(`💰 [CPT_Extractor] Daily (50 encounters): ${projections.formatted.daily}`);
-        console.log(`💰 [CPT_Extractor] Monthly: ${projections.formatted.monthly}`);
-        console.log(`💰 [CPT_Extractor] Yearly: ${projections.formatted.yearly}`);
-      }
 
       const content = response.choices[0].message.content;
       if (!content) {
