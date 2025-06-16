@@ -39,10 +39,7 @@ import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
 } from "@/components/RealtimeSOAPIntegration";
-import { 
-  RealtimeSOAPStreaming,
-  RealtimeSOAPStreamingRef
-} from "@/components/RealtimeSOAPStreaming";
+
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
 
 interface EncounterDetailViewProps {
@@ -207,9 +204,6 @@ export function EncounterDetailView({
 
   // Real-time SOAP generation ref
   const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
-  
-  // Real-time SOAP streaming ref for incremental updates
-  const realtimeSOAPStreamingRef = useRef<RealtimeSOAPStreamingRef>(null);
 
   // Auto-save function with debouncing
   const autoSaveSOAPNote = async (content: string) => {
@@ -2444,24 +2438,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             </div>
           </Card>
 
-          {/* Real-time SOAP Streaming (incremental updates during recording) */}
-          <RealtimeSOAPStreaming
-            ref={realtimeSOAPStreamingRef}
-            patientId={patient.id.toString()}
-            encounterId={encounterId.toString()}
-            isRecording={isRecording}
-            transcription={transcription}
-            onSOAPUpdate={(soapNote) => {
-              // Update editor content with streaming SOAP note during recording
-              setSoapNote(soapNote);
-              if (editor && !editor.isDestroyed) {
-                editor.commands.setContent(soapNote);
-              }
-            }}
-            autoStart={true}
-          />
-
-          {/* Real-time SOAP Integration (fallback and completion handling) */}
+          {/* Unified Real-time SOAP Integration with Intelligent Streaming */}
           <RealtimeSOAPIntegration
             ref={realtimeSOAPRef}
             patientId={patient.id.toString()}
@@ -2472,7 +2449,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             onDraftOrdersReceived={handleDraftOrdersReceived}
             onCPTCodesReceived={handleCPTCodesReceived}
             isRealtimeEnabled={true}
-            autoTrigger={false}
+            autoTrigger={true}
+            enableIntelligentStreaming={true}
           />
 
           {/* Draft Orders */}

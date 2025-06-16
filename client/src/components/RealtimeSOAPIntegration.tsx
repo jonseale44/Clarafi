@@ -16,7 +16,7 @@ interface RealtimeSOAPIntegrationProps {
 }
 
 export interface RealtimeSOAPRef {
-  generateSOAPNote: () => void;
+  generateSOAPNote: (forceGeneration?: boolean) => void;
 }
 
 export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPIntegrationProps>(({
@@ -93,7 +93,7 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   };
 
   // Generate SOAP note using Real-time API for streaming delivery
-  const generateSOAPNote = async () => {
+  const generateSOAPNote = async (forceGeneration = false) => {
     if (!transcription?.trim()) {
       toast({
         variant: "destructive",
@@ -103,14 +103,38 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       return;
     }
 
-    console.log("🩺 [RealtimeSOAP] Starting Real-time SOAP generation AFTER recording stop");
+    // Skip if already generating (unless forced)
+    if (isGenerating && !forceGeneration) {
+      console.log("🔍 [IntelligentStreaming] Skipping - already generating");
+      return;
+    }
+
+    // Apply frontend change detection (unless forced by manual button)
+    if (!forceGeneration && enableIntelligentStreaming) {
+      const transcriptionHash = generateSimpleHash(transcription);
+      
+      // Skip if rate limited, duplicate, or minimal change
+      if (!shouldTriggerUpdate(lastSOAPContent, soapBuffer)) {
+        setLastTranscriptionHash(transcriptionHash);
+        return;
+      }
+      
+      console.log("🔍 [IntelligentStreaming] Triggering update - change detected");
+      setLastTranscriptionHash(transcriptionHash);
+      setLastGenerationTime(Date.now());
+    }
+
+    console.log("🩺 [RealtimeSOAP] Starting Real-time SOAP generation");
     setIsGenerating(true);
     setSoapBuffer("");
     
-    toast({
-      title: "Generating SOAP Note",
-      description: "Creating your clinical documentation...",
-    });
+    // Only show toast for manual generation or first automatic generation
+    if (forceGeneration || !lastSOAPContent) {
+      toast({
+        title: "Generating SOAP Note",
+        description: "Creating your clinical documentation...",
+      });
+    }
     
     try {
       // Send complete transcription to Real-time API for streaming SOAP generation
@@ -157,8 +181,19 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
                 // Batch delivery - complete SOAP note arrives all at once (faster)
                 const completeSoap = data.text || "";
                 setSoapBuffer(completeSoap);
-                console.log("📝 [RealtimeSOAP] About to call onSOAPNoteUpdate with note length:", completeSoap.length);
-                onSOAPNoteUpdate(completeSoap);
+                
+                // Apply intelligent change detection for UI updates
+                if (enableIntelligentStreaming && shouldTriggerUpdate(lastSOAPContent, completeSoap)) {
+                  console.log("📝 [IntelligentStreaming] Meaningful change detected - updating UI");
+                  setLastSOAPContent(completeSoap);
+                  onSOAPNoteUpdate(completeSoap);
+                } else if (!enableIntelligentStreaming) {
+                  // Traditional behavior - always update
+                  console.log("📝 [RealtimeSOAP] Traditional update - no change detection");
+                  onSOAPNoteUpdate(completeSoap);
+                } else {
+                  console.log("📝 [IntelligentStreaming] No meaningful change - skipping UI update");
+                }
                 
                 console.log("🎯 [RealtimeSOAP] About to call onSOAPNoteComplete - THIS SHOULD TRIGGER MEDICAL PROBLEMS");
                 console.log("🎯 [RealtimeSOAP] Patient ID:", patientId, "Encounter ID:", encounterId);
@@ -167,10 +202,13 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
                 
                 console.log("✅ [RealtimeSOAP] SOAP note generation completed - onSOAPNoteComplete called");
                 
-                toast({
-                  title: "SOAP Note Generated",
-                  description: "Clinical documentation completed successfully",
-                });
+                // Only show success toast for manual generation or significant changes
+                if (forceGeneration || (!enableIntelligentStreaming)) {
+                  toast({
+                    title: "SOAP Note Generated",
+                    description: "Clinical documentation completed successfully",
+                  });
+                }
               } else if (data.type === 'draft_orders') {
                 console.log("📋 [RealtimeSOAP] Received draft orders:", data.orders?.length || 0);
                 onDraftOrdersReceived(data.orders || []);
@@ -216,13 +254,63 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     generateSOAPNote
   }));
 
-  // Auto-trigger SOAP generation if enabled and transcription changes
+  // Intelligent streaming with conversation pause detection
   useEffect(() => {
-    if (autoTrigger && transcription?.trim() && !isGenerating) {
-      console.log("🔄 [RealtimeSOAP] Auto-triggering SOAP generation");
-      generateSOAPNote();
+    if (!enableIntelligentStreaming) {
+      // Traditional auto-trigger behavior
+      if (autoTrigger && transcription?.trim() && !isGenerating) {
+        console.log("🔄 [RealtimeSOAP] Auto-triggering SOAP generation");
+        generateSOAPNote();
+      }
+      return;
     }
-  }, [transcription, autoTrigger]);
+
+    // Clear existing timeouts
+    if (pauseDetectionTimeoutRef.current) {
+      clearTimeout(pauseDetectionTimeoutRef.current);
+    }
+    if (streamingTimeoutRef.current) {
+      clearTimeout(streamingTimeoutRef.current);
+    }
+
+    if (!transcription?.trim() || isGenerating) {
+      return;
+    }
+
+    // Immediate trigger on medical keywords
+    const recentTranscription = transcription.slice(-100); // Last 100 characters
+    if (detectMedicalKeywords(recentTranscription)) {
+      console.log("🔍 [IntelligentStreaming] Medical keywords detected - immediate trigger");
+      generateSOAPNote();
+      return;
+    }
+
+    // Content-based batching (50+ new words)
+    const wordCount = transcription.split(/\s+/).length;
+    const lastWordCount = lastTranscriptionHash ? parseInt(lastTranscriptionHash.split('_')[1] || '0') : 0;
+    
+    if (wordCount - lastWordCount >= 50) {
+      console.log("🔍 [IntelligentStreaming] Content threshold reached - triggering generation");
+      generateSOAPNote();
+      return;
+    }
+
+    // Set pause detection timer (2-3 seconds of silence)
+    pauseDetectionTimeoutRef.current = setTimeout(() => {
+      console.log("🔍 [IntelligentStreaming] Conversation pause detected - triggering generation");
+      generateSOAPNote();
+    }, 2500);
+
+    // Cleanup function
+    return () => {
+      if (pauseDetectionTimeoutRef.current) {
+        clearTimeout(pauseDetectionTimeoutRef.current);
+      }
+      if (streamingTimeoutRef.current) {
+        clearTimeout(streamingTimeoutRef.current);
+      }
+    };
+  }, [transcription, autoTrigger, enableIntelligentStreaming, isGenerating]);
 
   // Real-time SOAP works seamlessly in background - no UI needed
   return null;
