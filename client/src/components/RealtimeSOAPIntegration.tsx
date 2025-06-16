@@ -12,6 +12,7 @@ interface RealtimeSOAPIntegrationProps {
   onCPTCodesReceived?: (cptData: any) => void;
   isRealtimeEnabled: boolean;
   autoTrigger?: boolean;
+  enableIntelligentStreaming?: boolean;
 }
 
 export interface RealtimeSOAPRef {
@@ -27,11 +28,69 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   onDraftOrdersReceived,
   onCPTCodesReceived,
   isRealtimeEnabled,
-  autoTrigger = false
+  autoTrigger = false,
+  enableIntelligentStreaming = false
 }, ref) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [soapBuffer, setSoapBuffer] = useState("");
+  const [lastSOAPContent, setLastSOAPContent] = useState("");
+  const [lastTranscriptionHash, setLastTranscriptionHash] = useState("");
+  const [lastGenerationTime, setLastGenerationTime] = useState(0);
   const { toast } = useToast();
+  
+  const streamingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pauseDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Frontend change detection utilities
+  const generateSimpleHash = (content: string): string => {
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString();
+  };
+
+  const hasStructuralChanges = (oldContent: string, newContent: string): boolean => {
+    // Check for formatting differences that don't need medical review
+    const oldHTML = oldContent.replace(/<[^>]*>/g, '').trim();
+    const newHTML = newContent.replace(/<[^>]*>/g, '').trim();
+    return oldHTML !== newHTML;
+  };
+
+  const shouldTriggerUpdate = (oldSOAP: string, newSOAP: string): boolean => {
+    if (!oldSOAP && newSOAP) return true; // First generation
+    if (!newSOAP) return false; // No new content
+    
+    // Length threshold check (5% minimum change)
+    const lengthDifference = Math.abs(oldSOAP.length - newSOAP.length) / Math.max(oldSOAP.length, 1);
+    if (lengthDifference < 0.05 && !hasStructuralChanges(oldSOAP, newSOAP)) {
+      console.log("🔍 [IntelligentStreaming] Skipping update - minimal change detected");
+      return false;
+    }
+
+    // Rate limiting check (max 1 per 5 seconds)
+    const now = Date.now();
+    if (now - lastGenerationTime < 5000) {
+      console.log("🔍 [IntelligentStreaming] Skipping update - rate limited");
+      return false;
+    }
+
+    // Duplicate content check
+    const newHash = generateSimpleHash(newSOAP);
+    if (newHash === lastTranscriptionHash) {
+      console.log("🔍 [IntelligentStreaming] Skipping update - duplicate content");
+      return false;
+    }
+
+    return true;
+  };
+
+  const detectMedicalKeywords = (text: string): boolean => {
+    const medicalKeywords = /\b(pain|symptoms?|medication|treatment|diagnosis|chest|headache|fever|nausea|dizzy|shortness of breath|allergic|prescription|blood pressure|heart rate|exam|vital|lab|test|drug|pill|tablet|injection|therapy|surgery|procedure|complaint|history)\b/i;
+    return medicalKeywords.test(text);
+  };
 
   // Generate SOAP note using Real-time API for streaming delivery
   const generateSOAPNote = async () => {
