@@ -503,6 +503,15 @@ export function EncounterDetailView({
           console.log(`✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`);
           console.log(`✅ [CPT] Processing details:`, result);
           
+          // Store token analysis data for UI display
+          if (result.tokenAnalysis) {
+            setTokenAnalysisData(prev => ({
+              ...prev,
+              cpt: result.tokenAnalysis
+            }));
+            console.log(`💰 [CPT] Token analysis stored:`, result.tokenAnalysis);
+          }
+          
           // Invalidate billing queries to refresh UI
           await queryClient.invalidateQueries({ 
             queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
