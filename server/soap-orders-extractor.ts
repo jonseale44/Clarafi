@@ -3,6 +3,7 @@ import { InsertOrder } from "../shared/schema.js";
 import { OrderStandardizationService } from "./order-standardization-service.js";
 import { LOINCLookupService } from "./loinc-lookup-service.js";
 import { MedicationStandardizationService } from "./medication-standardization-service.js";
+import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

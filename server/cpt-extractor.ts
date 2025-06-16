@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 import {
   CPT_OFFICE_VISIT_CODES,
   PROCEDURE_CPT_CODES,
@@ -100,6 +101,26 @@ export class CPTExtractor {
         response_format: { type: "json_object" },
         temperature: 0.1,
       });
+
+      // Log comprehensive token usage and cost analysis
+      if (response.usage) {
+        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
+          'CPT-Extractor',
+          response.usage,
+          'gpt-4.1',
+          {
+            soapNoteLength: soapNote.length,
+            patientAge: patientContext?.patientAge || 'unknown'
+          }
+        );
+        
+        // Log cost projections for business planning
+        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50);
+        console.log(`💰 [CPT-Extractor] COST PROJECTIONS:`);
+        console.log(`💰 [CPT-Extractor] Daily (50 encounters): ${projections.formatted.daily}`);
+        console.log(`💰 [CPT-Extractor] Monthly: ${projections.formatted.monthly}`);
+        console.log(`💰 [CPT-Extractor] Yearly: ${projections.formatted.yearly}`);
+      }
 
       const content = response.choices[0].message.content;
       if (!content) {

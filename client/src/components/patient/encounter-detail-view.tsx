@@ -448,6 +448,15 @@ export function EncounterDetailView({
           console.log(`✅ [Medications] Processing time: ${result.processingTimeMs}ms`);
           console.log(`✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`);
           
+          // Store token analysis data for UI display
+          if (result.tokenAnalysis) {
+            setTokenAnalysisData(prev => ({
+              ...prev,
+              medications: result.tokenAnalysis
+            }));
+            console.log(`💰 [Medications] Token analysis stored:`, result.tokenAnalysis);
+          }
+          
           // Invalidate medications queries to refresh UI
           await queryClient.invalidateQueries({ 
             queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
@@ -464,6 +473,15 @@ export function EncounterDetailView({
           const result = await ordersResponse.json();
           console.log(`✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`);
           console.log(`✅ [Orders] Message: ${result.message}`);
+          
+          // Store token analysis data for UI display
+          if (result.tokenAnalysis) {
+            setTokenAnalysisData(prev => ({
+              ...prev,
+              orders: result.tokenAnalysis
+            }));
+            console.log(`💰 [Orders] Token analysis stored:`, result.tokenAnalysis);
+          }
           
           // Invalidate orders queries to refresh UI
           await queryClient.invalidateQueries({ 
