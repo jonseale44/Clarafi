@@ -9,6 +9,7 @@ import { db } from "./db";
 import { medications, encounters, patients } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
+import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 
 export interface MedicationHistoryEntry {
   date: string; // Authoritative medical event date (encounter date)

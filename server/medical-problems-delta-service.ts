@@ -8,6 +8,7 @@ import OpenAI from "openai";
 import { db } from "./db";
 import { medicalProblems, encounters, patients } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 
 export interface VisitHistoryEntry {
   date: string; // DP - authoritative medical event date (encounter date)
@@ -253,6 +254,27 @@ Respond with ONLY the JSON, no other text.
         temperature: 0.1,
         max_tokens: 1000
       });
+
+      // Log comprehensive token usage and cost analysis
+      if (response.usage) {
+        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
+          'MedicalProblems',
+          response.usage,
+          'gpt-4.1',
+          {
+            existingProblemsCount: existingProblems.length,
+            soapNoteLength: soapNote.length,
+            patientAge: this.calculateAge(patient.dateOfBirth)
+          }
+        );
+        
+        // Log cost projections for business planning
+        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50); // 50 encounters/day estimate
+        console.log(`💰 [MedicalProblems] COST PROJECTIONS:`);
+        console.log(`💰 [MedicalProblems] Daily (50 encounters): ${projections.formatted.daily}`);
+        console.log(`💰 [MedicalProblems] Monthly: ${projections.formatted.monthly}`);
+        console.log(`💰 [MedicalProblems] Yearly: ${projections.formatted.yearly}`);
+      }
 
       const content = response.choices[0].message.content?.trim();
       console.log(`🤖 [GPT] Raw response from GPT:`, content);
