@@ -39,6 +39,11 @@ import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
 } from "@/components/RealtimeSOAPIntegration";
+import { 
+  RealtimeSOAPTemplate,
+  RealtimeSOAPTemplateRef,
+  SOAPTemplateData 
+} from "@/components/RealtimeSOAPTemplate";
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
 
 interface EncounterDetailViewProps {
