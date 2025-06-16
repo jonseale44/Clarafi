@@ -120,18 +120,22 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     if (!forceGeneration && enableIntelligentStreaming) {
       const transcriptionHash = generateSimpleHash(transcription);
       
-      // Skip if rate limited, duplicate, or minimal change
+      // For automatic generation, be more lenient with change detection
       if (!shouldTriggerUpdate(lastSOAPContent, soapBuffer)) {
-        setLastTranscriptionHash(transcriptionHash);
-        return;
+        console.log("🔍 [IntelligentStreaming] Skipping update - minimal change detected");
+        console.log("🔍 [IntelligentStreaming] But continuing with generation for automatic trigger");
+        // Don't return early for automatic generation - continue with generation
+      } else {
+        console.log("🔍 [IntelligentStreaming] Triggering update - change detected");
       }
       
-      console.log("🔍 [IntelligentStreaming] Triggering update - change detected");
       setLastTranscriptionHash(transcriptionHash);
       setLastGenerationTime(Date.now());
     }
 
     console.log("🩺 [RealtimeSOAP] Starting Real-time SOAP generation");
+    console.log("🩺 [RealtimeSOAP] Force generation:", forceGeneration);
+    console.log("🩺 [RealtimeSOAP] Enable intelligent streaming:", enableIntelligentStreaming);
     setIsGenerating(true);
     setSoapBuffer("");
     
@@ -165,6 +169,11 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       // Handle JSON response instead of streaming
       const responseData = await response.json();
       console.log("🔍 [RealtimeSOAP] Received JSON response:", responseData);
+      console.log("🔍 [RealtimeSOAP] Response has soapNote:", !!responseData.soapNote);
+      console.log("🔍 [RealtimeSOAP] Callback functions available:", {
+        onSOAPNoteUpdate: !!onSOAPNoteUpdate,
+        onSOAPNoteComplete: !!onSOAPNoteComplete
+      });
       
       if (responseData.soapNote) {
         const completeSoap = responseData.soapNote;
@@ -183,7 +192,9 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
           console.log("📝 [RealtimeSOAP] Traditional update - no change detection");
           onSOAPNoteUpdate(completeSoap);
         } else {
-          console.log("📝 [IntelligentStreaming] No meaningful change - skipping UI update");
+          console.log("📝 [IntelligentStreaming] No meaningful change - but updating UI anyway for automatic generation");
+          // For automatic generation, always update UI even if minimal change
+          onSOAPNoteUpdate(completeSoap);
         }
         
         console.log("🎯 [RealtimeSOAP] About to call onSOAPNoteComplete - THIS SHOULD TRIGGER MEDICAL PROBLEMS");
