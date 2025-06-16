@@ -72,8 +72,8 @@ async function generateSOAPNoteDirect(patientId: number, encounterId: string, tr
     ? vitalsList.map((v: any) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
     : "- No recent vitals on file";
 
-  // Create comprehensive SOAP prompt with real-time system formatting
-  const soapPrompt = `You are an experienced physician creating a comprehensive SOAP note. Generate a detailed, professional SOAP note based on the following patient encounter.
+  // Create comprehensive SOAP prompt with sophisticated medical reasoning
+  const soapPrompt = `You are an expert attending physician with extensive clinical experience creating comprehensive, evidence-based SOAP notes. Your documentation directly impacts patient care, billing accuracy, and medical-legal protection.
 
 PATIENT CONTEXT:
 - Name: ${patientData.firstName} ${patientData.lastName}
@@ -81,7 +81,7 @@ PATIENT CONTEXT:
 - Gender: ${patientData.gender}
 - MRN: ${patientData.mrn}
 
-CURRENT DIAGNOSES:
+ACTIVE MEDICAL PROBLEMS:
 ${currentDiagnoses}
 
 CURRENT MEDICATIONS:
@@ -96,48 +96,117 @@ ${recentVitals}
 ENCOUNTER TRANSCRIPTION:
 ${transcription}
 
-Generate a comprehensive SOAP note using this EXACT format structure:
+CLINICAL DOCUMENTATION STANDARDS:
+Create a comprehensive SOAP note that meets hospital accreditation, billing compliance, and medical-legal requirements. Apply sophisticated clinical reasoning, differential diagnosis consideration, and evidence-based medicine principles.
+
+EXACT FORMATTING REQUIREMENTS:
 
 **Chief Complaint:**
-[Brief description of primary concern]
+[Single sentence capturing patient's primary concern in their own words]
 
 **History of Present Illness:**
-[Detailed HPI with OLDCARTS elements]
+Apply OLDCARTS methodology systematically:
+- Onset: Precise timing and circumstances of symptom initiation
+- Location: Anatomical specificity with radiation patterns if applicable
+- Duration: Exact timeframes with symptom evolution
+- Character: Detailed symptom quality using patient's descriptors
+- Aggravating factors: Environmental, positional, and activity-related triggers
+- Relieving factors: Interventions, medications, or positions providing relief
+- Timing: Frequency, periodicity, and circadian patterns
+- Severity: Quantified using appropriate scales (0-10 pain, functional impact)
+
+Include associated symptoms, prior similar episodes, and relevant review of systems.
 
 **Review of Systems:**
-[Pertinent positives and negatives organized by system]
+Organize by organ system with pertinent positives and significant negatives:
+- Constitutional: Weight changes, fatigue, fever, night sweats
+- HEENT: Vision changes, hearing loss, rhinorrhea, throat pain
+- Cardiovascular: Chest pain, palpitations, dyspnea on exertion, orthopnea
+- Pulmonary: Cough, shortness of breath, wheezing, hemoptysis
+- Gastrointestinal: Nausea, vomiting, abdominal pain, bowel changes
+- Genitourinary: Dysuria, frequency, hematuria, discharge
+- Musculoskeletal: Joint pain, stiffness, weakness, functional limitations
+- Neurological: Headaches, dizziness, numbness, cognitive changes
+- Psychiatric: Mood changes, anxiety, sleep disturbances
+- Endocrine: Heat/cold intolerance, polydipsia, polyuria
+- Hematologic: Easy bruising, bleeding, lymphadenopathy
+- Dermatologic: Rashes, lesions, changes in existing marks
 
 **Past Medical History:**
-[Relevant past medical history]
+[Chronologically organized significant diagnoses with dates when available]
 
 **Medications:**
-[Current medications with dosing]
+[Current medications with generic names, exact dosages, frequencies, and routes]
 
 **Allergies:**
-[Known allergies and reactions]
+[Specific allergens with reaction types and severity]
 
 **Social History:**
-[Relevant social history]
+[Tobacco use (pack-years), alcohol consumption (drinks/week), illicit substances, occupation, living situation, travel history, sexual history when relevant]
 
-**Vitals:** [Vital signs if documented]
+**Family History:**
+[Relevant hereditary conditions affecting differential diagnosis]
+
+**Vitals:**
+[If documented: BP (with position), HR, Temp (route), RR, SpO2 (on room air vs supplemental O2), BMI when available]
+
 **Physical Exam:**
-[Organized by system - Gen, HEENT, CV, Lungs, Abd, Ext, Neuro, Skin as appropriate]
+Apply systematic examination with appropriate detail for clinical scenario:
+
+General: Appearance, distress level, positioning, cooperation
+HEENT: Normocephalic/atraumatic, pupils equal round reactive to light, extraocular movements intact, tympanic membranes, oropharynx
+Neck: Jugular venous distension, thyromegaly, lymphadenopathy, carotid bruits
+Cardiovascular: Rate, rhythm, murmurs (grade/location), gallops, peripheral pulses, edema
+Pulmonary: Effort, symmetry, breath sounds by zone, adventitious sounds
+Abdominal: Inspection, bowel sounds, palpation by quadrant, organomegaly, tenderness, guarding
+Extremities: Range of motion, deformity, edema, pulses, capillary refill
+Neurological: Mental status, cranial nerves, motor strength by group, sensation, reflexes, gait, coordination (as clinically indicated)
+Skin: Color, temperature, turgor, lesions, rashes
 
 **Assessment/Plan:**
-[Primary and secondary diagnoses with ICD-10 codes where appropriate]
-[Detailed plan including medications with specific dosing, labs, imaging, referrals, patient education, follow-up]
+For each diagnosis (primary first, then secondary):
+
+1. [Primary Diagnosis with ICD-10 code when appropriate]
+   Clinical reasoning: [Evidence supporting diagnosis, risk factors present, differential considerations ruled out]
+   Severity assessment: [Staging, functional impact, prognosis]
+   
+   Management plan:
+   - Pharmacologic: [Specific medications with dosing rationale, contraindication considerations]
+   - Non-pharmacologic: [Lifestyle modifications, physical therapy, dietary changes]
+   - Monitoring: [Follow-up parameters, laboratory surveillance, imaging intervals]
+   - Patient education: [Disease understanding, warning signs, compliance strategies]
+
+2. [Secondary diagnoses with similar systematic approach]
 
 **Orders:**
-[Specific orders including medications, labs, imaging, referrals]
+Organized by category with clinical rationale:
+- Laboratory: [Specific tests with timing and clinical indication]
+- Imaging: [Modality selection with clinical justification]
+- Medications: [New prescriptions with dosing, quantity, refills]
+- Referrals: [Specialty consultations with specific questions]
+- Procedures: [Interventions with consent requirements]
+- Follow-up: [Timeline and parameters for reassessment]
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Use markdown bold formatting (**text**) for section headers
-- Do NOT use "PATIENT NAME:", "SUBJECTIVE:", "OBJECTIVE:", "ASSESSMENT:", "PLAN:" as headers
-- Use the specific header format shown above
-- Keep professional medical terminology
-- Include pertinent negatives
-- Ensure clinical reasoning is evidence-based
-- Format for easy reading and clinical handoff`;
+ADVANCED CLINICAL REASONING REQUIREMENTS:
+- Apply evidence-based medicine principles with consideration of clinical guidelines
+- Include differential diagnosis reasoning and rule-out criteria
+- Address preventive care opportunities and health maintenance
+- Consider drug interactions, allergies, and contraindications
+- Incorporate patient preferences and shared decision-making
+- Ensure cultural sensitivity and health literacy considerations
+- Apply appropriate billing and coding considerations
+- Include relevant quality metrics and performance measures
+
+DOCUMENTATION QUALITY STANDARDS:
+- Use precise medical terminology with appropriate specificity
+- Avoid vague descriptors ("some," "mild," "moderate" without quantification)
+- Include pertinent negatives that support diagnostic reasoning
+- Ensure chronological consistency and logical flow
+- Maintain professional tone while capturing patient voice
+- Support all clinical decisions with documented rationale
+- Address all presenting complaints and incidental findings
+
+Generate a SOAP note that exemplifies excellence in clinical documentation, demonstrating the sophisticated medical reasoning and comprehensive patient care that characterizes expert clinical practice.`;
 
   // Generate SOAP note
   const soapCompletion = await openai.chat.completions.create({
