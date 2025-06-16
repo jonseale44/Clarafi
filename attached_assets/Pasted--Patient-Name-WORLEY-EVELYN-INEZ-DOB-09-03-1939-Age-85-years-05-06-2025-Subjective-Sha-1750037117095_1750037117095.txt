@@ -1,0 +1,285 @@
+
+Patient Name: WORLEY, EVELYN INEZ, DOB: 09/03/1939, Age: 85 years  
+  
+05/06/2025  
+Subjective 
+Shaking/tremors. 
+
+Objective 
+
+
+
+Vital Signs: Last 24 Hours
+Date/Time	BP (mm/Hg)	BP Position/Site	MAP (mm/Hg)	Heart Rate	Pulse Site	Resp	Temp (°C)	Temp (°F)	SPO2%	O2 L/min	FiO2	EtCO2 (mm/Hg)	O2 Device	Blood Sugar	Pain Score	Weight (kg)	Weight (lbs/ozs)	Scale	BSA
+05/06/2025 16:54	
+
+
+
+
+
+
+
+
+
+
+
+
+173 mg/dL	
+
+
+
+
+05/06/2025 16:32	153/77	Lying/Left Arm	102	102	Pulse Ox	18	36.4 Temporal Scanning	97.5 Temporal Scanning	95 %	
+
+
+Room Air 21%	173 mg/dL	
+
+
+
+
+05/06/2025 11:46	
+
+
+
+
+
+
+
+
+
+
+
+
+244 mg/dL	
+
+
+
+
+05/06/2025 11:21	148/75	Lying/Left Arm	99	99	Pulse Ox	20	36.7 Temporal Scanning	98.1 Temporal Scanning	93 %	
+
+
+Room Air 21%	244 mg/dL	
+
+
+
+
+05/06/2025 09:21	
+
+
+
+
+
+
+
+
+
+
+
+
+219 mg/dL	
+
+
+
+
+05/06/2025 07:48	164/73	Lying/Left Arm	103	97	Pulse Ox	20	36.6 Temporal Scanning	97.8 Temporal Scanning	93 %	
+
+
+Room Air 21%	219 mg/dL	
+
+
+
+
+05/06/2025 07:23	
+
+
+96	Pulse Ox	18	
+
+97 %	2.00	
+
+O2 Cannula	
+
+
+
+
+
+05/06/2025 04:24	142/87	Lying/Left Arm	105	103	Monitor	18	36 Temporal Scanning	96.8 Temporal Scanning	95 %	2.00	
+
+O2 Cannula	
+
+84.37 kg	186.0	
+
+05/06/2025 00:11	171/93	Lying/Right Arm	119	93	Monitor	16	35.9 Temporal	96.7 Temporal	96 %	2.00	
+
+O2 Cannula	
+
+
+
+
+
+05/05/2025 22:02	
+
+
+93	
+
+
+
+95 %	2.00	
+
+O2 Cannula	
+
+
+
+
+
+05/05/2025 22:00	
+
+
+90	
+
+
+
+93 %	
+
+
+Room Air 21%	
+
+
+
+
+
+05/05/2025 21:27	
+
+
+
+
+
+
+
+
+
+
+
+
+178 mg/dL	
+
+
+
+
+05/05/2025 20:10	162/107	Lying/Right Arm	125	96	Monitor	16	36 Temporal Scanning	96.8 Temporal Scanning	95 %	
+
+
+Room Air 21%	178 mg/dL	
+
+
+
+
+ 
+  
+05/06/2025  
+Physical Exam
+Gen: AAO x 3. NAD. 
+HEENT: MMM, no lymphadenopathy
+CV: Normal rate, regular rhythm. No m/c/g/r. 
+Lungs: Normal work of breathing. CTAB. 
+Abd: Normoactive bowel sounds. Soft, non-tender. 
+Ext: No clubbing, cyanosis, or edema. 
+Skin: No rashes or lesions
+
+
+
+Lab Results: Last 24 Hours
+Test	Results	Units	Reference Range	Ordered	Collected	Status
+WBC	8.5	10*3/uL	L=4.0 H=11.0	05/06/2025 08:03	05/06/2025 08:39	final
+RBC	4.13	10*6/uL	L=3.80 H=6.50	05/06/2025 08:03	05/06/2025 08:39	final
+HEMOGLOBIN	13.3	g/dL	L=12.1 H=15.5	05/06/2025 08:03	05/06/2025 08:39	final
+HEMATOCRIT	40.2	%	L=35.1 H=46.0	05/06/2025 08:03	05/06/2025 08:39	final
+MCV	97.3 H	fL	L=76.0 H=96.0	05/06/2025 08:03	05/06/2025 08:39	final
+RDW-CV%	11.8	%	L=10.0 H=15.0	05/06/2025 08:03	05/06/2025 08:39	final
+MCH	32.2 H	pg	L=27.0 H=32.0	05/06/2025 08:03	05/06/2025 08:39	final
+MCHC	33.1	g/dL	L=31.0 H=35.0	05/06/2025 08:03	05/06/2025 08:39	final
+PLATELETS	204	10*3/uL	L=150 H=400	05/06/2025 08:03	05/06/2025 08:39	final
+%NEUT	74.5 H	%	L=40.0 H=70.0	05/06/2025 08:03	05/06/2025 08:39	final
+%LYMPH	15.7 L	%	L=20.0 H=40.0	05/06/2025 08:03	05/06/2025 08:39	final
+%MONO	7.7	%	L=3.0 H=10.0	05/06/2025 08:03	05/06/2025 08:39	final
+%EOS	1.5	%	L=1.0 H=5.0	05/06/2025 08:03	05/06/2025 08:39	final
+%BASO	0.2	%	L=0.0 H=0.5	05/06/2025 08:03	05/06/2025 08:39	final
+%IG	0.40	%	L=0.00 H=1.00	05/06/2025 08:03	05/06/2025 08:39	final
+#NEUT	6.4	10*3/uL	L=2.2 H=6.5	05/06/2025 08:03	05/06/2025 08:39	final
+#LYMPH	1.3 L	10*3/uL	L=1.5 H=4.0	05/06/2025 08:03	05/06/2025 08:39	final
+#MONO	0.7	10*3/uL	L=0.2 H=0.8	05/06/2025 08:03	05/06/2025 08:39	final
+#EOS	0.13	10*3/uL	L=0.04 H=0.40	05/06/2025 08:03	05/06/2025 08:39	final
+#BASO	0.02	10*3/uL	L=0.02 H=0.10	05/06/2025 08:03	05/06/2025 08:39	final
+#IG	0.03	10*3/UL	L=0.00 H=1.00	05/06/2025 08:03	05/06/2025 08:39	final
+MANUAL DIFF	NOT INDICATED	
+
+05/06/2025 08:03	05/06/2025 08:39	final
+RBC MORPH	NOT INDICATED	
+
+05/06/2025 08:03	05/06/2025 08:39	final
+SODIUM	136	mmol/L	L=136 H=145	05/06/2025 08:03	05/06/2025 08:39	final
+POTASSIUM	4.5	mmol/L	L=3.5 H=5.1	05/06/2025 08:03	05/06/2025 08:39	final
+CHLORIDE	100	mmol/L	L=98 H=107	05/06/2025 08:03	05/06/2025 08:39	final
+CO2	29.0	mmol/L	L=22.0 H=30.0	05/06/2025 08:03	05/06/2025 08:39	final
+ANION GAP	7.0	meq/L	
+05/06/2025 08:03	05/06/2025 08:39	final
+GLUCOSE	224 H	mg/dL	L=74 H=106	05/06/2025 08:03	05/06/2025 08:39	final
+BUN	15	mg/dL	L=7 H=17	05/06/2025 08:03	05/06/2025 08:39	final
+CREATININE	0.45 L	mg/dL	L=0.52 H=1.25	05/06/2025 08:03	05/06/2025 08:39	final
+AGE	85	yrs	
+05/06/2025 08:03	05/06/2025 08:39	final
+NON-AA GFR	141	mL/min	
+05/06/2025 08:03	05/06/2025 08:39	final
+AFR AMER GFR	170	mL/min	
+05/06/2025 08:03	05/06/2025 08:39	final
+CALCIUM	9.3	mg/dL	L=8.6 H=10.3	05/06/2025 08:03	05/06/2025 08:39	final
+TOTAL PROTEIN	7.5	g/dL	L=6.4 H=8.2	05/06/2025 08:03	05/06/2025 08:39	final
+ALBUMIN	4.2	g/dL	L=3.4 H=5.0	05/06/2025 08:03	05/06/2025 08:39	final
+TOTAL BILI	0.6	mg/dL	L=0.2 H=1.3	05/06/2025 08:03	05/06/2025 08:39	final
+SGOT/AST	47 H	U/L	L=15 H=46	05/06/2025 08:03	05/06/2025 08:39	final
+ALKALINE PHOS	79	U/L	L=38 H=126	05/06/2025 08:03	05/06/2025 08:39	final
+SGPT/ALT	39 H	U/L	L=0 H=34	05/06/2025 08:03	05/06/2025 08:39	final
+CORRECTED CALCIUM	9.14	mg/DL	L=8.50 H=10.10	05/06/2025 08:03	05/06/2025 08:39	final
+
+Current meds: 
+
+
+Ordered Meds List
+PANTOPRAZOLE (PROTONIX) 40 MG EC TAB, DAILY
+GABAPENTIN 400mg Oral Capsule, QHS
+AMLODIPINE (NORVASC) 5MG TAB, DAILY
+DULOXETINE (CYMBALTA) 30MG CAP, BID
+TRAMADOL (ULTRAM) 50MG TAB, PRN Q6H
+LOSARTAN (COZAAR) TABLET 100MG, DAILY
+BUSPIRONE (BUSPAR) 5MG TABLET, TID
+NACL 0.9% FLUSH 10ML INJ, PRN FLUSH
+GABAPENTIN 300mg Oral Capsule, BID
+INSULIN REGULAR (HUMULIN) INJ (10ML), PRN
+LIDOCAINE HCL 1% 50MG/5ML SDV, Q24H
+CEFTRIAXONE (Rocephin) 1gm VIAL (IM), Q24H
+MAGNESIUM HYDROXIDE (MOM) 30ML LIQUID, PRN DAILY
+DOCUSATE (COLACE) 100MG CAP, QHS
+TRAZODONE (DESYREL) 50MG TAB, QHS
+rOPINIRole (REQUIP) 0.25 mg TABLET, BID
+LEADER ARTHRITIS PAIN RELIEVER GEL 1%, BID
+ 
+Assessment/Plan:
+
+
+
+
+Jonathan Seale, MD
+05/06/2025  
+
+
+Admit: 
+99231-F/U: Inpt Admission-1
+99232-F/U: Inpt Admission-2
+99233-F/U: Inpt Admission-3
+99291-F/U: CriticalCare (1st 30-74min) Admission
+
+Observe: 
+99224-F/U: Observe-1
+99225-F/U: Observe-2
+99226-F/U: Observe-3
+99999-Patient not seen 
+ 

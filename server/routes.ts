@@ -24,8 +24,140 @@ import nursingContentRoutes from "./nursing-content-routes";
 import nursingSummaryRoutes from "./nursing-summary-routes";
 import multer from "multer";
 import OpenAI from "openai";
+import { SOAPOrdersExtractor } from "./soap-orders-extractor.js";
+import { PhysicalExamLearningService } from "./physical-exam-learning-service.js";
 
-import { RealtimeSOAPStreaming } from "./realtime-soap-streaming";
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Direct SOAP note generation function (replaces realtime-soap-streaming.ts)
+async function generateSOAPNoteDirect(patientId: number, encounterId: string, transcription: string): Promise<string> {
+  console.log(`🩺 [DirectSOAP] Generating SOAP note for patient ${patientId}`);
+  
+  // Get patient context
+  const [patient, diagnosisList, meds, allergiesList, vitalsList, recentEncounters] = await Promise.all([
+    db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
+    db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
+    db.select().from(medications).where(eq(medications.patientId, patientId)),
+    db.select().from(allergies).where(eq(allergies.patientId, patientId)),
+    db.select().from(vitals).where(eq(vitals.patientId, patientId)).orderBy(desc(vitals.createdAt)).limit(5),
+    db.select().from(encountersTable).where(eq(encountersTable.patientId, patientId)).orderBy(desc(encountersTable.createdAt)).limit(3),
+  ]);
+
+  const patientData = patient[0];
+  if (!patientData) {
+    throw new Error(`Patient ${patientId} not found`);
+  }
+
+  const age = Math.floor((Date.now() - new Date(patientData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  
+  // Build medical context
+  const currentDiagnoses = diagnosisList.length > 0 
+    ? diagnosisList.map((d) => `- ${d.condition} (${d.icd10Code || "unspecified"})`).join("\n")
+    : "- No active diagnoses on file";
+
+  const currentMedications = meds.length > 0
+    ? meds.map((m) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
+    : "- No current medications on file";
+
+  const knownAllergies = allergiesList.length > 0
+    ? allergiesList.map((a) => `- ${a.allergen}: ${a.reaction}`).join("\n")
+    : "- NKDA (No Known Drug Allergies)";
+
+  const recentVitals = vitalsList.length > 0
+    ? vitalsList.map((v) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
+    : "- No recent vitals on file";
+
+  // Create comprehensive SOAP prompt
+  const soapPrompt = `You are an experienced physician creating a comprehensive SOAP note. Generate a detailed, professional SOAP note based on the following patient encounter:
+
+PATIENT INFORMATION:
+- Name: ${patientData.firstName} ${patientData.lastName}
+- Age: ${age} years old
+- Gender: ${patientData.gender}
+- MRN: ${patientData.mrn}
+
+CURRENT DIAGNOSES:
+${currentDiagnoses}
+
+CURRENT MEDICATIONS:
+${currentMedications}
+
+KNOWN ALLERGIES:
+${knownAllergies}
+
+RECENT VITALS:
+${recentVitals}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a comprehensive SOAP note with the following structure:
+
+SUBJECTIVE:
+- Chief complaint
+- History of present illness (HPI) with OLDCARTS elements where applicable
+- Review of systems (ROS) - include pertinent positives and negatives
+- Past medical history, medications, allergies, social history as relevant
+
+OBJECTIVE:
+- Vital signs (if documented)
+- Physical examination findings organized by system
+- Relevant diagnostic results (labs, imaging, etc.)
+
+ASSESSMENT:
+- Primary diagnosis with ICD-10 code
+- Secondary diagnoses with ICD-10 codes
+- Clinical reasoning and differential diagnosis considerations
+
+PLAN:
+- Medications: Include specific dosing, frequency, duration, and quantity to dispense
+- Labs: List specific tests needed
+- Imaging: Specify modality and clinical indication
+- Referrals: Include specialty and reason
+- Patient education: Key points discussed
+- Follow-up: Timeline and specific instructions
+
+IMPORTANT FORMATTING:
+- Use professional medical terminology
+- Include pertinent negatives
+- Ensure clinical reasoning is evidence-based
+- Format for easy reading and clinical handoff
+- Keep concise yet comprehensive`;
+
+  // Generate SOAP note
+  const soapCompletion = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    messages: [{ role: "user", content: soapPrompt }],
+    temperature: 0.7,
+    max_tokens: 4000,
+  });
+
+  const soapNote = soapCompletion.choices[0]?.message?.content;
+  if (!soapNote) {
+    throw new Error("No SOAP note generated from OpenAI");
+  }
+
+  // Save SOAP note to encounter
+  await storage.updateEncounter(parseInt(encounterId), {
+    note: soapNote,
+  });
+
+  // Process orders and CPT codes in background
+  const soapOrdersExtractor = new SOAPOrdersExtractor();
+  const physicalExamLearningService = new PhysicalExamLearningService();
+  
+  // Background processing (don't await)
+  Promise.allSettled([
+    soapOrdersExtractor.extractOrders(transcription, patientId, parseInt(encounterId)),
+    physicalExamLearningService.analyzeSOAPNoteForPersistentFindings(patientId, parseInt(encounterId), soapNote),
+  ]).catch(error => {
+    console.warn("Background processing failed:", error);
+  });
+
+  return soapNote;
+}
 
 // Fast medical routes removed - functionality moved to frontend WebSocket
 
@@ -801,46 +933,9 @@ export function registerRoutes(app: Express): Server {
             generatedAt: new Date().toISOString(),
           });
         } else {
-          // Fall back to realtime streaming generation (non-personalized)
-          const realtimeSOAP = new RealtimeSOAPStreaming();
-          const stream = await realtimeSOAP.generateSOAPNoteStream(
-            patientId,
-            encounterId.toString(),
-            transcription,
-          );
-
-          // Read the complete SOAP note from the stream
-          const reader = stream.getReader();
-          let soapNote = "";
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              const chunk = new TextDecoder().decode(value);
-              const lines = chunk.split("\n");
-
-              for (const line of lines) {
-                if (line.startsWith("data: ")) {
-                  try {
-                    const data = JSON.parse(line.slice(6));
-                    if (data.type === "response.text.done") {
-                      soapNote = data.text;
-                      break;
-                    }
-                  } catch (e) {
-                    // Ignore parsing errors for streaming data
-                  }
-                }
-              }
-
-              if (soapNote) break;
-            }
-          } finally {
-            reader.releaseLock();
-          }
-
+          // Generate SOAP note using direct OpenAI API call
+          const soapNote = await generateSOAPNoteDirect(patientId, encounterId, transcription);
+          
           res.json({
             soapNote,
             patientId,
@@ -932,12 +1027,8 @@ export function registerRoutes(app: Express): Server {
         `🩺 [RealtimeSOAP] Starting streaming SOAP generation for patient ${patientId}, encounter ${encounterId}`,
       );
 
-      const realtimeSOAP = new RealtimeSOAPStreaming();
-      const stream = await realtimeSOAP.generateSOAPNoteStream(
-        parseInt(patientId),
-        encounterId,
-        transcription,
-      );
+      // Generate SOAP note directly using OpenAI API
+      const soapNote = await generateSOAPNoteDirect(parseInt(patientId), encounterId, transcription);
 
       // Set headers for Server-Sent Events
       res.setHeader("Content-Type", "text/event-stream");
