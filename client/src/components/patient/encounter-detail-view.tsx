@@ -804,7 +804,7 @@ export function EncounterDetailView({
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
     setSuggestionsBuffer(""); // Clear suggestions buffer for fresh accumulation
-    setTranscription("");
+    // NOTE: Don't clear transcription here - let it accumulate for intelligent streaming
 
     try {
       // Create direct WebSocket connection to OpenAI like your working code
@@ -1135,7 +1135,16 @@ Format each bullet point on its own line with no extra spacing between them.`,
             setTranscriptionBuffer(transcriptionBuffer);
 
             // Append delta to existing transcription (don't replace)
-            setTranscription((prev) => prev + deltaText);
+            setTranscription((prev) => {
+              const newTranscription = prev + deltaText;
+              console.log("📝 [EncounterView] Transcription updated:", {
+                previousLength: prev.length,
+                deltaLength: deltaText.length,
+                newLength: newTranscription.length,
+                preview: newTranscription.substring(0, 100)
+              });
+              return newTranscription;
+            });
 
             // CRITICAL: Update unified transcription content for AI suggestions
             setLiveTranscriptionContent((prev) => prev + deltaText);

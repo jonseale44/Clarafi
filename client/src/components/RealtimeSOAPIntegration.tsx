@@ -256,33 +256,60 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
 
   // Intelligent streaming with conversation pause detection
   useEffect(() => {
+    console.log("🔍 [IntelligentStreaming] useEffect triggered with:", {
+      enableIntelligentStreaming,
+      autoTrigger,
+      transcriptionLength: transcription?.length || 0,
+      isGenerating,
+      transcriptionPreview: transcription?.substring(0, 100) || 'empty'
+    });
+
     if (!enableIntelligentStreaming) {
+      console.log("🔍 [IntelligentStreaming] Intelligent streaming disabled, using traditional auto-trigger");
       // Traditional auto-trigger behavior
       if (autoTrigger && transcription?.trim() && !isGenerating) {
-        console.log("🔄 [RealtimeSOAP] Auto-triggering SOAP generation");
+        console.log("🔄 [RealtimeSOAP] Auto-triggering SOAP generation (traditional mode)");
         generateSOAPNote();
+      } else {
+        console.log("🔍 [IntelligentStreaming] Traditional auto-trigger conditions not met:", {
+          autoTrigger,
+          hasTranscription: !!transcription?.trim(),
+          isGenerating
+        });
       }
       return;
     }
 
+    console.log("🔍 [IntelligentStreaming] Intelligent streaming enabled");
+
     // Clear existing timeouts
     if (pauseDetectionTimeoutRef.current) {
+      console.log("🔍 [IntelligentStreaming] Clearing existing pause detection timeout");
       clearTimeout(pauseDetectionTimeoutRef.current);
     }
     if (streamingTimeoutRef.current) {
+      console.log("🔍 [IntelligentStreaming] Clearing existing streaming timeout");
       clearTimeout(streamingTimeoutRef.current);
     }
 
     if (!transcription?.trim() || isGenerating) {
+      console.log("🔍 [IntelligentStreaming] Skipping - no transcription or already generating:", {
+        hasTranscription: !!transcription?.trim(),
+        isGenerating
+      });
       return;
     }
 
     // Immediate trigger on medical keywords
     const recentTranscription = transcription.slice(-100); // Last 100 characters
+    console.log("🔍 [IntelligentStreaming] Checking recent transcription for medical keywords:", recentTranscription);
+    
     if (detectMedicalKeywords(recentTranscription)) {
       console.log("🔍 [IntelligentStreaming] Medical keywords detected - immediate trigger");
       generateSOAPNote();
       return;
+    } else {
+      console.log("🔍 [IntelligentStreaming] No medical keywords detected in recent transcription");
     }
 
     // Content-based batching (50+ new words)
@@ -293,9 +320,17 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       console.log("🔍 [IntelligentStreaming] Content threshold reached - triggering generation");
       generateSOAPNote();
       return;
+    } else {
+      console.log("🔍 [IntelligentStreaming] Content threshold not reached:", {
+        currentWordCount: wordCount,
+        lastWordCount,
+        difference: wordCount - lastWordCount,
+        threshold: 50
+      });
     }
 
     // Set pause detection timer (2-3 seconds of silence)
+    console.log("🔍 [IntelligentStreaming] Setting pause detection timeout (2.5s)");
     pauseDetectionTimeoutRef.current = setTimeout(() => {
       console.log("🔍 [IntelligentStreaming] Conversation pause detected - triggering generation");
       generateSOAPNote();
