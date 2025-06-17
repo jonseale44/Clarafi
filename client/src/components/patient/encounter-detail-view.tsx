@@ -238,6 +238,39 @@ export function EncounterDetailView({
       setLastSaved(content);
       setAutoSaveStatus("saved");
 
+      // Process medical problems for auto-save edits (Trigger 2)
+      console.log("🏥 [AutoSave] Processing medical problems for auto-saved changes...");
+      
+      try {
+        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            soapNote: content,
+            patientId: patient.id,
+            triggerType: "manual_edit"
+          })
+        });
+
+        if (medicalProblemsResponse.ok) {
+          const result = await medicalProblemsResponse.json();
+          console.log(`✅ [AutoSave] Medical problems updated: ${result.total_problems_affected || 0} problems affected`);
+          
+          // Invalidate medical problems cache
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          });
+        } else {
+          console.error(`❌ [AutoSave] Medical problems processing failed: ${medicalProblemsResponse.status}`);
+        }
+      } catch (error) {
+        console.error("❌ [AutoSave] Error processing medical problems:", error);
+      }
+
       // Invalidate relevant caches
       await queryClient.invalidateQueries({
         queryKey: [`/api/encounters/${encounterId}`],
@@ -2028,6 +2061,40 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         autoSaveTimer.current = null;
       }
 
+      // Process medical problems for manual SOAP edits (Trigger 2)
+      console.log("🏥 [ManualEdit] === MANUAL SOAP EDIT PROCESSING START ===");
+      console.log("🏥 [ManualEdit] Processing medical problems for manual SOAP changes...");
+      
+      try {
+        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            soapNote: currentContent,
+            patientId: patient.id,
+            triggerType: "manual_edit"
+          })
+        });
+
+        if (medicalProblemsResponse.ok) {
+          const result = await medicalProblemsResponse.json();
+          console.log(`✅ [ManualEdit] Medical problems updated: ${result.total_problems_affected || 0} problems affected`);
+          
+          // Invalidate medical problems cache
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          });
+        } else {
+          console.error(`❌ [ManualEdit] Medical problems processing failed: ${medicalProblemsResponse.status}`);
+        }
+      } catch (error) {
+        console.error("❌ [ManualEdit] Error processing medical problems:", error);
+      }
+
       // Invalidate all relevant caches to ensure changes persist
       await queryClient.invalidateQueries({
         queryKey: [`/api/encounters/${encounterId}`],
@@ -2042,7 +2109,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       toast({
         title: "SOAP Note Saved",
         description:
-          "Your SOAP note has been saved and analyzed for future encounters.",
+          "Your SOAP note has been saved and medical problems updated.",
       });
     } catch (error) {
       console.error("❌ [EncounterView] Error saving SOAP note:", error);

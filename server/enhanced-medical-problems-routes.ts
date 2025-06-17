@@ -87,12 +87,13 @@ router.post("/encounters/:encounterId/process-medical-problems", async (req, res
     }
 
     const encounterId = parseInt(req.params.encounterId);
-    const { soapNote, patientId } = req.body;
+    const { soapNote, patientId, triggerType } = req.body;
     const providerId = req.user!.id;
 
     console.log(`🏥 [MedicalProblemsAPI] Parsed encounter ID: ${encounterId}`);
     console.log(`🏥 [MedicalProblemsAPI] Patient ID: ${patientId}`);
     console.log(`🏥 [MedicalProblemsAPI] Provider ID: ${providerId}`);
+    console.log(`🏥 [MedicalProblemsAPI] Trigger type: ${triggerType || 'recording_completion'}`);
     console.log(`🏥 [MedicalProblemsAPI] SOAP note length: ${soapNote?.length || 0} characters`);
     console.log(`🏥 [MedicalProblemsAPI] SOAP note preview: ${soapNote?.substring(0, 100) || 'empty'}...`);
 
@@ -109,7 +110,8 @@ router.post("/encounters/:encounterId/process-medical-problems", async (req, res
       patientId,
       encounterId,
       soapNote,
-      providerId
+      providerId,
+      triggerType || 'recording_completion'
     );
 
     const totalTime = Date.now() - startTime;

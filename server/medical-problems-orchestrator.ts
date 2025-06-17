@@ -65,8 +65,7 @@ class MedicalProblemsOrchestrator {
         encounterId,
         soapNote,
         providerId,
-        "initial", // Processing tier
-        undefined // No previous results for initial processing
+        "recording_completion" // Use recording completion trigger type
       );
 
       // Update state
