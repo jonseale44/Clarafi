@@ -65,12 +65,18 @@ export class MedicalProblemsDeltaService {
     patientId: number,
     encounterId: number,
     soapNote: string,
-    providerId: number
+    providerId: number,
+    processingTier: "initial" | "revision" = "initial",
+    previousResults?: DeltaProcessingResult
   ): Promise<DeltaProcessingResult> {
     const startTime = Date.now();
     console.log(`🏥 [DeltaService] === DELTA PROCESSING START ===`);
+    console.log(`🏥 [DeltaService] Processing Tier: ${processingTier.toUpperCase()}`);
     console.log(`🏥 [DeltaService] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
     console.log(`🏥 [DeltaService] SOAP Note length: ${soapNote.length} characters`);
+    if (previousResults) {
+      console.log(`🏥 [DeltaService] Previous processing results: ${previousResults.changes.length} changes`);
+    }
 
     try {
       // Get existing medical problems for context
@@ -94,7 +100,9 @@ export class MedicalProblemsDeltaService {
         soapNote,
         encounter,
         patient,
-        providerId
+        providerId,
+        processingTier,
+        previousResults
       );
       console.log(`🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`);
       changes.forEach((change, index) => {
@@ -183,7 +191,9 @@ export class MedicalProblemsDeltaService {
     soapNote: string,
     encounter: any,
     patient: any,
-    providerId: number
+    providerId: number,
+    processingTier: "initial" | "revision" = "initial",
+    previousResults?: DeltaProcessingResult
   ): Promise<ProblemChange[]> {
 
     console.log(`🔍 [GPT] Building prompt with ${existingProblems.length} existing problems`);
