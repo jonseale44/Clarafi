@@ -16,33 +16,19 @@ const router = Router();
  */
 router.get("/patients/:patientId/medications-enhanced", async (req: Request, res: Response) => {
   try {
-    console.log(`🔍 [EnhancedMedications] GET request for patient ${req.params.patientId}`);
-    console.log(`🔍 [EnhancedMedications] Request headers:`, req.headers);
-    console.log(`🔍 [EnhancedMedications] User authenticated: ${req.isAuthenticated()}`);
-    console.log(`🔍 [EnhancedMedications] Request session:`, req.session);
+    // Authentication check
     
     if (!req.isAuthenticated()) {
-      console.log(`❌ [EnhancedMedications] Authentication failed`);
       return res.sendStatus(401);
     }
 
     const patientIdParam = req.params.patientId;
-    console.log(`🔍 [EnhancedMedications] Raw patientId param: "${patientIdParam}"`);
-    
     if (!patientIdParam || isNaN(parseInt(patientIdParam))) {
-      console.log(`❌ [EnhancedMedications] Invalid patient ID: "${patientIdParam}"`);
       return res.status(400).json({ error: "Invalid patient ID" });
     }
 
     const patientId = parseInt(patientIdParam);
-    console.log(`🔍 [EnhancedMedications] Fetching medications for patient ID: ${patientId}`);
-    
     const medications = await storage.getPatientMedicationsEnhanced(patientId);
-    console.log(`🔍 [EnhancedMedications] Found ${medications.length} medications`);
-    
-    medications.forEach((medication, index) => {
-      console.log(`🔍 [EnhancedMedications] Medication ${index + 1}: ${medication.medicationName} ${medication.dosage} (${medication.status})`);
-    });
 
     // Group medications by status for EMR-standard display
     const groupedMedications = {
@@ -88,7 +74,7 @@ router.get("/patients/:patientId/medications-enhanced", async (req: Request, res
       updatedAt: medication.updatedAt
     }));
 
-    console.log(`🔍 [EnhancedMedications] Returning ${formattedMedications.length} formatted medications`);
+    // Return formatted medications
     res.json({
       medications: formattedMedications,
       groupedByStatus: groupedMedications,
@@ -139,12 +125,7 @@ router.get("/medications/:medicationId/history", async (req: Request, res: Respo
  */
 router.post("/encounters/:encounterId/process-medications", async (req: Request, res: Response) => {
   try {
-    console.log(`💊 [MedicationAPI] === ORDER PROCESSING REQUEST START ===`);
-    console.log(`💊 [MedicationAPI] Encounter ID: ${req.params.encounterId}`);
-    console.log(`💊 [MedicationAPI] User authenticated: ${req.isAuthenticated()}`);
-    
     if (!req.isAuthenticated()) {
-      console.log(`❌ [MedicationAPI] User not authenticated`);
       return res.sendStatus(401);
     }
 
@@ -152,16 +133,9 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
     const { patientId } = req.body;
     const providerId = req.user!.id;
 
-    console.log(`💊 [MedicationAPI] Parsed encounter ID: ${encounterId}`);
-    console.log(`💊 [MedicationAPI] Patient ID: ${patientId}`);
-    console.log(`💊 [MedicationAPI] Provider ID: ${providerId}`);
-
     if (!patientId) {
-      console.log(`❌ [MedicationAPI] Missing required field - patientId: ${!!patientId}`);
       return res.status(400).json({ error: "Patient ID is required" });
     }
-
-    console.log(`💊 [MedicationAPI] Calling order-based delta processing...`);
     const startTime = Date.now();
     
     // Process medications based on orders using new order-driven approach
@@ -171,19 +145,12 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
       providerId
     );
 
-    const totalTime = Date.now() - startTime;
-    console.log(`✅ [MedicationAPI] Order processing completed in ${totalTime}ms`);
-    console.log(`✅ [MedicationAPI] Result:`, result);
-
     const response = {
       success: true,
       changes: result.changes,
       processingTimeMs: result.processing_time_ms,
       medicationsAffected: result.total_medications_affected
     };
-    
-    console.log(`✅ [MedicationAPI] Sending response:`, response);
-    console.log(`💊 [MedicationAPI] === ORDER PROCESSING REQUEST END ===`);
     
     res.json(response);
 

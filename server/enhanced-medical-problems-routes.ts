@@ -13,22 +13,12 @@ const router = Router();
  */
 router.get("/patients/:patientId/medical-problems-enhanced", async (req, res) => {
   try {
-    console.log(`🔍 [EnhancedMedicalProblems] GET request for patient ${req.params.patientId}`);
-    console.log(`🔍 [EnhancedMedicalProblems] User authenticated: ${req.isAuthenticated()}`);
-    
     if (!req.isAuthenticated()) {
-      console.log(`❌ [EnhancedMedicalProblems] Authentication failed`);
       return res.sendStatus(401);
     }
 
     const patientId = parseInt(req.params.patientId);
-    console.log(`🔍 [EnhancedMedicalProblems] Fetching problems for patient ID: ${patientId}`);
-    
     const problems = await storage.getPatientMedicalProblems(patientId);
-    console.log(`🔍 [EnhancedMedicalProblems] Found ${problems.length} problems`);
-    problems.forEach((problem, index) => {
-      console.log(`🔍 [EnhancedMedicalProblems] Problem ${index + 1}: ${problem.problemTitle} (${problem.currentIcd10Code})`);
-    });
 
     // Format for frontend display with visit history
     const formattedProblems = problems.map(problem => ({
@@ -77,20 +67,8 @@ router.get("/medical-problems/:problemId/visit-history", async (req, res) => {
  * Process SOAP note for medical problems using delta approach
  */
 router.post("/encounters/:encounterId/process-medical-problems", async (req, res) => {
-  console.log(`🚨 [MedicalProblemsAPI] ROUTE HIT - Enhanced medical problems processing endpoint accessed`);
-  console.log(`🚨 [MedicalProblemsAPI] Method: ${req.method}, URL: ${req.url}`);
-  console.log(`🚨 [MedicalProblemsAPI] Headers:`, req.headers);
-  console.log(`🚨 [MedicalProblemsAPI] Raw params:`, req.params);
-  console.log(`🚨 [MedicalProblemsAPI] Raw body:`, req.body);
-  
   try {
-    console.log(`🏥 [MedicalProblemsAPI] === PROCESSING REQUEST START ===`);
-    console.log(`🏥 [MedicalProblemsAPI] Encounter ID: ${req.params.encounterId}`);
-    console.log(`🏥 [MedicalProblemsAPI] Request body keys: ${Object.keys(req.body)}`);
-    console.log(`🏥 [MedicalProblemsAPI] User authenticated: ${req.isAuthenticated()}`);
-    
     if (!req.isAuthenticated()) {
-      console.log(`❌ [MedicalProblemsAPI] User not authenticated`);
       return res.sendStatus(401);
     }
 
@@ -122,19 +100,12 @@ router.post("/encounters/:encounterId/process-medical-problems", async (req, res
       triggerType || 'recording_complete'
     );
 
-    const totalTime = Date.now() - startTime;
-    console.log(`✅ [MedicalProblemsAPI] Delta processing completed in ${totalTime}ms`);
-    console.log(`✅ [MedicalProblemsAPI] Result:`, result);
-
     const response = {
       success: true,
       changes: result.changes,
       processingTimeMs: result.processing_time_ms,
       problemsAffected: result.total_problems_affected
     };
-    
-    console.log(`✅ [MedicalProblemsAPI] Sending response:`, response);
-    console.log(`🏥 [MedicalProblemsAPI] === PROCESSING REQUEST END ===`);
     
     res.json(response);
 
