@@ -2147,19 +2147,22 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             
             // Update tracking state
             setLastProcessedSOAPContent(currentContent);
-          
-          // Invalidate medical problems cache
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
-          });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
-          });
-        } else {
-          console.error(`❌ [ManualEdit] Medical problems processing failed: ${medicalProblemsResponse.status}`);
+            
+            // Invalidate medical problems cache
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+            });
+            await queryClient.invalidateQueries({ 
+              queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+            });
+          } else {
+            console.error(`❌ [SmartProcessing] Medical problems processing failed: ${medicalProblemsResponse.status}`);
+          }
+        } catch (error) {
+          console.error("❌ [SmartProcessing] Error processing medical problems:", error);
         }
-      } catch (error) {
-        console.error("❌ [ManualEdit] Error processing medical problems:", error);
+      } else {
+        console.log("🏥 [SmartProcessing] Skipping medical problems processing - no significant changes or too soon after recording");
       }
 
       // Invalidate all relevant caches to ensure changes persist
@@ -2178,6 +2181,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         description:
           "Your SOAP note has been saved and medical problems updated.",
       });
+
     } catch (error) {
       console.error("❌ [EncounterView] Error saving SOAP note:", error);
       toast({
