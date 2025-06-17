@@ -342,7 +342,7 @@ router.post("/medical-problems/process-encounter", async (req, res) => {
       return res.status(404).json({ error: "Encounter not found" });
     }
 
-    const soapNote = encounter[0].soapNote || '';
+    const soapNote = encounter[0].note || '';
     const patientId = encounter[0].patientId;
 
     console.log(`🏥 [ProcessEncounter] Processing encounter ${encounterId} for patient ${patientId}`);
@@ -365,7 +365,7 @@ router.post("/medical-problems/process-encounter", async (req, res) => {
 
     res.json({
       success: true,
-      problemsAffected: result.total_problems_affected || result.problemsAffected || 0,
+      problemsAffected: result.total_problems_affected || 0,
       processingTimeMs: processingTime,
       details: result
     });
