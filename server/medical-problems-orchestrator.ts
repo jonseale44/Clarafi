@@ -108,7 +108,7 @@ class MedicalProblemsOrchestrator {
         processing_time_ms: 0, 
         total_problems_affected: 0,
         reason: "No initial processing completed"
-      } as any;
+      };
     }
 
     if (state.lastProcessedSOAPHash === soapHash) {
@@ -118,7 +118,7 @@ class MedicalProblemsOrchestrator {
         processing_time_ms: 0, 
         total_problems_affected: 0,
         reason: "No content changes detected"
-      } as any;
+      };
     }
 
     console.log(`🎯 [MedicalOrchestrator] === TIER 3 PROCESSING START ===`);

@@ -238,34 +238,6 @@ export function EncounterDetailView({
       setLastSaved(content);
       setAutoSaveStatus("saved");
 
-      // Trigger Tier 3 medical problems processing for manual edits
-      try {
-        console.log("🎯 [AutoSave] Triggering Tier 3 medical problems processing...");
-        const tier3Response = await fetch(`/api/encounters/${encounterId}/process-medical-problems-tier3`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ soapNote: content, patientId: patient.id })
-        });
-
-        if (tier3Response.ok) {
-          const result = await tier3Response.json();
-          console.log("✅ [AutoSave] Tier 3 processing completed:", result);
-          
-          // Only invalidate medical problems cache if changes were made
-          if (result.total_problems_affected > 0) {
-            await queryClient.invalidateQueries({
-              queryKey: [`/api/patients/${patient.id}/medical-problems`],
-            });
-          }
-        } else {
-          console.log("ℹ️ [AutoSave] Tier 3 processing skipped or failed - this is normal for unchanged content");
-        }
-      } catch (error) {
-        console.error("❌ [AutoSave] Tier 3 processing error:", error);
-        // Don't fail auto-save if tier 3 processing fails
-      }
-
       // Invalidate relevant caches
       await queryClient.invalidateQueries({
         queryKey: [`/api/encounters/${encounterId}`],
@@ -399,7 +371,7 @@ export function EncounterDetailView({
         
         // Process all services in parallel for maximum efficiency
         const [medicalProblemsResponse, medicationsResponse, ordersResponse, cptResponse] = await Promise.all([
-          fetch(`/api/encounters/${encounterId}/process-medical-problems-tier1`, {
+          fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
