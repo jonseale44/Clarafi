@@ -1945,20 +1945,110 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     setLastRecordingStopTime(Date.now());
 
     // Real-time streaming has been updating SOAP note during recording
-    // Now trigger completion workflow to save and process dependencies
+    // Now trigger medical problems processing directly (bypassing recording check)
     if (soapNote && soapNote.trim()) {
-      console.log("🩺 [EncounterView] Processing final SOAP note through completion workflow...");
+      console.log("🩺 [EncounterView] Processing final SOAP note with medical problems after recording stop...");
       
       // Mark this content as processed for future change detection
       setLastProcessedSOAPContent(soapNote);
       
-      // Trigger all existing dependencies that rely on SOAP completion
-      await handleSOAPNoteComplete(soapNote);
-      
-      toast({
-        title: "Recording Complete",
-        description: "SOAP note updated in real-time and saved with medical data processing",
-      });
+      try {
+        // Save SOAP note first
+        await fetch(
+          `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ soapNote }),
+          },
+        );
+        
+        console.log("✅ [StopRecording] SOAP note saved");
+        
+        // Process medical problems after recording stops
+        console.log("🏥 [StopRecording] Processing medical problems after recording completion...");
+        
+        const medicalProblemsResponse = await fetch(`/api/medical-problems/process-encounter`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            encounterId: encounterId,
+            triggerType: "recording_complete"
+          })
+        });
+
+        if (medicalProblemsResponse.ok) {
+          const result = await medicalProblemsResponse.json();
+          console.log(`✅ [StopRecording] Medical problems processed: ${result.problemsAffected || 0} problems affected`);
+          
+          // Invalidate medical problems cache to refresh UI
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          });
+        } else {
+          console.error(`❌ [StopRecording] Medical problems processing failed: ${medicalProblemsResponse.status}`);
+        }
+        
+        // Process other services in parallel
+        const [medicationsResponse, ordersResponse, cptResponse] = await Promise.all([
+          fetch(`/api/encounters/${encounterId}/process-medications`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ patientId: patient.id })
+          }),
+          fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({})
+          }),
+          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt-codes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({})
+          })
+        ]);
+
+        // Handle other responses and invalidate caches
+        if (medicationsResponse.ok) {
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+          });
+        }
+        
+        if (ordersResponse.ok) {
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/draft-orders`] 
+          });
+        }
+        
+        if (cptResponse.ok) {
+          await queryClient.invalidateQueries({ 
+            queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
+          });
+        }
+        
+        toast({
+          title: "Recording Complete",
+          description: "SOAP note saved and medical data processed successfully",
+        });
+        
+      } catch (error) {
+        console.error("❌ [StopRecording] Error processing after recording stop:", error);
+        toast({
+          variant: "destructive",
+          title: "Processing Error",
+          description: "SOAP note saved but some processing failed. Please try manual save.",
+        });
+      }
     } else {
       console.log("🩺 [EncounterView] No SOAP content to process");
       toast({
