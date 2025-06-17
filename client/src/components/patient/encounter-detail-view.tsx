@@ -1996,6 +1996,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         }
         
         // Process other services in parallel
+        console.log("🏥 [StopRecording] Starting parallel processing of medications, orders, and CPT codes...");
+        console.log("🏥 [StopRecording] CPT extraction URL:", `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`);
+        console.log("🏥 [StopRecording] CPT extraction payload:", { soapNote: soapNote.substring(0, 200) + "..." });
+        
         const [medicationsResponse, ordersResponse, cptResponse] = await Promise.all([
           fetch(`/api/encounters/${encounterId}/process-medications`, {
             method: 'POST',
@@ -2014,6 +2018,32 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({ soapNote })
+          }).then(async response => {
+            console.log("🏥 [StopRecording] CPT response status:", response.status);
+            console.log("🏥 [StopRecording] CPT response headers:", Object.fromEntries(response.headers.entries()));
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error("❌ [StopRecording] CPT extraction failed:", errorText);
+              return response;
+            }
+            
+            const responseText = await response.text();
+            console.log("✅ [StopRecording] CPT extraction raw response:", responseText.substring(0, 500) + "...");
+            
+            try {
+              const jsonData = JSON.parse(responseText);
+              console.log("✅ [StopRecording] CPT extraction parsed data:", jsonData);
+              return new Response(responseText, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+              });
+            } catch (parseError) {
+              console.error("❌ [StopRecording] CPT response JSON parse error:", parseError);
+              console.error("❌ [StopRecording] Raw response that failed to parse:", responseText);
+              return response;
+            }
           })
         ]);
 
@@ -2031,9 +2061,15 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         }
         
         if (cptResponse.ok) {
+          console.log("✅ [StopRecording] CPT extraction successful, invalidating CPT cache...");
           await queryClient.invalidateQueries({ 
             queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
           });
+          console.log("✅ [StopRecording] CPT cache invalidated");
+        } else {
+          console.error("❌ [StopRecording] CPT extraction failed with status:", cptResponse.status);
+          const errorText = await cptResponse.text();
+          console.error("❌ [StopRecording] CPT error response:", errorText);
         }
         
         toast({
