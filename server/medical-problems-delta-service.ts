@@ -308,6 +308,7 @@ IMPORTANT:
         messages: [{ role: "user", content: encounterScopedPrompt }],
         temperature: 0.1,
         max_tokens: 3000,
+        response_format: { type: "json_object" }
       });
 
       const content = completion.choices[0]?.message?.content;
@@ -320,8 +321,41 @@ IMPORTANT:
 
       let response;
       try {
-        response = JSON.parse(content);
-        console.log(`✅ [GPT] Successfully parsed JSON response`);
+        // Clean the content by removing markdown code blocks if present
+        let cleanContent = content.trim();
+        
+        console.log(`🔍 [GPT] Original content length: ${cleanContent.length}`);
+        console.log(`🔍 [GPT] Content starts with: ${cleanContent.substring(0, 50)}`);
+        
+        // More robust markdown cleaning
+        if (cleanContent.includes('```')) {
+          console.log(`🔍 [GPT] Found markdown code blocks, cleaning...`);
+          // Extract content between first ``` and last ```
+          const startIdx = cleanContent.indexOf('```');
+          const endIdx = cleanContent.lastIndexOf('```');
+          console.log(`🔍 [GPT] Start index: ${startIdx}, End index: ${endIdx}`);
+          
+          if (startIdx !== endIdx) {
+            // Get content between the code blocks
+            let extracted = cleanContent.substring(startIdx + 3, endIdx).trim();
+            console.log(`🔍 [GPT] Extracted content: ${extracted.substring(0, 100)}...`);
+            
+            // Remove 'json' if it's at the start
+            if (extracted.startsWith('json')) {
+              extracted = extracted.substring(4).trim();
+              console.log(`🔍 [GPT] Removed 'json' prefix`);
+            }
+            cleanContent = extracted;
+          }
+        }
+        
+        console.log(`🔍 [GPT] Final cleaned content length: ${cleanContent.length}`);
+        console.log(`🔍 [GPT] Final content starts with: ${cleanContent.substring(0, 50)}`);
+        console.log(`🔍 [GPT] About to parse: ${cleanContent}`);
+        
+        
+        response = JSON.parse(cleanContent);
+        console.log(`✅ [GPT] Successfully parsed JSON response (cleaned markdown)`);
         console.log(`✅ [GPT] Parsed response object:`, response);
       } catch (parseError) {
         console.log(`❌ [GPT] JSON parse error:`, parseError);
