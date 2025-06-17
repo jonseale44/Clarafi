@@ -333,7 +333,7 @@ IMPORTANT:
       console.log(`🔍 [GPT] Changes array length: ${changes.length}`);
       
       if (changes.length > 0) {
-        changes.forEach((change, index) => {
+        changes.forEach((change: any, index: number) => {
           console.log(`🔍 [GPT] Change ${index + 1}:`, change);
         });
       } else {

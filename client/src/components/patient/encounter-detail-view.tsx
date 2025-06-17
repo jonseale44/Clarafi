@@ -404,7 +404,7 @@ export function EncounterDetailView({
         
         // Process all services in parallel for maximum efficiency
         const [medicalProblemsResponse, medicationsResponse, ordersResponse, cptResponse] = await Promise.all([
-          fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
+          fetch(`/api/medical-problems/process-encounter`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
