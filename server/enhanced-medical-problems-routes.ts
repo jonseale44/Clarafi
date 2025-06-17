@@ -111,7 +111,7 @@ router.post("/encounters/:encounterId/process-medical-problems", async (req, res
       encounterId,
       soapNote,
       providerId,
-      triggerType || 'recording_completion'
+      triggerType || 'recording_complete'
     );
 
     const totalTime = Date.now() - startTime;

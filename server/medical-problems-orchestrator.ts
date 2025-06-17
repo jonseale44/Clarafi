@@ -65,7 +65,7 @@ class MedicalProblemsOrchestrator {
         encounterId,
         soapNote,
         providerId,
-        "recording_completion" // Use recording completion trigger type
+        "recording_complete" // Use recording completion trigger type
       );
 
       // Update state
@@ -130,8 +130,7 @@ class MedicalProblemsOrchestrator {
         encounterId,
         soapNote,
         providerId,
-        "revision", // Processing tier
-        state.initialProcessingResults // Previous results for context
+        "manual_edit" // Use manual edit trigger type for revisions
       );
 
       // Update state
