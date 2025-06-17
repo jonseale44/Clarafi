@@ -196,6 +196,50 @@ export function EncounterDetailView({
   const [isAutoGeneratingOrders, setIsAutoGeneratingOrders] = useState(false);
   const [isAutoGeneratingBilling, setIsAutoGeneratingBilling] = useState(false);
 
+  // Medical problems processing state tracking
+  const [lastProcessedSOAPContent, setLastProcessedSOAPContent] = useState<string>("");
+  const [lastRecordingStopTime, setLastRecordingStopTime] = useState<number>(0);
+  
+  // Function to detect meaningful changes in SOAP content
+  const hasSignificantSOAPChanges = (newContent: string): boolean => {
+    if (!lastProcessedSOAPContent) return true; // First time processing
+    
+    // Extract Assessment/Plan sections for comparison (where diagnoses live)
+    const extractAssessmentPlan = (content: string) => {
+      const assessmentMatch = content.match(/(?:ASSESSMENT|PLAN|A&P|A\/P)[\s\S]*$/i);
+      return assessmentMatch ? assessmentMatch[0].toLowerCase() : content.toLowerCase();
+    };
+    
+    const oldAssessment = extractAssessmentPlan(lastProcessedSOAPContent);
+    const newAssessment = extractAssessmentPlan(newContent);
+    
+    // Check for significant changes: new diagnoses, medication changes, plan modifications
+    const significantKeywords = [
+      // New diagnoses
+      'diabetes', 'hypertension', 'pneumonia', 'copd', 'asthma', 'depression', 
+      'anxiety', 'arthritis', 'infection', 'pain', 'fracture', 'cancer',
+      // ICD codes
+      'e11', 'i10', 'j44', 'f32', 'f41', 'm79', 'n39',
+      // Medication keywords
+      'metformin', 'lisinopril', 'albuterol', 'prednisone', 'amoxicillin',
+      'start', 'stop', 'discontinue', 'increase', 'decrease', 'titrate'
+    ];
+    
+    // Look for new significant keywords in the assessment/plan
+    const hasNewKeywords = significantKeywords.some(keyword => 
+      newAssessment.includes(keyword) && !oldAssessment.includes(keyword)
+    );
+    
+    // Check for substantial content length changes (>20% change)
+    const lengthChange = Math.abs(newContent.length - lastProcessedSOAPContent.length) / lastProcessedSOAPContent.length;
+    const hasSubstantialChanges = lengthChange > 0.2;
+    
+    console.log(`🔍 [ChangeDetection] Significant changes detected: ${hasNewKeywords || hasSubstantialChanges}`);
+    console.log(`🔍 [ChangeDetection] New keywords: ${hasNewKeywords}, Length change: ${(lengthChange * 100).toFixed(1)}%`);
+    
+    return hasNewKeywords || hasSubstantialChanges;
+  };
+
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
@@ -238,38 +282,11 @@ export function EncounterDetailView({
       setLastSaved(content);
       setAutoSaveStatus("saved");
 
-      // Process medical problems for auto-save edits (Trigger 2)
-      console.log("🏥 [AutoSave] Processing medical problems for auto-saved changes...");
-      
-      try {
-        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            soapNote: content,
-            patientId: patient.id,
-            triggerType: "manual_edit"
-          })
-        });
-
-        if (medicalProblemsResponse.ok) {
-          const result = await medicalProblemsResponse.json();
-          console.log(`✅ [AutoSave] Medical problems updated: ${result.total_problems_affected || 0} problems affected`);
-          
-          // Invalidate medical problems cache
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
-          });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
-          });
-        } else {
-          console.error(`❌ [AutoSave] Medical problems processing failed: ${medicalProblemsResponse.status}`);
-        }
-      } catch (error) {
-        console.error("❌ [AutoSave] Error processing medical problems:", error);
-      }
+      // NOTE: Medical problems processing removed from auto-save
+      // Medical problems will only be processed when:
+      // 1. Recording stops (stopRecording function)
+      // 2. Manual save with significant changes outside of recording
+      console.log("💾 [AutoSave] Auto-save completed - medical problems processing skipped (will process on recording stop)");
 
       // Invalidate relevant caches
       await queryClient.invalidateQueries({
@@ -332,7 +349,41 @@ export function EncounterDetailView({
     console.log(`🔍 [EncounterView] Note length: ${note.length}`);
     console.log(`🔍 [EncounterView] Patient: ${patient?.id || 'MISSING'}, Encounter: ${encounterId || 'MISSING'}`);
     console.log(`🔍 [EncounterView] Patient object:`, patient);
+    console.log(`🔍 [EncounterView] Recording state: ${isRecording ? 'ACTIVE' : 'STOPPED'}`);
     console.log(`🔍 [EncounterView] About to save SOAP note to encounter...`);
+    
+    // CRITICAL SAFEGUARD: Prevent medical problems processing during active recording
+    if (isRecording) {
+      console.log(`🚫 [EncounterView] BLOCKING medical problems processing - recording is ACTIVE`);
+      console.log(`🚫 [EncounterView] SOAP note will be saved but medical problems processing skipped until recording stops`);
+      
+      // Only save SOAP note, skip all medical processing
+      setSoapNote(note);
+      if (editor && !editor.isDestroyed) {
+        const formattedContent = formatSoapNoteContent(note);
+        editor.commands.setContent(formattedContent);
+      }
+      
+      try {
+        await fetch(
+          `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ soapNote: note }),
+          },
+        );
+        console.log(`✅ [EncounterView] SOAP note saved during recording - medical processing deferred`);
+      } catch (error) {
+        console.error("❌ [EncounterView] Error saving SOAP note during recording:", error);
+      }
+      
+      return; // Exit early - no medical processing during recording
+    }
+    
+    console.log(`✅ [EncounterView] Recording is STOPPED - proceeding with full medical processing`);
     
     // Reset all generating states when SOAP generation completes
     setIsGeneratingSOAP(false);
@@ -1891,11 +1942,15 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
     }
 
     setIsRecording(false);
+    setLastRecordingStopTime(Date.now());
 
     // Real-time streaming has been updating SOAP note during recording
     // Now trigger completion workflow to save and process dependencies
     if (soapNote && soapNote.trim()) {
       console.log("🩺 [EncounterView] Processing final SOAP note through completion workflow...");
+      
+      // Mark this content as processed for future change detection
+      setLastProcessedSOAPContent(soapNote);
       
       // Trigger all existing dependencies that rely on SOAP completion
       await handleSOAPNoteComplete(soapNote);
@@ -2062,36 +2117,36 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         autoSaveTimer.current = null;
       }
 
-      // Process medical problems for manual SOAP edits (Trigger 2)
-      console.log("🏥 [ManualEdit] === MANUAL SOAP EDIT PROCESSING START ===");
-      console.log("🏥 [ManualEdit] Processing medical problems for manual SOAP changes...");
-      console.log("🏥 [ManualEdit] Request URL:", `/api/encounters/${encounterId}/process-medical-problems`);
-      console.log("🏥 [ManualEdit] Request payload:", {
-        soapNote: currentContent.substring(0, 200) + "...",
-        patientId: patient.id,
-        triggerType: "manual_edit",
-        encounterId: encounterId
-      });
+      // Smart medical problems processing for manual edits
+      const timeSinceRecordingStop = Date.now() - lastRecordingStopTime;
+      const hasSignificantChanges = hasSignificantSOAPChanges(currentContent);
+      const shouldProcessMedicalProblems = timeSinceRecordingStop > 5000 && hasSignificantChanges; // Only if 5+ seconds after recording stop AND significant changes
       
-      try {
-        const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            soapNote: currentContent,
-            patientId: patient.id,
-            triggerType: "manual_edit"
-          })
-        });
+      console.log("🏥 [SmartProcessing] === SMART MEDICAL PROBLEMS PROCESSING ===");
+      console.log("🏥 [SmartProcessing] Time since recording stop:", timeSinceRecordingStop, "ms");
+      console.log("🏥 [SmartProcessing] Has significant changes:", hasSignificantChanges);
+      console.log("🏥 [SmartProcessing] Should process medical problems:", shouldProcessMedicalProblems);
+      
+      if (shouldProcessMedicalProblems) {
+        console.log("🏥 [SmartProcessing] Processing medical problems for significant manual changes...");
+        
+        try {
+          const medicalProblemsResponse = await fetch(`/api/medical-problems/process-encounter`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              encounterId: encounterId,
+              triggerType: "manual_edit"
+            })
+          });
 
-        console.log("🏥 [ManualEdit] Response status:", medicalProblemsResponse.status);
-        console.log("🏥 [ManualEdit] Response headers:", Object.fromEntries(medicalProblemsResponse.headers.entries()));
-        console.log("🏥 [ManualEdit] Response ok:", medicalProblemsResponse.ok);
-
-        if (medicalProblemsResponse.ok) {
-          const result = await medicalProblemsResponse.json();
-          console.log(`✅ [ManualEdit] Medical problems updated: ${result.total_problems_affected || 0} problems affected`);
+          if (medicalProblemsResponse.ok) {
+            const result = await medicalProblemsResponse.json();
+            console.log(`✅ [SmartProcessing] Medical problems updated: ${result.total_problems_affected || 0} problems affected`);
+            
+            // Update tracking state
+            setLastProcessedSOAPContent(currentContent);
           
           // Invalidate medical problems cache
           await queryClient.invalidateQueries({ 
