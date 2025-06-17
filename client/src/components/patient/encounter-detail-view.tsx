@@ -479,6 +479,44 @@ export function EncounterDetailView({
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({ soapNote: note })
+          }).then(async response => {
+            console.log("🏥 [ParallelProcessing] CPT extraction response status:", response.status);
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error("❌ [ParallelProcessing] CPT extraction failed:", errorText);
+              return response;
+            }
+            
+            const extractedData = await response.json();
+            console.log("✅ [ParallelProcessing] CPT extraction successful:", extractedData);
+            
+            // Now save the extracted data to the database
+            console.log("💾 [ParallelProcessing] Saving CPT codes to database...");
+            const saveResponse = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                cptCodes: extractedData.cptCodes || [],
+                diagnoses: extractedData.diagnoses || [],
+                mappings: extractedData.mappings || []
+              })
+            });
+            
+            if (saveResponse.ok) {
+              console.log("✅ [ParallelProcessing] CPT codes saved to database successfully");
+            } else {
+              const saveErrorText = await saveResponse.text();
+              console.error("❌ [ParallelProcessing] Failed to save CPT codes:", saveErrorText);
+            }
+            
+            // Return the original extraction response for the parallel processing handler
+            return new Response(JSON.stringify(extractedData), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers
+            });
           })
         ]);
 
@@ -2034,22 +2072,35 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               return response;
             }
             
-            const responseText = await response.text();
-            console.log("✅ [StopRecording] CPT extraction raw response:", responseText.substring(0, 500) + "...");
+            const extractedData = await response.json();
+            console.log("✅ [StopRecording] CPT extraction successful:", extractedData);
             
-            try {
-              const jsonData = JSON.parse(responseText);
-              console.log("✅ [StopRecording] CPT extraction parsed data:", jsonData);
-              return new Response(responseText, {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers
-              });
-            } catch (parseError) {
-              console.error("❌ [StopRecording] CPT response JSON parse error:", parseError);
-              console.error("❌ [StopRecording] Raw response that failed to parse:", responseText);
-              return response;
+            // Now save the extracted data to the database
+            console.log("💾 [StopRecording] Saving CPT codes to database...");
+            const saveResponse = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                cptCodes: extractedData.cptCodes || [],
+                diagnoses: extractedData.diagnoses || [],
+                mappings: extractedData.mappings || []
+              })
+            });
+            
+            if (saveResponse.ok) {
+              console.log("✅ [StopRecording] CPT codes saved to database successfully");
+            } else {
+              const saveErrorText = await saveResponse.text();
+              console.error("❌ [StopRecording] Failed to save CPT codes:", saveErrorText);
             }
+            
+            // Return the original extraction response for the parallel processing handler
+            return new Response(JSON.stringify(extractedData), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers
+            });
           })
         ]);
 
