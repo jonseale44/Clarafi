@@ -274,24 +274,33 @@ CONSOLIDATION RULES:
 4. If diagnosis added to SOAP: CREATE new visit entry
 5. If diagnosis evolved (Type 2 DM → Type 2 DM with neuropathy): UPDATE existing visit
 
-TASK: Return encounter-scoped changes in this exact JSON format:
+TASK: Extract medical problems and return changes in this exact JSON format:
 {
   "changes": [
     {
-      "action": "ADD_HISTORY" | "UPDATE_HISTORY" | "DELETE_HISTORY" | "NEW_PROBLEM",
+      "action": "NEW_PROBLEM" | "ADD_VISIT" | "UPDATE_ICD" | "RESOLVE",
       "problem_id": number | null,
       "problem_title": "string",
-      "visit_action": "started" | "continued" | "modified" | "discontinued" | "resolved",
-      "visit_notes": "Clinical notes for this encounter",
-      "icd10_code": "string",
-      "confidence": 0.95,
-      "reasoning": "Why this change was made",
-      "encounter_operation": "CREATE" | "UPDATE" | "DELETE"
+      "visit_notes": "Clinical notes from this encounter",
+      "icd10_change": {"from": "old_code", "to": "new_code"} | null,
+      "confidence": 0.95
     }
   ]
 }
 
-IMPORTANT: Only return valid JSON. No additional text.`;
+EXAMPLES:
+- If SOAP mentions "Type 2 diabetes" and no existing problems: {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus", "visit_notes": "Patient presents with...", "confidence": 0.95}
+- If existing "Diabetes" problem and SOAP shows progression: {"action": "ADD_VISIT", "problem_id": 1, "problem_title": "Type 2 diabetes mellitus", "visit_notes": "Follow-up visit showing...", "confidence": 0.9}
+
+IMPORTANT: 
+1. Extract ALL diagnoses, symptoms, and medical conditions from Assessment/Plan sections
+2. Look for conditions mentioned in medications (e.g., metformin suggests diabetes)
+3. Only return valid JSON. No additional text.
+4. Always create new problems if patient has no existing medical problems`;
+
+    console.log(`🔍 [GPT] Sending prompt to GPT-4o:`);
+    console.log(`🔍 [GPT] Prompt length: ${encounterScopedPrompt.length} characters`);
+    console.log(`🔍 [GPT] Prompt preview:`, encounterScopedPrompt.substring(0, 500) + "...");
 
     try {
       const completion = await this.openai.chat.completions.create({
@@ -306,10 +315,34 @@ IMPORTANT: Only return valid JSON. No additional text.`;
         throw new Error("No response from GPT");
       }
 
-      console.log(`🔍 [GPT] Raw response:`, content.substring(0, 200));
+      console.log(`🔍 [GPT] Raw response length: ${content.length} characters`);
+      console.log(`🔍 [GPT] Full raw response:`, content);
 
-      const response = JSON.parse(content);
-      return response.changes || [];
+      let response;
+      try {
+        response = JSON.parse(content);
+        console.log(`✅ [GPT] Successfully parsed JSON response`);
+        console.log(`✅ [GPT] Parsed response object:`, response);
+      } catch (parseError) {
+        console.log(`❌ [GPT] JSON parse error:`, parseError);
+        console.log(`❌ [GPT] Content that failed to parse:`, content);
+        return [];
+      }
+
+      const changes = response.changes || [];
+      console.log(`🔍 [GPT] Changes array length: ${changes.length}`);
+      
+      if (changes.length > 0) {
+        changes.forEach((change, index) => {
+          console.log(`🔍 [GPT] Change ${index + 1}:`, change);
+        });
+      } else {
+        console.log(`⚠️ [GPT] No changes detected by GPT - investigating...`);
+        console.log(`⚠️ [GPT] Response had 'changes' property:`, 'changes' in response);
+        console.log(`⚠️ [GPT] Response changes value:`, response.changes);
+      }
+
+      return changes;
 
     } catch (error: any) {
       console.error(`❌ [GPT] Error in encounter-scoped analysis:`, error);
