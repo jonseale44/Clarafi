@@ -474,11 +474,11 @@ export function EncounterDetailView({
             credentials: 'include',
             body: JSON.stringify(ordersRequestBody)
           }),
-          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt-codes`, {
+          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(cptRequestBody)
+            body: JSON.stringify({ soapNote: note })
           })
         ]);
 
