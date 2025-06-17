@@ -58,29 +58,29 @@ export class MedicalProblemsDeltaService {
   }
 
   /**
-   * Process SOAP note incrementally to identify medical problem changes
-   * Only analyzes what changed, not full rewrite
+   * Process SOAP note with encounter-scoped visit consolidation
+   * Handles multiple recordings and manual edits within same encounter
    */
   async processSOAPDelta(
     patientId: number,
     encounterId: number,
     soapNote: string,
     providerId: number,
-    processingTier: "initial" | "revision" = "initial",
-    previousResults?: DeltaProcessingResult
+    triggerType: "recording_complete" | "manual_edit" = "recording_complete"
   ): Promise<DeltaProcessingResult> {
     const startTime = Date.now();
-    console.log(`🏥 [DeltaService] === DELTA PROCESSING START ===`);
-    console.log(`🏥 [DeltaService] Processing Tier: ${processingTier.toUpperCase()}`);
+    console.log(`🏥 [DeltaService] === ENCOUNTER-SCOPED PROCESSING START ===`);
+    console.log(`🏥 [DeltaService] Trigger Type: ${triggerType.toUpperCase()}`);
     console.log(`🏥 [DeltaService] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
     console.log(`🏥 [DeltaService] SOAP Note length: ${soapNote.length} characters`);
-    if (previousResults) {
-      console.log(`🏥 [DeltaService] Previous processing results: ${previousResults.changes.length} changes`);
-    }
 
     try {
-      // Get existing medical problems for context
-      console.log(`🏥 [DeltaService] Fetching existing medical problems...`);
+      // Get existing medical problems and encounter visit history for context
+      console.log(`🏥 [DeltaService] Fetching existing medical problems and encounter history...`);
+      
+      // Get any existing visit history entries for this specific encounter
+      const existingEncounterVisits = await this.getEncounterVisitHistory(encounterId);
+      console.log(`🏥 [DeltaService] Found ${existingEncounterVisits.length} existing visit entries for this encounter`);
       const existingProblems = await this.getExistingProblems(patientId);
       console.log(`🏥 [DeltaService] Found ${existingProblems.length} existing medical problems`);
       
@@ -93,16 +93,16 @@ export class MedicalProblemsDeltaService {
       console.log(`🏥 [DeltaService] Patient: ${patient.firstName} ${patient.lastName}, Age: ${this.calculateAge(patient.dateOfBirth)}`);
       console.log(`🏥 [DeltaService] Encounter: ${encounter.encounterType}, Status: ${encounter.encounterStatus}`);
 
-      // Generate delta changes using GPT
-      console.log(`🏥 [DeltaService] Starting GPT delta analysis...`);
-      const changes = await this.generateDeltaChanges(
+      // Generate delta changes using GPT with encounter context
+      console.log(`🏥 [DeltaService] Starting GPT encounter-scoped analysis...`);
+      const changes = await this.generateEncounterScopedChanges(
         existingProblems,
+        existingEncounterVisits,
         soapNote,
         encounter,
         patient,
         providerId,
-        processingTier,
-        previousResults
+        triggerType
       );
       console.log(`🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`);
       changes.forEach((change, index) => {
@@ -184,16 +184,148 @@ export class MedicalProblemsDeltaService {
   }
 
   /**
-   * Generate delta changes using GPT analysis
+   * Get existing visit history entries for a specific encounter
+   */
+  private async getEncounterVisitHistory(encounterId: number) {
+    console.log(`🔍 [DeltaService] Querying visit history for encounter ${encounterId}`);
+    
+    // Get all medical problems for the patient of this encounter
+    const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).then(rows => rows[0]);
+    if (!encounter) return [];
+    
+    const problems = await db.select()
+      .from(medicalProblems)
+      .where(eq(medicalProblems.patientId, encounter.patientId));
+    
+    // Extract visit history entries that match this encounter
+    const encounterVisits: any[] = [];
+    
+    problems.forEach(problem => {
+      if (problem.visitHistory && Array.isArray(problem.visitHistory)) {
+        const encounterSpecificVisits = problem.visitHistory.filter((visit: any) => 
+          visit.encounterId === encounterId
+        );
+        encounterSpecificVisits.forEach(visit => {
+          encounterVisits.push({
+            problemId: problem.id,
+            problemTitle: problem.problemTitle,
+            visit: visit
+          });
+        });
+      }
+    });
+    
+    console.log(`🔍 [DeltaService] Found ${encounterVisits.length} visit entries for encounter ${encounterId}`);
+    return encounterVisits;
+  }
+
+  /**
+   * Generate encounter-scoped changes using GPT analysis
+   */
+  private async generateEncounterScopedChanges(
+    existingProblems: any[],
+    existingEncounterVisits: any[],
+    soapNote: string,
+    encounter: any,
+    patient: any,
+    providerId: number,
+    triggerType: "recording_complete" | "manual_edit"
+  ): Promise<ProblemChange[]> {
+
+    console.log(`🔍 [GPT] Building encounter-scoped prompt with ${existingProblems.length} existing problems and ${existingEncounterVisits.length} encounter visits`);
+    
+    const encounterScopedPrompt = `
+CURRENT MEDICAL PROBLEMS (Patient Chart):
+${existingProblems.length === 0 ? "NONE - This is a new patient with no existing medical problems" : JSON.stringify(existingProblems.map(p => ({
+  id: p.id,
+  title: p.problemTitle,
+  current_icd10: p.currentIcd10Code,
+  status: p.problemStatus
+})))}
+
+EXISTING VISIT HISTORY FOR THIS ENCOUNTER:
+${existingEncounterVisits.length === 0 ? "NONE - First processing for this encounter" : JSON.stringify(existingEncounterVisits.map(v => ({
+  problemId: v.problemId,
+  problemTitle: v.problemTitle,
+  visitDate: v.visit.date,
+  visitAction: v.visit.action,
+  visitNotes: v.visit.notes
+})))}
+
+CURRENT SOAP NOTE CONTENT:
+${soapNote}
+
+PATIENT CONTEXT:
+- Name: ${patient.firstName} ${patient.lastName}
+- Age: ${this.calculateAge(patient.dateOfBirth)}
+- Encounter Date: ${encounter.startTime}
+- Trigger Type: ${triggerType}
+
+ENCOUNTER-SCOPED PROCESSING INSTRUCTIONS:
+${triggerType === "recording_complete" ? 
+  "This is a recording completion. Process all diagnoses from the SOAP note." :
+  "This is a manual edit. Compare current SOAP content with existing visit history and update accordingly."
+}
+
+CONSOLIDATION RULES:
+1. ONE visit history entry per problem per encounter
+2. If problem already has visit history for this encounter: UPDATE it
+3. If diagnosis removed from SOAP: MARK visit as resolved/deleted
+4. If diagnosis added to SOAP: CREATE new visit entry
+5. If diagnosis evolved (Type 2 DM → Type 2 DM with neuropathy): UPDATE existing visit
+
+TASK: Return encounter-scoped changes in this exact JSON format:
+{
+  "changes": [
+    {
+      "action": "ADD_HISTORY" | "UPDATE_HISTORY" | "DELETE_HISTORY" | "NEW_PROBLEM",
+      "problem_id": number | null,
+      "problem_title": "string",
+      "visit_action": "started" | "continued" | "modified" | "discontinued" | "resolved",
+      "visit_notes": "Clinical notes for this encounter",
+      "icd10_code": "string",
+      "confidence": 0.95,
+      "reasoning": "Why this change was made",
+      "encounter_operation": "CREATE" | "UPDATE" | "DELETE"
+    }
+  ]
+}
+
+IMPORTANT: Only return valid JSON. No additional text.`;
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: encounterScopedPrompt }],
+        temperature: 0.1,
+        max_tokens: 3000,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error("No response from GPT");
+      }
+
+      console.log(`🔍 [GPT] Raw response:`, content.substring(0, 200));
+
+      const response = JSON.parse(content);
+      return response.changes || [];
+
+    } catch (error: any) {
+      console.error(`❌ [GPT] Error in encounter-scoped analysis:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Legacy method - remove after migration complete
    */
   private async generateDeltaChanges(
     existingProblems: any[],
     soapNote: string,
     encounter: any,
     patient: any,
-    providerId: number,
-    processingTier: "initial" | "revision" = "initial",
-    previousResults?: DeltaProcessingResult
+    providerId: number
   ): Promise<ProblemChange[]> {
 
     console.log(`🔍 [GPT] Building prompt with ${existingProblems.length} existing problems`);
