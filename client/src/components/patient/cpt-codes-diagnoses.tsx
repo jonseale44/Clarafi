@@ -81,6 +81,16 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
     enabled: !!patientId && !!encounterId
   });
 
+  // Debug logging for encounter data
+  useEffect(() => {
+    console.log("🔍 [CPTComponent] encounterData updated:", encounterData);
+    if (encounterData && typeof encounterData === 'object' && 'encounter' in encounterData) {
+      const encounter = (encounterData as any).encounter;
+      console.log("🔍 [CPTComponent] encounter.cptCodes:", encounter.cptCodes);
+      console.log("🔍 [CPTComponent] encounter.draftDiagnoses:", encounter.draftDiagnoses);
+    }
+  }, [encounterData]);
+
   // Convert legacy data to new format with unique IDs
   const convertToUniqueIdFormat = (cptCodes: any[], diagnoses: any[]) => {
     const convertedCPTCodes: CPTCode[] = cptCodes.map((cpt, index) => ({

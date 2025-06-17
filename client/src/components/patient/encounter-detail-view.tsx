@@ -506,6 +506,12 @@ export function EncounterDetailView({
             
             if (saveResponse.ok) {
               console.log("✅ [ParallelProcessing] CPT codes saved to database successfully");
+              
+              // Force refetch encounter data to refresh billing component immediately
+              await queryClient.refetchQueries({ 
+                queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
+              });
+              console.log("🔄 [ParallelProcessing] Encounter data refetched for billing component");
             } else {
               const saveErrorText = await saveResponse.text();
               console.error("❌ [ParallelProcessing] Failed to save CPT codes:", saveErrorText);
@@ -2090,6 +2096,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             
             if (saveResponse.ok) {
               console.log("✅ [StopRecording] CPT codes saved to database successfully");
+              
+              // Invalidate encounter query to refresh billing component
+              await queryClient.invalidateQueries({ 
+                queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
+              });
+              console.log("🔄 [StopRecording] Encounter cache invalidated for billing component");
             } else {
               const saveErrorText = await saveResponse.text();
               console.error("❌ [StopRecording] Failed to save CPT codes:", saveErrorText);
