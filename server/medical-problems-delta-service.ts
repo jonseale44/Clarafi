@@ -567,7 +567,8 @@ Respond with ONLY the JSON, no other text.
   }
 
   /**
-   * Update existing problem with new visit entry
+   * Update existing problem with encounter-scoped visit management
+   * Ensures one visit entry per encounter per problem
    */
   private async updateExistingProblem(
     change: ProblemChange,
@@ -589,19 +590,53 @@ Respond with ONLY the JSON, no other text.
     const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
     const encounterDate = encounter[0]?.startTime || new Date();
 
-    // Add new visit entry using DP structure
-    const newVisitEntry: VisitHistoryEntry = {
-      date: encounterDate.toISOString().split('T')[0], // DP - authoritative medical event date
-      notes: change.visit_notes || "",
-      source: "encounter",
-      encounterId: encounterId,
-      providerId: encounter[0]?.providerId,
-      providerName: "Auto-Generated", // TODO: Get actual provider name
-      icd10AtVisit: change.icd10_change?.to || existingProblem.currentIcd10Code || "",
-      changesMade: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
-      confidence: change.confidence,
-      isSigned: false
-    };
+    // Check if visit entry already exists for this encounter
+    const existingVisitIndex = visitHistory.findIndex(visit => visit.encounterId === encounterId);
+    
+    console.log(`[MedicalProblemsDelta] Checking encounter ${encounterId} for problem ${change.problem_id}`);
+    console.log(`[MedicalProblemsDelta] Existing visit found at index: ${existingVisitIndex}`);
+
+    let updatedVisitHistory: VisitHistoryEntry[];
+    let actionType: string;
+
+    if (existingVisitIndex >= 0) {
+      // UPDATE existing visit entry for this encounter
+      console.log(`[MedicalProblemsDelta] Updating existing visit entry for encounter ${encounterId}`);
+      
+      const updatedVisitEntry: VisitHistoryEntry = {
+        ...visitHistory[existingVisitIndex],
+        date: encounterDate.toISOString().split('T')[0], // Keep DP date consistent
+        notes: change.visit_notes || visitHistory[existingVisitIndex].notes,
+        icd10AtVisit: change.icd10_change?.to || visitHistory[existingVisitIndex].icd10AtVisit || existingProblem.currentIcd10Code || "",
+        changesMade: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
+        confidence: change.confidence,
+        // Preserve other fields like providerId, isSigned, etc.
+      };
+
+      updatedVisitHistory = [...visitHistory];
+      updatedVisitHistory[existingVisitIndex] = updatedVisitEntry;
+      actionType = "updated_existing_visit";
+      
+    } else {
+      // CREATE new visit entry for this encounter
+      console.log(`[MedicalProblemsDelta] Creating new visit entry for encounter ${encounterId}`);
+      
+      const newVisitEntry: VisitHistoryEntry = {
+        date: encounterDate.toISOString().split('T')[0], // DP - authoritative medical event date
+        notes: change.visit_notes || "",
+        source: "encounter",
+        encounterId: encounterId,
+        providerId: encounter[0]?.providerId,
+        providerName: "Auto-Generated", // TODO: Get actual provider name
+        icd10AtVisit: change.icd10_change?.to || existingProblem.currentIcd10Code || "",
+        changesMade: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
+        confidence: change.confidence,
+        isSigned: false
+      };
+
+      updatedVisitHistory = [...visitHistory, newVisitEntry];
+      actionType = "added_new_visit";
+    }
 
     const newChangeLogEntry: ChangeLogEntry = {
       encounter_id: encounterId,
@@ -612,18 +647,18 @@ Respond with ONLY the JSON, no other text.
       processing_time_ms: 0
     };
 
-    // Update problem with new visit history
+    // Update problem with encounter-scoped visit history
     await db.update(medicalProblems)
       .set({
         currentIcd10Code: change.icd10_change?.to || existingProblem.currentIcd10Code,
         lastUpdatedEncounterId: encounterId,
-        visitHistory: [...visitHistory, newVisitEntry],
+        visitHistory: updatedVisitHistory,
         changeLog: [...changeLog, newChangeLogEntry],
         updatedAt: new Date()
       })
       .where(eq(medicalProblems.id, change.problem_id));
 
-    console.log(`[MedicalProblemsDelta] Updated problem ${change.problem_id} with visit entry`);
+    console.log(`[MedicalProblemsDelta] ${actionType} for problem ${change.problem_id} - encounter ${encounterId}`);
   }
 
   /**
