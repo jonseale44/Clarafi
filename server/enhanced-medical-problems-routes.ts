@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { storage } from "./storage";
 import { medicalProblemsDelta } from "./medical-problems-delta-service";
-import { insertMedicalProblemSchema } from "@shared/schema";
+import { insertMedicalProblemSchema, encounters } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 const router = Router();
 
@@ -333,10 +335,26 @@ router.post("/medical-problems/process-encounter", async (req, res) => {
     const providerId = req.user!.id;
     console.log(`🔍 [ProcessEncounter] Provider ID: ${providerId}`);
 
+    // Get encounter details to extract SOAP note and patient ID
+    const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
+    if (!encounter[0]) {
+      console.log(`❌ [ProcessEncounter] Encounter ${encounterId} not found`);
+      return res.status(404).json({ error: "Encounter not found" });
+    }
+
+    const soapNote = encounter[0].soapNote || '';
+    const patientId = encounter[0].patientId;
+
+    console.log(`🏥 [ProcessEncounter] Processing encounter ${encounterId} for patient ${patientId}`);
+    console.log(`🏥 [ProcessEncounter] SOAP note length: ${soapNote.length} characters`);
+    console.log(`🏥 [ProcessEncounter] Trigger type: ${triggerType}`);
+
     // Process the encounter using the medical problems delta service
     const startTime = Date.now();
-    const result = await medicalProblemsDelta.processEncounter(
+    const result = await medicalProblemsDelta.processSOAPDelta(
+      patientId,
       encounterId,
+      soapNote,
       providerId,
       triggerType || "manual_edit"
     );

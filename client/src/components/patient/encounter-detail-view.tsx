@@ -380,9 +380,10 @@ export function EncounterDetailView({
         console.log(`🏥 [ParallelProcessing] SOAP Note length: ${note.length} characters`);
         console.log(`🏥 [ParallelProcessing] SOAP Note preview: ${note.substring(0, 200)}...`);
         
+        const triggerType = "manual_edit"; // Manual save from SOAP editor
         const medicalProblemsRequestBody = {
-          soapNote: note,
-          patientId: patient.id
+          encounterId: encounterId,
+          triggerType: triggerType
         };
         
         const medicationsRequestBody = {
