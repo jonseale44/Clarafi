@@ -12,7 +12,6 @@ import {
 // Legacy import removed - using enhanced realtime service only
 import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
-import medicalProblemsRoutes from "./medical-problems-routes";
 import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
@@ -265,9 +264,6 @@ export function registerRoutes(app: Express): Server {
 
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);
-
-  // Medical problems routes
-  app.use("/api", medicalProblemsRoutes);
 
   // Enhanced medical problems routes (JSONB visit history)
   console.log("🚨 [ROUTES] Mounting enhanced medical problems routes...");
