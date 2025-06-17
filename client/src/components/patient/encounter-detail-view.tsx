@@ -2064,6 +2064,13 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       // Process medical problems for manual SOAP edits (Trigger 2)
       console.log("🏥 [ManualEdit] === MANUAL SOAP EDIT PROCESSING START ===");
       console.log("🏥 [ManualEdit] Processing medical problems for manual SOAP changes...");
+      console.log("🏥 [ManualEdit] Request URL:", `/api/encounters/${encounterId}/process-medical-problems`);
+      console.log("🏥 [ManualEdit] Request payload:", {
+        soapNote: currentContent.substring(0, 200) + "...",
+        patientId: patient.id,
+        triggerType: "manual_edit",
+        encounterId: encounterId
+      });
       
       try {
         const medicalProblemsResponse = await fetch(`/api/encounters/${encounterId}/process-medical-problems`, {
@@ -2076,6 +2083,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             triggerType: "manual_edit"
           })
         });
+
+        console.log("🏥 [ManualEdit] Response status:", medicalProblemsResponse.status);
+        console.log("🏥 [ManualEdit] Response headers:", Object.fromEntries(medicalProblemsResponse.headers.entries()));
+        console.log("🏥 [ManualEdit] Response ok:", medicalProblemsResponse.ok);
 
         if (medicalProblemsResponse.ok) {
           const result = await medicalProblemsResponse.json();

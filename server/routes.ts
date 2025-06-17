@@ -270,6 +270,9 @@ export function registerRoutes(app: Express): Server {
   app.use("/api", medicalProblemsRoutes);
 
   // Enhanced medical problems routes (JSONB visit history)
+  console.log("🚨 [ROUTES] Mounting enhanced medical problems routes...");
+  console.log("🚨 [ROUTES] Enhanced routes object:", typeof enhancedMedicalProblemsRoutes);
+  console.log("🚨 [ROUTES] Enhanced routes stack length:", enhancedMedicalProblemsRoutes?.stack?.length || 'no stack');
   app.use("/api", enhancedMedicalProblemsRoutes);
 
   // Enhanced medications routes (GPT-powered standardization and grouping)

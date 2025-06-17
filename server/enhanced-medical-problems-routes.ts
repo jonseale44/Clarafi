@@ -75,6 +75,12 @@ router.get("/medical-problems/:problemId/visit-history", async (req, res) => {
  * Process SOAP note for medical problems using delta approach
  */
 router.post("/encounters/:encounterId/process-medical-problems", async (req, res) => {
+  console.log(`🚨 [MedicalProblemsAPI] ROUTE HIT - Enhanced medical problems processing endpoint accessed`);
+  console.log(`🚨 [MedicalProblemsAPI] Method: ${req.method}, URL: ${req.url}`);
+  console.log(`🚨 [MedicalProblemsAPI] Headers:`, req.headers);
+  console.log(`🚨 [MedicalProblemsAPI] Raw params:`, req.params);
+  console.log(`🚨 [MedicalProblemsAPI] Raw body:`, req.body);
+  
   try {
     console.log(`🏥 [MedicalProblemsAPI] === PROCESSING REQUEST START ===`);
     console.log(`🏥 [MedicalProblemsAPI] Encounter ID: ${req.params.encounterId}`);
