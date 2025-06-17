@@ -2438,6 +2438,93 @@ Return only valid JSON without markdown formatting.`;
     }
   });
 
+  // Medical Problems Orchestrator - Tier 1 (Recording Completion)
+  app.post("/api/encounters/:encounterId/process-medical-problems-tier1", async (req, res) => {
+    try {
+      const { encounterId } = req.params;
+      const { soapNote, patientId } = req.body;
+
+      if (!soapNote || !patientId) {
+        return res.status(400).json({
+          success: false,
+          error: "Missing required fields: soapNote and patientId"
+        });
+      }
+
+      console.log(`🎯 [Tier1] Processing medical problems for encounter ${encounterId}`);
+      console.log(`🎯 [Tier1] Patient ID: ${patientId}`);
+      console.log(`🎯 [Tier1] SOAP Note length: ${soapNote.length} characters`);
+
+      const { medicalProblemsOrchestrator } = await import("./medical-problems-orchestrator.js");
+      
+      const result = await medicalProblemsOrchestrator.processRecordingCompletion(
+        parseInt(patientId),
+        parseInt(encounterId),
+        soapNote,
+        req.user?.id || 1 // Default to user 1 if not authenticated
+      );
+
+      console.log(`✅ [Tier1] Processing completed: ${result.total_problems_affected} problems affected in ${result.processing_time_ms}ms`);
+
+      res.json({
+        success: true,
+        ...result
+      });
+
+    } catch (error: any) {
+      console.error("❌ [Tier1] Processing failed:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to process medical problems (Tier 1)"
+      });
+    }
+  });
+
+  // Medical Problems Orchestrator - Tier 3 (Manual SOAP Edits)
+  app.post("/api/encounters/:encounterId/process-medical-problems-tier3", async (req, res) => {
+    try {
+      const { encounterId } = req.params;
+      const { soapNote, patientId } = req.body;
+
+      if (!soapNote || !patientId) {
+        return res.status(400).json({
+          success: false,
+          error: "Missing required fields: soapNote and patientId"
+        });
+      }
+
+      console.log(`🎯 [Tier3] Processing manual SOAP edits for encounter ${encounterId}`);
+      console.log(`🎯 [Tier3] Patient ID: ${patientId}`);
+      console.log(`🎯 [Tier3] SOAP Note length: ${soapNote.length} characters`);
+
+      const { medicalProblemsOrchestrator } = await import("./medical-problems-orchestrator.js");
+      
+      const result = await medicalProblemsOrchestrator.processManualSOAPEdit(
+        parseInt(patientId),
+        parseInt(encounterId),
+        soapNote,
+        req.user?.id || 1 // Default to user 1 if not authenticated
+      );
+
+      console.log(`✅ [Tier3] Processing completed: ${result.total_problems_affected} problems affected in ${result.processing_time_ms}ms`);
+      if ((result as any).reason) {
+        console.log(`ℹ️ [Tier3] Reason: ${(result as any).reason}`);
+      }
+
+      res.json({
+        success: true,
+        ...result
+      });
+
+    } catch (error: any) {
+      console.error("❌ [Tier3] Processing failed:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to process medical problems (Tier 3)"
+      });
+    }
+  });
+
   // Register patient parser routes
   app.use("/api", parseRoutes);
 
