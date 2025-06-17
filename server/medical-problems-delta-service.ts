@@ -27,7 +27,11 @@ export interface VisitHistoryEntry {
 export interface ChangeLogEntry {
   encounter_id: number;
   timestamp: string;
-  change_type: "visit_added" | "icd10_updated" | "problem_created" | "problem_resolved";
+  change_type:
+    | "visit_added"
+    | "icd10_updated"
+    | "problem_created"
+    | "problem_resolved";
   old_icd10?: string;
   new_icd10?: string;
   processing_time_ms: number;
@@ -66,35 +70,52 @@ export class MedicalProblemsDeltaService {
     encounterId: number,
     soapNote: string,
     providerId: number,
-    triggerType: "recording_complete" | "manual_edit" = "recording_complete"
+    triggerType: "recording_complete" | "manual_edit" = "recording_complete",
   ): Promise<DeltaProcessingResult> {
     const startTime = Date.now();
     console.log(`🏥 [DeltaService] === ENCOUNTER-SCOPED PROCESSING START ===`);
     console.log(`🏥 [DeltaService] Trigger Type: ${triggerType.toUpperCase()}`);
-    console.log(`🏥 [DeltaService] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
-    console.log(`🏥 [DeltaService] SOAP Note length: ${soapNote.length} characters`);
+    console.log(
+      `🏥 [DeltaService] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`,
+    );
+    console.log(
+      `🏥 [DeltaService] SOAP Note length: ${soapNote.length} characters`,
+    );
 
     try {
       // Get existing medical problems and encounter visit history for context
-      console.log(`🏥 [DeltaService] Fetching existing medical problems and encounter history...`);
-      
+      console.log(
+        `🏥 [DeltaService] Fetching existing medical problems and encounter history...`,
+      );
+
       // Get any existing visit history entries for this specific encounter
-      const existingEncounterVisits = await this.getEncounterVisitHistory(encounterId);
-      console.log(`🏥 [DeltaService] Found ${existingEncounterVisits.length} existing visit entries for this encounter`);
+      const existingEncounterVisits =
+        await this.getEncounterVisitHistory(encounterId);
+      console.log(
+        `🏥 [DeltaService] Found ${existingEncounterVisits.length} existing visit entries for this encounter`,
+      );
       const existingProblems = await this.getExistingProblems(patientId);
-      console.log(`🏥 [DeltaService] Found ${existingProblems.length} existing medical problems`);
-      
+      console.log(
+        `🏥 [DeltaService] Found ${existingProblems.length} existing medical problems`,
+      );
+
       // Get encounter and patient info
       console.log(`🏥 [DeltaService] Fetching encounter and patient info...`);
       const [encounter, patient] = await Promise.all([
         this.getEncounterInfo(encounterId),
-        this.getPatientInfo(patientId)
+        this.getPatientInfo(patientId),
       ]);
-      console.log(`🏥 [DeltaService] Patient: ${patient.firstName} ${patient.lastName}, Age: ${this.calculateAge(patient.dateOfBirth)}`);
-      console.log(`🏥 [DeltaService] Encounter: ${encounter.encounterType}, Status: ${encounter.encounterStatus}`);
+      console.log(
+        `🏥 [DeltaService] Patient: ${patient.firstName} ${patient.lastName}, Age: ${this.calculateAge(patient.dateOfBirth)}`,
+      );
+      console.log(
+        `🏥 [DeltaService] Encounter: ${encounter.encounterType}, Status: ${encounter.encounterStatus}`,
+      );
 
       // Generate delta changes using GPT with encounter context
-      console.log(`🏥 [DeltaService] Starting GPT encounter-scoped analysis...`);
+      console.log(
+        `🏥 [DeltaService] Starting GPT encounter-scoped analysis...`,
+      );
       const changes = await this.generateEncounterScopedChanges(
         existingProblems,
         existingEncounterVisits,
@@ -102,28 +123,35 @@ export class MedicalProblemsDeltaService {
         encounter,
         patient,
         providerId,
-        triggerType
+        triggerType,
       );
-      console.log(`🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`);
+      console.log(
+        `🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`,
+      );
       changes.forEach((change, index) => {
-        console.log(`🏥 [DeltaService] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing problem'} (confidence: ${change.confidence})`);
+        console.log(
+          `🏥 [DeltaService] Change ${index + 1}: ${change.action} - ${change.problem_title || "existing problem"} (confidence: ${change.confidence})`,
+        );
       });
 
       // Apply changes optimistically to database
-      console.log(`🏥 [DeltaService] Applying ${changes.length} changes to database...`);
+      console.log(
+        `🏥 [DeltaService] Applying ${changes.length} changes to database...`,
+      );
       await this.applyChangesToDatabase(changes, patientId, encounterId);
       console.log(`🏥 [DeltaService] Database changes applied successfully`);
 
       const processingTime = Date.now() - startTime;
       console.log(`✅ [DeltaService] === DELTA PROCESSING COMPLETE ===`);
-      console.log(`✅ [DeltaService] Total time: ${processingTime}ms, Problems affected: ${changes.length}`);
+      console.log(
+        `✅ [DeltaService] Total time: ${processingTime}ms, Problems affected: ${changes.length}`,
+      );
 
       return {
         changes,
         processing_time_ms: processingTime,
-        total_problems_affected: changes.length
+        total_problems_affected: changes.length,
       };
-
     } catch (error) {
       console.error(`❌ [DeltaService] Error in processSOAPDelta:`, error);
       console.error(`❌ [DeltaService] Stack trace:`, (error as Error).stack);
@@ -137,34 +165,37 @@ export class MedicalProblemsDeltaService {
   async signEncounter(encounterId: number, providerId: number): Promise<void> {
     try {
       // Update all visit history entries for this encounter to signed status
-      const problems = await db.select()
+      const problems = await db
+        .select()
         .from(medicalProblems)
         .where(eq(medicalProblems.lastUpdatedEncounterId, encounterId));
 
       for (const problem of problems) {
         const visitHistory = problem.visitHistory as VisitHistoryEntry[];
-        const updatedHistory = visitHistory.map(visit => {
+        const updatedHistory = visitHistory.map((visit) => {
           if (visit.encounterId === encounterId && !visit.isSigned) {
             return {
               ...visit,
               isSigned: true,
               providerId: providerId,
-              signedAt: new Date().toISOString()
+              signedAt: new Date().toISOString(),
             };
           }
           return visit;
         });
 
-        await db.update(medicalProblems)
+        await db
+          .update(medicalProblems)
           .set({
             visitHistory: updatedHistory,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(medicalProblems.id, problem.id));
       }
 
-      console.log(`[MedicalProblemsDelta] Signed encounter ${encounterId} for ${problems.length} problems`);
-
+      console.log(
+        `[MedicalProblemsDelta] Signed encounter ${encounterId} for ${problems.length} problems`,
+      );
     } catch (error) {
       console.error("Error signing encounter:", error);
       throw error;
@@ -175,47 +206,59 @@ export class MedicalProblemsDeltaService {
    * Get patient's medical problems for context
    */
   private async getExistingProblems(patientId: number) {
-    return await db.select()
+    return await db
+      .select()
       .from(medicalProblems)
-      .where(and(
-        eq(medicalProblems.patientId, patientId),
-        eq(medicalProblems.problemStatus, "active")
-      ));
+      .where(
+        and(
+          eq(medicalProblems.patientId, patientId),
+          eq(medicalProblems.problemStatus, "active"),
+        ),
+      );
   }
 
   /**
    * Get existing visit history entries for a specific encounter
    */
   private async getEncounterVisitHistory(encounterId: number) {
-    console.log(`🔍 [DeltaService] Querying visit history for encounter ${encounterId}`);
-    
+    console.log(
+      `🔍 [DeltaService] Querying visit history for encounter ${encounterId}`,
+    );
+
     // Get all medical problems for the patient of this encounter
-    const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).then(rows => rows[0]);
+    const encounter = await db
+      .select()
+      .from(encounters)
+      .where(eq(encounters.id, encounterId))
+      .then((rows) => rows[0]);
     if (!encounter) return [];
-    
-    const problems = await db.select()
+
+    const problems = await db
+      .select()
       .from(medicalProblems)
       .where(eq(medicalProblems.patientId, encounter.patientId));
-    
+
     // Extract visit history entries that match this encounter
     const encounterVisits: any[] = [];
-    
-    problems.forEach(problem => {
+
+    problems.forEach((problem) => {
       if (problem.visitHistory && Array.isArray(problem.visitHistory)) {
-        const encounterSpecificVisits = problem.visitHistory.filter((visit: any) => 
-          visit.encounterId === encounterId
+        const encounterSpecificVisits = problem.visitHistory.filter(
+          (visit: any) => visit.encounterId === encounterId,
         );
-        encounterSpecificVisits.forEach(visit => {
+        encounterSpecificVisits.forEach((visit) => {
           encounterVisits.push({
             problemId: problem.id,
             problemTitle: problem.problemTitle,
-            visit: visit
+            visit: visit,
           });
         });
       }
     });
-    
-    console.log(`🔍 [DeltaService] Found ${encounterVisits.length} visit entries for encounter ${encounterId}`);
+
+    console.log(
+      `🔍 [DeltaService] Found ${encounterVisits.length} visit entries for encounter ${encounterId}`,
+    );
     return encounterVisits;
   }
 
@@ -229,28 +272,41 @@ export class MedicalProblemsDeltaService {
     encounter: any,
     patient: any,
     providerId: number,
-    triggerType: "recording_complete" | "manual_edit"
+    triggerType: "recording_complete" | "manual_edit",
   ): Promise<ProblemChange[]> {
+    console.log(
+      `🔍 [GPT] Building encounter-scoped prompt with ${existingProblems.length} existing problems and ${existingEncounterVisits.length} encounter visits`,
+    );
 
-    console.log(`🔍 [GPT] Building encounter-scoped prompt with ${existingProblems.length} existing problems and ${existingEncounterVisits.length} encounter visits`);
-    
     const encounterScopedPrompt = `
 CURRENT MEDICAL PROBLEMS (Patient Chart):
-${existingProblems.length === 0 ? "NONE - This is a new patient with no existing medical problems" : JSON.stringify(existingProblems.map(p => ({
-  id: p.id,
-  title: p.problemTitle,
-  current_icd10: p.currentIcd10Code,
-  status: p.problemStatus
-})))}
+${
+  existingProblems.length === 0
+    ? "NONE - This is a new patient with no existing medical problems"
+    : JSON.stringify(
+        existingProblems.map((p) => ({
+          id: p.id,
+          title: p.problemTitle,
+          current_icd10: p.currentIcd10Code,
+          status: p.problemStatus,
+        })),
+      )
+}
 
 EXISTING VISIT HISTORY FOR THIS ENCOUNTER:
-${existingEncounterVisits.length === 0 ? "NONE - First processing for this encounter" : JSON.stringify(existingEncounterVisits.map(v => ({
-  problemId: v.problemId,
-  problemTitle: v.problemTitle,
-  visitDate: v.visit.date,
-  visitAction: v.visit.action,
-  visitNotes: v.visit.notes
-})))}
+${
+  existingEncounterVisits.length === 0
+    ? "NONE - First processing for this encounter"
+    : JSON.stringify(
+        existingEncounterVisits.map((v) => ({
+          problemId: v.problemId,
+          problemTitle: v.problemTitle,
+          visitDate: v.visit.date,
+          visitAction: v.visit.action,
+          visitNotes: v.visit.notes,
+        })),
+      )
+}
 
 CURRENT SOAP NOTE CONTENT:
 ${soapNote}
@@ -262,9 +318,10 @@ PATIENT CONTEXT:
 - Trigger Type: ${triggerType}
 
 ENCOUNTER-SCOPED PROCESSING INSTRUCTIONS:
-${triggerType === "recording_complete" ? 
-  "This is a recording completion. Process all diagnoses from the SOAP note." :
-  "This is a manual edit. Compare current SOAP content with existing visit history and update accordingly."
+${
+  triggerType === "recording_complete"
+    ? "This is a recording completion. Process all diagnoses from the SOAP note."
+    : "This is a manual edit. Compare current SOAP content with existing visit history and update accordingly."
 }
 
 CONSOLIDATION RULES:
@@ -298,17 +355,22 @@ IMPORTANT:
 3. Only return valid JSON. No additional text.
 4. Always create new problems if patient has no existing medical problems`;
 
-    console.log(`🔍 [GPT] Sending prompt to GPT-4o:`);
-    console.log(`🔍 [GPT] Prompt length: ${encounterScopedPrompt.length} characters`);
-    console.log(`🔍 [GPT] Prompt preview:`, encounterScopedPrompt.substring(0, 500) + "...");
+    console.log(`🔍 [GPT] Sending prompt to GPT-4.1-nano:`);
+    console.log(
+      `🔍 [GPT] Prompt length: ${encounterScopedPrompt.length} characters`,
+    );
+    console.log(
+      `🔍 [GPT] Prompt preview:`,
+      encounterScopedPrompt.substring(0, 500) + "...",
+    );
 
     try {
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1-nano",
         messages: [{ role: "user", content: encounterScopedPrompt }],
         temperature: 0.1,
         max_tokens: 3000,
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
       });
 
       const content = completion.choices[0]?.message?.content;
@@ -325,19 +387,21 @@ IMPORTANT:
 
       const changes = response.changes || [];
       console.log(`🔍 [GPT] Changes array length: ${changes.length}`);
-      
+
       if (changes.length > 0) {
         changes.forEach((change: any, index: number) => {
           console.log(`🔍 [GPT] Change ${index + 1}:`, change);
         });
       } else {
         console.log(`⚠️ [GPT] No changes detected by GPT - investigating...`);
-        console.log(`⚠️ [GPT] Response had 'changes' property:`, 'changes' in response);
+        console.log(
+          `⚠️ [GPT] Response had 'changes' property:`,
+          "changes" in response,
+        );
         console.log(`⚠️ [GPT] Response changes value:`, response.changes);
       }
 
       return changes;
-
     } catch (error: any) {
       console.error(`❌ [GPT] Error in encounter-scoped analysis:`, error);
       return [];
@@ -352,19 +416,26 @@ IMPORTANT:
     soapNote: string,
     encounter: any,
     patient: any,
-    providerId: number
+    providerId: number,
   ): Promise<ProblemChange[]> {
+    console.log(
+      `🔍 [GPT] Building prompt with ${existingProblems.length} existing problems`,
+    );
 
-    console.log(`🔍 [GPT] Building prompt with ${existingProblems.length} existing problems`);
-    
     const deltaPrompt = `
 CURRENT MEDICAL PROBLEMS (DO NOT REWRITE):
-${existingProblems.length === 0 ? "NONE - This is a new patient with no existing medical problems" : JSON.stringify(existingProblems.map(p => ({
-  id: p.id,
-  title: p.problemTitle,
-  current_icd10: p.currentIcd10Code,
-  status: p.problemStatus
-})))}
+${
+  existingProblems.length === 0
+    ? "NONE - This is a new patient with no existing medical problems"
+    : JSON.stringify(
+        existingProblems.map((p) => ({
+          id: p.id,
+          title: p.problemTitle,
+          current_icd10: p.currentIcd10Code,
+          status: p.problemStatus,
+        })),
+      )
+}
 
 NEW SOAP NOTE CONTENT:
 ${soapNote}
@@ -414,40 +485,53 @@ Respond with ONLY the JSON, no other text.
 
     try {
       console.log(`🤖 [GPT] Sending prompt to GPT-4.1 for delta analysis...`);
-      console.log(`🤖 [GPT] Existing problems count: ${existingProblems.length}`);
-      console.log(`🤖 [GPT] SOAP note contains Assessment/Plan: ${soapNote.includes('ASSESSMENT') || soapNote.includes('Assessment')}`);
-      
+      console.log(
+        `🤖 [GPT] Existing problems count: ${existingProblems.length}`,
+      );
+      console.log(
+        `🤖 [GPT] SOAP note contains Assessment/Plan: ${soapNote.includes("ASSESSMENT") || soapNote.includes("Assessment")}`,
+      );
+
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1",
         messages: [{ role: "user", content: deltaPrompt }],
         temperature: 0.1,
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       // Log comprehensive token usage and cost analysis
       if (response.usage) {
         const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
-          'MedicalProblems',
+          "MedicalProblems",
           response.usage,
-          'gpt-4.1',
+          "gpt-4.1",
           {
             existingProblemsCount: existingProblems.length,
             soapNoteLength: soapNote.length,
-            patientAge: this.calculateAge(patient.dateOfBirth)
-          }
+            patientAge: this.calculateAge(patient.dateOfBirth),
+          },
         );
-        
+
         // Log cost projections for business planning
-        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50); // 50 encounters/day estimate
+        const projections = TokenCostAnalyzer.calculateProjections(
+          costAnalysis.totalCost,
+          50,
+        ); // 50 encounters/day estimate
         console.log(`💰 [MedicalProblems] COST PROJECTIONS:`);
-        console.log(`💰 [MedicalProblems] Daily (50 encounters): ${projections.formatted.daily}`);
-        console.log(`💰 [MedicalProblems] Monthly: ${projections.formatted.monthly}`);
-        console.log(`💰 [MedicalProblems] Yearly: ${projections.formatted.yearly}`);
+        console.log(
+          `💰 [MedicalProblems] Daily (50 encounters): ${projections.formatted.daily}`,
+        );
+        console.log(
+          `💰 [MedicalProblems] Monthly: ${projections.formatted.monthly}`,
+        );
+        console.log(
+          `💰 [MedicalProblems] Yearly: ${projections.formatted.yearly}`,
+        );
       }
 
       const content = response.choices[0].message.content?.trim();
       console.log(`🤖 [GPT] Raw response from GPT:`, content);
-      
+
       if (!content) {
         console.log(`🤖 [GPT] Empty response from GPT`);
         return [];
@@ -455,28 +539,33 @@ Respond with ONLY the JSON, no other text.
 
       // Clean GPT response - remove markdown code blocks if present
       let cleanedContent = content;
-      if (content.startsWith('```json')) {
-        cleanedContent = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+      if (content.startsWith("```json")) {
+        cleanedContent = content
+          .replace(/```json\s*/, "")
+          .replace(/\s*```$/, "");
         console.log(`🤖 [GPT] Cleaned markdown formatting from response`);
-      } else if (content.startsWith('```')) {
-        cleanedContent = content.replace(/```\s*/, '').replace(/\s*```$/, '');
-        console.log(`🤖 [GPT] Cleaned generic markdown formatting from response`);
+      } else if (content.startsWith("```")) {
+        cleanedContent = content.replace(/```\s*/, "").replace(/\s*```$/, "");
+        console.log(
+          `🤖 [GPT] Cleaned generic markdown formatting from response`,
+        );
       }
-      
+
       console.log(`🤖 [GPT] Cleaned content for parsing:`, cleanedContent);
 
       const result = JSON.parse(cleanedContent);
       console.log(`🤖 [GPT] Parsed result:`, result);
       console.log(`🤖 [GPT] Changes detected: ${result.changes?.length || 0}`);
-      
+
       if (result.changes && result.changes.length > 0) {
         result.changes.forEach((change: any, index: number) => {
-          console.log(`🤖 [GPT] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing'} (${change.confidence})`);
+          console.log(
+            `🤖 [GPT] Change ${index + 1}: ${change.action} - ${change.problem_title || "existing"} (${change.confidence})`,
+          );
         });
       }
-      
-      return result.changes || [];
 
+      return result.changes || [];
     } catch (error) {
       console.error("❌ [GPT] Error generating delta changes:", error);
       if (error instanceof SyntaxError) {
@@ -492,27 +581,29 @@ Respond with ONLY the JSON, no other text.
   private async applyChangesToDatabase(
     changes: ProblemChange[],
     patientId: number,
-    encounterId: number
+    encounterId: number,
   ): Promise<void> {
-
     for (const change of changes) {
       try {
         switch (change.action) {
           case "NEW_PROBLEM":
             await this.createNewProblem(change, patientId, encounterId);
             break;
-          
+
           case "ADD_VISIT":
           case "UPDATE_ICD":
             await this.updateExistingProblem(change, encounterId);
             break;
-          
+
           case "RESOLVE":
             await this.resolveProblem(change);
             break;
         }
       } catch (error) {
-        console.error(`Error applying change for problem ${change.problem_id}:`, error);
+        console.error(
+          `Error applying change for problem ${change.problem_id}:`,
+          error,
+        );
       }
     }
   }
@@ -523,15 +614,18 @@ Respond with ONLY the JSON, no other text.
   private async createNewProblem(
     change: ProblemChange,
     patientId: number,
-    encounterId: number
+    encounterId: number,
   ): Promise<void> {
-
     // Get encounter details for DP date
-    const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
+    const encounter = await db
+      .select()
+      .from(encounters)
+      .where(eq(encounters.id, encounterId))
+      .limit(1);
     const encounterDate = encounter[0]?.startTime || new Date();
 
     const visitEntry: VisitHistoryEntry = {
-      date: encounterDate.toISOString().split('T')[0], // DP - authoritative medical event date
+      date: encounterDate.toISOString().split("T")[0], // DP - authoritative medical event date
       notes: change.visit_notes || "",
       source: "encounter",
       encounterId: encounterId,
@@ -540,7 +634,7 @@ Respond with ONLY the JSON, no other text.
       icd10AtVisit: change.icd10_change?.to || "",
       changesMade: ["initial_diagnosis"],
       confidence: change.confidence,
-      isSigned: false
+      isSigned: false,
     };
 
     const changeLogEntry: ChangeLogEntry = {
@@ -548,7 +642,7 @@ Respond with ONLY the JSON, no other text.
       timestamp: new Date().toISOString(),
       change_type: "problem_created",
       new_icd10: change.icd10_change?.to,
-      processing_time_ms: 0
+      processing_time_ms: 0,
     };
 
     await db.insert(medicalProblems).values({
@@ -556,14 +650,16 @@ Respond with ONLY the JSON, no other text.
       problemTitle: change.problem_title!,
       currentIcd10Code: change.icd10_change?.to,
       problemStatus: "active",
-      firstDiagnosedDate: new Date().toISOString().split('T')[0],
+      firstDiagnosedDate: new Date().toISOString().split("T")[0],
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
       visitHistory: [visitEntry],
-      changeLog: [changeLogEntry]
+      changeLog: [changeLogEntry],
     });
 
-    console.log(`[MedicalProblemsDelta] Created new problem: ${change.problem_title}`);
+    console.log(
+      `[MedicalProblemsDelta] Created new problem: ${change.problem_title}`,
+    );
   }
 
   /**
@@ -572,12 +668,12 @@ Respond with ONLY the JSON, no other text.
    */
   private async updateExistingProblem(
     change: ProblemChange,
-    encounterId: number
+    encounterId: number,
   ): Promise<void> {
-
     if (!change.problem_id) return;
 
-    const [existingProblem] = await db.select()
+    const [existingProblem] = await db
+      .select()
       .from(medicalProblems)
       .where(eq(medicalProblems.id, change.problem_id));
 
@@ -587,28 +683,46 @@ Respond with ONLY the JSON, no other text.
     const changeLog = existingProblem.changeLog as ChangeLogEntry[];
 
     // Get encounter details for DP date
-    const encounter = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
+    const encounter = await db
+      .select()
+      .from(encounters)
+      .where(eq(encounters.id, encounterId))
+      .limit(1);
     const encounterDate = encounter[0]?.startTime || new Date();
 
     // Check if visit entry already exists for this encounter
-    const existingVisitIndex = visitHistory.findIndex(visit => visit.encounterId === encounterId);
-    
-    console.log(`[MedicalProblemsDelta] Checking encounter ${encounterId} for problem ${change.problem_id}`);
-    console.log(`[MedicalProblemsDelta] Existing visit found at index: ${existingVisitIndex}`);
+    const existingVisitIndex = visitHistory.findIndex(
+      (visit) => visit.encounterId === encounterId,
+    );
+
+    console.log(
+      `[MedicalProblemsDelta] Checking encounter ${encounterId} for problem ${change.problem_id}`,
+    );
+    console.log(
+      `[MedicalProblemsDelta] Existing visit found at index: ${existingVisitIndex}`,
+    );
 
     let updatedVisitHistory: VisitHistoryEntry[];
     let actionType: string;
 
     if (existingVisitIndex >= 0) {
       // UPDATE existing visit entry for this encounter
-      console.log(`[MedicalProblemsDelta] Updating existing visit entry for encounter ${encounterId}`);
-      
+      console.log(
+        `[MedicalProblemsDelta] Updating existing visit entry for encounter ${encounterId}`,
+      );
+
       const updatedVisitEntry: VisitHistoryEntry = {
         ...visitHistory[existingVisitIndex],
-        date: encounterDate.toISOString().split('T')[0], // Keep DP date consistent
+        date: encounterDate.toISOString().split("T")[0], // Keep DP date consistent
         notes: change.visit_notes || visitHistory[existingVisitIndex].notes,
-        icd10AtVisit: change.icd10_change?.to || visitHistory[existingVisitIndex].icd10AtVisit || existingProblem.currentIcd10Code || "",
-        changesMade: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
+        icd10AtVisit:
+          change.icd10_change?.to ||
+          visitHistory[existingVisitIndex].icd10AtVisit ||
+          existingProblem.currentIcd10Code ||
+          "",
+        changesMade: change.icd10_change
+          ? ["diagnosis_evolution"]
+          : ["routine_follow_up"],
         confidence: change.confidence,
         // Preserve other fields like providerId, isSigned, etc.
       };
@@ -616,22 +730,26 @@ Respond with ONLY the JSON, no other text.
       updatedVisitHistory = [...visitHistory];
       updatedVisitHistory[existingVisitIndex] = updatedVisitEntry;
       actionType = "updated_existing_visit";
-      
     } else {
       // CREATE new visit entry for this encounter
-      console.log(`[MedicalProblemsDelta] Creating new visit entry for encounter ${encounterId}`);
-      
+      console.log(
+        `[MedicalProblemsDelta] Creating new visit entry for encounter ${encounterId}`,
+      );
+
       const newVisitEntry: VisitHistoryEntry = {
-        date: encounterDate.toISOString().split('T')[0], // DP - authoritative medical event date
+        date: encounterDate.toISOString().split("T")[0], // DP - authoritative medical event date
         notes: change.visit_notes || "",
         source: "encounter",
         encounterId: encounterId,
         providerId: encounter[0]?.providerId,
         providerName: "Auto-Generated", // TODO: Get actual provider name
-        icd10AtVisit: change.icd10_change?.to || existingProblem.currentIcd10Code || "",
-        changesMade: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
+        icd10AtVisit:
+          change.icd10_change?.to || existingProblem.currentIcd10Code || "",
+        changesMade: change.icd10_change
+          ? ["diagnosis_evolution"]
+          : ["routine_follow_up"],
         confidence: change.confidence,
-        isSigned: false
+        isSigned: false,
       };
 
       updatedVisitHistory = [...visitHistory, newVisitEntry];
@@ -641,24 +759,29 @@ Respond with ONLY the JSON, no other text.
     const newChangeLogEntry: ChangeLogEntry = {
       encounter_id: encounterId,
       timestamp: new Date().toISOString(),
-      change_type: change.action === "UPDATE_ICD" ? "icd10_updated" : "visit_added",
+      change_type:
+        change.action === "UPDATE_ICD" ? "icd10_updated" : "visit_added",
       old_icd10: change.icd10_change?.from,
       new_icd10: change.icd10_change?.to,
-      processing_time_ms: 0
+      processing_time_ms: 0,
     };
 
     // Update problem with encounter-scoped visit history
-    await db.update(medicalProblems)
+    await db
+      .update(medicalProblems)
       .set({
-        currentIcd10Code: change.icd10_change?.to || existingProblem.currentIcd10Code,
+        currentIcd10Code:
+          change.icd10_change?.to || existingProblem.currentIcd10Code,
         lastUpdatedEncounterId: encounterId,
         visitHistory: updatedVisitHistory,
         changeLog: [...changeLog, newChangeLogEntry],
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(medicalProblems.id, change.problem_id));
 
-    console.log(`[MedicalProblemsDelta] ${actionType} for problem ${change.problem_id} - encounter ${encounterId}`);
+    console.log(
+      `[MedicalProblemsDelta] ${actionType} for problem ${change.problem_id} - encounter ${encounterId}`,
+    );
   }
 
   /**
@@ -667,10 +790,11 @@ Respond with ONLY the JSON, no other text.
   private async resolveProblem(change: ProblemChange): Promise<void> {
     if (!change.problem_id) return;
 
-    await db.update(medicalProblems)
+    await db
+      .update(medicalProblems)
       .set({
         problemStatus: "resolved",
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(medicalProblems.id, change.problem_id));
 
@@ -681,7 +805,8 @@ Respond with ONLY the JSON, no other text.
    * Get encounter information
    */
   private async getEncounterInfo(encounterId: number) {
-    const [encounter] = await db.select()
+    const [encounter] = await db
+      .select()
       .from(encounters)
       .where(eq(encounters.id, encounterId));
     return encounter;
@@ -691,7 +816,8 @@ Respond with ONLY the JSON, no other text.
    * Get patient information
    */
   private async getPatientInfo(patientId: number) {
-    const [patient] = await db.select()
+    const [patient] = await db
+      .select()
       .from(patients)
       .where(eq(patients.id, patientId));
     return patient;
@@ -705,11 +831,14 @@ Respond with ONLY the JSON, no other text.
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
-    
+
     return age;
   }
 }

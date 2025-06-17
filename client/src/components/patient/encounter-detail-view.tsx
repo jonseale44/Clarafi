@@ -1934,7 +1934,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
   };
 
   const stopRecording = async () => {
-    console.log("🎤 [EncounterView] Stopping recording...");
+    console.log("🎤 [EncounterView] === STOP RECORDING CALLED ===");
+    console.log("🎤 [EncounterView] Current soapNote:", soapNote ? soapNote.substring(0, 100) + "..." : "NULL/EMPTY");
+    console.log("🎤 [EncounterView] soapNote length:", soapNote?.length || 0);
+    console.log("🎤 [EncounterView] soapNote.trim():", soapNote?.trim() ? "HAS CONTENT" : "EMPTY AFTER TRIM");
+    
     const mediaRecorder = (window as any).currentMediaRecorder;
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.stop();
@@ -1946,7 +1950,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
     // Real-time streaming has been updating SOAP note during recording
     // Now trigger medical problems processing directly (bypassing recording check)
+    console.log("🎤 [EncounterView] Checking if should process SOAP content...");
     if (soapNote && soapNote.trim()) {
+      console.log("✅ [EncounterView] SOAP content exists - starting processing...");
       console.log("🩺 [EncounterView] Processing final SOAP note with medical problems after recording stop...");
       
       // Mark this content as processed for future change detection
@@ -2086,7 +2092,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         });
       }
     } else {
-      console.log("🩺 [EncounterView] No SOAP content to process");
+      console.log("❌ [EncounterView] === NO SOAP CONTENT TO PROCESS ===");
+      console.log("❌ [EncounterView] This explains why automatic processing isn't happening!");
+      console.log("❌ [EncounterView] soapNote value:", soapNote);
+      console.log("❌ [EncounterView] typeof soapNote:", typeof soapNote);
       toast({
         title: "Recording Stopped",
         description: "No SOAP content was generated during recording",
