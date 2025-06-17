@@ -310,4 +310,55 @@ router.get("/medical-problems/:problemId", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/medical-problems/process-encounter
+ * Process medical problems for an encounter using GPT analysis
+ */
+router.post("/medical-problems/process-encounter", async (req, res) => {
+  try {
+    console.log(`🔍 [ProcessEncounter] Medical problems processing request received`);
+    
+    if (!req.isAuthenticated()) {
+      console.log(`❌ [ProcessEncounter] Authentication failed`);
+      return res.sendStatus(401);
+    }
+
+    const { encounterId, triggerType } = req.body;
+    console.log(`🔍 [ProcessEncounter] Processing encounter ${encounterId} with trigger: ${triggerType}`);
+
+    if (!encounterId) {
+      return res.status(400).json({ error: "Missing encounterId" });
+    }
+
+    const providerId = req.user!.id;
+    console.log(`🔍 [ProcessEncounter] Provider ID: ${providerId}`);
+
+    // Process the encounter using the medical problems delta service
+    const startTime = Date.now();
+    const result = await medicalProblemsDelta.processEncounter(
+      encounterId,
+      providerId,
+      triggerType || "manual_edit"
+    );
+    const processingTime = Date.now() - startTime;
+
+    console.log(`✅ [ProcessEncounter] Processing completed in ${processingTime}ms`);
+    console.log(`✅ [ProcessEncounter] Result:`, result);
+
+    res.json({
+      success: true,
+      problemsAffected: result.total_problems_affected || result.problemsAffected || 0,
+      processingTimeMs: processingTime,
+      details: result
+    });
+
+  } catch (error) {
+    console.error("❌ [ProcessEncounter] Error processing medical problems:", error);
+    res.status(500).json({ 
+      error: "Failed to process medical problems",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;
