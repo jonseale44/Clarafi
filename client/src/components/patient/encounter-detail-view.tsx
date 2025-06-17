@@ -2009,11 +2009,11 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             credentials: 'include',
             body: JSON.stringify({})
           }),
-          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt-codes`, {
+          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({})
+            body: JSON.stringify({ soapNote })
           })
         ]);
 
