@@ -285,22 +285,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPatientMedicationsEnhanced(patientId: number): Promise<Medication[]> {
-    console.log(`🔍 [STORAGE] Fetching enhanced medications for patient ID: ${patientId}`);
-    
     const patientMedications = await db.select().from(medications)
       .where(eq(medications.patientId, patientId))
       .orderBy(desc(medications.createdAt));
-    
-    console.log(`🔍 [STORAGE] Found ${patientMedications.length} medications`);
-    patientMedications.forEach((med, index) => {
-      console.log(`🔍 [STORAGE] Medication ${index + 1}: ${med.medicationName} (${med.status}) - Order ID: ${med.sourceOrderId}`);
-    });
     
     return patientMedications;
   }
 
   async createMedication(medication: InsertMedication): Promise<Medication> {
-    console.log(`🔍 [STORAGE] Creating medication: ${medication.medicationName}`);
+
     
     const [newMedication] = await db.insert(medications)
       .values(medication)
@@ -311,7 +304,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateMedication(id: number, updates: Partial<Medication>): Promise<Medication> {
-    console.log(`🔍 [STORAGE] Updating medication ID: ${id}`);
+
     
     const [updatedMedication] = await db.update(medications)
       .set({ ...updates, updatedAt: new Date() })

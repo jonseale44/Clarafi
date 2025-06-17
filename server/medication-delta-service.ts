@@ -76,24 +76,17 @@ export class MedicationDeltaService {
     providerId: number
   ): Promise<MedicationDeltaResult> {
     const startTime = Date.now();
-    console.log(`💊 [MedicationDelta] === ORDER PROCESSING START ===`);
-    console.log(`💊 [MedicationDelta] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
 
     try {
       // Get medication orders for this encounter
-      console.log(`💊 [MedicationDelta] Fetching medication orders...`);
       const medicationOrders = await this.getMedicationOrders(encounterId);
-      console.log(`💊 [MedicationDelta] Found ${medicationOrders.length} medication orders`);
       
       // Get existing medications for context
-      console.log(`💊 [MedicationDelta] Fetching existing medications...`);
       const existingMedications = await this.getExistingMedications(patientId);
-      console.log(`💊 [MedicationDelta] Found ${existingMedications.length} existing medications`);
       
       // Process each medication order
       const changes: MedicationChange[] = [];
       for (const order of medicationOrders) {
-        console.log(`💊 [MedicationDelta] Processing order: ${order.medicationName} (Status: ${order.orderStatus})`);
         
         const change = await this.processIndividualMedicationOrder(
           order,
@@ -108,15 +101,11 @@ export class MedicationDeltaService {
         }
       }
 
-      console.log(`💊 [MedicationDelta] Generated ${changes.length} medication changes`);
       changes.forEach((change, index) => {
-        console.log(`💊 [MedicationDelta] Change ${index + 1}: ${change.action} - ${change.medication_name} (confidence: ${change.confidence})`);
       });
 
       // Apply changes to database
-      console.log(`💊 [MedicationDelta] Applying ${changes.length} changes to database...`);
       await this.applyChangesToDatabase(changes, patientId, encounterId, providerId);
-      console.log(`💊 [MedicationDelta] Database changes applied successfully`);
 
       const processingTime = Date.now() - startTime;
       console.log(`✅ [MedicationDelta] === ORDER PROCESSING COMPLETE ===`);
@@ -205,7 +194,6 @@ export class MedicationDeltaService {
     soapNote: string,
     providerId: number
   ): Promise<MedicationDeltaResult> {
-    console.log(`💊 [MedicationDelta] SOAP processing is deprecated, redirecting to order processing`);
     return this.processOrderDelta(patientId, encounterId, providerId);
   }
 
@@ -660,16 +648,11 @@ Please analyze this SOAP note and identify medication changes that occurred duri
    */
   private async findMatchingMedicationOrder(medicationName: string, encounterId: number): Promise<any | null> {
     try {
-      console.log(`💊 [OrderMatch] Searching for medication order matching "${medicationName}" in encounter ${encounterId}`);
-      
       // Get all medication orders for this encounter
       const orders = await storage.getDraftOrdersByEncounter(encounterId);
       const medicationOrders = orders.filter((order: any) => order.orderType === 'medication');
       
-      console.log(`💊 [OrderMatch] Found ${medicationOrders.length} medication orders in encounter ${encounterId}`);
-      
       if (medicationOrders.length === 0) {
-        console.log(`💊 [OrderMatch] No medication orders found in encounter ${encounterId}`);
         return null;
       }
       
@@ -678,17 +661,14 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         const orderMedName = (order as any).medicationName?.toLowerCase() || '';
         const targetMedName = medicationName.toLowerCase();
         
-        console.log(`💊 [OrderMatch] Comparing "${orderMedName}" with "${targetMedName}"`);
         
         // Exact match
         if (orderMedName === targetMedName) {
-          console.log(`💊 [OrderMatch] ✅ Exact match found: Order ID ${order.id}`);
           return order;
         }
         
         // Partial match (contains)
         if (orderMedName.includes(targetMedName) || targetMedName.includes(orderMedName)) {
-          console.log(`💊 [OrderMatch] ✅ Partial match found: Order ID ${order.id}`);
           return order;
         }
         
@@ -697,12 +677,10 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         const cleanTargetName = targetMedName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
         
         if (cleanOrderName === cleanTargetName) {
-          console.log(`💊 [OrderMatch] ✅ Clean name match found: Order ID ${order.id} ("${cleanOrderName}" = "${cleanTargetName}")`);
           return order;
         }
       }
       
-      console.log(`💊 [OrderMatch] ❌ No matching order found for "${medicationName}"`);
       return null;
       
     } catch (error) {
