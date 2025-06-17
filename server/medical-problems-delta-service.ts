@@ -197,8 +197,39 @@ export class MedicalProblemsDeltaService {
   ): Promise<ProblemChange[]> {
 
     console.log(`🔍 [GPT] Building prompt with ${existingProblems.length} existing problems`);
+    console.log(`🔍 [GPT] Processing tier: ${processingTier}`);
+    
+    // Build tier-specific context
+    let tierContext = "";
+    if (processingTier === "initial") {
+      tierContext = `
+**PROCESSING CONTEXT: INITIAL ANALYSIS**
+This is the first analysis of this encounter after recording completion. Provide comprehensive problem list updates based on the complete SOAP note and existing medical problems.
+      `;
+    } else if (processingTier === "revision") {
+      tierContext = `
+**PROCESSING CONTEXT: REVISION ANALYSIS**
+This is a revision analysis after the provider manually edited the SOAP note. The initial processing was already completed.
+
+PREVIOUS PROCESSING RESULTS:
+${previousResults ? `
+- Changes made: ${previousResults.changes.length}
+- Problems affected: ${previousResults.total_problems_affected}
+- Processing time: ${previousResults.processing_time_ms}ms
+
+Previous Changes Summary:
+${previousResults.changes.map((change, idx) => 
+  `${idx + 1}. ${change.action}: ${change.problem_title || 'existing problem'} (confidence: ${change.confidence})`
+).join('\n')}
+` : 'No previous results available'}
+
+Focus on what has changed since the initial processing. Only make changes if the SOAP revisions contain clinically significant new information or corrections.
+      `;
+    }
     
     const deltaPrompt = `
+${tierContext}
+
 CURRENT MEDICAL PROBLEMS (DO NOT REWRITE):
 ${existingProblems.length === 0 ? "NONE - This is a new patient with no existing medical problems" : JSON.stringify(existingProblems.map(p => ({
   id: p.id,
