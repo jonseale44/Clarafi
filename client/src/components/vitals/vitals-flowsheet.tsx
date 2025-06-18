@@ -149,6 +149,29 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
   // Fetch vitals entries for the encounter
   const { data: vitalsEntries = [], isLoading } = useQuery<VitalsEntry[]>({
     queryKey: ['/api/vitals/encounter', encounterId],
+    queryFn: async () => {
+      console.log("🩺 [VitalsFlowsheet] Fetching vitals for encounter:", encounterId);
+      const response = await fetch(`/api/vitals/encounter/${encounterId}`, { 
+        credentials: 'include' 
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch vitals: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("🩺 [VitalsFlowsheet] Fetched vitals result:", result);
+      
+      // Handle wrapped API response format
+      if (result.success && result.data) {
+        return result.data;
+      } else if (Array.isArray(result)) {
+        return result;
+      } else {
+        console.warn("🩺 [VitalsFlowsheet] Unexpected response format:", result);
+        return [];
+      }
+    },
     enabled: !!encounterId
   });
 
@@ -264,9 +287,12 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
       }
     },
     onSuccess: () => {
+      console.log("✅ [VitalsFlowsheet] Vitals saved successfully, invalidating cache");
       queryClient.invalidateQueries({ queryKey: ['/api/vitals/encounter', encounterId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/vitals/patient', patientId] });
       setEditingEntry(null);
       setShowAddDialog(false);
+      setQuickParseText('');
       toast({
         title: "Vitals Saved",
         description: "Vitals entry has been saved successfully"
