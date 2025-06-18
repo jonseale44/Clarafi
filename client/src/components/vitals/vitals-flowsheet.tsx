@@ -176,17 +176,17 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
           systolicBp: result.data.systolicBp,
           diastolicBp: result.data.diastolicBp,
           heartRate: result.data.heartRate,
-          temperature: result.data.temperature ? parseFloat(result.data.temperature) : undefined,
-          weight: result.data.weight ? parseFloat(result.data.weight) : undefined,
-          height: result.data.height ? parseFloat(result.data.height) : undefined,
-          bmi: result.data.bmi ? parseFloat(result.data.bmi) : undefined,
-          oxygenSaturation: result.data.oxygenSaturation ? parseFloat(result.data.oxygenSaturation) : undefined,
+          temperature: result.data.temperature ? parseFloat(result.data.temperature?.toString() || '0') : undefined,
+          weight: result.data.weight ? parseFloat(result.data.weight?.toString() || '0') : undefined,
+          height: result.data.height ? parseFloat(result.data.height?.toString() || '0') : undefined,
+          bmi: result.data.bmi ? parseFloat(result.data.bmi?.toString() || '0') : undefined,
+          oxygenSaturation: result.data.oxygenSaturation ? parseFloat(result.data.oxygenSaturation?.toString() || '0') : undefined,
           respiratoryRate: result.data.respiratoryRate,
           painScale: result.data.painScale,
           parsedFromText: true,
           originalText: quickParseText,
-          notes: `Parsed: ${result.data.parsedText || quickParseText}`,
-          alerts: result.data.warnings || []
+          notes: `Parsed: ${quickParseText}`,
+          alerts: []
         };
         
         console.log("🩺 [VitalsFlowsheet] Created new entry:", newEntry);
@@ -194,9 +194,10 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
         setShowAddDialog(true);
         setQuickParseText("");
         
+        const extractedCount = Object.keys(result.data).filter(k => result.data?.[k as keyof typeof result.data] !== null && result.data?.[k as keyof typeof result.data] !== undefined).length;
         toast({
           title: "Vitals Parsed Successfully",
-          description: `Extracted ${Object.keys(result.data).filter(k => result.data[k] !== null && result.data[k] !== undefined).length} vital signs with ${result.confidence}% confidence`,
+          description: `Extracted ${extractedCount} vital signs`,
         });
       } else {
         console.error("❌ [VitalsFlowsheet] Parse result missing success or data:", result);
@@ -356,7 +357,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
 
   return (
     <div className="space-y-4">
-      {/* Header with Quick Parse */}
+      {/* Header */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -383,27 +384,6 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
             )}
           </div>
         </CardHeader>
-        
-        {!readOnly && (
-          <CardContent className="pt-0">
-            <div className="flex space-x-2">
-              <Textarea
-                placeholder="Quick parse: '120/80, P 80, RR 23, 98% on room air'"
-                value={quickParseText}
-                onChange={(e) => setQuickParseText(e.target.value)}
-                className="flex-1 min-h-[40px] resize-none"
-                rows={1}
-              />
-              <Button 
-                onClick={() => quickParseMutation.mutate(quickParseText)}
-                disabled={!quickParseText.trim() || quickParseMutation.isPending}
-                size="sm"
-              >
-                {quickParseMutation.isPending ? "Parsing..." : "Parse & Add"}
-              </Button>
-            </div>
-          </CardContent>
-        )}
       </Card>
 
       {/* Vitals Table */}
@@ -589,6 +569,9 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
               }}
               isSaving={saveVitalsMutation.isPending}
               ranges={ranges}
+              quickParseText={quickParseText}
+              setQuickParseText={setQuickParseText}
+              quickParseMutation={quickParseMutation}
             />
           )}
         </DialogContent>
@@ -604,10 +587,18 @@ interface VitalsEntryFormProps {
   onCancel: () => void;
   isSaving: boolean;
   ranges: AgeBasedRanges;
+  quickParseText: string;
+  setQuickParseText: (text: string) => void;
+  quickParseMutation: any;
 }
 
-function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges }: VitalsEntryFormProps) {
+function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParseText, setQuickParseText, quickParseMutation }: VitalsEntryFormProps) {
   const [formData, setFormData] = useState<Partial<VitalsEntry>>(entry);
+
+  // Update form data when entry changes (from quick parse)
+  useEffect(() => {
+    setFormData(entry);
+  }, [entry]);
 
   const updateField = (field: keyof VitalsEntry, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -618,8 +609,42 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges }: VitalsEn
     onSave(formData);
   };
 
+  const handleQuickParse = () => {
+    if (quickParseText.trim()) {
+      quickParseMutation.mutate(quickParseText);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Quick Parse Section */}
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <Label className="text-sm font-medium text-blue-900 mb-2 block">
+          Quick Parse Vitals
+        </Label>
+        <div className="flex space-x-2">
+          <Textarea
+            placeholder="Enter vitals: '120/80, P 80, RR 23, 98% on room air'"
+            value={quickParseText}
+            onChange={(e) => setQuickParseText(e.target.value)}
+            className="flex-1 min-h-[40px] resize-none"
+            rows={1}
+          />
+          <Button 
+            type="button"
+            onClick={handleQuickParse}
+            disabled={!quickParseText.trim() || quickParseMutation.isPending}
+            size="sm"
+          >
+            {quickParseMutation.isPending ? "Parsing..." : "Parse"}
+          </Button>
+        </div>
+        <p className="text-xs text-blue-700 mt-1">
+          Automatically fills form fields below. Examples: "BP 120/80", "HR 75", "Temp 98.6F"
+        </p>
+      </div>
+
+      <Separator />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="entryType">Entry Type</Label>
