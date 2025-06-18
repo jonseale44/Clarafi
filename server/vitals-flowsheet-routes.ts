@@ -16,16 +16,16 @@ const VitalsEntrySchema = z.object({
   systolicBp: z.number().min(50).max(300).optional(),
   diastolicBp: z.number().min(20).max(200).optional(),
   heartRate: z.number().min(30).max(250).optional(),
-  temperature: z.number().min(90).max(110).optional(),
-  weight: z.number().min(1).max(1000).optional(),
-  height: z.number().min(10).max(100).optional(),
-  bmi: z.number().min(10).max(80).optional(),
-  oxygenSaturation: z.number().min(70).max(100).optional(),
+  temperature: z.union([z.number().min(90).max(110), z.string().transform(val => parseFloat(val))]).optional(),
+  weight: z.union([z.number().min(1).max(1000), z.string().transform(val => parseFloat(val))]).optional(),
+  height: z.union([z.number().min(10).max(100), z.string().transform(val => parseFloat(val))]).optional(),
+  bmi: z.union([z.number().min(10).max(80), z.string().transform(val => parseFloat(val))]).optional(),
+  oxygenSaturation: z.union([z.number().min(70).max(100), z.string().transform(val => parseFloat(val))]).optional(),
   respiratoryRate: z.number().min(5).max(100).optional(),
   painScale: z.number().min(0).max(10).nullable().optional(),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
   parsedFromText: z.boolean().optional(),
-  originalText: z.string().optional(),
+  originalText: z.string().nullable().optional(),
 });
 
 /**
