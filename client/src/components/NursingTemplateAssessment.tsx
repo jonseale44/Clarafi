@@ -137,13 +137,20 @@ For Vital Signs:
 CRITICAL RULES:
 1. Transform ALL long-form medical conditions to standard abbreviations
 2. Use bullet points with hyphens (-) for multi-item fields
-3. Only include fields with new information in your JSON response
-4. Never add information not explicitly mentioned in conversation
-5. Use professional nursing terminology consistently
-6. Include specific measurements when provided
-7. Format medications with complete dosing information
+3. IMPORTANT: When you receive existing template data, ADD new information to existing content rather than replacing it
+4. For bullet-point fields (pmh, meds, allergies, etc.), combine existing bullets with new ones, avoiding duplicates
+5. Never add information not explicitly mentioned in conversation
+6. Use professional nursing terminology consistently
+7. Include specific measurements when provided
+8. Format medications with complete dosing information
 
-Return only valid JSON with fields containing new information. Do not include empty fields or fields without updates.`;
+INCREMENTAL UPDATE BEHAVIOR:
+- If pmh currently contains "- HTN\n- DM2" and patient mentions "COPD", return {"pmh": "- HTN\n- DM2\n- COPD"}
+- If meds contains existing medications and new ones are mentioned, combine them
+- Always preserve existing information while adding new information
+- Only return fields that need updates (new additions or modifications)
+
+Return only valid JSON with fields containing new or updated information.`;
 
 interface NursingTemplateData {
   cc: string; // Chief Complaint
@@ -614,7 +621,12 @@ export const NursingTemplateAssessment = forwardRef<
         `🔍 [NursingTemplate] Processing transcript for template extraction`,
       );
 
-      // Create a conversation item with the transcription
+      // Create a conversation item with the transcription and current template state
+      const currentTemplateState = Object.entries(templateData)
+        .filter(([_, value]) => value.trim())
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n\n');
+
       const contextMessage = {
         type: "conversation.item.create",
         item: {
@@ -623,9 +635,15 @@ export const NursingTemplateAssessment = forwardRef<
           content: [
             {
               type: "input_text",
-              text: `Extract nursing assessment information from this conversation transcript. Only include fields with new information. Return as JSON:
+              text: `Extract and UPDATE nursing assessment information from this conversation transcript. 
 
-${transcriptText}`,
+CURRENT TEMPLATE STATE:
+${currentTemplateState || 'No existing data'}
+
+NEW CONVERSATION TRANSCRIPT:
+${transcriptText}
+
+INSTRUCTIONS: Add new information to existing template fields. For bullet-point fields, combine existing entries with new ones. Return only fields that need updates as JSON.`,
             },
           ],
         },
@@ -656,6 +674,8 @@ ${transcriptText}`,
           </div>
         ));
     };
+
+
 
     const updateTemplateFields = (updates: Partial<NursingTemplateData>) => {
       setTemplateData((prev) => {
