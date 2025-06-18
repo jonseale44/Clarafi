@@ -514,6 +514,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteOrder(id: number): Promise<void> {
+    // First, update any medications that reference this order to remove the reference
+    await db
+      .update(medications)
+      .set({ sourceOrderId: null })
+      .where(eq(medications.sourceOrderId, id));
+    
+    // Then delete the order
     await db.delete(orders).where(eq(orders.id, id));
   }
 

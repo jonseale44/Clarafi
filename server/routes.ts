@@ -1542,8 +1542,16 @@ export function registerRoutes(app: Express): Server {
         // Clear existing draft orders since GPT has determined the final reconciled set
         console.log(`📋 [ExtractOrders] Clearing existing draft orders - GPT reconciled to ${deduplicatedOrders.length} final orders`);
         const existingDraftOrders = await storage.getDraftOrdersByEncounter(encounterId);
+        console.log(`📋 [ExtractOrders] Found ${existingDraftOrders.length} existing orders to delete`);
+        
         for (const existingOrder of existingDraftOrders) {
-          await storage.deleteOrder(existingOrder.id);
+          try {
+            await storage.deleteOrder(existingOrder.id);
+            console.log(`📋 [ExtractOrders] Successfully deleted order ${existingOrder.id}`);
+          } catch (error) {
+            console.error(`📋 [ExtractOrders] Error deleting order ${existingOrder.id}:`, error);
+            // Continue with other orders even if one fails
+          }
         }
 
         // Save the deduplicated orders
