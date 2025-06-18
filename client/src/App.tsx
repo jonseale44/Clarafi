@@ -26,6 +26,7 @@ function Router() {
       <ProtectedRoute path="/settings" component={UserSettingsPage} />
 
       <ProtectedRoute path="/encounters/:encounterId/vitals" component={VitalsFlowsheetPage} />
+      <ProtectedRoute path="/vitals-flowsheet/:encounterId" component={VitalsFlowsheetPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

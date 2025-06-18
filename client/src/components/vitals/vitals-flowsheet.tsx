@@ -100,14 +100,15 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     return age;
   };
 
+  // Fetch patient data if not provided
+  const { data: patientData } = useQuery<Patient>({
+    queryKey: ['/api/patients', patientId],
+    enabled: !!patientId && !patient
+  });
+
   // Use provided patient or fetched patient data
   const currentPatient = patient || patientData;
   const patientAge = currentPatient?.age || (currentPatient?.dateOfBirth ? calculateAge(currentPatient.dateOfBirth) : 0);
-  
-  // Debug logging for age and ranges
-  console.log("🩺 [VitalsFlowsheet] Debug - Patient DOB:", currentPatient?.dateOfBirth);
-  console.log("🩺 [VitalsFlowsheet] Debug - Calculated patient age:", patientAge);
-  console.log("🩺 [VitalsFlowsheet] Debug - Patient object:", currentPatient);
 
   // Get age-appropriate vital sign ranges
   const getVitalRanges = (patientAge?: number): AgeBasedRanges => {
@@ -153,10 +154,6 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
   };
 
   const ranges = getVitalRanges(patientAge);
-  
-  // Debug logging for ranges
-  console.log("🩺 [VitalsFlowsheet] Debug - Using patient age for ranges:", patientAge);
-  console.log("🩺 [VitalsFlowsheet] Debug - Heart rate range:", ranges.heartRate);
 
   const getVitalStatus = (value: number | undefined, vitalType: keyof AgeBasedRanges) => {
     if (!value || !ranges[vitalType]) return { status: "normal", color: "text-gray-600", bgColor: "bg-gray-50" };
@@ -173,14 +170,8 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     return { status: "normal", color: "text-green-600", bgColor: "bg-green-50" };
   };
 
-  // Fetch patient data if not provided
-  const { data: patientData } = useQuery({
-    queryKey: ['/api/patients', patientId],
-    enabled: !!patientId && !patient
-  });
-
   // Fetch vitals entries for the encounter
-  const { data: vitalsEntries = [], isLoading } = useQuery<VitalsEntry[]>({
+  const { data: vitalsEntries = [], isLoading: vitalsLoading } = useQuery<VitalsEntry[]>({
     queryKey: ['/api/vitals/encounter', encounterId],
     queryFn: async () => {
       console.log("🩺 [VitalsFlowsheet] Fetching vitals for encounter:", encounterId);
@@ -440,7 +431,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     );
   };
 
-  if (isLoading) {
+  if (vitalsLoading) {
     return (
       <Card>
         <CardContent className="p-6">
