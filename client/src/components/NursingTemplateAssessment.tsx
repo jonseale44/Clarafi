@@ -309,6 +309,13 @@ export const NursingTemplateAssessment = forwardRef<
       }
 
       try {
+        console.log("🏥 [NursingTemplate] Making API request with data:", {
+          patientId,
+          encounterId,
+          transcriptionLength: transcription.trim().length,
+          currentTemplateDataKeys: Object.keys(templateData)
+        });
+
         const response = await fetch('/api/nursing-template/generate', {
           method: 'POST',
           headers: {
@@ -323,16 +330,22 @@ export const NursingTemplateAssessment = forwardRef<
           })
         });
 
+        console.log("🏥 [NursingTemplate] Response status:", response.status);
+        console.log("🏥 [NursingTemplate] Response headers:", Object.fromEntries(response.headers.entries()));
+
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error("❌ [NursingTemplate] HTTP Error Response:", errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
         }
 
         const responseData = await response.json();
-        console.log("🏥 [NursingTemplate] Received template data:", responseData);
+        console.log("🏥 [NursingTemplate] Complete response received:", responseData);
         
         if (responseData.templateData) {
           const newTemplateData = responseData.templateData;
-          console.log("🏥 [NursingTemplate] Updating template fields with:", newTemplateData);
+          console.log("🏥 [NursingTemplate] Template data fields:", Object.keys(newTemplateData));
+          console.log("🏥 [NursingTemplate] Template data values:", newTemplateData);
           
           // Update template fields intelligently
           updateTemplateFields(newTemplateData);
@@ -344,16 +357,20 @@ export const NursingTemplateAssessment = forwardRef<
             });
           }
         } else {
+          console.error("❌ [NursingTemplate] No templateData in response:", responseData);
           throw new Error("No template data received in response");
         }
         
-      } catch (error) {
-        console.error("❌ [NursingTemplate] Error generating template:", error);
+      } catch (error: any) {
+        console.error("❌ [NursingTemplate] Complete error details:");
+        console.error("❌ [NursingTemplate] Error name:", error?.name);
+        console.error("❌ [NursingTemplate] Error message:", error?.message);
+        console.error("❌ [NursingTemplate] Error stack:", error?.stack);
         
         toast({
           variant: "destructive",
           title: "Generation Failed",
-          description: "Failed to generate nursing template. Please try again.",
+          description: `Failed to generate nursing template: ${error?.message || 'Unknown error'}`,
         });
       } finally {
         setIsProcessing(false);

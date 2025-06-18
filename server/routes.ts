@@ -235,16 +235,34 @@ Example output format:
     throw new Error("No nursing template generated from OpenAI");
   }
 
+  console.log("🏥 [NursingTemplateDirect] Raw OpenAI response:", response);
+  console.log("🏥 [NursingTemplateDirect] Response length:", response?.length || 0);
+
   // Parse JSON response
   let templateData;
   try {
-    templateData = JSON.parse(response);
+    // Clean response - sometimes OpenAI adds markdown formatting
+    let cleanResponse = response.trim();
+    if (cleanResponse.startsWith('```json')) {
+      cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    }
+    if (cleanResponse.startsWith('```')) {
+      cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    console.log("🏥 [NursingTemplateDirect] Cleaned response for parsing:", cleanResponse);
+    templateData = JSON.parse(cleanResponse);
+    console.log("✅ [NursingTemplateDirect] Successfully parsed JSON:", templateData);
   } catch (parseError) {
-    console.error("❌ [NursingTemplate] Failed to parse JSON response:", response);
-    throw new Error("Invalid JSON response from OpenAI");
+    console.error("❌ [NursingTemplateDirect] JSON Parse Error Details:");
+    console.error("❌ [NursingTemplateDirect] Parse error:", parseError);
+    console.error("❌ [NursingTemplateDirect] Raw response:", response);
+    console.error("❌ [NursingTemplateDirect] Response type:", typeof response);
+    throw new Error(`Invalid JSON response from OpenAI: ${(parseError as Error).message}`);
   }
 
-  console.log(`✅ [NursingTemplate] Generated template with ${Object.keys(templateData).length} fields`);
+  console.log(`✅ [NursingTemplateDirect] Generated template with ${Object.keys(templateData).length} fields`);
+  console.log("🏥 [NursingTemplateDirect] Template field keys:", Object.keys(templateData));
   return templateData;
 }
 
