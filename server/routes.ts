@@ -19,6 +19,7 @@ import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligen
 import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
+import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 
 import nursingSummaryRoutes from "./nursing-summary-routes";
 import multer from "multer";
@@ -642,7 +643,8 @@ export function registerRoutes(app: Express): Server {
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
 
-
+  // Vitals flowsheet routes (enhanced vitals management)
+  app.use("/api/vitals", vitalsFlowsheetRoutes);
 
   // Nursing summary routes
   app.use("/api/encounters", nursingSummaryRoutes);
