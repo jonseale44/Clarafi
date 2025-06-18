@@ -78,9 +78,10 @@ export class ClientVitalsParser {
       }
     }
 
-    // Heart rate patterns - more comprehensive
+    // Heart rate patterns - more comprehensive and specific
     const hrPatterns = [
-      /(?:HR|heart rate|pulse|P)[:\s]*(\d{1,3})/i,
+      /(?:HR|heart rate|pulse)\s*:?\s*(\d{1,3})/i,  // Removed standalone "P" to avoid BP confusion
+      /\bP\s+(\d{1,3})\b/i,  // Specific pattern for "P 51" format with word boundaries
       /(\d{1,3})\s*(?:bpm|beats per minute)/i
     ];
     
