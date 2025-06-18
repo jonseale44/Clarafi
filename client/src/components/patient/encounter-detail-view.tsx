@@ -2497,7 +2497,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   ) : section.id === "vitals" ? (
                     <VitalsFlowsheet 
                       patientId={patient.id} 
-                      encounterId={encounter?.id}
+                      encounterId={encounterId}
                       readOnly={false}
                     />
                   ) : section.id === "ai-debug" ? (

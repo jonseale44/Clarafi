@@ -665,8 +665,8 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     console.log("🩺 [VitalsEntryForm] DEBUG - formData before save:", JSON.stringify(formData, null, 2));
     
     // Validate required IDs
-    if (!encounterId) {
-      console.error("❌ [VitalsEntryForm] Missing encounterId prop");
+    if (!encounterId || encounterId === null) {
+      console.error("❌ [VitalsEntryForm] Missing encounterId prop - value:", encounterId);
       return;
     }
     
