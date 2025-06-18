@@ -203,6 +203,7 @@ export const NursingTemplateAssessment = forwardRef<
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [nursingSummary, setNursingSummary] = useState<string>("");
     const [isEditingSummary, setIsEditingSummary] = useState(false);
+    const [accumulatedTranscript, setAccumulatedTranscript] = useState<string>("");
 
     // Format nursing summary text with proper HTML formatting
     const formatNursingSummary = (text: string): string => {
@@ -322,6 +323,7 @@ export const NursingTemplateAssessment = forwardRef<
     const startTemplateAssessment = async () => {
       if (isActive) return;
 
+      setAccumulatedTranscript(""); // Reset transcript for new session
       console.log(
         `🏥 [NursingTemplate] Starting template assessment for session ${sessionIdRef.current}`,
       );
@@ -592,9 +594,19 @@ export const NursingTemplateAssessment = forwardRef<
             finalTranscript,
           );
 
-          // Process the complete transcription for template extraction
-          if (finalTranscript.trim() && wsRef.current) {
-            processTranscriptionForTemplate(finalTranscript);
+          // Accumulate the transcript for full conversation context
+          if (finalTranscript.trim()) {
+            setAccumulatedTranscript(prev => {
+              const newAccumulated = prev ? `${prev}\n\n${finalTranscript}` : finalTranscript;
+              console.log("📝 [NursingTemplate] Accumulated transcript length:", newAccumulated.length);
+              
+              // Process the accumulated transcription for template extraction
+              if (wsRef.current) {
+                processTranscriptionForTemplate(newAccumulated);
+              }
+              
+              return newAccumulated;
+            });
           }
           break;
 
@@ -635,15 +647,25 @@ export const NursingTemplateAssessment = forwardRef<
           content: [
             {
               type: "input_text",
-              text: `Extract and UPDATE nursing assessment information from this conversation transcript. 
+              text: `You are updating a nursing assessment template. Your job is to MERGE new information with existing content, never replace it.
 
-CURRENT TEMPLATE STATE:
+EXISTING TEMPLATE DATA:
 ${currentTemplateState || 'No existing data'}
 
-NEW CONVERSATION TRANSCRIPT:
+FULL CONVERSATION SO FAR:
 ${transcriptText}
 
-INSTRUCTIONS: Add new information to existing template fields. For bullet-point fields, combine existing entries with new ones. Return only fields that need updates as JSON.`,
+CRITICAL INSTRUCTIONS:
+1. If a field already has content, ADD new information to it (don't replace)
+2. For bullet-point fields (pmh, meds, allergies, famHx, soHx, psh, hpi, ros, vitals):
+   - Keep ALL existing bullet points
+   - Add new bullet points for any new information mentioned
+   - Example: If pmh has "- HTN\n- DM2" and patient mentions COPD, return {"pmh": "- HTN\n- DM2\n- COPD"}
+3. For narrative fields (cc): Update only if new information provides more detail
+4. Only return fields that have NEW information to add
+5. Never remove or replace existing information
+
+Return only JSON with fields that need updates.`,
             },
           ],
         },
