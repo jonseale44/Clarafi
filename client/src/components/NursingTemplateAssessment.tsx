@@ -398,53 +398,6 @@ export const NursingTemplateAssessment = forwardRef<
             type: "session.update",
             session: {
               instructions: NURSING_ASSESSMENT_INSTRUCTIONS,
-
-famHx: Family History
-- Use standard abbreviations for conditions
-- Format as "Relationship: Conditions"
-- Example: "- Father: HTN, DM2\n- Mother: Breast CA, HTN"
-
-soHx: Social History
-- Use bullet points for each social factor
-- Include specific quantities when mentioned
-- Example: "- Tobacco: 20 pack-year history\n- Alcohol: 2-3 drinks weekly\n- Occupation: Teacher"
-
-psh: Past Surgical History
-- Include year if mentioned
-- Use bullet points
-- Example: "- 2018 Cholecystectomy\n- 2020 Appendectomy"
-
-ros: Review of Systems
-- Only include positive findings
-- Use standard abbreviations and bullet points
-- Organize by body system
-- Example: "- Constitutional: Fatigue, weight loss\n- CV: CP, palpitations\n- Respiratory: SOB on exertion"
-
-vitals: Vital Signs
-- Use standard format and abbreviations
-- Example: "- BP: 140/90 mmHg\n- HR: 88 BPM\n- RR: 20/min\n- T: 98.6°F\n- O2 Sat: 96% on RA\n- Pain: 7/10"
-
-RESPONSE FORMAT EXAMPLES:
-
-For Past Medical History:
-{"pmh": "- HTN\n- DM2\n- CAD"}
-
-For Current Medications:
-{"meds": "- Lisinopril 10mg QD PO\n- Metformin 1000mg BID PO"}
-
-For Vital Signs:
-{"vitals": "- BP: 140/90 mmHg\n- HR: 88 BPM\n- T: 98.6°F"}
-
-CRITICAL RULES:
-1. Transform ALL long-form medical conditions to standard abbreviations
-2. Use bullet points with hyphens (-) for multi-item fields
-3. Only include fields with new information in your JSON response
-4. Never add information not explicitly mentioned in conversation
-5. Use professional nursing terminology consistently
-6. Include specific measurements when provided
-7. Format medications with complete dosing information
-
-Return only valid JSON with fields containing new information. Do not include empty fields or fields without updates.`,
               modalities: ["text"],
               input_audio_format: "pcm16",
               input_audio_transcription: {
@@ -562,10 +515,7 @@ Return only valid JSON with fields containing new information. Do not include em
         type: "response.create",
         response: {
           modalities: ["text"],
-          instructions: `Extract nursing assessment data from the conversation and return as JSON with only populated fields. Use this exact format:
-{"cc": "value", "hpi": "value", "pmh": "value", "meds": "value", "allergies": "value", "famHx": "value", "soHx": "value", "psh": "value", "ros": "value", "vitals": "value"}
-
-Only include fields that have information mentioned in the conversation.`,
+          instructions: NURSING_ASSESSMENT_INSTRUCTIONS,
         },
       };
 
@@ -688,36 +638,7 @@ ${transcriptText}`,
         type: "response.create",
         response: {
           modalities: ["text"],
-          instructions: `Extract nursing assessment data from the conversation using professional medical abbreviations and return as JSON with only populated fields.
-
-CRITICAL FORMATTING REQUIREMENTS:
-- Use standard medical abbreviations for ALL conditions (HTN, DM2, CAD, CHF, COPD, GERD, etc.)
-- Format medications with proper strength and frequency abbreviations
-- Use bullet points with hyphens (-) for multi-item fields
-- Apply professional nursing terminology consistently
-
-MANDATORY MEDICAL ABBREVIATIONS:
-- Hypertension → HTN
-- Diabetes Type 2 → DM2, Diabetes Type 1 → DM1
-- Coronary Artery Disease → CAD
-- Congestive Heart Failure → CHF
-- Chronic Obstructive Pulmonary Disease → COPD
-- Gastroesophageal Reflux Disease → GERD
-- Atrial Fibrillation → AFib
-- Myocardial Infarction → MI
-- Cerebrovascular Accident → CVA
-- Hyperlipidemia → HLD
-- Osteoarthritis → OA
-- Rheumatoid Arthritis → RA
-- Blood Pressure → BP
-- Heart Rate → HR
-- Shortness of Breath → SOB
-- Chest Pain → CP
-
-EXAMPLE FORMAT:
-{"pmh": "- HTN\\n- DM2\\n- CAD", "meds": "- Lisinopril 20mg QD PO\\n- Metformin 500mg BID PO"}
-
-Return JSON with only populated fields using proper medical abbreviations.`,
+          instructions: NURSING_ASSESSMENT_INSTRUCTIONS,
         },
       };
 
