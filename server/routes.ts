@@ -266,7 +266,9 @@ Example output format:
   "vitals": "BP: 150/95 | HR: 92 | T: 98.4°F | RR: 20 | O2 Sat: 96% on RA"
 }`;
 
-  // Generate nursing template using same model as SOAP
+  // Generate nursing template using GPT-4.1-nano for structured data extraction
+  // Purpose: Fast, cost-effective model for parsing transcriptions into standardized nursing documentation fields
+  // Uses low temperature (0.3) for consistent formatting and medical abbreviation compliance
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-nano",
     messages: [{ role: "user", content: nursingPrompt }],
@@ -554,7 +556,9 @@ IMPORTANT INSTRUCTIONS:
 - Include pertinent negatives where clinically relevant.
 - Format the note for easy reading and clinical handoff.`;
 
-  // Generate SOAP note
+  // Generate SOAP note using GPT-4.1-mini for comprehensive clinical documentation
+  // Purpose: Balanced model for creating detailed SOAP notes with proper medical reasoning and differential diagnosis
+  // Uses higher temperature (0.7) for more natural clinical narrative while maintaining accuracy
   const soapCompletion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages: [{ role: "user", content: soapPrompt }],
@@ -2464,6 +2468,9 @@ Instructions:
         `[AI Parser] Sending request to OpenAI for multi-type parsing`,
       );
 
+      // Parse multiple order types using GPT-4.1-nano for efficient bulk processing
+      // Purpose: Cost-effective model for parsing mixed medical orders (medications, labs, imaging, referrals)
+      // Uses structured JSON output for reliable data extraction from free-text medical orders
       const response = await openai.chat.completions.create({
         model: "gpt-4.1-nano",
         messages: [
@@ -2631,6 +2638,9 @@ Return only valid JSON without markdown formatting.`;
           return res.status(400).json({ message: "Unsupported order type" });
       }
 
+      // Parse individual order type using GPT-4.1-nano for precise single-category extraction
+      // Purpose: Specialized parsing for specific order types (medication, lab, imaging, referral)
+      // Uses strict schema validation to ensure consistent structured output format
       const response = await openai.chat.completions.create({
         model: "gpt-4.1-nano",
         messages: [

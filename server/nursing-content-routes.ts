@@ -1,12 +1,12 @@
 /**
  * Nursing Content Generation Routes
- * 
+ *
  * Provides AI-powered content generation specifically for nursing workflows
  */
 
-import { Router, Request, Response } from 'express';
-import OpenAI from 'openai';
-import { APIResponseHandler } from './api-response-handler';
+import { Router, Request, Response } from "express";
+import OpenAI from "openai";
+import { APIResponseHandler } from "./api-response-handler";
 
 const router = Router();
 
@@ -18,52 +18,59 @@ const openai = new OpenAI({
  * POST /api/generate-nursing-content
  * Generate nursing-specific content from transcription
  */
-router.post('/generate-nursing-content', APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
-  const { transcription, type, patientId, encounterId } = req.body;
+router.post(
+  "/generate-nursing-content",
+  APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
+    const { transcription, type, patientId, encounterId } = req.body;
 
-  if (!transcription) {
-    return APIResponseHandler.badRequest(res, 'Transcription is required');
-  }
+    if (!transcription) {
+      return APIResponseHandler.badRequest(res, "Transcription is required");
+    }
 
-  const nursingPrompt = buildNursingPrompt(transcription, type);
+    const nursingPrompt = buildNursingPrompt(transcription, type);
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
-      messages: [
-        {
-          role: "system",
-          content: nursingPrompt
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4.1-nano",
+        messages: [
+          {
+            role: "system",
+            content: nursingPrompt,
+          },
+          {
+            role: "user",
+            content: transcription,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      });
+
+      const generatedContent = completion.choices[0]?.message?.content || "";
+
+      // Parse the generated content based on type
+      const parsedContent = parseNursingContent(generatedContent, type);
+
+      return APIResponseHandler.success(res, {
+        ...parsedContent,
+        metadata: {
+          patientId,
+          encounterId,
+          generatedAt: new Date().toISOString(),
+          type,
         },
-        {
-          role: "user", 
-          content: transcription
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 2000
-    });
-
-    const generatedContent = completion.choices[0]?.message?.content || '';
-    
-    // Parse the generated content based on type
-    const parsedContent = parseNursingContent(generatedContent, type);
-
-    return APIResponseHandler.success(res, {
-      ...parsedContent,
-      metadata: {
-        patientId,
-        encounterId,
-        generatedAt: new Date().toISOString(),
-        type
-      }
-    });
-
-  } catch (error) {
-    console.error('🚨 [NursingContent] Generation error:', error);
-    return APIResponseHandler.error(res, 'Failed to generate nursing content', 500, 'GENERATION_FAILED');
-  }
-}));
+      });
+    } catch (error) {
+      console.error("🚨 [NursingContent] Generation error:", error);
+      return APIResponseHandler.error(
+        res,
+        "Failed to generate nursing content",
+        500,
+        "GENERATION_FAILED",
+      );
+    }
+  }),
+);
 
 /**
  * Build nursing-specific prompts based on content type
@@ -300,10 +307,13 @@ Document objective and subjective responses to interventions:
 - Communication with family/healthcare team
 - Follow-up interventions planned or recommended
 
-Format as professional nursing intervention documentation suitable for legal documentation and nursing handoff communication.`
+Format as professional nursing intervention documentation suitable for legal documentation and nursing handoff communication.`,
   };
 
-  return typeSpecificPrompts[type as keyof typeof typeSpecificPrompts] || typeSpecificPrompts.nursing_assessment;
+  return (
+    typeSpecificPrompts[type as keyof typeof typeSpecificPrompts] ||
+    typeSpecificPrompts.nursing_assessment
+  );
 }
 
 /**
@@ -311,11 +321,11 @@ Format as professional nursing intervention documentation suitable for legal doc
  */
 function parseNursingContent(content: string, type: string) {
   const typeMap: Record<string, any> = {
-    'nursing_assessment': { nursingAssessment: content },
-    'care_plan': { nursingInterventions: content },
-    'interventions': { nursingInterventions: content }
+    nursing_assessment: { nursingAssessment: content },
+    care_plan: { nursingInterventions: content },
+    interventions: { nursingInterventions: content },
   };
-  
+
   return typeMap[type] || { nursingNotes: content };
 }
 

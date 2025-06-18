@@ -365,6 +365,9 @@ IMPORTANT:
     );
 
     try {
+      // Analyze medical problems using GPT-4.1-nano for precise delta analysis
+      // Purpose: Cost-effective model for identifying changes in patient medical problems from SOAP notes
+      // Uses very low temperature (0.1) and JSON format for consistent, structured medical problem tracking
       const completion = await this.openai.chat.completions.create({
         model: "gpt-4.1-nano",
         messages: [{ role: "user", content: encounterScopedPrompt }],

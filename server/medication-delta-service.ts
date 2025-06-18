@@ -228,6 +228,9 @@ export class MedicationDeltaService {
 
     try {
       console.log(`💊 [GPT] Calling OpenAI GPT-4.1 model...`);
+      // Analyze medication changes using GPT-4.1 for complex clinical reasoning
+      // Purpose: Advanced model needed for sophisticated medication analysis including drug interactions, dosage changes, and clinical indications
+      // Uses low temperature (0.1) and JSON format for precise medication delta tracking and clinical decision support
       const completion = await this.openai.chat.completions.create({
         model: "gpt-4.1",
         messages: [
