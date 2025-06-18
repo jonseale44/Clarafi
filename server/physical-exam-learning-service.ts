@@ -223,8 +223,11 @@ Return a JSON array of persistent findings. For each finding, provide:
 Only include findings with confidence > 0.7. Return empty array if no persistent findings found.`;
 
     try {
+      // Analyze physical exam findings using GPT-4.1 for advanced medical pattern recognition
+      // Purpose: Sophisticated model needed for identifying persistent/chronic physical findings that should be tracked across encounters
+      // Uses JSON format and low temperature (0.1) for consistent clinical assessment and longitudinal patient monitoring
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
+        model: "gpt-4.1", // Advanced model for complex medical reasoning and pattern recognition
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.1,
@@ -333,8 +336,11 @@ Examples of contradictions:
 Return JSON: {"isContradicted": boolean, "reasoning": "explanation"}`;
 
     try {
+      // Validate physical findings using GPT-4.1 for medical contradiction detection
+      // Purpose: Advanced model needed for complex clinical reasoning to identify contradictory physical exam findings
+      // Uses JSON format and low temperature (0.1) for reliable medical logic validation
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
+        model: "gpt-4.1", // Advanced model for sophisticated medical contradiction analysis
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.1,
@@ -386,8 +392,11 @@ Return JSON array of relevant findings:
 }`;
 
     try {
+      // Generate physical exam suggestions using GPT-4.1 for intelligent clinical recommendations
+      // Purpose: Advanced model needed for contextual physical exam recommendations based on patient history and chief complaint
+      // Uses slightly higher temperature (0.2) for more varied but clinically appropriate suggestions
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
+        model: "gpt-4.1", // Advanced model for contextual clinical recommendation generation
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.2,
