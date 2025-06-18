@@ -280,22 +280,12 @@ export class SOAPOrdersExtractor {
           // Import GPT deduplication service dynamically to avoid import issues
           const { gptOrderDeduplication } = await import("./gpt-order-deduplication-service.js");
           
-          // Use GPT deduplication service to identify which NEW orders to keep
-          // Only return the new orders that are not duplicates of existing ones
-          const deduplicationResult = await gptOrderDeduplication.mergeAndDeduplicateOrders(
-            existingInsertOrders, // existing orders (treated as transcription for GPT context)
+          // Use GPT to intelligently reconcile existing and new orders
+          // GPT has full authority to decide what orders should exist
+          finalOrders = await gptOrderDeduplication.mergeAndDeduplicateOrders(
+            existingInsertOrders, // existing draft orders
             orderInserts // new SOAP-extracted orders
           );
-          
-          // Filter to only include orders that are actually new (not existing ones)
-          finalOrders = deduplicationResult.filter(order => {
-            // Check if this order is from the new batch (orderInserts) rather than existing
-            return orderInserts.some(newOrder => 
-              newOrder.medicationName === order.medicationName &&
-              newOrder.dosage === order.dosage &&
-              newOrder.orderType === order.orderType
-            );
-          });
           
           console.log(`[SOAPExtractor] GPT deduplication complete: ${existingOrders.length + orderInserts.length} total → ${finalOrders.length} final orders`);
           console.log(`[SOAPExtractor] Duplicates eliminated: ${(existingOrders.length + orderInserts.length) - finalOrders.length}`);

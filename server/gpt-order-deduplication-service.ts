@@ -32,35 +32,43 @@ export class GPTOrderDeduplicationService {
     if (soapOrders.length === 0) return transcriptionOrders;
 
     try {
-      // Prepare order data for GPT analysis
-      const orderData = {
-        transcriptionOrders: transcriptionOrders.map((order, index) => ({
-          id: `T${index + 1}`,
+      // Prepare comprehensive order data for GPT analysis
+      const orderAnalysis = {
+        existing_orders: existingOrders.map((order: any, index: number) => ({
+          id: `EXISTING_${index + 1}`,
           type: order.orderType,
           medication_name: order.medicationName,
           dosage: order.dosage,
           sig: order.sig,
+          quantity: order.quantity,
+          refills: order.refills,
           clinical_indication: order.clinicalIndication,
           lab_name: order.labName,
           test_name: order.testName,
+          test_code: order.testCode,
           study_type: order.studyType,
           region: order.region,
           specialty_type: order.specialtyType,
-          provider_name: order.providerName
+          provider_name: order.providerName,
+          priority: order.priority
         })),
-        soapOrders: soapOrders.map((order, index) => ({
-          id: `S${index + 1}`,
+        new_soap_orders: newSoapOrders.map((order: any, index: number) => ({
+          id: `NEW_${index + 1}`,
           type: order.orderType,
           medication_name: order.medicationName,
           dosage: order.dosage,
           sig: order.sig,
+          quantity: order.quantity,
+          refills: order.refills,
           clinical_indication: order.clinicalIndication,
           lab_name: order.labName,
           test_name: order.testName,
+          test_code: order.testCode,
           study_type: order.studyType,
           region: order.region,
           specialty_type: order.specialtyType,
-          provider_name: order.providerName
+          provider_name: order.providerName,
+          priority: order.priority
         }))
       };
 
@@ -69,61 +77,61 @@ export class GPTOrderDeduplicationService {
         messages: [
           {
             role: "system",
-            content: `You are a medical AI expert specializing in clinical order analysis and deduplication. 
+            content: `You are a clinical decision support AI with full medical expertise. Your task is to reconcile medical orders based on clinical intent and medical best practices.
 
-Your task is to intelligently merge two sets of medical orders, eliminating true duplicates while preserving legitimate variations.
+CONTEXT: A provider has existing draft orders and has updated their SOAP note, which generated new orders. You need to determine the final set of orders that should exist.
 
-MEDICAL EXPERTISE REQUIRED:
-- Understand generic vs brand names (e.g., hydroxychloroquine = Plaquenil)
-- Recognize medication formulations and strengths
-- Identify medication tapers (e.g., prednisone 40mg→20mg→10mg are separate orders)
-- Distinguish between same medication for different indications
-- Understand lab test equivalencies and variations
-- Recognize imaging study variations
+YOUR MEDICAL AUTHORITY:
+- You have complete decision-making power over what orders should exist
+- You understand clinical intent behind order changes
+- You recognize when medications are being switched vs added
+- You know when duplicate labs/imaging make no clinical sense
+- You can identify medication tapers, combination therapies, and clinical substitutions
 
-DEDUPLICATION RULES:
-1. TRUE DUPLICATES (merge): Same drug, same dosage, same indication
-2. DIFFERENT DRUGS (keep both): Different active ingredients
-3. SAME DRUG, DIFFERENT DOSAGES (keep both): Could be a taper or different indication
-4. SAME DRUG, DIFFERENT INDICATIONS (keep both): Different clinical purposes
-5. BRAND VS GENERIC (merge): Same active ingredient, same strength, same indication
-6. LAB VARIATIONS (smart merge): "CBC" vs "Complete Blood Count" = duplicate
-7. IMAGING VARIATIONS (smart merge): "CXR" vs "Chest X-ray" = duplicate
+CLINICAL SCENARIOS YOU HANDLE:
+1. MEDICATION CHANGES: If SOAP note shows "changed from amoxicillin to levaquin" → Remove amoxicillin, keep levaquin
+2. MEDICATION ADDITIONS: If SOAP note shows "added prednisone to current regimen" → Keep both
+3. DUPLICATE LABS: Multiple CBCs with same indication → Keep only one unless different timing/indication
+4. GENERIC/BRAND EQUIVALENTS: Lisinopril vs Prinivil → Same drug, keep one
+5. DOSE ADJUSTMENTS: "Increased metformin from 500mg to 1000mg" → Keep only new dose
 
-PRIORITIZATION:
-- SOAP orders (more detailed) take priority over transcription orders when merging
-- Preserve the most complete order information
-- Maintain clinical accuracy above all
+DECISION PRINCIPLES:
+- SOAP note reflects current clinical thinking - it takes precedence
+- Eliminate medically unnecessary duplicates
+- Preserve clinically justified variations
+- Consider timing, indication, and clinical context
+- Default to what makes medical sense
 
-Respond with JSON only:`
+OUTPUT: Return the complete final order set that should exist after reconciliation.`
           },
           {
             role: "user",
-            content: `Analyze these medical orders for intelligent deduplication:
+            content: `I need you to reconcile these medical orders. The provider has existing draft orders and just updated their SOAP note, generating new orders. 
 
-${JSON.stringify(orderData, null, 2)}
+Please determine what the final complete set of orders should be:
 
-Return a JSON object with this exact structure:
+EXISTING ORDERS (currently in the system):
+${JSON.stringify(orderAnalysis.existing_orders, null, 2)}
+
+NEW ORDERS FROM UPDATED SOAP NOTE:
+${JSON.stringify(orderAnalysis.new_soap_orders, null, 2)}
+
+Return a JSON object with this structure:
 {
-  "analysis": {
-    "total_transcription_orders": number,
-    "total_soap_orders": number,
-    "duplicates_found": [
-      {
-        "transcription_id": "T1",
-        "soap_id": "S1", 
-        "reason": "Same medication (hydroxychloroquine = Plaquenil), same dosage, same indication",
-        "action": "merge_prefer_soap"
-      }
-    ],
-    "unique_orders": ["T2", "S2", "S3"],
-    "final_count": number
-  },
-  "merged_orders": [
+  "clinical_reasoning": "Brief explanation of your clinical decision-making process",
+  "final_orders": [
     {
-      "source_ids": ["T1", "S1"],
-      "preferred_source": "soap",
-      "reason": "SOAP order has more complete information"
+      "source": "existing|new|modified",
+      "order_details": {
+        // Complete order object with all fields
+      },
+      "rationale": "Why this order was kept/modified/created"
+    }
+  ],
+  "orders_removed": [
+    {
+      "removed_order": "Description of removed order",
+      "reason": "Why this order was removed"
     }
   ]
 }`
@@ -133,62 +141,63 @@ Return a JSON object with this exact structure:
         temperature: 0.1
       });
 
-      const analysisResult = JSON.parse(response.choices[0].message.content!);
-      console.log("🧠 [GPTDedup] Analysis result:", JSON.stringify(analysisResult, null, 2));
+      const reconciliationResult = JSON.parse(response.choices[0].message.content!);
+      console.log("🧠 [GPTDedup] Clinical reasoning:", reconciliationResult.clinical_reasoning);
+      console.log("🧠 [GPTDedup] Orders removed:", reconciliationResult.orders_removed?.length || 0);
+      console.log("🧠 [GPTDedup] Final orders count:", reconciliationResult.final_orders?.length || 0);
 
-      // Build final order list based on GPT analysis
+      // Convert GPT's final orders back to InsertOrder format
       const finalOrders: InsertOrder[] = [];
-      const processedIds = new Set<string>();
-
-      // Add merged orders (GPT chose the best version)
-      for (const merge of analysisResult.merged_orders || []) {
-        const sourceIds = merge.source_ids;
-        const preferredSource = merge.preferred_source;
+      
+      for (const finalOrder of reconciliationResult.final_orders || []) {
+        const orderDetails = finalOrder.order_details;
         
-        // Find the preferred order
-        let preferredOrder: InsertOrder | null = null;
+        // Find the source order to get complete data
+        let sourceOrder: InsertOrder | null = null;
         
-        for (const sourceId of sourceIds) {
-          if (sourceId.startsWith('T') && preferredSource === 'transcription') {
-            const index = parseInt(sourceId.substring(1)) - 1;
-            preferredOrder = transcriptionOrders[index];
-          } else if (sourceId.startsWith('S') && preferredSource === 'soap') {
-            const index = parseInt(sourceId.substring(1)) - 1;
-            preferredOrder = soapOrders[index];
-          }
+        if (finalOrder.source === 'existing') {
+          // Find matching existing order
+          sourceOrder = existingOrders.find(order => 
+            this.ordersMatch(order, orderDetails)
+          ) || null;
+        } else if (finalOrder.source === 'new') {
+          // Find matching new order
+          sourceOrder = newSoapOrders.find(order => 
+            this.ordersMatch(order, orderDetails)
+          ) || null;
         }
-
-        if (preferredOrder) {
-          finalOrders.push(preferredOrder);
-          sourceIds.forEach(id => processedIds.add(id));
-          console.log(`🧠 [GPTDedup] Merged orders ${sourceIds.join(', ')} → preferred ${preferredSource}`);
+        
+        if (sourceOrder) {
+          finalOrders.push(sourceOrder);
+          console.log(`🧠 [GPTDedup] Included ${finalOrder.source} order: ${orderDetails.medication_name || orderDetails.test_name || orderDetails.study_type} - ${finalOrder.rationale}`);
+        } else {
+          // Create new order from GPT specifications if no exact match found
+          const newOrder: InsertOrder = {
+            patientId: existingOrders[0]?.patientId || newSoapOrders[0]?.patientId || 0,
+            encounterId: existingOrders[0]?.encounterId || newSoapOrders[0]?.encounterId || 0,
+            orderType: orderDetails.type as any,
+            orderStatus: 'draft' as any,
+            medicationName: orderDetails.medication_name,
+            dosage: orderDetails.dosage,
+            sig: orderDetails.sig,
+            quantity: orderDetails.quantity,
+            refills: orderDetails.refills,
+            clinicalIndication: orderDetails.clinical_indication,
+            labName: orderDetails.lab_name,
+            testName: orderDetails.test_name,
+            testCode: orderDetails.test_code,
+            studyType: orderDetails.study_type,
+            region: orderDetails.region,
+            specialtyType: orderDetails.specialty_type,
+            providerName: orderDetails.provider_name,
+            priority: orderDetails.priority
+          };
+          finalOrders.push(newOrder);
+          console.log(`🧠 [GPTDedup] Created modified order: ${orderDetails.medication_name || orderDetails.test_name || orderDetails.study_type} - ${finalOrder.rationale}`);
         }
       }
 
-      // Add unique orders that weren't part of any merge
-      const uniqueOrders = (analysisResult.analysis.unique_orders || []) as string[];
-      for (const uniqueId of uniqueOrders) {
-        if (!processedIds.has(uniqueId)) {
-          if (uniqueId.startsWith('T')) {
-            const index = parseInt(uniqueId.substring(1)) - 1;
-            if (index >= 0 && index < transcriptionOrders.length) {
-              finalOrders.push(transcriptionOrders[index]);
-              console.log(`🧠 [GPTDedup] Added unique transcription order ${uniqueId}`);
-            }
-          } else if (uniqueId.startsWith('S')) {
-            const index = parseInt(uniqueId.substring(1)) - 1;
-            if (index >= 0 && index < soapOrders.length) {
-              finalOrders.push(soapOrders[index]);
-              console.log(`🧠 [GPTDedup] Added unique SOAP order ${uniqueId}`);
-            }
-          }
-          processedIds.add(uniqueId);
-        }
-      }
-
-      console.log(`🧠 [GPTDedup] Deduplication complete: ${transcriptionOrders.length + soapOrders.length} → ${finalOrders.length} orders`);
-      console.log(`🧠 [GPTDedup] Duplicates eliminated: ${analysisResult.analysis.duplicates_found?.length || 0}`);
-
+      console.log(`🧠 [GPTDedup] Final reconciled orders: ${finalOrders.length}`);
       return finalOrders;
 
     } catch (error: any) {
