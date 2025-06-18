@@ -4,7 +4,6 @@ import { OrderStandardizationService } from "./order-standardization-service.js"
 import { LOINCLookupService } from "./loinc-lookup-service.js";
 import { MedicationStandardizationService } from "./medication-standardization-service.js";
 import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
-import { gptOrderDeduplication } from "./gpt-order-deduplication-service.js";
 import { storage } from "./storage.js";
 
 const openai = new OpenAI({
@@ -278,6 +277,9 @@ export class SOAPOrdersExtractor {
             priority: order.priority
           }));
 
+          // Import GPT deduplication service dynamically to avoid import issues
+          const { gptOrderDeduplication } = await import("./gpt-order-deduplication-service.js");
+          
           // Use GPT deduplication service - treating existing orders as "transcription" and new orders as "soap"
           finalOrders = await gptOrderDeduplication.mergeAndDeduplicateOrders(
             existingInsertOrders, // existing orders (treated as transcription for GPT context)

@@ -1528,20 +1528,28 @@ export function registerRoutes(app: Express): Server {
         );
         const extractor = new SOAPOrdersExtractor();
 
-        // Extract orders from the SOAP note
-        const extractedOrders = await extractor.extractOrders(
+        // Extract orders from the SOAP note (this now includes deduplication)
+        const deduplicatedOrders = await extractor.extractOrders(
           encounter.note,
           encounter.patientId,
           encounterId,
         );
 
         console.log(
-          `📋 [ExtractOrders] Extracted ${extractedOrders.length} orders`,
+          `📋 [ExtractOrders] Extracted and deduplicated ${deduplicatedOrders.length} orders`,
         );
 
-        // Save the extracted orders
+        // Clear existing draft orders for this encounter before saving deduplicated ones
+        console.log(`📋 [ExtractOrders] Clearing existing draft orders for encounter ${encounterId}`);
+        const existingDraftOrders = await storage.getDraftOrdersByEncounter(encounterId);
+        for (const existingOrder of existingDraftOrders) {
+          await storage.deleteOrder(existingOrder.id);
+        }
+        console.log(`📋 [ExtractOrders] Deleted ${existingDraftOrders.length} existing draft orders`);
+
+        // Save the deduplicated orders
         const savedOrders = [];
-        for (const orderData of extractedOrders) {
+        for (const orderData of deduplicatedOrders) {
           try {
             const savedOrder = await storage.createOrder(orderData);
             savedOrders.push(savedOrder);
@@ -1552,7 +1560,7 @@ export function registerRoutes(app: Express): Server {
         }
 
         console.log(
-          `📋 [ExtractOrders] Successfully saved ${savedOrders.length} orders`,
+          `📋 [ExtractOrders] Successfully saved ${savedOrders.length} deduplicated orders`,
         );
 
         res.json({
