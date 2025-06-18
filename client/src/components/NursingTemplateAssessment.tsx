@@ -645,6 +645,18 @@ ${transcriptText}`,
       wsRef.current.send(JSON.stringify(responseRequest));
     };
 
+    // Helper function to format text with proper line breaks for display
+    const formatFieldForDisplay = (text: string) => {
+      if (!text) return null;
+      return text
+        .split('\n')
+        .map((line, index) => (
+          <div key={index} className={line.trim() ? '' : 'h-2'}>
+            {line.trim() || '\u00A0'}
+          </div>
+        ));
+    };
+
     const updateTemplateFields = (updates: Partial<NursingTemplateData>) => {
       setTemplateData((prev) => {
         const newData = { ...prev, ...updates };
@@ -884,7 +896,11 @@ ${transcriptText}`,
                     className="min-h-[60px] p-3 bg-white border rounded-md text-sm cursor-pointer hover:bg-gray-50"
                     onClick={() => setEditingField(field)}
                   >
-                    {templateData[field as keyof NursingTemplateData] || (
+                    {templateData[field as keyof NursingTemplateData] ? (
+                      <div className="whitespace-pre-wrap">
+                        {formatFieldForDisplay(templateData[field as keyof NursingTemplateData])}
+                      </div>
+                    ) : (
                       <span className="text-gray-400 italic">
                         {`${label} will be filled automatically...`}
                       </span>
