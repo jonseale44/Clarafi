@@ -1281,6 +1281,47 @@ export function registerRoutes(app: Express): Server {
 
   // LEGACY: OptimizedSOAPService route removed - now handled by realtime-soap/stream endpoint
 
+  // Nursing Template Generation endpoint - REST API replacement for realtime
+  app.post("/api/nursing-template/generate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const { patientId, encounterId, transcription, currentTemplateData } = req.body;
+
+      if (!patientId || !encounterId || !transcription) {
+        return res.status(400).json({
+          message: "Missing required fields: patientId, encounterId, transcription",
+        });
+      }
+
+      // Generate nursing template using same approach as SOAP generation
+      const templateData = await generateNursingTemplateDirect(
+        parseInt(patientId), 
+        encounterId, 
+        transcription,
+        currentTemplateData || {}
+      );
+
+      // Return the complete template data as JSON
+      const responseData = {
+        templateData,
+        patientId: parseInt(patientId),
+        encounterId,
+        generatedAt: new Date().toISOString(),
+      };
+
+      res.json(responseData);
+
+    } catch (error: any) {
+      console.error("❌ [NursingTemplateAPI] ERROR:", error.message);
+      
+      res.status(500).json({
+        message: "Failed to generate nursing template",
+        error: error.message
+      });
+    }
+  });
+
   // Real-time SOAP streaming endpoint
   app.post("/api/realtime-soap/stream", async (req, res) => {
     try {
