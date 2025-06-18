@@ -73,6 +73,7 @@ export interface IStorage {
   getOrder(id: number): Promise<Order | undefined>;
   getPatientOrders(patientId: number): Promise<Order[]>;
   getPatientDraftOrders(patientId: number): Promise<Order[]>;
+  getDraftOrdersByEncounter(encounterId: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, updates: Partial<Order>): Promise<Order>;
   deleteOrder(id: number): Promise<void>;

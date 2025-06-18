@@ -4,6 +4,8 @@ import { OrderStandardizationService } from "./order-standardization-service.js"
 import { LOINCLookupService } from "./loinc-lookup-service.js";
 import { MedicationStandardizationService } from "./medication-standardization-service.js";
 import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
+import { gptOrderDeduplication } from "./gpt-order-deduplication-service.js";
+import { storage } from "./storage.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -68,6 +70,11 @@ export class SOAPOrdersExtractor {
       console.log(
         `[SOAPExtractor] SOAP Note preview: ${soapNote.substring(0, 200)}...`,
       );
+
+      // Get existing draft orders for this encounter to enable deduplication
+      console.log(`[SOAPExtractor] Fetching existing draft orders for deduplication...`);
+      const existingOrders = await storage.getDraftOrdersByEncounter(encounterId);
+      console.log(`[SOAPExtractor] Found ${existingOrders.length} existing draft orders for encounter ${encounterId}`);
 
       const extractedOrders = await this.parseOrdersWithGPT(soapNote);
       console.log(
@@ -233,8 +240,123 @@ export class SOAPOrdersExtractor {
         `[SOAPExtractor] Extracted ${orderInserts.length} total orders: ${orderInserts.filter((o) => o.orderType === "medication").length} medications, ${orderInserts.filter((o) => o.orderType === "lab").length} labs, ${orderInserts.filter((o) => o.orderType === "imaging").length} imaging, ${orderInserts.filter((o) => o.orderType === "referral").length} referrals`,
       );
 
+      // Apply GPT-powered deduplication against existing orders
+      let finalOrders: InsertOrder[] = [];
+      if (existingOrders.length > 0) {
+        console.log(`[SOAPExtractor] ========== APPLYING GPT DEDUPLICATION ==========`);
+        console.log(`[SOAPExtractor] Comparing ${orderInserts.length} new orders against ${existingOrders.length} existing orders`);
+        
+        try {
+          // Convert existing orders to InsertOrder format for comparison
+          const existingInsertOrders: InsertOrder[] = existingOrders.map((order: any) => ({
+            patientId: order.patientId,
+            encounterId: order.encounterId,
+            orderType: order.orderType as any,
+            orderStatus: order.orderStatus as any,
+            medicationName: order.medicationName,
+            dosage: order.dosage,
+            quantity: order.quantity,
+            sig: order.sig,
+            refills: order.refills,
+            form: order.form,
+            routeOfAdministration: order.routeOfAdministration,
+            daysSupply: order.daysSupply,
+            labName: order.labName,
+            testName: order.testName,
+            testCode: order.testCode,
+            specimenType: order.specimenType,
+            fastingRequired: order.fastingRequired,
+            studyType: order.studyType,
+            region: order.region,
+            laterality: order.laterality,
+            contrastNeeded: order.contrastNeeded,
+            specialtyType: order.specialtyType,
+            providerName: order.providerName,
+            clinicalIndication: order.clinicalIndication,
+            diagnosisCode: order.diagnosisCode,
+            requiresPriorAuth: order.requiresPriorAuth,
+            priority: order.priority
+          }));
+
+          // Use GPT deduplication service - treating existing orders as "transcription" and new orders as "soap"
+          finalOrders = await gptOrderDeduplication.mergeAndDeduplicateOrders(
+            existingInsertOrders, // existing orders (treated as transcription for GPT context)
+            orderInserts // new SOAP-extracted orders
+          );
+          
+          console.log(`[SOAPExtractor] GPT deduplication complete: ${existingOrders.length + orderInserts.length} total → ${finalOrders.length} final orders`);
+          console.log(`[SOAPExtractor] Duplicates eliminated: ${(existingOrders.length + orderInserts.length) - finalOrders.length}`);
+          
+        } catch (deduplicationError) {
+          console.error(`❌ [SOAPExtractor] GPT deduplication failed, using fallback logic:`, deduplicationError);
+          
+          // Fallback deduplication: simple medication name matching
+          finalOrders = [...orderInserts];
+          for (const existingOrder of existingOrders) {
+            const isDuplicate = orderInserts.some(newOrder => {
+              if (newOrder.orderType === 'medication' && existingOrder.orderType === 'medication') {
+                const newMedName = newOrder.medicationName?.toLowerCase().trim() || '';
+                const existingMedName = existingOrder.medicationName?.toLowerCase().trim() || '';
+                return newMedName === existingMedName && newOrder.dosage === existingOrder.dosage;
+              }
+              if (newOrder.orderType === 'lab' && existingOrder.orderType === 'lab') {
+                const newTestName = newOrder.testName?.toLowerCase().trim() || '';
+                const existingTestName = existingOrder.testName?.toLowerCase().trim() || '';
+                return newTestName === existingTestName;
+              }
+              if (newOrder.orderType === 'imaging' && existingOrder.orderType === 'imaging') {
+                const newStudyType = newOrder.studyType?.toLowerCase().trim() || '';
+                const existingStudyType = existingOrder.studyType?.toLowerCase().trim() || '';
+                return newStudyType === existingStudyType && newOrder.region === existingOrder.region;
+              }
+              return false;
+            });
+            
+            if (!isDuplicate) {
+              // Convert existing order back to InsertOrder format and add to final list
+              const existingAsInsert: InsertOrder = {
+                patientId: existingOrder.patientId,
+                encounterId: existingOrder.encounterId,
+                orderType: existingOrder.orderType as any,
+                orderStatus: existingOrder.orderStatus as any,
+                medicationName: existingOrder.medicationName,
+                dosage: existingOrder.dosage,
+                quantity: existingOrder.quantity,
+                sig: existingOrder.sig,
+                refills: existingOrder.refills,
+                form: existingOrder.form,
+                routeOfAdministration: existingOrder.routeOfAdministration,
+                daysSupply: existingOrder.daysSupply,
+                labName: existingOrder.labName,
+                testName: existingOrder.testName,
+                testCode: existingOrder.testCode,
+                specimenType: existingOrder.specimenType,
+                fastingRequired: existingOrder.fastingRequired,
+                studyType: existingOrder.studyType,
+                region: existingOrder.region,
+                laterality: existingOrder.laterality,
+                contrastNeeded: existingOrder.contrastNeeded,
+                specialtyType: existingOrder.specialtyType,
+                providerName: existingOrder.providerName,
+                clinicalIndication: existingOrder.clinicalIndication,
+                diagnosisCode: existingOrder.diagnosisCode,
+                requiresPriorAuth: existingOrder.requiresPriorAuth,
+                priority: existingOrder.priority
+              };
+              finalOrders.push(existingAsInsert);
+            }
+          }
+          
+          console.log(`[SOAPExtractor] Fallback deduplication complete: ${existingOrders.length + orderInserts.length} total → ${finalOrders.length} final orders`);
+        }
+      } else {
+        // No existing orders, use all new orders
+        finalOrders = orderInserts;
+        console.log(`[SOAPExtractor] No existing orders found, using all ${finalOrders.length} newly extracted orders`);
+      }
+
       // Check if we have medication orders that need medication processing
-      const medicationOrders = orderInserts.filter((o) => o.orderType === "medication");
+      const medicationOrders = finalOrders.filter((o) => o.orderType === "medication");
       if (medicationOrders.length > 0) {
         console.log(`💊 [SOAPExtractor] Triggering medication processing for ${medicationOrders.length} medication orders`);
         try {
@@ -247,7 +369,7 @@ export class SOAPOrdersExtractor {
         }
       }
 
-      return orderInserts;
+      return finalOrders;
     } catch (error: any) {
       console.error("[SOAPExtractor] Error extracting orders:", error);
       return [];
