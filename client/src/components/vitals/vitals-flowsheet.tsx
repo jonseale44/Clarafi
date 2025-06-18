@@ -251,19 +251,28 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
   // Save vitals entry mutation
   const saveVitalsMutation = useMutation({
     mutationFn: async (entry: Partial<VitalsEntry>) => {
-      const url = entry.id ? `/api/vitals/entries/${entry.id}` : '/api/vitals/entries';
-      const method = entry.id ? 'PUT' : 'POST';
+      // Ensure encounterId and patientId are always included
+      const entryWithIds = {
+        ...entry,
+        encounterId: entry.encounterId || encounterId,
+        patientId: entry.patientId || patientId
+      };
+      
+      const url = entryWithIds.id ? `/api/vitals/entries/${entryWithIds.id}` : '/api/vitals/entries';
+      const method = entryWithIds.id ? 'PUT' : 'POST';
       
       console.log("🩺 [VitalsFlowsheet] Starting save request:");
       console.log("🩺 [VitalsFlowsheet] URL:", url);
       console.log("🩺 [VitalsFlowsheet] Method:", method);
-      console.log("🩺 [VitalsFlowsheet] Entry data:", JSON.stringify(entry, null, 2));
+      console.log("🩺 [VitalsFlowsheet] Entry data:", JSON.stringify(entryWithIds, null, 2));
+      console.log("🩺 [VitalsFlowsheet] Entry encounterId:", entryWithIds.encounterId);
+      console.log("🩺 [VitalsFlowsheet] Entry patientId:", entryWithIds.patientId);
       
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(entry)
+        body: JSON.stringify(entryWithIds)
       });
       
       console.log("🩺 [VitalsFlowsheet] Response status:", response.status);
