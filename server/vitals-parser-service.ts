@@ -1,33 +1,27 @@
-import { OpenAI } from "openai";
-import { z } from "zod";
+import OpenAI from "openai";
 
-/**
- * Vitals Parser Service - modeled after PatientParserService
- * Extracts structured vital signs from freeform clinical text using GPT
- */
-
-// Schema for extracted vitals data
-const extractedVitalsSchema = z.object({
-  systolic_bp: z.number().nullable(),
-  diastolic_bp: z.number().nullable(),
-  heart_rate: z.number().nullable(),
-  temperature: z.number().nullable(),
-  weight: z.number().nullable(),
-  height: z.number().nullable(),
-  bmi: z.number().nullable(),
-  oxygen_saturation: z.number().nullable(),
-  respiratory_rate: z.number().nullable(),
-  pain_scale: z.number().nullable(),
-  alerts: z.array(z.string()).default([]),
-});
-
-export type ExtractedVitals = z.infer<typeof extractedVitalsSchema>;
-
-export interface VitalsParseResult {
-  success: boolean;
-  data?: ExtractedVitals;
-  error?: string;
+interface ParsedVitalsData {
+  systolicBp?: number;
+  diastolicBp?: number;
+  heartRate?: number;
+  temperature?: string;
+  weight?: string;
+  height?: string;
+  bmi?: string;
+  oxygenSaturation?: string;
+  respiratoryRate?: number;
+  painScale?: number;
+  parsedText?: string;
   confidence?: number;
+  warnings?: string[];
+}
+
+interface VitalsParsingResult {
+  success: boolean;
+  data?: ParsedVitalsData;
+  errors?: string[];
+  confidence: number;
+  originalText: string;
 }
 
 export class VitalsParserService {
@@ -39,138 +33,128 @@ export class VitalsParserService {
     });
   }
 
-  async parseVitalsText(vitalsText: string): Promise<VitalsParseResult> {
+  async parseVitalsText(
+    vitalsText: string,
+    patientContext?: { age?: number; gender?: string; }
+  ): Promise<VitalsParsingResult> {
+    if (!vitalsText || vitalsText.trim().length === 0) {
+      return {
+        success: false,
+        errors: ["No vitals text provided"],
+        confidence: 0,
+        originalText: vitalsText || ""
+      };
+    }
+
+    console.log("🩺 [VitalsParser] Parsing vitals text:", vitalsText);
+
     try {
-      console.log("🩺 [VitalsParser] Starting vitals parsing...");
-      
-      const systemPrompt = `You are a medical AI assistant specialized in extracting vital signs from clinical documentation, nursing notes, and medical records.
+      // Enhanced GPT prompt for better vitals extraction
+      const prompt = `You are a medical AI assistant that extracts vital signs from clinical text.
 
-CRITICAL INSTRUCTIONS:
-- Extract ONLY the vital signs that are clearly stated in the text
-- DO NOT make assumptions or generate fake data
-- Convert all measurements to US standard units (°F, lbs, inches)
-- Return null for any vital sign that cannot be determined from the input
-- For blood pressure, extract both systolic and diastolic values
-- Normalize units consistently (temperature in Fahrenheit, weight in pounds, etc.)
-
-Return a JSON object with these exact fields:
+Parse this vitals text and return ONLY a valid JSON object with the following structure:
 {
-  "systolic_bp": number or null,
-  "diastolic_bp": number or null,
-  "heart_rate": number or null,
-  "temperature": number or null,
-  "weight": number or null,
-  "height": number or null,
-  "bmi": number or null,
-  "oxygen_saturation": number or null,
-  "respiratory_rate": number or null,
-  "pain_scale": number or null,
-  "alerts": ["array of any concerning findings"]
-}`;
+  "systolicBp": number or null,
+  "diastolicBp": number or null,
+  "heartRate": number or null,
+  "temperature": "string with decimal" or null,
+  "weight": "string with decimal" or null,
+  "height": "string with decimal" or null,
+  "bmi": "string with decimal" or null,
+  "oxygenSaturation": "string with decimal" or null,
+  "respiratoryRate": number or null,
+  "painScale": number (0-10) or null,
+  "parsedText": "cleaned interpretation",
+  "warnings": ["array of critical value warnings"]
+}
 
-      const messages: any[] = [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Extract vital signs from this clinical text:\n\n${vitalsText}`,
-        },
-      ];
+CRITICAL RULES:
+- Convert Celsius to Fahrenheit (°F = °C × 9/5 + 32)
+- Convert kg to lbs (lbs = kg × 2.20462)
+- Convert cm to inches (inches = cm ÷ 2.54)
+- Blood pressure format: "120/80" means systolic=120, diastolic=80
+- Temperature, weight, height, BMI, O2 sat as strings with decimals
+- Heart rate, respiratory rate, pain scale as numbers
+- Flag critical values in warnings array
+- Return null for missing values
+- No explanatory text, ONLY the JSON object
 
-      console.log("🩺 [VitalsParser] Calling OpenAI API...");
-      console.log("🩺 [VitalsParser] OpenAI API Key exists:", !!process.env.OPENAI_API_KEY);
-      console.log("🩺 [VitalsParser] Messages:", JSON.stringify(messages, null, 2));
+Input: "${vitalsText}"`;
+
+      console.log("🩺 [VitalsParser] Calling OpenAI...");
       
-      try {
-        const response = await this.openai.chat.completions.create({
-          model: "gpt-4.1-mini", 
-          messages,
-          response_format: { type: "json_object" },
-          temperature: 0,
-          max_tokens: 1000,
-        });
+      const response = await this.openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+        max_tokens: 800,
+      });
 
-        console.log("🩺 [VitalsParser] OpenAI response received");
-        console.log("🩺 [VitalsParser] Response choices length:", response.choices?.length);
-        
-        const content = response.choices[0].message.content;
-        console.log("🩺 [VitalsParser] Raw GPT response:", content);
-        
-        if (!content) {
-          console.error("❌ [VitalsParser] No content in OpenAI response");
-          return {
-            success: false,
-            error: "No response from AI service",
-          };
-        }
-      } catch (apiError) {
-        console.error("❌ [VitalsParser] OpenAI API error:", apiError);
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
         return {
           success: false,
-          error: `OpenAI API error: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`,
+          errors: ["No response from OpenAI"],
+          confidence: 0,
+          originalText: vitalsText
         };
       }
-      
-      let rawData;
+
+      console.log("🩺 [VitalsParser] Raw response:", content);
+
+      // Clean the response - remove markdown formatting
+      let cleanedContent = content.trim();
+      if (cleanedContent.startsWith('```json')) {
+        cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      }
+      if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      console.log("🩺 [VitalsParser] Cleaned content:", cleanedContent);
+
+      let parsedData: ParsedVitalsData;
       try {
-        rawData = JSON.parse(content);
-        console.log("🩺 [VitalsParser] Parsed raw data:", rawData);
+        parsedData = JSON.parse(cleanedContent);
       } catch (parseError) {
-        console.error("❌ [VitalsParser] Failed to parse OpenAI JSON:", parseError);
-        console.error("❌ [VitalsParser] Content was:", content);
+        console.error("❌ [VitalsParser] JSON parse error:", parseError);
         return {
           success: false,
-          error: "Invalid JSON from AI service",
+          errors: [`Invalid JSON response: ${parseError}`],
+          confidence: 0,
+          originalText: vitalsText
         };
       }
 
-      // Validate and transform the extracted data
-      let validatedData;
-      try {
-        validatedData = extractedVitalsSchema.parse(rawData);
-        console.log("🩺 [VitalsParser] Validated data:", validatedData);
-      } catch (validationError) {
-        console.error("❌ [VitalsParser] Schema validation failed:", validationError);
-        return {
-          success: false,
-          error: "Data validation failed",
-        };
-      }
-      console.log("✅ [VitalsParser] Validated data:", validatedData);
-
-      // Calculate confidence based on completeness
+      // Calculate confidence based on how many fields were extracted
       const vitalFields = [
-        "systolic_bp",
-        "diastolic_bp", 
-        "heart_rate",
-        "temperature",
-        "oxygen_saturation",
-        "respiratory_rate"
+        parsedData.systolicBp, parsedData.diastolicBp, parsedData.heartRate,
+        parsedData.temperature, parsedData.respiratoryRate, parsedData.oxygenSaturation
       ];
-      const completedFields = vitalFields.filter(
-        (field) => validatedData[field as keyof ExtractedVitals] !== null
-      ).length;
+      const extractedCount = vitalFields.filter(field => field !== null && field !== undefined).length;
+      const confidence = Math.round((extractedCount / vitalFields.length) * 100);
 
-      const confidence = Math.round((completedFields / vitalFields.length) * 100);
-      console.log(`📊 [VitalsParser] Confidence: ${confidence}%`);
+      // Add timestamp if not present
+      if (!parsedData.parsedText) {
+        parsedData.parsedText = vitalsText;
+      }
+
+      console.log(`✅ [VitalsParser] Successfully parsed ${extractedCount} vitals with ${confidence}% confidence`);
 
       return {
         success: true,
-        data: validatedData,
+        data: parsedData,
         confidence,
+        originalText: vitalsText
       };
+
     } catch (error) {
-      console.error("❌ [VitalsParser] Parsing error:", error);
-
-      if (error instanceof z.ZodError) {
-        return {
-          success: false,
-          error: `Data validation failed: ${error.errors.map((e) => e.message).join(", ")}`,
-        };
-      }
-
+      console.error("❌ [VitalsParser] Error:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown parsing error",
+        errors: [error instanceof Error ? error.message : "Unknown error"],
+        confidence: 0,
+        originalText: vitalsText
       };
     }
   }

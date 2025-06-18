@@ -201,20 +201,20 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
           encounterId,
           patientId,
           entryType: 'routine',
-          systolicBp: result.data.systolic_bp,
-          diastolicBp: result.data.diastolic_bp,
-          heartRate: result.data.heart_rate,
-          temperature: result.data.temperature?.toString(),
-          weight: result.data.weight?.toString(),
-          height: result.data.height?.toString(),
-          bmi: result.data.bmi?.toString(),
-          oxygenSaturation: result.data.oxygen_saturation?.toString(),
-          respiratoryRate: result.data.respiratory_rate,
-          painScale: result.data.pain_scale,
+          systolicBp: result.data.systolicBp,
+          diastolicBp: result.data.diastolicBp,
+          heartRate: result.data.heartRate,
+          temperature: result.data.temperature ? parseFloat(result.data.temperature) : undefined,
+          weight: result.data.weight ? parseFloat(result.data.weight) : undefined,
+          height: result.data.height ? parseFloat(result.data.height) : undefined,
+          bmi: result.data.bmi ? parseFloat(result.data.bmi) : undefined,
+          oxygenSaturation: result.data.oxygenSaturation ? parseFloat(result.data.oxygenSaturation) : undefined,
+          respiratoryRate: result.data.respiratoryRate,
+          painScale: result.data.painScale,
           parsedFromText: true,
           originalText: quickParseText,
-          notes: `Parsed: ${quickParseText}`,
-          alerts: result.data.alerts || []
+          notes: `Parsed: ${result.data.parsedText || quickParseText}`,
+          alerts: result.data.warnings || []
         };
         
         console.log("🩺 [VitalsFlowsheet] Created new entry:", newEntry);
@@ -224,13 +224,13 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
         
         toast({
           title: "Vitals Parsed Successfully",
-          description: `Extracted ${Object.keys(result.data).filter(k => result.data[k] !== null).length} vital signs with ${result.confidence}% confidence`,
+          description: `Extracted ${Object.keys(result.data).filter(k => result.data[k] !== null && result.data[k] !== undefined).length} vital signs with ${result.confidence}% confidence`,
         });
       } else {
         console.error("❌ [VitalsFlowsheet] Parse result missing success or data:", result);
         toast({
           title: "Parse Error", 
-          description: result.error || "Failed to parse vitals",
+          description: result.errors?.[0] || "Failed to parse vitals",
           variant: "destructive"
         });
       }
