@@ -159,7 +159,7 @@ CRITICAL DOCUMENTATION STANDARDS:
 4. Use professional nursing terminology throughout
 5. Include specific measurements and observations
 6. Only document information explicitly mentioned in conversation
-7. Intelligently merge with existing template data - don't replace, enhance
+7. INTELLIGENTLY UPDATE EXISTING DATA: Add new information, correct inaccurate information, and remove information that the patient explicitly contradicts or corrects
 
 MANDATORY MEDICAL ABBREVIATIONS TO USE:
 - Hypertension → HTN
@@ -250,7 +250,16 @@ vitals: Current Vital Signs
 - Format as single line with standard abbreviations
 - Example: "BP: 140/90 | HR: 88 | T: 98.6°F | RR: 18 | O2 Sat: 98% on RA"
 
-Return ONLY a JSON object with these exact field names containing the extracted and properly formatted information. Merge intelligently with existing data - enhance, don't replace unless new information contradicts old information.
+Return ONLY a JSON object with these exact field names containing the extracted and properly formatted information. 
+
+INTELLIGENT DATA MERGING RULES:
+- ADD new information that wasn't previously documented
+- CORRECT any existing information that the patient contradicts or clarifies (e.g., "I don't actually have that allergy", "That medication was discontinued")
+- REMOVE information that the patient explicitly says is incorrect
+- PRESERVE existing accurate information that isn't contradicted
+- When patient corrects allergies from specific allergies back to "no allergies", use "NKDA"
+- When patient corrects medications, remove discontinued ones and add new ones
+- Trust the patient's current statements over previously documented information
 
 Example output format:
 {
