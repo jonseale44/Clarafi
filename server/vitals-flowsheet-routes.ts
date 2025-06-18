@@ -84,14 +84,23 @@ router.get("/patient/:patientId", async (req, res) => {
  */
 router.post("/entries", async (req, res) => {
   try {
+    console.log("🩺 [VitalsFlowsheet] POST /entries request received");
+    console.log("🩺 [VitalsFlowsheet] Request body:", JSON.stringify(req.body, null, 2));
+    console.log("🩺 [VitalsFlowsheet] User:", req.user?.id, req.user?.username);
+    
     if (!req.user?.id) {
+      console.error("❌ [VitalsFlowsheet] Unauthorized - no user");
       return APIResponseHandler.unauthorized(res);
     }
 
-    const validatedData = VitalsEntrySchema.parse({
+    const dataToValidate = {
       ...req.body,
       recordedBy: req.user.username || `User ${req.user.id}`,
-    });
+    };
+    
+    console.log("🩺 [VitalsFlowsheet] Data to validate:", JSON.stringify(dataToValidate, null, 2));
+    
+    const validatedData = VitalsEntrySchema.parse(dataToValidate);
 
     // Calculate BMI if height and weight are provided
     let bmi: number | undefined;
@@ -124,12 +133,15 @@ router.post("/entries", async (req, res) => {
     console.log("✅ [VitalsFlowsheet] Created vitals entry:", vitalsEntry.id);
     return APIResponseHandler.success(res, vitalsEntry, 201);
   } catch (error) {
+    console.error("❌ [VitalsFlowsheet] Error creating vitals entry:", error);
+    
     if (error instanceof z.ZodError) {
+      console.error("❌ [VitalsFlowsheet] Validation errors:", JSON.stringify(error.errors, null, 2));
       return APIResponseHandler.badRequest(res, "Invalid vitals data", error.errors);
     }
     
-    console.error("❌ [VitalsFlowsheet] Error creating vitals entry:", error);
-    return APIResponseHandler.error(res, "CREATE_VITALS_ERROR", "Failed to create vitals entry");
+    console.error("❌ [VitalsFlowsheet] Unexpected error:", error);
+    return APIResponseHandler.error(res, error instanceof Error ? error.message : "Failed to create vitals entry", 500);
   }
 });
 

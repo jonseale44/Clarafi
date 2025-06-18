@@ -222,14 +222,41 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
       const url = entry.id ? `/api/vitals/entries/${entry.id}` : '/api/vitals/entries';
       const method = entry.id ? 'PUT' : 'POST';
       
+      console.log("🩺 [VitalsFlowsheet] Starting save request:");
+      console.log("🩺 [VitalsFlowsheet] URL:", url);
+      console.log("🩺 [VitalsFlowsheet] Method:", method);
+      console.log("🩺 [VitalsFlowsheet] Entry data:", JSON.stringify(entry, null, 2));
+      
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(entry)
       });
-      if (!response.ok) throw new Error("Save failed");
-      return response.json();
+      
+      console.log("🩺 [VitalsFlowsheet] Response status:", response.status);
+      console.log("🩺 [VitalsFlowsheet] Response headers:", Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ [VitalsFlowsheet] Save failed - Status:", response.status);
+        console.error("❌ [VitalsFlowsheet] Error response:", errorText);
+        throw new Error(`Save failed: ${response.status} - ${errorText.substring(0, 200)}`);
+      }
+      
+      const responseText = await response.text();
+      console.log("🩺 [VitalsFlowsheet] Raw response text:", responseText);
+      
+      try {
+        const result = JSON.parse(responseText);
+        console.log("✅ [VitalsFlowsheet] Successfully parsed JSON result:", result);
+        return result;
+      } catch (parseError) {
+        console.error("❌ [VitalsFlowsheet] Failed to parse JSON from save response");
+        console.error("❌ [VitalsFlowsheet] Parse error:", parseError);
+        console.error("❌ [VitalsFlowsheet] Response was:", responseText);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vitals/encounter', encounterId] });
