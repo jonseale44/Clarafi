@@ -35,14 +35,14 @@ export class VitalsParserService {
 
   async parseVitalsText(
     vitalsText: string,
-    patientContext?: { age?: number; gender?: string; }
+    patientContext?: { age?: number; gender?: string },
   ): Promise<VitalsParsingResult> {
     if (!vitalsText || vitalsText.trim().length === 0) {
       return {
         success: false,
         errors: ["No vitals text provided"],
         confidence: 0,
-        originalText: vitalsText || ""
+        originalText: vitalsText || "",
       };
     }
 
@@ -82,9 +82,9 @@ CRITICAL RULES:
 Input: "${vitalsText}"`;
 
       console.log("🩺 [VitalsParser] Calling OpenAI...");
-      
+
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 800,
@@ -96,7 +96,7 @@ Input: "${vitalsText}"`;
           success: false,
           errors: ["No response from OpenAI"],
           confidence: 0,
-          originalText: vitalsText
+          originalText: vitalsText,
         };
       }
 
@@ -104,11 +104,15 @@ Input: "${vitalsText}"`;
 
       // Clean the response - remove markdown formatting
       let cleanedContent = content.trim();
-      if (cleanedContent.startsWith('```json')) {
-        cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      if (cleanedContent.startsWith("```json")) {
+        cleanedContent = cleanedContent
+          .replace(/^```json\s*/, "")
+          .replace(/\s*```$/, "");
       }
-      if (cleanedContent.startsWith('```')) {
-        cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      if (cleanedContent.startsWith("```")) {
+        cleanedContent = cleanedContent
+          .replace(/^```\s*/, "")
+          .replace(/\s*```$/, "");
       }
 
       console.log("🩺 [VitalsParser] Cleaned content:", cleanedContent);
@@ -122,39 +126,48 @@ Input: "${vitalsText}"`;
           success: false,
           errors: [`Invalid JSON response: ${parseError}`],
           confidence: 0,
-          originalText: vitalsText
+          originalText: vitalsText,
         };
       }
 
       // Calculate confidence based on how many fields were extracted
       const vitalFields = [
-        parsedData.systolicBp, parsedData.diastolicBp, parsedData.heartRate,
-        parsedData.temperature, parsedData.respiratoryRate, parsedData.oxygenSaturation
+        parsedData.systolicBp,
+        parsedData.diastolicBp,
+        parsedData.heartRate,
+        parsedData.temperature,
+        parsedData.respiratoryRate,
+        parsedData.oxygenSaturation,
       ];
-      const extractedCount = vitalFields.filter(field => field !== null && field !== undefined).length;
-      const confidence = Math.round((extractedCount / vitalFields.length) * 100);
+      const extractedCount = vitalFields.filter(
+        (field) => field !== null && field !== undefined,
+      ).length;
+      const confidence = Math.round(
+        (extractedCount / vitalFields.length) * 100,
+      );
 
       // Add timestamp if not present
       if (!parsedData.parsedText) {
         parsedData.parsedText = vitalsText;
       }
 
-      console.log(`✅ [VitalsParser] Successfully parsed ${extractedCount} vitals with ${confidence}% confidence`);
+      console.log(
+        `✅ [VitalsParser] Successfully parsed ${extractedCount} vitals with ${confidence}% confidence`,
+      );
 
       return {
         success: true,
         data: parsedData,
         confidence,
-        originalText: vitalsText
+        originalText: vitalsText,
       };
-
     } catch (error) {
       console.error("❌ [VitalsParser] Error:", error);
       return {
         success: false,
         errors: [error instanceof Error ? error.message : "Unknown error"],
         confidence: 0,
-        originalText: vitalsText
+        originalText: vitalsText,
       };
     }
   }
