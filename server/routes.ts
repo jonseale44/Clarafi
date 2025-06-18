@@ -266,11 +266,11 @@ Example output format:
   "vitals": "BP: 150/95 | HR: 92 | T: 98.4°F | RR: 20 | O2 Sat: 96% on RA"
 }`;
 
-  // Generate nursing template using GPT-4.1-nano for structured data extraction
+  // Generate nursing template using GPT-4.1-mini for structured data extraction
   // Purpose: Fast, cost-effective model for parsing transcriptions into standardized nursing documentation fields
   // Uses low temperature (0.3) for consistent formatting and medical abbreviation compliance
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-nano",
+    model: "gpt-4.1-mini",
     messages: [{ role: "user", content: nursingPrompt }],
     temperature: 0.3,
     max_tokens: 2000,

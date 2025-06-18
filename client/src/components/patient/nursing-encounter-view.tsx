@@ -1454,7 +1454,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         <div className="flex-1 overflow-y-auto p-6">
           <div className="flex gap-6 h-full">
             {/* Left Column - Assessment and Summary */}
-            <div className="flex-1 space-y-6">
+            <div className="w-1/2 space-y-6">
               {/* Nursing Template Assessment Section */}
               <Card className="p-6">
                 <NursingTemplateAssessment
@@ -1472,7 +1472,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
             </div>
 
             {/* Right Column - Transcription and AI Suggestions */}
-            <div className="flex-1 space-y-6">
+            <div className="w-1/2 space-y-6">
               {/* Voice Recording and Transcription Section */}
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
