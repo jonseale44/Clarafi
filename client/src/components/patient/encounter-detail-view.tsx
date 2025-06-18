@@ -41,6 +41,7 @@ import {
 } from "@/components/RealtimeSOAPIntegration";
 
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
+import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
 
 interface EncounterDetailViewProps {
   patient: Patient;
@@ -2493,6 +2494,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 <div className="bg-white border-b border-gray-100 p-3">
                   {section.id === "encounters" ? (
                     <div className="text-xs text-gray-600">Current encounter in progress</div>
+                  ) : section.id === "vitals" ? (
+                    <VitalsFlowsheet 
+                      patientId={patient.id} 
+                      encounterId={encounter?.id}
+                      isReadOnly={false}
+                    />
                   ) : section.id === "ai-debug" ? (
                     <AIDebugSection patientId={patient.id} />
                   ) : (
