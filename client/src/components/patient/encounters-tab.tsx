@@ -198,7 +198,30 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
                       <p className="text-gray-700">
                         <span className="font-medium">Note:</span> {(() => {
                           const plainText = stripHtmlTags(encounter.note);
-                          return plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
+                          // Extract key sections for a more informative preview
+                          const sections = [];
+                          
+                          // Look for Assessment/Plan section (most important for providers)
+                          const assessmentMatch = plainText.match(/(ASSESSMENT|PLAN|A&P)[\s\S]*?(?=\n\n|\n[A-Z]|$)/i);
+                          if (assessmentMatch) {
+                            const assessment = assessmentMatch[0].replace(/^(ASSESSMENT|PLAN|A&P)[:\s]*\n?/i, '').trim();
+                            if (assessment) sections.push(`Assessment: ${assessment.substring(0, 80)}...`);
+                          }
+                          
+                          // If no assessment found, look for chief complaint
+                          if (sections.length === 0) {
+                            const ccMatch = plainText.match(/(Chief Complaint|CC)[:\s]*([^\n]+)/i);
+                            if (ccMatch && ccMatch[2]) {
+                              sections.push(`CC: ${ccMatch[2].trim()}`);
+                            }
+                          }
+                          
+                          // Fallback to truncated full text
+                          if (sections.length === 0) {
+                            return plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
+                          }
+                          
+                          return sections.join(' | ');
                         })()}
                       </p>
                     )}
@@ -226,7 +249,41 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
                       <p className="text-gray-700 mt-1">
                         <span className="font-medium">Nursing Summary:</span> {(() => {
                           const plainText = stripHtmlTags(encounter.nurseNotes);
-                          return plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
+                          // Extract key nursing information
+                          const sections = [];
+                          
+                          // Look for Chief Complaint from nursing notes
+                          const ccMatch = plainText.match(/CHIEF COMPLAINT[\s\S]*?(?=\n\n|\*\*|$)/i);
+                          if (ccMatch) {
+                            const cc = ccMatch[0].replace(/\*\*CHIEF COMPLAINT\*\*/i, '').replace(/^[:\s-]*/, '').trim();
+                            if (cc) sections.push(`CC: ${cc.split('\n')[0]}`);
+                          }
+                          
+                          // Look for key medications from nursing notes
+                          const medsMatch = plainText.match(/CURRENT MEDICATIONS[\s\S]*?(?=\n\n|\*\*|$)/i);
+                          if (medsMatch) {
+                            const meds = medsMatch[0].replace(/\*\*CURRENT MEDICATIONS\*\*/i, '').replace(/^[:\s-]*/, '').trim();
+                            if (meds && !meds.includes('Not documented')) {
+                              const medList = meds.split('\n').filter(m => m.trim() && m.includes('mg')).slice(0, 2);
+                              if (medList.length > 0) sections.push(`Meds: ${medList.join(', ')}`);
+                            }
+                          }
+                          
+                          // Look for allergies from nursing notes
+                          const allergyMatch = plainText.match(/ALLERGIES[\s\S]*?(?=\n\n|\*\*|$)/i);
+                          if (allergyMatch) {
+                            const allergies = allergyMatch[0].replace(/\*\*ALLERGIES\*\*/i, '').replace(/^[:\s-]*/, '').trim();
+                            if (allergies && !allergies.includes('Not documented')) {
+                              sections.push(`Allergies: ${allergies.split('\n')[0]}`);
+                            }
+                          }
+                          
+                          // Fallback to truncated summary
+                          if (sections.length === 0) {
+                            return plainText.length > 120 ? plainText.substring(0, 120) + '...' : plainText;
+                          }
+                          
+                          return sections.join(' | ');
                         })()}
                       </p>
                     )}
