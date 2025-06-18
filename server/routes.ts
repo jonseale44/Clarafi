@@ -643,8 +643,7 @@ export function registerRoutes(app: Express): Server {
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
 
-  // Vitals flowsheet routes (enhanced vitals management)
-  app.use("/api/vitals", vitalsFlowsheetRoutes);
+  // Vitals flowsheet routes (enhanced vitals management) - now handled by dynamic import above
 
   // Nursing summary routes
   app.use("/api/encounters", nursingSummaryRoutes);
