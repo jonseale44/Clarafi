@@ -51,7 +51,9 @@ router.post("/parse", async (req: Request, res: Response) => {
     console.log("✅ [VitalsParser] Successfully parsed vitals data");
     console.log(`📊 [VitalsParser] Confidence: ${parseResult.confidence}%`);
 
-    res.json(parseResult);
+    // Ensure we return proper JSON response
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json(parseResult);
 
   } catch (error) {
     console.error("❌ [VitalsParser] Error in parse route:", error);
