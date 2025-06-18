@@ -1450,38 +1450,13 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Voice Recording Section */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">
-                Real-Time Transcription
-              </h2>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-green-600">● Connected</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} text-white`}
-                >
-                  {isRecording ? (
-                    <MicOff className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Mic className="h-4 w-4 mr-2" />
-                  )}
-                  {isRecording ? "Stop Recording" : "Start Recording"}
-                </Button>
-
-                {/* Removed legacy RealtimeNursingIntegration - functionality replaced by NursingTemplateAssessment */}
-              </div>
-
+        {/* Content Area - Two Column Layout */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex gap-6 h-full">
+            {/* Left Column - Assessment and Summary */}
+            <div className="flex-1 space-y-6">
               {/* Nursing Template Assessment Section */}
-              <div className="mt-4">
+              <Card className="p-6">
                 <NursingTemplateAssessment
                   ref={nursingTemplateRef}
                   patientId={patient.id.toString()}
@@ -1493,40 +1468,71 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
                   }}
                   autoStart={true}
                 />
-              </div>
+              </Card>
+            </div>
 
-              {/* Transcription Content */}
-              <div className="space-y-2">
-                <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
-                  <div className="whitespace-pre-line text-sm leading-relaxed">
-                    {transcription ||
-                      (isRecording
-                        ? "Listening..."
-                        : "Transcription will appear here during recording")}
+            {/* Right Column - Transcription and AI Suggestions */}
+            <div className="flex-1 space-y-6">
+              {/* Voice Recording and Transcription Section */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                    Transcription
+                  </h2>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-green-600">● Connected</span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </Card>
 
-          {/* AI Suggestions - EXACT COPY from provider view */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">
-                AI Suggestions
-              </h2>
-              <Button
-                onClick={generateSmartSuggestions}
-                size="sm"
-                variant="outline"
-              >
-                Generate Suggestions
-              </Button>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} text-white`}
+                    >
+                      {isRecording ? (
+                        <MicOff className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Mic className="h-4 w-4 mr-2" />
+                      )}
+                      {isRecording ? "Stop Recording" : "Start Recording"}
+                    </Button>
+                  </div>
+
+                  {/* Transcription Content */}
+                  <div className="space-y-2">
+                    <div className="border border-gray-200 rounded-lg p-4 min-h-[200px] bg-gray-50">
+                      <div className="whitespace-pre-line text-sm leading-relaxed">
+                        {transcription ||
+                          (isRecording
+                            ? "Listening..."
+                            : "Transcription will appear here during recording")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* AI Suggestions */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                    AI Suggestions
+                  </h2>
+                  <Button
+                    onClick={generateSmartSuggestions}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Generate Suggestions
+                  </Button>
+                </div>
+                <div className="text-gray-500 text-sm whitespace-pre-line min-h-[200px]">
+                  {gptSuggestions || "AI analysis will appear here..."}
+                </div>
+              </Card>
             </div>
-            <div className="text-gray-500 text-sm whitespace-pre-line">
-              {gptSuggestions || "AI analysis will appear here..."}
-            </div>
-          </Card>
+          </div>
         </div>
       </div>
     </div>
