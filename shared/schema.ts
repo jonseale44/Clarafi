@@ -273,7 +273,11 @@ export const vitals = pgTable("vitals", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
-  measuredAt: timestamp("measured_at").notNull(),
+  recordedAt: timestamp("recorded_at").notNull().defaultNow(),
+  recordedBy: text("recorded_by").notNull(),
+  entryType: text("entry_type").notNull().default("routine"), // 'admission', 'routine', 'recheck', 'discharge', etc.
+  
+  // Vital signs
   systolicBp: integer("systolic_bp"),
   diastolicBp: integer("diastolic_bp"),
   heartRate: integer("heart_rate"),
@@ -284,8 +288,15 @@ export const vitals = pgTable("vitals", {
   oxygenSaturation: decimal("oxygen_saturation"),
   respiratoryRate: integer("respiratory_rate"),
   painScale: integer("pain_scale"),
-  recordedBy: text("recorded_by"),
+  
+  // Additional data
+  notes: text("notes"),
+  alerts: text("alerts").array(),
+  parsedFromText: boolean("parsed_from_text").default(false),
+  originalText: text("original_text"),
+  
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Enhanced Medications with EMR-standard fields

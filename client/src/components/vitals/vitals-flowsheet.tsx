@@ -180,7 +180,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
           respiratoryRate: result.parsedData.respiratoryRate,
           painScale: result.parsedData.painScale,
           parsedFromText: true,
-          originalText: text,
+          originalText: quickParseText,
           notes: `Parsed: ${result.parsedData.parsedText || quickParseText}`,
           alerts: result.warnings
         };

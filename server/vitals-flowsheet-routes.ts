@@ -8,12 +8,12 @@ import { vitals } from "../shared/schema.js";
 const router = Router();
 
 // Validation schemas
-const VitalsEntrySchema = createInsertSchema(vitals).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-}).extend({
+const VitalsEntrySchema = z.object({
+  patientId: z.number(),
+  encounterId: z.number(),
   recordedAt: z.string().datetime().optional(),
+  recordedBy: z.string(),
+  entryType: z.string().default("routine"),
   systolicBp: z.number().min(50).max(300).optional(),
   diastolicBp: z.number().min(20).max(200).optional(),
   heartRate: z.number().min(30).max(250).optional(),
@@ -23,6 +23,10 @@ const VitalsEntrySchema = createInsertSchema(vitals).omit({
   oxygenSaturation: z.number().min(70).max(100).optional(),
   respiratoryRate: z.number().min(5).max(100).optional(),
   painScale: z.number().min(0).max(10).optional(),
+  notes: z.string().optional(),
+  alerts: z.array(z.string()).optional(),
+  parsedFromText: z.boolean().optional(),
+  originalText: z.string().optional(),
 });
 
 /**
@@ -247,14 +251,14 @@ router.get("/trends/:patientId", async (req, res) => {
       if (daysBack > 0) {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-        vitalsEntries = vitalsEntries.filter(entry => 
+        vitalsEntries = vitalsEntries.filter((entry: any) => 
           new Date(entry.recordedAt) >= cutoffDate
         );
       }
     }
     
     // Sort chronologically for trend analysis
-    const sortedEntries = vitalsEntries.sort((a, b) => 
+    const sortedEntries = vitalsEntries.sort((a: any, b: any) => 
       new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
     );
 
@@ -270,7 +274,7 @@ router.get("/trends/:patientId", async (req, res) => {
           start: sortedEntries[0]?.recordedAt,
           end: sortedEntries[sortedEntries.length - 1]?.recordedAt
         },
-        criticalAlerts: sortedEntries.filter(entry => entry.alerts?.length > 0).length
+        criticalAlerts: sortedEntries.filter((entry: any) => entry.alerts?.length > 0).length
       }
     });
   } catch (error) {
