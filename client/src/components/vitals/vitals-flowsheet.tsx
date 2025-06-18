@@ -173,6 +173,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
           encounterId,
           patientId,
           entryType: 'routine',
+          recordedAt: new Date().toISOString(),
           systolicBp: result.data.systolicBp,
           diastolicBp: result.data.diastolicBp,
           heartRate: result.data.heartRate,
@@ -188,6 +189,9 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
           notes: `Parsed: ${quickParseText}`,
           alerts: []
         };
+        
+        console.log("🩺 [VitalsFlowsheet] Encounter ID:", encounterId);
+        console.log("🩺 [VitalsFlowsheet] Patient ID:", patientId);
         
         console.log("🩺 [VitalsFlowsheet] Created new entry:", newEntry);
         setEditingEntry(newEntry as VitalsEntry);
@@ -572,6 +576,8 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
               quickParseText={quickParseText}
               setQuickParseText={setQuickParseText}
               quickParseMutation={quickParseMutation}
+              encounterId={encounterId}
+              patientId={patientId}
             />
           )}
         </DialogContent>
@@ -590,15 +596,22 @@ interface VitalsEntryFormProps {
   quickParseText: string;
   setQuickParseText: (text: string) => void;
   quickParseMutation: any;
+  encounterId: number;
+  patientId: number;
 }
 
-function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParseText, setQuickParseText, quickParseMutation }: VitalsEntryFormProps) {
+function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParseText, setQuickParseText, quickParseMutation, encounterId, patientId }: VitalsEntryFormProps) {
   const [formData, setFormData] = useState<Partial<VitalsEntry>>(entry);
 
   // Update form data when entry changes (from quick parse)
   useEffect(() => {
-    setFormData(entry);
-  }, [entry]);
+    console.log("🩺 [VitalsEntryForm] Entry changed, updating form data:", entry);
+    setFormData({
+      ...entry,
+      encounterId,
+      patientId
+    });
+  }, [entry, encounterId, patientId]);
 
   const updateField = (field: keyof VitalsEntry, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -606,7 +619,16 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    // Ensure encounterId is always included
+    const dataToSave = {
+      ...formData,
+      encounterId,
+      patientId
+    };
+    console.log("🩺 [VitalsEntryForm] Submitting form data:", dataToSave);
+    console.log("🩺 [VitalsEntryForm] EncounterId from props:", encounterId);
+    console.log("🩺 [VitalsEntryForm] PatientId from props:", patientId);
+    onSave(dataToSave);
   };
 
   const handleQuickParse = () => {

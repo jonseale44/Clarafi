@@ -98,7 +98,10 @@ router.post("/entries", async (req, res) => {
       recordedBy: req.user.username || `User ${req.user.id}`,
     };
     
+    console.log("🩺 [VitalsFlowsheet] Raw request body:", JSON.stringify(req.body, null, 2));
     console.log("🩺 [VitalsFlowsheet] Data to validate:", JSON.stringify(dataToValidate, null, 2));
+    console.log("🩺 [VitalsFlowsheet] EncounterId present?", dataToValidate.encounterId !== undefined);
+    console.log("🩺 [VitalsFlowsheet] EncounterId value:", dataToValidate.encounterId);
     
     const validatedData = VitalsEntrySchema.parse(dataToValidate);
 
