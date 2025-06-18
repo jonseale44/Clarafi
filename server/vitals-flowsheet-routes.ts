@@ -22,7 +22,7 @@ const VitalsEntrySchema = z.object({
   bmi: z.number().min(10).max(80).optional(),
   oxygenSaturation: z.number().min(70).max(100).optional(),
   respiratoryRate: z.number().min(5).max(100).optional(),
-  painScale: z.number().min(0).max(10).optional(),
+  painScale: z.number().min(0).max(10).nullable().optional(),
   notes: z.string().optional(),
   parsedFromText: z.boolean().optional(),
   originalText: z.string().optional(),
