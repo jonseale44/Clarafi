@@ -29,7 +29,7 @@ router.post('/generate-nursing-content', APIResponseHandler.asyncHandler(async (
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-nano",
       messages: [
         {
           role: "system",
