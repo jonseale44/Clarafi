@@ -73,7 +73,7 @@ export class NursingSummaryGenerator {
   }
 
   private buildNursingSummaryPrompt(templateData: NursingTemplateData, transcription: string): string {
-    return `Based on the nursing assessment data collected below, create a clean, structured nursing summary. 
+    return `You are an expert registered nurse creating a comprehensive nursing assessment summary using proper medical terminology, standard abbreviations, and structured formatting. Your documentation must meet professional nursing standards and EMR requirements.
 
 NURSING TEMPLATE DATA:
 Chief Complaint: ${templateData.cc || "Not documented"}
@@ -90,54 +90,151 @@ Vital Signs: ${templateData.vitals || "Not documented"}
 TRANSCRIPTION CONTEXT:
 ${transcription || "No transcription available"}
 
-Generate a structured nursing assessment summary with the following format:
+CRITICAL FORMATTING REQUIREMENTS:
+
+1. **MEDICAL ABBREVIATIONS - USE THESE EXACT FORMATS:**
+   - Hypertension → HTN
+   - Diabetes Type 2 → DM2, Diabetes Type 1 → DM1
+   - Coronary Artery Disease → CAD
+   - Congestive Heart Failure → CHF
+   - Chronic Obstructive Pulmonary Disease → COPD
+   - Gastroesophageal Reflux Disease → GERD
+   - Chronic Kidney Disease → CKD
+   - Atrial Fibrillation → AFib
+   - Myocardial Infarction → MI
+   - Cerebrovascular Accident → CVA
+   - Deep Vein Thrombosis → DVT
+   - Pulmonary Embolism → PE
+   - Hyperlipidemia → HLD
+   - Hypothyroidism → Hypothyroid
+   - Osteoarthritis → OA
+   - Rheumatoid Arthritis → RA
+   - Urinary Tract Infection → UTI
+   - Upper Respiratory Infection → URI
+   - Benign Prostatic Hyperplasia → BPH
+   - Bipolar Disorder → Bipolar
+   - Major Depressive Disorder → MDD
+   - Generalized Anxiety Disorder → GAD
+   - Post-Traumatic Stress Disorder → PTSD
+   - Attention Deficit Hyperactivity Disorder → ADHD
+   - Obstructive Sleep Apnea → OSA
+   - Peripheral Artery Disease → PAD
+   - Inflammatory Bowel Disease → IBD
+   - Irritable Bowel Syndrome → IBS
+   - Peptic Ulcer Disease → PUD
+   - Liver Disease → Liver Dz
+   - Kidney Disease → Kidney Dz
+   - Heart Disease → Heart Dz
+   - Asthma → Asthma
+   - Seizure Disorder → Seizure Disorder
+   - Stroke → Stroke
+   - Cancer → CA (with specific type, e.g., "Breast CA")
+
+2. **BULLET POINT FORMATTING:**
+   - Use hyphen (-) followed by uppercase abbreviation
+   - Each condition on separate line
+   - No periods after abbreviations
+   - Capitalize first letter of each bullet point
+
+3. **MEDICATION FORMATTING:**
+   - Generic name preferred (Lisinopril vs Prinivil)
+   - Include strength and frequency
+   - Use standard abbreviations: PO (by mouth), BID (twice daily), QD (once daily), PRN (as needed)
+   - Format: "- Medication name [strength] [frequency] [route]"
+
+4. **VITAL SIGNS FORMATTING:**
+   - BP: [systolic/diastolic] mmHg
+   - HR: [rate] BPM
+   - RR: [rate] /min
+   - T: [temp]°F or °C
+   - O2 Sat: [%] on [room air/oxygen]
+   - Wt: [weight] lbs or kg
+   - Ht: [height] ft/in or cm
+
+**EXAMPLE OUTPUT FORMAT:**
 
 **CHIEF COMPLAINT**
-• [Clean, concise statement]
+- [Brief, clear statement using proper medical terminology]
 
 **HISTORY OF PRESENT ILLNESS**
-• [Key points as bullet points]
-• [Each symptom or concern on separate line]
+- [Chronological symptoms with duration, quality, severity]
+- [Aggravating/alleviating factors]
+- [Associated symptoms]
 
 **PAST MEDICAL HISTORY**
-• [Each condition as bullet point]
-• [Include relevant dates if available]
+- HTN
+- DM2
+- CAD
+- GERD
+- [Each condition as separate bullet with standard abbreviation]
 
 **CURRENT MEDICATIONS**
-• [Each medication with dosage if available]
-• [Include frequency and route]
+- Lisinopril 10mg QD PO
+- Metformin 1000mg BID PO
+- Atorvastatin 40mg QHS PO
+- [Each medication with complete dosing information]
 
 **ALLERGIES**
-• [Each allergy with reaction if known]
-• [Use "NKDA" if no known allergies]
+- NKDA (if no known allergies)
+- [Allergen]: [reaction type] (e.g., "Penicillin: Rash")
 
 **FAMILY HISTORY**
-• [Relevant family medical history]
-• [Each family member condition as bullet]
+- Father: HTN, DM2
+- Mother: Breast CA, HTN
+- [Use standard abbreviations for conditions]
 
 **SOCIAL HISTORY**
-• [Smoking, alcohol, occupation, etc.]
-• [Each social factor as bullet point]
+- Tobacco: [pack-year history or "Never"]
+- Alcohol: [frequency/amount or "Denies"]
+- Illicit drugs: [status or "Denies"]
+- Occupation: [job title]
+- Exercise: [frequency/type]
 
 **PAST SURGICAL HISTORY**
-• [Each surgery with approximate date]
-• [Include complications if noted]
+- [Year] [procedure] (e.g., "2018 Cholecystectomy")
+- [Include complications if any]
 
 **REVIEW OF SYSTEMS**
-• [Positive findings only]
-• [Organize by body system if multiple]
+- Constitutional: [positive findings only]
+- HEENT: [positive findings only]
+- Cardiovascular: [positive findings only]
+- Respiratory: [positive findings only]
+- GI: [positive findings only]
+- GU: [positive findings only]
+- Musculoskeletal: [positive findings only]
+- Neurological: [positive findings only]
+- Psychiatric: [positive findings only]
+- [Only include systems with positive findings]
 
 **VITAL SIGNS**
-• [Current vital signs in clear format]
-• [Include any trending information]
+- BP: [sys/dia] mmHg
+- HR: [rate] BPM
+- RR: [rate] /min
+- T: [temp]°F
+- O2 Sat: [%] on RA
+- Wt: [weight] lbs
 
-Rules:
-- Only include sections that have documented information
-- Keep bullet points concise and clinical
-- Omit sections that are empty or "Not documented"
-- Use standard medical abbreviations appropriately
-- Maintain professional nursing documentation style
-- Do not add information not provided in the source data`;
+**CRITICAL RULES:**
+1. Transform ALL long-form medical conditions to standard abbreviations
+2. Use bullet points with hyphens (-) for EVERY item
+3. Capitalize each bullet point appropriately
+4. Omit empty sections (do not include sections with "Not documented")
+5. Use professional nursing terminology throughout
+6. Ensure medical abbreviations are consistent with standard practice
+7. Include relevant clinical context when available
+8. Maintain chronological order for HPI
+9. Group medications by therapeutic class when multiple present
+10. Use standard nursing assessment language
+
+**FORBIDDEN PRACTICES:**
+- Do NOT use long-form medical names when abbreviations exist
+- Do NOT include sections with no data
+- Do NOT use inconsistent abbreviation formats
+- Do NOT add information not provided in source data
+- Do NOT use periods after standard medical abbreviations
+- Do NOT use lowercase for medical abbreviations
+
+Generate the nursing summary following these exact specifications. Only include sections that contain actual documented information from the provided data.`;
   }
 
   private async saveNursingSummary(encounterId: number, nursingSummary: string): Promise<void> {
