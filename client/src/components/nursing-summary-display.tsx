@@ -25,16 +25,16 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
     return text
       // Convert markdown bold to HTML (same as SOAP note)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Convert bullet points to clean format without excessive spacing
-      .replace(/^- (.*?)$/gm, '<div class="ml-4">• $1</div>')
-      // Convert single line breaks to HTML breaks
-      .replace(/\n/g, '<br/>')
-      // Clean up multiple consecutive breaks (2 or more)
-      .replace(/(<br\/>){2,}/g, '<br/>')
-      // Ensure section headers have proper spacing before them but not excessive spacing after
-      .replace(/(<strong>.*?:<\/strong>)/g, '<br/>$1')
-      // Remove leading breaks
-      .replace(/^(<br\/>)+/, '');
+      // Convert bullet points to compact format without line breaks
+      .replace(/^- (.*?)$/gm, '<div class="ml-4 leading-tight">• $1</div>')
+      // Replace single line breaks with minimal spacing only for section breaks
+      .replace(/\n\n/g, '<div class="h-2"></div>')
+      // Remove remaining single line breaks to eliminate extra spacing
+      .replace(/\n/g, '')
+      // Ensure section headers have minimal spacing before them
+      .replace(/(<strong>.*?:<\/strong>)/g, '<div class="h-2"></div>$1')
+      // Remove leading spacing
+      .replace(/^(<div class="h-2"><\/div>)+/, '');
   };
 
   if (isLoading) {
@@ -117,7 +117,7 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
       <CardContent>
         <div className="p-4 bg-white border rounded-md">
           <div 
-            className="text-sm text-gray-800 font-sans leading-normal"
+            className="text-sm text-gray-800 font-sans leading-tight space-y-0"
             dangerouslySetInnerHTML={{ 
               __html: formatNursingSummary(nursingSummary) 
             }}
