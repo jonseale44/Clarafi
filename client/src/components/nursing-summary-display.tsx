@@ -18,18 +18,23 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
   const nursingSummary = (nursingSummaryData as any)?.data?.nursingSummary;
 
   // Local function to format nursing summary text with proper HTML formatting
+  // Matches the SOAP note formatting approach for consistency
   const formatNursingSummary = (text: string): string => {
     if (!text) return '';
     
     return text
-      // Convert **text** to <strong>text</strong>
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-      // Convert bullet points to proper list items with spacing
-      .replace(/^- (.*?)$/gm, '<div class="ml-4 mb-1">• $1</div>')
-      // Add spacing between sections (double line breaks)
-      .replace(/\n\n/g, '<div class="mb-4"></div>')
-      // Convert single line breaks to <br>
-      .replace(/\n/g, '<br>');
+      // Convert markdown bold to HTML (same as SOAP note)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Convert bullet points to clean format without excessive spacing
+      .replace(/^- (.*?)$/gm, '<div class="ml-4">• $1</div>')
+      // Convert single line breaks to HTML breaks
+      .replace(/\n/g, '<br/>')
+      // Clean up multiple consecutive breaks (2 or more)
+      .replace(/(<br\/>){2,}/g, '<br/>')
+      // Ensure section headers have proper spacing before them but not excessive spacing after
+      .replace(/(<strong>.*?:<\/strong>)/g, '<br/>$1')
+      // Remove leading breaks
+      .replace(/^(<br\/>)+/, '');
   };
 
   if (isLoading) {
@@ -112,7 +117,7 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
       <CardContent>
         <div className="p-4 bg-white border rounded-md">
           <div 
-            className="text-sm text-gray-800 font-sans leading-relaxed"
+            className="text-sm text-gray-800 font-sans leading-normal"
             dangerouslySetInnerHTML={{ 
               __html: formatNursingSummary(nursingSummary) 
             }}
