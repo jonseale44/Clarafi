@@ -2498,7 +2498,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     <VitalsFlowsheet 
                       patientId={patient.id} 
                       encounterId={encounter?.id}
-                      isReadOnly={false}
+                      readOnly={false}
                     />
                   ) : section.id === "ai-debug" ? (
                     <AIDebugSection patientId={patient.id} />

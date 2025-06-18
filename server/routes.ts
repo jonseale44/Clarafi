@@ -2995,11 +2995,17 @@ Return only valid JSON without markdown formatting.`;
   // Vitals parser routes
   import("./vitals-parser-routes.js").then(vitalsParserRoutes => {
     app.use("/api/vitals", vitalsParserRoutes.default);
+    console.log("✅ [Routes] Vitals parser routes mounted");
+  }).catch(err => {
+    console.error("❌ [Routes] Failed to mount vitals parser routes:", err);
   });
 
   // Vitals flowsheet routes  
   import("./vitals-flowsheet-routes.js").then(vitalsFlowsheetRoutes => {
     app.use("/api/vitals", vitalsFlowsheetRoutes.default);
+    console.log("✅ [Routes] Vitals flowsheet routes mounted");
+  }).catch(err => {
+    console.error("❌ [Routes] Failed to mount vitals flowsheet routes:", err);
   });
 
   const httpServer = createServer(app);

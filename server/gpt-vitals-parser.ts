@@ -333,7 +333,7 @@ Output: {"systolicBp": 180, "diastolicBp": 95, "temperature": "101.3", "weight":
     return {
       patientId,
       encounterId,
-      measuredAt: new Date(),
+      recordedAt: new Date(),
       systolicBp: parsedData.systolicBp || null,
       diastolicBp: parsedData.diastolicBp || null,
       heartRate: parsedData.heartRate || null,
