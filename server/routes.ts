@@ -2997,6 +2997,11 @@ Return only valid JSON without markdown formatting.`;
     app.use("/api/vitals", vitalsParserRoutes.default);
   });
 
+  // Vitals flowsheet routes  
+  import("./vitals-flowsheet-routes.js").then(vitalsFlowsheetRoutes => {
+    app.use("/api/vitals", vitalsFlowsheetRoutes.default);
+  });
+
   const httpServer = createServer(app);
 
   // Legacy real-time transcription service removed - AI suggestions now use direct client WebSocket connection
