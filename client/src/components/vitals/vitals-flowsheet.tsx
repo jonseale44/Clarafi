@@ -659,7 +659,7 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
       ...formData,
       encounterId,
       patientId,
-      recordedBy: formData.recordedBy || 1
+      recordedBy: String(formData.recordedBy || 1)
     };
     
     console.log("🩺 [VitalsEntryForm] DEBUG - dataToSave with IDs:", JSON.stringify(dataToSave, null, 2));
