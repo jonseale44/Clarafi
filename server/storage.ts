@@ -40,7 +40,10 @@ export interface IStorage {
   // Vitals management
   getPatientVitals(patientId: number): Promise<Vitals[]>;
   getLatestVitals(patientId: number): Promise<Vitals | undefined>;
+  getEncounterVitals(encounterId: number): Promise<Vitals[]>;
   createVitals(vitals: InsertVitals): Promise<Vitals>;
+  updateVitals(id: number, updates: Partial<Vitals>): Promise<Vitals>;
+  deleteVitals(id: number): Promise<void>;
   
   // Patient chart data
   getPatientAllergies(patientId: number): Promise<any[]>;
@@ -264,12 +267,31 @@ export class DatabaseStorage implements IStorage {
     return latestVitals || undefined;
   }
 
+  async getEncounterVitals(encounterId: number): Promise<Vitals[]> {
+    return await db.select().from(vitals)
+      .where(eq(vitals.encounterId, encounterId))
+      .orderBy(desc(vitals.measuredAt));
+  }
+
   async createVitals(insertVitals: InsertVitals): Promise<Vitals> {
     const [vital] = await db
       .insert(vitals)
       .values(insertVitals)
       .returning();
     return vital;
+  }
+
+  async updateVitals(id: number, updates: Partial<Vitals>): Promise<Vitals> {
+    const [vital] = await db
+      .update(vitals)
+      .set(updates)
+      .where(eq(vitals.id, id))
+      .returning();
+    return vital;
+  }
+
+  async deleteVitals(id: number): Promise<void> {
+    await db.delete(vitals).where(eq(vitals.id, id));
   }
 
   // Patient chart data
