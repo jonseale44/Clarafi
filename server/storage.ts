@@ -273,6 +273,40 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(vitals.measuredAt));
   }
 
+  async getVitalsByEncounter(encounterId: number) {
+    return await this.db.select().from(vitals).where(eq(vitals.encounterId, encounterId));
+  }
+
+  async getVitalsByPatient(patientId: number) {
+    return await this.db.select().from(vitals).where(eq(vitals.patientId, patientId));
+  }
+
+  async getVitalsEntry(id: number) {
+    const [result] = await this.db.select().from(vitals).where(eq(vitals.id, id));
+    return result;
+  }
+
+  async createVitalsEntry(data: any) {
+    const [result] = await this.db.insert(vitals).values({
+      ...data,
+      recordedAt: data.recordedAt || new Date()
+    }).returning();
+    return result;
+  }
+
+  async updateVitalsEntry(id: number, data: any) {
+    const [result] = await this.db.update(vitals)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(vitals.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteVitalsEntry(id: number) {
+    const [result] = await this.db.delete(vitals).where(eq(vitals.id, id)).returning();
+    return result;
+  }
+
   async createVitals(insertVitals: InsertVitals): Promise<Vitals> {
     const [vital] = await db
       .insert(vitals)

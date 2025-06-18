@@ -12,6 +12,7 @@ import UserSettingsPage from "@/pages/user-settings-page";
 import { PatientView } from "@/pages/patient-view";
 import { EncounterView } from "@/pages/encounter-view";
 import { VitalsTestPage } from "@/pages/vitals-test-page";
+import { VitalsFlowsheetPage } from "@/pages/vitals-flowsheet-page";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <ProtectedRoute path="/encounters/:id" component={EncounterView} />
       <ProtectedRoute path="/settings" component={UserSettingsPage} />
       <ProtectedRoute path="/vitals-test" component={VitalsTestPage} />
+      <ProtectedRoute path="/encounters/:encounterId/vitals" component={VitalsFlowsheetPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
