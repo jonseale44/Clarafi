@@ -280,11 +280,22 @@ export class SOAPOrdersExtractor {
           // Import GPT deduplication service dynamically to avoid import issues
           const { gptOrderDeduplication } = await import("./gpt-order-deduplication-service.js");
           
-          // Use GPT deduplication service - treating existing orders as "transcription" and new orders as "soap"
-          finalOrders = await gptOrderDeduplication.mergeAndDeduplicateOrders(
+          // Use GPT deduplication service to identify which NEW orders to keep
+          // Only return the new orders that are not duplicates of existing ones
+          const deduplicationResult = await gptOrderDeduplication.mergeAndDeduplicateOrders(
             existingInsertOrders, // existing orders (treated as transcription for GPT context)
             orderInserts // new SOAP-extracted orders
           );
+          
+          // Filter to only include orders that are actually new (not existing ones)
+          finalOrders = deduplicationResult.filter(order => {
+            // Check if this order is from the new batch (orderInserts) rather than existing
+            return orderInserts.some(newOrder => 
+              newOrder.medicationName === order.medicationName &&
+              newOrder.dosage === order.dosage &&
+              newOrder.orderType === order.orderType
+            );
+          });
           
           console.log(`[SOAPExtractor] GPT deduplication complete: ${existingOrders.length + orderInserts.length} total → ${finalOrders.length} final orders`);
           console.log(`[SOAPExtractor] Duplicates eliminated: ${(existingOrders.length + orderInserts.length) - finalOrders.length}`);
@@ -292,10 +303,9 @@ export class SOAPOrdersExtractor {
         } catch (deduplicationError) {
           console.error(`❌ [SOAPExtractor] GPT deduplication failed, using fallback logic:`, deduplicationError);
           
-          // Fallback deduplication: simple medication name matching
-          finalOrders = [...orderInserts];
-          for (const existingOrder of existingOrders) {
-            const isDuplicate = orderInserts.some(newOrder => {
+          // Fallback deduplication: filter out new orders that duplicate existing ones
+          finalOrders = orderInserts.filter(newOrder => {
+            const isDuplicate = existingOrders.some(existingOrder => {
               if (newOrder.orderType === 'medication' && existingOrder.orderType === 'medication') {
                 const newMedName = newOrder.medicationName?.toLowerCase().trim() || '';
                 const existingMedName = existingOrder.medicationName?.toLowerCase().trim() || '';
@@ -314,40 +324,8 @@ export class SOAPOrdersExtractor {
               return false;
             });
             
-            if (!isDuplicate) {
-              // Convert existing order back to InsertOrder format and add to final list
-              const existingAsInsert: InsertOrder = {
-                patientId: existingOrder.patientId,
-                encounterId: existingOrder.encounterId,
-                orderType: existingOrder.orderType as any,
-                orderStatus: existingOrder.orderStatus as any,
-                medicationName: existingOrder.medicationName,
-                dosage: existingOrder.dosage,
-                quantity: existingOrder.quantity,
-                sig: existingOrder.sig,
-                refills: existingOrder.refills,
-                form: existingOrder.form,
-                routeOfAdministration: existingOrder.routeOfAdministration,
-                daysSupply: existingOrder.daysSupply,
-                labName: existingOrder.labName,
-                testName: existingOrder.testName,
-                testCode: existingOrder.testCode,
-                specimenType: existingOrder.specimenType,
-                fastingRequired: existingOrder.fastingRequired,
-                studyType: existingOrder.studyType,
-                region: existingOrder.region,
-                laterality: existingOrder.laterality,
-                contrastNeeded: existingOrder.contrastNeeded,
-                specialtyType: existingOrder.specialtyType,
-                providerName: existingOrder.providerName,
-                clinicalIndication: existingOrder.clinicalIndication,
-                diagnosisCode: existingOrder.diagnosisCode,
-                requiresPriorAuth: existingOrder.requiresPriorAuth,
-                priority: existingOrder.priority
-              };
-              finalOrders.push(existingAsInsert);
-            }
-          }
+            return !isDuplicate; // Only keep orders that are NOT duplicates
+          });
           
           console.log(`[SOAPExtractor] Fallback deduplication complete: ${existingOrders.length + orderInserts.length} total → ${finalOrders.length} final orders`);
         }

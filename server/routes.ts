@@ -1539,13 +1539,9 @@ export function registerRoutes(app: Express): Server {
           `📋 [ExtractOrders] Extracted and deduplicated ${deduplicatedOrders.length} orders`,
         );
 
-        // Clear existing draft orders for this encounter before saving deduplicated ones
-        console.log(`📋 [ExtractOrders] Clearing existing draft orders for encounter ${encounterId}`);
-        const existingDraftOrders = await storage.getDraftOrdersByEncounter(encounterId);
-        for (const existingOrder of existingDraftOrders) {
-          await storage.deleteOrder(existingOrder.id);
-        }
-        console.log(`📋 [ExtractOrders] Deleted ${existingDraftOrders.length} existing draft orders`);
+        // Instead of deleting existing orders, let the deduplication process handle them
+        // The SOAPOrdersExtractor already includes existing orders in its deduplication logic
+        console.log(`📋 [ExtractOrders] Deduplication already handled existing orders - no deletion needed`);
 
         // Save the deduplicated orders
         const savedOrders = [];
