@@ -8,8 +8,8 @@ const router = Router();
 // Request schema for vitals parsing
 const parseRequestSchema = z.object({
   vitalsText: z.string().min(1, "Vitals text is required"),
-  patientId: z.number().optional(),
-  encounterId: z.number().optional(),
+  patientId: z.union([z.number(), z.string()]).optional(),
+  encounterId: z.union([z.number(), z.string()]).optional(),
 });
 
 // Initialize the parser service
