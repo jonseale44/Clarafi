@@ -33,6 +33,221 @@ const openai = new OpenAI({
 });
 
 // Direct SOAP note generation function (replaces realtime-soap-streaming.ts)
+// Nursing Template Generation function matching SOAP pattern
+async function generateNursingTemplateDirect(
+  patientId: number, 
+  encounterId: string, 
+  transcription: string,
+  currentTemplateData: any = {}
+): Promise<any> {
+  console.log(`🏥 [NursingTemplate] Generating template for patient ${patientId}`);
+  
+  // Get patient context (same as SOAP)
+  const [patient, diagnosisList, meds, allergiesList, vitalsList, recentEncounters] = await Promise.all([
+    db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
+    db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
+    db.select().from(medications).where(eq(medications.patientId, patientId)),
+    db.select().from(allergies).where(eq(allergies.patientId, patientId)),
+    db.select().from(vitals).where(eq(vitals.patientId, patientId)).orderBy(desc(vitals.createdAt)).limit(5),
+    db.select().from(encountersTable).where(eq(encountersTable.patientId, patientId)).orderBy(desc(encountersTable.createdAt)).limit(3),
+  ]);
+
+  const patientData = patient[0];
+  if (!patientData) {
+    throw new Error(`Patient ${patientId} not found`);
+  }
+
+  const age = Math.floor((Date.now() - new Date(patientData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  
+  // Build medical context
+  const currentDiagnoses = diagnosisList.length > 0 
+    ? diagnosisList.map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`).join("\n")
+    : "- No active diagnoses on file";
+
+  const currentMedications = meds.length > 0
+    ? meds.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
+    : "- No current medications on file";
+
+  const knownAllergies = allergiesList.length > 0
+    ? allergiesList.map((a: any) => `- ${a.allergen}: ${a.reaction}`).join("\n")
+    : "- NKDA (No Known Drug Allergies)";
+
+  const recentVitals = vitalsList.length > 0
+    ? vitalsList.map((v: any) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
+    : "- No recent vitals on file";
+
+  // Build comprehensive medical context
+  const medicalContext = `
+PATIENT CONTEXT:
+- Name: ${patientData.firstName} ${patientData.lastName}
+- Age: ${age} years old
+- Gender: ${patientData.gender}
+- MRN: ${patientData.mrn}
+
+ACTIVE MEDICAL PROBLEMS:
+${currentDiagnoses}
+
+CURRENT MEDICATIONS:
+${currentMedications}
+
+KNOWN ALLERGIES:
+${knownAllergies}
+
+RECENT VITALS:
+${recentVitals}
+  `.trim();
+
+  // Create nursing template prompt with current state for intelligent merging
+  const nursingPrompt = `You are an expert registered nurse with 15+ years of clinical experience extracting structured information from patient conversations. Your documentation must meet professional nursing standards and use proper medical abbreviations and formatting.
+
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+CURRENT TEMPLATE STATE:
+${JSON.stringify(currentTemplateData, null, 2)}
+
+CRITICAL DOCUMENTATION STANDARDS:
+1. Use standard medical abbreviations consistently
+2. Format medical histories with bullet points using hyphens (-)
+3. Convert long-form medical conditions to proper abbreviations
+4. Use professional nursing terminology throughout
+5. Include specific measurements and observations
+6. Only document information explicitly mentioned in conversation
+7. Intelligently merge with existing template data - don't replace, enhance
+
+MANDATORY MEDICAL ABBREVIATIONS TO USE:
+- Hypertension → HTN
+- Diabetes Type 2 → DM2, Diabetes Type 1 → DM1
+- Coronary Artery Disease → CAD
+- Congestive Heart Failure → CHF
+- Chronic Obstructive Pulmonary Disease → COPD
+- Gastroesophageal Reflux Disease → GERD
+- Chronic Kidney Disease → CKD
+- Atrial Fibrillation → AFib
+- Myocardial Infarction → MI
+- Cerebrovascular Accident → CVA
+- Deep Vein Thrombosis → DVT
+- Pulmonary Embolism → PE
+- Hyperlipidemia → HLD
+- Hypothyroidism → Hypothyroid
+- Osteoarthritis → OA
+- Rheumatoid Arthritis → RA
+- Urinary Tract Infection → UTI
+- Upper Respiratory Infection → URI
+- Benign Prostatic Hyperplasia → BPH
+- Activities of Daily Living → ADLs
+- Range of Motion → ROM
+- Shortness of Breath → SOB
+- Chest Pain → CP
+- Nausea and Vomiting → N/V
+- Blood Pressure → BP
+- Heart Rate → HR
+- Respiratory Rate → RR
+- Temperature → T
+- Oxygen Saturation → O2 Sat
+- Room Air → RA
+- Pain Scale → 0-10 scale
+- Twice Daily → BID
+- Once Daily → QD
+- As Needed → PRN
+- By Mouth → PO
+- Intravenous → IV
+
+TEMPLATE FIELDS FORMATTING REQUIREMENTS:
+
+cc: Chief Complaint
+- Brief, clear statement using proper medical terminology
+- Example: "CP rated 7/10, substernal"
+
+hpi: History of Present Illness  
+- Use bullet points with hyphens (-) for each symptom/timeline element
+- Include duration, quality, severity, aggravating/alleviating factors
+- Example: "- CP onset 2 hours ago, crushing quality\\n- Radiates to left arm\\n- Relieved partially with rest"
+
+pmh: Past Medical History
+- Convert ALL conditions to standard abbreviations
+- Use bullet points with hyphens (-) for each condition
+- Example: "- HTN\\n- DM2\\n- CAD\\n- GERD"
+
+meds: Current Medications
+- Use generic names with proper capitalization
+- Include strength, frequency, and route
+- Use standard abbreviations for dosing
+- Example: "- Lisinopril 10mg QD PO\\n- Metformin 1000mg BID PO\\n- Atorvastatin 40mg QHS PO"
+
+allergies: Known Allergies
+- Use "NKDA" if no known allergies
+- Format as "Allergen: Reaction type"
+- Example: "- Penicillin: Rash\\n- Shellfish: Anaphylaxis" or "- NKDA"
+
+famHx: Family History
+- Use bullet points with hyphens (-) for each condition
+- Include relationship and condition with abbreviations
+- Example: "- Father: MI at age 65\\n- Mother: HTN, DM2"
+
+soHx: Social History
+- Include relevant social factors affecting health
+- Use bullet points for multiple items
+- Example: "- Tobacco: 1 PPD x 20 years\\n- Alcohol: Social use\\n- Exercise: Sedentary"
+
+psh: Past Surgical History
+- List surgeries chronologically with dates/years
+- Use bullet points with hyphens (-)
+- Example: "- 2019: Cholecystectomy\\n- 2015: Appendectomy"
+
+ros: Review of Systems
+- Organize by system with pertinent positives and negatives
+- Use abbreviations and bullet points
+- Example: "CV: Denies CP, palpitations\\nResp: Admits to SOB on exertion\\nGI: Denies N/V, abdominal pain"
+
+vitals: Current Vital Signs
+- Format as single line with standard abbreviations
+- Example: "BP: 140/90 | HR: 88 | T: 98.6°F | RR: 18 | O2 Sat: 98% on RA"
+
+Return ONLY a JSON object with these exact field names containing the extracted and properly formatted information. Merge intelligently with existing data - enhance, don't replace unless new information contradicts old information.
+
+Example output format:
+{
+  "cc": "SOB and fatigue x 3 days",
+  "hpi": "- SOB onset 3 days ago, progressive\\n- Worsens with exertion\\n- Associated with fatigue",
+  "pmh": "- HTN\\n- DM2\\n- CAD",
+  "meds": "- Lisinopril 10mg QD PO\\n- Metformin 1000mg BID PO",
+  "allergies": "- NKDA",
+  "famHx": "- Father: CAD\\n- Mother: DM2",
+  "soHx": "- Tobacco: Former smoker, quit 5 years ago\\n- Alcohol: Social use",
+  "psh": "- 2018: CABG",
+  "ros": "CV: Admits to chest tightness\\nResp: Admits to SOB\\nGI: Denies N/V",
+  "vitals": "BP: 150/95 | HR: 92 | T: 98.4°F | RR: 20 | O2 Sat: 96% on RA"
+}`;
+
+  // Generate nursing template using same model as SOAP
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    messages: [{ role: "user", content: nursingPrompt }],
+    temperature: 0.3,
+    max_tokens: 2000,
+  });
+
+  const response = completion.choices[0]?.message?.content;
+  if (!response) {
+    throw new Error("No nursing template generated from OpenAI");
+  }
+
+  // Parse JSON response
+  let templateData;
+  try {
+    templateData = JSON.parse(response);
+  } catch (parseError) {
+    console.error("❌ [NursingTemplate] Failed to parse JSON response:", response);
+    throw new Error("Invalid JSON response from OpenAI");
+  }
+
+  console.log(`✅ [NursingTemplate] Generated template with ${Object.keys(templateData).length} fields`);
+  return templateData;
+}
+
 async function generateSOAPNoteDirect(patientId: number, encounterId: string, transcription: string): Promise<string> {
   console.log(`🩺 [DirectSOAP] Generating SOAP note for patient ${patientId}`);
   

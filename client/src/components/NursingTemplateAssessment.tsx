@@ -320,74 +320,100 @@ export const NursingTemplateAssessment = forwardRef<
       }
     }, [transcription, isActive]);
 
+    // Generate nursing template using REST API (replaces realtime WebSocket)
+    const generateNursingTemplate = async (forceGeneration = false) => {
+      console.log("🏥 [NursingTemplate] generateNursingTemplate called with:", {
+        forceGeneration,
+        transcriptionLength: transcription?.length || 0,
+        transcriptionPreview: transcription?.substring(0, 100) || 'empty'
+      });
+
+      if (!transcription?.trim()) {
+        console.log("🏥 [NursingTemplate] No transcription available");
+        toast({
+          variant: "destructive",
+          title: "No Transcription",
+          description: "Please record some audio first before generating template fields.",
+        });
+        return;
+      }
+
+      if (isProcessing && !forceGeneration) {
+        console.log("🏥 [NursingTemplate] Already processing, skipping");
+        return;
+      }
+
+      console.log("🏥 [NursingTemplate] Starting REST API template generation");
+      setIsProcessing(true);
+      
+      // Only show toast for manual generation
+      if (forceGeneration) {
+        toast({
+          title: "Generating Template",
+          description: "Extracting nursing assessment data...",
+        });
+      }
+
+      try {
+        const response = await fetch('/api/nursing-template/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            patientId,
+            encounterId,
+            transcription: transcription.trim(),
+            currentTemplateData: templateData
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        console.log("🏥 [NursingTemplate] Received template data:", responseData);
+        
+        if (responseData.templateData) {
+          const newTemplateData = responseData.templateData;
+          console.log("🏥 [NursingTemplate] Updating template fields with:", newTemplateData);
+          
+          // Update template fields intelligently
+          updateTemplateFields(newTemplateData);
+          
+          if (forceGeneration) {
+            toast({
+              title: "Template Generated",
+              description: "Nursing assessment fields updated successfully",
+            });
+          }
+        } else {
+          throw new Error("No template data received in response");
+        }
+        
+      } catch (error) {
+        console.error("❌ [NursingTemplate] Error generating template:", error);
+        
+        toast({
+          variant: "destructive",
+          title: "Generation Failed",
+          description: "Failed to generate nursing template. Please try again.",
+        });
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
     const startTemplateAssessment = async () => {
       if (isActive) return;
 
-      setAccumulatedTranscript(""); // Reset transcript for new session
       console.log(
         `🏥 [NursingTemplate] Starting template assessment for session ${sessionIdRef.current}`,
       );
 
       try {
-        // Get API key from environment
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        if (!apiKey) {
-          throw new Error("OpenAI API key not configured");
-        }
-
-        // Step 1: Create session like working implementation
-        console.log("🔧 [NursingTemplate] Creating OpenAI session...");
-        const sessionConfig = {
-          model: "gpt-4o-mini-realtime-preview",
-          modalities: ["text"],
-          instructions: NURSING_ASSESSMENT_INSTRUCTIONS,
-          input_audio_format: "pcm16",
-          input_audio_transcription: {
-            model: "whisper-1",
-            language: "en",
-          },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.3,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 200,
-            create_response: true,
-          },
-        };
-
-        const sessionResponse = await fetch(
-          "https://api.openai.com/v1/realtime/sessions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-              "OpenAI-Beta": "realtime=v1",
-            },
-            body: JSON.stringify(sessionConfig),
-          },
-        );
-
-        if (!sessionResponse.ok) {
-          const error = await sessionResponse.json();
-          console.log("❌ [NursingTemplate] Session creation failed:", error);
-          throw new Error(
-            `Failed to create session: ${error.message || "Unknown error"}`,
-          );
-        }
-
-        const session = await sessionResponse.json();
-        console.log("✅ [NursingTemplate] Session created:", session.id);
-
-        // Step 2: Connect via WebSocket with proper protocols
-        const protocols = [
-          "realtime",
-          `openai-insecure-api-key.${apiKey}`,
-          "openai-beta.realtime-v1",
-        ];
-
-        const params = new URLSearchParams({
-          model: "gpt-4o-mini-realtime-preview",
         });
 
         const ws = new WebSocket(
