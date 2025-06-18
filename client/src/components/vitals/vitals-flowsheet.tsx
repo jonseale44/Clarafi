@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -782,6 +782,30 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     });
   }, [entry, encounterId, patientId]);
 
+  // Auto-parse functionality with debouncing
+  const debouncedParse = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (text: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (text.trim() && text.length > 5) { // Only parse if meaningful text
+            console.log("🔄 [Auto-Parse] Triggering auto-parse for:", text);
+            quickParseMutation.mutate(text);
+          }
+        }, 1500); // 1.5 second delay after user stops typing
+      };
+    })(),
+    [quickParseMutation]
+  );
+
+  // Trigger auto-parse when quickParseText changes
+  useEffect(() => {
+    if (quickParseText) {
+      debouncedParse(quickParseText);
+    }
+  }, [quickParseText, debouncedParse]);
+
   const updateField = (field: keyof VitalsEntry, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -820,38 +844,31 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     onSave(dataToSave);
   };
 
-  const handleQuickParse = () => {
-    if (quickParseText.trim()) {
-      quickParseMutation.mutate(quickParseText);
-    }
-  };
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Quick Parse Section */}
+      {/* Auto-Parse Section */}
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-        <Label className="text-sm font-medium text-blue-900 mb-2 block">
-          Quick Parse Vitals
-        </Label>
-        <div className="flex space-x-2">
-          <Textarea
-            placeholder="Enter vitals: '120/80, P 80, RR 23, 98% on room air'"
-            value={quickParseText}
-            onChange={(e) => setQuickParseText(e.target.value)}
-            className="flex-1 min-h-[40px] resize-none"
-            rows={1}
-          />
-          <Button 
-            type="button"
-            onClick={handleQuickParse}
-            disabled={!quickParseText.trim() || quickParseMutation.isPending}
-            size="sm"
-          >
-            {quickParseMutation.isPending ? "Parsing..." : "Parse"}
-          </Button>
+        <div className="flex items-center gap-2 mb-2">
+          <Label className="text-sm font-medium text-blue-900">
+            Quick Parse Vitals
+          </Label>
+          {quickParseMutation.isPending && (
+            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700">
+              Auto-parsing...
+            </Badge>
+          )}
         </div>
-        <p className="text-xs text-blue-700 mt-1">
-          Automatically fills form fields below. Examples: "BP 120/80", "HR 75", "Temp 98.6F"
+        <Textarea
+          placeholder="Start typing vitals... (auto-parses as you type) e.g., '120/80, P 80, RR 23, 98% on room air'"
+          value={quickParseText}
+          onChange={(e) => setQuickParseText(e.target.value)}
+          className="flex-1 min-h-[60px] resize-none"
+          rows={2}
+        />
+        <p className="text-xs text-blue-700 mt-2">
+          ✨ Auto-parsing enabled - form fields fill automatically as you type. Examples: "BP 120/80", "HR 75", "Temp 98.6F"
         </p>
       </div>
 
