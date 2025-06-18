@@ -84,7 +84,7 @@ Input: "${vitalsText}"`;
       console.log("🩺 [VitalsParser] Calling OpenAI...");
       
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4.1-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 800,

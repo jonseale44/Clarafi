@@ -20,44 +20,46 @@ const parserService = new VitalsParserService();
  * Parses vitals information from text using GPT - following patient parser pattern
  */
 router.post("/parse", async (req: Request, res: Response) => {
+  console.log("🩺 [VitalsParser] POST /api/vitals/parse route hit");
+  console.log("🩺 [VitalsParser] Request body:", JSON.stringify(req.body, null, 2));
+  
   try {
-    console.log("🩺 [VitalsParser] POST /api/vitals/parse - Starting request");
-    console.log("🩺 [VitalsParser] Request body:", JSON.stringify(req.body, null, 2));
+    const { vitalsText } = req.body;
     
-    // Validate request body - remove authentication requirement for testing
-    const validationResult = parseRequestSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      console.log("❌ [VitalsParser] Invalid request format:", validationResult.error.errors);
+    if (!vitalsText || typeof vitalsText !== 'string' || vitalsText.trim().length === 0) {
+      console.log("❌ [VitalsParser] Invalid vitals text:", vitalsText);
       return res.status(400).json({
         success: false,
-        error: "Invalid request format",
-        details: validationResult.error.errors
+        errors: ["Invalid vitals text provided"],
+        confidence: 0,
+        originalText: vitalsText || ""
       });
     }
 
-    const { vitalsText } = validationResult.data;
-
+    console.log("🩺 [VitalsParser] Calling parser service...");
+    
     // Parse the vitals information
-    const parseResult = await parserService.parseVitalsText(vitalsText);
+    const parseResult = await parserService.parseVitalsText(vitalsText.trim());
+    
+    console.log("🩺 [VitalsParser] Parse result:", parseResult);
 
     if (!parseResult.success) {
-      console.error("❌ [VitalsParser] Parsing failed:", parseResult.error);
+      console.error("❌ [VitalsParser] Parsing failed:", parseResult.errors);
       return res.status(400).json(parseResult);
     }
 
     console.log("✅ [VitalsParser] Successfully parsed vitals data");
     console.log(`📊 [VitalsParser] Confidence: ${parseResult.confidence}%`);
 
-    res.json({
-      ...parseResult,
-      originalText: vitalsText
-    });
+    res.json(parseResult);
 
   } catch (error) {
     console.error("❌ [VitalsParser] Error in parse route:", error);
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : "Unknown parsing error"
+      errors: [error instanceof Error ? error.message : "Unknown parsing error"],
+      confidence: 0,
+      originalText: req.body.vitalsText || ""
     });
   }
 });
