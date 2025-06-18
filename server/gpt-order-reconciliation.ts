@@ -21,10 +21,12 @@ export class GPTOrderReconciliation {
   async reconcileOrders(
     existingOrders: InsertOrder[],
     newSoapOrders: InsertOrder[],
-    soapNote: string
+    soapNote: string,
   ): Promise<InsertOrder[]> {
     console.log(`🧠 [GPTReconcile] Starting intelligent order reconciliation`);
-    console.log(`🧠 [GPTReconcile] Existing orders: ${existingOrders.length}, New SOAP orders: ${newSoapOrders.length}`);
+    console.log(
+      `🧠 [GPTReconcile] Existing orders: ${existingOrders.length}, New SOAP orders: ${newSoapOrders.length}`,
+    );
 
     // If no existing orders, just return the new ones
     if (existingOrders.length === 0) return newSoapOrders;
@@ -33,7 +35,7 @@ export class GPTOrderReconciliation {
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1",
+        model: "gpt-4.1-mini",
         messages: [
           {
             role: "system",
@@ -58,7 +60,7 @@ DECISION PRINCIPLES:
 - Preserve clinically justified orders
 - Use medical judgment, not rigid rules
 
-Your job: Return the complete final order set that should exist after intelligent reconciliation.`
+Your job: Return the complete final order set that should exist after intelligent reconciliation.`,
           },
           {
             role: "user",
@@ -68,26 +70,34 @@ SOAP NOTE CONTEXT:
 ${soapNote}
 
 EXISTING ORDERS:
-${JSON.stringify(existingOrders.map(order => ({
-  type: order.orderType,
-  medication: order.medicationName,
-  dosage: order.dosage,
-  sig: order.sig,
-  lab_test: order.testName,
-  imaging: order.studyType,
-  indication: order.clinicalIndication
-})), null, 2)}
+${JSON.stringify(
+  existingOrders.map((order) => ({
+    type: order.orderType,
+    medication: order.medicationName,
+    dosage: order.dosage,
+    sig: order.sig,
+    lab_test: order.testName,
+    imaging: order.studyType,
+    indication: order.clinicalIndication,
+  })),
+  null,
+  2,
+)}
 
 NEW ORDERS FROM UPDATED SOAP:
-${JSON.stringify(newSoapOrders.map(order => ({
-  type: order.orderType,
-  medication: order.medicationName,
-  dosage: order.dosage,
-  sig: order.sig,
-  lab_test: order.testName,
-  imaging: order.studyType,
-  indication: order.clinicalIndication
-})), null, 2)}
+${JSON.stringify(
+  newSoapOrders.map((order) => ({
+    type: order.orderType,
+    medication: order.medicationName,
+    dosage: order.dosage,
+    sig: order.sig,
+    lab_test: order.testName,
+    imaging: order.studyType,
+    indication: order.clinicalIndication,
+  })),
+  null,
+  2,
+)}
 
 Return ONLY the orders that should exist in the final reconciled set. Use your medical judgment to eliminate duplicates and preserve legitimate orders.
 
@@ -101,37 +111,43 @@ Return JSON:
       "rationale": "Why this order should exist"
     }
   ]
-}`
-          }
+}`,
+          },
         ],
         response_format: { type: "json_object" },
-        temperature: 0.1
+        temperature: 0.1,
       });
 
       const result = JSON.parse(response.choices[0].message.content!);
-      console.log("🧠 [GPTReconcile] Clinical reasoning:", result.clinical_reasoning);
+      console.log(
+        "🧠 [GPTReconcile] Clinical reasoning:",
+        result.clinical_reasoning,
+      );
 
       // Build final order set based on GPT's decisions
       const finalOrders: InsertOrder[] = [];
-      
+
       for (const finalOrder of result.final_orders || []) {
         let sourceOrder: InsertOrder | null = null;
-        
-        if (finalOrder.source === 'existing') {
+
+        if (finalOrder.source === "existing") {
           sourceOrder = existingOrders[finalOrder.order_index] || null;
-        } else if (finalOrder.source === 'new') {
+        } else if (finalOrder.source === "new") {
           sourceOrder = newSoapOrders[finalOrder.order_index] || null;
         }
-        
+
         if (sourceOrder) {
           finalOrders.push(sourceOrder);
-          console.log(`🧠 [GPTReconcile] ✓ ${finalOrder.source} order: ${sourceOrder.medicationName || sourceOrder.testName || sourceOrder.studyType} - ${finalOrder.rationale}`);
+          console.log(
+            `🧠 [GPTReconcile] ✓ ${finalOrder.source} order: ${sourceOrder.medicationName || sourceOrder.testName || sourceOrder.studyType} - ${finalOrder.rationale}`,
+          );
         }
       }
 
-      console.log(`🧠 [GPTReconcile] Reconciliation complete: ${existingOrders.length + newSoapOrders.length} → ${finalOrders.length} orders`);
+      console.log(
+        `🧠 [GPTReconcile] Reconciliation complete: ${existingOrders.length + newSoapOrders.length} → ${finalOrders.length} orders`,
+      );
       return finalOrders;
-
     } catch (error) {
       console.error("❌ [GPTReconcile] Error in order reconciliation:", error);
       // Fallback: return new orders only to avoid duplicates
