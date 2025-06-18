@@ -175,17 +175,35 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     enabled: !!encounterId
   });
 
-  // Quick parse mutation using client-side parsing
+  // Quick parse mutation using server-side GPT parsing
   const quickParseMutation = useMutation({
     mutationFn: async (text: string) => {
-      console.log("🩺 [VitalsFlowsheet] Starting client-side parsing for text:", text);
+      console.log("🩺 [VitalsFlowsheet] Starting GPT parsing for text:", text);
       
-      // Use client-side parser to avoid API routing issues
-      const { ClientVitalsParser } = await import('@/lib/vitals-parser');
-      const parser = new ClientVitalsParser();
-      const result = await parser.parseVitalsText(text);
-      
-      console.log("🩺 [VitalsFlowsheet] Client parser result:", result);
+      // Use server-side GPT parsing via vitals-parser-service.ts
+      const response = await fetch('/api/vitals/parse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          vitalsText: text,
+          patientId: patientId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Parse failed: ${response.status} ${response.statusText}`);
+      }
+
+      const apiResponse = await response.json();
+      if (!apiResponse.success) {
+        throw new Error(apiResponse.error?.message || 'Parse failed');
+      }
+
+      const result = apiResponse.data;
+      console.log("🩺 [VitalsFlowsheet] GPT parser result:", result);
       return result;
     },
     onSuccess: (result) => {

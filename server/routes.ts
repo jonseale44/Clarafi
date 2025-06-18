@@ -20,6 +20,7 @@ import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
+import vitalsParserAPI from "./vitals-parser-api";
 
 import nursingSummaryRoutes from "./nursing-summary-routes";
 import multer from "multer";
@@ -643,6 +644,9 @@ export function registerRoutes(app: Express): Server {
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
 
+  // Vitals parser API (single source of truth for GPT parsing)
+  app.use("/api/vitals", vitalsParserAPI);
+  
   // Vitals flowsheet routes (enhanced vitals management)
   app.use("/api/vitals", vitalsFlowsheetRoutes);
 
