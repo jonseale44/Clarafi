@@ -1037,6 +1037,12 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
             setSuggestionsBuffer((prev) => prev + "\n");
           }
 
+          // Handle complete response completion
+          else if (message.type === "response.done") {
+            console.log("✅ [NursingView] Response completely finished - marking as complete");
+            markResponseComplete();
+          }
+
           if (
             message.type ===
             "conversation.item.input_audio_transcription.completed"
