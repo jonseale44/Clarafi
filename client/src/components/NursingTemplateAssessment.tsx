@@ -21,6 +21,9 @@ import {
   FileText,
   RefreshCw,
 } from "lucide-react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
 
 // Standardized nursing assessment prompt for consistent AI responses
 const NURSING_ASSESSMENT_INSTRUCTIONS = `You are an expert registered nurse with 15+ years of clinical experience extracting structured information from patient conversations. Your documentation must meet professional nursing standards and use proper medical abbreviations and formatting.
@@ -189,27 +192,88 @@ export const NursingTemplateAssessment = forwardRef<
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [nursingSummary, setNursingSummary] = useState<string>("");
     const [isEditingSummary, setIsEditingSummary] = useState(false);
+    const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+    const [lastSaved, setLastSaved] = useState<string>("");
+    const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
-    // Format nursing summary text with proper HTML formatting
-    // Matches the SOAP note formatting approach for consistency
-    const formatNursingSummary = (text: string): string => {
-      if (!text) return "";
+    // TipTap editor for nursing summary (matches SOAP note implementation)
+    const summaryEditor = useEditor({
+      extensions: [
+        StarterKit,
+        Placeholder.configure({
+          placeholder: "Nursing summary will appear here...",
+        }),
+      ],
+      editorProps: {
+        attributes: {
+          class: "outline-none min-h-[200px] max-w-none whitespace-pre-wrap p-4",
+        },
+      },
+      content: "",
+      onUpdate: ({ editor }) => {
+        if (!editor.isDestroyed) {
+          const newContent = editor.getHTML();
+          setNursingSummary(newContent);
+          triggerAutoSave(newContent);
+        }
+      },
+    });
 
-      return (
-        text
-          // Convert markdown bold to HTML (same as SOAP note)
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          // Convert bullet points to clean format without excessive spacing
-          .replace(/^- (.*?)$/gm, '<div class="ml-4">• $1</div>')
-          // Convert single line breaks to HTML breaks
-          .replace(/\n/g, '<br/>')
-          // Clean up multiple consecutive breaks (2 or more)
-          .replace(/(<br\/>){2,}/g, '<br/>')
-          // Ensure section headers have proper spacing before them but not excessive spacing after
-          .replace(/(<strong>.*?:<\/strong>)/g, '<br/>$1')
-          // Remove leading breaks
-          .replace(/^(<br\/>)+/, '')
-      );
+    // Format nursing summary content (matches SOAP note formatting)
+    const formatNursingSummaryContent = (content: string): string => {
+      if (!content) return "";
+
+      return content
+        // Convert markdown bold to HTML
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        // Convert single line breaks to HTML breaks
+        .replace(/\n/g, "<br/>")
+        // Clean up multiple consecutive breaks (2 or more)
+        .replace(/(<br\/>){2,}/g, "<br/>")
+        // Ensure section headers have proper spacing before them
+        .replace(/(<strong>.*?:<\/strong>)/g, "<br/>$1")
+        // Remove leading breaks
+        .replace(/^(<br\/>)+/, "");
+    };
+
+    // Auto-save functionality (matches SOAP note implementation)
+    const triggerAutoSave = (content: string) => {
+      if (content === lastSaved) return;
+
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
+
+      setAutoSaveStatus("unsaved");
+
+      autoSaveTimer.current = setTimeout(() => {
+        autoSaveNursingSummary(content);
+      }, 3000);
+    };
+
+    const autoSaveNursingSummary = async (content: string) => {
+      if (!content.trim() || content === lastSaved) return;
+
+      setAutoSaveStatus("saving");
+      try {
+        const response = await fetch(
+          `/api/encounters/${encounterId}/nursing-summary`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ nursingSummary: content }),
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to auto-save summary");
+
+        setLastSaved(content);
+        setAutoSaveStatus("saved");
+      } catch (error) {
+        console.error("❌ [NursingTemplate] Auto-save failed:", error);
+        setAutoSaveStatus("unsaved");
+      }
     };
 
     const [templateData, setTemplateData] = useState<NursingTemplateData>({
@@ -227,6 +291,60 @@ export const NursingTemplateAssessment = forwardRef<
 
     const lastTranscriptionRef = useRef<string>("");
     const { toast } = useToast();
+
+    // Cleanup auto-save timer on unmount
+    useEffect(() => {
+      return () => {
+        if (autoSaveTimer.current) {
+          clearTimeout(autoSaveTimer.current);
+        }
+      };
+    }, []);
+
+    // Load existing nursing summary when component mounts or encounter changes
+    useEffect(() => {
+      const loadExistingNursingSummary = async () => {
+        try {
+          const response = await fetch(`/api/encounters/${encounterId}/nursing-summary`, {
+            credentials: "include",
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const existingSummary = data.data?.nursingSummary;
+            
+            if (existingSummary && existingSummary.trim()) {
+              setNursingSummary(existingSummary);
+              setLastSaved(existingSummary);
+              setAutoSaveStatus("saved");
+              
+              // Load into editor if available
+              if (summaryEditor && !summaryEditor.isDestroyed) {
+                const formattedContent = formatNursingSummaryContent(existingSummary);
+                summaryEditor.commands.setContent(formattedContent);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("❌ [NursingTemplate] Error loading existing summary:", error);
+        }
+      };
+
+      if (encounterId) {
+        loadExistingNursingSummary();
+      }
+    }, [encounterId, summaryEditor]);
+
+    // Update editor when new summary is generated
+    useEffect(() => {
+      if (summaryEditor && nursingSummary && !summaryEditor.isDestroyed) {
+        // Only update if this is new generated content (contains markdown)
+        if (nursingSummary.includes("**") && nursingSummary !== lastSaved) {
+          const formattedContent = formatNursingSummaryContent(nursingSummary);
+          summaryEditor.commands.setContent(formattedContent);
+        }
+      }
+    }, [nursingSummary, summaryEditor, lastSaved]);
 
     // Expose methods to parent component
     useImperativeHandle(ref, () => ({
@@ -495,33 +613,7 @@ export const NursingTemplateAssessment = forwardRef<
       }
     };
 
-    const saveSummary = async () => {
-      try {
-        const response = await fetch(
-          `/api/encounters/${encounterId}/nursing-summary`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ nursingSummary }),
-          },
-        );
 
-        if (!response.ok) throw new Error("Failed to save summary");
-
-        toast({
-          title: "Summary Saved",
-          description: "Nursing summary saved successfully",
-        });
-        setIsEditingSummary(false);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Save Failed",
-          description: "Failed to save nursing summary",
-        });
-      }
-    };
 
     // Template field definitions
     const templateFields = [
@@ -680,54 +772,65 @@ export const NursingTemplateAssessment = forwardRef<
                     </>
                   )}
                 </Button>
-                {nursingSummary && (
-                  <Button
-                    onClick={() => setIsEditingSummary(!isEditingSummary)}
-                    size="sm"
-                    variant="outline"
-                    className="h-8"
-                  >
-                    <Edit2 className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                )}
+
               </div>
             </div>
 
             {nursingSummary ? (
               <div className="space-y-2">
-                {isEditingSummary ? (
-                  <div className="space-y-2">
-                    <Textarea
-                      value={nursingSummary}
-                      onChange={(e) => setNursingSummary(e.target.value)}
-                      className="min-h-[200px] text-sm whitespace-pre-wrap"
-                      placeholder="Edit nursing summary..."
-                    />
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        onClick={() => setIsEditingSummary(false)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={saveSummary} size="sm" variant="default">
-                        <Save className="h-3 w-3 mr-1" />
-                        Save Changes
-                      </Button>
+                {/* Auto-save status indicator */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-sm">
+                    {autoSaveStatus === "saving" && (
+                      <div className="flex items-center text-blue-600">
+                        <div className="animate-spin h-3 w-3 mr-1 border border-blue-600 border-t-transparent rounded-full" />
+                        <span>Saving...</span>
+                      </div>
+                    )}
+                    {autoSaveStatus === "saved" && (
+                      <div className="flex items-center text-green-600">
+                        <div className="h-2 w-2 bg-green-600 rounded-full mr-1" />
+                        <span>Saved</span>
+                      </div>
+                    )}
+                    {autoSaveStatus === "unsaved" && (
+                      <div className="flex items-center text-yellow-600">
+                        <div className="h-2 w-2 bg-yellow-600 rounded-full mr-1" />
+                        <span>Unsaved changes</span>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => setIsEditingSummary(!isEditingSummary)}
+                    size="sm"
+                    variant="outline"
+                    className="h-7"
+                  >
+                    <Edit2 className="h-3 w-3 mr-1" />
+                    {isEditingSummary ? "View" : "Edit"}
+                  </Button>
+                </div>
+
+                {/* TipTap Editor or Read-only Display */}
+                <div className="border rounded-md">
+                  {isEditingSummary ? (
+                    <div className="min-h-[200px]">
+                      <EditorContent 
+                        editor={summaryEditor}
+                        className="prose max-w-none text-sm"
+                      />
                     </div>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-white border rounded-md">
-                    <div
-                      className="text-sm text-gray-800 font-sans leading-normal"
-                      dangerouslySetInnerHTML={{
-                        __html: formatNursingSummary(nursingSummary),
-                      }}
-                    />
-                  </div>
-                )}
+                  ) : (
+                    <div className="p-4 bg-white">
+                      <div
+                        className="text-sm text-gray-800 font-sans leading-normal prose max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: formatNursingSummaryContent(nursingSummary),
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
