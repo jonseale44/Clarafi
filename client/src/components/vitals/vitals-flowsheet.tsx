@@ -467,131 +467,211 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
         </CardHeader>
       </Card>
 
-      {/* Vitals Table */}
+      {/* Transposed Vitals Table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50 h-8">
-                  <TableHead className="font-semibold text-xs py-2">Time</TableHead>
-                  <TableHead className="font-semibold text-xs py-2 text-center">BP</TableHead>
-                  <TableHead className="font-semibold text-xs py-2 text-center">HR</TableHead>
-                  <TableHead className="font-semibold text-xs py-2 text-center">Temp</TableHead>
-                  <TableHead className="font-semibold text-xs py-2 text-center">RR</TableHead>
-                  <TableHead className="font-semibold text-xs py-2 text-center">O2</TableHead>
-                  <TableHead className="font-semibold text-xs py-2 text-center">Pain</TableHead>
-                  <TableHead className="font-semibold text-xs py-2 text-center">Wt</TableHead>
-                  <TableHead className="font-semibold text-xs py-2">By</TableHead>
-                  {!readOnly && <TableHead className="font-semibold text-xs py-2"></TableHead>}
+                  <TableHead className="font-semibold text-xs py-2 w-24">Parameter</TableHead>
+                  {vitalsEntries.map((entry) => (
+                    <TableHead key={entry.id} className="font-semibold text-xs py-2 text-center min-w-20">
+                      <div className="text-xs text-gray-500">{format(new Date(entry.recordedAt), 'MM/dd')}</div>
+                      <div className="text-xs">{format(new Date(entry.recordedAt), 'HH:mm')}</div>
+                    </TableHead>
+                  ))}
+                  {!readOnly && (
+                    <TableHead className="font-semibold text-xs py-2 text-center w-16">
+                      <Plus className="h-4 w-4 mx-auto" />
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {vitalsEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={readOnly ? 9 : 10} className="text-center py-6 text-gray-500 text-sm">
+                    <TableCell colSpan={2} className="text-center py-6 text-gray-500 text-sm">
                       No vitals recorded for this encounter
                     </TableCell>
                   </TableRow>
                 ) : (
-                  vitalsEntries.map((entry, index) => {
-                    const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
-                    
-                    return (
-                      <TableRow key={entry.id} className="hover:bg-gray-25 h-12">
-                        <TableCell className="py-2">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{format(new Date(entry.recordedAt), 'HH:mm')}</span>
-                            <span className="text-xs text-gray-500">
-                              {format(new Date(entry.recordedAt), 'MM/dd')}
-                            </span>
-                          </div>
+                  <>
+                    {/* Blood Pressure Row */}
+                    <TableRow className="hover:bg-gray-25 h-10">
+                      <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                        BP <span className="text-xs text-gray-500">(mmHg)</span>
+                      </TableCell>
+                      {vitalsEntries.map((entry, index) => {
+                        const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
+                        return (
+                          <TableCell key={`bp-${entry.id}`} className="py-2 text-center">
+                            <BloodPressureCell 
+                              systolic={entry.systolicBp}
+                              diastolic={entry.diastolicBp}
+                              prevSystolic={prevEntry?.systolicBp}
+                              prevDiastolic={prevEntry?.diastolicBp}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                      {!readOnly && (
+                        <TableCell className="py-2 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingEntry({} as VitalsEntry);
+                              setShowAddDialog(true);
+                            }}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
                         </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <BloodPressureCell 
-                            systolic={entry.systolicBp}
-                            diastolic={entry.diastolicBp}
-                            prevSystolic={prevEntry?.systolicBp}
-                            prevDiastolic={prevEntry?.diastolicBp}
-                          />
-                        </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <VitalCell 
-                            value={entry.heartRate} 
-                            vitalType="heartRate"
-                            previousValue={prevEntry?.heartRate}
-                          />
-                        </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <VitalCell 
-                            value={entry.temperature} 
-                            vitalType="temperature"
-                            previousValue={prevEntry?.temperature}
-                          />
-                        </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <VitalCell 
-                            value={entry.respiratoryRate} 
-                            vitalType="respiratoryRate"
-                            previousValue={prevEntry?.respiratoryRate}
-                          />
-                        </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <VitalCell 
-                            value={entry.oxygenSaturation} 
-                            vitalType="oxygenSaturation"
-                            previousValue={prevEntry?.oxygenSaturation}
-                          />
-                        </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <div className="flex items-center justify-center py-1 px-2 rounded bg-gray-50 text-sm">
-                            <span className="font-medium">
-                              {entry.painScale !== null && entry.painScale !== undefined ? `${entry.painScale}/10` : '-'}
-                            </span>
-                            {getTrendIcon(entry.painScale, prevEntry?.painScale)}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <div className="group relative flex items-center justify-center py-1 px-2 rounded bg-gray-50 text-sm">
-                            <div className="flex flex-col items-center">
+                      )}
+                    </TableRow>
+
+                    {/* Heart Rate Row */}
+                    <TableRow className="hover:bg-gray-25 h-10">
+                      <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                        HR <span className="text-xs text-gray-500">(bpm)</span>
+                      </TableCell>
+                      {vitalsEntries.map((entry, index) => {
+                        const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
+                        return (
+                          <TableCell key={`hr-${entry.id}`} className="py-2 text-center">
+                            <VitalCell 
+                              value={entry.heartRate} 
+                              vitalType="heartRate"
+                              previousValue={prevEntry?.heartRate}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                      {!readOnly && <TableCell className="py-2"></TableCell>}
+                    </TableRow>
+
+                    {/* Temperature Row */}
+                    <TableRow className="hover:bg-gray-25 h-10">
+                      <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                        Temp <span className="text-xs text-gray-500">(°F)</span>
+                      </TableCell>
+                      {vitalsEntries.map((entry, index) => {
+                        const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
+                        return (
+                          <TableCell key={`temp-${entry.id}`} className="py-2 text-center">
+                            <VitalCell 
+                              value={entry.temperature} 
+                              vitalType="temperature"
+                              previousValue={prevEntry?.temperature}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                      {!readOnly && <TableCell className="py-2"></TableCell>}
+                    </TableRow>
+
+                    {/* Respiratory Rate Row */}
+                    <TableRow className="hover:bg-gray-25 h-10">
+                      <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                        RR <span className="text-xs text-gray-500">(/min)</span>
+                      </TableCell>
+                      {vitalsEntries.map((entry, index) => {
+                        const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
+                        return (
+                          <TableCell key={`rr-${entry.id}`} className="py-2 text-center">
+                            <VitalCell 
+                              value={entry.respiratoryRate} 
+                              vitalType="respiratoryRate"
+                              previousValue={prevEntry?.respiratoryRate}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                      {!readOnly && <TableCell className="py-2"></TableCell>}
+                    </TableRow>
+
+                    {/* Oxygen Saturation Row */}
+                    <TableRow className="hover:bg-gray-25 h-10">
+                      <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                        O2 Sat <span className="text-xs text-gray-500">(%)</span>
+                      </TableCell>
+                      {vitalsEntries.map((entry, index) => {
+                        const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
+                        return (
+                          <TableCell key={`o2-${entry.id}`} className="py-2 text-center">
+                            <VitalCell 
+                              value={entry.oxygenSaturation} 
+                              vitalType="oxygenSaturation"
+                              previousValue={prevEntry?.oxygenSaturation}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                      {!readOnly && <TableCell className="py-2"></TableCell>}
+                    </TableRow>
+
+                    {/* Pain Scale Row */}
+                    <TableRow className="hover:bg-gray-25 h-10">
+                      <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                        Pain <span className="text-xs text-gray-500">(/10)</span>
+                      </TableCell>
+                      {vitalsEntries.map((entry, index) => {
+                        const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
+                        return (
+                          <TableCell key={`pain-${entry.id}`} className="py-2 text-center">
+                            <div className="flex items-center justify-center py-1 px-2 rounded bg-gray-50 text-sm">
                               <span className="font-medium">
-                                {entry.weight ? `${entry.weight}` : '-'}
+                                {entry.painScale !== null && entry.painScale !== undefined ? `${entry.painScale}` : '-'}
                               </span>
-                              {entry.height && entry.bmi && (
-                                <span className="text-xs text-gray-500">
-                                  BMI {entry.bmi}
-                                </span>
+                              {getTrendIcon(entry.painScale, prevEntry?.painScale)}
+                            </div>
+                          </TableCell>
+                        );
+                      })}
+                      {!readOnly && <TableCell className="py-2"></TableCell>}
+                    </TableRow>
+
+                    {/* Weight Row */}
+                    <TableRow className="hover:bg-gray-25 h-10">
+                      <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                        Weight <span className="text-xs text-gray-500">(lbs)</span>
+                      </TableCell>
+                      {vitalsEntries.map((entry, index) => {
+                        const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
+                        return (
+                          <TableCell key={`wt-${entry.id}`} className="py-2 text-center">
+                            <div className="group relative flex items-center justify-center py-1 px-2 rounded bg-gray-50 text-sm">
+                              <span className="font-medium">
+                                {entry.weight || '-'}
+                              </span>
+                              {getTrendIcon(entry.weight, prevEntry?.weight)}
+                              
+                              {/* Tooltip with full weight info */}
+                              {entry.weight && (
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                  Weight: {entry.weight} lbs
+                                  {entry.height && <div>Height: {entry.height}"</div>}
+                                  {entry.bmi && <div>BMI: {entry.bmi}</div>}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
+                                </div>
                               )}
                             </div>
-                            {getTrendIcon(entry.weight, prevEntry?.weight)}
-                            
-                            {/* Tooltip with full weight info */}
-                            {entry.weight && (
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                Weight: {entry.weight} lbs
-                                {entry.height && <div>Height: {entry.height}"</div>}
-                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
-                              </div>
-                            )}
-                          </div>
+                          </TableCell>
+                        );
+                      })}
+                      {!readOnly && <TableCell className="py-2"></TableCell>}
+                    </TableRow>
+
+                    {/* Actions Row (Edit buttons) */}
+                    {!readOnly && (
+                      <TableRow className="hover:bg-gray-25 h-10">
+                        <TableCell className="py-2 font-medium text-gray-900 bg-gray-50">
+                          Actions
                         </TableCell>
-                        
-                        <TableCell className="py-2">
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs text-gray-600">{entry.recordedBy}</span>
-                          </div>
-                        </TableCell>
-                        
-                        {!readOnly && (
-                          <TableCell className="py-2">
+                        {vitalsEntries.map((entry) => (
+                          <TableCell key={`action-${entry.id}`} className="py-2 text-center">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -604,10 +684,11 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                               <Edit3 className="h-3 w-3" />
                             </Button>
                           </TableCell>
-                        )}
+                        ))}
+                        <TableCell className="py-2"></TableCell>
                       </TableRow>
-                    );
-                  })
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>
