@@ -277,14 +277,14 @@ export class SOAPOrdersExtractor {
             priority: order.priority
           }));
 
-          // Import GPT deduplication service dynamically to avoid import issues
-          const { gptOrderDeduplication } = await import("./gpt-order-deduplication-service.js");
+          // Import GPT reconciliation service for intelligent order management
+          const { gptOrderReconciliation } = await import("./gpt-order-reconciliation.js");
           
-          // Use GPT to intelligently reconcile existing and new orders
-          // GPT has full authority to decide what orders should exist
-          finalOrders = await gptOrderDeduplication.mergeAndDeduplicateOrders(
+          // Give GPT complete authority to reconcile orders based on clinical context
+          finalOrders = await gptOrderReconciliation.reconcileOrders(
             existingInsertOrders, // existing draft orders
-            orderInserts // new SOAP-extracted orders
+            orderInserts, // new SOAP-extracted orders
+            soapNote // full clinical context for intelligent decisions
           );
           
           console.log(`[SOAPExtractor] GPT deduplication complete: ${existingOrders.length + orderInserts.length} total → ${finalOrders.length} final orders`);
