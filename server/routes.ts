@@ -2989,21 +2989,7 @@ Return only valid JSON without markdown formatting.`;
   // Register patient parser routes
   app.use("/api", parseRoutes);
 
-  // Vitals parser routes
-  import("./vitals-parse-routes.js").then(vitalsParseRoutes => {
-    app.use("/api/vitals", vitalsParseRoutes.default);
-    console.log("✅ [Routes] Vitals parser routes mounted");
-  }).catch(err => {
-    console.error("❌ [Routes] Failed to mount vitals parser routes:", err);
-  });
-
-  // Vitals flowsheet routes  
-  import("./vitals-flowsheet-routes.js").then(vitalsFlowsheetRoutes => {
-    app.use("/api/vitals", vitalsFlowsheetRoutes.default);
-    console.log("✅ [Routes] Vitals flowsheet routes mounted");
-  }).catch(err => {
-    console.error("❌ [Routes] Failed to mount vitals flowsheet routes:", err);
-  });
+  // Legacy dynamic vitals routes removed - now using static imports above
 
   const httpServer = createServer(app);
 

@@ -207,9 +207,9 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
       return result;
     },
     onSuccess: (result) => {
-      console.log("🩺 [VitalsFlowsheet] Processing successful parse result:", result);
+      console.log("🩺 [VitalsFlowsheet] Processing successful GPT parse result:", result);
       if (result.success && result.data) {
-        // Transform parsed data to vitals entry format - using correct field names
+        // Transform GPT parsed data to vitals entry format - using correct camelCase field names
         const newEntry: Partial<VitalsEntry> = {
           encounterId,
           patientId,

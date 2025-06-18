@@ -63,7 +63,7 @@ router.post("/parse", async (req, res) => {
     return APIResponseHandler.error(
       res, 
       "VITALS_PARSE_ERROR", 
-      "Failed to parse vitals", 
+      "Failed to parse vitals",
       500
     );
   }
