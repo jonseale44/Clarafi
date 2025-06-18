@@ -658,20 +658,35 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     console.log("🩺 [VitalsEntryForm] DEBUG - About to save");
     console.log("🩺 [VitalsEntryForm] DEBUG - encounterId prop:", encounterId);
     console.log("🩺 [VitalsEntryForm] DEBUG - patientId prop:", patientId);
     console.log("🩺 [VitalsEntryForm] DEBUG - formData before save:", JSON.stringify(formData, null, 2));
     
-    // Ensure encounterId and patientId are included
+    // Validate required IDs
+    if (!encounterId) {
+      console.error("❌ [VitalsEntryForm] Missing encounterId prop");
+      return;
+    }
+    
+    if (!patientId) {
+      console.error("❌ [VitalsEntryForm] Missing patientId prop");
+      return;
+    }
+    
+    // Ensure encounterId and patientId are included - force them from props
     const dataToSave = {
       ...formData,
-      encounterId,
-      patientId,
+      encounterId: encounterId,  // Force from props, not formData
+      patientId: patientId,      // Force from props, not formData
       recordedBy: String(formData.recordedBy || 1)
     };
     
-    console.log("🩺 [VitalsEntryForm] DEBUG - dataToSave with IDs:", JSON.stringify(dataToSave, null, 2));
+    console.log("🩺 [VitalsEntryForm] DEBUG - dataToSave with forced IDs:", JSON.stringify(dataToSave, null, 2));
+    console.log("🩺 [VitalsEntryForm] DEBUG - Final encounterId:", dataToSave.encounterId);
+    console.log("🩺 [VitalsEntryForm] DEBUG - Final patientId:", dataToSave.patientId);
+    
     onSave(dataToSave);
   };
 
