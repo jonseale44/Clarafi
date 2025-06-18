@@ -204,7 +204,30 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
                     )}
                     {encounter.nurseAssessment && (
                       <p className="text-gray-700 mt-1">
-                        <span className="font-medium">Nurse Assessment:</span> {encounter.nurseAssessment}
+                        <span className="font-medium">Nurse Assessment:</span> {(() => {
+                          try {
+                            // Parse the JSON nursing assessment
+                            const assessmentData = JSON.parse(encounter.nurseAssessment);
+                            const summary = [];
+                            if (assessmentData.cc) summary.push(`CC: ${assessmentData.cc}`);
+                            if (assessmentData.hpi) summary.push(`HPI: ${assessmentData.hpi.replace(/\n/g, ' ').substring(0, 50)}...`);
+                            if (assessmentData.pmh) summary.push(`PMH: ${assessmentData.pmh.replace(/\n/g, ' ')}`);
+                            return summary.length > 0 ? summary.join(' | ') : 'Assessment completed by nursing';
+                          } catch {
+                            // If it's not JSON, just truncate the string
+                            return encounter.nurseAssessment.length > 100 
+                              ? encounter.nurseAssessment.substring(0, 100) + '...' 
+                              : encounter.nurseAssessment;
+                          }
+                        })()}
+                      </p>
+                    )}
+                    {encounter.nurseNotes && (
+                      <p className="text-gray-700 mt-1">
+                        <span className="font-medium">Nursing Summary:</span> {(() => {
+                          const plainText = stripHtmlTags(encounter.nurseNotes);
+                          return plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText;
+                        })()}
                       </p>
                     )}
                   </div>
