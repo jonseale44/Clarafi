@@ -7,24 +7,23 @@ import { vitals } from "../shared/schema.js";
 
 const router = Router();
 
-// Validation schemas
+// Validation schemas - match database schema
 const VitalsEntrySchema = z.object({
   patientId: z.number(),
-  encounterId: z.number(),
-  recordedAt: z.string().datetime().optional(),
+  encounterId: z.number().optional(),
+  measuredAt: z.string().datetime().optional(),
   recordedBy: z.string(),
-  entryType: z.string().default("routine"),
   systolicBp: z.number().min(50).max(300).optional(),
   diastolicBp: z.number().min(20).max(200).optional(),
   heartRate: z.number().min(30).max(250).optional(),
   temperature: z.number().min(90).max(110).optional(),
   weight: z.number().min(1).max(1000).optional(),
   height: z.number().min(10).max(100).optional(),
+  bmi: z.number().min(10).max(80).optional(),
   oxygenSaturation: z.number().min(70).max(100).optional(),
   respiratoryRate: z.number().min(5).max(100).optional(),
   painScale: z.number().min(0).max(10).optional(),
   notes: z.string().optional(),
-  alerts: z.array(z.string()).optional(),
   parsedFromText: z.boolean().optional(),
   originalText: z.string().optional(),
 });
@@ -92,7 +91,6 @@ router.post("/entries", async (req, res) => {
     const validatedData = VitalsEntrySchema.parse({
       ...req.body,
       recordedBy: req.user.username || `User ${req.user.id}`,
-      recordedAt: req.body.recordedAt || new Date().toISOString(),
     });
 
     // Calculate BMI if height and weight are provided
@@ -106,10 +104,21 @@ router.post("/entries", async (req, res) => {
     // Generate clinical alerts for critical values
     const alerts = generateClinicalAlerts(validatedData);
 
-    const vitalsEntry = await storage.createVitalsEntry({
-      ...validatedData,
-      bmi,
-      alerts,
+    const vitalsEntry = await storage.createVitals({
+      patientId: validatedData.patientId,
+      encounterId: validatedData.encounterId,
+      measuredAt: new Date().toISOString(),
+      systolicBp: validatedData.systolicBp,
+      diastolicBp: validatedData.diastolicBp,
+      heartRate: validatedData.heartRate,
+      temperature: validatedData.temperature,
+      weight: validatedData.weight,
+      height: validatedData.height,
+      bmi: bmi,
+      oxygenSaturation: validatedData.oxygenSaturation,
+      respiratoryRate: validatedData.respiratoryRate,
+      painScale: validatedData.painScale,
+      recordedBy: validatedData.recordedBy,
     });
 
     console.log("✅ [VitalsFlowsheet] Created vitals entry:", vitalsEntry.id);
