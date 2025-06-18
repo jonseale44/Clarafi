@@ -2992,6 +2992,10 @@ Return only valid JSON without markdown formatting.`;
   // Register patient parser routes
   app.use("/api", parseRoutes);
 
+  // Vitals parser routes
+  const vitalsParserRoutes = await import("./vitals-parser-routes.js");
+  app.use("/api/vitals", vitalsParserRoutes.default);
+
   const httpServer = createServer(app);
 
   // Legacy real-time transcription service removed - AI suggestions now use direct client WebSocket connection
