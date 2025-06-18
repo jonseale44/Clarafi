@@ -86,6 +86,22 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Calculate patient age from dateOfBirth if not provided
+  const calculateAge = (dateOfBirth: string): number => {
+    const today = new Date();
+    const birth = new Date(dateOfBirth);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  const patientAge = patient?.age || (patient?.dateOfBirth ? calculateAge(patient.dateOfBirth) : 0);
+
   // Get age-appropriate vital sign ranges
   const getVitalRanges = (patientAge?: number): AgeBasedRanges => {
     const age = patientAge || 0;
@@ -129,7 +145,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     }
   };
 
-  const ranges = getVitalRanges(patient?.age);
+  const ranges = getVitalRanges(patientAge);
 
   const getVitalStatus = (value: number | undefined, vitalType: keyof AgeBasedRanges) => {
     if (!value || !ranges[vitalType]) return { status: "normal", color: "text-gray-600", bgColor: "bg-gray-50" };
@@ -429,9 +445,9 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
             <CardTitle className="flex items-center space-x-2 text-lg">
               <Stethoscope className="h-4 w-4" />
               <span>Vitals</span>
-              {patient?.age && (
+              {patientAge > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  Age {patient.age}
+                  Age {patientAge}
                 </Badge>
               )}
             </CardTitle>
