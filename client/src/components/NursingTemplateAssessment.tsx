@@ -800,28 +800,42 @@ export const NursingTemplateAssessment = forwardRef<
                       </div>
                     )}
                   </div>
-                  <Button
-                    onClick={() => setIsEditingSummary(!isEditingSummary)}
-                    size="sm"
-                    variant="outline"
-                    className="h-7"
-                  >
-                    <Edit2 className="h-3 w-3 mr-1" />
-                    {isEditingSummary ? "View" : "Edit"}
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    {isEditingSummary && (
+                      <Button
+                        onClick={() => autoSaveNursingSummary(summaryEditor?.getHTML() || nursingSummary)}
+                        size="sm"
+                        variant="default"
+                        disabled={autoSaveStatus === "saving"}
+                        className="h-7"
+                      >
+                        <Save className="h-3 w-3 mr-1" />
+                        Save
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => setIsEditingSummary(!isEditingSummary)}
+                      size="sm"
+                      variant="outline"
+                      className="h-7"
+                    >
+                      <Edit2 className="h-3 w-3 mr-1" />
+                      {isEditingSummary ? "View" : "Edit"}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* TipTap Editor or Read-only Display */}
                 <div className="border rounded-md">
                   {isEditingSummary ? (
-                    <div className="min-h-[200px]">
+                    <div className="min-h-[200px] bg-white">
                       <EditorContent 
                         editor={summaryEditor}
                         className="prose max-w-none text-sm"
                       />
                     </div>
                   ) : (
-                    <div className="p-4 bg-white">
+                    <div className="p-4 bg-blue-50">
                       <div
                         className="text-sm text-gray-800 font-sans leading-normal prose max-w-none"
                         dangerouslySetInnerHTML={{
