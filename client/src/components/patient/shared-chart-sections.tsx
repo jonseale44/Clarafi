@@ -1,7 +1,9 @@
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
+import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface SharedChartSectionsProps {
   patientId: number;
@@ -9,6 +11,29 @@ interface SharedChartSectionsProps {
   encounterId?: number;
   isReadOnly?: boolean;
   sectionId?: string;
+}
+
+// Vitals Section Component
+function VitalsSection({ patientId, encounterId, mode }: { 
+  patientId: number, 
+  encounterId?: number, 
+  mode: "patient-chart" | "encounter" 
+}) {
+  const { data: patient } = useQuery({
+    queryKey: [`/api/patients/${patientId}`],
+    enabled: !!patientId
+  });
+
+  return (
+    <div className="space-y-4">
+      <VitalsFlowsheet
+        encounterId={encounterId || 0}
+        patientId={patientId}
+        patient={patient as any}
+        readOnly={false}
+      />
+    </div>
+  );
 }
 
 export function SharedChartSections({ 
@@ -72,20 +97,7 @@ export function SharedChartSections({
         );
       
       case "vitals":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Vital Signs</h2>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Vitals management coming soon</p>
-                  <p className="text-sm">Track patient vital signs over time.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <VitalsSection patientId={patientId} encounterId={encounterId} mode={mode} />;
       
       case "imaging":
         return (
