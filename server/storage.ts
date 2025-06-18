@@ -256,13 +256,13 @@ export class DatabaseStorage implements IStorage {
   async getPatientVitals(patientId: number): Promise<Vitals[]> {
     return await db.select().from(vitals)
       .where(eq(vitals.patientId, patientId))
-      .orderBy(desc(vitals.measuredAt));
+      .orderBy(desc(vitals.recordedAt));
   }
 
   async getLatestVitals(patientId: number): Promise<Vitals | undefined> {
     const [latestVitals] = await db.select().from(vitals)
       .where(eq(vitals.patientId, patientId))
-      .orderBy(desc(vitals.measuredAt))
+      .orderBy(desc(vitals.recordedAt))
       .limit(1);
     return latestVitals || undefined;
   }
@@ -270,24 +270,24 @@ export class DatabaseStorage implements IStorage {
   async getEncounterVitals(encounterId: number): Promise<Vitals[]> {
     return await db.select().from(vitals)
       .where(eq(vitals.encounterId, encounterId))
-      .orderBy(desc(vitals.measuredAt));
+      .orderBy(desc(vitals.recordedAt));
   }
 
   async getVitalsByEncounter(encounterId: number) {
-    return await this.db.select().from(vitals).where(eq(vitals.encounterId, encounterId));
+    return await db.select().from(vitals).where(eq(vitals.encounterId, encounterId));
   }
 
   async getVitalsByPatient(patientId: number) {
-    return await this.db.select().from(vitals).where(eq(vitals.patientId, patientId));
+    return await db.select().from(vitals).where(eq(vitals.patientId, patientId));
   }
 
   async getVitalsEntry(id: number) {
-    const [result] = await this.db.select().from(vitals).where(eq(vitals.id, id));
+    const [result] = await db.select().from(vitals).where(eq(vitals.id, id));
     return result;
   }
 
   async createVitalsEntry(data: any) {
-    const [result] = await this.db.insert(vitals).values({
+    const [result] = await db.insert(vitals).values({
       ...data,
       recordedAt: data.recordedAt || new Date()
     }).returning();
@@ -295,7 +295,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateVitalsEntry(id: number, data: any) {
-    const [result] = await this.db.update(vitals)
+    const [result] = await db.update(vitals)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(vitals.id, id))
       .returning();
@@ -303,7 +303,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteVitalsEntry(id: number) {
-    const [result] = await this.db.delete(vitals).where(eq(vitals.id, id)).returning();
+    const [result] = await db.delete(vitals).where(eq(vitals.id, id)).returning();
     return result;
   }
 
