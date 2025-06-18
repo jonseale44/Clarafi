@@ -99,78 +99,64 @@ allergies: Known Allergies
 - Example: "- Penicillin: Rash\n- Shellfish: Anaphylaxis" or "- NKDA"
 
 famHx: Family History
-- Use standard abbreviations for conditions
-- Format as "Relationship: Conditions"
-- Example: "- Father: HTN, DM2\n- Mother: Breast CA, HTN"
+- Use bullet points with hyphens (-) for each condition
+- Include relationship and condition with abbreviations
+- Example: "- Father: MI at age 65\n- Mother: HTN, DM2"
 
 soHx: Social History
-- Use bullet points for each social factor
-- Include specific quantities when mentioned
-- Example: "- Tobacco: 20 pack-year history\n- Alcohol: 2-3 drinks weekly\n- Occupation: Teacher"
+- Include relevant social factors affecting health
+- Use bullet points for multiple items
+- Example: "- Tobacco: 1 PPD x 20 years\n- Alcohol: Social use\n- Exercise: Sedentary"
 
 psh: Past Surgical History
-- Include year if mentioned
-- Use bullet points
-- Example: "- 2018 Cholecystectomy\n- 2020 Appendectomy"
+- List surgeries chronologically with dates/years
+- Use bullet points with hyphens (-)
+- Example: "- 2019: Cholecystectomy\n- 2015: Appendectomy"
 
 ros: Review of Systems
-- Only include positive findings
-- Use standard abbreviations and bullet points
-- Organize by body system
-- Example: "- Constitutional: Fatigue, weight loss\n- CV: CP, palpitations\n- Respiratory: SOB on exertion"
+- Organize by system with pertinent positives and negatives
+- Use abbreviations and bullet points
+- Example: "CV: Denies CP, palpitations\nResp: Admits to SOB on exertion\nGI: Denies N/V, abdominal pain"
 
-vitals: Vital Signs
-- Use standard format and abbreviations
-- Example: "- BP: 140/90 mmHg\n- HR: 88 BPM\n- RR: 20/min\n- T: 98.6°F\n- O2 Sat: 96% on RA\n- Pain: 7/10"
+vitals: Current Vital Signs
+- Format as single line with standard abbreviations
+- Example: "BP: 140/90 | HR: 88 | T: 98.6°F | RR: 18 | O2 Sat: 98% on RA"
 
-RESPONSE FORMAT EXAMPLES:
+Return ONLY a JSON object with these exact field names containing the extracted and properly formatted information. If a field has no information, return an empty string.
 
-For Past Medical History:
-{"pmh": "- HTN\n- DM2\n- CAD"}
+Example output format:
+{
+  "cc": "SOB and fatigue x 3 days",
+  "hpi": "- SOB onset 3 days ago, progressive\\n- Worsens with exertion\\n- Associated with fatigue",
+  "pmh": "- HTN\\n- DM2\\n- CAD",
+  "meds": "- Lisinopril 10mg QD PO\\n- Metformin 1000mg BID PO",
+  "allergies": "- NKDA",
+  "famHx": "- Father: CAD\\n- Mother: DM2",
+  "soHx": "- Tobacco: Former smoker, quit 5 years ago\\n- Alcohol: Social use",
+  "psh": "- 2018: CABG",
+  "ros": "CV: Admits to chest tightness\\nResp: Admits to SOB\\nGI: Denies N/V",
+  "vitals": "BP: 150/95 | HR: 92 | T: 98.4°F | RR: 20 | O2 Sat: 96% on RA"
+}`;
 
-For Current Medications:
-{"meds": "- Lisinopril 10mg QD PO\n- Metformin 1000mg BID PO"}
-
-For Vital Signs:
-{"vitals": "- BP: 140/90 mmHg\n- HR: 88 BPM\n- T: 98.6°F"}
-
-CRITICAL RULES:
-1. Transform ALL long-form medical conditions to standard abbreviations
-2. Use bullet points with hyphens (-) for multi-item fields
-3. IMPORTANT: When you receive existing template data, ADD new information to existing content rather than replacing it
-4. For bullet-point fields (pmh, meds, allergies, etc.), combine existing bullets with new ones, avoiding duplicates
-5. Never add information not explicitly mentioned in conversation
-6. Use professional nursing terminology consistently
-7. Include specific measurements when provided
-8. Format medications with complete dosing information
-
-INCREMENTAL UPDATE BEHAVIOR:
-- If pmh currently contains "- HTN\n- DM2" and patient mentions "COPD", return {"pmh": "- HTN\n- DM2\n- COPD"}
-- If meds contains existing medications and new ones are mentioned, combine them
-- Always preserve existing information while adding new information
-- Only return fields that need updates (new additions or modifications)
-
-Return only valid JSON with fields containing new or updated information.`;
-
-interface NursingTemplateData {
-  cc: string; // Chief Complaint
-  hpi: string; // History of Present Illness
-  pmh: string; // Past Medical History
-  meds: string; // Medications
-  allergies: string; // Allergies
-  famHx: string; // Family History
-  soHx: string; // Social History
-  psh: string; // Past Surgical History
-  ros: string; // Review of Systems
-  vitals: string; // Vital Signs
+export interface NursingTemplateData {
+  cc: string;
+  hpi: string;
+  pmh: string;
+  meds: string;
+  allergies: string;
+  famHx: string;
+  soHx: string;
+  psh: string;
+  ros: string;
+  vitals: string;
 }
 
 interface NursingTemplateAssessmentProps {
   patientId: string;
   encounterId: string;
-  isRecording: boolean;
+  isRecording?: boolean;
   transcription: string;
-  onTemplateUpdate: (template: NursingTemplateData) => void;
+  onTemplateUpdate?: (data: NursingTemplateData) => void;
   autoStart?: boolean;
 }
 
@@ -198,12 +184,11 @@ export const NursingTemplateAssessment = forwardRef<
     ref,
   ) => {
     const [isActive, setIsActive] = useState(false);
-    const [isConnected, setIsConnected] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [editingField, setEditingField] = useState<string | null>(null);
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [nursingSummary, setNursingSummary] = useState<string>("");
     const [isEditingSummary, setIsEditingSummary] = useState(false);
-    const [accumulatedTranscript, setAccumulatedTranscript] = useState<string>("");
 
     // Format nursing summary text with proper HTML formatting
     const formatNursingSummary = (text: string): string => {
@@ -238,11 +223,7 @@ export const NursingTemplateAssessment = forwardRef<
       vitals: "",
     });
 
-    const wsRef = useRef<WebSocket | null>(null);
-    const sessionIdRef = useRef<string>(
-      `nursing_template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    );
-    const lastTranscriptionRef = useRef("");
+    const lastTranscriptionRef = useRef<string>("");
     const { toast } = useToast();
 
     // Expose methods to parent component
@@ -250,53 +231,26 @@ export const NursingTemplateAssessment = forwardRef<
       startTemplateAssessment,
       stopTemplateAssessment,
       getCurrentTemplate: () => templateData,
-      saveTemplate,
+      saveTemplate: saveTemplateData,
       generateSummary,
     }));
 
-    // Auto-start when recording begins
-    useEffect(() => {
-      if (autoStart && isRecording && !isActive) {
-        startTemplateAssessment();
-      } else if (!isRecording && isActive) {
-        stopTemplateAssessment();
-      }
-    }, [isRecording, autoStart]);
+    // Helper to format field display values
+    const formatFieldForDisplay = (value: string): string => {
+      if (!value.trim()) return "";
+      return value
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join('\n');
+    };
 
-    // Load existing nursing summary on component mount
+    // Auto-generate summary when template has substantial content
     useEffect(() => {
-      const loadExistingSummary = async () => {
-        try {
-          const response = await fetch(
-            `/api/encounters/${encounterId}/nursing-summary`,
-            {
-              credentials: "include",
-            },
-          );
-          if (response.ok) {
-            const data = await response.json();
-            if (data.data?.nursingSummary) {
-              setNursingSummary(data.data.nursingSummary);
-            }
-          }
-        } catch (error) {
-          console.error(
-            "❌ [NursingTemplate] Error loading existing summary:",
-            error,
-          );
-        }
-      };
-
-      if (encounterId) {
-        loadExistingSummary();
-      }
-    }, [encounterId]);
-
-    // Auto-generate summary when template is sufficiently complete
-    useEffect(() => {
-      const completedFields = Object.values(templateData).filter((v) =>
-        v.trim(),
+      const completedFields = Object.values(templateData).filter(
+        (value) => value.trim().length > 0,
       ).length;
+
       const shouldAutoGenerate =
         completedFields >= 5 && !nursingSummary && !isGeneratingSummary;
 
@@ -406,117 +360,21 @@ export const NursingTemplateAssessment = forwardRef<
       }
     };
 
-    const startTemplateAssessment = async () => {
+    const startTemplateAssessment = () => {
       if (isActive) return;
 
-      console.log(
-        `🏥 [NursingTemplate] Starting template assessment for session ${sessionIdRef.current}`,
-      );
+      console.log("🏥 [NursingTemplate] Starting template assessment");
+      setIsActive(true);
 
-      try {
-        });
-
-        const ws = new WebSocket(
-          `wss://api.openai.com/v1/realtime?${params.toString()}`,
-          protocols,
-        );
-
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-          console.log("🌐 [NursingTemplate] Connected to OpenAI Realtime API");
-          setIsConnected(true);
-          setIsActive(true);
-
-          // Configure session for nursing template extraction like working implementation
-          const sessionUpdateMessage = {
-            type: "session.update",
-            session: {
-              instructions: NURSING_ASSESSMENT_INSTRUCTIONS,
-              modalities: ["text"],
-              input_audio_format: "pcm16",
-              input_audio_transcription: {
-                model: "whisper-1",
-                language: "en",
-              },
-              turn_detection: {
-                type: "server_vad",
-                threshold: 0.3,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 200,
-                create_response: true,
-              },
-            },
-          };
-
-          ws.send(JSON.stringify(sessionUpdateMessage));
-
-          toast({
-            title: "Template Assessment Started",
-            description:
-              "Nursing template will update automatically during conversation",
-          });
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            handleRealtimeMessage(message);
-          } catch (error) {
-            console.error(
-              "❌ [NursingTemplate] Error parsing WebSocket message:",
-              error,
-            );
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error("❌ [NursingTemplate] WebSocket error:", error);
-          setIsConnected(false);
-          toast({
-            variant: "destructive",
-            title: "Connection Error",
-            description: "Failed to connect to template assessment service",
-          });
-        };
-
-        ws.onclose = (event) => {
-          console.log(
-            "🔌 [NursingTemplate] WebSocket closed:",
-            event.code,
-            event.reason,
-          );
-          setIsActive(false);
-          setIsConnected(false);
-        };
-      } catch (error) {
-        console.error(
-          "❌ [NursingTemplate] Error starting template assessment:",
-          error,
-        );
-        setIsActive(false);
-        setIsConnected(false);
-
-        toast({
-          variant: "destructive",
-          title: "Assessment Failed",
-          description: "Failed to start template assessment",
-        });
-      }
+      toast({
+        title: "Template Assessment Started",
+        description: "Nursing template will update automatically during conversation",
+      });
     };
 
     const stopTemplateAssessment = () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-
       setIsActive(false);
-      setIsConnected(false);
-
-      console.log(
-        `🛑 [NursingTemplate] Template assessment stopped for session ${sessionIdRef.current}`,
-      );
+      console.log("🛑 [NursingTemplate] Template assessment stopped");
 
       toast({
         title: "Template Assessment Stopped",
@@ -525,241 +383,35 @@ export const NursingTemplateAssessment = forwardRef<
     };
 
     const processTranscriptionUpdate = (newTranscription: string) => {
-      if (!wsRef.current || !isConnected) return;
-
-      console.log(`📝 [NursingTemplate] Processing transcription update`);
-
-      // Send transcription to OpenAI for field extraction using correct format
-      const contextMessage = {
-        type: "conversation.item.create",
-        item: {
-          type: "message",
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: `Extract nursing assessment information from this conversation transcript. Only include fields with new information:\n\n${newTranscription}`,
-            },
-          ],
-        },
-      };
-
-      wsRef.current.send(JSON.stringify(contextMessage));
-
-      const responseRequest = {
-        type: "response.create",
-        response: {
-          modalities: ["text"],
-          instructions: NURSING_ASSESSMENT_INSTRUCTIONS,
-        },
-      };
-
-      wsRef.current.send(JSON.stringify(responseRequest));
+      console.log("📝 [NursingTemplate] Processing transcription update");
+      // Use REST API to generate template updates
+      generateNursingTemplate(false);
     };
 
-    const handleRealtimeMessage = (message: any) => {
-      console.log(`📨 [NursingTemplate] OpenAI message type: ${message.type}`);
-
-      switch (message.type) {
-        case "session.created":
-          console.log("✅ [NursingTemplate] Session created successfully");
-          break;
-
-        case "session.updated":
-          console.log("✅ [NursingTemplate] Session updated successfully");
-          break;
-
-        case "response.audio_transcript.delta":
-        case "conversation.item.input_audio_transcription.delta":
-          // Handle transcription deltas - not needed for template extraction
-          break;
-
-        case "response.text.delta":
-          // Accumulate text deltas for complete response
-          const deltaContent = message.delta || message.text || "";
-          if (deltaContent) {
-            console.log(
-              "📝 [NursingTemplate] Text delta:",
-              deltaContent.substring(0, 50),
-            );
-          }
-          break;
-
-        case "response.text.done":
-          try {
-            const content = message.text || "";
-            console.log(
-              "📝 [NursingTemplate] Complete response received:",
-              content,
-            );
-
-            // Try to parse as JSON and update template fields
-            if (content.trim()) {
-              // Clean up the response to extract JSON
-              const jsonMatch = content.match(/\{[^}]*\}/);
-              if (jsonMatch) {
-                const updates = JSON.parse(jsonMatch[0]);
-                console.log("📝 [NursingTemplate] Parsed updates:", updates);
-                updateTemplateFields(updates);
-              } else {
-                console.log("📝 [NursingTemplate] No JSON found in response");
-              }
-            }
-          } catch (error) {
-            console.error(
-              "❌ [NursingTemplate] Error parsing template updates:",
-              error,
-            );
-          }
-          break;
-
-        case "conversation.item.input_audio_transcription.completed":
-          const finalTranscript = message.transcript || "";
-          console.log(
-            "✅ [NursingTemplate] Transcription completed:",
-            finalTranscript,
-          );
-
-          // Accumulate the transcript for full conversation context
-          if (finalTranscript.trim()) {
-            setAccumulatedTranscript(prev => {
-              const newAccumulated = prev ? `${prev}\n\n${finalTranscript}` : finalTranscript;
-              console.log("📝 [NursingTemplate] Accumulated transcript length:", newAccumulated.length);
-              
-              // Process the accumulated transcription for template extraction
-              if (wsRef.current) {
-                processTranscriptionForTemplate(newAccumulated);
-              }
-              
-              return newAccumulated;
-            });
-          }
-          break;
-
-        case "error":
-          console.error("❌ [NursingTemplate] OpenAI error:", message);
-          toast({
-            variant: "destructive",
-            title: "AI Processing Error",
-            description: message.error?.message || "Unknown error occurred",
-          });
-          break;
-
-        default:
-          console.log(
-            `📊 [NursingTemplate] Unhandled message type: ${message.type}`,
-          );
-      }
-    };
-
-    const processTranscriptionForTemplate = (transcriptText: string) => {
-      if (!wsRef.current || !isConnected) return;
-
-      console.log(
-        `🔍 [NursingTemplate] Processing transcript for template extraction`,
-      );
-
-      // Create a conversation item with the transcription and current template state
-      const currentTemplateState = Object.entries(templateData)
-        .filter(([_, value]) => value.trim())
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n\n');
-
-      const contextMessage = {
-        type: "conversation.item.create",
-        item: {
-          type: "message",
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: `You are updating a nursing assessment template. Your job is to MERGE new information with existing content, never replace it.
-
-EXISTING TEMPLATE DATA:
-${currentTemplateState || 'No existing data'}
-
-FULL CONVERSATION SO FAR:
-${transcriptText}
-
-CRITICAL INSTRUCTIONS:
-1. If a field already has content, ADD new information to it (don't replace)
-2. For bullet-point fields (pmh, meds, allergies, famHx, soHx, psh, hpi, ros, vitals):
-   - Keep ALL existing bullet points
-   - Add new bullet points for any new information mentioned
-   - Example: If pmh has "- HTN\n- DM2" and patient mentions COPD, return {"pmh": "- HTN\n- DM2\n- COPD"}
-3. For narrative fields (cc): Update only if new information provides more detail
-4. Only return fields that have NEW information to add
-5. Never remove or replace existing information
-
-Return only JSON with fields that need updates.`,
-            },
-          ],
-        },
-      };
-
-      wsRef.current.send(JSON.stringify(contextMessage));
-
-      // Request a response
-      const responseRequest = {
-        type: "response.create",
-        response: {
-          modalities: ["text"],
-          instructions: NURSING_ASSESSMENT_INSTRUCTIONS,
-        },
-      };
-
-      wsRef.current.send(JSON.stringify(responseRequest));
-    };
-
-    // Helper function to format text with proper line breaks for display
-    const formatFieldForDisplay = (text: string) => {
-      if (!text) return null;
-      return text
-        .split('\n')
-        .map((line, index) => (
-          <div key={index} className={line.trim() ? '' : 'h-2'}>
-            {line.trim() || '\u00A0'}
-          </div>
-        ));
-    };
-
-
-
+    // Update template fields intelligently with new data
     const updateTemplateFields = (updates: Partial<NursingTemplateData>) => {
+      console.log("📝 [NursingTemplate] Updating template fields:", updates);
+
       setTemplateData((prev) => {
-        const newData = { ...prev, ...updates };
-        onTemplateUpdate(newData);
-        return newData;
+        const updatedData = { ...prev, ...updates };
+        onTemplateUpdate?.(updatedData);
+        return updatedData;
       });
 
-      // Show which fields were updated
-      const updatedFields = Object.keys(updates);
-      if (updatedFields.length > 0) {
-        toast({
-          title: "Template Updated",
-          description: `Updated: ${updatedFields.join(", ")}`,
-        });
-      }
-    };
-
-    const handleFieldEdit = (
-      field: keyof NursingTemplateData,
-      value: string,
-    ) => {
-      setTemplateData((prev) => {
-        const newData = { ...prev, [field]: value };
-        onTemplateUpdate(newData);
-        return newData;
+      toast({
+        title: "Template Updated",
+        description: "Nursing assessment fields have been updated",
       });
     };
 
-    const saveTemplate = async () => {
+    const saveTemplateData = async () => {
       try {
         const response = await fetch(`/api/encounters/${encounterId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
-            nurseAssessment: JSON.stringify(templateData, null, 2),
+            nurseAssessment: JSON.stringify(templateData),
           }),
         });
 
@@ -770,7 +422,6 @@ Return only JSON with fields that need updates.`,
           description: "Nursing assessment template saved successfully",
         });
       } catch (error) {
-        console.error("❌ [NursingTemplate] Error saving template:", error);
         toast({
           variant: "destructive",
           title: "Save Failed",
@@ -780,9 +431,8 @@ Return only JSON with fields that need updates.`,
     };
 
     const generateSummary = async () => {
-      setIsGeneratingSummary(true);
       try {
-        console.log("🏥 [NursingTemplate] Generating nursing summary...");
+        setIsGeneratingSummary(true);
 
         const response = await fetch(
           `/api/encounters/${encounterId}/generate-nursing-summary`,
@@ -837,17 +487,14 @@ Return only JSON with fields that need updates.`,
           },
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to save nursing summary");
-        }
+        if (!response.ok) throw new Error("Failed to save summary");
 
         toast({
           title: "Summary Saved",
-          description: "Nursing summary updated successfully",
+          description: "Nursing summary saved successfully",
         });
         setIsEditingSummary(false);
       } catch (error) {
-        console.error("❌ [NursingTemplate] Error saving summary:", error);
         toast({
           variant: "destructive",
           title: "Save Failed",
@@ -856,122 +503,122 @@ Return only JSON with fields that need updates.`,
       }
     };
 
-    const fieldLabels = {
-      cc: "Chief Complaint",
-      hpi: "History of Present Illness",
-      pmh: "Past Medical History",
-      meds: "Medications",
-      allergies: "Allergies",
-      famHx: "Family History",
-      soHx: "Social History",
-      psh: "Past Surgical History",
-      ros: "Review of Systems",
-      vitals: "Vital Signs",
+    // Template field definitions
+    const templateFields = [
+      { key: "cc", label: "Chief Complaint", placeholder: "Primary reason for visit" },
+      { key: "hpi", label: "History of Present Illness", placeholder: "Detailed symptom description", multiline: true },
+      { key: "pmh", label: "Past Medical History", placeholder: "Previous medical conditions", multiline: true },
+      { key: "meds", label: "Current Medications", placeholder: "List all current medications", multiline: true },
+      { key: "allergies", label: "Known Allergies", placeholder: "Drug and environmental allergies" },
+      { key: "famHx", label: "Family History", placeholder: "Relevant family medical history", multiline: true },
+      { key: "soHx", label: "Social History", placeholder: "Tobacco, alcohol, exercise habits", multiline: true },
+      { key: "psh", label: "Past Surgical History", placeholder: "Previous surgeries and dates", multiline: true },
+      { key: "ros", label: "Review of Systems", placeholder: "System-by-system review", multiline: true },
+      { key: "vitals", label: "Current Vital Signs", placeholder: "BP, HR, Temp, RR, O2 Sat" },
+    ];
+
+    const updateField = (key: string, value: string) => {
+      setTemplateData((prev) => {
+        const updated = { ...prev, [key]: value };
+        onTemplateUpdate?.(updated);
+        return updated;
+      });
     };
 
     return (
-      <Card className="p-6 border-blue-200 bg-blue-50">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900">
-              Nursing Assessment Template
-            </h3>
-          </div>
-          <div className="flex items-center space-x-2">
-            {isConnected && (
-              <Badge
-                variant="outline"
-                className="text-green-600 border-green-600"
-              >
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
-                Live
-              </Badge>
-            )}
-            <Button
-              onClick={
-                isActive ? stopTemplateAssessment : startTemplateAssessment
-              }
-              size="sm"
-              variant={isActive ? "destructive" : "default"}
-              className="h-8"
-            >
-              {isActive ? (
-                <>
-                  <Square className="h-3 w-3 mr-1" />
-                  Stop
-                </>
-              ) : (
-                <>
-                  <Play className="h-3 w-3 mr-1" />
-                  Start
-                </>
+      <Card className="border-blue-200 bg-blue-50">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-blue-900">
+                Nursing Assessment Template
+              </h3>
+              {isActive && (
+                <Badge variant="default" className="bg-green-500">
+                  <div className="w-2 h-2 bg-white rounded-full mr-1 animate-pulse"></div>
+                  Active
+                </Badge>
               )}
-            </Button>
-            <Button
-              onClick={saveTemplate}
-              size="sm"
-              variant="outline"
-              className="h-8"
-            >
-              <Save className="h-3 w-3 mr-1" />
-              Save
-            </Button>
+              {isProcessing && (
+                <Badge variant="outline" className="text-blue-600 border-blue-600">
+                  <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                  Processing
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              {!isActive ? (
+                <Button onClick={startTemplateAssessment} size="sm" variant="default">
+                  <Play className="h-3 w-3 mr-1" />
+                  Start Assessment
+                </Button>
+              ) : (
+                <Button onClick={stopTemplateAssessment} size="sm" variant="outline">
+                  <Square className="h-3 w-3 mr-1" />
+                  Stop Assessment
+                </Button>
+              )}
+              <Button onClick={() => generateNursingTemplate(true)} size="sm" variant="outline" disabled={isProcessing}>
+                <RefreshCw className={`h-3 w-3 mr-1 ${isProcessing ? 'animate-spin' : ''}`} />
+                Generate Now
+              </Button>
+              <Button onClick={saveTemplateData} size="sm" variant="outline">
+                <Save className="h-3 w-3 mr-1" />
+                Save
+              </Button>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-4">
-          <div className="text-xs text-blue-600 p-2 bg-blue-100 rounded">
-            Template fields will be automatically filled as information is
-            discussed during the patient encounter.
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {Object.entries(fieldLabels).map(([field, label]) => (
-              <div key={field} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700">
-                    {label}:
-                  </label>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={() =>
-                      setEditingField(editingField === field ? null : field)
-                    }
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                </div>
-
-                {editingField === field ? (
-                  <Textarea
-                    value={templateData[field as keyof NursingTemplateData]}
-                    onChange={(e) =>
-                      handleFieldEdit(
-                        field as keyof NursingTemplateData,
-                        e.target.value,
-                      )
-                    }
-                    onBlur={() => setEditingField(null)}
-                    className="min-h-[60px] text-sm"
-                    placeholder={`Enter ${label.toLowerCase()}...`}
-                    autoFocus
-                  />
-                ) : (
-                  <div
-                    className="min-h-[60px] p-3 bg-white border rounded-md text-sm cursor-pointer hover:bg-gray-50"
-                    onClick={() => setEditingField(field)}
-                  >
-                    {templateData[field as keyof NursingTemplateData] ? (
-                      <div className="whitespace-pre-wrap">
-                        {formatFieldForDisplay(templateData[field as keyof NursingTemplateData])}
-                      </div>
+          <div className="space-y-4">
+            {templateFields.map(({ key, label, placeholder, multiline }) => (
+              <div key={key} className="space-y-2">
+                <label className="text-sm font-medium text-blue-900">
+                  {label}
+                </label>
+                {editingField === key ? (
+                  <div className="space-y-2">
+                    {multiline ? (
+                      <Textarea
+                        value={templateData[key as keyof NursingTemplateData]}
+                        onChange={(e) => updateField(key, e.target.value)}
+                        className="min-h-[100px] text-sm"
+                        placeholder={placeholder}
+                      />
                     ) : (
-                      <span className="text-gray-400 italic">
-                        {`${label} will be filled automatically...`}
-                      </span>
+                      <Input
+                        value={templateData[key as keyof NursingTemplateData]}
+                        onChange={(e) => updateField(key, e.target.value)}
+                        className="text-sm"
+                        placeholder={placeholder}
+                      />
+                    )}
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        onClick={() => setEditingField(null)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Done
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative group">
+                    <div
+                      className="p-3 bg-white border rounded-md cursor-pointer hover:border-blue-300 transition-colors min-h-[40px] text-sm"
+                      onClick={() => setEditingField(key)}
+                    >
+                      {formatFieldForDisplay(templateData[key as keyof NursingTemplateData]) || (
+                        <span className="text-gray-400 italic">{placeholder}</span>
+                      )}
+                    </div>
+                    {templateData[key as keyof NursingTemplateData] && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1059,30 +706,14 @@ Return only JSON with fields that need updates.`,
                 )}
               </div>
             ) : (
-              <div className="p-4 bg-gray-50 border rounded-md text-center">
-                <p className="text-sm text-gray-600">
-                  Complete template fields and click "Generate Summary" to
-                  create a structured nursing assessment summary
-                </p>
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <div className="text-sm">No nursing summary generated yet</div>
+                <div className="text-xs mt-1">
+                  Complete template fields to automatically generate summary
+                </div>
               </div>
             )}
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>
-              Status:{" "}
-              {isActive
-                ? isConnected
-                  ? "Active"
-                  : "Connecting..."
-                : "Inactive"}
-            </span>
-            <span>
-              {Object.values(templateData).filter((v) => v.trim()).length}/10
-              fields completed
-            </span>
           </div>
         </div>
       </Card>
