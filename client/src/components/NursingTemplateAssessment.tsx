@@ -301,6 +301,63 @@ export const NursingTemplateAssessment = forwardRef<
       };
     }, []);
 
+    // Auto-populate vitals from encounter data
+    const loadEncounterVitals = async () => {
+      try {
+        console.log("🩺 [NursingTemplate] Loading encounter vitals for auto-population");
+        
+        const response = await fetch(`/api/vitals/encounter/${encounterId}`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const vitalsEntries = result.success ? result.data : result;
+          
+          if (vitalsEntries && vitalsEntries.length > 0) {
+            // Get most recent vitals entry
+            const latestVitals = vitalsEntries[0];
+            
+            // Format vitals for nursing template display
+            const vitalsText = formatVitalsForTemplate(latestVitals);
+            
+            if (vitalsText && !templateData.vitals.trim()) {
+              console.log("✅ [NursingTemplate] Auto-populating vitals:", vitalsText);
+              setTemplateData(prev => ({ ...prev, vitals: vitalsText }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error("❌ [NursingTemplate] Error loading encounter vitals:", error);
+      }
+    };
+
+    // Format vitals data for template display
+    const formatVitalsForTemplate = (vitals: any): string => {
+      const parts = [];
+      
+      if (vitals.systolicBp && vitals.diastolicBp) {
+        parts.push(`BP: ${vitals.systolicBp}/${vitals.diastolicBp}`);
+      }
+      if (vitals.heartRate) {
+        parts.push(`HR: ${vitals.heartRate}`);
+      }
+      if (vitals.temperature) {
+        parts.push(`T: ${vitals.temperature}°F`);
+      }
+      if (vitals.respiratoryRate) {
+        parts.push(`RR: ${vitals.respiratoryRate}`);
+      }
+      if (vitals.oxygenSaturation) {
+        parts.push(`O2 Sat: ${vitals.oxygenSaturation}%`);
+      }
+      if (vitals.painScale !== null && vitals.painScale !== undefined) {
+        parts.push(`Pain: ${vitals.painScale}/10`);
+      }
+      
+      return parts.length > 0 ? parts.join(' | ') : '';
+    };
+
     // Load existing nursing summary when component mounts or encounter changes
     useEffect(() => {
       const loadExistingNursingSummary = async () => {
@@ -332,6 +389,7 @@ export const NursingTemplateAssessment = forwardRef<
 
       if (encounterId) {
         loadExistingNursingSummary();
+        loadEncounterVitals(); // Also load vitals for auto-population
       }
     }, [encounterId, summaryEditor]);
 
@@ -629,10 +687,74 @@ export const NursingTemplateAssessment = forwardRef<
       { key: "vitals", label: "Current Vital Signs", placeholder: "BP, HR, Temp, RR, O2 Sat" },
     ];
 
+    // Smart vitals parsing and auto-save to database
+    const parseAndSaveVitals = async (vitalsText: string) => {
+      if (!vitalsText.trim() || vitalsText.length < 5) return;
+
+      try {
+        console.log("🩺 [NursingTemplate] Parsing vitals text:", vitalsText);
+        
+        const response = await fetch('/api/vitals/parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            vitalsText,
+            patientId: parseInt(patientId),
+            encounterId: parseInt(encounterId),
+            patientContext: { age: 0 } // Add patient context if available
+          })
+        });
+
+        if (response.ok) {
+          const parseResult = await response.json();
+          
+          if (parseResult.success && parseResult.data) {
+            console.log("✅ [NursingTemplate] Vitals parsed successfully:", parseResult.data);
+            
+            // Save parsed vitals to database
+            const vitalsEntry = {
+              patientId: parseInt(patientId),
+              encounterId: parseInt(encounterId),
+              recordedBy: "Nursing Assessment",
+              recordedAt: new Date().toISOString(),
+              parsedFromText: true,
+              originalText: vitalsText,
+              ...parseResult.data
+            };
+
+            const saveResponse = await fetch('/api/vitals/entries', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(vitalsEntry)
+            });
+
+            if (saveResponse.ok) {
+              console.log("✅ [NursingTemplate] Vitals saved to database");
+              toast({
+                title: "Vitals Saved",
+                description: "Vital signs automatically saved to patient chart"
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("❌ [NursingTemplate] Error parsing/saving vitals:", error);
+      }
+    };
+
     const updateField = (key: string, value: string) => {
       setTemplateData((prev) => {
         const updated = { ...prev, [key]: value };
         onTemplateUpdate?.(updated);
+        
+        // Auto-parse and save vitals when vitals field is updated
+        if (key === 'vitals' && value.trim()) {
+          // Debounce vitals parsing to avoid excessive API calls
+          setTimeout(() => parseAndSaveVitals(value), 2000);
+        }
+        
         return updated;
       });
     };
