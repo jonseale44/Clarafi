@@ -6,7 +6,6 @@ import { APIResponseHandler } from "./api-response-handler.js";
 import {
   insertPatientSchema,
   insertEncounterSchema,
-  insertVitalsSchema,
   insertOrderSchema,
 } from "@shared/schema";
 // Legacy import removed - using enhanced realtime service only

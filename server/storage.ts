@@ -4,7 +4,7 @@ import {
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems,
   type User, type InsertUser, type Patient, type InsertPatient,
-  type Encounter, type InsertEncounter, type Vitals, type InsertVitals,
+  type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
   type Medication, type InsertMedication
 } from "@shared/schema";
@@ -41,7 +41,7 @@ export interface IStorage {
   getPatientVitals(patientId: number): Promise<Vitals[]>;
   getLatestVitals(patientId: number): Promise<Vitals | undefined>;
   getEncounterVitals(encounterId: number): Promise<Vitals[]>;
-  createVitals(vitals: InsertVitals): Promise<Vitals>;
+  createVitals(vitals: Partial<Vitals>): Promise<Vitals>;
   updateVitals(id: number, updates: Partial<Vitals>): Promise<Vitals>;
   deleteVitals(id: number): Promise<void>;
   
@@ -307,7 +307,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async createVitals(insertVitals: InsertVitals): Promise<Vitals> {
+  async createVitals(insertVitals: Partial<Vitals>): Promise<Vitals> {
     const [vital] = await db
       .insert(vitals)
       .values(insertVitals)

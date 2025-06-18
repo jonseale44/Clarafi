@@ -943,22 +943,7 @@ export const insertEncounterSchema = createInsertSchema(encounters).pick({
   location: true,
 });
 
-export const insertVitalsSchema = createInsertSchema(vitals).pick({
-  patientId: true,
-  encounterId: true,
-  measuredAt: true,
-  systolicBp: true,
-  diastolicBp: true,
-  heartRate: true,
-  temperature: true,
-  weight: true,
-  height: true,
-  bmi: true,
-  oxygenSaturation: true,
-  respiratoryRate: true,
-  painScale: true,
-  recordedBy: true,
-});
+
 
 export const insertOrderSchema = createInsertSchema(orders).pick({
   patientId: true,
@@ -1069,7 +1054,7 @@ export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type Patient = typeof patients.$inferSelect;
 export type InsertEncounter = z.infer<typeof insertEncounterSchema>;
 export type Encounter = typeof encounters.$inferSelect;
-export type InsertVitals = z.infer<typeof insertVitalsSchema>;
+
 export type Vitals = typeof vitals.$inferSelect;
 export type InsertDiagnosis = z.infer<typeof insertDiagnosisSchema>;
 export type Diagnosis = typeof diagnoses.$inferSelect;
