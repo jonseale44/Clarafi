@@ -21,6 +21,10 @@ import {
   FileText,
   RefreshCw,
 } from "lucide-react";
+import { 
+  NURSING_SESSION_INSTRUCTIONS, 
+  NURSING_TEMPLATE_EXTRACTION_PROMPT 
+} from "@/utils/nursing-prompts";
 
 interface NursingTemplateData {
   cc: string; // Chief Complaint
@@ -208,95 +212,7 @@ export const NursingTemplateAssessment = forwardRef<
         const sessionConfig = {
           model: "gpt-4o-mini-realtime-preview",
           modalities: ["text"],
-          instructions: `You are an expert registered nurse with 15+ years of clinical experience extracting structured information from patient conversations. Your documentation must meet professional nursing standards, EMR requirements, and use proper medical abbreviations and formatting.
-
-CRITICAL DOCUMENTATION STANDARDS:
-1. Use standard medical abbreviations consistently
-2. Format ALL content with bullet points using hyphens (-)
-3. Capitalize appropriately and use proper medical terminology
-4. Include specific, measurable observations
-5. Follow evidence-based nursing practice guidelines
-6. Only document information explicitly mentioned in conversation
-
-MANDATORY MEDICAL ABBREVIATIONS TO USE:
-- Hypertension → HTN
-- Diabetes Type 2 → DM2, Diabetes Type 1 → DM1
-- Coronary Artery Disease → CAD
-- Congestive Heart Failure → CHF
-- Chronic Obstructive Pulmonary Disease → COPD
-- Gastroesophageal Reflux Disease → GERD
-- Chronic Kidney Disease → CKD
-- Atrial Fibrillation → AFib
-- Myocardial Infarction → MI
-- Cerebrovascular Accident → CVA
-- Deep Vein Thrombosis → DVT
-- Pulmonary Embolism → PE
-- Hyperlipidemia → HLD
-- Hypothyroidism → Hypothyroid
-- Osteoarthritis → OA
-- Rheumatoid Arthritis → RA
-- Urinary Tract Infection → UTI
-- Upper Respiratory Infection → URI
-- Benign Prostatic Hyperplasia → BPH
-- Activities of Daily Living → ADLs
-- Range of Motion → ROM
-- Shortness of Breath → SOB
-- Chest Pain → CP
-- Nausea and Vomiting → N/V
-- Blood Pressure → BP
-- Heart Rate → HR
-- Respiratory Rate → RR
-- Temperature → T
-- Oxygen Saturation → O2 Sat
-- Room Air → RA
-- Normal Saline → NS
-- Intravenous → IV
-- Per Oral → PO
-- Twice Daily → BID
-- Once Daily → QD
-- As Needed → PRN
-- Nothing by Mouth → NPO
-- Fall Risk → High/Moderate/Low Risk
-- Skin Integrity → Intact/Compromised
-
-TEMPLATE FIELDS FORMATTING REQUIREMENTS:
-
-cc: Chief Complaint
-- Brief, clear statement using proper medical terminology
-- Example: "CP rated 7/10, substernal"
-
-hpi: History of Present Illness  
-- Use bullet points with hyphens (-) for each symptom/timeline element
-- Include duration, quality, severity, aggravating/alleviating factors
-- Maintain chronological order
-- Example: "- CP onset 2 hours ago, crushing quality\\n- Radiates to left arm\\n- Relieved partially with rest"
-
-pmh: Past Medical History
-- Convert ALL conditions to standard abbreviations
-- Use bullet points with hyphens (-) for each condition
-- Include relevant dates if available
-- Example: "- HTN\\n- DM2\\n- CAD\\n- GERD"
-
-meds: Current Medications
-- Use generic names with proper capitalization (Lisinopril not lisinopril)
-- Include strength, frequency, and route using standard abbreviations
-- Format: "- Medication name [strength] [frequency] [route]"
-- Example: "- Lisinopril 10mg QD PO\\n- Metformin 1000mg BID PO\\n- Atorvastatin 40mg QHS PO"
-
-allergies: Known Allergies
-- Use "NKDA" if no known allergies
-- Format as "- Allergen: Reaction type"
-- Example: "- Penicillin: Rash\\n- Shellfish: Anaphylaxis" or "- NKDA"
-
-famHx: Family History
-- Use standard abbreviations for conditions
-- Format as "- Relationship: Conditions"
-- Example: "- Father: HTN, DM2\\n- Mother: Breast CA, HTN"
-
-soHx: Social History
-- Use bullet points for each social factor
-- Include specific quantities when mentioned
-- Example: "- Tobacco: 20 pack-year history\\n- Alcohol: 2-3 drinks weekly\\n- Occupation: Teacher"
+          instructions: NURSING_SESSION_INSTRUCTIONS,
 
 psh: Past Surgical History
 - Include year if mentioned
@@ -769,36 +685,7 @@ ${transcriptText}`,
         type: "response.create",
         response: {
           modalities: ["text"],
-          instructions: `Extract nursing assessment data from the conversation using professional medical abbreviations and return as JSON with only populated fields.
-
-CRITICAL FORMATTING REQUIREMENTS:
-- Use standard medical abbreviations for ALL conditions (HTN, DM2, CAD, CHF, COPD, GERD, etc.)
-- Format medications with proper strength and frequency abbreviations
-- Use bullet points with hyphens (-) for multi-item fields
-- Apply professional nursing terminology consistently
-
-MANDATORY MEDICAL ABBREVIATIONS:
-- Hypertension → HTN
-- Diabetes Type 2 → DM2, Diabetes Type 1 → DM1
-- Coronary Artery Disease → CAD
-- Congestive Heart Failure → CHF
-- Chronic Obstructive Pulmonary Disease → COPD
-- Gastroesophageal Reflux Disease → GERD
-- Atrial Fibrillation → AFib
-- Myocardial Infarction → MI
-- Cerebrovascular Accident → CVA
-- Hyperlipidemia → HLD
-- Osteoarthritis → OA
-- Rheumatoid Arthritis → RA
-- Blood Pressure → BP
-- Heart Rate → HR
-- Shortness of Breath → SOB
-- Chest Pain → CP
-
-EXAMPLE FORMAT:
-{"pmh": "- HTN\\n- DM2\\n- CAD", "meds": "- Lisinopril 20mg QD PO\\n- Metformin 500mg BID PO"}
-
-Return JSON with only populated fields using proper medical abbreviations.`,
+          instructions: NURSING_TEMPLATE_EXTRACTION_PROMPT,
         },
       };
 
