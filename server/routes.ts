@@ -25,7 +25,14 @@ import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
 import { db } from "./db.js";
-import { patients, diagnoses, medications, allergies, vitals, encounters as encountersTable } from "../shared/schema.js";
+import {
+  patients,
+  diagnoses,
+  medications,
+  allergies,
+  vitals,
+  encounters as encountersTable,
+} from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
 
 const openai = new OpenAI({
@@ -35,21 +42,40 @@ const openai = new OpenAI({
 // Direct SOAP note generation function (replaces realtime-soap-streaming.ts)
 // Nursing Template Generation function matching SOAP pattern
 async function generateNursingTemplateDirect(
-  patientId: number, 
-  encounterId: string, 
+  patientId: number,
+  encounterId: string,
   transcription: string,
-  currentTemplateData: any = {}
+  currentTemplateData: any = {},
 ): Promise<any> {
-  console.log(`🏥 [NursingTemplate] Generating template for patient ${patientId}`);
-  
+  console.log(
+    `🏥 [NursingTemplate] Generating template for patient ${patientId}`,
+  );
+
   // Get patient context (same as SOAP)
-  const [patient, diagnosisList, meds, allergiesList, vitalsList, recentEncounters] = await Promise.all([
+  const [
+    patient,
+    diagnosisList,
+    meds,
+    allergiesList,
+    vitalsList,
+    recentEncounters,
+  ] = await Promise.all([
     db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
     db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
     db.select().from(medications).where(eq(medications.patientId, patientId)),
     db.select().from(allergies).where(eq(allergies.patientId, patientId)),
-    db.select().from(vitals).where(eq(vitals.patientId, patientId)).orderBy(desc(vitals.createdAt)).limit(5),
-    db.select().from(encountersTable).where(eq(encountersTable.patientId, patientId)).orderBy(desc(encountersTable.createdAt)).limit(3),
+    db
+      .select()
+      .from(vitals)
+      .where(eq(vitals.patientId, patientId))
+      .orderBy(desc(vitals.createdAt))
+      .limit(5),
+    db
+      .select()
+      .from(encountersTable)
+      .where(eq(encountersTable.patientId, patientId))
+      .orderBy(desc(encountersTable.createdAt))
+      .limit(3),
   ]);
 
   const patientData = patient[0];
@@ -57,24 +83,42 @@ async function generateNursingTemplateDirect(
     throw new Error(`Patient ${patientId} not found`);
   }
 
-  const age = Math.floor((Date.now() - new Date(patientData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-  
+  const age = Math.floor(
+    (Date.now() - new Date(patientData.dateOfBirth).getTime()) /
+      (365.25 * 24 * 60 * 60 * 1000),
+  );
+
   // Build medical context
-  const currentDiagnoses = diagnosisList.length > 0 
-    ? diagnosisList.map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`).join("\n")
-    : "- No active diagnoses on file";
+  const currentDiagnoses =
+    diagnosisList.length > 0
+      ? diagnosisList
+          .map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`)
+          .join("\n")
+      : "- No active diagnoses on file";
 
-  const currentMedications = meds.length > 0
-    ? meds.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
-    : "- No current medications on file";
+  const currentMedications =
+    meds.length > 0
+      ? meds
+          .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
+          .join("\n")
+      : "- No current medications on file";
 
-  const knownAllergies = allergiesList.length > 0
-    ? allergiesList.map((a: any) => `- ${a.allergen}: ${a.reaction}`).join("\n")
-    : "- NKDA (No Known Drug Allergies)";
+  const knownAllergies =
+    allergiesList.length > 0
+      ? allergiesList
+          .map((a: any) => `- ${a.allergen}: ${a.reaction}`)
+          .join("\n")
+      : "- NKDA (No Known Drug Allergies)";
 
-  const recentVitals = vitalsList.length > 0
-    ? vitalsList.map((v: any) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
-    : "- No recent vitals on file";
+  const recentVitals =
+    vitalsList.length > 0
+      ? vitalsList
+          .map(
+            (v: any) =>
+              `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
+          )
+          .join("\n")
+      : "- No recent vitals on file";
 
   // Build comprehensive medical context
   const medicalContext = `
@@ -224,7 +268,7 @@ Example output format:
 
   // Generate nursing template using same model as SOAP
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1",
+    model: "gpt-4.1-nano",
     messages: [{ role: "user", content: nursingPrompt }],
     temperature: 0.3,
     max_tokens: 2000,
@@ -236,47 +280,88 @@ Example output format:
   }
 
   console.log("🏥 [NursingTemplateDirect] Raw OpenAI response:", response);
-  console.log("🏥 [NursingTemplateDirect] Response length:", response?.length || 0);
+  console.log(
+    "🏥 [NursingTemplateDirect] Response length:",
+    response?.length || 0,
+  );
 
   // Parse JSON response
   let templateData;
   try {
     // Clean response - sometimes OpenAI adds markdown formatting
     let cleanResponse = response.trim();
-    if (cleanResponse.startsWith('```json')) {
-      cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    if (cleanResponse.startsWith("```json")) {
+      cleanResponse = cleanResponse
+        .replace(/^```json\s*/, "")
+        .replace(/\s*```$/, "");
     }
-    if (cleanResponse.startsWith('```')) {
-      cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    if (cleanResponse.startsWith("```")) {
+      cleanResponse = cleanResponse
+        .replace(/^```\s*/, "")
+        .replace(/\s*```$/, "");
     }
-    
-    console.log("🏥 [NursingTemplateDirect] Cleaned response for parsing:", cleanResponse);
+
+    console.log(
+      "🏥 [NursingTemplateDirect] Cleaned response for parsing:",
+      cleanResponse,
+    );
     templateData = JSON.parse(cleanResponse);
-    console.log("✅ [NursingTemplateDirect] Successfully parsed JSON:", templateData);
+    console.log(
+      "✅ [NursingTemplateDirect] Successfully parsed JSON:",
+      templateData,
+    );
   } catch (parseError) {
     console.error("❌ [NursingTemplateDirect] JSON Parse Error Details:");
     console.error("❌ [NursingTemplateDirect] Parse error:", parseError);
     console.error("❌ [NursingTemplateDirect] Raw response:", response);
     console.error("❌ [NursingTemplateDirect] Response type:", typeof response);
-    throw new Error(`Invalid JSON response from OpenAI: ${(parseError as Error).message}`);
+    throw new Error(
+      `Invalid JSON response from OpenAI: ${(parseError as Error).message}`,
+    );
   }
 
-  console.log(`✅ [NursingTemplateDirect] Generated template with ${Object.keys(templateData).length} fields`);
-  console.log("🏥 [NursingTemplateDirect] Template field keys:", Object.keys(templateData));
+  console.log(
+    `✅ [NursingTemplateDirect] Generated template with ${Object.keys(templateData).length} fields`,
+  );
+  console.log(
+    "🏥 [NursingTemplateDirect] Template field keys:",
+    Object.keys(templateData),
+  );
   return templateData;
 }
 
-async function generateSOAPNoteDirect(patientId: number, encounterId: string, transcription: string): Promise<string> {
+async function generateSOAPNoteDirect(
+  patientId: number,
+  encounterId: string,
+  transcription: string,
+): Promise<string> {
   console.log(`🩺 [DirectSOAP] Generating SOAP note for patient ${patientId}`);
-  
+
   // Get patient context
-  const [patient, diagnosisList, meds, allergiesList, vitalsList, recentEncounters] = await Promise.all([
+  const [
+    patient,
+    diagnosisList,
+    meds,
+    allergiesList,
+    vitalsList,
+    recentEncounters,
+  ] = await Promise.all([
     db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
     db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
     db.select().from(medications).where(eq(medications.patientId, patientId)),
     db.select().from(allergies).where(eq(allergies.patientId, patientId)),
-    db.select().from(vitals).where(eq(vitals.patientId, patientId)).orderBy(desc(vitals.createdAt)).limit(5),
-    db.select().from(encountersTable).where(eq(encountersTable.patientId, patientId)).orderBy(desc(encountersTable.createdAt)).limit(3),
+    db
+      .select()
+      .from(vitals)
+      .where(eq(vitals.patientId, patientId))
+      .orderBy(desc(vitals.createdAt))
+      .limit(5),
+    db
+      .select()
+      .from(encountersTable)
+      .where(eq(encountersTable.patientId, patientId))
+      .orderBy(desc(encountersTable.createdAt))
+      .limit(3),
   ]);
 
   const patientData = patient[0];
@@ -284,24 +369,42 @@ async function generateSOAPNoteDirect(patientId: number, encounterId: string, tr
     throw new Error(`Patient ${patientId} not found`);
   }
 
-  const age = Math.floor((Date.now() - new Date(patientData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-  
+  const age = Math.floor(
+    (Date.now() - new Date(patientData.dateOfBirth).getTime()) /
+      (365.25 * 24 * 60 * 60 * 1000),
+  );
+
   // Build medical context
-  const currentDiagnoses = diagnosisList.length > 0 
-    ? diagnosisList.map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`).join("\n")
-    : "- No active diagnoses on file";
+  const currentDiagnoses =
+    diagnosisList.length > 0
+      ? diagnosisList
+          .map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`)
+          .join("\n")
+      : "- No active diagnoses on file";
 
-  const currentMedications = meds.length > 0
-    ? meds.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
-    : "- No current medications on file";
+  const currentMedications =
+    meds.length > 0
+      ? meds
+          .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
+          .join("\n")
+      : "- No current medications on file";
 
-  const knownAllergies = allergiesList.length > 0
-    ? allergiesList.map((a: any) => `- ${a.allergen}: ${a.reaction}`).join("\n")
-    : "- NKDA (No Known Drug Allergies)";
+  const knownAllergies =
+    allergiesList.length > 0
+      ? allergiesList
+          .map((a: any) => `- ${a.allergen}: ${a.reaction}`)
+          .join("\n")
+      : "- NKDA (No Known Drug Allergies)";
 
-  const recentVitals = vitalsList.length > 0
-    ? vitalsList.map((v: any) => `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`).join("\n")
-    : "- No recent vitals on file";
+  const recentVitals =
+    vitalsList.length > 0
+      ? vitalsList
+          .map(
+            (v: any) =>
+              `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
+          )
+          .join("\n")
+      : "- No recent vitals on file";
 
   // Build comprehensive medical context
   const medicalContext = `
@@ -453,7 +556,7 @@ IMPORTANT INSTRUCTIONS:
 
   // Generate SOAP note
   const soapCompletion = await openai.chat.completions.create({
-    model: "gpt-4.1",
+    model: "gpt-4.1-mini",
     messages: [{ role: "user", content: soapPrompt }],
     temperature: 0.7,
     max_tokens: 4000,
@@ -472,12 +575,19 @@ IMPORTANT INSTRUCTIONS:
   // Legacy automatic processing removed - now handled by frontend parallel processing
   // Physical exam learning service still runs for persistent findings analysis
   try {
-    const { PhysicalExamLearningService } = await import("./physical-exam-learning-service.js");
+    const { PhysicalExamLearningService } = await import(
+      "./physical-exam-learning-service.js"
+    );
     const physicalExamLearningService = new PhysicalExamLearningService();
-    
+
     // Run in background (don't await)
-    physicalExamLearningService.analyzeSOAPNoteForPersistentFindings(patientId, parseInt(encounterId), soapNote)
-      .catch(error => {
+    physicalExamLearningService
+      .analyzeSOAPNoteForPersistentFindings(
+        patientId,
+        parseInt(encounterId),
+        soapNote,
+      )
+      .catch((error) => {
         console.warn("Physical exam learning service failed:", error);
       });
   } catch (error) {
@@ -964,14 +1074,16 @@ export function registerRoutes(app: Express): Server {
           res.json({
             transcription: "Live processing now handled by frontend WebSocket",
             suggestions: {
-              suggestions: ["Use real-time WebSocket transcription for better performance"],
-              clinicalFlags: []
+              suggestions: [
+                "Use real-time WebSocket transcription for better performance",
+              ],
+              clinicalFlags: [],
             },
             performance: {
               responseTime: 0,
               tokenCount: 0,
-              system: "deprecated"
-            }
+              system: "deprecated",
+            },
           });
           return;
         }
@@ -999,17 +1111,19 @@ export function registerRoutes(app: Express): Server {
         res.json({
           transcription: "Voice processing now handled by frontend WebSocket",
           aiSuggestions: {
-            providerPrompts: ["Use WebSocket transcription for better performance"],
+            providerPrompts: [
+              "Use WebSocket transcription for better performance",
+            ],
             nursePrompts: ["Switch to real-time WebSocket transcription"],
             draftOrders: [],
             draftDiagnoses: [],
-            clinicalNotes: "This endpoint is deprecated"
+            clinicalNotes: "This endpoint is deprecated",
           },
           performance: {
             responseTime: 0,
             tokenCount: 0,
-            system: "deprecated"
-          }
+            system: "deprecated",
+          },
         });
       } catch (error: any) {
         res.status(500).json({ message: error.message });
@@ -1226,8 +1340,12 @@ export function registerRoutes(app: Express): Server {
         );
 
         // Always use direct SOAP generation with standardized formatting
-        const soapNote = await generateSOAPNoteDirect(patientId, encounterId.toString(), transcription);
-        
+        const soapNote = await generateSOAPNoteDirect(
+          patientId,
+          encounterId.toString(),
+          transcription,
+        );
+
         res.json({
           soapNote,
           patientId,
@@ -1286,20 +1404,22 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const { patientId, encounterId, transcription, currentTemplateData } = req.body;
+      const { patientId, encounterId, transcription, currentTemplateData } =
+        req.body;
 
       if (!patientId || !encounterId || !transcription) {
         return res.status(400).json({
-          message: "Missing required fields: patientId, encounterId, transcription",
+          message:
+            "Missing required fields: patientId, encounterId, transcription",
         });
       }
 
       // Generate nursing template using same approach as SOAP generation
       const templateData = await generateNursingTemplateDirect(
-        parseInt(patientId), 
-        encounterId, 
+        parseInt(patientId),
+        encounterId,
         transcription,
-        currentTemplateData || {}
+        currentTemplateData || {},
       );
 
       // Return the complete template data as JSON
@@ -1311,13 +1431,12 @@ export function registerRoutes(app: Express): Server {
       };
 
       res.json(responseData);
-
     } catch (error: any) {
       console.error("❌ [NursingTemplateAPI] ERROR:", error.message);
-      
+
       res.status(500).json({
         message: "Failed to generate nursing template",
-        error: error.message
+        error: error.message,
       });
     }
   });
@@ -1341,7 +1460,11 @@ export function registerRoutes(app: Express): Server {
       );
 
       // Generate SOAP note directly using OpenAI API
-      const soapNote = await generateSOAPNoteDirect(parseInt(patientId), encounterId, transcription);
+      const soapNote = await generateSOAPNoteDirect(
+        parseInt(patientId),
+        encounterId,
+        transcription,
+      );
 
       // Return the complete SOAP note as JSON
       res.json({
@@ -1359,10 +1482,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-
-
-
-
   // CPT Codes and Diagnoses API endpoints for billing integration
 
   // Extract orders from SOAP note
@@ -1373,7 +1492,7 @@ export function registerRoutes(app: Express): Server {
         if (!req.isAuthenticated()) return res.sendStatus(401);
 
         const encounterId = parseInt(req.params.encounterId);
-        
+
         // Get the encounter and SOAP note
         const encounter = await storage.getEncounter(encounterId);
         if (!encounter) {
@@ -1381,25 +1500,32 @@ export function registerRoutes(app: Express): Server {
         }
 
         if (!encounter.note || !encounter.note.trim()) {
-          return res.status(400).json({ 
-            message: "No SOAP note found for this encounter. Please save a SOAP note first." 
+          return res.status(400).json({
+            message:
+              "No SOAP note found for this encounter. Please save a SOAP note first.",
           });
         }
 
-        console.log(`📋 [ExtractOrders] Starting order extraction for encounter ${encounterId}`);
+        console.log(
+          `📋 [ExtractOrders] Starting order extraction for encounter ${encounterId}`,
+        );
 
         // Import and use the SOAPOrdersExtractor
-        const { SOAPOrdersExtractor } = await import("./soap-orders-extractor.js");
+        const { SOAPOrdersExtractor } = await import(
+          "./soap-orders-extractor.js"
+        );
         const extractor = new SOAPOrdersExtractor();
 
         // Extract orders from the SOAP note
         const extractedOrders = await extractor.extractOrders(
           encounter.note,
           encounter.patientId,
-          encounterId
+          encounterId,
         );
 
-        console.log(`📋 [ExtractOrders] Extracted ${extractedOrders.length} orders`);
+        console.log(
+          `📋 [ExtractOrders] Extracted ${extractedOrders.length} orders`,
+        );
 
         // Save the extracted orders
         const savedOrders = [];
@@ -1413,22 +1539,26 @@ export function registerRoutes(app: Express): Server {
           }
         }
 
-        console.log(`📋 [ExtractOrders] Successfully saved ${savedOrders.length} orders`);
+        console.log(
+          `📋 [ExtractOrders] Successfully saved ${savedOrders.length} orders`,
+        );
 
         res.json({
           message: "Orders extracted and saved successfully",
           ordersCount: savedOrders.length,
-          orders: savedOrders
+          orders: savedOrders,
         });
-
       } catch (error: any) {
-        console.error("❌ [ExtractOrders] Error extracting orders from SOAP:", error);
+        console.error(
+          "❌ [ExtractOrders] Error extracting orders from SOAP:",
+          error,
+        );
         res.status(500).json({
           message: "Failed to extract orders from SOAP note",
           error: error.message,
         });
       }
-    }
+    },
   );
 
   // Extract CPT codes from SOAP note
@@ -1564,37 +1694,47 @@ export function registerRoutes(app: Express): Server {
         const { transcription } = req.body;
 
         if (!transcription || !transcription.trim()) {
-          return res.status(400).json({ 
-            message: "Transcription is required to generate SOAP note" 
+          return res.status(400).json({
+            message: "Transcription is required to generate SOAP note",
           });
         }
 
-        console.log(`🔄 [GenerateSOAP] Generating SOAP note from transcription for encounter ${encounterId}`);
+        console.log(
+          `🔄 [GenerateSOAP] Generating SOAP note from transcription for encounter ${encounterId}`,
+        );
 
         // Generate SOAP note using direct API call
-        const soapNote = await generateSOAPNoteDirect(patientId, encounterId.toString(), transcription);
+        const soapNote = await generateSOAPNoteDirect(
+          patientId,
+          encounterId.toString(),
+          transcription,
+        );
 
         if (!soapNote.trim()) {
           throw new Error("Failed to generate SOAP note content");
         }
 
-        console.log(`✅ [GenerateSOAP] SOAP note generated and saved for encounter ${encounterId}`);
+        console.log(
+          `✅ [GenerateSOAP] SOAP note generated and saved for encounter ${encounterId}`,
+        );
 
         res.json({
           soapNote,
           message: "SOAP note generated successfully from transcription",
           encounterId,
-          patientId
+          patientId,
         });
-
       } catch (error: any) {
-        console.error("❌ [GenerateSOAP] Error generating SOAP from transcription:", error);
+        console.error(
+          "❌ [GenerateSOAP] Error generating SOAP from transcription:",
+          error,
+        );
         res.status(500).json({
           message: "Failed to generate SOAP note from transcription",
           error: error.message,
         });
       }
-    }
+    },
   );
 
   // Save manually edited SOAP note (with physical exam learning analysis)
@@ -1873,24 +2013,33 @@ export function registerRoutes(app: Express): Server {
 
       const order = await storage.createOrder(standardizedOrder);
       console.log("[Orders API] Created enhanced order:", order);
-      
+
       // Trigger medication processing for medication orders
       if (order.orderType === "medication" && order.encounterId) {
-        console.log(`💊 [Orders API] Triggering medication processing for new medication order ${order.id}`);
+        console.log(
+          `💊 [Orders API] Triggering medication processing for new medication order ${order.id}`,
+        );
         try {
-          const { medicationDelta } = await import("./medication-delta-service.js");
+          const { medicationDelta } = await import(
+            "./medication-delta-service.js"
+          );
           await medicationDelta.processOrderDelta(
             order.patientId,
             order.encounterId,
-            req.user!.id
+            req.user!.id,
           );
-          console.log(`✅ [Orders API] Medication processing completed for order ${order.id}`);
+          console.log(
+            `✅ [Orders API] Medication processing completed for order ${order.id}`,
+          );
         } catch (medicationError) {
-          console.error(`❌ [Orders API] Medication processing failed for order ${order.id}:`, medicationError);
+          console.error(
+            `❌ [Orders API] Medication processing failed for order ${order.id}:`,
+            medicationError,
+          );
           // Don't fail the order creation if medication processing fails
         }
       }
-      
+
       res.status(201).json(order);
     } catch (error: any) {
       console.error("[Orders API] Error creating order:", error);
@@ -1912,34 +2061,56 @@ export function registerRoutes(app: Express): Server {
       );
 
       // Process medication orders if any were created
-      const medicationOrders = createdOrders.filter(order => order.orderType === 'medication');
+      const medicationOrders = createdOrders.filter(
+        (order) => order.orderType === "medication",
+      );
       if (medicationOrders.length > 0) {
-        console.log(`💊 [Orders API] Processing ${medicationOrders.length} medication orders from batch`);
-        
+        console.log(
+          `💊 [Orders API] Processing ${medicationOrders.length} medication orders from batch`,
+        );
+
         // Group by encounter to trigger processing once per encounter
-        const encounterGroups = medicationOrders.reduce((groups, order) => {
-          if (order.encounterId) {
-            if (!groups[order.encounterId]) {
-              groups[order.encounterId] = { patientId: order.patientId, orders: [] };
+        const encounterGroups = medicationOrders.reduce(
+          (groups, order) => {
+            if (order.encounterId) {
+              if (!groups[order.encounterId]) {
+                groups[order.encounterId] = {
+                  patientId: order.patientId,
+                  orders: [],
+                };
+              }
+              groups[order.encounterId].orders.push(order);
             }
-            groups[order.encounterId].orders.push(order);
-          }
-          return groups;
-        }, {} as Record<number, { patientId: number, orders: any[] }>);
+            return groups;
+          },
+          {} as Record<number, { patientId: number; orders: any[] }>,
+        );
 
         // Process each encounter's medications
-        for (const [encounterId, { patientId, orders: encounterOrders }] of Object.entries(encounterGroups)) {
+        for (const [
+          encounterId,
+          { patientId, orders: encounterOrders },
+        ] of Object.entries(encounterGroups)) {
           try {
-            console.log(`💊 [Orders API] Processing ${encounterOrders.length} medication orders for encounter ${encounterId}`);
-            const { medicationDelta } = await import("./medication-delta-service.js");
+            console.log(
+              `💊 [Orders API] Processing ${encounterOrders.length} medication orders for encounter ${encounterId}`,
+            );
+            const { medicationDelta } = await import(
+              "./medication-delta-service.js"
+            );
             await medicationDelta.processOrderDelta(
               patientId,
               parseInt(encounterId),
-              req.user!.id
+              req.user!.id,
             );
-            console.log(`✅ [Orders API] Medication processing completed for encounter ${encounterId}`);
+            console.log(
+              `✅ [Orders API] Medication processing completed for encounter ${encounterId}`,
+            );
           } catch (medicationError) {
-            console.error(`❌ [Orders API] Medication processing failed for encounter ${encounterId}:`, medicationError);
+            console.error(
+              `❌ [Orders API] Medication processing failed for encounter ${encounterId}:`,
+              medicationError,
+            );
             // Don't fail the batch operation if medication processing fails
           }
         }
@@ -1951,10 +2122,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ message: error.message });
     }
   });
-
-
-
-
 
   app.get("/api/orders/:id", async (req, res) => {
     try {
@@ -1999,28 +2166,35 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Delete all draft orders for a patient
-  app.delete("/api/patients/:patientId/draft-orders", APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
-    if (!req.isAuthenticated()) {
-      return APIResponseHandler.unauthorized(res);
-    }
+  app.delete(
+    "/api/patients/:patientId/draft-orders",
+    APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
+      if (!req.isAuthenticated()) {
+        return APIResponseHandler.unauthorized(res);
+      }
 
-    const patientId = parseInt(req.params.patientId);
-    
-    if (isNaN(patientId)) {
-      return APIResponseHandler.badRequest(res, "Invalid patient ID");
-    }
+      const patientId = parseInt(req.params.patientId);
 
-    console.log(`[Orders API] Deleting all draft orders for patient ${patientId}`);
+      if (isNaN(patientId)) {
+        return APIResponseHandler.badRequest(res, "Invalid patient ID");
+      }
 
-    await storage.deleteAllPatientDraftOrders(patientId);
-    
-    console.log(`[Orders API] Successfully deleted all draft orders for patient ${patientId}`);
+      console.log(
+        `[Orders API] Deleting all draft orders for patient ${patientId}`,
+      );
 
-    return APIResponseHandler.success(res, { 
-      message: "All draft orders deleted successfully",
-      patientId 
-    });
-  }));
+      await storage.deleteAllPatientDraftOrders(patientId);
+
+      console.log(
+        `[Orders API] Successfully deleted all draft orders for patient ${patientId}`,
+      );
+
+      return APIResponseHandler.success(res, {
+        message: "All draft orders deleted successfully",
+        patientId,
+      });
+    }),
+  );
 
   // Create a new order
   app.post("/api/orders", async (req, res) => {
@@ -2135,20 +2309,29 @@ export function registerRoutes(app: Express): Server {
 
       const order = await storage.updateOrder(orderId, cleanedUpdates);
       console.log(`[Orders API] Successfully updated order ${orderId}`);
-      
+
       // If this is a medication order, trigger medication synchronization
-      if (order.orderType === 'medication') {
-        console.log(`💊 [Orders API] Triggering medication synchronization for updated medication order ${orderId}`);
+      if (order.orderType === "medication") {
+        console.log(
+          `💊 [Orders API] Triggering medication synchronization for updated medication order ${orderId}`,
+        );
         try {
-          const { medicationDelta } = await import("./medication-delta-service.js");
+          const { medicationDelta } = await import(
+            "./medication-delta-service.js"
+          );
           await medicationDelta.syncMedicationWithOrder(orderId);
-          console.log(`✅ [Orders API] Medication synchronization completed for updated order ${orderId}`);
+          console.log(
+            `✅ [Orders API] Medication synchronization completed for updated order ${orderId}`,
+          );
         } catch (medicationError) {
-          console.error(`❌ [Orders API] Medication synchronization failed for updated order ${orderId}:`, medicationError);
+          console.error(
+            `❌ [Orders API] Medication synchronization failed for updated order ${orderId}:`,
+            medicationError,
+          );
           // Continue with response even if sync fails
         }
       }
-      
+
       res.json(order);
     } catch (error: any) {
       console.error("[Orders API] Error updating order:", error);
@@ -2167,12 +2350,16 @@ export function registerRoutes(app: Express): Server {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const orderId = parseInt(req.params.id);
-      console.log(`[Orders API] Deleting order ${orderId} with cascading deletion`);
-      
+      console.log(
+        `[Orders API] Deleting order ${orderId} with cascading deletion`,
+      );
+
       // Use storage method that handles cascading deletion
       await storage.deleteOrderWithCascade(orderId);
-      console.log(`[Orders API] Successfully deleted order ${orderId} with cascade`);
-      
+      console.log(
+        `[Orders API] Successfully deleted order ${orderId} with cascade`,
+      );
+
       res.status(204).send();
     } catch (error: any) {
       console.error("[Orders API] Error deleting order:", error);
@@ -2278,7 +2465,7 @@ Instructions:
       );
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1",
+        model: "gpt-4.1-nano",
         messages: [
           {
             role: "system",
@@ -2445,7 +2632,7 @@ Return only valid JSON without markdown formatting.`;
       }
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1",
+        model: "gpt-4.1-nano",
         messages: [
           {
             role: "system",
@@ -2501,7 +2688,12 @@ Return only valid JSON without markdown formatting.`;
       }
 
       // Validate status values
-      const validStatuses = ['in_progress', 'pending_review', 'completed', 'signed'];
+      const validStatuses = [
+        "in_progress",
+        "pending_review",
+        "completed",
+        "signed",
+      ];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ error: "Invalid status value" });
       }
@@ -2509,17 +2701,18 @@ Return only valid JSON without markdown formatting.`;
       // Update encounter status
       const updatedEncounter = await storage.updateEncounter(encounterId, {
         encounterStatus: status,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
-      console.log(`✅ [Encounter Status] Updated encounter ${encounterId} to status: ${status}`);
+      console.log(
+        `✅ [Encounter Status] Updated encounter ${encounterId} to status: ${status}`,
+      );
 
       res.json({
         success: true,
         encounter: updatedEncounter,
-        message: `Encounter status updated to ${status}`
+        message: `Encounter status updated to ${status}`,
       });
-
     } catch (error: any) {
       console.error("❌ [Encounter Status] Error updating status:", error);
       res.status(500).json({ error: "Failed to update encounter status" });
@@ -2543,42 +2736,72 @@ Return only valid JSON without markdown formatting.`;
 
       // Update order status and add approval
       const updatedOrder = await storage.updateOrder(orderId, {
-        orderStatus: 'approved',
+        orderStatus: "approved",
         approvedBy: userId,
         approvedAt: new Date(),
-        providerNotes: signatureNote ? `${order.providerNotes || ''}\n\nSignature Note: ${signatureNote}` : order.providerNotes
+        providerNotes: signatureNote
+          ? `${order.providerNotes || ""}\n\nSignature Note: ${signatureNote}`
+          : order.providerNotes,
       });
 
-      console.log(`✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`);
+      console.log(
+        `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
+      );
 
       // For medication orders, activate pending medications
-      if (order.orderType === 'medication') {
-        console.log(`📋 [IndividualSign] === INDIVIDUAL MEDICATION ORDER SIGNING ===`);
-        console.log(`📋 [IndividualSign] Order ID: ${orderId}, Type: ${order.orderType}`);
-        console.log(`📋 [IndividualSign] Medication: ${order.medicationName}, Dosage: ${order.dosage}`);
-        console.log(`📋 [IndividualSign] Encounter ID: ${order.encounterId}, Patient ID: ${order.patientId}`);
+      if (order.orderType === "medication") {
+        console.log(
+          `📋 [IndividualSign] === INDIVIDUAL MEDICATION ORDER SIGNING ===`,
+        );
+        console.log(
+          `📋 [IndividualSign] Order ID: ${orderId}, Type: ${order.orderType}`,
+        );
+        console.log(
+          `📋 [IndividualSign] Medication: ${order.medicationName}, Dosage: ${order.dosage}`,
+        );
+        console.log(
+          `📋 [IndividualSign] Encounter ID: ${order.encounterId}, Patient ID: ${order.patientId}`,
+        );
         console.log(`📋 [IndividualSign] User ID: ${userId}`);
-        
+
         try {
-          const { medicationDelta } = await import("./medication-delta-service.js");
-          
+          const { medicationDelta } = await import(
+            "./medication-delta-service.js"
+          );
+
           console.log(`📋 [IndividualSign] Calling signMedicationOrders with:`);
-          console.log(`📋 [IndividualSign] - Encounter: ${order.encounterId || 0}`);
+          console.log(
+            `📋 [IndividualSign] - Encounter: ${order.encounterId || 0}`,
+          );
           console.log(`📋 [IndividualSign] - Order IDs: [${orderId}]`);
           console.log(`📋 [IndividualSign] - Provider: ${userId}`);
-          
-          await medicationDelta.signMedicationOrders(order.encounterId || 0, [orderId], userId);
-          console.log(`✅ [IndividualSign] Successfully activated medication: ${order.medicationName}`);
+
+          await medicationDelta.signMedicationOrders(
+            order.encounterId || 0,
+            [orderId],
+            userId,
+          );
+          console.log(
+            `✅ [IndividualSign] Successfully activated medication: ${order.medicationName}`,
+          );
         } catch (medicationError) {
-          console.error(`❌ [IndividualSign] Failed to activate medication for order ${orderId}:`, medicationError);
-          console.error(`❌ [IndividualSign] Medication error stack:`, (medicationError as Error).stack);
+          console.error(
+            `❌ [IndividualSign] Failed to activate medication for order ${orderId}:`,
+            medicationError,
+          );
+          console.error(
+            `❌ [IndividualSign] Medication error stack:`,
+            (medicationError as Error).stack,
+          );
           // Continue with response even if activation fails
         }
-        console.log(`📋 [IndividualSign] === END INDIVIDUAL MEDICATION SIGNING ===`);
+        console.log(
+          `📋 [IndividualSign] === END INDIVIDUAL MEDICATION SIGNING ===`,
+        );
       }
 
       // For lab orders, send to laboratory
-      if (order.orderType === 'lab') {
+      if (order.orderType === "lab") {
         // Here you would send to lab interface (HL7, etc.)
         console.log(`🧪 [Lab] Signed lab order: ${order.testName}`);
       }
@@ -2586,9 +2809,8 @@ Return only valid JSON without markdown formatting.`;
       res.json({
         success: true,
         order: updatedOrder,
-        message: `${order.orderType} order signed successfully`
+        message: `${order.orderType} order signed successfully`,
       });
-
     } catch (error: any) {
       console.error("❌ [Order Signing] Error signing order:", error);
       res.status(500).json({ error: "Failed to sign order" });
@@ -2619,15 +2841,18 @@ Return only valid JSON without markdown formatting.`;
           }
 
           const updatedOrder = await storage.updateOrder(orderId, {
-            orderStatus: 'approved',
+            orderStatus: "approved",
             approvedBy: userId,
             approvedAt: new Date(),
-            providerNotes: signatureNote ? `${order.providerNotes || ''}\n\nBulk Signature Note: ${signatureNote}` : order.providerNotes
+            providerNotes: signatureNote
+              ? `${order.providerNotes || ""}\n\nBulk Signature Note: ${signatureNote}`
+              : order.providerNotes,
           });
 
           signedOrders.push(updatedOrder);
-          console.log(`✅ [Bulk Sign] Signed ${order.orderType} order ${orderId}`);
-
+          console.log(
+            `✅ [Bulk Sign] Signed ${order.orderType} order ${orderId}`,
+          );
         } catch (error: any) {
           errors.push(`Failed to sign order ${orderId}: ${error.message}`);
         }
@@ -2635,19 +2860,30 @@ Return only valid JSON without markdown formatting.`;
 
       // Activate any medication orders that were signed
       const medicationOrderIds = signedOrders
-        .filter(order => order.orderType === 'medication')
-        .map(order => order.id);
+        .filter((order) => order.orderType === "medication")
+        .map((order) => order.id);
 
       if (medicationOrderIds.length > 0) {
         try {
-          const { medicationDelta } = await import("./medication-delta-service.js");
+          const { medicationDelta } = await import(
+            "./medication-delta-service.js"
+          );
           const encounterId = signedOrders[0]?.encounterId;
           if (encounterId) {
-            await medicationDelta.signMedicationOrders(encounterId, medicationOrderIds, userId);
-            console.log(`📋 [Bulk Sign] Activated ${medicationOrderIds.length} medication orders`);
+            await medicationDelta.signMedicationOrders(
+              encounterId,
+              medicationOrderIds,
+              userId,
+            );
+            console.log(
+              `📋 [Bulk Sign] Activated ${medicationOrderIds.length} medication orders`,
+            );
           }
         } catch (medicationError) {
-          console.error(`❌ [Bulk Sign] Failed to activate medications:`, medicationError);
+          console.error(
+            `❌ [Bulk Sign] Failed to activate medications:`,
+            medicationError,
+          );
           // Continue with response even if activation fails
         }
       }
@@ -2656,9 +2892,8 @@ Return only valid JSON without markdown formatting.`;
         success: true,
         signedOrders,
         errors,
-        message: `Signed ${signedOrders.length} orders${errors.length > 0 ? ` with ${errors.length} errors` : ''}`
+        message: `Signed ${signedOrders.length} orders${errors.length > 0 ? ` with ${errors.length} errors` : ""}`,
       });
-
     } catch (error: any) {
       console.error("❌ [Bulk Sign] Error bulk signing orders:", error);
       res.status(500).json({ error: "Failed to bulk sign orders" });
@@ -2669,15 +2904,24 @@ Return only valid JSON without markdown formatting.`;
   app.post("/api/debug/activate-medication", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
-      
+
       const { encounterId, orderIds, providerId } = req.body;
       console.log(`🧪 [Debug] Manual medication activation test`);
-      console.log(`🧪 [Debug] Encounter: ${encounterId}, Orders: [${orderIds.join(', ')}], Provider: ${providerId}`);
-      
+      console.log(
+        `🧪 [Debug] Encounter: ${encounterId}, Orders: [${orderIds.join(", ")}], Provider: ${providerId}`,
+      );
+
       const { medicationDelta } = await import("./medication-delta-service.js");
-      await medicationDelta.signMedicationOrders(encounterId, orderIds, providerId);
-      
-      res.json({ success: true, message: "Medication activation test completed" });
+      await medicationDelta.signMedicationOrders(
+        encounterId,
+        orderIds,
+        providerId,
+      );
+
+      res.json({
+        success: true,
+        message: "Medication activation test completed",
+      });
     } catch (error: any) {
       console.error("🧪 [Debug] Test activation failed:", error);
       res.status(500).json({ error: error.message });
@@ -2698,12 +2942,16 @@ Return only valid JSON without markdown formatting.`;
       }
 
       // Get all draft orders for this patient
-      const draftOrders = await storage.getPatientDraftOrders(encounter.patientId);
+      const draftOrders = await storage.getPatientDraftOrders(
+        encounter.patientId,
+      );
 
       res.json(draftOrders);
-
     } catch (error: any) {
-      console.error("❌ [Unsigned Orders] Error fetching unsigned orders:", error);
+      console.error(
+        "❌ [Unsigned Orders] Error fetching unsigned orders:",
+        error,
+      );
       res.status(500).json({ error: "Failed to fetch unsigned orders" });
     }
   });
