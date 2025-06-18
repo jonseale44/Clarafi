@@ -77,27 +77,64 @@ Return a JSON object with these exact fields:
       ];
 
       console.log("🩺 [VitalsParser] Calling OpenAI API...");
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-mini",
-        messages,
-        response_format: { type: "json_object" },
-        temperature: 0,
-        max_tokens: 1000,
-      });
+      console.log("🩺 [VitalsParser] OpenAI API Key exists:", !!process.env.OPENAI_API_KEY);
+      console.log("🩺 [VitalsParser] Messages:", JSON.stringify(messages, null, 2));
+      
+      try {
+        const response = await this.openai.chat.completions.create({
+          model: "gpt-4.1-mini", 
+          messages,
+          response_format: { type: "json_object" },
+          temperature: 0,
+          max_tokens: 1000,
+        });
 
-      const content = response.choices[0].message.content;
-      if (!content) {
+        console.log("🩺 [VitalsParser] OpenAI response received");
+        console.log("🩺 [VitalsParser] Response choices length:", response.choices?.length);
+        
+        const content = response.choices[0].message.content;
+        console.log("🩺 [VitalsParser] Raw GPT response:", content);
+        
+        if (!content) {
+          console.error("❌ [VitalsParser] No content in OpenAI response");
+          return {
+            success: false,
+            error: "No response from AI service",
+          };
+        }
+      } catch (apiError) {
+        console.error("❌ [VitalsParser] OpenAI API error:", apiError);
         return {
           success: false,
-          error: "No response from AI service",
+          error: `OpenAI API error: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`,
+        };
+      }
+      
+      let rawData;
+      try {
+        rawData = JSON.parse(content);
+        console.log("🩺 [VitalsParser] Parsed raw data:", rawData);
+      } catch (parseError) {
+        console.error("❌ [VitalsParser] Failed to parse OpenAI JSON:", parseError);
+        console.error("❌ [VitalsParser] Content was:", content);
+        return {
+          success: false,
+          error: "Invalid JSON from AI service",
         };
       }
 
-      console.log("🩺 [VitalsParser] Raw GPT response:", content);
-      const rawData = JSON.parse(content);
-
       // Validate and transform the extracted data
-      const validatedData = extractedVitalsSchema.parse(rawData);
+      let validatedData;
+      try {
+        validatedData = extractedVitalsSchema.parse(rawData);
+        console.log("🩺 [VitalsParser] Validated data:", validatedData);
+      } catch (validationError) {
+        console.error("❌ [VitalsParser] Schema validation failed:", validationError);
+        return {
+          success: false,
+          error: "Data validation failed",
+        };
+      }
       console.log("✅ [VitalsParser] Validated data:", validatedData);
 
       // Calculate confidence based on completeness

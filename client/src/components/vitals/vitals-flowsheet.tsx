@@ -152,41 +152,87 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     enabled: !!encounterId
   });
 
-  // Quick parse mutation
+  // Quick parse mutation with detailed logging
   const quickParseMutation = useMutation({
     mutationFn: async (text: string) => {
+      console.log("🩺 [VitalsFlowsheet] Starting parse request for text:", text);
+      console.log("🩺 [VitalsFlowsheet] Patient ID:", patientId, "Encounter ID:", encounterId);
+      
+      const requestBody = { vitalsText: text, patientId, encounterId };
+      console.log("🩺 [VitalsFlowsheet] Request body:", JSON.stringify(requestBody, null, 2));
+      
       const response = await fetch("/api/vitals/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ vitalsText: text, patientId, encounterId })
+        body: JSON.stringify(requestBody)
       });
-      if (!response.ok) throw new Error("Parse failed");
-      return response.json();
+      
+      console.log("🩺 [VitalsFlowsheet] Response status:", response.status);
+      console.log("🩺 [VitalsFlowsheet] Response headers:", Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ [VitalsFlowsheet] Parse request failed");
+        console.error("❌ [VitalsFlowsheet] Status:", response.status);
+        console.error("❌ [VitalsFlowsheet] Error response:", errorText);
+        throw new Error(`Parse failed: ${response.status} - ${errorText.substring(0, 200)}`);
+      }
+      
+      const responseText = await response.text();
+      console.log("🩺 [VitalsFlowsheet] Raw response text:", responseText);
+      
+      try {
+        const result = JSON.parse(responseText);
+        console.log("✅ [VitalsFlowsheet] Parsed JSON result:", result);
+        return result;
+      } catch (parseError) {
+        console.error("❌ [VitalsFlowsheet] Failed to parse JSON from response");
+        console.error("❌ [VitalsFlowsheet] Parse error:", parseError);
+        console.error("❌ [VitalsFlowsheet] Response was:", responseText);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+      }
     },
     onSuccess: (result) => {
-      if (result.success) {
+      console.log("🩺 [VitalsFlowsheet] Processing successful parse result:", result);
+      if (result.success && result.data) {
+        // Transform parsed data to vitals entry format - using correct field names
         const newEntry: Partial<VitalsEntry> = {
           encounterId,
           patientId,
           entryType: 'routine',
-          systolicBp: result.parsedData.systolicBp,
-          diastolicBp: result.parsedData.diastolicBp,
-          heartRate: result.parsedData.heartRate,
-          temperature: result.parsedData.temperature ? parseFloat(result.parsedData.temperature) : undefined,
-          weight: result.parsedData.weight ? parseFloat(result.parsedData.weight) : undefined,
-          height: result.parsedData.height ? parseFloat(result.parsedData.height) : undefined,
-          oxygenSaturation: result.parsedData.oxygenSaturation ? parseFloat(result.parsedData.oxygenSaturation) : undefined,
-          respiratoryRate: result.parsedData.respiratoryRate,
-          painScale: result.parsedData.painScale,
+          systolicBp: result.data.systolic_bp,
+          diastolicBp: result.data.diastolic_bp,
+          heartRate: result.data.heart_rate,
+          temperature: result.data.temperature?.toString(),
+          weight: result.data.weight?.toString(),
+          height: result.data.height?.toString(),
+          bmi: result.data.bmi?.toString(),
+          oxygenSaturation: result.data.oxygen_saturation?.toString(),
+          respiratoryRate: result.data.respiratory_rate,
+          painScale: result.data.pain_scale,
           parsedFromText: true,
           originalText: quickParseText,
-          notes: `Parsed: ${result.parsedData.parsedText || quickParseText}`,
-          alerts: result.warnings
+          notes: `Parsed: ${quickParseText}`,
+          alerts: result.data.alerts || []
         };
+        
+        console.log("🩺 [VitalsFlowsheet] Created new entry:", newEntry);
         setEditingEntry(newEntry as VitalsEntry);
         setShowAddDialog(true);
         setQuickParseText("");
+        
+        toast({
+          title: "Vitals Parsed Successfully",
+          description: `Extracted ${Object.keys(result.data).filter(k => result.data[k] !== null).length} vital signs with ${result.confidence}% confidence`,
+        });
+      } else {
+        console.error("❌ [VitalsFlowsheet] Parse result missing success or data:", result);
+        toast({
+          title: "Parse Error", 
+          description: result.error || "Failed to parse vitals",
+          variant: "destructive"
+        });
       }
     },
     onError: (error) => {
