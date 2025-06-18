@@ -102,6 +102,19 @@ router.post("/entries", async (req, res) => {
     console.log("🩺 [VitalsFlowsheet] Data to validate:", JSON.stringify(dataToValidate, null, 2));
     console.log("🩺 [VitalsFlowsheet] EncounterId present?", dataToValidate.encounterId !== undefined);
     console.log("🩺 [VitalsFlowsheet] EncounterId value:", dataToValidate.encounterId);
+    console.log("🩺 [VitalsFlowsheet] PatientId present?", dataToValidate.patientId !== undefined);
+    console.log("🩺 [VitalsFlowsheet] PatientId value:", dataToValidate.patientId);
+    
+    // Check for required fields before validation
+    if (!dataToValidate.encounterId) {
+      console.error("❌ [VitalsFlowsheet] Missing encounterId in request body");
+      return APIResponseHandler.badRequest(res, "encounterId is required");
+    }
+    
+    if (!dataToValidate.patientId) {
+      console.error("❌ [VitalsFlowsheet] Missing patientId in request body");
+      return APIResponseHandler.badRequest(res, "patientId is required");
+    }
     
     const validatedData = VitalsEntrySchema.parse(dataToValidate);
 

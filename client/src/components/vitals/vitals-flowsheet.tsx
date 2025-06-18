@@ -213,6 +213,10 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
           alerts: []
         };
         
+        console.log("🩺 [VitalsFlowsheet] DEBUG - encounterId value:", encounterId);
+        console.log("🩺 [VitalsFlowsheet] DEBUG - patientId value:", patientId);
+        console.log("🩺 [VitalsFlowsheet] DEBUG - newEntry object:", JSON.stringify(newEntry, null, 2));
+        
         console.log("🩺 [VitalsFlowsheet] Encounter ID:", encounterId);
         console.log("🩺 [VitalsFlowsheet] Patient ID:", patientId);
         
@@ -645,15 +649,20 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Ensure encounterId is always included
+    console.log("🩺 [VitalsEntryForm] DEBUG - About to save");
+    console.log("🩺 [VitalsEntryForm] DEBUG - encounterId prop:", encounterId);
+    console.log("🩺 [VitalsEntryForm] DEBUG - patientId prop:", patientId);
+    console.log("🩺 [VitalsEntryForm] DEBUG - formData before save:", JSON.stringify(formData, null, 2));
+    
+    // Ensure encounterId and patientId are included
     const dataToSave = {
       ...formData,
       encounterId,
-      patientId
+      patientId,
+      recordedBy: formData.recordedBy || 1
     };
-    console.log("🩺 [VitalsEntryForm] Submitting form data:", dataToSave);
-    console.log("🩺 [VitalsEntryForm] EncounterId from props:", encounterId);
-    console.log("🩺 [VitalsEntryForm] PatientId from props:", patientId);
+    
+    console.log("🩺 [VitalsEntryForm] DEBUG - dataToSave with IDs:", JSON.stringify(dataToSave, null, 2));
     onSave(dataToSave);
   };
 
