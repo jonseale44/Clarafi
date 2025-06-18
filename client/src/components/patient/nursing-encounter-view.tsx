@@ -116,6 +116,8 @@ export function NursingEncounterView({
   // Deduplication tracking for WebSocket messages
   const processedEvents = useRef(new Set<string>());
   const processedContent = useRef(new Set<string>());
+  const activeResponseId = useRef<string | null>(null);
+  const lastResponseTime = useRef(0);
 
   const isEventProcessed = (eventId: string) =>
     processedEvents.current.has(eventId);
@@ -125,6 +127,22 @@ export function NursingEncounterView({
     processedContent.current.has(content);
   const markContentAsProcessed = (content: string) =>
     processedContent.current.add(content);
+
+  // Response management helpers
+  const canCreateNewResponse = () => {
+    const now = Date.now();
+    const timeSinceLastResponse = now - lastResponseTime.current;
+    return !activeResponseId.current && timeSinceLastResponse > 3000; // 3 second cooldown
+  };
+  
+  const markResponseActive = (responseId: string) => {
+    activeResponseId.current = responseId;
+    lastResponseTime.current = Date.now();
+  };
+  
+  const markResponseComplete = () => {
+    activeResponseId.current = null;
+  };
 
   // MISSING: Add the startSuggestionsConversation function from provider view
   const startSuggestionsConversation = async (
@@ -204,11 +222,12 @@ Please provide nursing suggestions based on what the patient is saying in this c
     ws.send(JSON.stringify(contextMessage));
 
     // 4. Create response for AI suggestions with metadata like external system
-    const suggestionsMessage = {
-      type: "response.create",
-      response: {
-        modalities: ["text"],
-        instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
+    if (canCreateNewResponse()) {
+      const suggestionsMessage = {
+        type: "response.create",
+        response: {
+          modalities: ["text"],
+          instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
 
 Language: Always respond in English only.
 
@@ -253,14 +272,18 @@ Formatting Guidelines:
 IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
 
 Format each bullet point on its own line with no extra spacing between them.`,
-        metadata: {
-          type: "suggestions",
+          metadata: {
+            type: "suggestions",
+          },
         },
-      },
-    };
+      };
 
-    console.log("🧠 [NursingView] Creating AI suggestions conversation");
-    ws.send(JSON.stringify(suggestionsMessage));
+      console.log("🧠 [NursingView] Creating AI suggestions conversation");
+      markResponseActive("suggestions_initial");
+      ws.send(JSON.stringify(suggestionsMessage));
+    } else {
+      console.log("🧠 [NursingView] Skipping response creation - active response exists");
+    }
   };
 
   // Generate smart suggestions function - EXACT COPY from provider view
