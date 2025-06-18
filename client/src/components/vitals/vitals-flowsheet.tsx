@@ -354,18 +354,19 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     const range = ranges[vitalType];
     
     return (
-      <div className={`flex items-center justify-between p-2 rounded ${status.bgColor}`}>
-        <div className="flex flex-col">
-          <span className={`font-medium ${status.color}`}>
-            {value ? `${value}${range?.unit || ''}` : '-'}
-          </span>
-          {value && (
-            <span className="text-xs text-gray-500">
-              {range?.min}-{range?.max}
-            </span>
-          )}
-        </div>
+      <div className={`group relative flex items-center justify-center py-1 px-2 rounded text-sm ${status.bgColor}`}>
+        <span className={`font-medium ${status.color}`}>
+          {value ? `${value}${range?.unit || ''}` : '-'}
+        </span>
         {getTrendIcon(value, previousValue)}
+        
+        {/* Tooltip with ranges - only visible on hover */}
+        {value && range && (
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+            Normal: {range.min}-{range.max}{range.unit || ''}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
+          </div>
+        )}
       </div>
     );
   };
@@ -386,19 +387,22 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     const isAbnormal = systolicStatus.status !== 'normal' || diastolicStatus.status !== 'normal';
     
     return (
-      <div className={`flex items-center justify-between p-2 rounded ${isAbnormal ? 'bg-red-50' : 'bg-green-50'}`}>
-        <div className="flex flex-col">
-          <span className={`font-medium ${isAbnormal ? 'text-red-700' : 'text-green-600'}`}>
-            {systolic && diastolic ? `${systolic}/${diastolic}` : '-'}
-          </span>
-          <span className="text-xs text-gray-500">
-            {ranges.systolic?.min}-{ranges.systolic?.max}/{ranges.diastolic?.min}-{ranges.diastolic?.max}
-          </span>
-        </div>
-        <div className="flex flex-col items-center">
+      <div className={`group relative flex items-center justify-center py-1 px-2 rounded text-sm ${isAbnormal ? 'bg-red-50' : 'bg-green-50'}`}>
+        <span className={`font-medium ${isAbnormal ? 'text-red-700' : 'text-green-600'}`}>
+          {systolic && diastolic ? `${systolic}/${diastolic}` : '-'}
+        </span>
+        <div className="flex flex-col items-center ml-1">
           {getTrendIcon(systolic, prevSystolic)}
           {getTrendIcon(diastolic, prevDiastolic)}
         </div>
+        
+        {/* Tooltip with ranges - only visible on hover */}
+        {systolic && diastolic && ranges.systolic && ranges.diastolic && (
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+            Normal: {ranges.systolic.min}-{ranges.systolic.max}/{ranges.diastolic.min}-{ranges.diastolic.max}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
+          </div>
+        )}
       </div>
     );
   };
@@ -420,14 +424,14 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     <div className="space-y-4">
       {/* Header */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
-              <Stethoscope className="h-5 w-5" />
-              <span>Vitals Flowsheet</span>
+            <CardTitle className="flex items-center space-x-2 text-lg">
+              <Stethoscope className="h-4 w-4" />
+              <span>Vitals</span>
               {patient?.age && (
-                <Badge variant="outline">
-                  Age {patient.age} - {patient.age < 1 ? 'Infant' : patient.age < 12 ? 'Pediatric' : patient.age < 18 ? 'Adolescent' : 'Adult'} Ranges
+                <Badge variant="outline" className="text-xs">
+                  Age {patient.age}
                 </Badge>
               )}
             </CardTitle>
@@ -453,24 +457,23 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">Time</TableHead>
-                  <TableHead className="font-semibold">Type</TableHead>
-                  <TableHead className="font-semibold">BP</TableHead>
-                  <TableHead className="font-semibold">HR</TableHead>
-                  <TableHead className="font-semibold">Temp</TableHead>
-                  <TableHead className="font-semibold">RR</TableHead>
-                  <TableHead className="font-semibold">O2 Sat</TableHead>
-                  <TableHead className="font-semibold">Pain</TableHead>
-                  <TableHead className="font-semibold">Weight</TableHead>
-                  <TableHead className="font-semibold">By</TableHead>
-                  {!readOnly && <TableHead className="font-semibold">Actions</TableHead>}
+                <TableRow className="bg-gray-50 h-8">
+                  <TableHead className="font-semibold text-xs py-2">Time</TableHead>
+                  <TableHead className="font-semibold text-xs py-2 text-center">BP</TableHead>
+                  <TableHead className="font-semibold text-xs py-2 text-center">HR</TableHead>
+                  <TableHead className="font-semibold text-xs py-2 text-center">Temp</TableHead>
+                  <TableHead className="font-semibold text-xs py-2 text-center">RR</TableHead>
+                  <TableHead className="font-semibold text-xs py-2 text-center">O2</TableHead>
+                  <TableHead className="font-semibold text-xs py-2 text-center">Pain</TableHead>
+                  <TableHead className="font-semibold text-xs py-2 text-center">Wt</TableHead>
+                  <TableHead className="font-semibold text-xs py-2">By</TableHead>
+                  {!readOnly && <TableHead className="font-semibold text-xs py-2"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {vitalsEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={readOnly ? 10 : 11} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={readOnly ? 9 : 10} className="text-center py-6 text-gray-500 text-sm">
                       No vitals recorded for this encounter
                     </TableCell>
                   </TableRow>
@@ -479,23 +482,17 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                     const prevEntry = index > 0 ? vitalsEntries[index - 1] : null;
                     
                     return (
-                      <TableRow key={entry.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">
+                      <TableRow key={entry.id} className="hover:bg-gray-25 h-12">
+                        <TableCell className="py-2">
                           <div className="flex flex-col">
-                            <span>{format(new Date(entry.recordedAt), 'HH:mm')}</span>
+                            <span className="text-sm font-medium">{format(new Date(entry.recordedAt), 'HH:mm')}</span>
                             <span className="text-xs text-gray-500">
                               {format(new Date(entry.recordedAt), 'MM/dd')}
                             </span>
                           </div>
                         </TableCell>
                         
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {entry.entryType}
-                          </Badge>
-                        </TableCell>
-                        
-                        <TableCell>
+                        <TableCell className="py-2">
                           <BloodPressureCell 
                             systolic={entry.systolicBp}
                             diastolic={entry.diastolicBp}
@@ -504,7 +501,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                           />
                         </TableCell>
                         
-                        <TableCell>
+                        <TableCell className="py-2">
                           <VitalCell 
                             value={entry.heartRate} 
                             vitalType="heartRate"
@@ -512,7 +509,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                           />
                         </TableCell>
                         
-                        <TableCell>
+                        <TableCell className="py-2">
                           <VitalCell 
                             value={entry.temperature} 
                             vitalType="temperature"
@@ -520,7 +517,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                           />
                         </TableCell>
                         
-                        <TableCell>
+                        <TableCell className="py-2">
                           <VitalCell 
                             value={entry.respiratoryRate} 
                             vitalType="respiratoryRate"
@@ -528,7 +525,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                           />
                         </TableCell>
                         
-                        <TableCell>
+                        <TableCell className="py-2">
                           <VitalCell 
                             value={entry.oxygenSaturation} 
                             vitalType="oxygenSaturation"
@@ -536,8 +533,8 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                           />
                         </TableCell>
                         
-                        <TableCell>
-                          <div className="flex items-center justify-between p-2 rounded bg-gray-50">
+                        <TableCell className="py-2">
+                          <div className="flex items-center justify-center py-1 px-2 rounded bg-gray-50 text-sm">
                             <span className="font-medium">
                               {entry.painScale !== null && entry.painScale !== undefined ? `${entry.painScale}/10` : '-'}
                             </span>
@@ -545,11 +542,11 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                           </div>
                         </TableCell>
                         
-                        <TableCell>
-                          <div className="flex items-center justify-between p-2 rounded bg-gray-50">
-                            <div className="flex flex-col">
+                        <TableCell className="py-2">
+                          <div className="group relative flex items-center justify-center py-1 px-2 rounded bg-gray-50 text-sm">
+                            <div className="flex flex-col items-center">
                               <span className="font-medium">
-                                {entry.weight ? `${entry.weight} lbs` : '-'}
+                                {entry.weight ? `${entry.weight}` : '-'}
                               </span>
                               {entry.height && entry.bmi && (
                                 <span className="text-xs text-gray-500">
@@ -558,18 +555,27 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                               )}
                             </div>
                             {getTrendIcon(entry.weight, prevEntry?.weight)}
+                            
+                            {/* Tooltip with full weight info */}
+                            {entry.weight && (
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                Weight: {entry.weight} lbs
+                                {entry.height && <div>Height: {entry.height}"</div>}
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         
-                        <TableCell>
+                        <TableCell className="py-2">
                           <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3" />
-                            <span className="text-xs">{entry.recordedBy}</span>
+                            <User className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs text-gray-600">{entry.recordedBy}</span>
                           </div>
                         </TableCell>
                         
                         {!readOnly && (
-                          <TableCell>
+                          <TableCell className="py-2">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -577,6 +583,7 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
                                 setEditingEntry(entry);
                                 setShowAddDialog(true);
                               }}
+                              className="h-6 w-6 p-0"
                             >
                               <Edit3 className="h-3 w-3" />
                             </Button>
