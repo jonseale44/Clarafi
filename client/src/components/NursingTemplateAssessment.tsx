@@ -235,14 +235,15 @@ export const NursingTemplateAssessment = forwardRef<
       generateSummary,
     }));
 
-    // Helper to format field display values
+    // Helper to format field display values with consistent spacing
     const formatFieldForDisplay = (value: string): string => {
       if (!value.trim()) return "";
-      return value
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .join('\n');
+      
+      // Split into lines and clean them up
+      const lines = value.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      
+      // Return with normal line breaks (no extra spacing)
+      return lines.join('\n');
     };
 
     // Auto-generate summary when template has substantial content
@@ -626,7 +627,11 @@ export const NursingTemplateAssessment = forwardRef<
                       className="p-3 bg-white border rounded-md cursor-pointer hover:border-blue-300 transition-colors min-h-[40px] text-sm"
                       onClick={() => setEditingField(key)}
                     >
-                      {formatFieldForDisplay(templateData[key as keyof NursingTemplateData]) || (
+                      {templateData[key as keyof NursingTemplateData] ? (
+                        <div className="whitespace-pre-line leading-normal">
+                          {formatFieldForDisplay(templateData[key as keyof NursingTemplateData])}
+                        </div>
+                      ) : (
                         <span className="text-gray-400 italic">{placeholder}</span>
                       )}
                     </div>
