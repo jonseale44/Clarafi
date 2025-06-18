@@ -152,46 +152,18 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     enabled: !!encounterId
   });
 
-  // Quick parse mutation with detailed logging
+  // Quick parse mutation using client-side parsing
   const quickParseMutation = useMutation({
     mutationFn: async (text: string) => {
-      console.log("🩺 [VitalsFlowsheet] Starting parse request for text:", text);
-      console.log("🩺 [VitalsFlowsheet] Patient ID:", patientId, "Encounter ID:", encounterId);
+      console.log("🩺 [VitalsFlowsheet] Starting client-side parsing for text:", text);
       
-      const requestBody = { vitalsText: text, patientId, encounterId };
-      console.log("🩺 [VitalsFlowsheet] Request body:", JSON.stringify(requestBody, null, 2));
+      // Use client-side parser to avoid API routing issues
+      const { ClientVitalsParser } = await import('@/lib/vitals-parser');
+      const parser = new ClientVitalsParser();
+      const result = await parser.parseVitalsText(text);
       
-      const response = await fetch("/api/vitals/parse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(requestBody)
-      });
-      
-      console.log("🩺 [VitalsFlowsheet] Response status:", response.status);
-      console.log("🩺 [VitalsFlowsheet] Response headers:", Object.fromEntries(response.headers.entries()));
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ [VitalsFlowsheet] Parse request failed");
-        console.error("❌ [VitalsFlowsheet] Status:", response.status);
-        console.error("❌ [VitalsFlowsheet] Error response:", errorText);
-        throw new Error(`Parse failed: ${response.status} - ${errorText.substring(0, 200)}`);
-      }
-      
-      const responseText = await response.text();
-      console.log("🩺 [VitalsFlowsheet] Raw response text:", responseText);
-      
-      try {
-        const result = JSON.parse(responseText);
-        console.log("✅ [VitalsFlowsheet] Parsed JSON result:", result);
-        return result;
-      } catch (parseError) {
-        console.error("❌ [VitalsFlowsheet] Failed to parse JSON from response");
-        console.error("❌ [VitalsFlowsheet] Parse error:", parseError);
-        console.error("❌ [VitalsFlowsheet] Response was:", responseText);
-        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
-      }
+      console.log("🩺 [VitalsFlowsheet] Client parser result:", result);
+      return result;
     },
     onSuccess: (result) => {
       console.log("🩺 [VitalsFlowsheet] Processing successful parse result:", result);
