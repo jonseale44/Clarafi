@@ -37,6 +37,7 @@ import {
   NursingTemplateAssessment,
   NursingTemplateRef,
 } from "@/components/NursingTemplateAssessment";
+import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
 
 interface NursingTemplateData {
   cc: string;
@@ -1484,6 +1485,26 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           <div className="flex gap-6 h-full">
             {/* Left Column - Assessment and Summary */}
             <div className="w-1/2 space-y-6">
+              {/* Vitals Entry Section - Same as Provider View */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-semibold leading-none tracking-tight flex items-center">
+                    <Activity className="h-6 w-6 mr-2 text-blue-600" />
+                    Vital Signs
+                  </h2>
+                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
+                    Nursing Entry
+                  </Badge>
+                </div>
+                <VitalsFlowsheet
+                  encounterId={encounterId}
+                  patientId={patient.id}
+                  patient={patient}
+                  readOnly={false}
+                />
+              </Card>
+
               {/* Nursing Template Assessment Section */}
               <Card className="p-6">
                 <NursingTemplateAssessment
