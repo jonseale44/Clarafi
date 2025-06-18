@@ -640,8 +640,8 @@ export const NursingTemplateAssessment = forwardRef<
     return (
       <Card className="border-blue-200 bg-blue-50">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 mb-3">
               <Activity className="h-5 w-5 text-blue-600" />
               <h3 className="text-lg font-semibold text-blue-900">
                 Nursing Assessment Template
@@ -659,7 +659,7 @@ export const NursingTemplateAssessment = forwardRef<
                 </Badge>
               )}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap gap-2">
               {!isActive ? (
                 <Button onClick={startTemplateAssessment} size="sm" variant="default">
                   <Play className="h-3 w-3 mr-1" />
