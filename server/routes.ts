@@ -2993,8 +2993,8 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api", parseRoutes);
 
   // Vitals parser routes
-  import("./vitals-parser-routes.js").then(vitalsParserRoutes => {
-    app.use("/api/vitals", vitalsParserRoutes.default);
+  import("./vitals-parse-routes.js").then(vitalsParseRoutes => {
+    app.use("/api/vitals", vitalsParseRoutes.default);
     console.log("✅ [Routes] Vitals parser routes mounted");
   }).catch(err => {
     console.error("❌ [Routes] Failed to mount vitals parser routes:", err);

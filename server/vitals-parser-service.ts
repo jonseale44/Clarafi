@@ -68,7 +68,7 @@ Return a JSON object with these exact fields:
   "alerts": ["array of any concerning findings"]
 }`;
 
-      const messages = [
+      const messages: any[] = [
         { role: "system", content: systemPrompt },
         {
           role: "user",
