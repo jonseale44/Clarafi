@@ -31,48 +31,58 @@ export class NursingSummaryGenerator {
     templateData: NursingTemplateData,
     transcription: string,
     patientId: number,
-    encounterId: number
+    encounterId: number,
   ): Promise<string> {
     try {
-      console.log(`🏥 [NursingSummary] Generating summary for encounter ${encounterId}`);
+      console.log(
+        `🏥 [NursingSummary] Generating summary for encounter ${encounterId}`,
+      );
 
-      const prompt = this.buildNursingSummaryPrompt(templateData, transcription);
-      
+      const prompt = this.buildNursingSummaryPrompt(
+        templateData,
+        transcription,
+      );
+
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1-nano",
         messages: [
           {
             role: "system",
-            content: "You are an expert nurse creating a concise, structured nursing assessment summary. Format the output as clean, organized bullet points under each section heading."
+            content:
+              "You are an expert nurse creating a concise, structured nursing assessment summary. Format the output as clean, organized bullet points under each section heading.",
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         temperature: 0.3,
         max_tokens: 2000,
       });
 
       const nursingSummary = completion.choices[0]?.message?.content || "";
-      
+
       if (!nursingSummary.trim()) {
         throw new Error("Failed to generate nursing summary");
       }
 
       // Save to database
       await this.saveNursingSummary(encounterId, nursingSummary);
-      
-      console.log(`✅ [NursingSummary] Generated and saved summary (${nursingSummary.length} chars)`);
-      return nursingSummary;
 
+      console.log(
+        `✅ [NursingSummary] Generated and saved summary (${nursingSummary.length} chars)`,
+      );
+      return nursingSummary;
     } catch (error) {
       console.error("❌ [NursingSummary] Error generating summary:", error);
       throw error;
     }
   }
 
-  private buildNursingSummaryPrompt(templateData: NursingTemplateData, transcription: string): string {
+  private buildNursingSummaryPrompt(
+    templateData: NursingTemplateData,
+    transcription: string,
+  ): string {
     return `You are an expert registered nurse creating a comprehensive nursing assessment summary using proper medical terminology, standard abbreviations, and structured formatting. Your documentation must meet professional nursing standards and EMR requirements.
 
 NURSING TEMPLATE DATA:
@@ -237,16 +247,19 @@ CRITICAL FORMATTING REQUIREMENTS:
 Generate the nursing summary following these exact specifications. Only include sections that contain actual documented information from the provided data.`;
   }
 
-  private async saveNursingSummary(encounterId: number, nursingSummary: string): Promise<void> {
+  private async saveNursingSummary(
+    encounterId: number,
+    nursingSummary: string,
+  ): Promise<void> {
     try {
       await db
         .update(encounters)
-        .set({ 
+        .set({
           nurseNotes: nursingSummary,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(encounters.id, encounterId));
-        
+
       console.log(`💾 [NursingSummary] Saved to encounter ${encounterId}`);
     } catch (error) {
       console.error(`❌ [NursingSummary] Failed to save to database:`, error);

@@ -12,7 +12,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Play, Square, Activity, Edit2, Save, FileText, RefreshCw } from "lucide-react";
+import {
+  Play,
+  Square,
+  Activity,
+  Edit2,
+  Save,
+  FileText,
+  RefreshCw,
+} from "lucide-react";
 
 interface NursingTemplateData {
   cc: string; // Chief Complaint
@@ -68,17 +76,22 @@ export const NursingTemplateAssessment = forwardRef<
 
     // Format nursing summary text with proper HTML formatting
     const formatNursingSummary = (text: string): string => {
-      if (!text) return '';
-      
-      return text
-        // Convert **text** to <strong>text</strong>
-        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-        // Convert bullet points to proper list items with spacing
-        .replace(/^- (.*?)$/gm, '<div class="ml-4 mb-1">• $1</div>')
-        // Add spacing between sections (double line breaks)
-        .replace(/\n\n/g, '<div class="mb-4"></div>')
-        // Convert single line breaks to <br>
-        .replace(/\n/g, '<br>');
+      if (!text) return "";
+
+      return (
+        text
+          // Convert **text** to <strong>text</strong>
+          .replace(
+            /\*\*(.*?)\*\*/g,
+            '<strong class="font-semibold text-gray-900">$1</strong>',
+          )
+          // Convert bullet points to proper list items with spacing
+          .replace(/^- (.*?)$/gm, '<div class="ml-4 mb-1">• $1</div>')
+          // Add spacing between sections (double line breaks)
+          .replace(/\n\n/g, '<div class="mb-4"></div>')
+          // Convert single line breaks to <br>
+          .replace(/\n/g, "<br>")
+      );
     };
 
     const [templateData, setTemplateData] = useState<NursingTemplateData>({
@@ -123,9 +136,12 @@ export const NursingTemplateAssessment = forwardRef<
     useEffect(() => {
       const loadExistingSummary = async () => {
         try {
-          const response = await fetch(`/api/encounters/${encounterId}/nursing-summary`, {
-            credentials: "include",
-          });
+          const response = await fetch(
+            `/api/encounters/${encounterId}/nursing-summary`,
+            {
+              credentials: "include",
+            },
+          );
           if (response.ok) {
             const data = await response.json();
             if (data.data?.nursingSummary) {
@@ -133,7 +149,10 @@ export const NursingTemplateAssessment = forwardRef<
             }
           }
         } catch (error) {
-          console.error("❌ [NursingTemplate] Error loading existing summary:", error);
+          console.error(
+            "❌ [NursingTemplate] Error loading existing summary:",
+            error,
+          );
         }
       };
 
@@ -144,11 +163,16 @@ export const NursingTemplateAssessment = forwardRef<
 
     // Auto-generate summary when template is sufficiently complete
     useEffect(() => {
-      const completedFields = Object.values(templateData).filter(v => v.trim()).length;
-      const shouldAutoGenerate = completedFields >= 5 && !nursingSummary && !isGeneratingSummary;
-      
+      const completedFields = Object.values(templateData).filter((v) =>
+        v.trim(),
+      ).length;
+      const shouldAutoGenerate =
+        completedFields >= 5 && !nursingSummary && !isGeneratingSummary;
+
       if (shouldAutoGenerate) {
-        console.log("🏥 [NursingTemplate] Auto-generating summary (5+ fields completed)");
+        console.log(
+          "🏥 [NursingTemplate] Auto-generating summary (5+ fields completed)",
+        );
         generateSummary();
       }
     }, [templateData, nursingSummary, isGeneratingSummary]);
@@ -813,25 +837,30 @@ Only include fields that have information mentioned in the conversation.`,
       setIsGeneratingSummary(true);
       try {
         console.log("🏥 [NursingTemplate] Generating nursing summary...");
-        
-        const response = await fetch(`/api/encounters/${encounterId}/generate-nursing-summary`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            templateData,
-            transcription,
-            patientId: parseInt(patientId),
-          }),
-        });
+
+        const response = await fetch(
+          `/api/encounters/${encounterId}/generate-nursing-summary`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              templateData,
+              transcription,
+              patientId: parseInt(patientId),
+            }),
+          },
+        );
 
         if (!response.ok) {
-          throw new Error(`Failed to generate nursing summary: ${response.status}`);
+          throw new Error(
+            `Failed to generate nursing summary: ${response.status}`,
+          );
         }
 
         const data = await response.json();
         setNursingSummary(data.data.nursingSummary);
-        
+
         toast({
           title: "Summary Generated",
           description: "Nursing summary has been created and saved",
@@ -852,12 +881,15 @@ Only include fields that have information mentioned in the conversation.`,
 
     const saveSummary = async () => {
       try {
-        const response = await fetch(`/api/encounters/${encounterId}/nursing-summary`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ nursingSummary }),
-        });
+        const response = await fetch(
+          `/api/encounters/${encounterId}/nursing-summary`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ nursingSummary }),
+          },
+        );
 
         if (!response.ok) {
           throw new Error("Failed to save nursing summary");
@@ -1008,7 +1040,11 @@ Only include fields that have information mentioned in the conversation.`,
                   onClick={generateSummary}
                   size="sm"
                   variant="default"
-                  disabled={isGeneratingSummary || Object.values(templateData).filter(v => v.trim()).length === 0}
+                  disabled={
+                    isGeneratingSummary ||
+                    Object.values(templateData).filter((v) => v.trim())
+                      .length === 0
+                  }
                   className="h-8"
                 >
                   {isGeneratingSummary ? (
@@ -1055,11 +1091,7 @@ Only include fields that have information mentioned in the conversation.`,
                       >
                         Cancel
                       </Button>
-                      <Button
-                        onClick={saveSummary}
-                        size="sm"
-                        variant="default"
-                      >
+                      <Button onClick={saveSummary} size="sm" variant="default">
                         <Save className="h-3 w-3 mr-1" />
                         Save Changes
                       </Button>
@@ -1067,10 +1099,10 @@ Only include fields that have information mentioned in the conversation.`,
                   </div>
                 ) : (
                   <div className="p-4 bg-white border rounded-md">
-                    <div 
+                    <div
                       className="text-sm text-gray-800 font-sans leading-relaxed"
-                      dangerouslySetInnerHTML={{ 
-                        __html: formatNursingSummary(nursingSummary) 
+                      dangerouslySetInnerHTML={{
+                        __html: formatNursingSummary(nursingSummary),
                       }}
                     />
                   </div>
@@ -1079,7 +1111,8 @@ Only include fields that have information mentioned in the conversation.`,
             ) : (
               <div className="p-4 bg-gray-50 border rounded-md text-center">
                 <p className="text-sm text-gray-600">
-                  Complete template fields and click "Generate Summary" to create a structured nursing assessment summary
+                  Complete template fields and click "Generate Summary" to
+                  create a structured nursing assessment summary
                 </p>
               </div>
             )}

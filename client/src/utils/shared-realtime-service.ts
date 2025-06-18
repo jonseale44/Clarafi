@@ -105,9 +105,53 @@ export class SharedRealtimeService {
         orders: basePrompt + "Generate appropriate medical orders including medications, labs, and imaging studies."
       },
       nurse: {
-        nursing_assessment: basePrompt + "Generate a nursing assessment focusing on patient safety, comfort, education needs, and nursing interventions.",
-        care_plan: basePrompt + "Create a nursing care plan with patient-centered goals, interventions, and evaluation criteria.",
-        interventions: basePrompt + "Document nursing interventions performed and patient responses."
+        nursing_assessment: basePrompt + `Generate a nursing assessment using professional medical abbreviations and bullet point formatting.
+
+CRITICAL FORMATTING STANDARDS:
+- Use standard medical abbreviations: HTN, DM2, CAD, CHF, COPD, GERD, etc.
+- Format ALL content with bullet points using hyphens (-)
+- Convert long-form conditions to abbreviations (hypertension → HTN, diabetes type 2 → DM2)
+- Use professional nursing terminology throughout
+
+MEDICAL ABBREVIATIONS TO USE:
+- Hypertension → HTN
+- Diabetes Type 2 → DM2
+- Coronary Artery Disease → CAD
+- Congestive Heart Failure → CHF
+- Chronic Obstructive Pulmonary Disease → COPD
+- Gastroesophageal Reflux Disease → GERD
+- Atrial Fibrillation → AFib
+- Myocardial Infarction → MI
+- Cerebrovascular Accident → CVA
+- Hyperlipidemia → HLD
+- Osteoarthritis → OA
+- Rheumatoid Arthritis → RA
+- Urinary Tract Infection → UTI
+- Blood Pressure → BP
+- Heart Rate → HR
+- Respiratory Rate → RR
+- Temperature → T
+- Oxygen Saturation → O2 Sat
+
+Focus on patient safety, comfort, education needs, and nursing interventions using proper medical shorthand.`,
+        care_plan: basePrompt + `Create a nursing care plan using NANDA diagnoses and bullet point formatting.
+
+FORMATTING REQUIREMENTS:
+- Use bullet points with hyphens (-) for all content
+- Apply standard medical abbreviations consistently
+- Include specific, measurable goals and interventions
+- Use evidence-based nursing practice terminology
+
+Create patient-centered goals, interventions, and evaluation criteria with proper medical abbreviations.`,
+        interventions: basePrompt + `Document nursing interventions using professional medical terminology and bullet point formatting.
+
+FORMATTING STANDARDS:
+- Use bullet points with hyphens (-) for all interventions and responses
+- Include specific times, doses, and measurements
+- Use standard medical abbreviations consistently
+- Document both interventions performed and patient responses
+
+Format as professional nursing intervention documentation.`
       },
       admin: {
         notes: basePrompt + "Generate administrative notes and workflow documentation."
