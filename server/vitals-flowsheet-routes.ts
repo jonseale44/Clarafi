@@ -134,7 +134,10 @@ router.post("/entries", async (req, res) => {
     });
 
     console.log("✅ [VitalsFlowsheet] Created vitals entry:", vitalsEntry.id);
-    return APIResponseHandler.success(res, vitalsEntry, 201);
+    console.log("✅ [VitalsFlowsheet] Returning success response with vitals entry");
+    const response = APIResponseHandler.success(res, vitalsEntry, 201);
+    console.log("✅ [VitalsFlowsheet] Response sent");
+    return response;
   } catch (error) {
     console.error("❌ [VitalsFlowsheet] Error creating vitals entry:", error);
     

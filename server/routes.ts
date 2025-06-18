@@ -924,17 +924,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/vitals", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const validatedData = insertVitalsSchema.parse(req.body);
-      const vitals = await storage.createVitals(validatedData);
-      res.status(201).json(vitals);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+  // Vitals routes are now handled by vitals-flowsheet-routes.ts
+  // Old POST /api/vitals route removed to prevent routing conflicts
 
   // Patient chart data routes
   app.get("/api/patients/:patientId/allergies", async (req, res) => {
