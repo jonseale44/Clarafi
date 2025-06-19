@@ -213,7 +213,7 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Psychiatric: [positive findings only]
 - [Only include systems with positive findings]
 
-**VITAL SIGNS (${new Date().toLocaleDateString()})**
+**VITAL SIGNS (${new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' })})**
 - [Include ALL vital signs from the template data chronologically]
 - If multiple sets of vitals are documented, list each set with time/sequence
 - Example: "6/19/2025 1: BP: 146/83 | HR: 52 | T: 98.7°F | RR: N/A | O2 Sat: N/A on RA"

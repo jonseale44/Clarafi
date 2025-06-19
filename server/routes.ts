@@ -115,7 +115,7 @@ async function generateNursingTemplateDirect(
       ? encounterVitalsList
           .map(
             (v: any) =>
-              `${v.recordedAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
+              `${new Date(v.recordedAt).toLocaleDateString("en-US", { timeZone: "America/Chicago" })}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
           )
           .join("\n")
       : "- No vitals recorded for this encounter";
@@ -413,7 +413,7 @@ async function generateSOAPNoteDirect(
       ? encounterVitalsList
           .map(
             (v: any) =>
-              `${v.recordedAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
+              `${new Date(v.recordedAt).toLocaleDateString("en-US", { timeZone: "America/Chicago" })}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
           )
           .join("\n")
       : "- No vitals recorded for this encounter";
