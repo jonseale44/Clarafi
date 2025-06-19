@@ -596,6 +596,26 @@ export function LabResultsMatrix({
           </table>
         </div>
         
+        {/* Bottom Review Button - only shown when selections are made */}
+        {(selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) && (
+          <div className="border-t p-4 bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                {selectedDates.size > 0 && `${selectedDates.size} date${selectedDates.size > 1 ? 's' : ''} selected`}
+                {selectedTestRows.size > 0 && `${selectedTestRows.size} test${selectedTestRows.size > 1 ? 's' : ''} selected`}
+                {selectedPanels.size > 0 && `${selectedPanels.size} panel${selectedPanels.size > 1 ? 's' : ''} selected`}
+              </div>
+              <Button
+                onClick={handleReviewSelection}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Review Selected
+              </Button>
+            </div>
+          </div>
+        )}
+        
         {mode === 'compact' && dateColumns.length > maxColumns && (
           <div className="p-3 text-center border-t bg-muted/10">
             <div className="text-sm text-muted-foreground">
