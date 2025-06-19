@@ -64,7 +64,7 @@ router.post("/generate-encounter-messages/:encounterId", async (req: Request, re
     });
   } catch (error) {
     console.error("Error generating encounter messages:", error);
-    return APIResponseHandler.error(res, "BATCH_MESSAGE_ERROR", "Failed to generate encounter messages");
+    return APIResponseHandler.error(res, error as Error, 500, "BATCH_MESSAGE_ERROR");
   }
 });
 
@@ -95,11 +95,11 @@ router.post("/approve-message/:messageId", async (req: Request, res: Response) =
         status: 'approved'
       });
     } else {
-      return APIResponseHandler.error(res, "APPROVAL_ERROR", "Failed to approve message");
+      return APIResponseHandler.error(res, "Failed to approve message", 500, "APPROVAL_ERROR");
     }
   } catch (error) {
     console.error("Error approving message:", error);
-    return APIResponseHandler.error(res, "APPROVAL_ERROR", "Failed to approve message");
+    return APIResponseHandler.error(res, error as Error, 500, "APPROVAL_ERROR");
   }
 });
 
@@ -128,11 +128,11 @@ router.post("/send-message/:messageId", async (req: Request, res: Response) => {
         status: 'sent'
       });
     } else {
-      return APIResponseHandler.error(res, "SEND_ERROR", "Failed to send message");
+      return APIResponseHandler.error(res, "Failed to send message", 500, "SEND_ERROR");
     }
   } catch (error) {
     console.error("Error sending message:", error);
-    return APIResponseHandler.error(res, "SEND_ERROR", "Failed to send message");
+    return APIResponseHandler.error(res, error as Error, 500, "SEND_ERROR");
   }
 });
 
@@ -207,7 +207,7 @@ router.get("/pending-approval", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching pending messages:", error);
-    return APIResponseHandler.error(res, "FETCH_ERROR", "Failed to fetch pending messages");
+    return APIResponseHandler.error(res, error as Error, 500, "FETCH_ERROR");
   }
 });
 
@@ -234,7 +234,7 @@ router.post("/bulk-approve", async (req: Request, res: Response) => {
           const approved = await LabCommunicationService.approveMessage(id, providerId);
           return { messageId: id, success: approved };
         } catch (error) {
-          return { messageId: id, success: false, error: error.message };
+          return { messageId: id, success: false, error: (error as Error).message };
         }
       })
     );
@@ -254,7 +254,7 @@ router.post("/bulk-approve", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error bulk approving messages:", error);
-    return APIResponseHandler.error(res, "BULK_APPROVAL_ERROR", "Failed to bulk approve messages");
+    return APIResponseHandler.error(res, error as Error, 500, "BULK_APPROVAL_ERROR");
   }
 });
 
