@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   FlaskConical, 
   Calendar, 
@@ -12,10 +15,12 @@ import {
   CheckCircle, 
   AlertCircle,
   Activity,
-  Info
+  Info,
+  Expand,
+  Eye
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
+import { LabChartView } from "./lab-chart-view";
 
 interface EncounterLabResultsProps {
   patientId: number;
@@ -23,97 +28,136 @@ interface EncounterLabResultsProps {
 }
 
 export function EncounterLabResults({ patientId, encounterDate }: EncounterLabResultsProps) {
-  const [activeTab, setActiveTab] = useState("recent");
+  const [activeTab, setActiveTab] = useState("results");
+  const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 
   // Fetch lab orders and results
   const { data: labOrders = [], isLoading: ordersLoading } = useQuery({
-    queryKey: [`/api/patients/${patientId}/lab-orders`],
-    enabled: !!patientId
+    queryKey: ['/api/patients', patientId, 'draft-orders'],
   });
 
   const { data: labResults = [], isLoading: resultsLoading } = useQuery({
-    queryKey: [`/api/patients/${patientId}/lab-results`],
-    enabled: !!patientId
+    queryKey: ['/api/patients', patientId, 'lab-results'],
   });
+
+  const isLoading = ordersLoading || resultsLoading;
 
   // Ensure data is arrays
   const safeLabResults = Array.isArray(labResults) ? labResults : [];
   const safeLabOrders = Array.isArray(labOrders) ? labOrders : [];
 
-  // Filter results by encounter date if provided
-  const recentResults = encounterDate 
-    ? safeLabResults.filter((result: any) => {
-        if (!result.resultAvailableAt) return false;
-        const resultDate = new Date(result.resultAvailableAt);
-        const encDate = new Date(encounterDate);
-        const timeDiff = Math.abs(resultDate.getTime() - encDate.getTime());
-        return timeDiff <= 30 * 24 * 60 * 60 * 1000; // Within 30 days
-      })
-    : safeLabResults.slice(0, 30); // Show more recent results
+  // Filter for most recent results (last 7 days for compact view)
+  const recentResults = safeLabResults
+    .filter((result: any) => {
+      if (!result.resultAvailableAt) return false;
+      const resultDate = new Date(result.resultAvailableAt);
+      const now = new Date();
+      const timeDiff = now.getTime() - resultDate.getTime();
+      return timeDiff <= 7 * 24 * 60 * 60 * 1000; // Within 7 days
+    })
+    .slice(0, 8); // Show max 8 most recent results for compact view
 
   const pendingOrders = safeLabOrders.filter((order: any) => 
     order.orderStatus === 'pending' || order.orderStatus === 'collected'
   );
 
-  const abnormalResults = safeLabResults.filter((result: any) => 
-    result.abnormalFlag && result.abnormalFlag !== 'N'
-  );
-
-  // Group results by lab order (panel) for compact display
-  const groupedResults = recentResults.reduce((groups: any, result: any) => {
-    const orderKey = result.labOrderId || 'standalone';
-    if (!groups[orderKey]) {
-      groups[orderKey] = {
+  // Group results by lab order/panel for better organization
+  const groupedResults = recentResults.reduce((groups: any[], result: any) => {
+    const existingGroup = groups.find(g => g.orderInfo.id === result.labOrderId);
+    
+    if (existingGroup) {
+      existingGroup.results.push(result);
+      // Update group flags
+      if (result.abnormalFlag && result.abnormalFlag !== 'N') {
+        existingGroup.hasAbnormal = true;
+      }
+      if (result.criticalFlag) {
+        existingGroup.hasCritical = true;
+      }
+    } else {
+      groups.push({
         orderInfo: {
-          date: result.resultAvailableAt,
-          panelName: result.labOrderId ? getPanelName(result.testName) : result.testName,
-          status: result.resultStatus
+          id: result.labOrderId,
+          panelName: getPanelName(result.testName),
+          status: result.resultStatus || 'final',
+          date: result.resultAvailableAt
         },
-        results: []
-      };
+        results: [result],
+        hasAbnormal: result.abnormalFlag && result.abnormalFlag !== 'N',
+        hasCritical: result.criticalFlag || false
+      });
     }
-    groups[orderKey].results.push(result);
+    
     return groups;
-  }, {});
+  }, []);
 
-  // Helper function to determine panel name from test name
+  // Sort groups to prioritize critical and abnormal results
+  groupedResults.sort((a, b) => {
+    if (a.hasCritical && !b.hasCritical) return -1;
+    if (!a.hasCritical && b.hasCritical) return 1;
+    if (a.hasAbnormal && !b.hasAbnormal) return -1;
+    if (!a.hasAbnormal && b.hasAbnormal) return 1;
+    return new Date(b.orderInfo.date).getTime() - new Date(a.orderInfo.date).getTime();
+  });
+
   function getPanelName(testName: string): string {
-    if (['White Blood Cell Count', 'Red Blood Cell Count', 'Hemoglobin', 'Hematocrit', 'Platelet Count', 'Mean Corpuscular Volume', 'Mean Corpuscular Hemoglobin', 'Mean Corpuscular Hemoglobin Concentration'].includes(testName)) {
-      return 'Complete Blood Count (CBC)';
+    const panelMappings: { [key: string]: string } = {
+      'complete blood count': 'Complete Blood Count (CBC)',
+      'comprehensive metabolic panel': 'Comprehensive Metabolic Panel (CMP)',
+      'basic metabolic panel': 'Basic Metabolic Panel (BMP)',
+      'lipid panel': 'Lipid Panel',
+      'liver function': 'Liver Function Tests',
+      'thyroid': 'Thyroid Function Panel'
+    };
+
+    const lowerTest = testName.toLowerCase();
+    for (const [key, value] of Object.entries(panelMappings)) {
+      if (lowerTest.includes(key)) {
+        return value;
+      }
     }
-    if (['Glucose', 'BUN', 'Creatinine', 'Sodium', 'Potassium', 'Chloride', 'CO2'].includes(testName)) {
-      return 'Comprehensive Metabolic Panel (CMP)';
-    }
-    if (['TSH', 'T4', 'T3'].includes(testName)) {
-      return 'Thyroid Panel';
-    }
-    return testName;
+    
+    return testName || 'Lab Panel';
   }
 
-  // Helper function to get flag color
   function getFlagColor(flag: string): string {
-    if (!flag || flag === 'N') return '';
-    if (flag === 'H' || flag === 'HH') return 'text-red-600 font-medium';
-    if (flag === 'L' || flag === 'LL') return 'text-blue-600 font-medium';
-    return 'text-orange-600 font-medium';
+    if (!flag || flag === 'N') return 'text-gray-900';
+    if (flag.includes('H')) return 'text-red-600 font-semibold';
+    if (flag.includes('L')) return 'text-blue-600 font-semibold';
+    return 'text-orange-600 font-semibold';
   }
 
-  // Helper function to get test abbreviations
   function getTestAbbreviation(testName: string): string {
     const abbreviations: { [key: string]: string } = {
-      'White Blood Cell Count': 'WBC',
-      'Red Blood Cell Count': 'RBC', 
-      'Mean Corpuscular Volume': 'MCV',
-      'Mean Corpuscular Hemoglobin': 'MCH',
-      'Mean Corpuscular Hemoglobin Concentration': 'MCHC',
-      'Platelet Count': 'PLT',
-      'Hemoglobin': 'HGB',
-      'Hematocrit': 'HCT'
+      'platelet count': 'PLT',
+      'hematocrit': 'HCT',
+      'white blood cell count': 'WBC',
+      'red blood cell count': 'RBC',
+      'hemoglobin': 'HGB',
+      'mean corpuscular hemoglobin concentration': 'MCHC',
+      'mean corpuscular hemoglobin': 'MCH',
+      'mean corpuscular volume': 'MCV',
+      'glucose': 'GLU',
+      'blood urea nitrogen': 'BUN',
+      'creatinine': 'CREAT',
+      'sodium': 'Na',
+      'potassium': 'K',
+      'chloride': 'Cl',
+      'carbon dioxide': 'CO2',
+      'thyroid stimulating hormone': 'TSH'
     };
-    return abbreviations[testName] || testName;
+
+    const lowerTest = testName.toLowerCase();
+    for (const [key, value] of Object.entries(abbreviations)) {
+      if (lowerTest.includes(key)) {
+        return value;
+      }
+    }
+    
+    return testName.substring(0, 8).toUpperCase();
   }
 
-  if (ordersLoading || resultsLoading) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -123,8 +167,9 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-2">Loading lab results...</p>
           </div>
         </CardContent>
       </Card>
@@ -134,13 +179,36 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FlaskConical className="h-5 w-5" />
-          Lab Results
-        </CardTitle>
-        <CardDescription>
-          Recent laboratory data for this patient (last 30 days)
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <FlaskConical className="h-5 w-5" />
+              Lab Results
+            </CardTitle>
+            <CardDescription>
+              Most recent laboratory data (last 7 days)
+            </CardDescription>
+          </div>
+          <Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                View All Labs
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+              <DialogHeader>
+                <DialogTitle>All Laboratory Results</DialogTitle>
+              </DialogHeader>
+              <div className="overflow-auto max-h-[80vh]">
+                <LabChartView 
+                  patientId={patientId} 
+                  patientName={`Patient ID: ${patientId}`}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -153,30 +221,54 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="recent" className="space-y-3">
-            {Object.keys(groupedResults).length === 0 ? (
+          <TabsContent value="results">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              </div>
+            ) : groupedResults.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <FlaskConical className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No recent lab results found</p>
+                <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <div>
+                  <p>No recent lab results found (last 7 days)</p>
+                  <Button 
+                    variant="link" 
+                    className="text-sm mt-2"
+                    onClick={() => setIsFullViewOpen(true)}
+                  >
+                    View all patient lab history
+                  </Button>
+                </div>
               </div>
             ) : (
-              <ScrollArea className="h-[500px]">
+              <div className="max-h-[400px] overflow-y-auto">
                 <div className="space-y-4">
-                  {Object.entries(groupedResults).map(([orderKey, group]: [string, any]) => (
-                    <div key={orderKey} className="border rounded-lg">
-                      {/* Panel Header */}
-                      <div className="bg-gray-50 px-3 py-2 border-b flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-sm">{group.orderInfo.panelName}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            {group.orderInfo.status}
-                          </Badge>
+                  {groupedResults.map((group: any) => (
+                    <Card key={group.orderInfo.id} className={group.hasAbnormal ? 'border-orange-200 bg-orange-50' : ''}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            {group.orderInfo.panelName}
+                            <Badge variant="secondary" className="text-xs">
+                              {group.orderInfo.status}
+                            </Badge>
+                            {group.hasAbnormal && (
+                              <Badge variant="destructive" className="text-xs">
+                                Has Abnormal
+                              </Badge>
+                            )}
+                            {group.hasCritical && (
+                              <Badge variant="destructive" className="text-xs animate-pulse">
+                                CRITICAL
+                              </Badge>
+                            )}
+                          </CardTitle>
+                          <div className="text-sm text-muted-foreground">
+                            {group.orderInfo.date && format(new Date(group.orderInfo.date), 'MMM dd, yyyy')}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {group.orderInfo.date && format(new Date(group.orderInfo.date), 'MMM dd, yyyy')}
-                        </div>
-                      </div>
+                      </CardHeader>
                       
                       {/* Ultra-Compact Results Grid */}
                       <div className="p-2">
@@ -208,8 +300,10 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                         
                         <div className="space-y-0">
                           {group.results.map((result: any) => (
-                            <div key={result.id} className="grid grid-cols-7 gap-1 py-1 px-2 text-sm hover:bg-gray-50 rounded border-b border-gray-100 last:border-b-0">
-                              <div className="col-span-3 font-medium text-xs">
+                            <div key={result.id} className={`grid grid-cols-7 gap-1 py-1 px-2 text-sm hover:bg-gray-50 rounded border-b border-gray-100 last:border-b-0 ${result.criticalFlag ? 'bg-red-100 border-red-300' : result.abnormalFlag && result.abnormalFlag !== 'N' ? 'bg-yellow-50' : ''}`}>
+                              <div className="col-span-3 font-medium text-xs flex items-center gap-1">
+                                {result.criticalFlag && <AlertTriangle className="h-3 w-3 text-red-600" />}
+                                {result.abnormalFlag && result.abnormalFlag !== 'N' && !result.criticalFlag && <AlertCircle className="h-3 w-3 text-orange-500" />}
                                 {getTestAbbreviation(result.testName)}
                               </div>
                               <div className="col-span-2 text-right font-mono text-sm">
@@ -218,7 +312,12 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                                 </span>
                               </div>
                               <div className="col-span-1 text-center">
-                                {result.abnormalFlag && result.abnormalFlag !== 'N' && (
+                                {result.criticalFlag && (
+                                  <Badge variant="destructive" className="text-xs px-1 py-0 h-4">
+                                    CRIT
+                                  </Badge>
+                                )}
+                                {!result.criticalFlag && result.abnormalFlag && result.abnormalFlag !== 'N' && (
                                   <Badge variant={result.abnormalFlag.includes('H') ? 'destructive' : 'secondary'} className="text-xs px-1 py-0 h-4">
                                     {result.abnormalFlag}
                                   </Badge>
@@ -229,10 +328,24 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                           ))}
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   ))}
+                  
+                  {/* Show link to full view if there are more results */}
+                  {safeLabResults.length > recentResults.length && (
+                    <div className="text-center py-4 border-t">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsFullViewOpen(true)}
+                      >
+                        <Expand className="h-4 w-4 mr-2" />
+                        View All {safeLabResults.length} Lab Results
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              </ScrollArea>
+              </div>
             )}
           </TabsContent>
 
@@ -246,86 +359,22 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3">
                   {pendingOrders.map((order: any) => (
-                    <div key={order.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{order.testName}</h4>
-                          <p className="text-xs text-muted-foreground">
-                            {order.testCode} • {order.priority}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {order.clinicalIndication}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {order.orderStatus}
+                    <div key={order.id} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{order.testName}</h4>
+                        <Badge variant={order.priority === 'STAT' ? 'destructive' : 'secondary'}>
+                          {order.priority || 'Routine'}
                         </Badge>
                       </div>
-                      
-                      <div className="text-xs text-muted-foreground mt-2">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Ordered: {order.orderedAt && format(new Date(order.orderedAt), 'MMM dd, yyyy')}
-                        </span>
+                      <div className="text-sm text-muted-foreground">
+                        <div>Ordered: {order.orderDate && format(new Date(order.orderDate), 'MMM dd, yyyy')}</div>
+                        <div>Status: {order.orderStatus}</div>
+                        {order.collectionDate && (
+                          <div>Collected: {format(new Date(order.collectionDate), 'MMM dd, yyyy')}</div>
+                        )}
                       </div>
                     </div>
                   ))}
-                </div>
-              </ScrollArea>
-            )}
-          </TabsContent>
-
-          <TabsContent value="abnormal" className="space-y-3">
-            {abnormalResults.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No abnormal results found</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[400px]">
-                <div className="p-2">
-                  <div className="grid grid-cols-7 gap-1 text-xs font-medium text-muted-foreground mb-2 py-1 px-2 bg-red-100 rounded">
-                    <div className="col-span-3 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3 text-red-600" />
-                      Test
-                    </div>
-                    <div className="col-span-2 text-right">Result</div>
-                    <div className="col-span-1 text-center">Flag</div>
-                    <div className="col-span-1 text-center">Date</div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    {abnormalResults.map((result: any) => (
-                      <TooltipProvider key={result.id}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="grid grid-cols-7 gap-1 py-2 text-sm border-l-4 border-red-400 bg-red-50 hover:bg-red-100 rounded px-2 cursor-help">
-                              <div className="col-span-3 font-medium text-sm">
-                                {getTestAbbreviation(result.testName)}
-                              </div>
-                              <div className="col-span-2 text-right font-mono font-semibold text-red-600">
-                                {result.resultValue} <span className="text-xs">{result.resultUnits}</span>
-                              </div>
-                              <div className="col-span-1 text-center">
-                                <Badge variant="destructive" className="text-xs h-4">
-                                  {result.abnormalFlag}
-                                </Badge>
-                              </div>
-                              <div className="col-span-1 text-center text-xs text-muted-foreground">
-                                {result.resultAvailableAt && format(new Date(result.resultAvailableAt), 'MMM dd')}
-                              </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            <div className="text-xs">
-                              <div><strong>Full Name:</strong> {result.testName}</div>
-                              <div><strong>Reference:</strong> {result.referenceRange}</div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ))}
-                  </div>
                 </div>
               </ScrollArea>
             )}
