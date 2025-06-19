@@ -72,7 +72,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
   console.log('🧪 [EncounterLabResults] Recent results sample:', recentResults[0]);
 
   const pendingOrders = safeLabOrders.filter((order: any) => 
-    order.orderStatus === 'pending' || order.orderStatus === 'collected'
+    ['pending', 'collected', 'transmitted', 'acknowledged', 'order_received', 'specimen_collection_scheduled', 'specimen_collected', 'specimen_received_at_lab', 'specimen_processing_started', 'analysis_completed', 'results_verified'].includes(order.orderStatus)
   );
 
   // Group results by lab order/panel for better organization

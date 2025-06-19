@@ -168,13 +168,13 @@ export class EncounterValidationService {
       }
     }
 
-    // For lab orders, process through external lab integration
+    // For lab orders, process through production lab integration
     if (signedOrder.orderType === "lab") {
-      console.log(`🧪 [ValidationService] Processing lab order for external transmission: ${orderId}`);
+      console.log(`🏥 [ValidationService] Processing lab order through production lab system: ${orderId}`);
       try {
-        const { LabOrderIntegrationService } = await import("./lab-order-integration-service.js");
-        await LabOrderIntegrationService.processSignedLabOrder(orderId);
-        console.log(`✅ [ValidationService] Successfully processed lab order ${orderId} for external transmission`);
+        const { ProductionLabIntegrationService } = await import("./production-lab-integration-service.js");
+        await ProductionLabIntegrationService.processProductionLabOrder(orderId);
+        console.log(`✅ [ValidationService] Successfully processed lab order ${orderId} through production lab system`);
       } catch (labError) {
         console.error(`❌ [ValidationService] Failed to process lab order ${orderId}:`, labError);
         // Continue - order is still signed even if lab processing fails
