@@ -58,18 +58,27 @@ export class LabCommunicationService {
    */
   static async generateLabMessage(request: MessageGenerationRequest): Promise<LabMessage> {
     console.log(`🤖 [Lab Communication] Generating message for patient ${request.patientId}`);
+    console.log(`🤖 [Lab Communication] Request details:`, JSON.stringify(request, null, 2));
     
     // Get lab results
+    console.log(`🤖 [Lab Communication] Querying lab results for IDs: ${request.resultIds.join(', ')}`);
     const results = await db
       .select()
       .from(labResults)
       .where(inArray(labResults.id, request.resultIds));
     
+    console.log(`🤖 [Lab Communication] Found ${results.length} lab results`);
+    if (results.length > 0) {
+      console.log(`🤖 [Lab Communication] Sample result:`, JSON.stringify(results[0], null, 2));
+    }
+    
     if (!results.length) {
+      console.error(`🤖 [Lab Communication] No lab results found for IDs: ${request.resultIds.join(', ')}`);
       throw new Error('No lab results found for message generation');
     }
     
     // Get patient information
+    console.log(`🤖 [Lab Communication] Querying patient info for ID: ${request.patientId}`);
     const patient = await db
       .select({
         id: patients.id,
@@ -82,7 +91,13 @@ export class LabCommunicationService {
       .where(eq(patients.id, request.patientId))
       .limit(1);
     
+    console.log(`🤖 [Lab Communication] Found ${patient.length} patient records`);
+    if (patient.length > 0) {
+      console.log(`🤖 [Lab Communication] Patient: ${patient[0].firstName} ${patient[0].lastName}`);
+    }
+    
     if (!patient.length) {
+      console.error(`🤖 [Lab Communication] Patient not found for ID: ${request.patientId}`);
       throw new Error('Patient not found');
     }
     
@@ -90,11 +105,14 @@ export class LabCommunicationService {
     const preferences = await this.getPatientCommunicationPreferences(request.patientId);
     
     // Determine message type and urgency
+    console.log(`🤖 [Lab Communication] Analyzing results for message type and urgency`);
     const messageAnalysis = this.analyzeResults(results);
     const messageType = request.messageType || messageAnalysis.messageType;
     const urgencyLevel = messageAnalysis.urgencyLevel;
+    console.log(`🤖 [Lab Communication] Analysis result - Type: ${messageType}, Urgency: ${urgencyLevel}`);
     
     // Generate message content using GPT
+    console.log(`🤖 [Lab Communication] Generating message content using GPT`);
     const messageContent = await this.generateMessageContent({
       patient: patient[0],
       results,
@@ -102,6 +120,7 @@ export class LabCommunicationService {
       preferences,
       urgencyLevel
     });
+    console.log(`🤖 [Lab Communication] Generated message content (${messageContent.length} characters)`);
     
     // Create message record
     const message: Partial<LabMessage> = {

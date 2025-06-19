@@ -1,0 +1,71 @@
+n] Diagnoses count: 0
+🔍 [Validation] Found 0 draft orders requiring signature
+✅ [Validation] All orders signed or no orders present
+2:29:45 PM [express] GET /api/encounters/306/validation 304 in 327ms :: {"canSign":false,"errors":["…
+🤖 [Lab Communication] Generating message for patient 110
+Error generating lab message: error: column "result_numeric" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async Function.generateLabMessage (/home/runner/workspace/server/lab-communication-service.ts:63:21)
+    at async <anonymous> (/home/runner/workspace/server/lab-communication-routes.ts:29:21) {
+  length: 115,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '117',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+[API Error 500] column "result_numeric" does not exist error: column "result_numeric" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async Function.generateLabMessage (/home/runner/workspace/server/lab-communication-service.ts:63:21)
+    at async <anonymous> (/home/runner/workspace/server/lab-communication-routes.ts:29:21) {
+  length: 115,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '117',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+2:29:46 PM [express] POST /api/lab-communication/generate-message 500 in 470ms :: {"success":false,"…
+2:29:46 PM [express] GET /api/patients/110/draft-orders 304 in 261ms :: []
+🔍 [Validation] Validating encounter 306
+🔍 [Validation] SOAP note length: 0
+🔍 [Validation] CPT codes count: 0
+🔍 [Validation] Diagnoses count: 0
+🔍 [Validation] Found 0 draft orders requiring signature
+✅ [Validation] All orders signed or no orders present
+2:29:47 PM [express] GET /api/encounters/306/validation 304 in 327ms :: {"canSign":false,"errors":["…
+2:29:49 PM [express] GET /api/patients/110/draft-orders 304 in 265ms :: []
+🔍 [Validation] Validating encounter 306
+🔍 [Validation] SOAP note length: 0
+🔍 [Validation] CPT codes count: 0
+🔍 [Validation] Diagnoses count: 0
+🔍 [Validation] Found 0 draft orders requiring signature
+✅ [Validation] All orders signed or no orders present
+2:29:50 PM [express] GET /api/encounters/306/validation 304 in 328ms :: {"canSign":false,"errors":["…
+2:29:51 PM [express] GET /api/patients/110/draft-orders 304 in 258ms :: []
