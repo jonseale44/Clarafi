@@ -234,22 +234,7 @@ export function LabResultsMatrix({
   }, [matrixData]);
 
   const handleDateClick = (date: string, isShiftClick: boolean) => {
-    // Check if this date has pending review results
-    const hasPendingResults = matrixData.some(test => 
-      test.results.some(result => result.date === date && result.needsReview)
-    );
-
-    if (hasPendingResults) {
-      // Immediately trigger review for this date
-      const encounterIds: number[] = [];
-      const encounters = encountersByDate.get(date) || [];
-      encounterIds.push(...encounters);
-      console.log('🔍 [LabMatrix] Auto-triggering review for date:', date, 'encounters:', encounterIds);
-      onReviewEncounter?.(date, encounterIds);
-      // Don't return - still allow selection for visual highlighting
-    }
-
-    // Selection behavior for visual highlighting
+    // Selection behavior for visual highlighting - this should happen first
     const newSelected = new Set(selectedDates);
     if (newSelected.has(date)) {
       newSelected.delete(date);
@@ -262,26 +247,13 @@ export function LabResultsMatrix({
       }
     }
     setSelectedDates(newSelected);
+    
+    // Note: Auto-review is now only triggered via the Review Selected button
+    // This ensures proper selection counting works in dashboard view
   };
 
   const handleTestRowClick = (testName: string) => {
-    // Check if this test has pending review results
-    const hasPendingResults = matrixData
-      .find(test => test.testName === testName)?.results
-      .some(result => result.needsReview);
-
-    if (hasPendingResults) {
-      // Immediately trigger review for this test
-      const test = matrixData.find(t => t.testName === testName);
-      if (test) {
-        const resultIds = test.results.map(r => r.id);
-        console.log('🔍 [LabMatrix] Auto-triggering review for test:', testName, 'resultIds:', resultIds);
-        onReviewTestGroup?.(testName, resultIds);
-        // Don't return - still allow selection for visual highlighting
-      }
-    }
-
-    // Selection behavior for visual highlighting
+    // Selection behavior for visual highlighting - this should happen first
     const newSelected = new Set(selectedTestRows);
     if (newSelected.has(testName)) {
       newSelected.delete(testName);
@@ -289,27 +261,13 @@ export function LabResultsMatrix({
       newSelected.add(testName);
     }
     setSelectedTestRows(newSelected);
+    
+    // Note: Auto-review is now only triggered via the Review Selected button
+    // This ensures proper selection counting works in dashboard view
   };
 
   const handlePanelClick = (panelName: string) => {
-    // Check if this panel has pending review results
-    const panelTests = groupedData[panelName] || [];
-    const hasPendingResults = panelTests.some(test => 
-      test.results.some(result => result.needsReview)
-    );
-
-    if (hasPendingResults) {
-      // Immediately trigger review for this panel
-      const resultIds: number[] = [];
-      panelTests.forEach(test => {
-        resultIds.push(...test.results.map(r => r.id));
-      });
-      console.log('🔍 [LabMatrix] Auto-triggering review for panel:', panelName, 'resultIds:', resultIds);
-      onReviewTestGroup?.(panelName, resultIds);
-      // Don't return - still allow selection for visual highlighting
-    }
-
-    // Selection behavior for visual highlighting
+    // Selection behavior for visual highlighting - this should happen first
     const newSelected = new Set(selectedPanels);
     if (newSelected.has(panelName)) {
       newSelected.delete(panelName);
@@ -317,6 +275,9 @@ export function LabResultsMatrix({
       newSelected.add(panelName);
     }
     setSelectedPanels(newSelected);
+    
+    // Note: Auto-review is now only triggered via the Review Selected button
+    // This ensures proper selection counting works in dashboard view
   };
 
   const togglePanelExpansion = (panelName: string) => {
@@ -711,12 +672,12 @@ export function LabResultsMatrix({
                                   <div 
                                     className={`px-1 py-0.5 rounded text-xs cursor-pointer transition-all ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview, result.isReviewed, canUnreview(result))} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
                                     onClick={() => {
+                                      // Only trigger individual lab result actions for specific review/unreview
+                                      // This preserves the single-click review behavior for individual results
                                       if (result.needsReview) {
-                                        // Immediately trigger review for this specific result
                                         console.log('🔍 [LabMatrix] Auto-triggering review for specific result:', test.testName, date, result.id);
                                         onReviewSpecific?.(test.testName, date, result.id);
                                       } else if (result.isReviewed && canUnreview(result)) {
-                                        // Allow unreview if user has permission
                                         console.log('🔍 [LabMatrix] Auto-triggering unreview for specific result:', test.testName, date, result.id);
                                         onUnreviewSpecific?.(test.testName, date, result.id);
                                       }
