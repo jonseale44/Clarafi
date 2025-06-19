@@ -139,18 +139,17 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
           Lab Results
         </CardTitle>
         <CardDescription>
-          Laboratory data relevant to this encounter
+          Recent laboratory data for this patient (last 30 days)
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="recent">Recent Results</TabsTrigger>
-            <TabsTrigger value="pending">
-              Pending ({pendingOrders.length})
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="results">
+              Recent Results ({recentResults.length})
             </TabsTrigger>
-            <TabsTrigger value="abnormal">
-              Abnormal ({abnormalResults.length})
+            <TabsTrigger value="pending">
+              Pending Orders ({pendingOrders.length})
             </TabsTrigger>
           </TabsList>
 
