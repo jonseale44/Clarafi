@@ -707,6 +707,9 @@ export function ProviderDashboard() {
                     .filter((id: number) => !reviewedResultIds.has(id))
                   }
                   onReviewEncounter={(date, encounterIds) => {
+                    console.log('🔍 [Dashboard] onReviewEncounter called with:', { date, encounterIds });
+                    console.log('🔍 [Dashboard] Available labs:', selectedPatientGroup.labs.length);
+                    
                     // Get all result IDs for this encounter date
                     const resultIds = selectedPatientGroup.labs
                       .filter((lab: any) => {
@@ -715,13 +718,17 @@ export function ProviderDashboard() {
                           const labDate = new Date(lab.resultAvailableAt);
                           if (isNaN(labDate.getTime())) return false;
                           const dateString = labDate.toISOString().split('T')[0];
-                          return dateString === date;
+                          const matches = dateString === date;
+                          console.log('🔍 [Dashboard] Lab', lab.id, 'date check:', dateString, 'vs', date, '=', matches);
+                          return matches;
                         } catch (error) {
                           console.warn('Invalid date for lab:', lab.id, lab.resultAvailableAt);
                           return false;
                         }
                       })
                       .map((lab: any) => lab.id);
+                    
+                    console.log('🔍 [Dashboard] Filtered result IDs:', resultIds);
                     
                     setSelectedLabForReview({
                       type: 'encounter',
@@ -732,6 +739,8 @@ export function ProviderDashboard() {
                     });
                   }}
                   onReviewTestGroup={(testName, resultIds) => {
+                    console.log('🔍 [Dashboard] onReviewTestGroup called with:', { testName, resultIds });
+                    
                     // Open test group review
                     setSelectedLabForReview({
                       type: 'testGroup',
@@ -817,12 +826,13 @@ export function ProviderDashboard() {
                         setReviewingInProgress(true);
                         
                         try {
+                          console.log('🔍 [Dashboard] Starting review process for:', selectedLabForReview);
+                          
                           const promises: Promise<any>[] = [];
                           const resultIdsToReview: number[] = [];
                           
                           if (selectedLabForReview.type === 'encounter') {
-                            // For encounter review, we need to get all lab result IDs from those encounters
-                            // This is a simplified approach - in practice you'd want to batch this
+                            console.log('🔍 [Dashboard] Processing encounter review with resultIds:', selectedLabForReview.resultIds);
                             selectedLabForReview.resultIds?.forEach((resultId: number) => {
                               resultIdsToReview.push(resultId);
                               promises.push(
@@ -833,6 +843,7 @@ export function ProviderDashboard() {
                               );
                             });
                           } else if (selectedLabForReview.type === 'testGroup') {
+                            console.log('🔍 [Dashboard] Processing test group review with resultIds:', selectedLabForReview.resultIds);
                             selectedLabForReview.resultIds?.forEach((resultId: number) => {
                               resultIdsToReview.push(resultId);
                               promises.push(
@@ -843,6 +854,7 @@ export function ProviderDashboard() {
                               );
                             });
                           } else {
+                            console.log('🔍 [Dashboard] Processing specific review with resultId:', selectedLabForReview.resultId);
                             resultIdsToReview.push(selectedLabForReview.resultId);
                             promises.push(
                               reviewLabResultMutation.mutateAsync({
@@ -851,6 +863,8 @@ export function ProviderDashboard() {
                               })
                             );
                           }
+                          
+                          console.log('🔍 [Dashboard] Total result IDs to review:', resultIdsToReview);
                           
                           await Promise.all(promises);
                           

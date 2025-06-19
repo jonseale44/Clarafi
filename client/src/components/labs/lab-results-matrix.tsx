@@ -246,33 +246,49 @@ export function LabResultsMatrix({
   };
 
   const handleReviewSelection = () => {
+    console.log('🔍 [LabMatrix] Review selection triggered with:', {
+      selectedDates: Array.from(selectedDates),
+      selectedTestRows: Array.from(selectedTestRows),
+      selectedPanels: Array.from(selectedPanels),
+      matrixDataLength: matrixData.length,
+      groupedDataKeys: Object.keys(groupedData)
+    });
+
     if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
       // Review by encounter(s)
       const encounterIds: number[] = [];
       selectedDates.forEach(date => {
         const encounters = encountersByDate.get(date) || [];
+        console.log('🔍 [LabMatrix] Encounters for date', date, ':', encounters);
         encounterIds.push(...encounters);
       });
+      console.log('🔍 [LabMatrix] Calling onReviewEncounter with:', Array.from(selectedDates).join(', '), encounterIds);
       onReviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds);
     } else if (selectedPanels.size > 0 && selectedDates.size === 0) {
       // Review by lab panel(s)
       const resultIds: number[] = [];
       selectedPanels.forEach(panelName => {
         const panelTests = groupedData[panelName] || [];
+        console.log('🔍 [LabMatrix] Panel tests for', panelName, ':', panelTests.length);
         panelTests.forEach(test => {
+          console.log('🔍 [LabMatrix] Test results for', test.testName, ':', test.results.map(r => r.id));
           resultIds.push(...test.results.map(r => r.id));
         });
       });
+      console.log('🔍 [LabMatrix] Calling onReviewTestGroup with panel resultIds:', resultIds);
       onReviewTestGroup?.(Array.from(selectedPanels).join(', '), resultIds);
     } else if (selectedTestRows.size > 0 && selectedDates.size === 0) {
       // Review by test group(s)
       const resultIds: number[] = [];
       selectedTestRows.forEach(testName => {
         const test = matrixData.find(t => t.testName === testName);
+        console.log('🔍 [LabMatrix] Found test for', testName, ':', test ? test.results.length + ' results' : 'not found');
         if (test) {
+          console.log('🔍 [LabMatrix] Result IDs for', testName, ':', test.results.map(r => r.id));
           resultIds.push(...test.results.map(r => r.id));
         }
       });
+      console.log('🔍 [LabMatrix] Calling onReviewTestGroup with test resultIds:', resultIds);
       onReviewTestGroup?.(Array.from(selectedTestRows).join(', '), resultIds);
     } else if (selectedTestRows.size === 1 && selectedDates.size === 1) {
       // Review specific test on specific date
@@ -280,9 +296,12 @@ export function LabResultsMatrix({
       const date = Array.from(selectedDates)[0];
       const test = matrixData.find(t => t.testName === testName);
       const result = test?.results.find(r => r.date === date);
+      console.log('🔍 [LabMatrix] Specific review for', testName, 'on', date, ':', result ? result.id : 'not found');
       if (result) {
         onReviewSpecific?.(testName, date, result.id);
       }
+    } else {
+      console.log('🔍 [LabMatrix] No matching review condition found');
     }
   };
 
