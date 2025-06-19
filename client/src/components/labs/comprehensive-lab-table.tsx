@@ -91,16 +91,19 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
     Object.entries(grouped)
       .sort(([, a], [, b]) => {
         // Sort groups by most recent result date
-        const latestA = Math.max(...(a as LabResult[]).map((r: LabResult) => new Date(r.resultAvailableAt).getTime()));
-        const latestB = Math.max(...(b as LabResult[]).map((r: LabResult) => new Date(r.resultAvailableAt).getTime()));
+        const groupA = a as LabResult[];
+        const groupB = b as LabResult[];
+        const latestA = Math.max(...groupA.map(r => new Date(r.resultAvailableAt).getTime()));
+        const latestB = Math.max(...groupB.map(r => new Date(r.resultAvailableAt).getTime()));
         return latestB - latestA;
       })
       .forEach(([testName, results]) => {
-        const sortedResults = (results as LabResult[]).sort((a: LabResult, b: LabResult) => 
+        const typedResults = results as LabResult[];
+        const sortedResults = typedResults.sort((a, b) => 
           new Date(b.resultAvailableAt).getTime() - new Date(a.resultAvailableAt).getTime()
         );
         
-        sortedResults.forEach((result: LabResult, index: number) => {
+        sortedResults.forEach((result, index) => {
           flattened.push({
             ...result,
             isGroupStart: index === 0,

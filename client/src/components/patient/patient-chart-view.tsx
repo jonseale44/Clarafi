@@ -180,7 +180,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       case "problems":
         return <EnhancedMedicalProblemsList patientId={patientId} mode="patient-chart" isReadOnly={false} />;
       case "labs":
-        return <IntegratedLabView patientId={patientId} patientName={`${patient.firstName} ${patient.lastName}`} />;
+        return <ComprehensiveLabTable patientId={patientId} patientName={`${patient.firstName} ${patient.lastName}`} />;
       case "medication":
       case "allergies":
       case "vitals":
