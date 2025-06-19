@@ -82,7 +82,13 @@ interface AgeBasedRanges {
   [key: string]: VitalRange;
 }
 
-export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = false }: VitalsFlowsheetProps) {
+export function VitalsFlowsheet({ 
+  encounterId, 
+  patientId, 
+  patient, 
+  readOnly = false,
+  showAllPatientVitals = true
+}: VitalsFlowsheetProps) {
   const [editingEntry, setEditingEntry] = useState<VitalsEntry | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [quickParseText, setQuickParseText] = useState("");
@@ -173,33 +179,60 @@ export function VitalsFlowsheet({ encounterId, patientId, patient, readOnly = fa
     return { status: "normal", color: "text-green-600", bgColor: "bg-green-50" };
   };
 
-  // Fetch vitals entries for the encounter
+  // Fetch vitals entries - use patient vitals if showAllPatientVitals is true  
   const { data: vitalsEntries = [], isLoading: vitalsLoading } = useQuery<VitalsEntry[]>({
-    queryKey: ['/api/vitals/encounter', encounterId],
+    queryKey: showAllPatientVitals 
+      ? ['/api/vitals/patient', patientId, encounterId]
+      : ['/api/vitals/encounter', encounterId],
     queryFn: async () => {
-      console.log("🩺 [VitalsFlowsheet] Fetching vitals for encounter:", encounterId);
-      const response = await fetch(`/api/vitals/encounter/${encounterId}`, { 
-        credentials: 'include' 
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch vitals: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("🩺 [VitalsFlowsheet] Fetched vitals result:", result);
-      
-      // Handle wrapped API response format
-      if (result.success && result.data) {
-        return result.data;
-      } else if (Array.isArray(result)) {
-        return result;
+      if (showAllPatientVitals) {
+        console.log("🩺 [VitalsFlowsheet] Fetching ALL patient vitals for patient:", patientId, "current encounter:", encounterId);
+        const params = encounterId ? `?currentEncounterId=${encounterId}` : '';
+        const response = await fetch(`/api/vitals/patient/${patientId}${params}`, { 
+          credentials: 'include' 
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch patient vitals: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log("🩺 [VitalsFlowsheet] Fetched patient vitals result:", result);
+        
+        // Handle wrapped API response format
+        if (result.success && result.data) {
+          return result.data;
+        } else if (Array.isArray(result)) {
+          return result;
+        } else {
+          console.warn("🩺 [VitalsFlowsheet] Unexpected response format:", result);
+          return [];
+        }
       } else {
-        console.warn("🩺 [VitalsFlowsheet] Unexpected response format:", result);
-        return [];
+        console.log("🩺 [VitalsFlowsheet] Fetching vitals for encounter:", encounterId);
+        const response = await fetch(`/api/vitals/encounter/${encounterId}`, { 
+          credentials: 'include' 
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch vitals: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log("🩺 [VitalsFlowsheet] Fetched vitals result:", result);
+        
+        // Handle wrapped API response format
+        if (result.success && result.data) {
+          return result.data;
+        } else if (Array.isArray(result)) {
+          return result;
+        } else {
+          console.warn("🩺 [VitalsFlowsheet] Unexpected response format:", result);
+          return [];
+        }
       }
     },
-    enabled: !!encounterId
+    enabled: !!patientId
   });
 
   // Quick parse mutation using server-side GPT parsing

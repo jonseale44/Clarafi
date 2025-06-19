@@ -27,10 +27,11 @@ function VitalsSection({ patientId, encounterId, mode }: {
   return (
     <div className="space-y-4">
       <VitalsFlowsheet
-        encounterId={encounterId || 0}
+        encounterId={encounterId}
         patientId={patientId}
         patient={patient as any}
         readOnly={false}
+        showAllPatientVitals={true}
       />
     </div>
   );
