@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,13 @@ interface LabResultsMatrixProps {
   encounterId?: number;
   showTitle?: boolean;
   pendingReviewIds?: number[]; // IDs of results that need review
+  currentUserId?: number; // Current user ID for permission checks
   onReviewEncounter?: (date: string, encounterIds: number[]) => void;
   onReviewTestGroup?: (testName: string, resultIds: number[]) => void;
   onReviewSpecific?: (testName: string, date: string, resultId: number) => void;
   onUnreviewEncounter?: (date: string, encounterIds: number[], resultIds: number[]) => void;
   onUnreviewTestGroup?: (testName: string, resultIds: number[]) => void;
+  onUnreviewSpecific?: (testName: string, date: string, resultId: number) => void;
 }
 
 interface MatrixData {
@@ -32,6 +34,8 @@ interface MatrixData {
     encounterId?: number;
     needsReview?: boolean;
     isReviewed?: boolean;
+    reviewedBy?: number;
+    orderedBy?: number;
   }>;
 }
 
@@ -41,11 +45,13 @@ export function LabResultsMatrix({
   encounterId,
   showTitle = true,
   pendingReviewIds = [],
+  currentUserId,
   onReviewEncounter,
   onReviewTestGroup,
   onReviewSpecific,
   onUnreviewEncounter,
-  onUnreviewTestGroup
+  onUnreviewTestGroup,
+  onUnreviewSpecific
 }: LabResultsMatrixProps) {
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
   const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['Complete Blood Count', 'Basic Metabolic Panel'])); // Default open panels
@@ -54,8 +60,20 @@ export function LabResultsMatrix({
   const [selectedPanels, setSelectedPanels] = useState<Set<string>>(new Set());
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [hoveredTestRow, setHoveredTestRow] = useState<string | null>(null);
+  
+  const queryClient = useQueryClient();
 
   console.log('🧪 [LabResultsMatrix] Rendering with:', { patientId, mode, encounterId });
+
+  // Permission check for unreview functionality
+  const canUnreview = (result: any) => {
+    if (!currentUserId) return false;
+    // Allow unreview if:
+    // 1. Current user reviewed it, OR
+    // 2. Current user is the ordering provider, OR  
+    // 3. Current user is admin/provider (role-based check would be ideal but not implemented here)
+    return result.reviewedBy === currentUserId || result.orderedBy === currentUserId;
+  };
 
   const { data: labResults, isLoading } = useQuery({
     queryKey: [`/api/patients/${patientId}/lab-results`],
@@ -481,9 +499,10 @@ export function LabResultsMatrix({
     }
   };
 
-  const getValueClass = (abnormalFlag?: string, criticalFlag?: boolean, needsReview?: boolean) => {
+  const getValueClass = (abnormalFlag?: string, criticalFlag?: boolean, needsReview?: boolean, isReviewed?: boolean, canUnreviewResult?: boolean) => {
     if (needsReview) return 'bg-yellow-100 text-yellow-900 border-2 border-yellow-400';
     if (criticalFlag) return 'bg-red-100 text-red-800 border border-red-300';
+    if (isReviewed && canUnreviewResult) return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
     if (abnormalFlag === 'H') return 'bg-orange-100 text-orange-800';
     if (abnormalFlag === 'L') return 'bg-blue-100 text-blue-800';
     return 'bg-green-50 text-green-800';
@@ -675,12 +694,16 @@ export function LabResultsMatrix({
                               {result ? (
                                 <div className="relative">
                                   <div 
-                                    className={`px-2 py-1 rounded text-sm cursor-pointer transition-all ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview)} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
+                                    className={`px-2 py-1 rounded text-sm cursor-pointer transition-all ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview, result.isReviewed, canUnreview(result))} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
                                     onClick={() => {
                                       if (result.needsReview) {
                                         // Immediately trigger review for this specific result
                                         console.log('🔍 [LabMatrix] Auto-triggering review for specific result:', test.testName, date, result.id);
                                         onReviewSpecific?.(test.testName, date, result.id);
+                                      } else if (result.isReviewed && canUnreview(result)) {
+                                        // Allow unreview if user has permission
+                                        console.log('🔍 [LabMatrix] Auto-triggering unreview for specific result:', test.testName, date, result.id);
+                                        onUnreviewSpecific?.(test.testName, date, result.id);
                                       }
                                     }}
                                   >
