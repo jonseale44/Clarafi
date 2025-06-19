@@ -57,14 +57,14 @@ export function LabChartView({ patientId, patientName }: LabChartViewProps) {
 
   // Fetch lab orders
   const { data: labOrders = [], isLoading: ordersLoading } = useQuery({
-    queryKey: ["/api/patients", patientId, "lab-orders"],
-    queryFn: () => apiRequest(`/api/patients/${patientId}/lab-orders`),
+    queryKey: [`/api/patients/${patientId}/lab-orders`],
+    enabled: !!patientId
   });
 
   // Fetch lab results
   const { data: labResults = [], isLoading: resultsLoading } = useQuery({
-    queryKey: ["/api/patients", patientId, "lab-results"],
-    queryFn: () => apiRequest(`/api/patients/${patientId}/lab-results`),
+    queryKey: [`/api/patients/${patientId}/lab-results`],
+    enabled: !!patientId
   });
 
   const filteredResults = labResults.filter((result: LabResult) => {

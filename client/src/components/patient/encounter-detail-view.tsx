@@ -42,6 +42,7 @@ import {
 
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
+import { EncounterLabResults } from "@/components/labs/encounter-lab-results";
 
 interface EncounterDetailViewProps {
   patient: Patient;
