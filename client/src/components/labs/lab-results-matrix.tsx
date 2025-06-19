@@ -370,7 +370,7 @@ export function LabResultsMatrix({
           });
         }
       });
-      console.log('🔍 [LabMatrix] Calling onUnreviewTestGroup with test resultIds:', resultIds);
+
       onUnreviewTestGroup?.(Array.from(selectedTestRows).join(', '), resultIds);
     }
   };
@@ -655,10 +655,10 @@ export function LabResultsMatrix({
                                       // Only trigger individual lab result actions for specific review/unreview
                                       // This preserves the single-click review behavior for individual results
                                       if (result.needsReview) {
-                                        console.log('🔍 [LabMatrix] Auto-triggering review for specific result:', test.testName, date, result.id);
+
                                         onReviewSpecific?.(test.testName, date, result.id);
                                       } else if (result.isReviewed && canUnreview(result)) {
-                                        console.log('🔍 [LabMatrix] Auto-triggering unreview for specific result:', test.testName, date, result.id);
+
                                         onUnreviewSpecific?.(test.testName, date, result.id);
                                       }
                                     }}
