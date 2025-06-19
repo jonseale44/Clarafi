@@ -35,6 +35,7 @@ export function MessageApprovalQueue() {
     mutationFn: async (messageId: number) => {
       return apiRequest(`/api/lab-communication/approve-message/${messageId}`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
     },
     onSuccess: () => {
@@ -47,6 +48,7 @@ export function MessageApprovalQueue() {
     mutationFn: async (messageIds: number[]) => {
       return apiRequest('/api/lab-communication/bulk-approve', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messageIds }),
       });
     },
@@ -64,7 +66,7 @@ export function MessageApprovalQueue() {
     }
   };
 
-  const pendingMessages = pendingData?.pendingMessages || [];
+  const pendingMessages = (pendingData as any)?.pendingMessages || [];
 
   if (isLoading) {
     return (
@@ -95,7 +97,7 @@ export function MessageApprovalQueue() {
             </div>
             {pendingMessages.length > 0 && (
               <Button
-                onClick={() => bulkApproveMutation.mutate(pendingMessages.map(m => m.id))}
+                onClick={() => bulkApproveMutation.mutate(pendingMessages.map((m: any) => m.id))}
                 disabled={bulkApproveMutation.isPending}
                 variant="default"
               >
@@ -113,7 +115,7 @@ export function MessageApprovalQueue() {
             </div>
           ) : (
             <div className="space-y-4">
-              {pendingMessages.map((message: PendingMessage) => (
+              {pendingMessages.map((message: any) => (
                 <Card key={message.id} className="border-l-4 border-l-amber-500">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">

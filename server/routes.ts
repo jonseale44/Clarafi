@@ -3058,6 +3058,8 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api/lab", labRoutes);
   app.use("/api/lab-entry", labEntryRoutes);
   app.use("/api/lab-workflow", labWorkflowRoutes);
+  app.use("/api/lab-communication", labCommunicationRoutes);
+  app.use("/api/lab-workflow", labWorkflowRoutes);
 
   // Legacy dynamic vitals routes removed - now using static imports above
 
