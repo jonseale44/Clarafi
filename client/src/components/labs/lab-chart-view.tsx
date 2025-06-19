@@ -17,6 +17,7 @@ import {
   TestTube, AlertTriangle, Clock, Eye, CheckCircle2,
   Search, Download, Info
 } from "lucide-react";
+import { LabSourceIndicator } from "./lab-source-indicator";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -268,7 +269,7 @@ export function LabChartView({ patientId, patientName }: LabChartViewProps) {
                                   {result.resultValue} <span className="text-xs text-gray-500">{result.resultUnits}</span>
                                 </span>
                               </div>
-                              <div className="col-span-1 text-center">
+                              <div className="col-span-1 text-center space-y-1">
                                 {result.abnormalFlag && result.abnormalFlag !== 'N' && (
                                   <Badge variant={result.abnormalFlag.includes('H') ? 'destructive' : 'secondary'} className="text-xs px-1 py-0 h-4">
                                     {result.abnormalFlag}
