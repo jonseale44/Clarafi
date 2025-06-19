@@ -38,7 +38,6 @@ router.post("/patient-reported", async (req: Request, res: Response) => {
     // Insert patient-reported lab result
     const [labResult] = await db.insert(labResults).values({
       patientId: parseInt(patientId),
-      testCode: testCode || `PATIENT_${testName.toUpperCase()}`,
       testCode: `PATIENT_${testName.toUpperCase()}`,
       testName,
       testCategory: "patient_reported",

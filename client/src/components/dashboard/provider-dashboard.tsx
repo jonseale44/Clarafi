@@ -283,7 +283,7 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors" onClick={() => setActiveTab("lab-reviews")}>
+        <Card className="bg-blue-50 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors" onClick={() => setIsReviewDialogOpen(true)}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -509,31 +509,7 @@ export function ProviderDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="lab-reviews" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lab Reviews</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Lab results should be reviewed within patient charts for full clinical context.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <TestTube className="h-12 w-12 mx-auto mb-4 text-blue-500" />
-                <h3 className="text-lg font-medium mb-2">Review Labs in Patient Charts</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Lab results are now integrated into patient charts where you can review them alongside complete clinical context.
-                </p>
-                <Button 
-                  variant="outline"
-                  onClick={() => window.location.href = '/patients'}
-                >
-                  Go to Patients
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+
 
         <TabsContent value="signatures" className="space-y-4">
           <Card>

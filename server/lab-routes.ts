@@ -375,13 +375,14 @@ router.get("/patients/:patientId/lab-summary", async (req: Request, res: Respons
 router.post("/lab-results/analyze-patterns", async (req: Request, res: Response) => {
   try {
     const { patientId, timeframeDays = 90 } = req.body;
+    const parsedPatientId = parseInt(patientId);
 
     if (!req.isAuthenticated()) {
       return APIResponseHandler.unauthorized(res);
     }
 
-    if (!patientId) {
-      return APIResponseHandler.badRequest(res, "Patient ID is required");
+    if (!parsedPatientId || isNaN(parsedPatientId)) {
+      return APIResponseHandler.badRequest(res, "Valid patient ID is required");
     }
 
     const patterns = await labIntelligenceService.analyzeResultPatterns(patientId, timeframeDays);
