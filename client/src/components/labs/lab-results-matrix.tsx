@@ -339,14 +339,25 @@ export function LabResultsMatrix({
     });
 
     if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
-      // Review by encounter(s)
+      // Review by encounter(s) - collect all result IDs for selected dates
       const encounterIds: number[] = [];
+      const resultIds: number[] = [];
+      
       selectedDates.forEach(date => {
         const encounters = encountersByDate.get(date) || [];
-        console.log('🔍 [LabMatrix] Encounters for date', date, ':', encounters);
         encounterIds.push(...encounters);
+        
+        // Collect all lab result IDs for this date
+        matrixData.forEach(test => {
+          test.results.forEach(result => {
+            if (result.date === date) {
+              resultIds.push(result.id);
+            }
+          });
+        });
       });
-      console.log('🔍 [LabMatrix] Calling onReviewEncounter with:', Array.from(selectedDates).join(', '), encounterIds);
+      
+      console.log('🔍 [LabMatrix] Review encounter - dates:', Array.from(selectedDates), 'encounterIds:', encounterIds, 'resultIds:', resultIds);
       onReviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds);
     } else if (selectedPanels.size > 0 && selectedDates.size === 0) {
       // Review by lab panel(s)
@@ -775,11 +786,18 @@ export function LabResultsMatrix({
                   
                   // Count results for selected dates (encounters)
                   if (selectedDates.size > 0) {
-                    selectedDates.forEach(date => {
+                    selectedDates.forEach(selectedDate => {
                       matrixData.forEach(test => {
-                        totalResults += test.results.filter(result => result.date === date).length;
+                        const matchingResults = test.results.filter(result => {
+                          // Direct date string comparison
+                          const match = result.date === selectedDate;
+
+                          return match;
+                        });
+                        totalResults += matchingResults.length;
                       });
                     });
+
                   }
                   
                   // Count results for selected test rows
