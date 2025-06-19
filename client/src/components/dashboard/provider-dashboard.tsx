@@ -933,7 +933,7 @@ export function ProviderDashboard() {
                           
                           // Refresh the data to show updated status
                           queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
-                          queryClient.invalidateQueries({ queryKey: ['/api/patients', patientId, 'lab-results'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedLabForReview.patientId, 'lab-results'] });
                           
                         } catch (error) {
                           console.error('🚨 [Dashboard] Review failed with detailed error:', {
@@ -1049,9 +1049,11 @@ export function ProviderDashboard() {
                         setSelectedForUnreview(null);
                         setUnreviewReason("");
                         
-                        // Refresh data
+                        // Refresh data to show updated status
                         queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
-                        queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedForUnreview.patientId, 'lab-results'] });
+                        if (selectedForUnreview.patientId) {
+                          queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedForUnreview.patientId, 'lab-results'] });
+                        }
 
                       } catch (error: any) {
                         toast({

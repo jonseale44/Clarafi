@@ -340,10 +340,10 @@ export function LabResultsMatrix({
         const encounters = encountersByDate.get(date) || [];
         encounterIds.push(...encounters);
         
-        // Get all reviewed results for this date
+        // Get all reviewed results for this date (results that are NOT pending review)
         matrixData.forEach(test => {
           test.results.forEach(result => {
-            if (result.date === date && !result.needsReview) { // reviewed results
+            if (result.date === date && !result.needsReview && result.isReviewed) { 
               resultIds.push(result.id);
             }
           });
@@ -358,7 +358,7 @@ export function LabResultsMatrix({
         const test = matrixData.find(t => t.testName === testName);
         if (test) {
           test.results.forEach(result => {
-            if (!result.needsReview) { // reviewed results
+            if (!result.needsReview && result.isReviewed) { // reviewed results only
               resultIds.push(result.id);
             }
           });
