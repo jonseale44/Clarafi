@@ -46,14 +46,16 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
   const safeLabResults = Array.isArray(labResults) ? labResults : [];
   const safeLabOrders = Array.isArray(labOrders) ? labOrders : [];
 
-  // Filter for most recent results (last 30 days for compact view, prioritize most recent)
+  // Debug: log what we're working with
+  console.log('🧪 [EncounterLabResults] Total lab results:', safeLabResults.length);
+  console.log('🧪 [EncounterLabResults] Sample result:', safeLabResults[0]);
+  console.log('🧪 [EncounterLabResults] Raw API response type check:', typeof labResults, Array.isArray(labResults));
+
+  // Filter for most recent results (all available, sort by most recent)
   const recentResults = safeLabResults
     .filter((result: any) => {
-      if (!result.resultAvailableAt) return false;
-      const resultDate = new Date(result.resultAvailableAt);
-      const now = new Date();
-      const timeDiff = Math.abs(now.getTime() - resultDate.getTime());
-      return timeDiff <= 30 * 24 * 60 * 60 * 1000; // Within 30 days
+      // Include all results with valid dates
+      return result.resultAvailableAt !== null && result.resultAvailableAt !== undefined;
     })
     .sort((a: any, b: any) => {
       // Sort by most recent first
@@ -61,7 +63,10 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
       const dateB = new Date(b.resultAvailableAt || 0);
       return dateB.getTime() - dateA.getTime();
     })
-    .slice(0, 12); // Show max 12 most recent results for compact view
+    .slice(0, 15); // Show max 15 most recent results for compact view
+
+  console.log('🧪 [EncounterLabResults] Filtered recent results:', recentResults.length);
+  console.log('🧪 [EncounterLabResults] Recent results sample:', recentResults[0]);
 
   const pendingOrders = safeLabOrders.filter((order: any) => 
     order.orderStatus === 'pending' || order.orderStatus === 'collected'
@@ -192,7 +197,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               Lab Results
             </CardTitle>
             <CardDescription>
-              Most recent laboratory data (last 30 days)
+              Most recent laboratory data
             </CardDescription>
           </div>
           <Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
@@ -218,12 +223,12 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="results">
-              Recent Results ({recentResults.length})
+          <TabsList className="grid w-full grid-cols-2 h-10">
+            <TabsTrigger value="results" className="text-xs px-2">
+              Results ({recentResults.length})
             </TabsTrigger>
-            <TabsTrigger value="pending">
-              Pending Orders ({pendingOrders.length})
+            <TabsTrigger value="pending" className="text-xs px-2">
+              Orders ({pendingOrders.length})
             </TabsTrigger>
           </TabsList>
 
@@ -236,7 +241,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               <div className="text-center py-8 text-muted-foreground">
                 <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <div>
-                  <p>No recent lab results found (last 30 days)</p>
+                  <p>No lab results found</p>
                   <Button 
                     variant="link" 
                     className="text-sm mt-2"

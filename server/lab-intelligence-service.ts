@@ -7,7 +7,7 @@
 
 import OpenAI from 'openai';
 import { db } from './db';
-import { labResults, labOrders, patients, labReferenceRanges, encounters } from '@shared/schema';
+import { labResults, labOrders, patients, encounters } from '@shared/schema';
 import { eq, and, desc, gte, lte } from 'drizzle-orm';
 
 interface LabInterpretationRequest {

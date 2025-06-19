@@ -22,6 +22,7 @@ import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 import vitalsParserAPI from "./vitals-parser-api";
 
 import nursingSummaryRoutes from "./nursing-summary-routes";
+import labRoutes from "./lab-routes";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -771,6 +772,32 @@ export function registerRoutes(app: Express): Server {
 
       await storage.deletePatient(patientId);
       res.status(200).json({ message: "Patient deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Lab results endpoint for compatibility
+  app.get("/api/patients/:patientId/lab-results", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const patientId = parseInt(req.params.patientId);
+      const labResults = await storage.getPatientLabResults(patientId);
+      res.json(labResults);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Lab orders endpoint for compatibility  
+  app.get("/api/patients/:patientId/lab-orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const patientId = parseInt(req.params.patientId);
+      const labOrders = await storage.getPatientLabOrders(patientId);
+      res.json(labOrders);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -3023,6 +3050,9 @@ Return only valid JSON without markdown formatting.`;
 
   // Register patient parser routes
   app.use("/api", parseRoutes);
+  
+  // Register lab routes
+  app.use("/api", labRoutes);
 
   // Legacy dynamic vitals routes removed - now using static imports above
 
