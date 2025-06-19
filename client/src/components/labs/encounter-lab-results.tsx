@@ -33,11 +33,13 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
 
   // Fetch lab orders and results
   const { data: labOrders = [], isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/patients', patientId, 'draft-orders'],
+    queryKey: [`/api/patients/${patientId}/lab-orders`],
+    enabled: !!patientId
   });
 
   const { data: labResults = [], isLoading: resultsLoading } = useQuery({
-    queryKey: ['/api/patients', patientId, 'lab-results'],
+    queryKey: [`/api/patients/${patientId}/lab-results`],
+    enabled: !!patientId
   });
 
   const isLoading = ordersLoading || resultsLoading;
@@ -50,6 +52,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
   console.log('🧪 [EncounterLabResults] Total lab results:', safeLabResults.length);
   console.log('🧪 [EncounterLabResults] Sample result:', safeLabResults[0]);
   console.log('🧪 [EncounterLabResults] Raw API response type check:', typeof labResults, Array.isArray(labResults));
+  console.log('🧪 [EncounterLabResults] Full API response:', labResults);
 
   // Filter for most recent results (all available, sort by most recent)
   const recentResults = safeLabResults
