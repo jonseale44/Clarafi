@@ -160,7 +160,6 @@ export function LabResultsMatrix({
             <CardTitle className="text-lg">Lab Results Matrix</CardTitle>
             {mode !== 'full' && (
               <Button variant="outline" size="sm" onClick={() => {
-                // Navigate to unified lab results page
                 window.location.href = `/patients/${patientId}/labs`;
               }}>
                 <ExternalLink className="h-4 w-4 mr-1" />
@@ -191,8 +190,7 @@ export function LabResultsMatrix({
             
             {/* Body */}
             <tbody>
-              {matrixData.map((test) => (
-                <React.Fragment key={test.testName}>
+              {matrixData.map((test) => [
                   <tr className="border-b hover:bg-muted/20">
                     <td className="p-3 sticky left-0 bg-white">
                       <div className="flex items-center gap-2">
@@ -238,9 +236,9 @@ export function LabResultsMatrix({
                     })}
                   </tr>
                   
-                  {/* Expanded details */}
-                  {expandedTests.has(test.testName) && (
-                    <tr>
+                  // Expanded details row
+                  ...(expandedTests.has(test.testName) ? [
+                    <tr key={`${test.testName}-expanded`}>
                       <td colSpan={displayColumns.length + 1} className="bg-muted/10 p-4">
                         <div className="space-y-2 text-sm">
                           <div>
@@ -257,8 +255,8 @@ export function LabResultsMatrix({
                         </div>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
+                  ] : [])
+                ].flat())
               ))}
             </tbody>
           </table>

@@ -11,6 +11,7 @@ import { PatientCreation } from "@/pages/PatientCreation";
 import UserSettingsPage from "@/pages/user-settings-page";
 import { PatientView } from "@/pages/patient-view";
 import { EncounterView } from "@/pages/encounter-view";
+import { PatientLabResults } from "@/pages/patient-lab-results";
 
 import { VitalsFlowsheetPage } from "@/pages/vitals-flowsheet-page";
 
@@ -23,6 +24,7 @@ function Router() {
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />
+      <ProtectedRoute path="/patients/:patientId/labs" component={PatientLabResults} />
       <ProtectedRoute path="/encounters/:id" component={EncounterView} />
       <ProtectedRoute path="/settings" component={UserSettingsPage} />
 
