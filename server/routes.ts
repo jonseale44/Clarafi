@@ -52,13 +52,13 @@ async function generateNursingTemplateDirect(
     `🏥 [NursingTemplate] Generating template for patient ${patientId}`,
   );
 
-  // Get patient context (same as SOAP)
+  // Get patient context and encounter-specific vitals
   const [
     patient,
     diagnosisList,
     meds,
     allergiesList,
-    vitalsList,
+    encounterVitalsList,
     recentEncounters,
   ] = await Promise.all([
     db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
@@ -68,9 +68,8 @@ async function generateNursingTemplateDirect(
     db
       .select()
       .from(vitals)
-      .where(eq(vitals.patientId, patientId))
-      .orderBy(desc(vitals.createdAt))
-      .limit(5),
+      .where(eq(vitals.encounterId, parseInt(encounterId)))
+      .orderBy(desc(vitals.recordedAt)),
     db
       .select()
       .from(encountersTable)
@@ -356,7 +355,7 @@ async function generateSOAPNoteDirect(
     diagnosisList,
     meds,
     allergiesList,
-    vitalsList,
+    encounterVitalsList,
     recentEncounters,
   ] = await Promise.all([
     db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
