@@ -215,7 +215,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                 <DialogTitle>All Laboratory Results</DialogTitle>
               </DialogHeader>
               <div className="overflow-auto max-h-[80vh]">
-                <LabChartView 
+                <IntegratedLabView 
                   patientId={patientId} 
                   patientName={`Patient ID: ${patientId}`}
                 />
