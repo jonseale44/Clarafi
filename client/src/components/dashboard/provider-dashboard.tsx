@@ -717,9 +717,20 @@ export function ProviderDashboard() {
                           if (!lab.resultAvailableAt) return false;
                           const labDate = new Date(lab.resultAvailableAt);
                           if (isNaN(labDate.getTime())) return false;
-                          const dateString = labDate.toISOString().split('T')[0];
-                          const matches = dateString === date;
-                          console.log('🔍 [Dashboard] Lab', lab.id, 'date check:', dateString, 'vs', date, '=', matches);
+                          
+                          // Handle both full ISO timestamp and date-only comparison
+                          const labDateString = labDate.toISOString();
+                          const labDateOnly = labDateString.split('T')[0];
+                          const selectedDateOnly = date.includes('T') ? date.split('T')[0] : date;
+                          
+                          const matches = labDateString === date || labDateOnly === selectedDateOnly;
+                          console.log('🔍 [Dashboard] Lab', lab.id, 'date check:', {
+                            labDateString,
+                            labDateOnly,
+                            selectedDate: date,
+                            selectedDateOnly,
+                            matches
+                          });
                           return matches;
                         } catch (error) {
                           console.warn('Invalid date for lab:', lab.id, lab.resultAvailableAt);
