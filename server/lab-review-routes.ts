@@ -51,10 +51,21 @@ router.post("/by-date", async (req: Request, res: Response) => {
     const { patientId, selectedDate, reviewNote } = validation.data;
     const reviewedBy = (req as any).user.id;
 
-    console.log('🏥 [LabReviewRoutes] Processing date-based review:', { patientId, selectedDate, reviewedBy });
+    console.log('🏥 [LabReviewRoutes] Processing date-based review:', { 
+      patientId, 
+      selectedDate, 
+      reviewedBy,
+      reviewNote: reviewNote.substring(0, 100) + (reviewNote.length > 100 ? '...' : '')
+    });
 
     // Get lab results for the specified date
     const dateResults = await labReviewService.getLabResultsByDate(patientId, selectedDate);
+    
+    console.log('🏥 [LabReviewRoutes] Date results retrieved:', {
+      resultCount: dateResults.resultCount,
+      resultIds: dateResults.resultIds,
+      criticalCount: dateResults.criticalCount
+    });
     
     if (dateResults.resultCount === 0) {
       return APIResponseHandler.success(res, {

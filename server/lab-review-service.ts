@@ -207,7 +207,11 @@ export class LabReviewService {
     const reviewId = `REV_${Date.now()}_${request.reviewedBy}`;
     const startTime = new Date();
     
-    console.log('🏥 [LabReviewService] Starting batch review:', reviewId);
+    console.log('🏥 [LabReviewService] Starting batch review:', {
+      reviewId,
+      requestData: request,
+      resultIdsCount: request.resultIds.length
+    });
 
     try {
       const processedResults: number[] = [];
@@ -223,7 +227,16 @@ export class LabReviewService {
         .from(labResults)
         .where(inArray(labResults.id, request.resultIds));
 
-      console.log('🏥 [LabReviewService] Validating', request.resultIds.length, 'result IDs');
+      console.log('🏥 [LabReviewService] Validation results:', {
+        requestedIds: request.resultIds,
+        foundResults: existingResults.length,
+        existingResults: existingResults
+      });
+
+      if (existingResults.length === 0) {
+        console.error('🏥 [LabReviewService] No matching results found for any requested IDs');
+        throw new Error(`No lab results found for the provided IDs: ${request.resultIds.join(', ')}`);
+      }
 
       for (const resultId of request.resultIds) {
         const existing = existingResults.find(r => r.id === resultId);

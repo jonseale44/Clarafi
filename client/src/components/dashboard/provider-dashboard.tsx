@@ -873,11 +873,18 @@ export function ProviderDashboard() {
                             throw new Error('No valid review type configured');
                           }
                           
+                          console.log('🔍 [Dashboard] Raw response status:', reviewResponse.status, reviewResponse.statusText);
+                          
                           const reviewResult = await reviewResponse.json();
-                          console.log('🔍 [Dashboard] Professional review completed:', reviewResult);
+                          console.log('🔍 [Dashboard] Professional review response:', reviewResult);
                           
                           if (!reviewResponse.ok) {
-                            throw new Error(reviewResult.error?.message || 'Review failed');
+                            console.error('🚨 [Dashboard] Review request failed:', {
+                              status: reviewResponse.status,
+                              statusText: reviewResponse.statusText,
+                              result: reviewResult
+                            });
+                            throw new Error(reviewResult.error?.message || reviewResult.message || `Review failed with status ${reviewResponse.status}`);
                           }
                           
 
@@ -903,10 +910,17 @@ export function ProviderDashboard() {
                           queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
                           
                         } catch (error) {
-                          console.error('Review failed:', error);
+                          console.error('🚨 [Dashboard] Review failed with detailed error:', {
+                            error: error,
+                            message: error?.message,
+                            stack: error?.stack,
+                            selectedLabForReview: selectedLabForReview,
+                            reviewNote: reviewNote
+                          });
+                          
                           toast({
                             title: "Review Failed",
-                            description: "There was an error completing the review. Please try again.",
+                            description: error?.message || "There was an error completing the review. Please try again.",
                             variant: "destructive",
                             duration: 5000,
                           });
