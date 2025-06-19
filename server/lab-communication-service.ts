@@ -193,6 +193,7 @@ Generate a patient-friendly message about these lab results.
 `;
 
     try {
+      console.log(`🤖 [Lab Communication] Making OpenAI API call with model: gpt-4`);
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
@@ -203,9 +204,12 @@ Generate a patient-friendly message about these lab results.
         max_tokens: 800
       });
 
-      return completion.choices[0]?.message?.content || 'Unable to generate message content.';
+      const content = completion.choices[0]?.message?.content || 'Unable to generate message content.';
+      console.log(`🤖 [Lab Communication] OpenAI response received (${content.length} characters)`);
+      return content;
     } catch (error) {
-      console.error('Error generating message content:', error);
+      console.error('🚨 [Lab Communication] Error generating message content:', error);
+      console.log(`🤖 [Lab Communication] Falling back to template message for type: ${messageType}`);
       return this.getFallbackMessage(messageType, results);
     }
   }
@@ -310,10 +314,13 @@ MESSAGE TYPE: Follow-up Required
     console.log(`📧 [Lab Communication] Processing batch messages for encounter ${encounterId}`);
     
     // Get all results for this encounter grouped by patient
+    console.log(`📧 [Lab Communication] Querying lab results for encounter ${encounterId}`);
     const encounterResults = await db
       .select()
       .from(labResults)
       .where(eq(labResults.patientId, encounterId)); // Note: Using patientId temporarily
+    
+    console.log(`📧 [Lab Communication] Found ${encounterResults.length} results for encounter ${encounterId}`);
     
     // Group results by patient
     const resultsByPatient = encounterResults.reduce((acc, result) => {

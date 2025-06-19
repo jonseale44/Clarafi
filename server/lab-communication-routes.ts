@@ -56,7 +56,9 @@ router.post("/generate-encounter-messages/:encounterId", async (req: Request, re
       return APIResponseHandler.badRequest(res, "Valid encounter ID is required");
     }
 
+    console.log(`🎯 [Lab Communication Routes] Processing encounter messages for encounter ${encounterId}`);
     const messages = await LabCommunicationService.processBatchMessagesByEncounter(encounterId);
+    console.log(`🎯 [Lab Communication Routes] Generated ${messages.length} messages`);
 
     return APIResponseHandler.success(res, {
       messages,
@@ -65,7 +67,8 @@ router.post("/generate-encounter-messages/:encounterId", async (req: Request, re
       readyToSend: messages.filter(m => m.status === 'approved').length
     });
   } catch (error) {
-    console.error("Error generating encounter messages:", error);
+    console.error("🚨 [Lab Communication Routes] Error generating encounter messages:", error);
+    console.error("🚨 [Lab Communication Routes] Error stack:", (error as Error).stack);
     return APIResponseHandler.error(res, error as Error, 500, "BATCH_MESSAGE_ERROR");
   }
 });
