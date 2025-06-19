@@ -16,20 +16,20 @@ const router = Router();
 const DateBasedReviewSchema = z.object({
   patientId: z.number(),
   selectedDate: z.string().datetime(),
-  reviewNote: z.string().min(1).max(1000),
+  reviewNote: z.string().max(1000).default("Provider reviewed - no additional notes"),
   reviewType: z.literal('encounter')
 });
 
 const PanelBasedReviewSchema = z.object({
   patientId: z.number(),
   panelNames: z.array(z.string()),
-  reviewNote: z.string().min(1).max(1000),
+  reviewNote: z.string().max(1000).default("Provider reviewed - no additional notes"),
   reviewType: z.literal('panel')
 });
 
 const BatchReviewSchema = z.object({
   resultIds: z.array(z.number()).min(1),
-  reviewNote: z.string().min(1).max(1000),
+  reviewNote: z.string().max(1000).default("Provider reviewed - no additional notes"),
   reviewType: z.enum(['individual', 'encounter', 'panel', 'batch'])
 });
 
@@ -49,6 +49,13 @@ router.post("/by-date", async (req: Request, res: Response) => {
     }
 
     const { patientId, selectedDate, reviewNote } = validation.data;
+    
+    console.log('🏥 [LabReviewRoutes] Parsed validation data:', {
+      patientId,
+      selectedDate,
+      reviewNote: reviewNote || "(empty - will use default)",
+      originalReviewNote: req.body.reviewNote
+    });
     const reviewedBy = (req as any).user.id;
 
     console.log('🏥 [LabReviewRoutes] Processing date-based review:', { 

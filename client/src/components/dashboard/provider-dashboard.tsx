@@ -784,15 +784,18 @@ export function ProviderDashboard() {
                     id="reviewNote"
                     placeholder={
                       selectedLabForReview.type === 'encounter' 
-                        ? "Enter clinical interpretation for all labs from this encounter..."
+                        ? "Enter clinical interpretation for all labs from this encounter... (optional - will use default if empty)"
                         : selectedLabForReview.type === 'testGroup'
-                        ? `Enter clinical interpretation for ${selectedLabForReview.testName} trend analysis...`
-                        : "Enter clinical interpretation, follow-up needed, patient communication notes..."
+                        ? `Enter clinical interpretation for ${selectedLabForReview.testName} trend analysis... (optional)`
+                        : "Enter clinical interpretation, follow-up needed, patient communication notes... (optional)"
                     }
                     value={reviewNote}
                     onChange={(e) => setReviewNote(e.target.value)}
                     className="min-h-[120px]"
                   />
+                  <p className="text-sm text-gray-500">
+                    Note: Review notes are optional. If left empty, a default review note will be used.
+                  </p>
                 </div>
 
                 <div className="flex justify-end space-x-2">
@@ -822,7 +825,7 @@ export function ProviderDashboard() {
                               body: JSON.stringify({
                                 patientId: selectedLabForReview.patientId,
                                 selectedDate: selectedLabForReview.date,
-                                reviewNote: reviewNote,
+                                reviewNote: reviewNote || "Provider reviewed - no additional notes",
                                 reviewType: 'encounter'
                               })
                             });
@@ -887,19 +890,20 @@ export function ProviderDashboard() {
                             throw new Error(reviewResult.error?.message || reviewResult.message || `Review failed with status ${reviewResponse.status}`);
                           }
                           
-
+                          // Extract result information from successful response
+                          const reviewedResultIds = reviewResult.data?.reviewedResults || [];
+                          const successCount = reviewResult.data?.resultCount || 0;
                           
-                          await Promise.all(promises);
-                          
-                          // Mark results as reviewed in UI
-                          const newReviewedIds = new Set(reviewedResultIds);
-                          resultIdsToReview.forEach(id => newReviewedIds.add(id));
-                          setReviewedResultIds(newReviewedIds);
+                          console.log('🔍 [Dashboard] Review successful:', {
+                            successCount,
+                            reviewedResultIds,
+                            auditTrail: reviewResult.data?.auditTrail
+                          });
                           
                           // Show success feedback
                           toast({
                             title: "Review Completed",
-                            description: `Successfully reviewed ${resultIdsToReview.length} lab result${resultIdsToReview.length > 1 ? 's' : ''}`,
+                            description: `Successfully reviewed ${successCount} lab result${successCount > 1 ? 's' : ''}`,
                             duration: 3000,
                           });
                           
