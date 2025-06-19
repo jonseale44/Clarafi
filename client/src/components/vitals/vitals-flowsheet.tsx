@@ -64,10 +64,11 @@ interface Patient {
 }
 
 interface VitalsFlowsheetProps {
-  encounterId: number;
+  encounterId?: number;
   patientId: number;
   patient?: Patient;
   readOnly?: boolean;
+  showAllPatientVitals?: boolean;
 }
 
 interface VitalRange {
