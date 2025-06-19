@@ -353,12 +353,7 @@ export default function Dashboard() {
                 Imaging
               </button>
               
-              <Link href="/lab-communication">
-                <button className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                  <MessageSquare className="h-4 w-4" />
-                  Lab Communication
-                </button>
-              </Link>
+
             </nav>
           </div>
           
