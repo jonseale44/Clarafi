@@ -459,7 +459,7 @@ export function LabResultsMatrix({
       test.results.some(result => result.date === date && result.needsReview)
     );
     
-    let classes = "text-center p-3 font-semibold min-w-[100px] cursor-pointer transition-colors border-2";
+    let classes = "text-center p-1 font-medium min-w-[80px] cursor-pointer transition-colors border-2 text-xs";
     
     if (isSelected) {
       classes += " bg-blue-200 text-blue-900 border-blue-400";
@@ -481,7 +481,7 @@ export function LabResultsMatrix({
       .find(test => test.testName === testName)?.results
       .some(result => result.needsReview);
     
-    let classes = "p-3 sticky left-0 bg-white border-l-4 transition-all";
+    let classes = "p-2 sticky left-0 bg-white border-l-4 transition-all text-sm";
     
     if (isSelected) {
       classes += " bg-blue-200 text-blue-900 border-l-blue-500 font-medium";
@@ -571,8 +571,8 @@ export function LabResultsMatrix({
       )}
       
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div className="overflow-x-auto max-h-[70vh]">
+          <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="border-b bg-muted/30">
                 <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-muted/30">
@@ -664,8 +664,8 @@ export function LabResultsMatrix({
                           onMouseEnter={() => setHoveredTestRow(test.testName)}
                           onMouseLeave={() => setHoveredTestRow(null)}
                         >
-                          <div className="flex items-center gap-2 ml-6">
-                            {selectedTestRows.has(test.testName) && <TestTube className="h-3 w-3 text-blue-600" />}
+                          <div className="flex items-center gap-1 ml-4">
+                            {selectedTestRows.has(test.testName) && <TestTube className="h-2 w-2 text-blue-600" />}
                             {test.results.length > 1 && (
                               <Button
                                 variant="ghost"
@@ -674,18 +674,18 @@ export function LabResultsMatrix({
                                   e.stopPropagation();
                                   toggleTestExpansion(test.testName);
                                 }}
-                                className="h-5 w-5 p-0"
+                                className="h-4 w-4 p-0"
                               >
                                 {expandedTests.has(test.testName) ? (
-                                  <ChevronDown className="h-3 w-3" />
+                                  <ChevronDown className="h-2 w-2" />
                                 ) : (
-                                  <ChevronRight className="h-3 w-3" />
+                                  <ChevronRight className="h-2 w-2" />
                                 )}
                               </Button>
                             )}
                             <div>
-                              <div className="font-medium text-sm">{test.testName}</div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="font-medium text-xs">{test.testName}</div>
+                              <div className="text-xs text-muted-foreground opacity-75">
                                 ({test.unit})
                               </div>
                             </div>
@@ -699,7 +699,7 @@ export function LabResultsMatrix({
                             selectedDates.has(date) && 
                             encountersByDate.get(date)?.includes(result.encounterId);
                           
-                          let cellClass = "p-3 text-center transition-colors";
+                          let cellClass = "p-1 text-center transition-colors";
                           if (isDateSelected || isEncounterHighlighted) {
                             cellClass += " bg-blue-50 border-2 border-blue-200";
                           }
@@ -709,7 +709,7 @@ export function LabResultsMatrix({
                               {result ? (
                                 <div className="relative">
                                   <div 
-                                    className={`px-2 py-1 rounded text-sm cursor-pointer transition-all ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview, result.isReviewed, canUnreview(result))} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
+                                    className={`px-1 py-0.5 rounded text-xs cursor-pointer transition-all ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview, result.isReviewed, canUnreview(result))} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
                                     onClick={() => {
                                       if (result.needsReview) {
                                         // Immediately trigger review for this specific result
@@ -777,9 +777,9 @@ export function LabResultsMatrix({
         
         {/* Bottom Review Button - only shown when selections are made */}
         {(selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) && (
-          <div className="border-t p-4 bg-gray-50">
+          <div className="border-t p-2 bg-gray-50">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-xs text-gray-600">
                 {(() => {
                   // Calculate total lab results count for selected items
                   let totalResults = 0;
@@ -827,17 +827,18 @@ export function LabResultsMatrix({
                 onClick={handleReviewSelection}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                <Check className="h-4 w-4 mr-2" />
-                Review Selected
+                <Check className="h-3 w-3 mr-1" />
+                Review
               </Button>
               <Button
                 onClick={handleUnreviewSelection}
                 disabled={selectedDates.size === 0 && selectedTestRows.size === 0 && selectedPanels.size === 0}
                 variant="outline"
-                className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                size="sm"
+                className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50 text-xs"
               >
-                <RotateCcw className="h-4 w-4" />
-                Unreview Selected
+                <RotateCcw className="h-3 w-3" />
+                Unreview
               </Button>
             </div>
           </div>
