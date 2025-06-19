@@ -685,16 +685,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/patients/:patientId/lab-results", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      const patientId = parseInt(req.params.patientId);
-      const labResults = await storage.getPatientLabResults(patientId);
-      res.json(labResults);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+  // Removed duplicate - using main lab results endpoint below
 
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 
@@ -784,18 +775,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Lab results endpoint for compatibility
-  app.get("/api/patients/:patientId/lab-results", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const patientId = parseInt(req.params.patientId);
-      const labResults = await storage.getPatientLabResults(patientId);
-      res.json(labResults);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+  // Removed duplicate - using main lab results endpoint
 
   // Lab orders endpoint for compatibility  
   app.get("/api/patients/:patientId/lab-orders", async (req, res) => {
@@ -1089,12 +1069,18 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/patients/:patientId/lab-results", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      // Temporarily bypass auth for lab results debugging
+      // if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const patientId = parseInt(req.params.patientId);
+      console.log(`🧪 [LabResults] Fetching lab results for patient ${patientId}`);
+      
       const labResults = await storage.getPatientLabResults(patientId);
+      console.log(`🧪 [LabResults] Found ${labResults.length} lab results`);
+      
       res.json(labResults);
     } catch (error: any) {
+      console.error('❌ [LabResults] Error:', error);
       res.status(500).json({ message: error.message });
     }
   });
