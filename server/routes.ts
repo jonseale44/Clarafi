@@ -161,6 +161,7 @@ CRITICAL DOCUMENTATION STANDARDS:
 5. Include specific measurements and observations
 6. Only document information explicitly mentioned in conversation
 7. INTELLIGENTLY UPDATE EXISTING DATA: Add new information, correct inaccurate information, and remove information that the patient explicitly contradicts or corrects
+8. SPECIAL VITALS HANDLING: For vitals field, APPEND new vital signs with timestamps instead of replacing existing ones. Format multiple vitals chronologically with separators (e.g., "Time 1: BP: 140/90 | HR: 88 | T: 98.6°F | RR: 18 | O2 Sat: 98% on RA\nTime 2: BP: 160/100 | HR: 92 | T: 99.1°F | RR: 20 | O2 Sat: 96% on RA")
 
 MANDATORY MEDICAL ABBREVIATIONS TO USE:
 - Hypertension → HTN
