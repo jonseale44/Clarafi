@@ -46,16 +46,22 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
   const safeLabResults = Array.isArray(labResults) ? labResults : [];
   const safeLabOrders = Array.isArray(labOrders) ? labOrders : [];
 
-  // Filter for most recent results (last 7 days for compact view)
+  // Filter for most recent results (last 30 days for compact view, prioritize most recent)
   const recentResults = safeLabResults
     .filter((result: any) => {
       if (!result.resultAvailableAt) return false;
       const resultDate = new Date(result.resultAvailableAt);
       const now = new Date();
-      const timeDiff = now.getTime() - resultDate.getTime();
-      return timeDiff <= 7 * 24 * 60 * 60 * 1000; // Within 7 days
+      const timeDiff = Math.abs(now.getTime() - resultDate.getTime());
+      return timeDiff <= 30 * 24 * 60 * 60 * 1000; // Within 30 days
     })
-    .slice(0, 8); // Show max 8 most recent results for compact view
+    .sort((a: any, b: any) => {
+      // Sort by most recent first
+      const dateA = new Date(a.resultAvailableAt || 0);
+      const dateB = new Date(b.resultAvailableAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    })
+    .slice(0, 12); // Show max 12 most recent results for compact view
 
   const pendingOrders = safeLabOrders.filter((order: any) => 
     order.orderStatus === 'pending' || order.orderStatus === 'collected'
@@ -186,7 +192,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               Lab Results
             </CardTitle>
             <CardDescription>
-              Most recent laboratory data (last 7 days)
+              Most recent laboratory data (last 30 days)
             </CardDescription>
           </div>
           <Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
@@ -230,7 +236,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               <div className="text-center py-8 text-muted-foreground">
                 <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <div>
-                  <p>No recent lab results found (last 7 days)</p>
+                  <p>No recent lab results found (last 30 days)</p>
                   <Button 
                     variant="link" 
                     className="text-sm mt-2"
