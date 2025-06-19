@@ -3,6 +3,7 @@ import { APIResponseHandler } from "./api-response-handler.js";
 import { storage } from "./storage.js";
 import { z } from "zod";
 import { vitals } from "../shared/schema.js";
+import { vitalsDeduplicationService } from "./vitals-deduplication-service.js";
 
 const router = Router();
 
@@ -163,28 +164,64 @@ router.post("/entries", async (req, res) => {
     // Generate clinical alerts for critical values
     const alerts = generateClinicalAlerts(validatedData);
 
-    const vitalsEntry = await storage.createVitals({
+    // Prepare vitals entry for smart merge
+    const vitalsEntryData = {
       patientId: validatedData.patientId,
-      encounterId: validatedData.encounterId || undefined,
-      recordedAt: new Date(),
+      encounterId: validatedData.encounterId || 0,
+      recordedAt: new Date().toISOString(),
       systolicBp: validatedData.systolicBp || undefined,
       diastolicBp: validatedData.diastolicBp || undefined,
       heartRate: validatedData.heartRate || undefined,
       temperature: validatedData.temperature ? validatedData.temperature.toString() : undefined,
       weight: validatedData.weight ? validatedData.weight.toString() : undefined,
       height: validatedData.height ? validatedData.height.toString() : undefined,
-      bmi: bmi ? bmi.toString() : undefined,
-      oxygenSaturation: validatedData.oxygenSaturation ? validatedData.oxygenSaturation.toString() : undefined,
       respiratoryRate: validatedData.respiratoryRate || undefined,
+      oxygenSaturation: validatedData.oxygenSaturation ? validatedData.oxygenSaturation.toString() : undefined,
       painScale: validatedData.painScale || undefined,
       recordedBy: validatedData.recordedBy,
-    });
+      parsedFromText: validatedData.parsedFromText || false,
+      originalText: validatedData.originalText || undefined,
+    };
 
-    console.log("✅ [VitalsFlowsheet] Created vitals entry:", vitalsEntry.id);
-    console.log("✅ [VitalsFlowsheet] Returning success response with vitals entry");
-    const response = APIResponseHandler.success(res, vitalsEntry, 201);
-    console.log("✅ [VitalsFlowsheet] Response sent");
-    return response;
+    // Use smart merge to handle duplicates
+    if (validatedData.encounterId) {
+      console.log("🔧 [VitalsFlowsheet] Using smart merge for duplicate detection");
+      const mergeResult = await vitalsDeduplicationService.smartMergeVitals(
+        validatedData.encounterId, 
+        vitalsEntryData
+      );
+
+      if (!mergeResult.success) {
+        console.log("⚠️ [VitalsFlowsheet] Smart merge declined:", mergeResult.message);
+        return APIResponseHandler.success(res, {
+          skipped: true,
+          reason: mergeResult.message,
+          skippedFields: mergeResult.skippedFields
+        }, 200);
+      }
+
+      const vitalsEntry = mergeResult.savedEntry;
+      
+      if (mergeResult.skippedFields && mergeResult.skippedFields.length > 0) {
+        console.log(`⚠️ [VitalsFlowsheet] Partial save - skipped duplicates: ${mergeResult.skippedFields.join(', ')}`);
+      }
+      
+      console.log("✅ [VitalsFlowsheet] Smart merge completed:", vitalsEntry.id);
+      return APIResponseHandler.success(res, {
+        ...vitalsEntry,
+        mergeInfo: {
+          skippedFields: mergeResult.skippedFields,
+          message: mergeResult.message
+        }
+      }, 201);
+    } else {
+      // No encounter ID, save directly
+      const vitalsEntry = await storage.createVitalsEntry(vitalsEntryData);
+      console.log("✅ [VitalsFlowsheet] Created vitals entry (no encounter):", vitalsEntry.id);
+      return APIResponseHandler.success(res, vitalsEntry, 201);
+    }
+
+
   } catch (error) {
     console.error("❌ [VitalsFlowsheet] Error creating vitals entry:", error);
     
