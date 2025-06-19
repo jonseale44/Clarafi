@@ -42,7 +42,7 @@ import {
 
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
-import { EncounterLabResults } from "@/components/labs/encounter-lab-results";
+import { ComprehensiveLabTable } from "@/components/labs/comprehensive-lab-table";
 
 interface EncounterDetailViewProps {
   patient: Patient;

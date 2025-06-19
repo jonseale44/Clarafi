@@ -1,7 +1,7 @@
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
-import { EncounterLabResults } from "@/components/labs/encounter-lab-results";
+import { ComprehensiveLabTable } from "@/components/labs/comprehensive-lab-table";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -85,9 +85,9 @@ export function SharedChartSections({
       case "labs":
         return (
           <div className="space-y-4">
-            <EncounterLabResults 
+            <ComprehensiveLabTable 
               patientId={patientId} 
-              encounterDate={encounterId ? new Date() : undefined} 
+              patientName="Patient Labs"
             />
           </div>
         );

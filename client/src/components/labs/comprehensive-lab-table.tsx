@@ -67,7 +67,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
 
   // Fetch comprehensive lab data
   const { data: labResults = [], isLoading } = useQuery({
-    queryKey: [`/api/patients/${patientId}/lab-results-enhanced`],
+    queryKey: [`/api/patients/${patientId}/lab-results`],
     enabled: !!patientId
   });
 
@@ -314,7 +314,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
             </TableHeader>
             <TableBody>
               {groupedResults.map((result) => (
-                <React.Fragment key={result.id}>
+                <React.Fragment key={`fragment-${result.id}`}>
                   <TableRow className={getResultRowClass(result)}>
                     <TableCell>
                       <Checkbox
