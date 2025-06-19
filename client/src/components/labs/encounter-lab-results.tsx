@@ -11,8 +11,10 @@ import {
   Clock, 
   CheckCircle, 
   AlertCircle,
-  Activity
+  Activity,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 
 interface EncounterLabResultsProps {
@@ -96,6 +98,21 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
     return 'text-orange-600 font-medium';
   }
 
+  // Helper function to get test abbreviations
+  function getTestAbbreviation(testName: string): string {
+    const abbreviations: { [key: string]: string } = {
+      'White Blood Cell Count': 'WBC',
+      'Red Blood Cell Count': 'RBC', 
+      'Mean Corpuscular Volume': 'MCV',
+      'Mean Corpuscular Hemoglobin': 'MCH',
+      'Mean Corpuscular Hemoglobin Concentration': 'MCHC',
+      'Platelet Count': 'PLT',
+      'Hemoglobin': 'HGB',
+      'Hematocrit': 'HCT'
+    };
+    return abbreviations[testName] || testName;
+  }
+
   if (ordersLoading || resultsLoading) {
     return (
       <Card>
@@ -162,50 +179,57 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                         </div>
                       </div>
                       
-                      {/* Compact Results Table */}
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="text-xs">
-                            <TableHead className="py-2 text-xs">Test</TableHead>
-                            <TableHead className="py-2 text-xs text-right">Result</TableHead>
-                            <TableHead className="py-2 text-xs text-center">Flag</TableHead>
-                            <TableHead className="py-2 text-xs">Reference</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                      {/* Ultra-Compact Results Grid */}
+                      <div className="p-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="grid grid-cols-7 gap-1 text-xs font-medium text-muted-foreground mb-1 py-1 px-2 bg-gray-100 rounded cursor-help">
+                                <div className="col-span-3">Test</div>
+                                <div className="col-span-2 text-right">Result</div>
+                                <div className="col-span-1 text-center">Flag</div>
+                                <div className="col-span-1 flex items-center justify-center">
+                                  <Info className="h-3 w-3" />
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-md">
+                              <div className="text-xs font-medium mb-2">Reference Ranges for {group.orderInfo.panelName}</div>
+                              <div className="space-y-1 text-xs">
+                                {group.results.map((result: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between gap-4">
+                                    <span className="font-medium">{getTestAbbreviation(result.testName)}:</span>
+                                    <span className="text-muted-foreground">{result.referenceRange}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <div className="space-y-0">
                           {group.results.map((result: any) => (
-                            <TableRow key={result.id} className="text-sm">
-                              <TableCell className="py-1 font-medium">
-                                {result.testName.replace(/^(White Blood Cell Count|Red Blood Cell Count|Mean Corpuscular Volume|Mean Corpuscular Hemoglobin|Mean Corpuscular Hemoglobin Concentration)$/, (match) => {
-                                  const abbreviations: { [key: string]: string } = {
-                                    'White Blood Cell Count': 'WBC',
-                                    'Red Blood Cell Count': 'RBC', 
-                                    'Mean Corpuscular Volume': 'MCV',
-                                    'Mean Corpuscular Hemoglobin': 'MCH',
-                                    'Mean Corpuscular Hemoglobin Concentration': 'MCHC'
-                                  };
-                                  return abbreviations[match] || match;
-                                })}
-                              </TableCell>
-                              <TableCell className="py-1 text-right font-mono">
+                            <div key={result.id} className="grid grid-cols-7 gap-1 py-1 px-2 text-sm hover:bg-gray-50 rounded border-b border-gray-100 last:border-b-0">
+                              <div className="col-span-3 font-medium text-xs">
+                                {getTestAbbreviation(result.testName)}
+                              </div>
+                              <div className="col-span-2 text-right font-mono text-sm">
                                 <span className={getFlagColor(result.abnormalFlag)}>
-                                  {result.resultValue} {result.resultUnits}
+                                  {result.resultValue} <span className="text-xs text-gray-500">{result.resultUnits}</span>
                                 </span>
-                              </TableCell>
-                              <TableCell className="py-1 text-center">
+                              </div>
+                              <div className="col-span-1 text-center">
                                 {result.abnormalFlag && result.abnormalFlag !== 'N' && (
-                                  <Badge variant={result.abnormalFlag.includes('H') ? 'destructive' : 'secondary'} className="text-xs px-1 py-0">
+                                  <Badge variant={result.abnormalFlag.includes('H') ? 'destructive' : 'secondary'} className="text-xs px-1 py-0 h-4">
                                     {result.abnormalFlag}
                                   </Badge>
                                 )}
-                              </TableCell>
-                              <TableCell className="py-1 text-xs text-muted-foreground">
-                                {result.referenceRange}
-                              </TableCell>
-                            </TableRow>
+                              </div>
+                              <div className="col-span-1"></div>
+                            </div>
                           ))}
-                        </TableBody>
-                      </Table>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -260,43 +284,50 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               </div>
             ) : (
               <ScrollArea className="h-[400px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="text-xs">
-                      <TableHead className="py-2 text-xs">Test</TableHead>
-                      <TableHead className="py-2 text-xs text-right">Result</TableHead>
-                      <TableHead className="py-2 text-xs text-center">Flag</TableHead>
-                      <TableHead className="py-2 text-xs">Reference</TableHead>
-                      <TableHead className="py-2 text-xs">Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <div className="p-2">
+                  <div className="grid grid-cols-7 gap-1 text-xs font-medium text-muted-foreground mb-2 py-1 px-2 bg-red-100 rounded">
+                    <div className="col-span-3 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 text-red-600" />
+                      Test
+                    </div>
+                    <div className="col-span-2 text-right">Result</div>
+                    <div className="col-span-1 text-center">Flag</div>
+                    <div className="col-span-1 text-center">Date</div>
+                  </div>
+                  
+                  <div className="space-y-1">
                     {abnormalResults.map((result: any) => (
-                      <TableRow key={result.id} className="text-sm border-l-4 border-red-400">
-                        <TableCell className="py-2 font-medium">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
-                            {result.testName}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2 text-right font-mono font-semibold text-red-600">
-                          {result.resultValue} {result.resultUnits}
-                        </TableCell>
-                        <TableCell className="py-2 text-center">
-                          <Badge variant="destructive" className="text-xs">
-                            {result.abnormalFlag}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-2 text-xs text-muted-foreground">
-                          {result.referenceRange}
-                        </TableCell>
-                        <TableCell className="py-2 text-xs text-muted-foreground">
-                          {result.resultAvailableAt && format(new Date(result.resultAvailableAt), 'MMM dd')}
-                        </TableCell>
-                      </TableRow>
+                      <TooltipProvider key={result.id}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="grid grid-cols-7 gap-1 py-2 text-sm border-l-4 border-red-400 bg-red-50 hover:bg-red-100 rounded px-2 cursor-help">
+                              <div className="col-span-3 font-medium text-sm">
+                                {getTestAbbreviation(result.testName)}
+                              </div>
+                              <div className="col-span-2 text-right font-mono font-semibold text-red-600">
+                                {result.resultValue} <span className="text-xs">{result.resultUnits}</span>
+                              </div>
+                              <div className="col-span-1 text-center">
+                                <Badge variant="destructive" className="text-xs h-4">
+                                  {result.abnormalFlag}
+                                </Badge>
+                              </div>
+                              <div className="col-span-1 text-center text-xs text-muted-foreground">
+                                {result.resultAvailableAt && format(new Date(result.resultAvailableAt), 'MMM dd')}
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <div className="text-xs">
+                              <div><strong>Full Name:</strong> {result.testName}</div>
+                              <div><strong>Reference:</strong> {result.referenceRange}</div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </div>
               </ScrollArea>
             )}
           </TabsContent>
