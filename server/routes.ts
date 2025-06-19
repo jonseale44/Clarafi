@@ -24,6 +24,7 @@ import vitalsParserAPI from "./vitals-parser-api";
 import nursingSummaryRoutes from "./nursing-summary-routes";
 import labRoutes from "./lab-routes";
 import labEntryRoutes from "./lab-entry-routes";
+import labWorkflowRoutes from "./lab-workflow-routes";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -3055,6 +3056,7 @@ Return only valid JSON without markdown formatting.`;
   // Register lab routes
   app.use("/api/lab", labRoutes);
   app.use("/api/lab-entry", labEntryRoutes);
+  app.use("/api/lab-workflow", labWorkflowRoutes);
 
   // Legacy dynamic vitals routes removed - now using static imports above
 
