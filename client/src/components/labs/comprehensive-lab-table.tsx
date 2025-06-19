@@ -83,8 +83,15 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
 
   // Group results by test type for better organization
   const groupedResults = useMemo(() => {
+    console.log('🧪 [ComprehensiveLabTable] Processing results in useMemo:', labResults);
     const safeResults = Array.isArray(labResults) ? labResults as LabResult[] : [];
+    console.log('🧪 [ComprehensiveLabTable] Safe results:', safeResults.length, 'items');
     
+    if (safeResults.length === 0) {
+      console.log('🧪 [ComprehensiveLabTable] No results to process');
+      return [];
+    }
+
     // Group by test name, then sort chronologically within each group
     const grouped = safeResults.reduce((acc: { [key: string]: LabResult[] }, result: LabResult) => {
       const key = result.testName;
@@ -94,6 +101,8 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
       acc[key].push(result);
       return acc;
     }, {});
+
+    console.log('🧪 [ComprehensiveLabTable] Grouped results:', Object.keys(grouped));
 
     // Sort each group by date (newest first) and return as flat array with grouping info
     const flattened: (LabResult & { isGroupStart?: boolean, groupSize?: number })[] = [];
@@ -122,6 +131,9 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
         });
       });
 
+    console.log('🧪 [ComprehensiveLabTable] Final processed results:', flattened.length, 'items');
+    console.log('🧪 [ComprehensiveLabTable] Sample result:', flattened[0]);
+    
     return flattened;
   }, [labResults]);
 
@@ -325,9 +337,8 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
             <TableBody>
               {groupedResults.map((result) => {
                 console.log('🧪 [ComprehensiveLabTable] Rendering result:', result.id, result.testName);
-                return (
-                <React.Fragment key={result.id}>
-                  <TableRow className={getResultRowClass(result)}>
+                const mainRow = (
+                  <TableRow key={result.id} className={getResultRowClass(result)}>
                     <TableCell>
                       <Checkbox
                         checked={selectedResults.has(result.id)}
@@ -438,42 +449,42 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
                       )}
                     </TableCell>
                   </TableRow>
-
-                  {/* Expanded Row Details */}
-                  {expandedRows.has(result.id) && (
-                    <TableRow>
-                      <TableCell colSpan={9} className="bg-muted/30 p-4">
-                        <div className="space-y-3 text-sm">
-                          {result.clinicalIndication && (
-                            <div>
-                              <span className="font-medium">Clinical Indication: </span>
-                              {result.clinicalIndication}
-                            </div>
-                          )}
-                          {result.providerNotes && (
-                            <div>
-                              <span className="font-medium">Provider Notes: </span>
-                              {result.providerNotes}
-                            </div>
-                          )}
-                          {result.previousValue && (
-                            <div>
-                              <span className="font-medium">Previous Value: </span>
-                              {result.previousValue} ({result.previousDate ? formatDate(result.previousDate) : 'Unknown date'})
-                            </div>
-                          )}
-                          {result.reviewedAt && (
-                            <div className="text-xs text-muted-foreground">
-                              Reviewed on {formatDate(result.reviewedAt)}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </React.Fragment>
                 );
-              })}
+
+                const expandedRow = expandedRows.has(result.id) ? (
+                  <TableRow key={`expanded-${result.id}`}>
+                    <TableCell colSpan={9} className="bg-muted/30 p-4">
+                      <div className="space-y-3 text-sm">
+                        {result.clinicalIndication && (
+                          <div>
+                            <span className="font-medium">Clinical Indication: </span>
+                            {result.clinicalIndication}
+                          </div>
+                        )}
+                        {result.providerNotes && (
+                          <div>
+                            <span className="font-medium">Provider Notes: </span>
+                            {result.providerNotes}
+                          </div>
+                        )}
+                        {result.previousValue && (
+                          <div>
+                            <span className="font-medium">Previous Value: </span>
+                            {result.previousValue} ({result.previousDate ? formatDate(result.previousDate) : 'Unknown date'})
+                          </div>
+                        )}
+                        {result.reviewedAt && (
+                          <div className="text-xs text-muted-foreground">
+                            Reviewed on {formatDate(result.reviewedAt)}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : null;
+
+                return [mainRow, expandedRow].filter(Boolean);
+              }).flat()}
             </TableBody>
           </Table>
         </ScrollArea>
