@@ -56,6 +56,12 @@ export function PatientLabResults() {
             patientId={parseInt(patientId)} 
             mode="full"
             showTitle={false}
+            onReviewResult={(resultId, testName, encounterId) => {
+              // Navigate to encounter if available
+              if (encounterId) {
+                window.location.href = `/encounters/${encounterId}`;
+              }
+            }}
           />
         </TabsContent>
         

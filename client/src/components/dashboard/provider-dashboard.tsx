@@ -173,6 +173,47 @@ export function ProviderDashboard() {
     setIsReviewDialogOpen(true);
   };
 
+  const handleReviewResult = (resultId: number, testName: string, encounterId?: number) => {
+    if (encounterId) {
+      window.location.href = `/encounters/${encounterId}`;
+    } else {
+      const labResult = labOrders.find((lab: any) => lab.id === resultId);
+      if (labResult) {
+        setSelectedLabForReview(labResult);
+      }
+    }
+  };
+
+  const handleBulkReview = async (labs: any[]) => {
+    for (const lab of labs) {
+      await reviewLabResultMutation.mutateAsync({
+        resultId: lab.id,
+        reviewNote: "Bulk reviewed"
+      });
+    }
+  };
+
+  const handleGeneratePatientSummary = async (patientGroup: any) => {
+    setIsGeneratingMessage(true);
+    try {
+      const summary = `Lab Results Summary for ${patientGroup.patientName}:\n\n${
+        patientGroup.labs.map((lab: any) => 
+          `• ${lab.testName}: ${typeof lab.results === 'string' ? lab.results : JSON.stringify(lab.results)} ${lab.criticalFlag ? '(CRITICAL)' : ''}`
+        ).join('\n')
+      }\n\nAll results have been reviewed. Please contact our office if you have any questions.`;
+      
+      setGeneratedMessage(summary);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate patient summary.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingMessage(false);
+    }
+  };
+
   const handleSubmitLabReview = () => {
     if (!selectedLabResult) return;
     reviewLabResultMutation.mutate({
@@ -570,7 +611,7 @@ export function ProviderDashboard() {
                       <div className="flex items-center space-x-3">
                         <h3 className="font-semibold text-lg">{group.patientName}</h3>
                         <Badge variant="outline">{group.labs.length} results pending</Badge>
-                        {group.labs.some(lab => lab.criticalFlag) && (
+                        {group.labs.some((lab: any) => lab.criticalFlag) && (
                           <Badge variant="destructive">
                             <AlertTriangle className="h-3 w-3 mr-1" />
                             Critical Results
@@ -603,7 +644,7 @@ export function ProviderDashboard() {
                     
                     {/* Quick preview of pending results */}
                     <div className="text-sm text-gray-600 space-y-1">
-                      {group.labs.slice(0, 3).map((lab, index) => (
+                      {group.labs.slice(0, 3).map((lab: any, index: number) => (
                         <div key={index} className="flex justify-between items-center">
                           <span>{lab.testName}</span>
                           <div className="flex items-center space-x-2">
@@ -659,7 +700,7 @@ export function ProviderDashboard() {
                   patientId={selectedPatientGroup.patientId}
                   mode="review"
                   showTitle={false}
-                  pendingReviewIds={selectedPatientGroup.labs.map(lab => lab.id)}
+                  pendingReviewIds={selectedPatientGroup.labs.map((lab: any) => lab.id)}
                   onReviewResult={handleReviewResult}
                 />
               </div>
@@ -707,7 +748,16 @@ export function ProviderDashboard() {
                     Cancel
                   </Button>
                   <Button 
-                    onClick={() => handleSubmitLabReview(selectedLabForReview)}
+                    onClick={() => {
+                      if (selectedLabForReview) {
+                        reviewLabResultMutation.mutate({
+                          resultId: selectedLabForReview.id,
+                          reviewNote: reviewNote
+                        });
+                        setSelectedLabForReview(null);
+                        setReviewNote("");
+                      }
+                    }}
                     disabled={reviewLabResultMutation.isPending}
                   >
                     {reviewLabResultMutation.isPending ? "Reviewing..." : "Complete Review"}
