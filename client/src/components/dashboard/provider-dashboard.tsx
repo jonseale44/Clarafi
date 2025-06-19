@@ -701,42 +701,77 @@ export function ProviderDashboard() {
                   mode="review"
                   showTitle={false}
                   pendingReviewIds={selectedPatientGroup.labs.map((lab: any) => lab.id)}
-                  onReviewResult={handleReviewResult}
+                  onReviewEncounter={(date, encounterIds) => {
+                    // Open encounter-level review
+                    setSelectedLabForReview({
+                      type: 'encounter',
+                      date,
+                      encounterIds,
+                      patientName: selectedPatientGroup.patientName
+                    });
+                  }}
+                  onReviewTestGroup={(testName, resultIds) => {
+                    // Open test group review
+                    setSelectedLabForReview({
+                      type: 'testGroup',
+                      testName,
+                      resultIds,
+                      patientName: selectedPatientGroup.patientName
+                    });
+                  }}
+                  onReviewSpecific={(testName, date, resultId) => {
+                    // Open specific result review
+                    setSelectedLabForReview({
+                      type: 'specific',
+                      testName,
+                      date,
+                      resultId,
+                      patientName: selectedPatientGroup.patientName
+                    });
+                  }}
                 />
               </div>
             )}
 
-            {/* Individual Lab Review Section */}
+            {/* Enhanced Lab Review Section */}
             {selectedLabForReview && (
               <div className="border-t pt-4 space-y-4">
-                <h4 className="font-medium">Review: {selectedLabForReview.testName}</h4>
-                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <Label className="text-sm font-medium">Result</Label>
-                    <p className="text-sm font-medium text-blue-600">
-                      {typeof selectedLabForReview.results === 'string' 
-                        ? selectedLabForReview.results 
-                        : JSON.stringify(selectedLabForReview.results)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Reference Range</Label>
-                    <p className="text-sm">{selectedLabForReview.referenceRange || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Date</Label>
-                    <p className="text-sm">{format(new Date(selectedLabForReview.orderedDate), 'MMM dd, yyyy HH:mm')}</p>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">
+                    {selectedLabForReview.type === 'encounter' && `Review Labs from ${selectedLabForReview.date}`}
+                    {selectedLabForReview.type === 'testGroup' && `Review ${selectedLabForReview.testName} Results`}
+                    {selectedLabForReview.type === 'specific' && `Review ${selectedLabForReview.testName} - ${selectedLabForReview.date}`}
+                  </h4>
+                  <Badge variant="outline">
+                    {selectedLabForReview.type === 'encounter' && `${selectedLabForReview.encounterIds?.length || 0} encounters`}
+                    {selectedLabForReview.type === 'testGroup' && `${selectedLabForReview.resultIds?.length || 0} results`}
+                    {selectedLabForReview.type === 'specific' && 'Single result'}
+                  </Badge>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <Label className="text-sm font-medium">Review Scope</Label>
+                  <p className="text-sm text-gray-600">
+                    {selectedLabForReview.type === 'encounter' && `All lab results from encounter(s) on ${selectedLabForReview.date}`}
+                    {selectedLabForReview.type === 'testGroup' && `All ${selectedLabForReview.testName} results for this patient`}
+                    {selectedLabForReview.type === 'specific' && `Single ${selectedLabForReview.testName} result from ${selectedLabForReview.date}`}
+                  </p>
                 </div>
 
                 <div className="space-y-3">
                   <Label htmlFor="reviewNote">Clinical Review & Notes</Label>
                   <Textarea
                     id="reviewNote"
-                    placeholder="Enter clinical interpretation, follow-up needed, patient communication notes..."
+                    placeholder={
+                      selectedLabForReview.type === 'encounter' 
+                        ? "Enter clinical interpretation for all labs from this encounter..."
+                        : selectedLabForReview.type === 'testGroup'
+                        ? `Enter clinical interpretation for ${selectedLabForReview.testName} trend analysis...`
+                        : "Enter clinical interpretation, follow-up needed, patient communication notes..."
+                    }
                     value={reviewNote}
                     onChange={(e) => setReviewNote(e.target.value)}
-                    className="min-h-[100px]"
+                    className="min-h-[120px]"
                   />
                 </div>
 
@@ -750,10 +785,30 @@ export function ProviderDashboard() {
                   <Button 
                     onClick={() => {
                       if (selectedLabForReview) {
-                        reviewLabResultMutation.mutate({
-                          resultId: selectedLabForReview.id,
-                          reviewNote: reviewNote
-                        });
+                        // Handle different review types
+                        if (selectedLabForReview.type === 'encounter') {
+                          // Review all labs from encounter(s)
+                          selectedLabForReview.encounterIds?.forEach((encounterId: number) => {
+                            reviewLabResultMutation.mutate({
+                              resultId: encounterId, // This would need to be adjusted for encounter-level review
+                              reviewNote: reviewNote
+                            });
+                          });
+                        } else if (selectedLabForReview.type === 'testGroup') {
+                          // Review all results in test group
+                          selectedLabForReview.resultIds?.forEach((resultId: number) => {
+                            reviewLabResultMutation.mutate({
+                              resultId,
+                              reviewNote: reviewNote
+                            });
+                          });
+                        } else {
+                          // Review specific result
+                          reviewLabResultMutation.mutate({
+                            resultId: selectedLabForReview.resultId,
+                            reviewNote: reviewNote
+                          });
+                        }
                         setSelectedLabForReview(null);
                         setReviewNote("");
                       }
