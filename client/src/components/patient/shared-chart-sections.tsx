@@ -1,6 +1,7 @@
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
+import { EncounterLabResults } from "@/components/labs/encounter-lab-results";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -84,16 +85,10 @@ export function SharedChartSections({
       case "labs":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Lab Results</h2>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Lab results management coming soon</p>
-                  <p className="text-sm">View and manage lab orders and results here.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <EncounterLabResults 
+              patientId={patientId} 
+              encounterDate={encounterId ? new Date() : undefined} 
+            />
           </div>
         );
       

@@ -34,23 +34,28 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
     enabled: !!patientId
   });
 
+  // Ensure data is arrays
+  const safeLabResults = Array.isArray(labResults) ? labResults : [];
+  const safeLabOrders = Array.isArray(labOrders) ? labOrders : [];
+
   // Filter results by encounter date if provided
   const recentResults = encounterDate 
-    ? labResults?.filter((result: any) => {
+    ? safeLabResults.filter((result: any) => {
+        if (!result.resultAvailableAt) return false;
         const resultDate = new Date(result.resultAvailableAt);
         const encDate = new Date(encounterDate);
         const timeDiff = Math.abs(resultDate.getTime() - encDate.getTime());
         return timeDiff <= 30 * 24 * 60 * 60 * 1000; // Within 30 days
-      }) || []
-    : labResults?.slice(0, 10) || []; // Show last 10 results
+      })
+    : safeLabResults.slice(0, 10); // Show last 10 results
 
-  const pendingOrders = labOrders?.filter((order: any) => 
+  const pendingOrders = safeLabOrders.filter((order: any) => 
     order.orderStatus === 'pending' || order.orderStatus === 'collected'
-  ) || [];
+  );
 
-  const abnormalResults = labResults?.filter((result: any) => 
+  const abnormalResults = safeLabResults.filter((result: any) => 
     result.abnormalFlag && result.abnormalFlag !== 'N'
-  ) || [];
+  );
 
   if (ordersLoading || resultsLoading) {
     return (
