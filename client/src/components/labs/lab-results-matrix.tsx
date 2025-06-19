@@ -767,9 +767,41 @@ export function LabResultsMatrix({
           <div className="border-t p-4 bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                {selectedDates.size > 0 && `${selectedDates.size} date${selectedDates.size > 1 ? 's' : ''} selected`}
-                {selectedTestRows.size > 0 && `${selectedTestRows.size} test${selectedTestRows.size > 1 ? 's' : ''} selected`}
-                {selectedPanels.size > 0 && `${selectedPanels.size} panel${selectedPanels.size > 1 ? 's' : ''} selected`}
+                {(() => {
+                  // Calculate total lab results count for selected items
+                  let totalResults = 0;
+                  
+                  // Count results for selected dates (encounters)
+                  if (selectedDates.size > 0) {
+                    selectedDates.forEach(date => {
+                      matrixData.forEach(test => {
+                        totalResults += test.results.filter(result => result.date === date).length;
+                      });
+                    });
+                  }
+                  
+                  // Count results for selected test rows
+                  if (selectedTestRows.size > 0) {
+                    selectedTestRows.forEach(testName => {
+                      const test = matrixData.find(t => t.testName === testName);
+                      if (test) {
+                        totalResults += test.results.length;
+                      }
+                    });
+                  }
+                  
+                  // Count results for selected panels
+                  if (selectedPanels.size > 0) {
+                    selectedPanels.forEach(panelName => {
+                      const panelTests = groupedData[panelName] || [];
+                      panelTests.forEach(test => {
+                        totalResults += test.results.length;
+                      });
+                    });
+                  }
+                  
+                  return `${totalResults} lab result${totalResults !== 1 ? 's' : ''} selected`;
+                })()}
               </div>
               <Button
                 onClick={handleReviewSelection}
