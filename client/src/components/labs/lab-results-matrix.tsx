@@ -196,22 +196,27 @@ export function LabResultsMatrix({
   }, [matrixData]);
 
   const handleDateClick = (date: string, isShiftClick: boolean) => {
-    if (isShiftClick) {
-      const newSelected = new Set(selectedDates);
-      if (newSelected.has(date)) {
-        newSelected.delete(date);
+    const newSelected = new Set(selectedDates);
+    if (newSelected.has(date)) {
+      // Remove if already selected (toggle off)
+      newSelected.delete(date);
+    } else {
+      // Add to selection
+      if (isShiftClick) {
+        newSelected.add(date);
       } else {
+        // Single click without shift replaces selection
+        newSelected.clear();
         newSelected.add(date);
       }
-      setSelectedDates(newSelected);
-    } else {
-      setSelectedDates(new Set([date]));
     }
+    setSelectedDates(newSelected);
   };
 
   const handleTestRowClick = (testName: string) => {
     const newSelected = new Set(selectedTestRows);
     if (newSelected.has(testName)) {
+      // Toggle off if already selected
       newSelected.delete(testName);
     } else {
       newSelected.add(testName);
@@ -222,6 +227,7 @@ export function LabResultsMatrix({
   const handlePanelClick = (panelName: string) => {
     const newSelected = new Set(selectedPanels);
     if (newSelected.has(panelName)) {
+      // Toggle off if already selected
       newSelected.delete(panelName);
     } else {
       newSelected.add(panelName);
@@ -407,30 +413,7 @@ export function LabResultsMatrix({
             <thead>
               <tr className="border-b bg-muted/30">
                 <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-muted/30">
-                  <div className="flex items-center gap-2">
-                    Test
-                    {(selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleReviewSelection}
-                          className="h-6 px-2 text-xs"
-                        >
-                          <Check className="h-3 w-3 mr-1" />
-                          Review
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={clearSelection}
-                          className="h-6 px-2 text-xs"
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  Test
                 </th>
                 {displayColumns.map(date => (
                   <th 
