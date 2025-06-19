@@ -246,10 +246,10 @@ export function LabResultsMatrix({
       encounterIds.push(...encounters);
       console.log('🔍 [LabMatrix] Auto-triggering review for date:', date, 'encounters:', encounterIds);
       onReviewEncounter?.(date, encounterIds);
-      return;
+      // Don't return - still allow selection for visual highlighting
     }
 
-    // Normal selection behavior for dates without pending results
+    // Selection behavior for visual highlighting
     const newSelected = new Set(selectedDates);
     if (newSelected.has(date)) {
       newSelected.delete(date);
@@ -277,11 +277,11 @@ export function LabResultsMatrix({
         const resultIds = test.results.map(r => r.id);
         console.log('🔍 [LabMatrix] Auto-triggering review for test:', testName, 'resultIds:', resultIds);
         onReviewTestGroup?.(testName, resultIds);
-        return;
+        // Don't return - still allow selection for visual highlighting
       }
     }
 
-    // Normal selection behavior for tests without pending results
+    // Selection behavior for visual highlighting
     const newSelected = new Set(selectedTestRows);
     if (newSelected.has(testName)) {
       newSelected.delete(testName);
@@ -306,10 +306,10 @@ export function LabResultsMatrix({
       });
       console.log('🔍 [LabMatrix] Auto-triggering review for panel:', panelName, 'resultIds:', resultIds);
       onReviewTestGroup?.(panelName, resultIds);
-      return;
+      // Don't return - still allow selection for visual highlighting
     }
 
-    // Normal selection behavior for panels without pending results
+    // Selection behavior for visual highlighting
     const newSelected = new Set(selectedPanels);
     if (newSelected.has(panelName)) {
       newSelected.delete(panelName);
