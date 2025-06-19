@@ -3,7 +3,6 @@ import { APIResponseHandler } from "./api-response-handler.js";
 import { storage } from "./storage.js";
 import { z } from "zod";
 import { vitals } from "../shared/schema.js";
-import { vitalsDeduplicationService } from "./vitals-deduplication-service.js";
 
 const router = Router();
 
@@ -89,51 +88,6 @@ router.get("/encounter/:encounterId", async (req, res) => {
 });
 
 /**
- * POST /api/vitals/smart-merge
- * Smart merge vitals with deduplication logic
- */
-router.post("/smart-merge", async (req, res) => {
-  try {
-    if (!req.user?.id) {
-      return APIResponseHandler.unauthorized(res);
-    }
-
-    const { encounterId, vitalsData } = req.body;
-    
-    if (!encounterId || !vitalsData) {
-      return APIResponseHandler.badRequest(res, "Missing encounterId or vitalsData");
-    }
-
-    console.log("🔧 [VitalsSmartMerge] Processing smart merge for encounter", encounterId);
-    
-    const mergeResult = await vitalsDeduplicationService.smartMergeVitals(encounterId, {
-      ...vitalsData,
-      recordedBy: req.user.username || 'Unknown',
-      recordedAt: new Date().toISOString()
-    });
-
-    if (!mergeResult.success) {
-      return APIResponseHandler.success(res, {
-        merged: false,
-        reason: mergeResult.message,
-        skippedFields: mergeResult.skippedFields
-      });
-    }
-
-    return APIResponseHandler.success(res, {
-      merged: true,
-      vitalsEntry: mergeResult.savedEntry,
-      skippedFields: mergeResult.skippedFields,
-      message: mergeResult.message
-    }, 201);
-
-  } catch (error) {
-    console.error("❌ [VitalsSmartMerge] Error:", error);
-    return APIResponseHandler.error(res, "SMART_MERGE_ERROR", "Failed to perform smart merge");
-  }
-});
-
-/**
  * GET /api/vitals/patient/:patientId
  * Get all vitals entries for a patient across all encounters
  */
@@ -209,64 +163,28 @@ router.post("/entries", async (req, res) => {
     // Generate clinical alerts for critical values
     const alerts = generateClinicalAlerts(validatedData);
 
-    // Prepare vitals entry for smart merge
-    const vitalsEntryData = {
+    const vitalsEntry = await storage.createVitals({
       patientId: validatedData.patientId,
-      encounterId: validatedData.encounterId || 0,
-      recordedAt: new Date().toISOString(),
+      encounterId: validatedData.encounterId || undefined,
+      recordedAt: new Date(),
       systolicBp: validatedData.systolicBp || undefined,
       diastolicBp: validatedData.diastolicBp || undefined,
       heartRate: validatedData.heartRate || undefined,
       temperature: validatedData.temperature ? validatedData.temperature.toString() : undefined,
       weight: validatedData.weight ? validatedData.weight.toString() : undefined,
       height: validatedData.height ? validatedData.height.toString() : undefined,
-      respiratoryRate: validatedData.respiratoryRate || undefined,
+      bmi: bmi ? bmi.toString() : undefined,
       oxygenSaturation: validatedData.oxygenSaturation ? validatedData.oxygenSaturation.toString() : undefined,
+      respiratoryRate: validatedData.respiratoryRate || undefined,
       painScale: validatedData.painScale || undefined,
       recordedBy: validatedData.recordedBy,
-      parsedFromText: validatedData.parsedFromText || false,
-      originalText: validatedData.originalText || undefined,
-    };
+    });
 
-    // Use smart merge to handle duplicates
-    if (validatedData.encounterId) {
-      console.log("🔧 [VitalsFlowsheet] Using smart merge for duplicate detection");
-      const mergeResult = await vitalsDeduplicationService.smartMergeVitals(
-        validatedData.encounterId, 
-        vitalsEntryData
-      );
-
-      if (!mergeResult.success) {
-        console.log("⚠️ [VitalsFlowsheet] Smart merge declined:", mergeResult.message);
-        return APIResponseHandler.success(res, {
-          skipped: true,
-          reason: mergeResult.message,
-          skippedFields: mergeResult.skippedFields
-        }, 200);
-      }
-
-      const vitalsEntry = mergeResult.savedEntry;
-      
-      if (mergeResult.skippedFields && mergeResult.skippedFields.length > 0) {
-        console.log(`⚠️ [VitalsFlowsheet] Partial save - skipped duplicates: ${mergeResult.skippedFields.join(', ')}`);
-      }
-      
-      console.log("✅ [VitalsFlowsheet] Smart merge completed:", vitalsEntry.id);
-      return APIResponseHandler.success(res, {
-        ...vitalsEntry,
-        mergeInfo: {
-          skippedFields: mergeResult.skippedFields,
-          message: mergeResult.message
-        }
-      }, 201);
-    } else {
-      // No encounter ID, save directly
-      const vitalsEntry = await storage.createVitalsEntry(vitalsEntryData);
-      console.log("✅ [VitalsFlowsheet] Created vitals entry (no encounter):", vitalsEntry.id);
-      return APIResponseHandler.success(res, vitalsEntry, 201);
-    }
-
-
+    console.log("✅ [VitalsFlowsheet] Created vitals entry:", vitalsEntry.id);
+    console.log("✅ [VitalsFlowsheet] Returning success response with vitals entry");
+    const response = APIResponseHandler.success(res, vitalsEntry, 201);
+    console.log("✅ [VitalsFlowsheet] Response sent");
+    return response;
   } catch (error) {
     console.error("❌ [VitalsFlowsheet] Error creating vitals entry:", error);
     
