@@ -99,6 +99,8 @@ export class LabWorkflowService {
 
   /**
    * Extend existing encounter with critical lab result information
+   * CORE ARCHITECTURAL DECISION: We extend encounters rather than creating new ones
+   * to maintain clinical continuity and reduce chart fragmentation
    */
   private static async extendExistingEncounter(patientId: number, resultId: number): Promise<number> {
     console.log(`📋 [Lab Workflow] Extending existing encounter for patient ${patientId} with critical result ${resultId}`);
