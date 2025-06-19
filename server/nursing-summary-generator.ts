@@ -153,13 +153,10 @@ CRITICAL FORMATTING REQUIREMENTS:
    - Format: "- Medication name [strength] [frequency] [route]"
 
 4. **VITAL SIGNS FORMATTING:**
-   - BP: [systolic/diastolic] mmHg
-   - HR: [rate] BPM
-   - RR: [rate] /min
-   - T: [temp]°F or °C
-   - O2 Sat: [%] on [room air/oxygen]
-   - Wt: [weight] lbs or kg
-   - Ht: [height] ft/in or cm
+   - CRITICAL: Use ALL vitals data from the template, preserving chronological order
+   - If template contains multiple vital sign entries, include ALL of them
+   - Format exactly as provided in template data (preserve timestamps/sequences)
+   - Example format: "6/19/2025 1: BP: 146/83 | HR: 52 | T: 98.7°F | RR: N/A | O2 Sat: N/A on RA"
 
 **EXAMPLE OUTPUT FORMAT:**
 
@@ -216,13 +213,12 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Psychiatric: [positive findings only]
 - [Only include systems with positive findings]
 
-**VITAL SIGNS**
-- BP: [sys/dia] mmHg
-- HR: [rate] BPM
-- RR: [rate] /min
-- T: [temp]°F
-- O2 Sat: [%] on RA
-- Wt: [weight] lbs
+**VITAL SIGNS (${new Date().toLocaleDateString()})**
+- [Include ALL vital signs from the template data chronologically]
+- If multiple sets of vitals are documented, list each set with time/sequence
+- Example: "6/19/2025 1: BP: 146/83 | HR: 52 | T: 98.7°F | RR: N/A | O2 Sat: N/A on RA"
+- Example: "6/19/2025 2: BP: 147/85 | HR: 51 | T: 98.2°F | RR: N/A | O2 Sat: N/A on RA"
+- Use the EXACT format provided in the template vitals field
 
 **CRITICAL RULES:**
 1. Transform ALL long-form medical conditions to standard abbreviations
