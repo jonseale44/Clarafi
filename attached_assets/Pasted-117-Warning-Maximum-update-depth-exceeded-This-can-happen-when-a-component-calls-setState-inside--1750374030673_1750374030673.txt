@@ -1,0 +1,34 @@
+117) Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn&#27;t have a dependency array, or
+one of the dependencies changes on every render.
+at LabResultsMatrix (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt.spock.replit.dev/src/components/labs/lab-results-matrix.tsx:25:3)
+at SharedChartSections (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt.spock. replit.dev/src/components/patient/shared-chart-sections.tsx:65:3)
+at https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt-spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2Xjs?
+v=b31b1293:42:13
+at https://893bccef-0af2-42bf-a737-bf99baf3905-00-11749bilncolt. spock. replit.dev/@fs/home/runner/workspace/node_modules/-vite/deps/@radix-ui_react-collapsible.js?
+v=b31b1293:112:11
+at Presence (https://893bccef-0a2-42bf-a737-bf99baf3905-00-11749bilncolt. spock. replit.dev/@fs/home/runner/workspace/node_modules/-vite/deps/chunk-LUE5KDWX. js?
+v=b31b1293:24:11)
+at https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt-spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-collapsible.js?
+v=b31b1293:105:13
+at https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt.spock.replit.dev/@fs/home/runner/workspace/node_modules/-vite/deps/chunk-AXMZZQ2X. js?
+v=b31b1293:42:13
+at Provider (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt-spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?
+v=b31b1293:38:15)
+at https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt. spock. replit.dev/@fs/home/runner/workspace/node_modules/-vite/deps/@radix-ui_react-collapsible.js?
+v=b31b1293:46:7
+at EncounterDetailView (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt spock. replit.dev/src/components/patient/encounter-detail-view.tsx:154:3)
+at RoleBasedEncounterView (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt.spock. replit.dev/src/components/patient/role-based-encounter-
+view.tsx:22:3)
+at EncounterView (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt.spock. replit.dev/src/pages/encounter-view.tsx:25:18)
+at Route (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt-spock. replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?
+v=b31b1293:323:16)
+at ProtectedRoute (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt. spock. replit.dev/src/lib/protected-route.tsx:22:3)
+at Switch (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter-js?
+v=b31b1293:379:17)
+at Provider (https://893bccef-0af2-42bf-a737-bf99baf3905-00-11749bilncolt. spock. replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-0XZDJRWN. js?
+v=b31b1293:38:15)
+at TooltipProvider (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt-spock. replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-
+ui_react-tooltip.js?v=b31b1293:64:5)
+at AuthProvider (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-11749bilncolt.spock. replit.dev/src/hooks/use-auth.tsx:26:32)
+at QueryClientProvider (https://893bccef-0af2-42bf-a737-bf99baf39e05-00-
+11749bilncolt. spock. replit.dev/@fs/home/runner/workspace/node_modules/-vite/deps/@tanstack_react-query-js?v=b31b1293:2805:3)
