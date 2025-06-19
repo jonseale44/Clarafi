@@ -314,7 +314,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
             </TableHeader>
             <TableBody>
               {groupedResults.map((result) => (
-                <React.Fragment key={`fragment-${result.id}`}>
+                <React.Fragment key={result.id}>
                   <TableRow className={getResultRowClass(result)}>
                     <TableCell>
                       <Checkbox
