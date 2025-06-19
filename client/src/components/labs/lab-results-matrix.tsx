@@ -148,8 +148,8 @@ export function LabResultsMatrix({
         criticalFlag: result.criticalFlag,
         id: result.id,
         encounterId: result.encounterId,
-        needsReview: pendingReviewIds.includes(result.id),
-        isReviewed: result.reviewedBy !== null && !pendingReviewIds.includes(result.id),
+        needsReview: pendingReviewIds.includes(result.id) && result.reviewedBy === null,
+        isReviewed: result.reviewedBy !== null,
         reviewedBy: result.reviewedBy,
         orderedBy: result.orderedBy
       });
@@ -418,6 +418,11 @@ export function LabResultsMatrix({
     // Clear selection when lab results data changes to reflect new review state
     clearSelection();
   }, [results]);
+
+  // Force re-render when results change to ensure visual state is updated
+  const resultIds = React.useMemo(() => 
+    results.map(r => r.id).join(','), [results]
+  );
 
   const getDateHeaderClass = (date: string) => {
     const isSelected = selectedDates.has(date);
