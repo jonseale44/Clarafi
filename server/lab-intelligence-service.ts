@@ -486,13 +486,8 @@ Format as JSON with keys: clinicalSignificance, riskAssessment, suggestedActions
             // Age filtering - only apply if age is known
             age ? gte(labReferenceRanges.ageMax, age) : undefined,
             age ? lte(labReferenceRanges.ageMin, age) : undefined,
-            // Gender filtering - null/undefined means applies to all genders
-            patientGender ? 
-              and(
-                eq(labReferenceRanges.gender, patientGender),
-                // Also include ranges that apply to all genders
-                eq(labReferenceRanges.gender, null)
-              ) : undefined
+            // Gender filtering - null means applies to all genders
+            patientGender ? eq(labReferenceRanges.gender, patientGender) : undefined
           )
         )
         .orderBy(desc(labReferenceRanges.lastVerified))
