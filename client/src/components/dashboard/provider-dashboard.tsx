@@ -736,13 +736,19 @@ export function ProviderDashboard() {
                             const labDate = new Date(field.value);
                             if (isNaN(labDate.getTime())) continue;
                             
-                            // Handle both full ISO timestamp and date-only comparison
+                            // Handle exact timestamp match first
                             const labDateString = labDate.toISOString();
+                            const exactMatch = labDateString === date;
+                            
+                            // Then handle date-only comparison
                             const labDateOnly = labDateString.split('T')[0];
                             const selectedDateOnly = date.includes('T') ? date.split('T')[0] : date;
-                            
-                            const exactMatch = labDateString === date;
                             const dateOnlyMatch = labDateOnly === selectedDateOnly;
+                            
+                            // Also handle time-normalized comparison (same date, possibly different times)
+                            const selectedDate = new Date(date);
+                            const timeNormalizedMatch = !isNaN(selectedDate.getTime()) && 
+                              labDate.toDateString() === selectedDate.toDateString();
                             
                             console.log('🔍 [Dashboard] Lab', lab.id, field.name, 'comparison:', {
                               labDateString,
@@ -750,11 +756,12 @@ export function ProviderDashboard() {
                               selectedDate: date,
                               selectedDateOnly,
                               exactMatch,
-                              dateOnlyMatch
+                              dateOnlyMatch,
+                              timeNormalizedMatch
                             });
                             
-                            if (exactMatch || dateOnlyMatch) {
-                              console.log('✅ [Dashboard] Lab', lab.id, 'MATCHED via', field.name);
+                            if (exactMatch || dateOnlyMatch || timeNormalizedMatch) {
+                              console.log('✅ [Dashboard] Lab', lab.id, 'MATCHED via', field.name, exactMatch ? 'exact' : dateOnlyMatch ? 'date-only' : 'time-normalized');
                               return true;
                             }
                           }
