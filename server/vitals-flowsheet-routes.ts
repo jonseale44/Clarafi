@@ -52,7 +52,7 @@ router.get("/patient/:patientId", async (req, res) => {
     const enrichedEntries = sortedEntries.map(entry => ({
       ...entry,
       isEditable: currentEncounterId ? entry.encounterId === currentEncounterId : false,
-      encounterContext: entry.encounterId === currentEncounterId ? 'current' : 'historical'
+      encounterContext: currentEncounterId && entry.encounterId === currentEncounterId ? 'current' : 'historical'
     }));
 
     return APIResponseHandler.success(res, enrichedEntries);

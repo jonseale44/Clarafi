@@ -524,6 +524,12 @@ export function VitalsFlowsheet({
                     <TableHead key={entry.id} className="font-semibold text-xs py-2 text-center min-w-20">
                       <div className="text-xs text-gray-500">{format(new Date(entry.recordedAt), 'MM/dd')}</div>
                       <div className="text-xs">{format(new Date(entry.recordedAt), 'HH:mm')}</div>
+                      {entry.encounterContext === 'historical' && (
+                        <div className="text-xs text-orange-600 font-medium">Historical</div>
+                      )}
+                      {entry.encounterContext === 'current' && (
+                        <div className="text-xs text-green-600 font-medium">Current</div>
+                      )}
                     </TableHead>
                   ))}
                   {!readOnly && (
@@ -717,17 +723,27 @@ export function VitalsFlowsheet({
                         </TableCell>
                         {vitalsEntries.map((entry) => (
                           <TableCell key={`action-${entry.id}`} className="py-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingEntry(entry);
-                                setShowAddDialog(true);
-                              }}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
+                            {entry.isEditable ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingEntry(entry);
+                                  setShowAddDialog(true);
+                                }}
+                                className="h-6 w-6 p-0"
+                                title="Edit vitals (current encounter)"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                            ) : (
+                              <div 
+                                className="h-6 w-6 flex items-center justify-center text-gray-300"
+                                title="Read-only (historical encounter)"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </div>
+                            )}
                           </TableCell>
                         ))}
                         <TableCell className="py-2"></TableCell>
@@ -782,7 +798,7 @@ export function VitalsFlowsheet({
               quickParseText={quickParseText}
               setQuickParseText={setQuickParseText}
               quickParseMutation={quickParseMutation}
-              encounterId={encounterId}
+              encounterId={encounterId || editingEntry?.encounterId || 0}
               patientId={patientId}
             />
           )}
