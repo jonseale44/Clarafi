@@ -560,6 +560,12 @@ export const labResults = pgTable("lab_results", {
   sourceSystem: text("source_system"), // 'epic', 'cerner', 'labcorp', 'quest'
   interfaceVersion: text("interface_version"),
   
+  // Source classification for multi-source lab data
+  sourceType: text("source_type").default("lab_order"), // 'lab_order', 'patient_reported', 'external_upload', 'provider_entered', 'imported_records'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceNotes: text("source_notes"), // Additional context about data source
+  enteredBy: integer("entered_by").references(() => users.id), // Who entered non-standard results
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

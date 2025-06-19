@@ -46,6 +46,10 @@ interface LabResult {
   resultAvailableAt: string;
   reviewedBy?: number;
   reviewedAt?: string;
+  sourceType: string;
+  sourceConfidence: number;
+  sourceNotes?: string;
+  testCategory?: string;
 }
 
 interface LabChartViewProps {
