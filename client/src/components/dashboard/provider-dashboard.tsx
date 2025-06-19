@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -527,102 +527,171 @@ export function ProviderDashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* Lab Result Review Dialog */}
+      {/* Lab Review Dialog */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Review Lab Result</DialogTitle>
+            <DialogTitle>Lab Orders Review</DialogTitle>
+            <DialogDescription>
+              Review pending lab orders and results requiring provider attention.
+            </DialogDescription>
           </DialogHeader>
-          {selectedLabResult && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Patient</Label>
-                  <p className="text-sm">{selectedLabResult.patientName}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Test Name</Label>
-                  <p className="text-sm">{selectedLabResult.testName}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Priority</Label>
-                  <Badge className={getPriorityColor(selectedLabResult.priority)}>
-                    {selectedLabResult.priority}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Status</Label>
-                  <p className="text-sm">{selectedLabResult.status}</p>
-                </div>
-              </div>
-
-              {selectedLabResult.criticalFlag && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    <span className="text-sm font-medium text-red-800">Critical Result</span>
-                  </div>
-                  <p className="text-sm text-red-700 mt-1">
-                    This result requires immediate attention and review.
-                  </p>
+          <div className="space-y-4">
+            {/* Lab Orders List */}
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {labOrdersLoading && (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-sm text-gray-500 mt-2">Loading lab orders...</p>
                 </div>
               )}
+              {!labOrdersLoading && labOrders.map((lab) => (
+                <div key={lab.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-medium">{lab.patientName}</h4>
+                      <Badge className={getPriorityColor(lab.priority)}>
+                        {lab.priority}
+                      </Badge>
+                      {lab.criticalFlag && (
+                        <Badge variant="destructive">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Critical
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">{lab.testName}</p>
+                    <p className="text-xs text-gray-500">
+                      Ordered: {format(new Date(lab.orderedDate), 'MMM dd, yyyy HH:mm')}
+                    </p>
+                    {lab.results && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        Results: {typeof lab.results === 'string' ? lab.results : JSON.stringify(lab.results)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewPatient(lab.patientId)}
+                    >
+                      <User className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedLabResult(lab);
+                        setReviewNote("");
+                        setGeneratedMessage("");
+                      }}
+                      variant={selectedLabResult?.id === lab.id ? "default" : "outline"}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      {selectedLabResult?.id === lab.id ? "Selected" : "Select"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {!labOrdersLoading && labOrders.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <TestTube className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No lab orders requiring review</p>
+                </div>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="reviewNote">Provider Review Notes</Label>
-                <Textarea
-                  id="reviewNote"
-                  placeholder="Enter your review notes, clinical interpretation, and follow-up instructions..."
-                  value={reviewNote}
-                  onChange={(e) => setReviewNote(e.target.value)}
-                  rows={4}
-                />
-              </div>
+            {/* Selected Lab Review Section */}
+            {selectedLabResult && (
+              <div className="border-t pt-4 space-y-4">
+                <h3 className="font-medium text-lg">Review Selected Lab Result</h3>
+                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-sm font-medium">Patient</Label>
+                    <p className="text-sm">{selectedLabResult.patientName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Test</Label>
+                    <p className="text-sm">{selectedLabResult.testName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Ordered Date</Label>
+                    <p className="text-sm">{format(new Date(selectedLabResult.orderedDate), 'MMM dd, yyyy HH:mm')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Priority</Label>
+                    <Badge className={getPriorityColor(selectedLabResult.priority)}>
+                      {selectedLabResult.priority}
+                    </Badge>
+                  </div>
+                  {selectedLabResult.results && (
+                    <div className="col-span-2">
+                      <Label className="text-sm font-medium">Results</Label>
+                      <p className="text-sm bg-white p-2 rounded border">
+                        {typeof selectedLabResult.results === 'string' 
+                          ? selectedLabResult.results 
+                          : JSON.stringify(selectedLabResult.results, null, 2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-              {/* Patient Communication Section */}
-              <div className="border-t pt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Patient Communication</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGeneratePatientMessage}
-                    disabled={isGeneratingMessage}
-                    className="flex items-center gap-2"
+                <div className="space-y-3">
+                  <Label htmlFor="reviewNote">Review Notes</Label>
+                  <Textarea
+                    id="reviewNote"
+                    placeholder="Enter your review notes..."
+                    value={reviewNote}
+                    onChange={(e) => setReviewNote(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Patient Communication</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGeneratePatientMessage}
+                      disabled={isGeneratingMessage}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      {isGeneratingMessage ? "Generating..." : "Generate Message"}
+                    </Button>
+                  </div>
+                  {generatedMessage && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                      <p className="text-sm text-blue-800">{generatedMessage}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    onClick={handleSubmitLabReview}
+                    disabled={reviewLabResultMutation.isPending}
                   >
-                    <MessageSquare className="h-4 w-4" />
-                    {isGeneratingMessage ? "Generating..." : "Generate AI Message"}
+                    {reviewLabResultMutation.isPending ? "Reviewing..." : "Complete Review"}
                   </Button>
                 </div>
-                
-                {generatedMessage && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Send className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">Generated Message</span>
-                    </div>
-                    <p className="text-sm text-blue-700">{generatedMessage}</p>
-                  </div>
-                )}
               </div>
+            )}
 
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsReviewDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmitLabReview}
-                  disabled={reviewLabResultMutation.isPending}
-                  variant={selectedLabResult.criticalFlag ? "destructive" : "default"}
-                >
-                  {reviewLabResultMutation.isPending ? "Reviewing..." : "Complete Review"}
-                </Button>
-              </div>
+            <div className="flex justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsReviewDialogOpen(false);
+                  setSelectedLabResult(null);
+                  setReviewNote("");
+                  setGeneratedMessage("");
+                }}
+              >
+                Close
+              </Button>
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
