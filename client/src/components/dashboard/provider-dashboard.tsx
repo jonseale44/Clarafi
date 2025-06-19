@@ -708,56 +708,38 @@ export function ProviderDashboard() {
                     .filter((id: number) => !reviewedResultIds.has(id))
                   }
                   onReviewEncounter={(date, encounterIds) => {
-                    console.log('🔍 [Dashboard] onReviewEncounter called with:', { date, encounterIds });
-                    console.log('🔍 [Dashboard] Selected date to match:', date);
-                    
-                    // CRITICAL FIX: The dashboard lab data structure is different from the matrix data
-                    // We need to fetch the actual lab results and match against those, not the dashboard summary
-                    
-                    // For now, use a more direct approach - we'll get ALL result IDs that match the selected date
-                    // by directly querying the actual lab results data
-                    
-                    const selectedDate = new Date(date);
-                    const selectedDateOnly = selectedDate.toISOString().split('T')[0];
-                    
-                    console.log('🔍 [Dashboard] Looking for results matching date:', selectedDateOnly);
-                    
-                    // Instead of filtering the dashboard labs (which have wrong structure), 
-                    // let's pass the date to the review handler and let it fetch the correct data
-                    const resultIds: number[] = [];
-                    
-                    console.log('🔍 [Dashboard] Proceeding with date-based review, will fetch actual results in backend');
-                    
-                    // Set up the review with the date - the review handler will fetch actual results
+                    // Use professional universal lab review interface
                     setSelectedLabForReview({
                       type: 'encounter',
                       date,
                       encounterIds,
-                      resultIds: [], // We'll fetch the actual result IDs in the review process
                       patientName: selectedPatientGroup.patientName,
-                      patientId: selectedPatientGroup.patientId // Add patientId so we can fetch lab results
+                      patientId: selectedPatientGroup.patientId
                     });
+                    setShowUniversalReview(true);
                   }}
                   onReviewTestGroup={(testName, resultIds) => {
-                    console.log('🔍 [Dashboard] onReviewTestGroup called with:', { testName, resultIds });
-                    
-                    // Open test group review
+                    // Use professional universal lab review interface
                     setSelectedLabForReview({
                       type: 'testGroup',
                       testName,
                       resultIds,
-                      patientName: selectedPatientGroup.patientName
+                      patientName: selectedPatientGroup.patientName,
+                      patientId: selectedPatientGroup.patientId
                     });
+                    setShowUniversalReview(true);
                   }}
                   onReviewSpecific={(testName, date, resultId) => {
-                    // Open specific result review
+                    // Use professional universal lab review interface
                     setSelectedLabForReview({
                       type: 'specific',
                       testName,
                       date,
                       resultId,
-                      patientName: selectedPatientGroup.patientName
+                      patientName: selectedPatientGroup.patientName,
+                      patientId: selectedPatientGroup.patientId
                     });
+                    setShowUniversalReview(true);
                   }}
                 />
               </div>
