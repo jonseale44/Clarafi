@@ -63,8 +63,7 @@ export function LabResultsMatrix({
   
   const queryClient = useQueryClient();
 
-  console.log('🧪 [LabResultsMatrix] Rendering with:', { patientId, mode, encounterId });
-  console.log('🧪 [LabResultsMatrix] Pending review IDs:', pendingReviewIds);
+
 
   // Permission check for unreview functionality
   const canUnreview = (result: any) => {
@@ -82,17 +81,16 @@ export function LabResultsMatrix({
   });
 
   const results = (labResults as any) || [];
-  console.log('🧪 [LabResultsMatrix] Processing results:', results.length);
 
-  // Define lab panel groupings
-  const labPanels: { [key: string]: string[] } = {
+  // Define lab panel groupings (stable reference)
+  const labPanels = useMemo(() => ({
     'Complete Blood Count': ['Hemoglobin', 'Hematocrit', 'White Blood Cell Count', 'Red Blood Cell Count', 'Platelet Count', 'Mean Corpuscular Volume', 'Mean Corpuscular Hemoglobin', 'Mean Corpuscular Hemoglobin Concentration'],
     'Basic Metabolic Panel': ['Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2'],
     'Comprehensive Metabolic Panel': ['Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2', 'Total Protein', 'Albumin', 'Total Bilirubin', 'AST', 'ALT', 'Alkaline Phosphatase'],
     'Lipid Panel': ['Total Cholesterol', 'HDL Cholesterol', 'LDL Cholesterol', 'Triglycerides'],
     'Thyroid Function': ['TSH', 'T3', 'T4', 'Free T4'],
     'Other': []
-  };
+  }), []);
 
   const matrixData = useMemo(() => {
     if (!results.length) return [];
@@ -187,7 +185,7 @@ export function LabResultsMatrix({
     });
 
     return groups;
-  }, [matrixData]);
+  }, [matrixData, labPanels]);
 
   const dateColumns = useMemo(() => {
     const allDates = new Set<string>();
@@ -277,13 +275,7 @@ export function LabResultsMatrix({
   };
 
   const handleReviewSelection = () => {
-    console.log('🔍 [LabMatrix] Review selection triggered with:', {
-      selectedDates: Array.from(selectedDates),
-      selectedTestRows: Array.from(selectedTestRows),
-      selectedPanels: Array.from(selectedPanels),
-      matrixDataLength: matrixData.length,
-      groupedDataKeys: Object.keys(groupedData)
-    });
+
 
     if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
       // Review by encounter(s) - collect all result IDs for selected dates
@@ -304,33 +296,29 @@ export function LabResultsMatrix({
         });
       });
       
-      console.log('🔍 [LabMatrix] Review encounter - dates:', Array.from(selectedDates), 'encounterIds:', encounterIds, 'resultIds:', resultIds);
+
       onReviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds);
     } else if (selectedPanels.size > 0 && selectedDates.size === 0) {
       // Review by lab panel(s)
       const resultIds: number[] = [];
       selectedPanels.forEach(panelName => {
         const panelTests = groupedData[panelName] || [];
-        console.log('🔍 [LabMatrix] Panel tests for', panelName, ':', panelTests.length);
         panelTests.forEach(test => {
-          console.log('🔍 [LabMatrix] Test results for', test.testName, ':', test.results.map(r => r.id));
           resultIds.push(...test.results.map(r => r.id));
         });
       });
-      console.log('🔍 [LabMatrix] Calling onReviewTestGroup with panel resultIds:', resultIds);
+
       onReviewTestGroup?.(Array.from(selectedPanels).join(', '), resultIds);
     } else if (selectedTestRows.size > 0 && selectedDates.size === 0) {
       // Review by test group(s)
       const resultIds: number[] = [];
       selectedTestRows.forEach(testName => {
         const test = matrixData.find(t => t.testName === testName);
-        console.log('🔍 [LabMatrix] Found test for', testName, ':', test ? test.results.length + ' results' : 'not found');
         if (test) {
-          console.log('🔍 [LabMatrix] Result IDs for', testName, ':', test.results.map(r => r.id));
           resultIds.push(...test.results.map(r => r.id));
         }
       });
-      console.log('🔍 [LabMatrix] Calling onReviewTestGroup with test resultIds:', resultIds);
+
       onReviewTestGroup?.(Array.from(selectedTestRows).join(', '), resultIds);
     } else if (selectedTestRows.size === 1 && selectedDates.size === 1) {
       // Review specific test on specific date
@@ -338,23 +326,17 @@ export function LabResultsMatrix({
       const date = Array.from(selectedDates)[0];
       const test = matrixData.find(t => t.testName === testName);
       const result = test?.results.find(r => r.date === date);
-      console.log('🔍 [LabMatrix] Specific review for', testName, 'on', date, ':', result ? result.id : 'not found');
+
       if (result) {
         onReviewSpecific?.(testName, date, result.id);
       }
     } else {
-      console.log('🔍 [LabMatrix] No matching review condition found');
+
     }
   };
 
   const handleUnreviewSelection = () => {
-    console.log('🔍 [LabMatrix] Unreview selection triggered with:', {
-      selectedDates: Array.from(selectedDates),
-      selectedTestRows: Array.from(selectedTestRows),
-      selectedPanels: Array.from(selectedPanels),
-      matrixDataLength: matrixData.length,
-      groupedDataKeys: Object.keys(groupedData)
-    });
+
 
     if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
       // Unreview by encounter(s) - get reviewed results for these dates
@@ -373,7 +355,7 @@ export function LabResultsMatrix({
           });
         });
       });
-      console.log('🔍 [LabMatrix] Calling onUnreviewEncounter with:', Array.from(selectedDates).join(', '), encounterIds, resultIds);
+
       onUnreviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds, resultIds);
     } else if (selectedTestRows.size > 0 && selectedDates.size === 0) {
       // Unreview by test group(s) - get reviewed results for these tests
