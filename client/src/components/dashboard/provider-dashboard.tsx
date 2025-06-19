@@ -508,73 +508,24 @@ export function ProviderDashboard() {
         <TabsContent value="lab-reviews" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Lab Orders Requiring Review</CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleRefreshData}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
-              </div>
+              <CardTitle>Lab Reviews</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Lab results should be reviewed within patient charts for full clinical context.
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {labOrdersLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  </div>
-                ) : (
-                  labOrders.map((lab) => (
-                    <div key={lab.id} className={`p-4 border rounded-lg hover:bg-gray-50 ${lab.criticalFlag ? 'bg-red-50 border-red-200' : ''}`}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="font-medium">{lab.patientName}</h4>
-                            <Badge className={getPriorityColor(lab.priority)}>
-                              {lab.priority}
-                            </Badge>
-                            {lab.criticalFlag && (
-                              <Badge variant="destructive">Critical</Badge>
-                            )}
-                          </div>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <p><strong>Test:</strong> {lab.testName}</p>
-                            <p><strong>Status:</strong> {lab.status}</p>
-                            <p><strong>Ordered:</strong> {format(new Date(lab.orderedDate), "PPp")}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleViewPatient(lab.patientId)}
-                          >
-                            <User className="h-4 w-4 mr-1" />
-                            View Patient
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant={lab.criticalFlag ? "destructive" : "default"}
-                            onClick={() => handleReviewLabResult(lab)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Review Results
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-                {!labOrdersLoading && labOrders.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    <TestTube className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Lab Orders Requiring Review</h3>
-                    <p>Lab results will appear here when orders are placed through the system and results are received from laboratories for provider review and interpretation.</p>
-                  </div>
-                )}
+              <div className="text-center py-8">
+                <TestTube className="h-12 w-12 mx-auto mb-4 text-blue-500" />
+                <h3 className="text-lg font-medium mb-2">Review Labs in Patient Charts</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Lab results are now integrated into patient charts where you can review them alongside complete clinical context.
+                </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '/patients'}
+                >
+                  Go to Patients
+                </Button>
               </div>
             </CardContent>
           </Card>

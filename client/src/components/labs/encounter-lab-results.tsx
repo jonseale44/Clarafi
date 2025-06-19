@@ -20,7 +20,7 @@ import {
   Eye
 } from "lucide-react";
 import { format } from "date-fns";
-import { LabChartView } from "./lab-chart-view";
+import { IntegratedLabView } from "./integrated-lab-view";
 
 interface EncounterLabResultsProps {
   patientId: number;
