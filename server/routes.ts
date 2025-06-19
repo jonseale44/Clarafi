@@ -28,6 +28,7 @@ import labWorkflowRoutes from "./lab-workflow-routes";
 import labCommunicationRoutes from "./lab-communication-routes";
 import labReviewRoutes from "./lab-review-routes";
 import labSimulatorRoutes from "./lab-simulator-routes";
+import labStatusDashboardRoutes from "./lab-status-dashboard-routes";
 import { externalLabMockRouter } from "./external-lab-mock-service";
 import multer from "multer";
 import OpenAI from "openai";
@@ -2846,6 +2847,17 @@ Return only valid JSON without markdown formatting.`;
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
 
+      // For lab orders, automatically start external lab simulation
+      if (order.orderType === "lab") {
+        try {
+          const { labOrderIntegration } = await import("./lab-order-integration-service");
+          await labOrderIntegration.processSignedLabOrder(orderId);
+          console.log(`🧪 [Order Signing] Started external lab simulation for order ${orderId}`);
+        } catch (error) {
+          console.error(`❌ [Order Signing] Failed to start lab simulation for order ${orderId}:`, error);
+        }
+      }
+
       // For medication orders, activate pending medications
       if (order.orderType === "medication") {
         console.log(
@@ -3064,6 +3076,7 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api/lab-communication", labCommunicationRoutes);
   app.use("/api/lab-review", labReviewRoutes);
   app.use("/api/lab-simulator", labSimulatorRoutes);
+  app.use("/api/lab-status", labStatusDashboardRoutes);
   app.use("/api/external-lab-mock", externalLabMockRouter);
 
   // Legacy dynamic vitals routes removed - now using static imports above
