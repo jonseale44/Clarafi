@@ -95,16 +95,6 @@ export function LabResultsMatrix({
   };
 
   const matrixData = useMemo(() => {
-    console.log('🧪 [LabResultsMatrix] Processing results:', results.length);
-    console.log('🧪 [LabResultsMatrix] Sample result structure:', results.slice(0, 2).map(r => ({
-      id: r.id,
-      testName: r.testName,
-      resultAvailableAt: r.resultAvailableAt,
-      specimenCollectedAt: r.specimenCollectedAt,
-      orderedAt: r.orderedAt,
-      encounterId: r.encounterId
-    })));
-    
     if (!results.length) return [];
 
     const testGroups = new Map<string, MatrixData>();
@@ -129,18 +119,14 @@ export function LabResultsMatrix({
         if (resultDate) {
           const parsedDate = new Date(resultDate);
           if (isNaN(parsedDate.getTime())) {
-            console.warn('Invalid date for result:', result.id, resultDate);
-            resultDate = new Date().toISOString(); // Fallback to current date
+            resultDate = new Date().toISOString();
           }
         } else {
-          resultDate = new Date().toISOString(); // Fallback to current date
+          resultDate = new Date().toISOString();
         }
       } catch (error) {
-        console.warn('Date parsing error for result:', result.id, error);
-        resultDate = new Date().toISOString(); // Fallback to current date
+        resultDate = new Date().toISOString();
       }
-
-      console.log('🧪 [LabResultsMatrix] Result', result.id, 'final date:', resultDate, 'original:', result.resultAvailableAt);
 
       testGroup.results.push({
         date: resultDate,
@@ -162,14 +148,13 @@ export function LabResultsMatrix({
         try {
           return new Date(b.date).getTime() - new Date(a.date).getTime();
         } catch (error) {
-          console.warn('Date sorting error:', a.date, b.date);
           return 0;
         }
       });
     });
 
     return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));
-  }, [results]);
+  }, [results, pendingReviewIds]);
 
   // Group tests by lab panels
   const groupedData = useMemo(() => {
