@@ -511,11 +511,11 @@ export function LabSimulatorDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {testDefinitions && Object.entries(testDefinitions).map(([category, tests]) => (
+              {testDefinitions?.data && Object.entries(testDefinitions.data).map(([category, tests]) => (
                 <div key={category} className="mb-6">
                   <h3 className="text-lg font-medium mb-3 capitalize">{category}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(tests as TestDefinition[]).map((test) => (
+                    {Array.isArray(tests) && (tests as TestDefinition[]).map((test) => (
                       <Card key={test.code} className="border-l-4 border-l-blue-200">
                         <CardContent className="pt-4">
                           <div className="space-y-2">
@@ -531,7 +531,7 @@ export function LabSimulatorDashboard() {
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                    )) || []}
                   </div>
                   <Separator className="mt-6" />
                 </div>
