@@ -269,14 +269,16 @@ export function LabResultsMatrix({
       test.results.some(result => result.date === date && result.needsReview)
     );
     
-    let classes = "text-center p-3 font-semibold min-w-[100px] cursor-pointer transition-colors";
+    let classes = "text-center p-3 font-semibold min-w-[100px] cursor-pointer transition-colors border-2";
     
     if (isSelected) {
-      classes += " bg-blue-200 text-blue-900";
+      classes += " bg-blue-200 text-blue-900 border-blue-400";
     } else if (isHovered) {
-      classes += " bg-blue-100";
+      classes += " bg-blue-100 border-blue-200";
     } else if (hasPendingResults) {
-      classes += " bg-yellow-100";
+      classes += " bg-yellow-100 border-yellow-300";
+    } else {
+      classes += " border-transparent";
     }
     
     return classes;
@@ -522,8 +524,18 @@ export function LabResultsMatrix({
                         
                         {displayColumns.map(date => {
                           const result = test.results.find(r => r.date === date);
+                          const isDateSelected = selectedDates.has(date);
+                          const isEncounterHighlighted = result?.encounterId && 
+                            selectedDates.has(date) && 
+                            encountersByDate.get(date)?.includes(result.encounterId);
+                          
+                          let cellClass = "p-3 text-center transition-colors";
+                          if (isDateSelected || isEncounterHighlighted) {
+                            cellClass += " bg-blue-50 border-2 border-blue-200";
+                          }
+                          
                           return (
-                            <td key={date} className="p-3 text-center">
+                            <td key={date} className={cellClass}>
                               {result ? (
                                 <div className="relative">
                                   <div className={`px-2 py-1 rounded text-sm ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview)}`}>

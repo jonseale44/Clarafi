@@ -67,6 +67,8 @@ export function ProviderDashboard() {
   const [selectedPatientGroup, setSelectedPatientGroup] = useState<any>(null);
   const [selectedLabForReview, setSelectedLabForReview] = useState<any>(null);
   const [reviewNote, setReviewNote] = useState("");
+  const [reviewingInProgress, setReviewingInProgress] = useState(false);
+  const [reviewedResultIds, setReviewedResultIds] = useState<Set<number>>(new Set());
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
@@ -700,13 +702,24 @@ export function ProviderDashboard() {
                   patientId={selectedPatientGroup.patientId}
                   mode="review"
                   showTitle={false}
-                  pendingReviewIds={selectedPatientGroup.labs.map((lab: any) => lab.id)}
+                  pendingReviewIds={selectedPatientGroup.labs
+                    .map((lab: any) => lab.id)
+                    .filter((id: number) => !reviewedResultIds.has(id))
+                  }
                   onReviewEncounter={(date, encounterIds) => {
-                    // Open encounter-level review
+                    // Get all result IDs for this encounter date
+                    const resultIds = selectedPatientGroup.labs
+                      .filter((lab: any) => {
+                        const labDate = new Date(lab.resultAvailableAt).toISOString().split('T')[0];
+                        return labDate === date;
+                      })
+                      .map((lab: any) => lab.id);
+                    
                     setSelectedLabForReview({
                       type: 'encounter',
                       date,
                       encounterIds,
+                      resultIds,
                       patientName: selectedPatientGroup.patientName
                     });
                   }}
@@ -742,11 +755,19 @@ export function ProviderDashboard() {
                     {selectedLabForReview.type === 'testGroup' && `Review ${selectedLabForReview.testName} Results`}
                     {selectedLabForReview.type === 'specific' && `Review ${selectedLabForReview.testName} - ${selectedLabForReview.date}`}
                   </h4>
-                  <Badge variant="outline">
-                    {selectedLabForReview.type === 'encounter' && `${selectedLabForReview.encounterIds?.length || 0} encounters`}
-                    {selectedLabForReview.type === 'testGroup' && `${selectedLabForReview.resultIds?.length || 0} results`}
-                    {selectedLabForReview.type === 'specific' && 'Single result'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {selectedLabForReview.type === 'encounter' && `${selectedLabForReview.resultIds?.length || 0} lab results`}
+                      {selectedLabForReview.type === 'testGroup' && `${selectedLabForReview.resultIds?.length || 0} results`}
+                      {selectedLabForReview.type === 'specific' && 'Single result'}
+                    </Badge>
+                    {reviewingInProgress && (
+                      <Badge variant="secondary">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                        Processing...
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 <div className="p-4 bg-gray-50 rounded-lg">
@@ -783,39 +804,89 @@ export function ProviderDashboard() {
                     Cancel
                   </Button>
                   <Button 
-                    onClick={() => {
+                    onClick={async () => {
                       if (selectedLabForReview) {
-                        // Handle different review types
-                        if (selectedLabForReview.type === 'encounter') {
-                          // Review all labs from encounter(s)
-                          selectedLabForReview.encounterIds?.forEach((encounterId: number) => {
-                            reviewLabResultMutation.mutate({
-                              resultId: encounterId, // This would need to be adjusted for encounter-level review
-                              reviewNote: reviewNote
+                        setReviewingInProgress(true);
+                        
+                        try {
+                          const promises: Promise<any>[] = [];
+                          const resultIdsToReview: number[] = [];
+                          
+                          if (selectedLabForReview.type === 'encounter') {
+                            // For encounter review, we need to get all lab result IDs from those encounters
+                            // This is a simplified approach - in practice you'd want to batch this
+                            selectedLabForReview.resultIds?.forEach((resultId: number) => {
+                              resultIdsToReview.push(resultId);
+                              promises.push(
+                                reviewLabResultMutation.mutateAsync({
+                                  resultId,
+                                  reviewNote: reviewNote
+                                })
+                              );
                             });
-                          });
-                        } else if (selectedLabForReview.type === 'testGroup') {
-                          // Review all results in test group
-                          selectedLabForReview.resultIds?.forEach((resultId: number) => {
-                            reviewLabResultMutation.mutate({
-                              resultId,
-                              reviewNote: reviewNote
+                          } else if (selectedLabForReview.type === 'testGroup') {
+                            selectedLabForReview.resultIds?.forEach((resultId: number) => {
+                              resultIdsToReview.push(resultId);
+                              promises.push(
+                                reviewLabResultMutation.mutateAsync({
+                                  resultId,
+                                  reviewNote: reviewNote
+                                })
+                              );
                             });
+                          } else {
+                            resultIdsToReview.push(selectedLabForReview.resultId);
+                            promises.push(
+                              reviewLabResultMutation.mutateAsync({
+                                resultId: selectedLabForReview.resultId,
+                                reviewNote: reviewNote
+                              })
+                            );
+                          }
+                          
+                          await Promise.all(promises);
+                          
+                          // Mark results as reviewed in UI
+                          const newReviewedIds = new Set(reviewedResultIds);
+                          resultIdsToReview.forEach(id => newReviewedIds.add(id));
+                          setReviewedResultIds(newReviewedIds);
+                          
+                          // Show success feedback
+                          toast({
+                            title: "Review Completed",
+                            description: `Successfully reviewed ${resultIdsToReview.length} lab result${resultIdsToReview.length > 1 ? 's' : ''}`,
+                            duration: 3000,
                           });
-                        } else {
-                          // Review specific result
-                          reviewLabResultMutation.mutate({
-                            resultId: selectedLabForReview.resultId,
-                            reviewNote: reviewNote
+                          
+                          setSelectedLabForReview(null);
+                          setReviewNote("");
+                          
+                          // Refresh the data to show updated status
+                          queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
+                          
+                        } catch (error) {
+                          console.error('Review failed:', error);
+                          toast({
+                            title: "Review Failed",
+                            description: "There was an error completing the review. Please try again.",
+                            variant: "destructive",
+                            duration: 5000,
                           });
+                        } finally {
+                          setReviewingInProgress(false);
                         }
-                        setSelectedLabForReview(null);
-                        setReviewNote("");
                       }
                     }}
-                    disabled={reviewLabResultMutation.isPending}
+                    disabled={reviewLabResultMutation.isPending || reviewingInProgress}
                   >
-                    {reviewLabResultMutation.isPending ? "Reviewing..." : "Complete Review"}
+                    {(reviewLabResultMutation.isPending || reviewingInProgress) ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        Reviewing...
+                      </div>
+                    ) : (
+                      "Complete Review"
+                    )}
                   </Button>
                 </div>
               </div>
