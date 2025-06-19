@@ -288,7 +288,7 @@ export function VitalsFlowsheet({
           painScale: result.data.painScale,
           parsedFromText: true,
           originalText: quickParseText,
-          notes: `Parsed: ${quickParseText}`,
+          notes: result.data.parsedText || "", // Use the clean parsed text instead of showing the raw input
           alerts: []
         };
         
@@ -302,7 +302,8 @@ export function VitalsFlowsheet({
         console.log("🩺 [VitalsFlowsheet] Created new entry:", newEntry);
         setEditingEntry(newEntry as VitalsEntry);
         setShowAddDialog(true);
-        setQuickParseText("");
+        // Don't clear quickParseText immediately - let the user see what was parsed
+        // setQuickParseText(""); // Commented out to prevent double updates
         
         const extractedCount = Object.keys(result.data).filter(k => result.data?.[k as keyof typeof result.data] !== null && result.data?.[k as keyof typeof result.data] !== undefined).length;
         toast({
@@ -792,6 +793,7 @@ export function VitalsFlowsheet({
               onCancel={() => {
                 setEditingEntry(null);
                 setShowAddDialog(false);
+                setQuickParseText(""); // Clear on cancel/close
               }}
               isSaving={saveVitalsMutation.isPending}
               ranges={ranges}
@@ -825,15 +827,21 @@ interface VitalsEntryFormProps {
 function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParseText, setQuickParseText, quickParseMutation, encounterId, patientId }: VitalsEntryFormProps) {
   const [formData, setFormData] = useState<Partial<VitalsEntry>>(entry);
 
-  // Update form data when entry changes (from quick parse)
+  // Update form data when entry changes (from quick parse) - but only update if the entry actually changed
   useEffect(() => {
-    console.log("🩺 [VitalsEntryForm] Entry changed, updating form data:", entry);
-    setFormData({
-      ...entry,
-      encounterId,
-      patientId
-    });
-  }, [entry, encounterId, patientId]);
+    // Only update if the entry ID changed or if it's a new entry with different vital values
+    const shouldUpdate = !formData.id || formData.id !== entry.id || 
+      JSON.stringify({...formData, encounterId, patientId}) !== JSON.stringify({...entry, encounterId, patientId});
+    
+    if (shouldUpdate) {
+      console.log("🩺 [VitalsEntryForm] Entry changed, updating form data:", entry);
+      setFormData({
+        ...entry,
+        encounterId,
+        patientId
+      });
+    }
+  }, [entry.id, entry.systolicBp, entry.diastolicBp, entry.heartRate, entry.temperature, entry.weight, entry.height, entry.respiratoryRate, entry.oxygenSaturation, entry.painScale, encounterId, patientId]);
 
   // Auto-parse functionality with debouncing
   const debouncedParse = useCallback(
@@ -852,9 +860,9 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     [quickParseMutation]
   );
 
-  // Trigger auto-parse when quickParseText changes
+  // Trigger auto-parse when quickParseText changes - but avoid triggering on empty text
   useEffect(() => {
-    if (quickParseText) {
+    if (quickParseText && quickParseText.trim().length > 5) {
       debouncedParse(quickParseText);
     }
   }, [quickParseText, debouncedParse]);
