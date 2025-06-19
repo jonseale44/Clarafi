@@ -708,81 +708,33 @@ export function ProviderDashboard() {
                   }
                   onReviewEncounter={(date, encounterIds) => {
                     console.log('🔍 [Dashboard] onReviewEncounter called with:', { date, encounterIds });
-                    console.log('🔍 [Dashboard] Available labs:', selectedPatientGroup.labs.length);
-                    console.log('🔍 [Dashboard] Sample labs structure:', selectedPatientGroup.labs.slice(0, 3).map(lab => ({
-                      id: lab.id,
-                      testName: lab.testName,
-                      resultAvailableAt: lab.resultAvailableAt,
-                      specimenCollectedAt: lab.specimenCollectedAt,
-                      orderedAt: lab.orderedAt
-                    })));
+                    console.log('🔍 [Dashboard] Selected date to match:', date);
                     
-                    // Get all result IDs for this encounter date
-                    const resultIds = selectedPatientGroup.labs
-                      .filter((lab: any) => {
-                        try {
-                          // Check all possible date fields
-                          const dateFields = [
-                            { name: 'resultAvailableAt', value: lab.resultAvailableAt },
-                            { name: 'specimenCollectedAt', value: lab.specimenCollectedAt },
-                            { name: 'orderedAt', value: lab.orderedAt }
-                          ];
-                          
-                          console.log('🔍 [Dashboard] Lab', lab.id, 'checking date fields:', dateFields);
-                          
-                          for (const field of dateFields) {
-                            if (!field.value) continue;
-                            
-                            const labDate = new Date(field.value);
-                            if (isNaN(labDate.getTime())) continue;
-                            
-                            // Handle exact timestamp match first
-                            const labDateString = labDate.toISOString();
-                            const exactMatch = labDateString === date;
-                            
-                            // Then handle date-only comparison
-                            const labDateOnly = labDateString.split('T')[0];
-                            const selectedDateOnly = date.includes('T') ? date.split('T')[0] : date;
-                            const dateOnlyMatch = labDateOnly === selectedDateOnly;
-                            
-                            // Also handle time-normalized comparison (same date, possibly different times)
-                            const selectedDate = new Date(date);
-                            const timeNormalizedMatch = !isNaN(selectedDate.getTime()) && 
-                              labDate.toDateString() === selectedDate.toDateString();
-                            
-                            console.log('🔍 [Dashboard] Lab', lab.id, field.name, 'comparison:', {
-                              labDateString,
-                              labDateOnly,
-                              selectedDate: date,
-                              selectedDateOnly,
-                              exactMatch,
-                              dateOnlyMatch,
-                              timeNormalizedMatch
-                            });
-                            
-                            if (exactMatch || dateOnlyMatch || timeNormalizedMatch) {
-                              console.log('✅ [Dashboard] Lab', lab.id, 'MATCHED via', field.name, exactMatch ? 'exact' : dateOnlyMatch ? 'date-only' : 'time-normalized');
-                              return true;
-                            }
-                          }
-                          
-                          console.log('❌ [Dashboard] Lab', lab.id, 'NO MATCH found');
-                          return false;
-                        } catch (error) {
-                          console.warn('Invalid date processing for lab:', lab.id, error);
-                          return false;
-                        }
-                      })
-                      .map((lab: any) => lab.id);
+                    // CRITICAL FIX: The dashboard lab data structure is different from the matrix data
+                    // We need to fetch the actual lab results and match against those, not the dashboard summary
                     
-                    console.log('🔍 [Dashboard] Final filtered result IDs:', resultIds);
+                    // For now, use a more direct approach - we'll get ALL result IDs that match the selected date
+                    // by directly querying the actual lab results data
                     
+                    const selectedDate = new Date(date);
+                    const selectedDateOnly = selectedDate.toISOString().split('T')[0];
+                    
+                    console.log('🔍 [Dashboard] Looking for results matching date:', selectedDateOnly);
+                    
+                    // Instead of filtering the dashboard labs (which have wrong structure), 
+                    // let's pass the date to the review handler and let it fetch the correct data
+                    const resultIds: number[] = [];
+                    
+                    console.log('🔍 [Dashboard] Proceeding with date-based review, will fetch actual results in backend');
+                    
+                    // Set up the review with the date - the review handler will fetch actual results
                     setSelectedLabForReview({
                       type: 'encounter',
                       date,
                       encounterIds,
-                      resultIds,
-                      patientName: selectedPatientGroup.patientName
+                      resultIds: [], // We'll fetch the actual result IDs in the review process
+                      patientName: selectedPatientGroup.patientName,
+                      patientId: selectedPatientGroup.patientId // Add patientId so we can fetch lab results
                     });
                   }}
                   onReviewTestGroup={(testName, resultIds) => {
@@ -876,23 +828,63 @@ export function ProviderDashboard() {
                           console.log('🔍 [Dashboard] Starting review process for:', selectedLabForReview);
                           
                           const promises: Promise<any>[] = [];
-                          const resultIdsToReview: number[] = [];
+                          let resultIdsToReview: number[] = [];
                           
-                          if (selectedLabForReview.type === 'encounter') {
-                            console.log('🔍 [Dashboard] Processing encounter review with resultIds:', selectedLabForReview.resultIds);
-                            selectedLabForReview.resultIds?.forEach((resultId: number) => {
-                              resultIdsToReview.push(resultId);
-                              promises.push(
-                                reviewLabResultMutation.mutateAsync({
-                                  resultId,
-                                  reviewNote: reviewNote
-                                })
-                              );
-                            });
+                          if (selectedLabForReview.type === 'encounter' && selectedLabForReview.date && selectedLabForReview.patientId) {
+                            console.log('🔍 [Dashboard] Processing encounter review - fetching actual lab results for date:', selectedLabForReview.date);
+                            
+                            // Fetch the actual lab results for this patient and filter by date
+                            try {
+                              const response = await fetch(`/api/patients/${selectedLabForReview.patientId}/lab-results`);
+                              const actualLabResults = await response.json();
+                              
+                              console.log('🔍 [Dashboard] Fetched', actualLabResults.length, 'actual lab results');
+                              
+                              // Filter lab results by the selected date
+                              const selectedDate = new Date(selectedLabForReview.date);
+                              const selectedDateOnly = selectedDate.toISOString().split('T')[0];
+                              
+                              const matchingResults = actualLabResults.filter((result: any) => {
+                                if (!result.resultAvailableAt) return false;
+                                
+                                const resultDate = new Date(result.resultAvailableAt);
+                                if (isNaN(resultDate.getTime())) return false;
+                                
+                                const resultDateOnly = resultDate.toISOString().split('T')[0];
+                                const exactMatch = result.resultAvailableAt === selectedLabForReview.date;
+                                const dateOnlyMatch = resultDateOnly === selectedDateOnly;
+                                
+                                console.log('🔍 [Dashboard] Checking result', result.id, ':', {
+                                  resultAvailableAt: result.resultAvailableAt,
+                                  resultDateOnly,
+                                  selectedDate: selectedLabForReview.date,
+                                  selectedDateOnly,
+                                  exactMatch,
+                                  dateOnlyMatch
+                                });
+                                
+                                return exactMatch || dateOnlyMatch;
+                              });
+                              
+                              resultIdsToReview = matchingResults.map((result: any) => result.id);
+                              console.log('🔍 [Dashboard] Found', resultIdsToReview.length, 'matching results:', resultIdsToReview);
+                              
+                              resultIdsToReview.forEach((resultId: number) => {
+                                promises.push(
+                                  reviewLabResultMutation.mutateAsync({
+                                    resultId,
+                                    reviewNote: reviewNote
+                                  })
+                                );
+                              });
+                            } catch (fetchError) {
+                              console.error('🔍 [Dashboard] Error fetching lab results:', fetchError);
+                              throw fetchError;
+                            }
                           } else if (selectedLabForReview.type === 'testGroup') {
                             console.log('🔍 [Dashboard] Processing test group review with resultIds:', selectedLabForReview.resultIds);
-                            selectedLabForReview.resultIds?.forEach((resultId: number) => {
-                              resultIdsToReview.push(resultId);
+                            resultIdsToReview = selectedLabForReview.resultIds || [];
+                            resultIdsToReview.forEach((resultId: number) => {
                               promises.push(
                                 reviewLabResultMutation.mutateAsync({
                                   resultId,
@@ -902,7 +894,7 @@ export function ProviderDashboard() {
                             });
                           } else {
                             console.log('🔍 [Dashboard] Processing specific review with resultId:', selectedLabForReview.resultId);
-                            resultIdsToReview.push(selectedLabForReview.resultId);
+                            resultIdsToReview = [selectedLabForReview.resultId];
                             promises.push(
                               reviewLabResultMutation.mutateAsync({
                                 resultId: selectedLabForReview.resultId,
