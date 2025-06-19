@@ -421,74 +421,150 @@ export const externalLabs = pgTable("external_labs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Lab Orders
+// Lab Orders - Enhanced for Production EMR Standards
 export const labOrders = pgTable("lab_orders", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
-  orderSetId: text("order_set_id"), // Groups related tests together
+  orderSetId: text("order_set_id"), // Groups related tests together (e.g., "CMP_PANEL_001")
   
-  // Order details
-  testCode: text("test_code").notNull(), // LOINC code
+  // Standardized test identification
+  loincCode: text("loinc_code").notNull(), // Primary LOINC identifier for interoperability
+  cptCode: text("cpt_code"), // CPT code for billing
+  testCode: text("test_code").notNull(), // Lab-specific internal code
   testName: text("test_name").notNull(),
-  priority: text("priority").default("routine"), // 'stat', 'urgent', 'routine'
+  testCategory: text("test_category"), // 'chemistry', 'hematology', 'microbiology', 'molecular'
+  
+  // Clinical context
+  priority: text("priority").default("routine"), // 'stat', 'urgent', 'routine', 'timed'
   clinicalIndication: text("clinical_indication"), // Why this test was ordered
+  icd10Codes: text("icd10_codes").array(), // Supporting diagnosis codes
   
   // Ordering provider
   orderedBy: integer("ordered_by").references(() => users.id).notNull(),
   orderedAt: timestamp("ordered_at").defaultNow(),
   
-  // External lab integration
-  externalLabId: text("external_lab_id"),
+  // External lab routing
+  targetLabId: integer("target_lab_id").references(() => externalLabs.id),
   externalOrderId: text("external_order_id"),
   hl7MessageId: text("hl7_message_id"),
+  requisitionNumber: text("requisition_number"), // Lab requisition tracking
   
-  // Status tracking
-  orderStatus: text("order_status").default("pending"), // 'pending', 'sent', 'received', 'in_progress', 'completed', 'cancelled'
-  sentAt: timestamp("sent_at"),
+  // Status tracking with detailed workflow
+  orderStatus: text("order_status").default("draft"), // 'draft', 'pending', 'transmitted', 'acknowledged', 'collected', 'in_progress', 'resulted', 'reviewed', 'cancelled'
+  transmittedAt: timestamp("transmitted_at"),
   acknowledgedAt: timestamp("acknowledged_at"),
+  collectedAt: timestamp("collected_at"),
   
-  // Specimen details
-  specimenType: text("specimen_type"), // 'blood', 'urine', 'tissue', etc.
+  // Specimen requirements
+  specimenType: text("specimen_type"), // 'serum', 'plasma', 'whole_blood', 'urine', 'stool', 'tissue'
+  specimenVolume: text("specimen_volume"), // Required volume
+  containerType: text("container_type"), // 'red_top', 'lavender_top', 'green_top', 'gray_top'
   collectionInstructions: text("collection_instructions"),
   fastingRequired: boolean("fasting_required").default(false),
+  fastingHours: integer("fasting_hours"), // Required fasting duration
+  timingInstructions: text("timing_instructions"), // Peak/trough, 24hr urine, etc.
+  
+  // Insurance and authorization
+  insurancePreauth: text("insurance_preauth"), // Pre-authorization number
+  estimatedCost: decimal("estimated_cost", { precision: 10, scale: 2 }),
+  insuranceCoverage: text("insurance_coverage"), // 'covered', 'partial', 'not_covered', 'pending'
+  
+  // AI-enhanced features
+  aiSuggestedTests: jsonb("ai_suggested_tests").$type<string[]>(), // Related tests AI recommends
+  riskFlags: jsonb("risk_flags").$type<{
+    criticalFlag?: boolean;
+    interactionWarnings?: string[];
+    patientRiskFactors?: string[];
+  }>(),
+  
+  // Quality measures
+  qualityMeasure: text("quality_measure"), // Links to quality reporting (HEDIS, CMS)
+  preventiveCareFlag: boolean("preventive_care_flag").default(false),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Lab Results
+// Lab Results - Enhanced with AI Intelligence and Clinical Context
 export const labResults = pgTable("lab_results", {
   id: serial("id").primaryKey(),
   labOrderId: integer("lab_order_id").references(() => labOrders.id).notNull(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   
-  // Result data
+  // Result identification
+  loincCode: text("loinc_code").notNull(),
   testCode: text("test_code").notNull(),
   testName: text("test_name").notNull(),
+  testCategory: text("test_category"), // 'chemistry', 'hematology', 'microbiology', 'molecular'
+  
+  // Result data with enhanced context
   resultValue: text("result_value"),
+  resultNumeric: decimal("result_numeric", { precision: 15, scale: 6 }), // For trending/calculations
   resultUnits: text("result_units"),
   referenceRange: text("reference_range"),
-  abnormalFlag: text("abnormal_flag"), // 'H', 'L', 'HH', 'LL', 'A', null
+  ageGenderAdjustedRange: text("age_gender_adjusted_range"), // Personalized normal ranges
+  abnormalFlag: text("abnormal_flag"), // 'H', 'L', 'HH', 'LL', 'A', 'AA', null
+  criticalFlag: boolean("critical_flag").default(false), // Life-threatening values
+  deltaFlag: text("delta_flag"), // Significant change from previous result
   
-  // Timing
+  // Timing with detailed tracking
   specimenCollectedAt: timestamp("specimen_collected_at"),
+  specimenReceivedAt: timestamp("specimen_received_at"),
   resultAvailableAt: timestamp("result_available_at"),
+  resultFinalizedAt: timestamp("result_finalized_at"),
   receivedAt: timestamp("received_at").defaultNow(),
   
-  // External tracking
-  externalLabId: text("external_lab_id"),
+  // External lab tracking
+  externalLabId: integer("external_lab_id").references(() => externalLabs.id),
   externalResultId: text("external_result_id"),
   hl7MessageId: text("hl7_message_id"),
+  instrumentId: text("instrument_id"), // Lab instrument that performed test
   
-  // Status & review
-  resultStatus: text("result_status").default("pending"), // 'pending', 'preliminary', 'final', 'corrected', 'cancelled'
+  // Result status and validation
+  resultStatus: text("result_status").default("pending"), // 'pending', 'preliminary', 'final', 'corrected', 'cancelled', 'entered_in_error'
+  verificationStatus: text("verification_status").default("unverified"), // 'unverified', 'verified', 'validated'
+  resultComments: text("result_comments"), // Lab technician notes
+  
+  // Provider review and clinical intelligence
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   providerNotes: text("provider_notes"),
   
+  // AI-enhanced interpretation
+  aiInterpretation: jsonb("ai_interpretation").$type<{
+    clinicalSignificance?: string;
+    suggestedActions?: string[];
+    trendAnalysis?: string;
+    riskAssessment?: string;
+    relatedFindings?: string[];
+    followUpRecommendations?: string[];
+  }>(),
+  
+  // Historical trending
+  previousValue: decimal("previous_value", { precision: 15, scale: 6 }),
+  previousDate: timestamp("previous_date"),
+  trendDirection: text("trend_direction"), // 'increasing', 'decreasing', 'stable', 'fluctuating'
+  percentChange: decimal("percent_change", { precision: 5, scale: 2 }),
+  
+  // Quality control
+  qcFlags: jsonb("qc_flags").$type<{
+    hemolyzed?: boolean;
+    lipemic?: boolean;
+    icteric?: boolean;
+    clotted?: boolean;
+    insufficientSample?: boolean;
+  }>(),
+  
+  // Integration metadata
+  sourceSystem: text("source_system"), // 'epic', 'cerner', 'labcorp', 'quest'
+  interfaceVersion: text("interface_version"),
+  
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+
 
 // Imaging Orders
 export const imagingOrders = pgTable("imaging_orders", {
