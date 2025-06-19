@@ -382,10 +382,19 @@ export function LabResultsMatrix({
   };
 
   // Add effect to clear selection when data changes (after review)
+  // Use a stable reference to prevent infinite loops
+  const resultsHash = React.useMemo(() => 
+    results.map(r => `${r.id}-${r.reviewedBy}`).join(','), [results]
+  );
+  
   React.useEffect(() => {
-    // Clear selection when lab results data changes to reflect new review state
-    clearSelection();
-  }, [results]);
+    // Clear selection when lab results review state changes
+    if (selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) {
+      setSelectedDates(new Set());
+      setSelectedTestRows(new Set());
+      setSelectedPanels(new Set());
+    }
+  }, [resultsHash]); // Only depend on the hash of results, not the selection state
 
   // Force re-render when results change to ensure visual state is updated
   const resultIds = React.useMemo(() => 
