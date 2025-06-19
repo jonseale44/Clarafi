@@ -575,7 +575,7 @@ export function LabResultsMatrix({
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-muted/30">
+                <th className="text-left p-2 font-medium min-w-[180px] sticky left-0 bg-muted/30 text-xs">
                   Test
                 </th>
                 {displayColumns.map(date => (
@@ -586,9 +586,9 @@ export function LabResultsMatrix({
                     onMouseEnter={() => setHoveredDate(date)}
                     onMouseLeave={() => setHoveredDate(null)}
                   >
-                    <div className="text-xs whitespace-pre-line flex items-center justify-center gap-1">
-                      {selectedDates.has(date) && <Calendar className="h-3 w-3" />}
-                      {formatDate(date)}
+                    <div className="text-xs whitespace-pre-line flex items-center justify-center gap-1 leading-tight">
+                      {selectedDates.has(date) && <Calendar className="h-2 w-2" />}
+                      <span className="text-xs">{formatDate(date)}</span>
                     </div>
                   </th>
                 ))}
@@ -616,11 +616,11 @@ export function LabResultsMatrix({
                 panelRows.push(
                   <tr key={`panel-${panelName}`} className={panelClass}>
                     <td 
-                      className="p-3 sticky left-0 bg-inherit"
+                      className="p-2 sticky left-0 bg-inherit"
                       onClick={() => handlePanelClick(panelName)}
                     >
-                      <div className="flex items-center gap-2">
-                        {isPanelSelected && <FlaskConical className="h-4 w-4 text-blue-600" />}
+                      <div className="flex items-center gap-1">
+                        {isPanelSelected && <FlaskConical className="h-3 w-3 text-blue-600" />}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -628,12 +628,12 @@ export function LabResultsMatrix({
                             e.stopPropagation();
                             togglePanelExpansion(panelName);
                           }}
-                          className="h-6 w-6 p-0"
+                          className="h-4 w-4 p-0"
                         >
                           {isPanelExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-3 w-3" />
                           ) : (
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-3 w-3" />
                           )}
                         </Button>
                         <div>
@@ -735,7 +735,7 @@ export function LabResultsMatrix({
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground text-sm">—</span>
+                                <span className="text-muted-foreground text-xs">—</span>
                               )}
                             </td>
                           );
@@ -845,12 +845,12 @@ export function LabResultsMatrix({
         )}
         
         {mode === 'compact' && dateColumns.length > maxColumns && (
-          <div className="p-3 text-center border-t bg-muted/10">
-            <div className="text-sm text-muted-foreground">
-              Showing {maxColumns} most recent results of {dateColumns.length} total
+          <div className="p-2 text-center border-t bg-muted/10">
+            <div className="text-xs text-muted-foreground">
+              Showing {maxColumns} most recent of {dateColumns.length} total
             </div>
-            <Button variant="link" size="sm" className="mt-1">
-              View All Results
+            <Button variant="link" size="sm" className="mt-1 text-xs h-6">
+              View All
             </Button>
           </div>
         )}
