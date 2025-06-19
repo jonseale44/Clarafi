@@ -37,10 +37,8 @@ router.post("/patient-reported", async (req: Request, res: Response) => {
 
     // Insert patient-reported lab result
     const [labResult] = await db.insert(labResults).values({
-      labOrderId: null,
       patientId: parseInt(patientId),
-      encounterId: encounterId ? parseInt(encounterId) : null,
-      loincCode: "", // Will be populated by GPT intelligence service
+      testCode: testCode || `PATIENT_${testName.toUpperCase()}`,
       testCode: `PATIENT_${testName.toUpperCase()}`,
       testName,
       testCategory: "patient_reported",
@@ -92,10 +90,7 @@ router.post("/provider-entered", async (req: Request, res: Response) => {
 
     // Insert provider-entered lab result
     const [labResult] = await db.insert(labResults).values({
-      labOrderId: null,
       patientId: parseInt(patientId),
-      encounterId: encounterId ? parseInt(encounterId) : null,
-      loincCode: loincCode || "",
       testCode: testCode || `PROVIDER_${testName.toUpperCase()}`,
       testName,
       testCategory: "provider_entered",
