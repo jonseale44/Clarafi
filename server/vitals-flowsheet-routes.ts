@@ -89,6 +89,51 @@ router.get("/encounter/:encounterId", async (req, res) => {
 });
 
 /**
+ * POST /api/vitals/smart-merge
+ * Smart merge vitals with deduplication logic
+ */
+router.post("/smart-merge", async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      return APIResponseHandler.unauthorized(res);
+    }
+
+    const { encounterId, vitalsData } = req.body;
+    
+    if (!encounterId || !vitalsData) {
+      return APIResponseHandler.badRequest(res, "Missing encounterId or vitalsData");
+    }
+
+    console.log("🔧 [VitalsSmartMerge] Processing smart merge for encounter", encounterId);
+    
+    const mergeResult = await vitalsDeduplicationService.smartMergeVitals(encounterId, {
+      ...vitalsData,
+      recordedBy: req.user.username || 'Unknown',
+      recordedAt: new Date().toISOString()
+    });
+
+    if (!mergeResult.success) {
+      return APIResponseHandler.success(res, {
+        merged: false,
+        reason: mergeResult.message,
+        skippedFields: mergeResult.skippedFields
+      });
+    }
+
+    return APIResponseHandler.success(res, {
+      merged: true,
+      vitalsEntry: mergeResult.savedEntry,
+      skippedFields: mergeResult.skippedFields,
+      message: mergeResult.message
+    }, 201);
+
+  } catch (error) {
+    console.error("❌ [VitalsSmartMerge] Error:", error);
+    return APIResponseHandler.error(res, "SMART_MERGE_ERROR", "Failed to perform smart merge");
+  }
+});
+
+/**
  * GET /api/vitals/patient/:patientId
  * Get all vitals entries for a patient across all encounters
  */

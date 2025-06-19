@@ -41,8 +41,12 @@ export interface IStorage {
   getPatientVitals(patientId: number): Promise<Vitals[]>;
   getLatestVitals(patientId: number): Promise<Vitals | undefined>;
   getEncounterVitals(encounterId: number): Promise<Vitals[]>;
+  getVitalsByPatient(patientId: number): Promise<Vitals[]>;
+  getVitalsByEncounter(encounterId: number): Promise<Vitals[]>;
   createVitals(vitals: Partial<Vitals>): Promise<Vitals>;
+  createVitalsEntry(vitals: any): Promise<Vitals>;
   updateVitals(id: number, updates: Partial<Vitals>): Promise<Vitals>;
+  updateVitalsEntry(id: number, updates: any): Promise<Vitals | null>;
   deleteVitals(id: number): Promise<void>;
   
   // Patient chart data

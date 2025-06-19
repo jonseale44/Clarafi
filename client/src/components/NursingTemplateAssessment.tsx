@@ -21,6 +21,7 @@ import {
   FileText,
   RefreshCw,
 } from "lucide-react";
+import { VitalsSync } from "@/components/vitals/VitalsSync";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -684,17 +685,23 @@ export const NursingTemplateAssessment = forwardRef<
       { key: "soHx", label: "Social History", placeholder: "Tobacco, alcohol, exercise habits", multiline: true },
       { key: "psh", label: "Past Surgical History", placeholder: "Previous surgeries and dates", multiline: true },
       { key: "ros", label: "Review of Systems", placeholder: "System-by-system review", multiline: true },
-      { key: "vitals", label: "Current Vital Signs", placeholder: "BP, HR, Temp, RR, O2 Sat" },
+      { 
+        key: "vitals", 
+        label: "Current Vital Signs", 
+        placeholder: "BP, HR, Temp, RR, O2 Sat",
+        hasSync: true
+      },
     ];
 
-    // Smart vitals parsing and auto-save to database
+    // Smart vitals parsing and save to database with deduplication
     const parseAndSaveVitals = async (vitalsText: string) => {
       if (!vitalsText.trim() || vitalsText.length < 5) return;
 
       try {
         console.log("🩺 [NursingTemplate] Parsing vitals text:", vitalsText);
         
-        const response = await fetch('/api/vitals/parse', {
+        // First, parse the vitals text
+        const parseResponse = await fetch('/api/vitals/parse', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -702,45 +709,66 @@ export const NursingTemplateAssessment = forwardRef<
             vitalsText,
             patientId: parseInt(patientId),
             encounterId: parseInt(encounterId),
-            patientContext: { age: 0 } // Add patient context if available
+            patientContext: { age: 0 }
           })
         });
 
-        if (response.ok) {
-          const parseResult = await response.json();
+        if (parseResponse.ok) {
+          const parseResult = await parseResponse.json();
           
           if (parseResult.success && parseResult.data) {
             console.log("✅ [NursingTemplate] Vitals parsed successfully:", parseResult.data);
             
-            // Save parsed vitals to database
-            const vitalsEntry = {
-              patientId: parseInt(patientId),
-              encounterId: parseInt(encounterId),
-              recordedBy: "Nursing Assessment",
-              recordedAt: new Date().toISOString(),
-              parsedFromText: true,
-              originalText: vitalsText,
-              ...parseResult.data
-            };
-
-            const saveResponse = await fetch('/api/vitals/entries', {
+            // Use smart merge to handle duplicates
+            const smartMergeResponse = await fetch('/api/vitals/smart-merge', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
-              body: JSON.stringify(vitalsEntry)
+              body: JSON.stringify({
+                encounterId: parseInt(encounterId),
+                vitalsData: {
+                  patientId: parseInt(patientId),
+                  encounterId: parseInt(encounterId),
+                  parsedFromText: true,
+                  originalText: vitalsText,
+                  ...parseResult.data
+                }
+              })
             });
 
-            if (saveResponse.ok) {
-              console.log("✅ [NursingTemplate] Vitals saved to database");
-              toast({
-                title: "Vitals Saved",
-                description: "Vital signs automatically saved to patient chart"
-              });
+            if (smartMergeResponse.ok) {
+              const mergeResult = await smartMergeResponse.json();
+              
+              if (mergeResult.data.merged) {
+                console.log("✅ [NursingTemplate] Vitals smart merged successfully");
+                
+                let toastMessage = "Vital signs saved to patient chart";
+                if (mergeResult.data.skippedFields && mergeResult.data.skippedFields.length > 0) {
+                  toastMessage += ` (skipped duplicates: ${mergeResult.data.skippedFields.join(', ')})`;
+                }
+                
+                toast({
+                  title: "Vitals Saved",
+                  description: toastMessage
+                });
+              } else {
+                console.log("⚠️ [NursingTemplate] Vitals merge skipped:", mergeResult.data.reason);
+                toast({
+                  title: "Vitals Already Recorded",
+                  description: mergeResult.data.reason,
+                  variant: "default"
+                });
+              }
             }
           }
         }
       } catch (error) {
         console.error("❌ [NursingTemplate] Error parsing/saving vitals:", error);
+        toast({
+          title: "Error",
+          description: "Failed to process vital signs",
+          variant: "destructive"
+        });
       }
     };
 
