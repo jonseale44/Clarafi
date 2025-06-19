@@ -63,7 +63,17 @@ export class LabCommunicationService {
     // Get lab results
     console.log(`🤖 [Lab Communication] Querying lab results for IDs: ${request.resultIds.join(', ')}`);
     const results = await db
-      .select()
+      .select({
+        id: labResults.id,
+        testName: labResults.testName,
+        resultValue: labResults.resultValue,
+        resultUnits: labResults.resultUnits,
+        referenceRange: labResults.referenceRange,
+        abnormalFlag: labResults.abnormalFlag,
+        criticalFlag: labResults.criticalFlag,
+        resultAvailableAt: labResults.resultAvailableAt,
+        patientId: labResults.patientId
+      })
       .from(labResults)
       .where(inArray(labResults.id, request.resultIds));
     

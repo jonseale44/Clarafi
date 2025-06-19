@@ -11,7 +11,7 @@ import { EncounterDetailView } from "./encounter-detail-view";
 import { NursingEncounterView } from "./nursing-encounter-view";
 import { SharedChartSections } from "./shared-chart-sections";
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
-import { IntegratedLabView } from "@/components/labs/integrated-lab-view";
+import { ComprehensiveLabTable } from "@/components/labs/comprehensive-lab-table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
