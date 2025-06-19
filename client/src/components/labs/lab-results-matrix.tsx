@@ -470,14 +470,16 @@ export function LabResultsMatrix({
       .find(test => test.testName === testName)?.results
       .some(result => result.needsReview);
     
-    let classes = "p-3 sticky left-0 bg-white cursor-pointer transition-colors";
+    let classes = "p-3 sticky left-0 bg-white border-l-4 transition-all";
     
     if (isSelected) {
-      classes += " bg-blue-200";
+      classes += " bg-blue-200 text-blue-900 border-l-blue-500 font-medium";
     } else if (isHovered) {
-      classes += " bg-blue-100";
+      classes += " bg-blue-100 border-l-blue-300";
     } else if (hasPendingResults) {
-      classes += " bg-yellow-50";
+      classes += " bg-yellow-50 border-l-yellow-400";
+    } else {
+      classes += " border-l-transparent";
     }
     
     return classes;
@@ -646,7 +648,7 @@ export function LabResultsMatrix({
                     const testRows = [
                       <tr key={test.testName} className="border-b hover:bg-muted/20">
                         <td 
-                          className={getTestRowClass(test.testName)}
+                          className={`${getTestRowClass(test.testName)} cursor-pointer transition-colors`}
                           onClick={() => handleTestRowClick(test.testName)}
                           onMouseEnter={() => setHoveredTestRow(test.testName)}
                           onMouseLeave={() => setHoveredTestRow(null)}
