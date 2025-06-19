@@ -3,13 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText } from 'lucide-react';
 
 interface LabResultsMatrixProps {
   patientId: number;
-  mode?: 'full' | 'compact' | 'encounter';
+  mode?: 'full' | 'compact' | 'encounter' | 'review';
   encounterId?: number;
   showTitle?: boolean;
+  pendingReviewIds?: number[]; // IDs of results that need review
+  onReviewResult?: (resultId: number, testName: string, encounterId?: number) => void;
 }
 
 interface MatrixData {
@@ -23,6 +25,8 @@ interface MatrixData {
     abnormalFlag?: string;
     criticalFlag?: boolean;
     id: number;
+    encounterId?: number;
+    needsReview?: boolean;
   }>;
 }
 
@@ -30,7 +34,9 @@ export function LabResultsMatrix({
   patientId, 
   mode = 'full', 
   encounterId,
-  showTitle = true 
+  showTitle = true,
+  pendingReviewIds = [],
+  onReviewResult
 }: LabResultsMatrixProps) {
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
 
@@ -68,7 +74,9 @@ export function LabResultsMatrix({
         value: result.resultValue,
         abnormalFlag: result.abnormalFlag,
         criticalFlag: result.criticalFlag,
-        id: result.id
+        id: result.id,
+        encounterId: result.encounterId,
+        needsReview: pendingReviewIds.includes(result.id)
       });
     });
 
@@ -109,7 +117,8 @@ export function LabResultsMatrix({
     }
   };
 
-  const getValueClass = (abnormalFlag?: string, criticalFlag?: boolean) => {
+  const getValueClass = (abnormalFlag?: string, criticalFlag?: boolean, needsReview?: boolean) => {
+    if (needsReview) return 'bg-yellow-100 text-yellow-900 border-2 border-yellow-400';
     if (criticalFlag) return 'bg-red-100 text-red-800 border border-red-300';
     if (abnormalFlag === 'H') return 'bg-orange-100 text-orange-800';
     if (abnormalFlag === 'L') return 'bg-blue-100 text-blue-800';
@@ -215,10 +224,25 @@ export function LabResultsMatrix({
                       return (
                         <td key={date} className="p-3 text-center">
                           {result ? (
-                            <div className={`px-2 py-1 rounded text-sm ${getValueClass(result.abnormalFlag, result.criticalFlag)}`}>
-                              {result.value}
-                              {result.criticalFlag && (
-                                <AlertTriangle className="inline h-3 w-3 ml-1" />
+                            <div className="relative group">
+                              <div className={`px-2 py-1 rounded text-sm ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview)}`}>
+                                {result.value}
+                                {result.criticalFlag && (
+                                  <AlertTriangle className="inline h-3 w-3 ml-1" />
+                                )}
+                                {result.needsReview && (
+                                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
+                                )}
+                              </div>
+                              {(mode === 'review' || result.needsReview) && onReviewResult && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                                  onClick={() => onReviewResult(result.id, test.testName, result.encounterId)}
+                                >
+                                  <FileText className="h-3 w-3" />
+                                </Button>
                               )}
                             </div>
                           ) : (

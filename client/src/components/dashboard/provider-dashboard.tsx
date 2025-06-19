@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -631,121 +632,38 @@ export function ProviderDashboard() {
               )}
             </div>
 
-            {/* Comprehensive Lab Results Table for Selected Patient */}
+            {/* Lab Results Matrix for Selected Patient */}
             {selectedPatientGroup && (
               <div className="border-t pt-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-lg">Lab Results for {selectedPatientGroup.patientName}</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowHistoricalResults(!showHistoricalResults)}
-                  >
-                    {showHistoricalResults ? "Hide" : "Show"} Historical Results
-                  </Button>
-                </div>
-
-                {/* Lab Results Table */}
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b">
-                        <tr>
-                          <th className="text-left p-3 font-medium">Test</th>
-                          <th className="text-left p-3 font-medium">Result</th>
-                          <th className="text-left p-3 font-medium">Reference Range</th>
-                          <th className="text-left p-3 font-medium">Date</th>
-                          <th className="text-left p-3 font-medium">Status</th>
-                          <th className="text-left p-3 font-medium">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedPatientGroup.labs.map((lab) => (
-                          <tr 
-                            key={lab.id} 
-                            className={`border-b hover:bg-gray-50 ${
-                              !lab.reviewedAt ? 'bg-yellow-50' : ''
-                            }`}
-                          >
-                            <td className="p-3">
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium">{lab.testName}</span>
-                                {lab.criticalFlag && (
-                                  <Badge variant="destructive" size="sm">
-                                    <AlertTriangle className="h-3 w-3 mr-1" />
-                                    Critical
-                                  </Badge>
-                                )}
-                                {!lab.reviewedAt && (
-                                  <Badge variant="outline" size="sm">
-                                    Pending Review
-                                  </Badge>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-3">
-                              <span className={`font-medium ${
-                                lab.criticalFlag ? 'text-red-600' : 
-                                lab.abnormalFlag ? 'text-orange-600' : 'text-green-600'
-                              }`}>
-                                {typeof lab.results === 'string' ? lab.results : JSON.stringify(lab.results)}
-                              </span>
-                            </td>
-                            <td className="p-3 text-gray-600">
-                              {lab.referenceRange || 'N/A'}
-                            </td>
-                            <td className="p-3 text-gray-600">
-                              {format(new Date(lab.orderedDate), 'MMM dd, yyyy')}
-                            </td>
-                            <td className="p-3">
-                              <Badge className={getPriorityColor(lab.priority)} size="sm">
-                                {lab.priority}
-                              </Badge>
-                            </td>
-                            <td className="p-3">
-                              {!lab.reviewedAt && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setSelectedLabForReview(lab)}
-                                >
-                                  Review
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Quick Review Actions */}
-                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm font-medium">Quick Actions:</span>
-                    <Button
-                      size="sm"
-                      onClick={() => handleBulkReview(selectedPatientGroup.labs.filter(lab => !lab.reviewedAt))}
-                      disabled={!selectedPatientGroup.labs.some(lab => !lab.reviewedAt)}
-                    >
-                      Review All Results
-                    </Button>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      {selectedPatientGroup.labs.length} results pending review
+                    </span>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleGeneratePatientSummary(selectedPatientGroup)}
+                      onClick={() => handleBulkReview(selectedPatientGroup.labs)}
                       disabled={isGeneratingMessage}
                     >
-                      <MessageSquare className="h-4 w-4 mr-1" />
-                      Generate Patient Summary
+                      Review All
                     </Button>
                   </div>
                 </div>
+
+                {/* Integrated Lab Results Matrix */}
+                <LabResultsMatrix
+                  patientId={selectedPatientGroup.patientId}
+                  mode="review"
+                  showTitle={false}
+                  pendingReviewIds={selectedPatientGroup.labs.map(lab => lab.id)}
+                  onReviewResult={handleReviewResult}
+                />
               </div>
             )}
 
-            {/* Individual Lab Review Modal */}
+            {/* Individual Lab Review Section */}
             {selectedLabForReview && (
               <div className="border-t pt-4 space-y-4">
                 <h4 className="font-medium">Review: {selectedLabForReview.testName}</h4>
@@ -801,7 +719,8 @@ export function ProviderDashboard() {
                 variant="outline" 
                 onClick={() => {
                   setIsReviewDialogOpen(false);
-                  setSelectedLabResult(null);
+                  setSelectedPatientGroup(null);
+                  setSelectedLabForReview(null);
                   setReviewNote("");
                   setGeneratedMessage("");
                 }}
