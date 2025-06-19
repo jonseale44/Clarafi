@@ -25,6 +25,7 @@ import nursingSummaryRoutes from "./nursing-summary-routes";
 import labRoutes from "./lab-routes";
 import labEntryRoutes from "./lab-entry-routes";
 import labWorkflowRoutes from "./lab-workflow-routes";
+import labCommunicationRoutes from "./lab-communication-routes";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
