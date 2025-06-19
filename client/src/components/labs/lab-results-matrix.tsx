@@ -31,6 +31,7 @@ interface MatrixData {
     id: number;
     encounterId?: number;
     needsReview?: boolean;
+    isReviewed?: boolean;
   }>;
 }
 
@@ -129,7 +130,8 @@ export function LabResultsMatrix({
         criticalFlag: result.criticalFlag,
         id: result.id,
         encounterId: result.encounterId,
-        needsReview: pendingReviewIds.includes(result.id)
+        needsReview: pendingReviewIds.includes(result.id),
+        isReviewed: result.reviewedBy !== null
       });
     });
 
@@ -318,6 +320,52 @@ export function LabResultsMatrix({
       }
     } else {
       console.log('🔍 [LabMatrix] No matching review condition found');
+    }
+  };
+
+  const handleUnreviewSelection = () => {
+    console.log('🔍 [LabMatrix] Unreview selection triggered with:', {
+      selectedDates: Array.from(selectedDates),
+      selectedTestRows: Array.from(selectedTestRows),
+      selectedPanels: Array.from(selectedPanels),
+      matrixDataLength: matrixData.length,
+      groupedDataKeys: Object.keys(groupedData)
+    });
+
+    if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
+      // Unreview by encounter(s) - get reviewed results for these dates
+      const encounterIds: number[] = [];
+      const resultIds: number[] = [];
+      selectedDates.forEach(date => {
+        const encounters = encountersByDate.get(date) || [];
+        encounterIds.push(...encounters);
+        
+        // Get all reviewed results for this date
+        matrixData.forEach(test => {
+          test.results.forEach(result => {
+            if (result.date === date && !result.needsReview) { // reviewed results
+              resultIds.push(result.id);
+            }
+          });
+        });
+      });
+      console.log('🔍 [LabMatrix] Calling onUnreviewEncounter with:', Array.from(selectedDates).join(', '), encounterIds, resultIds);
+      onUnreviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds, resultIds);
+    } else if (selectedTestRows.size > 0 && selectedDates.size === 0) {
+      // Unreview by test group(s) - get reviewed results for these tests
+      const resultIds: number[] = [];
+      selectedTestRows.forEach(testName => {
+        const test = matrixData.find(t => t.testName === testName);
+        if (test) {
+          test.results.forEach(result => {
+            if (!result.needsReview) { // reviewed results
+              resultIds.push(result.id);
+            }
+          });
+        }
+      });
+      console.log('🔍 [LabMatrix] Calling onUnreviewTestGroup with test resultIds:', resultIds);
+      onUnreviewTestGroup?.(Array.from(selectedTestRows).join(', '), resultIds);
     }
   };
 
@@ -646,6 +694,15 @@ export function LabResultsMatrix({
               >
                 <Check className="h-4 w-4 mr-2" />
                 Review Selected
+              </Button>
+              <Button
+                onClick={handleUnreviewSelection}
+                disabled={selectedDates.size === 0 && selectedTestRows.size === 0 && selectedPanels.size === 0}
+                variant="outline"
+                className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Unreview Selected
               </Button>
             </div>
           </div>
