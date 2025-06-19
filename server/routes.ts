@@ -28,6 +28,7 @@ import labWorkflowRoutes from "./lab-workflow-routes";
 import labCommunicationRoutes from "./lab-communication-routes";
 import labReviewRoutes from "./lab-review-routes";
 import labSimulatorRoutes from "./lab-simulator-routes";
+import { externalLabMockRouter } from "./external-lab-mock-service";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -3063,6 +3064,7 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api/lab-communication", labCommunicationRoutes);
   app.use("/api/lab-review", labReviewRoutes);
   app.use("/api/lab-simulator", labSimulatorRoutes);
+  app.use("/api/external-lab-mock", externalLabMockRouter);
 
   // Legacy dynamic vitals routes removed - now using static imports above
 
