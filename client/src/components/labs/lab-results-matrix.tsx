@@ -89,8 +89,25 @@ export function LabResultsMatrix({
       }
 
       const testGroup = testGroups.get(key)!;
+      // Safely handle date parsing
+      let resultDate = result.resultAvailableAt;
+      try {
+        if (resultDate) {
+          const parsedDate = new Date(resultDate);
+          if (isNaN(parsedDate.getTime())) {
+            console.warn('Invalid date for result:', result.id, resultDate);
+            resultDate = new Date().toISOString(); // Fallback to current date
+          }
+        } else {
+          resultDate = new Date().toISOString(); // Fallback to current date
+        }
+      } catch (error) {
+        console.warn('Date parsing error for result:', result.id, error);
+        resultDate = new Date().toISOString(); // Fallback to current date
+      }
+
       testGroup.results.push({
-        date: result.resultAvailableAt,
+        date: resultDate,
         value: result.resultValue,
         abnormalFlag: result.abnormalFlag,
         criticalFlag: result.criticalFlag,
@@ -102,7 +119,14 @@ export function LabResultsMatrix({
 
     // Sort results by date for each test
     testGroups.forEach(test => {
-      test.results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      test.results.sort((a, b) => {
+        try {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        } catch (error) {
+          console.warn('Date sorting error:', a.date, b.date);
+          return 0;
+        }
+      });
     });
 
     return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));

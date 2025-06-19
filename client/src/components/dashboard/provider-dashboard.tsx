@@ -710,8 +710,16 @@ export function ProviderDashboard() {
                     // Get all result IDs for this encounter date
                     const resultIds = selectedPatientGroup.labs
                       .filter((lab: any) => {
-                        const labDate = new Date(lab.resultAvailableAt).toISOString().split('T')[0];
-                        return labDate === date;
+                        try {
+                          if (!lab.resultAvailableAt) return false;
+                          const labDate = new Date(lab.resultAvailableAt);
+                          if (isNaN(labDate.getTime())) return false;
+                          const dateString = labDate.toISOString().split('T')[0];
+                          return dateString === date;
+                        } catch (error) {
+                          console.warn('Invalid date for lab:', lab.id, lab.resultAvailableAt);
+                          return false;
+                        }
                       })
                       .map((lab: any) => lab.id);
                     
