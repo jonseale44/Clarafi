@@ -214,16 +214,29 @@ export function LabResultsMatrix({
   }, [matrixData]);
 
   const handleDateClick = (date: string, isShiftClick: boolean) => {
+    // Check if this date has pending review results
+    const hasPendingResults = matrixData.some(test => 
+      test.results.some(result => result.date === date && result.needsReview)
+    );
+
+    if (hasPendingResults) {
+      // Immediately trigger review for this date
+      const encounterIds: number[] = [];
+      const encounters = encountersByDate.get(date) || [];
+      encounterIds.push(...encounters);
+      console.log('🔍 [LabMatrix] Auto-triggering review for date:', date, 'encounters:', encounterIds);
+      onReviewEncounter?.(date, encounterIds);
+      return;
+    }
+
+    // Normal selection behavior for dates without pending results
     const newSelected = new Set(selectedDates);
     if (newSelected.has(date)) {
-      // Remove if already selected (toggle off)
       newSelected.delete(date);
     } else {
-      // Add to selection
       if (isShiftClick) {
         newSelected.add(date);
       } else {
-        // Single click without shift replaces selection
         newSelected.clear();
         newSelected.add(date);
       }
@@ -232,9 +245,25 @@ export function LabResultsMatrix({
   };
 
   const handleTestRowClick = (testName: string) => {
+    // Check if this test has pending review results
+    const hasPendingResults = matrixData
+      .find(test => test.testName === testName)?.results
+      .some(result => result.needsReview);
+
+    if (hasPendingResults) {
+      // Immediately trigger review for this test
+      const test = matrixData.find(t => t.testName === testName);
+      if (test) {
+        const resultIds = test.results.map(r => r.id);
+        console.log('🔍 [LabMatrix] Auto-triggering review for test:', testName, 'resultIds:', resultIds);
+        onReviewTestGroup?.(testName, resultIds);
+        return;
+      }
+    }
+
+    // Normal selection behavior for tests without pending results
     const newSelected = new Set(selectedTestRows);
     if (newSelected.has(testName)) {
-      // Toggle off if already selected
       newSelected.delete(testName);
     } else {
       newSelected.add(testName);
@@ -243,9 +272,26 @@ export function LabResultsMatrix({
   };
 
   const handlePanelClick = (panelName: string) => {
+    // Check if this panel has pending review results
+    const panelTests = groupedData[panelName] || [];
+    const hasPendingResults = panelTests.some(test => 
+      test.results.some(result => result.needsReview)
+    );
+
+    if (hasPendingResults) {
+      // Immediately trigger review for this panel
+      const resultIds: number[] = [];
+      panelTests.forEach(test => {
+        resultIds.push(...test.results.map(r => r.id));
+      });
+      console.log('🔍 [LabMatrix] Auto-triggering review for panel:', panelName, 'resultIds:', resultIds);
+      onReviewTestGroup?.(panelName, resultIds);
+      return;
+    }
+
+    // Normal selection behavior for panels without pending results
     const newSelected = new Set(selectedPanels);
     if (newSelected.has(panelName)) {
-      // Toggle off if already selected
       newSelected.delete(panelName);
     } else {
       newSelected.add(panelName);
@@ -628,7 +674,16 @@ export function LabResultsMatrix({
                             <td key={date} className={cellClass}>
                               {result ? (
                                 <div className="relative">
-                                  <div className={`px-2 py-1 rounded text-sm ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview)}`}>
+                                  <div 
+                                    className={`px-2 py-1 rounded text-sm cursor-pointer transition-all ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview)} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
+                                    onClick={() => {
+                                      if (result.needsReview) {
+                                        // Immediately trigger review for this specific result
+                                        console.log('🔍 [LabMatrix] Auto-triggering review for specific result:', test.testName, date, result.id);
+                                        onReviewSpecific?.(test.testName, date, result.id);
+                                      }
+                                    }}
+                                  >
                                     {result.value}
                                     {result.criticalFlag && (
                                       <AlertTriangle className="inline h-3 w-3 ml-1" />
