@@ -709,37 +709,66 @@ export function ProviderDashboard() {
                   onReviewEncounter={(date, encounterIds) => {
                     console.log('🔍 [Dashboard] onReviewEncounter called with:', { date, encounterIds });
                     console.log('🔍 [Dashboard] Available labs:', selectedPatientGroup.labs.length);
+                    console.log('🔍 [Dashboard] Sample labs structure:', selectedPatientGroup.labs.slice(0, 3).map(lab => ({
+                      id: lab.id,
+                      testName: lab.testName,
+                      resultAvailableAt: lab.resultAvailableAt,
+                      specimenCollectedAt: lab.specimenCollectedAt,
+                      orderedAt: lab.orderedAt
+                    })));
                     
                     // Get all result IDs for this encounter date
                     const resultIds = selectedPatientGroup.labs
                       .filter((lab: any) => {
                         try {
-                          if (!lab.resultAvailableAt) return false;
-                          const labDate = new Date(lab.resultAvailableAt);
-                          if (isNaN(labDate.getTime())) return false;
+                          // Check all possible date fields
+                          const dateFields = [
+                            { name: 'resultAvailableAt', value: lab.resultAvailableAt },
+                            { name: 'specimenCollectedAt', value: lab.specimenCollectedAt },
+                            { name: 'orderedAt', value: lab.orderedAt }
+                          ];
                           
-                          // Handle both full ISO timestamp and date-only comparison
-                          const labDateString = labDate.toISOString();
-                          const labDateOnly = labDateString.split('T')[0];
-                          const selectedDateOnly = date.includes('T') ? date.split('T')[0] : date;
+                          console.log('🔍 [Dashboard] Lab', lab.id, 'checking date fields:', dateFields);
                           
-                          const matches = labDateString === date || labDateOnly === selectedDateOnly;
-                          console.log('🔍 [Dashboard] Lab', lab.id, 'date check:', {
-                            labDateString,
-                            labDateOnly,
-                            selectedDate: date,
-                            selectedDateOnly,
-                            matches
-                          });
-                          return matches;
+                          for (const field of dateFields) {
+                            if (!field.value) continue;
+                            
+                            const labDate = new Date(field.value);
+                            if (isNaN(labDate.getTime())) continue;
+                            
+                            // Handle both full ISO timestamp and date-only comparison
+                            const labDateString = labDate.toISOString();
+                            const labDateOnly = labDateString.split('T')[0];
+                            const selectedDateOnly = date.includes('T') ? date.split('T')[0] : date;
+                            
+                            const exactMatch = labDateString === date;
+                            const dateOnlyMatch = labDateOnly === selectedDateOnly;
+                            
+                            console.log('🔍 [Dashboard] Lab', lab.id, field.name, 'comparison:', {
+                              labDateString,
+                              labDateOnly,
+                              selectedDate: date,
+                              selectedDateOnly,
+                              exactMatch,
+                              dateOnlyMatch
+                            });
+                            
+                            if (exactMatch || dateOnlyMatch) {
+                              console.log('✅ [Dashboard] Lab', lab.id, 'MATCHED via', field.name);
+                              return true;
+                            }
+                          }
+                          
+                          console.log('❌ [Dashboard] Lab', lab.id, 'NO MATCH found');
+                          return false;
                         } catch (error) {
-                          console.warn('Invalid date for lab:', lab.id, lab.resultAvailableAt);
+                          console.warn('Invalid date processing for lab:', lab.id, error);
                           return false;
                         }
                       })
                       .map((lab: any) => lab.id);
                     
-                    console.log('🔍 [Dashboard] Filtered result IDs:', resultIds);
+                    console.log('🔍 [Dashboard] Final filtered result IDs:', resultIds);
                     
                     setSelectedLabForReview({
                       type: 'encounter',

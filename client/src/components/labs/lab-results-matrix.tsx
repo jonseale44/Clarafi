@@ -71,6 +71,16 @@ export function LabResultsMatrix({
   };
 
   const matrixData = useMemo(() => {
+    console.log('🧪 [LabResultsMatrix] Processing results:', results.length);
+    console.log('🧪 [LabResultsMatrix] Sample result structure:', results.slice(0, 2).map(r => ({
+      id: r.id,
+      testName: r.testName,
+      resultAvailableAt: r.resultAvailableAt,
+      specimenCollectedAt: r.specimenCollectedAt,
+      orderedAt: r.orderedAt,
+      encounterId: r.encounterId
+    })));
+    
     if (!results.length) return [];
 
     const testGroups = new Map<string, MatrixData>();
@@ -105,6 +115,8 @@ export function LabResultsMatrix({
         console.warn('Date parsing error for result:', result.id, error);
         resultDate = new Date().toISOString(); // Fallback to current date
       }
+
+      console.log('🧪 [LabResultsMatrix] Result', result.id, 'final date:', resultDate, 'original:', result.resultAvailableAt);
 
       testGroup.results.push({
         date: resultDate,
