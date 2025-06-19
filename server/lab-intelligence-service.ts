@@ -7,7 +7,7 @@
 
 import OpenAI from 'openai';
 import { db } from './db';
-import { labResults, labOrders, patients, encounters } from '@shared/schema';
+import { labResults, labOrders, patients, encounters, labReferenceRanges } from '@shared/schema';
 import { eq, and, desc, gte, lte } from 'drizzle-orm';
 
 interface LabInterpretationRequest {
@@ -136,6 +136,11 @@ export class LabIntelligenceService {
 
   /**
    * Critical value detection and alert generation
+   * 
+   * REFERENCE RANGE LOGIC:
+   * 1. First tries structured labReferenceRanges table for precise critical thresholds
+   * 2. Falls back to parsing referenceRange text field if structured data unavailable
+   * 3. Uses basic range parsing as last resort
    */
   async analyzeCriticalValues(resultId: number): Promise<{
     isCritical: boolean;
@@ -143,9 +148,9 @@ export class LabIntelligenceService {
     severity?: string;
     message?: string;
     recommendedActions?: string[];
+    dataSource?: string; // Indicates which reference range source was used
   }> {
     const result = await this.getLabResultWithContext(resultId);
-    const referenceRanges = await this.getReferenceRanges(result.loincCode, result.patientAge, result.patientGender);
     
     const analysis = {
       isCritical: false,
@@ -153,31 +158,104 @@ export class LabIntelligenceService {
       severity: undefined as string | undefined,
       message: undefined as string | undefined,
       recommendedActions: undefined as string[] | undefined,
+      dataSource: undefined as string | undefined,
     };
 
-    if (!result.resultNumeric || !referenceRanges) {
+    if (!result.resultNumeric) {
+      console.log(`[Lab Intelligence] No numeric result for ${result.testName}, cannot analyze critical values`);
       return analysis;
     }
 
-    // Check against critical ranges
-    if (referenceRanges.criticalLow && result.resultNumeric <= referenceRanges.criticalLow) {
-      analysis.isCritical = true;
-      analysis.alertType = 'critical_low';
-      analysis.severity = 'critical';
-      analysis.message = `${result.testName}: ${result.resultValue} ${result.resultUnits} is critically low (Critical: <${referenceRanges.criticalLow})`;
-    } else if (referenceRanges.criticalHigh && result.resultNumeric >= referenceRanges.criticalHigh) {
-      analysis.isCritical = true;
-      analysis.alertType = 'critical_high';
-      analysis.severity = 'critical';
-      analysis.message = `${result.testName}: ${result.resultValue} ${result.resultUnits} is critically high (Critical: >${referenceRanges.criticalHigh})`;
+    // STEP 1: Try structured reference ranges (preferred method)
+    const structuredRanges = await this.getReferenceRanges(result.loincCode, result.patientAge, result.patientGender);
+    
+    if (structuredRanges && (structuredRanges.criticalLow || structuredRanges.criticalHigh)) {
+      console.log(`[Lab Intelligence] Using STRUCTURED reference ranges for critical analysis`);
+      analysis.dataSource = 'structured_table';
+      
+      if (structuredRanges.criticalLow && result.resultNumeric <= structuredRanges.criticalLow) {
+        analysis.isCritical = true;
+        analysis.alertType = 'critical_low';
+        analysis.severity = 'critical';
+        analysis.message = `${result.testName}: ${result.resultValue} ${result.resultUnits} is critically low (Critical: <${structuredRanges.criticalLow})`;
+      } else if (structuredRanges.criticalHigh && result.resultNumeric >= structuredRanges.criticalHigh) {
+        analysis.isCritical = true;
+        analysis.alertType = 'critical_high';
+        analysis.severity = 'critical';
+        analysis.message = `${result.testName}: ${result.resultValue} ${result.resultUnits} is critically high (Critical: >${structuredRanges.criticalHigh})`;
+      }
+    } 
+    // STEP 2: Fall back to text field parsing (basic method)
+    else if (result.referenceRange) {
+      console.log(`[Lab Intelligence] Falling back to TEXT reference range parsing: "${result.referenceRange}"`);
+      analysis.dataSource = 'text_field_parsing';
+      
+      // Basic critical value estimation from text ranges
+      // This is a simple heuristic - structured data is much better
+      const criticalAnalysis = this.estimateCriticalFromTextRange(result.referenceRange, result.resultNumeric, result.testName);
+      if (criticalAnalysis.isCritical) {
+        Object.assign(analysis, criticalAnalysis);
+      }
     }
-
+    
     // Get AI-powered clinical recommendations for critical values
     if (analysis.isCritical) {
       analysis.recommendedActions = await this.getCriticalValueRecommendations(result);
     }
 
     return analysis;
+  }
+
+  /**
+   * Basic critical value estimation from text reference ranges
+   * This is a FALLBACK method when structured data is unavailable
+   * 
+   * NOTE: This is imprecise compared to structured critical thresholds!
+   * Example: "150-450" might suggest critical at <75 or >900 (rough 2x rule)
+   */
+  private estimateCriticalFromTextRange(referenceRange: string, resultValue: number, testName: string): {
+    isCritical: boolean;
+    alertType?: string;
+    severity?: string;
+    message?: string;
+  } {
+    try {
+      // Parse basic range like "150-450" or "0.7-1.2"
+      const rangeMatch = referenceRange.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);
+      if (!rangeMatch) {
+        return { isCritical: false };
+      }
+
+      const low = parseFloat(rangeMatch[1]);
+      const high = parseFloat(rangeMatch[2]);
+      
+      // Rough heuristic: critical might be 50% below low or 200% above high
+      // This is VERY approximate - structured data is much better
+      const estimatedCriticalLow = low * 0.5;
+      const estimatedCriticalHigh = high * 2.0;
+      
+      if (resultValue <= estimatedCriticalLow) {
+        return {
+          isCritical: true,
+          alertType: 'critical_low',
+          severity: 'critical',
+          message: `${testName}: ${resultValue} is estimated critically low (rough estimate from range ${referenceRange})`
+        };
+      } else if (resultValue >= estimatedCriticalHigh) {
+        return {
+          isCritical: true,
+          alertType: 'critical_high', 
+          severity: 'critical',
+          message: `${testName}: ${resultValue} is estimated critically high (rough estimate from range ${referenceRange})`
+        };
+      }
+      
+      return { isCritical: false };
+      
+    } catch (error) {
+      console.error(`[Lab Intelligence] Error parsing text reference range "${referenceRange}":`, error);
+      return { isCritical: false };
+    }
   }
 
   /**
@@ -317,7 +395,9 @@ Patient: ${result.patientAge ? this.calculateAge(result.patientAge) : 'Unknown'}
       if (clinicalContext.encounterNotes) prompt += `\nEncounter Notes: ${clinicalContext.encounterNotes.substring(0, 500)}...`;
     }
 
-    prompt += `\n\nPlease provide a comprehensive analysis including:
+    prompt += `\n\nREFERENCE RANGE NOTE: The reference range "${result.referenceRange}" is the DISPLAY range for this result. Use this for interpretation and patient communication.
+
+Please provide a comprehensive analysis including:
 1. Clinical significance of this result
 2. Risk assessment and urgency level
 3. Possible causes for abnormal values
@@ -375,24 +455,61 @@ Format as JSON with keys: clinicalSignificance, riskAssessment, suggestedActions
     return age;
   }
 
+  /**
+   * Get structured reference ranges for advanced AI analysis
+   * 
+   * IMPORTANT: This is DIFFERENT from the referenceRange text field in lab_results!
+   * 
+   * TWO REFERENCE RANGE SYSTEMS:
+   * 1. labResults.referenceRange (text): Simple display string like "150-450" 
+   *    - Used for: UI display, basic GPT prompts, fallback
+   *    - Always present, human-readable
+   * 
+   * 2. labReferenceRanges (table): Structured data for advanced features
+   *    - Used for: Age/gender-specific ranges, critical value detection, AI analysis
+   *    - May be empty, requires population
+   * 
+   * This method queries the STRUCTURED table for advanced AI features.
+   * If no data found, methods should fall back to parsing the TEXT field.
+   */
   private async getReferenceRanges(loincCode: string, patientAge?: string, patientGender?: string) {
     const age = patientAge ? this.calculateAge(patientAge) : null;
     
-    const ranges = await db
-      .select()
-      .from(labReferenceRanges)
-      .where(
-        and(
-          eq(labReferenceRanges.loincCode, loincCode),
-          labReferenceRanges.active === true,
-          age ? gte(labReferenceRanges.ageMax, age) : undefined,
-          age ? lte(labReferenceRanges.ageMin, age) : undefined,
-          patientGender ? eq(labReferenceRanges.gender, patientGender) : undefined
+    try {
+      const ranges = await db
+        .select()
+        .from(labReferenceRanges)
+        .where(
+          and(
+            eq(labReferenceRanges.loincCode, loincCode),
+            eq(labReferenceRanges.active, true),
+            // Age filtering - only apply if age is known
+            age ? gte(labReferenceRanges.ageMax, age) : undefined,
+            age ? lte(labReferenceRanges.ageMin, age) : undefined,
+            // Gender filtering - null/undefined means applies to all genders
+            patientGender ? 
+              and(
+                eq(labReferenceRanges.gender, patientGender),
+                // Also include ranges that apply to all genders
+                eq(labReferenceRanges.gender, null)
+              ) : undefined
+          )
         )
-      )
-      .limit(1);
+        .orderBy(desc(labReferenceRanges.lastVerified))
+        .limit(1);
 
-    return ranges[0] || null;
+      if (ranges.length > 0) {
+        console.log(`[Lab Intelligence] Found structured reference range for ${loincCode}`);
+        return ranges[0];
+      }
+      
+      console.log(`[Lab Intelligence] No structured reference range found for ${loincCode}, will fall back to text parsing`);
+      return null;
+      
+    } catch (error) {
+      console.error(`[Lab Intelligence] Error querying structured reference ranges:`, error);
+      return null;
+    }
   }
 
   private async getCriticalValueRecommendations(result: any): Promise<string[]> {

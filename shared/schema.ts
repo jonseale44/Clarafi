@@ -781,6 +781,48 @@ export const medicationFormulary = pgTable("medication_formulary", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Lab Reference Ranges - Structured table for advanced AI features
+// NOTE: This is SEPARATE from the referenceRange text field in lab_results
+// PURPOSE: 
+// - referenceRange (text): Simple display string like "150-450" - used for UI display and basic GPT prompts
+// - labReferenceRanges (table): Structured data for advanced AI analysis, age/gender-specific ranges, critical values
+export const labReferenceRanges = pgTable("lab_reference_ranges", {
+  id: serial("id").primaryKey(),
+  
+  // Test identification - must match lab_results.loincCode for lookups
+  loincCode: text("loinc_code").notNull(),
+  testName: text("test_name").notNull(),
+  testCategory: text("test_category"), // 'chemistry', 'hematology', etc.
+  
+  // Demographics for personalized ranges
+  gender: text("gender"), // 'male', 'female', 'all' - null means applies to all
+  ageMin: integer("age_min").default(0), // Minimum age in years
+  ageMax: integer("age_max").default(120), // Maximum age in years
+  
+  // Normal reference ranges (for AI analysis)
+  normalLow: decimal("normal_low", { precision: 15, scale: 6 }),
+  normalHigh: decimal("normal_high", { precision: 15, scale: 6 }),
+  units: text("units").notNull(),
+  
+  // Critical value thresholds (for alerts and AI recommendations)
+  criticalLow: decimal("critical_low", { precision: 15, scale: 6 }),
+  criticalHigh: decimal("critical_high", { precision: 15, scale: 6 }),
+  
+  // Display string (should match referenceRange text field when possible)
+  displayRange: text("display_range"), // "150-450 K/uL" - for consistency with text field
+  
+  // Data source and validation
+  labSource: text("lab_source"), // 'LabCorp', 'Quest', 'Internal', 'Literature'
+  lastVerified: timestamp("last_verified").defaultNow(),
+  active: boolean("active").default(true),
+  
+  // Clinical context
+  clinicalNotes: text("clinical_notes"), // Special considerations
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   encounters: many(encounters),
@@ -885,6 +927,10 @@ export const labResultsRelations = relations(labResults, ({ one }) => ({
     fields: [labResults.reviewedBy],
     references: [users.id],
   }),
+}));
+
+export const labReferenceRangesRelations = relations(labReferenceRanges, ({ many }) => ({
+  // No direct relations - this is a lookup table queried by LOINC code
 }));
 
 export const imagingOrdersRelations = relations(imagingOrders, ({ one, many }) => ({
@@ -1203,6 +1249,7 @@ export type InsertMedication = z.infer<typeof insertMedicationSchema>;
 export type Medication = typeof medications.$inferSelect;
 export type LabOrder = typeof labOrders.$inferSelect;
 export type LabResult = typeof labResults.$inferSelect;
+export type LabReferenceRange = typeof labReferenceRanges.$inferSelect;
 export type ImagingOrder = typeof imagingOrders.$inferSelect;
 export type ImagingResult = typeof imagingResults.$inferSelect;
 export type FamilyHistory = typeof familyHistory.$inferSelect;
