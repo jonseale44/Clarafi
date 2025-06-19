@@ -138,7 +138,7 @@ KNOWN ALLERGIES:
 ${knownAllergies}
 
 RECENT VITALS:
-${encounterVitals}
+${formatVitalsForSOAP(encounterVitalsList)}
   `.trim();
 
   // Create nursing template prompt with current state for intelligent merging
@@ -342,6 +342,38 @@ Example output format:
   return templateData;
 }
 
+// Helper function to format vitals consistently
+function formatVitalsForSOAP(vitals: any[]): string {
+  if (vitals.length === 0) {
+    return "- No vitals recorded for this encounter";
+  }
+  
+  return vitals
+    .map((v: any) => {
+      const parts = [];
+      const date = new Date(v.recordedAt).toLocaleDateString("en-US", { timeZone: "America/Chicago" });
+      
+      if (v.systolicBp && v.diastolicBp) {
+        parts.push(`BP: ${v.systolicBp}/${v.diastolicBp}`);
+      }
+      if (v.heartRate) {
+        parts.push(`HR: ${v.heartRate}`);
+      }
+      if (v.temperature) {
+        parts.push(`Temp: ${v.temperature}°F`);
+      }
+      if (v.respiratoryRate) {
+        parts.push(`RR: ${v.respiratoryRate}`);
+      }
+      if (v.oxygenSaturation) {
+        parts.push(`SpO2: ${v.oxygenSaturation}%`);
+      }
+      
+      return `${date}: ${parts.join(", ")}`;
+    })
+    .join("\n");
+}
+
 async function generateSOAPNoteDirect(
   patientId: number,
   encounterId: string,
@@ -436,7 +468,7 @@ KNOWN ALLERGIES:
 ${knownAllergies}
 
 RECENT VITALS:
-${encounterVitals}
+${formatVitalsForSOAP(encounterVitalsList)}
   `.trim();
 
   // Create sophisticated SOAP prompt with your finely-tuned specifications
