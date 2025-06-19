@@ -455,33 +455,23 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select({
         id: labOrders.id,
+        testCode: labOrders.testCode,
         testName: labOrders.testName,
-        loincCode: labOrders.loincCode,
-        testCategory: labOrders.testCategory,
         priority: labOrders.priority,
         orderStatus: labOrders.orderStatus,
         orderedAt: labOrders.orderedAt,
         clinicalIndication: labOrders.clinicalIndication,
         specimenType: labOrders.specimenType,
         fastingRequired: labOrders.fastingRequired,
-        fastingHours: labOrders.fastingHours,
-        collectionInstructions: labOrders.collectionInstructions,
         
         // Provider info
         orderedByName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
         
-        // External lab info
-        targetLabName: externalLabs.labName,
-        requisitionNumber: labOrders.requisitionNumber,
-        
         // Status tracking
-        transmittedAt: labOrders.transmittedAt,
         acknowledgedAt: labOrders.acknowledgedAt,
-        collectedAt: labOrders.collectedAt,
       })
       .from(labOrders)
       .leftJoin(users, eq(labOrders.orderedBy, users.id))
-      .leftJoin(externalLabs, eq(labOrders.targetLabId, externalLabs.id))
       .where(eq(labOrders.patientId, patientId))
       .orderBy(desc(labOrders.orderedAt));
   }
@@ -491,17 +481,12 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: labResults.id,
         labOrderId: labResults.labOrderId,
+        testCode: labResults.testCode,
         testName: labResults.testName,
-        loincCode: labResults.loincCode,
-        testCategory: labResults.testCategory,
         resultValue: labResults.resultValue,
-        resultNumeric: labResults.resultNumeric,
         resultUnits: labResults.resultUnits,
         referenceRange: labResults.referenceRange,
-        ageGenderAdjustedRange: labResults.ageGenderAdjustedRange,
         abnormalFlag: labResults.abnormalFlag,
-        criticalFlag: labResults.criticalFlag,
-        deltaFlag: labResults.deltaFlag,
         
         // Timing
         specimenCollectedAt: labResults.specimenCollectedAt,
@@ -510,37 +495,19 @@ export class DatabaseStorage implements IStorage {
         
         // Status and review
         resultStatus: labResults.resultStatus,
-        verificationStatus: labResults.verificationStatus,
         reviewedBy: labResults.reviewedBy,
         reviewedAt: labResults.reviewedAt,
         providerNotes: labResults.providerNotes,
-        
-        // AI interpretation
-        aiInterpretation: labResults.aiInterpretation,
-        
-        // Trending
-        trendDirection: labResults.trendDirection,
-        percentChange: labResults.percentChange,
-        previousValue: labResults.previousValue,
-        previousDate: labResults.previousDate,
-        
-        // Quality control
-        qcFlags: labResults.qcFlags,
-        resultComments: labResults.resultComments,
         
         // Order context
         orderPriority: labOrders.priority,
         clinicalIndication: labOrders.clinicalIndication,
         orderedAt: labOrders.orderedAt,
         orderedByName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
-        
-        // Review provider info  
-        reviewedByName: sql<string>`concat(reviewer.first_name, ' ', reviewer.last_name)`,
       })
       .from(labResults)
       .innerJoin(labOrders, eq(labResults.labOrderId, labOrders.id))
       .leftJoin(users, eq(labOrders.orderedBy, users.id))
-      .leftJoin(sql`users reviewer`, eq(labResults.reviewedBy, sql`reviewer.id`))
       .where(eq(labResults.patientId, patientId))
       .orderBy(desc(labResults.resultAvailableAt));
   }

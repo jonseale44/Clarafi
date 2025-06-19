@@ -665,9 +665,28 @@ export function registerRoutes(app: Express): Server {
   // Nursing summary routes
   app.use("/api/encounters", nursingSummaryRoutes);
   
-  // Import and use lab routes
-  const labRoutes = await import("./lab-routes");
-  app.use("/api", labRoutes.default);
+  // Lab management routes
+  app.get("/api/patients/:patientId/lab-orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      const patientId = parseInt(req.params.patientId);
+      const labOrders = await storage.getPatientLabOrders(patientId);
+      res.json(labOrders);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/patients/:patientId/lab-results", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      const patientId = parseInt(req.params.patientId);
+      const labResults = await storage.getPatientLabResults(patientId);
+      res.json(labResults);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 
