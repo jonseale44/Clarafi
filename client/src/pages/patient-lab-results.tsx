@@ -1,5 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
@@ -10,10 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export function PatientLabResults() {
   const { patientId } = useParams<{ patientId: string }>();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   
   const { data: patient } = useQuery({
     queryKey: [`/api/patients/${patientId}`],
     enabled: !!patientId
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
   });
 
   const patientData = patient as any;
@@ -56,6 +62,7 @@ export function PatientLabResults() {
             patientId={parseInt(patientId)} 
             mode="full"
             showTitle={false}
+            currentUserId={(currentUser as any)?.id}
             onReviewEncounter={(date, encounterIds) => {
               if (encounterIds.length > 0) {
                 window.location.href = `/encounters/${encounterIds[0]}`;
@@ -66,6 +73,31 @@ export function PatientLabResults() {
             }}
             onReviewSpecific={(testName, date, resultId) => {
               console.log('Review specific:', testName, date, resultId);
+            }}
+            onUnreviewSpecific={async (testName, date, resultId) => {
+              try {
+                const response = await fetch(`/api/lab-review/unreview/${resultId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ unreviewReason: `Unreviewed from patient chart for ${testName}` }),
+                });
+                
+                if (!response.ok) throw new Error('Failed to unreview lab result');
+                
+                toast({
+                  title: "Lab Result Unreviewed",
+                  description: `${testName} has been marked as unreviewed.`,
+                });
+                
+                // Refresh lab data
+                window.location.reload();
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: "Failed to unreview lab result.",
+                  variant: "destructive"
+                });
+              }
             }}
           />
         </TabsContent>

@@ -79,6 +79,11 @@ export function ProviderDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Get current user for permission checks
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
+  });
+
   // Fetch dashboard statistics
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -194,6 +199,39 @@ export function ProviderDashboard() {
       await reviewLabResultMutation.mutateAsync({
         resultId: lab.id,
         reviewNote: "Bulk reviewed"
+      });
+    }
+  };
+
+  const handleUnreviewLabResult = async (resultId: number, testName: string) => {
+    try {
+      const response = await fetch(`/api/lab-review/unreview/${resultId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          unreviewReason: `Unreviewd from dashboard for ${testName}` 
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to unreview lab result');
+      
+      toast({
+        title: "Lab Result Unreviewed",
+        description: `${testName} has been marked as unreviewed and requires provider attention.`,
+      });
+      
+      // Refresh data to show updated review status
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${selectedPatientGroup?.patientId}/lab-results`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/lab-orders-to-review"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to unreview lab result. Please try again.",
+        variant: "destructive"
       });
     }
   };

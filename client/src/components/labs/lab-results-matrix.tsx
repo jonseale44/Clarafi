@@ -149,7 +149,9 @@ export function LabResultsMatrix({
         id: result.id,
         encounterId: result.encounterId,
         needsReview: pendingReviewIds.includes(result.id),
-        isReviewed: result.reviewedBy !== null
+        isReviewed: result.reviewedBy !== null,
+        reviewedBy: result.reviewedBy,
+        orderedBy: result.orderedBy
       });
     });
 
@@ -713,6 +715,9 @@ export function LabResultsMatrix({
                                     )}
                                     {result.needsReview && (
                                       <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
+                                    )}
+                                    {result.isReviewed && canUnreview(result) && (
+                                      <span className="inline-block w-2 h-2 bg-green-500 rounded-full ml-1" title="Click to unreview" />
                                     )}
                                   </div>
                                 </div>
