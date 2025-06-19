@@ -84,8 +84,7 @@ export class LabCommunicationService {
         id: patients.id,
         firstName: patients.firstName,
         lastName: patients.lastName,
-        dateOfBirth: patients.dateOfBirth,
-        preferredLanguage: 'en' // Default language
+        dateOfBirth: patients.dateOfBirth
       })
       .from(patients)
       .where(eq(patients.id, request.patientId))
@@ -114,7 +113,7 @@ export class LabCommunicationService {
     // Generate message content using GPT
     console.log(`🤖 [Lab Communication] Generating message content using GPT`);
     const messageContent = await this.generateMessageContent({
-      patient: patient[0],
+      patient: { ...patient[0], preferredLanguage: 'en' },
       results,
       messageType,
       preferences,

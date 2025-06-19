@@ -34,7 +34,9 @@ router.post("/generate-message", async (req: Request, res: Response) => {
       requiresApproval: message.status === 'pending_approval'
     });
   } catch (error) {
-    console.error("Error generating lab message:", error);
+    console.error("🚨 [Lab Communication Routes] Error generating lab message:", error);
+    console.error("🚨 [Lab Communication Routes] Request body:", JSON.stringify(req.body, null, 2));
+    console.error("🚨 [Lab Communication Routes] Error stack:", (error as Error).stack);
     return APIResponseHandler.error(res, error as Error, 500, "MESSAGE_GENERATION_ERROR");
   }
 });
