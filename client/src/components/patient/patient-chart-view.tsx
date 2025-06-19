@@ -11,6 +11,7 @@ import { EncounterDetailView } from "./encounter-detail-view";
 import { NursingEncounterView } from "./nursing-encounter-view";
 import { SharedChartSections } from "./shared-chart-sections";
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
+import { LabChartView } from "@/components/labs/lab-chart-view";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -178,9 +179,10 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
         );
       case "problems":
         return <EnhancedMedicalProblemsList patientId={patientId} mode="patient-chart" isReadOnly={false} />;
+      case "labs":
+        return <LabChartView patientId={patientId} patientName={`${patient.firstName} ${patient.lastName}`} />;
       case "medication":
       case "allergies":
-      case "labs":
       case "vitals":
       case "imaging":
       case "family-history":

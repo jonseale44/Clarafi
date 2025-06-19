@@ -664,6 +664,10 @@ export function registerRoutes(app: Express): Server {
 
   // Nursing summary routes
   app.use("/api/encounters", nursingSummaryRoutes);
+  
+  // Import and use lab routes
+  const labRoutes = await import("./lab-routes");
+  app.use("/api", labRoutes.default);
 
   // Fast medical context routes removed - functionality moved to frontend WebSocket
 
