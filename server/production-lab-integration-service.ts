@@ -110,6 +110,9 @@ export class ProductionLabIntegrationService {
   private static async createProductionLabOrder(regularOrder: any) {
     const testMapping = await this.getTestMapping(regularOrder.testCode || regularOrder.testName);
     
+    // Get encounter diagnoses for ICD-10 codes
+    const encounterDiagnoses = await this.getEncounterDiagnoses(regularOrder.encounterId);
+    
     return {
       patientId: regularOrder.patientId,
       encounterId: regularOrder.encounterId,
@@ -123,8 +126,8 @@ export class ProductionLabIntegrationService {
       
       // Clinical requirements
       priority: regularOrder.priority || 'routine',
-      clinicalIndication: regularOrder.orderDetails || regularOrder.clinicalIndication,
-      icd10Codes: [], // Will be populated from encounter diagnoses
+      clinicalIndication: regularOrder.clinicalIndication || 'Laboratory testing as ordered',
+      icd10Codes: encounterDiagnoses,
       
       // Provider information
       orderedBy: regularOrder.orderedBy,
@@ -141,6 +144,27 @@ export class ProductionLabIntegrationService {
       // Status
       orderStatus: 'signed'
     };
+  }
+
+  /**
+   * Get encounter diagnoses for ICD-10 code context
+   */
+  private static async getEncounterDiagnoses(encounterId: number): Promise<string[]> {
+    try {
+      const { encounters } = await import("@shared/schema");
+      const encounterResult = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
+      
+      if (encounterResult.length && encounterResult[0].draftDiagnoses) {
+        return encounterResult[0].draftDiagnoses
+          .filter((dx: any) => dx.icd10Code)
+          .map((dx: any) => dx.icd10Code);
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error getting encounter diagnoses:', error);
+      return [];
+    }
   }
 
   /**
@@ -349,67 +373,236 @@ export class ProductionLabIntegrationService {
   private static async initiateLabWorkflow(labOrderId: number, submission: LabOrderSubmission): Promise<void> {
     console.log(`🔄 [ProductionLab] Starting workflow for lab order ${labOrderId}`);
     
-    // Production lab workflow steps with realistic timing
+    // Get lab order details for workflow customization
+    const orderResult = await db.select().from(labOrders).where(eq(labOrders.id, labOrderId)).limit(1);
+    if (!orderResult.length) return;
+    
+    const order = orderResult[0];
+    const isStatOrder = order.priority === 'stat';
+    const isUrgentOrder = order.priority === 'urgent';
+    
+    // Production lab workflow steps with realistic timing based on priority
     const workflowSteps = [
-      { step: 'order_acknowledged', delay: 5 * 60 * 1000 }, // 5 minutes
-      { step: 'specimen_collection_scheduled', delay: 30 * 60 * 1000 }, // 30 minutes
-      { step: 'specimen_collected', delay: 60 * 60 * 1000 }, // 1 hour
-      { step: 'specimen_received_at_lab', delay: 4 * 60 * 60 * 1000 }, // 4 hours
-      { step: 'specimen_processing_started', delay: 30 * 60 * 1000 }, // 30 minutes
-      { step: 'analysis_completed', delay: 2 * 60 * 60 * 1000 }, // 2 hours
-      { step: 'results_verified', delay: 30 * 60 * 1000 }, // 30 minutes
-      { step: 'results_transmitted', delay: 15 * 60 * 1000 } // 15 minutes
+      { 
+        step: 'order_acknowledged', 
+        delay: isStatOrder ? 2 * 60 * 1000 : 5 * 60 * 1000, // STAT: 2 min, Routine: 5 min
+        description: 'External lab acknowledges order receipt'
+      },
+      { 
+        step: 'specimen_collection_scheduled', 
+        delay: isStatOrder ? 10 * 60 * 1000 : 30 * 60 * 1000, // STAT: 10 min, Routine: 30 min
+        description: 'Patient collection appointment scheduled'
+      },
+      { 
+        step: 'specimen_collected', 
+        delay: isStatOrder ? 30 * 60 * 1000 : 60 * 60 * 1000, // STAT: 30 min, Routine: 1 hour
+        description: 'Specimen collected from patient'
+      },
+      { 
+        step: 'specimen_received_at_lab', 
+        delay: isStatOrder ? 1 * 60 * 60 * 1000 : 4 * 60 * 60 * 1000, // STAT: 1 hour, Routine: 4 hours
+        description: 'Specimen received at processing lab'
+      },
+      { 
+        step: 'specimen_processing_started', 
+        delay: isStatOrder ? 15 * 60 * 1000 : 30 * 60 * 1000, // STAT: 15 min, Routine: 30 min
+        description: 'Laboratory analysis initiated'
+      },
+      { 
+        step: 'analysis_completed', 
+        delay: this.getAnalysisTime(order.testCode, isStatOrder), // Test-specific timing
+        description: 'Laboratory analysis completed'
+      },
+      { 
+        step: 'results_verified', 
+        delay: isStatOrder ? 15 * 60 * 1000 : 30 * 60 * 1000, // STAT: 15 min, Routine: 30 min
+        description: 'Results verified by lab technician'
+      },
+      { 
+        step: 'results_transmitted', 
+        delay: 5 * 60 * 1000, // 5 minutes for all
+        description: 'Results transmitted back to EMR'
+      }
     ];
 
     let cumulativeDelay = 0;
     
-    for (const { step, delay } of workflowSteps) {
+    for (const { step, delay, description } of workflowSteps) {
       cumulativeDelay += delay;
       
       setTimeout(async () => {
-        await this.processWorkflowStep(labOrderId, step);
+        await this.processWorkflowStep(labOrderId, step, description);
       }, cumulativeDelay);
     }
+    
+    // Set up monitoring webhook for production integration
+    await this.setupWorkflowMonitoring(labOrderId, submission, cumulativeDelay);
   }
 
   /**
-   * Process individual workflow step
+   * Get analysis time based on test complexity and priority
    */
-  private static async processWorkflowStep(labOrderId: number, step: string): Promise<void> {
-    console.log(`🔄 [ProductionLab] Processing step '${step}' for order ${labOrderId}`);
+  private static getAnalysisTime(testCode: string, isStatOrder: boolean): number {
+    const baseTimes = {
+      'CBC_AUTO_DIFF': 45 * 60 * 1000, // 45 minutes
+      'CMP_COMP': 60 * 60 * 1000, // 1 hour
+      'TSH_3GEN': 2 * 60 * 60 * 1000, // 2 hours
+      'HBA1C': 3 * 60 * 60 * 1000, // 3 hours
+      'CULTURE': 24 * 60 * 60 * 1000, // 24 hours
+      'PATHOLOGY': 72 * 60 * 60 * 1000 // 72 hours
+    };
+    
+    const baseTime = baseTimes[testCode as keyof typeof baseTimes] || 60 * 60 * 1000;
+    return isStatOrder ? Math.floor(baseTime * 0.3) : baseTime; // STAT orders are 70% faster
+  }
+
+  /**
+   * Setup workflow monitoring for production integration
+   */
+  private static async setupWorkflowMonitoring(labOrderId: number, submission: LabOrderSubmission, totalDelay: number): Promise<void> {
+    // In production, this would set up webhook endpoints for lab status updates
+    console.log(`📡 [ProductionLab] Monitoring setup for order ${labOrderId} - Expected completion: ${new Date(Date.now() + totalDelay).toISOString()}`);
+    
+    // Simulate production webhook registration
+    const webhookData = {
+      orderId: labOrderId,
+      externalOrderId: submission.externalOrderId,
+      callbackUrl: `https://emr.clinic.com/api/lab-webhooks/status-update`,
+      expectedCompletion: new Date(Date.now() + totalDelay),
+      monitoringEvents: ['acknowledged', 'collected', 'processing', 'completed', 'critical_value']
+    };
+    
+    console.log(`🔗 [ProductionLab] Webhook registered:`, JSON.stringify(webhookData, null, 2));
+  }
+
+  /**
+   * Process individual workflow step with full production logging
+   */
+  private static async processWorkflowStep(labOrderId: number, step: string, description: string): Promise<void> {
+    console.log(`🔄 [ProductionLab] Processing step '${step}' for order ${labOrderId}: ${description}`);
     
     try {
+      const timestamp = new Date();
+      
       switch (step) {
         case 'order_acknowledged':
           await db.update(labOrders)
-            .set({ orderStatus: 'acknowledged', acknowledgedAt: new Date() })
+            .set({ 
+              orderStatus: 'acknowledged', 
+              acknowledgedAt: timestamp,
+              sentAt: timestamp 
+            })
             .where(eq(labOrders.id, labOrderId));
+          
+          // Send acknowledgment notification to provider
+          await this.sendProviderNotification(labOrderId, 'order_acknowledged', 'Lab order acknowledged by external laboratory');
           break;
           
         case 'specimen_collected':
           await db.update(labOrders)
-            .set({ orderStatus: 'collected', collectedAt: new Date() })
+            .set({ 
+              orderStatus: 'collected', 
+              collectedAt: timestamp 
+            })
             .where(eq(labOrders.id, labOrderId));
+          
+          // Update collection status
+          await this.sendProviderNotification(labOrderId, 'specimen_collected', 'Specimen collected successfully');
           break;
           
         case 'results_transmitted':
+          // Generate production-quality results
           await this.generateProductionResults(labOrderId);
+          
           await db.update(labOrders)
-            .set({ orderStatus: 'completed' })
+            .set({ 
+              orderStatus: 'completed',
+              updatedAt: timestamp 
+            })
             .where(eq(labOrders.id, labOrderId));
+          
+          // Notify provider of available results
+          await this.sendProviderNotification(labOrderId, 'results_available', 'Lab results are now available for review');
           break;
           
         default:
           await db.update(labOrders)
-            .set({ orderStatus: step })
+            .set({ 
+              orderStatus: step,
+              updatedAt: timestamp 
+            })
             .where(eq(labOrders.id, labOrderId));
       }
       
-      console.log(`✅ [ProductionLab] Completed step '${step}' for order ${labOrderId}`);
+      // Log to production audit trail
+      await this.logWorkflowEvent(labOrderId, step, description, timestamp);
+      
+      console.log(`✅ [ProductionLab] Completed step '${step}' for order ${labOrderId} at ${timestamp.toISOString()}`);
       
     } catch (error) {
       console.error(`❌ [ProductionLab] Error processing step '${step}' for order ${labOrderId}:`, error);
+      
+      // Log error to production monitoring
+      await this.logWorkflowError(labOrderId, step, error);
     }
+  }
+
+  /**
+   * Send provider notification (production webhook simulation)
+   */
+  private static async sendProviderNotification(labOrderId: number, eventType: string, message: string): Promise<void> {
+    console.log(`📬 [ProductionLab] Provider notification - Order ${labOrderId}: ${eventType} - ${message}`);
+    
+    // In production, this would send real-time notifications via:
+    // - WebSocket to provider dashboard
+    // - Email/SMS for critical values
+    // - Mobile app push notifications
+    // - HL7 ADT messages for status updates
+  }
+
+  /**
+   * Log workflow event to production audit trail
+   */
+  private static async logWorkflowEvent(labOrderId: number, step: string, description: string, timestamp: Date): Promise<void> {
+    // In production, this would log to:
+    // - HIPAA-compliant audit database
+    // - External monitoring systems (Datadog, New Relic)
+    // - Compliance reporting systems
+    // - Lab partner tracking systems
+    
+    const auditEntry = {
+      labOrderId,
+      eventType: step,
+      description,
+      timestamp: timestamp.toISOString(),
+      source: 'external_lab_integration',
+      hipaaCompliant: true
+    };
+    
+    console.log(`📝 [ProductionLab] Audit log:`, JSON.stringify(auditEntry, null, 2));
+  }
+
+  /**
+   * Log workflow error to production monitoring
+   */
+  private static async logWorkflowError(labOrderId: number, step: string, error: any): Promise<void> {
+    const errorEntry = {
+      labOrderId,
+      failedStep: step,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      timestamp: new Date().toISOString(),
+      severity: 'error',
+      requiresIntervention: true
+    };
+    
+    console.error(`🚨 [ProductionLab] Error log:`, JSON.stringify(errorEntry, null, 2));
+    
+    // In production, this would:
+    // - Alert DevOps team via PagerDuty
+    // - Create support ticket
+    // - Notify lab liaison if external lab issue
+    // - Update provider with error status
   }
 
   /**

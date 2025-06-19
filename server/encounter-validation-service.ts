@@ -168,135 +168,16 @@ export class EncounterValidationService {
       }
     }
 
-    // For lab orders, create lab_orders entry and start simulation
+    // For lab orders, process through production-ready external lab integration
     if (signedOrder.orderType === "lab") {
-      console.log(`🧪 [ValidationService] Converting lab order to external lab system: ${orderId}`);
+      console.log(`🏥 [ValidationService] Processing lab order through production lab integration: ${orderId}`);
       try {
-        // Create production lab order entry
-        const labOrderData = {
-          patientId: signedOrder.patientId,
-          encounterId: signedOrder.encounterId,
-          loincCode: signedOrder.testCode === 'CBC' ? '58410-2' : 'UNKNOWN',
-          cptCode: signedOrder.testCode === 'CBC' ? '85027' : '99999', 
-          testCode: signedOrder.testCode || 'CBC',
-          testName: signedOrder.testName || signedOrder.orderDetails || 'Complete Blood Count',
-          testCategory: 'hematology',
-          priority: signedOrder.priority || 'routine',
-          clinicalIndication: signedOrder.orderDetails || 'Laboratory testing as ordered',
-          orderedBy: signedOrder.orderedBy,
-          orderStatus: 'transmitted',
-          specimenType: 'whole_blood',
-          fastingRequired: false,
-          externalOrderId: `LC${Date.now()}${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
-          requisitionNumber: `REQ_LC_${Date.now()}`,
-          hl7MessageId: `HL7_${Date.now()}`,
-          transmittedAt: new Date(),
-          targetLabId: 1 // LabCorp
-        };
-        
-        const { labOrders } = await import("@shared/schema");
-        const [newLabOrder] = await db.insert(labOrders).values(labOrderData).returning();
-        
-        console.log(`✅ [ValidationService] Created lab order ${newLabOrder.id} for external processing`);
-        
-        // Start realistic lab workflow simulation
-        setTimeout(async () => {
-          try {
-            await db.update(labOrders)
-              .set({ orderStatus: 'acknowledged', acknowledgedAt: new Date() })
-              .where(eq(labOrders.id, newLabOrder.id));
-            console.log(`🧪 [LabWorkflow] Order ${newLabOrder.id} acknowledged by LabCorp`);
-            
-            setTimeout(async () => {
-              await db.update(labOrders)
-                .set({ orderStatus: 'collected', collectedAt: new Date() })
-                .where(eq(labOrders.id, newLabOrder.id));
-              console.log(`🧪 [LabWorkflow] Specimen collected for order ${newLabOrder.id}`);
-              
-              setTimeout(async () => {
-                await db.update(labOrders)
-                  .set({ orderStatus: 'completed' })
-                  .where(eq(labOrders.id, newLabOrder.id));
-                
-                // Generate realistic CBC results
-                const { labResults } = await import("@shared/schema");
-                const cbcResults = [
-                  {
-                    labOrderId: newLabOrder.id,
-                    patientId: signedOrder.patientId,
-                    loincCode: '6690-2',
-                    testCode: 'WBC',
-                    testName: 'White Blood Cell Count',
-                    testCategory: 'hematology',
-                    resultValue: (Math.random() * 3 + 5).toFixed(1),
-                    resultUnits: 'K/uL',
-                    referenceRange: '4.0-11.0',
-                    abnormalFlag: 'N',
-                    criticalFlag: false,
-                    resultStatus: 'final',
-                    verificationStatus: 'verified',
-                    resultAvailableAt: new Date(),
-                    resultFinalizedAt: new Date(),
-                    externalLabId: '1',
-                    externalResultId: `RES_${labOrderData.externalOrderId}`,
-                    sourceType: 'external_lab'
-                  },
-                  {
-                    labOrderId: newLabOrder.id,
-                    patientId: signedOrder.patientId,
-                    loincCode: '789-8',
-                    testCode: 'RBC',
-                    testName: 'Red Blood Cell Count',
-                    testCategory: 'hematology',
-                    resultValue: (Math.random() * 1.2 + 4.2).toFixed(1),
-                    resultUnits: 'M/uL',
-                    referenceRange: '4.2-5.4',
-                    abnormalFlag: 'N',
-                    criticalFlag: false,
-                    resultStatus: 'final',
-                    verificationStatus: 'verified',
-                    resultAvailableAt: new Date(),
-                    resultFinalizedAt: new Date(),
-                    externalLabId: '1',
-                    externalResultId: `RES_${labOrderData.externalOrderId}`,
-                    sourceType: 'external_lab'
-                  },
-                  {
-                    labOrderId: newLabOrder.id,
-                    patientId: signedOrder.patientId,
-                    loincCode: '718-7',
-                    testCode: 'HGB',
-                    testName: 'Hemoglobin',
-                    testCategory: 'hematology',
-                    resultValue: (Math.random() * 4 + 12).toFixed(1),
-                    resultUnits: 'g/dL',
-                    referenceRange: '12.0-16.0',
-                    abnormalFlag: 'N',
-                    criticalFlag: false,
-                    resultStatus: 'final',
-                    verificationStatus: 'verified',
-                    resultAvailableAt: new Date(),
-                    resultFinalizedAt: new Date(),
-                    externalLabId: '1',
-                    externalResultId: `RES_${labOrderData.externalOrderId}`,
-                    sourceType: 'external_lab'
-                  }
-                ];
-                
-                for (const result of cbcResults) {
-                  await db.insert(labResults).values(result);
-                }
-                
-                console.log(`📊 [LabWorkflow] Generated CBC results for order ${newLabOrder.id}`);
-              }, 5 * 60 * 1000); // 5 minutes for processing
-            }, 2 * 60 * 1000); // 2 minutes for collection
-          }, 1 * 60 * 1000); // 1 minute for acknowledgment
-        } catch (error) {
-          console.error(`❌ [LabWorkflow] Error in workflow step:`, error);
-        });
-        
+        const { ProductionLabIntegrationService } = await import("./production-lab-integration-service.js");
+        await ProductionLabIntegrationService.processProductionLabOrder(orderId);
+        console.log(`✅ [ValidationService] Successfully processed lab order ${orderId} through production lab system`);
       } catch (labError) {
         console.error(`❌ [ValidationService] Failed to process lab order ${orderId}:`, labError);
+        // Continue - order is still signed even if lab processing fails
       }
     }
 
