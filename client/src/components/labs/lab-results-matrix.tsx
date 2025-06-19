@@ -149,7 +149,7 @@ export function LabResultsMatrix({
         id: result.id,
         encounterId: result.encounterId,
         needsReview: pendingReviewIds.includes(result.id),
-        isReviewed: result.reviewedBy !== null,
+        isReviewed: result.reviewedBy !== null && !pendingReviewIds.includes(result.id),
         reviewedBy: result.reviewedBy,
         orderedBy: result.orderedBy
       });
@@ -413,6 +413,12 @@ export function LabResultsMatrix({
     setSelectedPanels(new Set());
   };
 
+  // Add effect to clear selection when data changes (after review)
+  React.useEffect(() => {
+    // Clear selection when lab results data changes to reflect new review state
+    clearSelection();
+  }, [results]);
+
   const getDateHeaderClass = (date: string) => {
     const isSelected = selectedDates.has(date);
     const isHovered = hoveredDate === date;
@@ -479,9 +485,10 @@ export function LabResultsMatrix({
     if (needsReview) return 'bg-yellow-100 text-yellow-900 border-2 border-yellow-400';
     if (criticalFlag) return 'bg-red-100 text-red-800 border border-red-300';
     if (isReviewed && canUnreviewResult) return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
+    if (isReviewed) return 'bg-gray-50 text-gray-700 border border-gray-200'; // Normal reviewed state
     if (abnormalFlag === 'H') return 'bg-orange-100 text-orange-800';
     if (abnormalFlag === 'L') return 'bg-blue-100 text-blue-800';
-    return 'bg-green-50 text-green-800';
+    return 'bg-gray-50 text-gray-700'; // Normal unreviewed state
   };
 
   if (isLoading) {
