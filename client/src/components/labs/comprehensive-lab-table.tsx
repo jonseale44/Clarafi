@@ -78,7 +78,8 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
     isLoading, 
     dataType: typeof labResults,
     isArray: Array.isArray(labResults),
-    length: Array.isArray(labResults) ? labResults.length : 'N/A'
+    length: Array.isArray(labResults) ? labResults.length : 'N/A',
+    sampleResult: Array.isArray(labResults) && labResults.length > 0 ? labResults[0] : null
   });
 
   // Group results by test type for better organization
@@ -335,9 +336,10 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
               </TableRow>
             </TableHeader>
             <TableBody>
-              {groupedResults.map((result) => {
+              {groupedResults.flatMap((result) => {
                 console.log('🧪 [ComprehensiveLabTable] Rendering result:', result.id, result.testName);
-                const mainRow = (
+                
+                const rows = [
                   <TableRow key={result.id} className={getResultRowClass(result)}>
                     <TableCell>
                       <Checkbox
@@ -428,7 +430,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
 
                     <TableCell>
                       <div className="text-xs text-muted-foreground">
-                        {result.providerName}
+                        {result.orderedByName || 'Unknown'}
                       </div>
                     </TableCell>
 
@@ -449,42 +451,45 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
                       )}
                     </TableCell>
                   </TableRow>
-                );
+                ];
 
-                const expandedRow = expandedRows.has(result.id) ? (
-                  <TableRow key={`expanded-${result.id}`}>
-                    <TableCell colSpan={9} className="bg-muted/30 p-4">
-                      <div className="space-y-3 text-sm">
-                        {result.clinicalIndication && (
-                          <div>
-                            <span className="font-medium">Clinical Indication: </span>
-                            {result.clinicalIndication}
-                          </div>
-                        )}
-                        {result.providerNotes && (
-                          <div>
-                            <span className="font-medium">Provider Notes: </span>
-                            {result.providerNotes}
-                          </div>
-                        )}
-                        {result.previousValue && (
-                          <div>
-                            <span className="font-medium">Previous Value: </span>
-                            {result.previousValue} ({result.previousDate ? formatDate(result.previousDate) : 'Unknown date'})
-                          </div>
-                        )}
-                        {result.reviewedAt && (
-                          <div className="text-xs text-muted-foreground">
-                            Reviewed on {formatDate(result.reviewedAt)}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : null;
+                // Add expanded row if needed
+                if (expandedRows.has(result.id)) {
+                  rows.push(
+                    <TableRow key={`expanded-${result.id}`}>
+                      <TableCell colSpan={9} className="bg-muted/30 p-4">
+                        <div className="space-y-3 text-sm">
+                          {result.clinicalIndication && (
+                            <div>
+                              <span className="font-medium">Clinical Indication: </span>
+                              {result.clinicalIndication}
+                            </div>
+                          )}
+                          {result.providerNotes && (
+                            <div>
+                              <span className="font-medium">Provider Notes: </span>
+                              {result.providerNotes}
+                            </div>
+                          )}
+                          {result.previousValue && (
+                            <div>
+                              <span className="font-medium">Previous Value: </span>
+                              {result.previousValue} ({result.previousDate ? formatDate(result.previousDate) : 'Unknown date'})
+                            </div>
+                          )}
+                          {result.reviewedAt && (
+                            <div className="text-xs text-muted-foreground">
+                              Reviewed on {formatDate(result.reviewedAt)}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
 
-                return [mainRow, expandedRow].filter(Boolean);
-              }).flat()}
+                return rows;
+              })}
             </TableBody>
           </Table>
         </ScrollArea>
