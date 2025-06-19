@@ -65,10 +65,20 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log('🧪 [ComprehensiveLabTable] Component initialized with:', { patientId, patientName });
+
   // Fetch comprehensive lab data
   const { data: labResults = [], isLoading } = useQuery({
     queryKey: [`/api/patients/${patientId}/lab-results`],
     enabled: !!patientId
+  });
+
+  console.log('🧪 [ComprehensiveLabTable] Query result:', { 
+    labResults, 
+    isLoading, 
+    dataType: typeof labResults,
+    isArray: Array.isArray(labResults),
+    length: Array.isArray(labResults) ? labResults.length : 'N/A'
   });
 
   // Group results by test type for better organization
@@ -313,7 +323,9 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
               </TableRow>
             </TableHeader>
             <TableBody>
-              {groupedResults.map((result) => (
+              {groupedResults.map((result) => {
+                console.log('🧪 [ComprehensiveLabTable] Rendering result:', result.id, result.testName);
+                return (
                 <React.Fragment key={result.id}>
                   <TableRow className={getResultRowClass(result)}>
                     <TableCell>
@@ -460,7 +472,8 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
                     </TableRow>
                   )}
                 </React.Fragment>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </ScrollArea>
