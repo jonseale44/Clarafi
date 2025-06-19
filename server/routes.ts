@@ -110,7 +110,7 @@ async function generateNursingTemplateDirect(
           .join("\n")
       : "- NKDA (No Known Drug Allergies)";
 
-  const recentVitals =
+  const encounterVitals =
     encounterVitalsList.length > 0
       ? encounterVitalsList
           .map(
@@ -408,15 +408,15 @@ async function generateSOAPNoteDirect(
           .join("\n")
       : "- NKDA (No Known Drug Allergies)";
 
-  const recentVitals =
-    vitalsList.length > 0
-      ? vitalsList
+  const encounterVitals =
+    encounterVitalsList.length > 0
+      ? encounterVitalsList
           .map(
             (v: any) =>
-              `${v.createdAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
+              `${v.recordedAt.toLocaleDateString()}: BP ${v.systolicBp}/${v.diastolicBp}, HR ${v.heartRate}, Temp ${v.temperature}°F`,
           )
           .join("\n")
-      : "- No recent vitals on file";
+      : "- No vitals recorded for this encounter";
 
   // Build comprehensive medical context
   const medicalContext = `
