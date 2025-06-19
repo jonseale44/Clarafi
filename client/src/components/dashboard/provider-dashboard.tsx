@@ -537,62 +537,92 @@ export function ProviderDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Lab Orders List */}
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            {/* Patient-Grouped Lab Orders */}
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               {labOrdersLoading && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   <p className="text-sm text-gray-500 mt-2">Loading lab orders...</p>
                 </div>
               )}
-              {!labOrdersLoading && labOrders.map((lab) => (
-                <div key={lab.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-medium">{lab.patientName}</h4>
-                      <Badge className={getPriorityColor(lab.priority)}>
-                        {lab.priority}
-                      </Badge>
-                      {lab.criticalFlag && (
-                        <Badge variant="destructive">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Critical
-                        </Badge>
+              
+              {!labOrdersLoading && (() => {
+                // Group lab orders by patient
+                const patientGroups = labOrders.reduce((groups, lab) => {
+                  const key = lab.patientId;
+                  if (!groups[key]) {
+                    groups[key] = {
+                      patientName: lab.patientName,
+                      patientId: lab.patientId,
+                      labs: []
+                    };
+                  }
+                  groups[key].labs.push(lab);
+                  return groups;
+                }, {});
+
+                return Object.values(patientGroups).map((group) => (
+                  <div key={group.patientId} className="border rounded-lg p-4 bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <h3 className="font-semibold text-lg">{group.patientName}</h3>
+                        <Badge variant="outline">{group.labs.length} results pending</Badge>
+                        {group.labs.some(lab => lab.criticalFlag) && (
+                          <Badge variant="destructive">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Critical Results
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewPatient(group.patientId)}
+                        >
+                          <User className="h-4 w-4 mr-1" />
+                          View Chart
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPatientGroup(group);
+                            setReviewNote("");
+                            setGeneratedMessage("");
+                          }}
+                          variant={selectedPatientGroup?.patientId === group.patientId ? "default" : "outline"}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Review Results
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Quick preview of pending results */}
+                    <div className="text-sm text-gray-600 space-y-1">
+                      {group.labs.slice(0, 3).map((lab, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <span>{lab.testName}</span>
+                          <div className="flex items-center space-x-2">
+                            {lab.results && (
+                              <span className="font-medium">
+                                {typeof lab.results === 'string' ? lab.results : JSON.stringify(lab.results)}
+                              </span>
+                            )}
+                            <Badge className={getPriorityColor(lab.priority)} size="sm">
+                              {lab.priority}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      {group.labs.length > 3 && (
+                        <p className="text-xs text-gray-500">...and {group.labs.length - 3} more results</p>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">{lab.testName}</p>
-                    <p className="text-xs text-gray-500">
-                      Ordered: {format(new Date(lab.orderedDate), 'MMM dd, yyyy HH:mm')}
-                    </p>
-                    {lab.results && (
-                      <p className="text-xs text-gray-600 mt-1">
-                        Results: {typeof lab.results === 'string' ? lab.results : JSON.stringify(lab.results)}
-                      </p>
-                    )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleViewPatient(lab.patientId)}
-                    >
-                      <User className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedLabResult(lab);
-                        setReviewNote("");
-                        setGeneratedMessage("");
-                      }}
-                      variant={selectedLabResult?.id === lab.id ? "default" : "outline"}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      {selectedLabResult?.id === lab.id ? "Selected" : "Select"}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ));
+              })()}
+              
               {!labOrdersLoading && labOrders.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <TestTube className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -601,75 +631,163 @@ export function ProviderDashboard() {
               )}
             </div>
 
-            {/* Selected Lab Review Section */}
-            {selectedLabResult && (
+            {/* Comprehensive Lab Results Table for Selected Patient */}
+            {selectedPatientGroup && (
               <div className="border-t pt-4 space-y-4">
-                <h3 className="font-medium text-lg">Review Selected Lab Result</h3>
-                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-lg">Lab Results for {selectedPatientGroup.patientName}</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowHistoricalResults(!showHistoricalResults)}
+                  >
+                    {showHistoricalResults ? "Hide" : "Show"} Historical Results
+                  </Button>
+                </div>
+
+                {/* Lab Results Table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="text-left p-3 font-medium">Test</th>
+                          <th className="text-left p-3 font-medium">Result</th>
+                          <th className="text-left p-3 font-medium">Reference Range</th>
+                          <th className="text-left p-3 font-medium">Date</th>
+                          <th className="text-left p-3 font-medium">Status</th>
+                          <th className="text-left p-3 font-medium">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedPatientGroup.labs.map((lab) => (
+                          <tr 
+                            key={lab.id} 
+                            className={`border-b hover:bg-gray-50 ${
+                              !lab.reviewedAt ? 'bg-yellow-50' : ''
+                            }`}
+                          >
+                            <td className="p-3">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium">{lab.testName}</span>
+                                {lab.criticalFlag && (
+                                  <Badge variant="destructive" size="sm">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    Critical
+                                  </Badge>
+                                )}
+                                {!lab.reviewedAt && (
+                                  <Badge variant="outline" size="sm">
+                                    Pending Review
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span className={`font-medium ${
+                                lab.criticalFlag ? 'text-red-600' : 
+                                lab.abnormalFlag ? 'text-orange-600' : 'text-green-600'
+                              }`}>
+                                {typeof lab.results === 'string' ? lab.results : JSON.stringify(lab.results)}
+                              </span>
+                            </td>
+                            <td className="p-3 text-gray-600">
+                              {lab.referenceRange || 'N/A'}
+                            </td>
+                            <td className="p-3 text-gray-600">
+                              {format(new Date(lab.orderedDate), 'MMM dd, yyyy')}
+                            </td>
+                            <td className="p-3">
+                              <Badge className={getPriorityColor(lab.priority)} size="sm">
+                                {lab.priority}
+                              </Badge>
+                            </td>
+                            <td className="p-3">
+                              {!lab.reviewedAt && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedLabForReview(lab)}
+                                >
+                                  Review
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Quick Review Actions */}
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm font-medium">Quick Actions:</span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleBulkReview(selectedPatientGroup.labs.filter(lab => !lab.reviewedAt))}
+                      disabled={!selectedPatientGroup.labs.some(lab => !lab.reviewedAt)}
+                    >
+                      Review All Results
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleGeneratePatientSummary(selectedPatientGroup)}
+                      disabled={isGeneratingMessage}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Generate Patient Summary
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Individual Lab Review Modal */}
+            {selectedLabForReview && (
+              <div className="border-t pt-4 space-y-4">
+                <h4 className="font-medium">Review: {selectedLabForReview.testName}</h4>
+                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
                   <div>
-                    <Label className="text-sm font-medium">Patient</Label>
-                    <p className="text-sm">{selectedLabResult.patientName}</p>
+                    <Label className="text-sm font-medium">Result</Label>
+                    <p className="text-sm font-medium text-blue-600">
+                      {typeof selectedLabForReview.results === 'string' 
+                        ? selectedLabForReview.results 
+                        : JSON.stringify(selectedLabForReview.results)}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">Test</Label>
-                    <p className="text-sm">{selectedLabResult.testName}</p>
+                    <Label className="text-sm font-medium">Reference Range</Label>
+                    <p className="text-sm">{selectedLabForReview.referenceRange || 'N/A'}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">Ordered Date</Label>
-                    <p className="text-sm">{format(new Date(selectedLabResult.orderedDate), 'MMM dd, yyyy HH:mm')}</p>
+                    <Label className="text-sm font-medium">Date</Label>
+                    <p className="text-sm">{format(new Date(selectedLabForReview.orderedDate), 'MMM dd, yyyy HH:mm')}</p>
                   </div>
-                  <div>
-                    <Label className="text-sm font-medium">Priority</Label>
-                    <Badge className={getPriorityColor(selectedLabResult.priority)}>
-                      {selectedLabResult.priority}
-                    </Badge>
-                  </div>
-                  {selectedLabResult.results && (
-                    <div className="col-span-2">
-                      <Label className="text-sm font-medium">Results</Label>
-                      <p className="text-sm bg-white p-2 rounded border">
-                        {typeof selectedLabResult.results === 'string' 
-                          ? selectedLabResult.results 
-                          : JSON.stringify(selectedLabResult.results, null, 2)}
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="reviewNote">Review Notes</Label>
+                  <Label htmlFor="reviewNote">Clinical Review & Notes</Label>
                   <Textarea
                     id="reviewNote"
-                    placeholder="Enter your review notes..."
+                    placeholder="Enter clinical interpretation, follow-up needed, patient communication notes..."
                     value={reviewNote}
                     onChange={(e) => setReviewNote(e.target.value)}
                     className="min-h-[100px]"
                   />
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Patient Communication</Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGeneratePatientMessage}
-                      disabled={isGeneratingMessage}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-1" />
-                      {isGeneratingMessage ? "Generating..." : "Generate Message"}
-                    </Button>
-                  </div>
-                  {generatedMessage && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-                      <p className="text-sm text-blue-800">{generatedMessage}</p>
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex justify-end space-x-2">
                   <Button 
-                    onClick={handleSubmitLabReview}
+                    variant="outline"
+                    onClick={() => setSelectedLabForReview(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={() => handleSubmitLabReview(selectedLabForReview)}
                     disabled={reviewLabResultMutation.isPending}
                   >
                     {reviewLabResultMutation.isPending ? "Reviewing..." : "Complete Review"}
