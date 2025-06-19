@@ -152,6 +152,9 @@ export class ProductionLabIntegrationService {
   private static async getEncounterDiagnoses(encounterId: number): Promise<string[]> {
     try {
       const { encounters } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const { db } = await import("./storage.js");
+      
       const encounterResult = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
       
       if (encounterResult.length && encounterResult[0].draftDiagnoses) {
@@ -373,13 +376,18 @@ export class ProductionLabIntegrationService {
   private static async initiateLabWorkflow(labOrderId: number, submission: LabOrderSubmission): Promise<void> {
     console.log(`🔄 [ProductionLab] Starting workflow for lab order ${labOrderId}`);
     
-    // Get lab order details for workflow customization
-    const orderResult = await db.select().from(labOrders).where(eq(labOrders.id, labOrderId)).limit(1);
-    if (!orderResult.length) return;
-    
-    const order = orderResult[0];
-    const isStatOrder = order.priority === 'stat';
-    const isUrgentOrder = order.priority === 'urgent';
+    try {
+      const { labOrders } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const { db } = await import("./storage.js");
+      
+      // Get lab order details for workflow customization
+      const orderResult = await db.select().from(labOrders).where(eq(labOrders.id, labOrderId)).limit(1);
+      if (!orderResult.length) return;
+      
+      const order = orderResult[0];
+      const isStatOrder = order.priority === 'stat';
+      const isUrgentOrder = order.priority === 'urgent';
     
     // Production lab workflow steps with realistic timing based on priority
     const workflowSteps = [
