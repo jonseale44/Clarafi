@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle } from 'lucide-react';
 
 interface LabResultsMatrixProps {
   patientId: number;
@@ -35,73 +33,63 @@ export function LabResultsMatrix({
   showTitle = true 
 }: LabResultsMatrixProps) {
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
-  
+
   console.log('🧪 [LabResultsMatrix] Rendering with:', { patientId, mode, encounterId });
 
-  // Fetch lab results
-  const { data: labResults = [], isLoading } = useQuery({
+  const { data: labResults, isLoading } = useQuery({
     queryKey: [`/api/patients/${patientId}/lab-results`],
     enabled: !!patientId
   });
 
-  // Transform data into matrix format
+  const results = (labResults as any) || [];
+  console.log('🧪 [LabResultsMatrix] Processing results:', results.length);
+
   const matrixData = useMemo(() => {
-    const safeResults = Array.isArray(labResults) ? labResults : [];
-    console.log('🧪 [LabResultsMatrix] Processing results:', safeResults.length);
-    
-    if (safeResults.length === 0) return [];
+    if (!results.length) return [];
 
-    // Group by test name
-    const grouped = safeResults.reduce((acc: { [key: string]: any[] }, result) => {
+    const testGroups = new Map<string, MatrixData>();
+
+    results.forEach((result: any) => {
       const key = result.testName;
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(result);
-      return acc;
-    }, {});
-
-    // Convert to matrix format
-    const matrix: MatrixData[] = Object.entries(grouped).map(([testName, results]) => {
-      const typedResults = results as any[];
       
-      // Sort by date and get unique time points
-      const sortedResults = typedResults.sort((a, b) => 
-        new Date(a.resultAvailableAt).getTime() - new Date(b.resultAvailableAt).getTime()
-      );
+      if (!testGroups.has(key)) {
+        testGroups.set(key, {
+          testName: result.testName,
+          testCode: result.testCode || 'N/A',
+          unit: result.resultUnits || '',
+          referenceRange: result.referenceRange || 'N/A',
+          results: []
+        });
+      }
 
-      return {
-        testName,
-        testCode: sortedResults[0]?.testCode || '',
-        unit: sortedResults[0]?.resultUnits || '',
-        referenceRange: sortedResults[0]?.referenceRange || '',
-        results: sortedResults.map(result => ({
-          date: result.resultAvailableAt,
-          value: result.resultValue,
-          abnormalFlag: result.abnormalFlag,
-          criticalFlag: result.criticalFlag,
-          id: result.id
-        }))
-      };
+      const testGroup = testGroups.get(key)!;
+      testGroup.results.push({
+        date: result.resultAvailableAt,
+        value: result.resultValue,
+        abnormalFlag: result.abnormalFlag,
+        criticalFlag: result.criticalFlag,
+        id: result.id
+      });
     });
 
-    // Sort by test name for consistent display
-    return matrix.sort((a, b) => a.testName.localeCompare(b.testName));
-  }, [labResults]);
+    // Sort results by date for each test
+    testGroups.forEach(test => {
+      test.results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    });
 
-  // Get all unique date columns
+    return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));
+  }, [results]);
+
   const dateColumns = useMemo(() => {
     const allDates = new Set<string>();
     matrixData.forEach(test => {
-      test.results.forEach(result => {
-        allDates.add(result.date);
-      });
+      test.results.forEach(result => allDates.add(result.date));
     });
-    
-    return Array.from(allDates).sort((a, b) => 
-      new Date(a).getTime() - new Date(b).getTime()
-    );
+    return Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
   }, [matrixData]);
+
+  const maxColumns = mode === 'compact' ? 5 : mode === 'encounter' ? 3 : 10;
+  const displayColumns = dateColumns.slice(0, maxColumns);
 
   const toggleTestExpansion = (testName: string) => {
     const newExpanded = new Set(expandedTests);
@@ -122,25 +110,30 @@ export function LabResultsMatrix({
   };
 
   const getValueClass = (abnormalFlag?: string, criticalFlag?: boolean) => {
-    if (criticalFlag) return 'text-red-600 font-semibold bg-red-50';
-    if (abnormalFlag && abnormalFlag !== 'N') return 'text-amber-600 font-medium bg-amber-50';
-    return 'text-gray-900';
+    if (criticalFlag) return 'bg-red-100 text-red-800 border border-red-300';
+    if (abnormalFlag === 'H') return 'bg-orange-100 text-orange-800';
+    if (abnormalFlag === 'L') return 'bg-blue-100 text-blue-800';
+    return 'bg-green-50 text-green-800';
   };
-
-  const maxColumns = mode === 'compact' ? 3 : dateColumns.length;
-  const displayColumns = dateColumns.slice(-maxColumns); // Show most recent columns
 
   if (isLoading) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center">Loading lab results...</div>
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-1/4"></div>
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-12 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (matrixData.length === 0) {
+  if (!matrixData.length) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -169,10 +162,10 @@ export function LabResultsMatrix({
           </div>
         </CardHeader>
       )}
+      
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            {/* Header */}
+          <table className="w-full border-collapse">
             <thead>
               <tr className="border-b bg-muted/30">
                 <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-muted/30">
@@ -188,10 +181,10 @@ export function LabResultsMatrix({
               </tr>
             </thead>
             
-            {/* Body */}
             <tbody>
-              {matrixData.map((test) => [
-                  <tr className="border-b hover:bg-muted/20">
+              {matrixData.flatMap((test) => {
+                const rows = [
+                  <tr key={test.testName} className="border-b hover:bg-muted/20">
                     <td className="p-3 sticky left-0 bg-white">
                       <div className="flex items-center gap-2">
                         {test.results.length > 1 && (
@@ -235,9 +228,10 @@ export function LabResultsMatrix({
                       );
                     })}
                   </tr>
-                  
-                  // Expanded details row
-                  ...(expandedTests.has(test.testName) ? [
+                ];
+                
+                if (expandedTests.has(test.testName)) {
+                  rows.push(
                     <tr key={`${test.testName}-expanded`}>
                       <td colSpan={displayColumns.length + 1} className="bg-muted/10 p-4">
                         <div className="space-y-2 text-sm">
@@ -255,9 +249,11 @@ export function LabResultsMatrix({
                         </div>
                       </td>
                     </tr>
-                  ] : [])
-                ].flat())
-              ))}
+                  );
+                }
+                
+                return rows;
+              })}
             </tbody>
           </table>
         </div>
