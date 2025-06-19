@@ -14,7 +14,7 @@ export interface CriticalResultWorkflow {
   testName: string;
   resultValue: string;
   criticalFlag: boolean;
-  encounterCreated?: number;
+  encounterExtended?: number;
   providersNotified: number[];
   followUpOrders: number[];
 }
@@ -72,9 +72,9 @@ export class LabWorkflowService {
       return workflow;
     }
 
-    // Step 1: Create follow-up encounter for critical results
-    const encounterId = await this.createFollowUpEncounter(labResult.patientId, resultId);
-    workflow.encounterCreated = encounterId;
+    // Step 1: Extend existing encounter with critical result information
+    const encounterId = await this.extendExistingEncounter(labResult.patientId, resultId);
+    workflow.encounterExtended = encounterId;
 
     // Step 2: Generate follow-up recommendations using AI
     const recommendations = await this.generateFollowUpRecommendations(labResult);
@@ -98,40 +98,54 @@ export class LabWorkflowService {
   }
 
   /**
-   * Create a follow-up encounter for critical lab results
+   * Extend existing encounter with critical lab result information
    */
-  private static async createFollowUpEncounter(patientId: number, resultId: number): Promise<number> {
-    console.log(`📋 [Lab Workflow] Creating follow-up encounter for patient ${patientId}`);
+  private static async extendExistingEncounter(patientId: number, resultId: number): Promise<number> {
+    console.log(`📋 [Lab Workflow] Extending existing encounter for patient ${patientId} with critical result ${resultId}`);
     
-    // Get patient information
-    const patient = await db
+    // Find the most recent encounter for this patient
+    const recentEncounters = await db
       .select({
-        id: patients.id,
-        firstName: patients.firstName,
-        lastName: patients.lastName
+        id: encounters.id,
+        note: encounters.note,
+        encounterType: encounters.encounterType
       })
-      .from(patients)
-      .where(eq(patients.id, patientId))
+      .from(encounters)
+      .where(eq(encounters.patientId, patientId))
+      .orderBy(desc(encounters.createdAt))
       .limit(1);
 
-    if (!patient.length) {
-      throw new Error(`Patient ${patientId} not found`);
+    if (!recentEncounters.length) {
+      console.log(`⚠️ [Lab Workflow] No existing encounter found, creating new one for critical result`);
+      // If no encounter exists, create a minimal one
+      const [encounter] = await db.insert(encounters).values({
+        patientId: patientId,
+        providerId: 2,
+        encounterType: 'lab_review',
+        chiefComplaint: `Critical lab result review - Result ID: ${resultId}`,
+        note: `Critical lab result requiring immediate attention and follow-up.`
+      }).returning({ id: encounters.id });
+
+      return encounter.id;
     }
 
-    // Create the encounter
-    const [encounter] = await db.insert(encounters).values({
-      patientId: patientId,
-      providerId: 2, // Default to system provider, can be reassigned
-      encounterType: 'follow_up',
-      status: 'scheduled',
-      chiefComplaint: `Critical lab result follow-up - Lab Result ID: ${resultId}`,
-      note: `Automated encounter created for critical lab result review and follow-up care planning.`,
-      encounterDate: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).returning({ id: encounters.id });
+    const encounter = recentEncounters[0];
+    
+    // Extend the existing encounter note with critical result information
+    const criticalResultNote = `\n\n--- CRITICAL LAB RESULT ALERT ---\nResult ID: ${resultId}\nTime: ${new Date().toISOString()}\nStatus: Requires immediate provider review and follow-up\n--- END CRITICAL ALERT ---`;
+    
+    const updatedNote = (encounter.note || '') + criticalResultNote;
+    
+    // Update the encounter with extended information
+    await db
+      .update(encounters)
+      .set({
+        note: updatedNote,
+        updatedAt: new Date()
+      })
+      .where(eq(encounters.id, encounter.id));
 
-    console.log(`✅ [Lab Workflow] Created encounter ${encounter.id} for critical lab follow-up`);
+    console.log(`✅ [Lab Workflow] Extended encounter ${encounter.id} with critical result information`);
     return encounter.id;
   }
 

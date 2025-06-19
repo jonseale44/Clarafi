@@ -126,10 +126,10 @@ router.get("/critical-queue", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/lab-workflow/follow-up-encounters/:patientId
- * Get follow-up encounters created for a patient's lab results
+ * GET /api/lab-workflow/extended-encounters/:patientId
+ * Get encounters that have been extended with critical lab result information
  */
-router.get("/follow-up-encounters/:patientId", async (req: Request, res: Response) => {
+router.get("/extended-encounters/:patientId", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return APIResponseHandler.unauthorized(res);
@@ -140,28 +140,28 @@ router.get("/follow-up-encounters/:patientId", async (req: Request, res: Respons
       return APIResponseHandler.badRequest(res, "Valid patient ID is required");
     }
 
-    const followUpEncounters = await db
+    const extendedEncounters = await db
       .select({
         id: encounters.id,
         encounterType: encounters.encounterType,
-        status: encounters.status,
         chiefComplaint: encounters.chiefComplaint,
-        encounterDate: encounters.encounterDate,
-        providerId: encounters.providerId
+        note: encounters.note,
+        providerId: encounters.providerId,
+        createdAt: encounters.createdAt
       })
       .from(encounters)
-      .where(
-        and(
-          eq(encounters.patientId, patientId),
-          eq(encounters.encounterType, 'follow_up')
-        )
-      )
-      .orderBy(desc(encounters.encounterDate));
+      .where(eq(encounters.patientId, patientId))
+      .orderBy(desc(encounters.createdAt));
 
-    return APIResponseHandler.success(res, followUpEncounters);
+    // Filter for encounters that contain critical lab result alerts
+    const encountersWithCriticalResults = extendedEncounters.filter(enc => 
+      enc.note && enc.note.includes('CRITICAL LAB RESULT ALERT')
+    );
+
+    return APIResponseHandler.success(res, encountersWithCriticalResults);
   } catch (error) {
-    console.error("Error fetching follow-up encounters:", error);
-    return APIResponseHandler.error(res, "ENCOUNTER_ERROR", "Failed to fetch follow-up encounters");
+    console.error("Error fetching extended encounters:", error);
+    return APIResponseHandler.error(res, "ENCOUNTER_ERROR", "Failed to fetch extended encounters");
   }
 });
 
