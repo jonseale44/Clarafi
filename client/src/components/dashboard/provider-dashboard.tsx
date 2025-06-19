@@ -64,6 +64,8 @@ interface LabOrderToReview {
 export function ProviderDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedLabResult, setSelectedLabResult] = useState<LabOrderToReview | null>(null);
+  const [selectedPatientGroup, setSelectedPatientGroup] = useState<any>(null);
+  const [selectedLabForReview, setSelectedLabForReview] = useState<any>(null);
   const [reviewNote, setReviewNote] = useState("");
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [generatedMessage, setGeneratedMessage] = useState("");
@@ -549,7 +551,7 @@ export function ProviderDashboard() {
               
               {!labOrdersLoading && (() => {
                 // Group lab orders by patient
-                const patientGroups = labOrders.reduce((groups, lab) => {
+                const patientGroups = labOrders.reduce((groups: any, lab: any) => {
                   const key = lab.patientId;
                   if (!groups[key]) {
                     groups[key] = {
@@ -562,7 +564,7 @@ export function ProviderDashboard() {
                   return groups;
                 }, {});
 
-                return Object.values(patientGroups).map((group) => (
+                return Object.values(patientGroups).map((group: any) => (
                   <div key={group.patientId} className="border rounded-lg p-4 bg-white">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
@@ -610,7 +612,7 @@ export function ProviderDashboard() {
                                 {typeof lab.results === 'string' ? lab.results : JSON.stringify(lab.results)}
                               </span>
                             )}
-                            <Badge className={getPriorityColor(lab.priority)} size="sm">
+                            <Badge className={getPriorityColor(lab.priority)}>
                               {lab.priority}
                             </Badge>
                           </div>
