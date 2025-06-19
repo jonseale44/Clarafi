@@ -64,6 +64,7 @@ export function LabResultsMatrix({
   const queryClient = useQueryClient();
 
   console.log('🧪 [LabResultsMatrix] Rendering with:', { patientId, mode, encounterId });
+  console.log('🧪 [LabResultsMatrix] Pending review IDs:', pendingReviewIds);
 
   // Permission check for unreview functionality
   const canUnreview = (result: any) => {
