@@ -72,6 +72,8 @@ export function ProviderDashboard() {
   const [reviewedResultIds, setReviewedResultIds] = useState<Set<number>>(new Set());
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [generatedMessage, setGeneratedMessage] = useState("");
+  const [selectedForUnreview, setSelectedForUnreview] = useState<any>(null);
+  const [unreviewReason, setUnreviewReason] = useState("");
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   
   const { toast } = useToast();
@@ -741,6 +743,25 @@ export function ProviderDashboard() {
                     });
                     setShowUniversalReview(true);
                   }}
+                  onUnreviewEncounter={(date, encounterIds, resultIds) => {
+                    setSelectedForUnreview({
+                      type: 'encounter',
+                      date,
+                      encounterIds,
+                      resultIds,
+                      patientName: selectedPatientGroup.patientName,
+                      patientId: selectedPatientGroup.patientId
+                    });
+                  }}
+                  onUnreviewTestGroup={(testName, resultIds) => {
+                    setSelectedForUnreview({
+                      type: 'testGroup',
+                      testName,
+                      resultIds,
+                      patientName: selectedPatientGroup.patientName,
+                      patientId: selectedPatientGroup.patientId
+                    });
+                  }}
                 />
               </div>
             )}
@@ -912,6 +933,7 @@ export function ProviderDashboard() {
                           
                           // Refresh the data to show updated status
                           queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/patients', patientId, 'lab-results'] });
                           
                         } catch (error) {
                           console.error('🚨 [Dashboard] Review failed with detailed error:', {
@@ -948,6 +970,105 @@ export function ProviderDashboard() {
               </div>
             )}
 
+            {/* Unreview Dialog */}
+            {selectedForUnreview && (
+              <div className="border-t pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-red-600">
+                    Unreview: {selectedForUnreview.type === 'encounter' ? `Labs from ${selectedForUnreview.date}` : `${selectedForUnreview.testName} Results`}
+                  </h4>
+                  <Badge variant="destructive">
+                    {selectedForUnreview.resultIds?.length || 0} results
+                  </Badge>
+                </div>
+
+                <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                  <p className="text-sm text-red-800 font-medium mb-2">Important:</p>
+                  <p className="text-sm text-red-700">
+                    Unreviewing lab results will return them to "pending review" status. This action creates an audit trail and should only be used for workflow corrections.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="unreviewReason">Reason for Unreview (Required)</Label>
+                  <Textarea
+                    id="unreviewReason"
+                    placeholder="Enter detailed reason for unreviewing (e.g., 'Need to add additional clinical notes', 'Incorrect review by mistake', 'Requires re-interpretation after additional data')..."
+                    value={unreviewReason}
+                    onChange={(e) => setUnreviewReason(e.target.value)}
+                    className="min-h-[100px]"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedForUnreview(null);
+                      setUnreviewReason("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={async () => {
+                      if (!unreviewReason.trim()) {
+                        toast({
+                          title: "Reason Required",
+                          description: "Please provide a reason for unreviewing these results.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+
+                      try {
+                        const response = await fetch('/api/lab-review/unreview', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            resultIds: selectedForUnreview.resultIds,
+                            unreviewReason: unreviewReason,
+                            reviewType: selectedForUnreview.type
+                          })
+                        });
+
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                          throw new Error(result.error?.message || 'Unreview failed');
+                        }
+
+                        toast({
+                          title: "Unreview Completed",
+                          description: `Successfully unreviewed ${result.data?.resultCount || 0} lab results`,
+                          duration: 3000,
+                        });
+
+                        setSelectedForUnreview(null);
+                        setUnreviewReason("");
+                        
+                        // Refresh data
+                        queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
+                        queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedForUnreview.patientId, 'lab-results'] });
+
+                      } catch (error: any) {
+                        toast({
+                          title: "Unreview Failed",
+                          description: error.message || "Failed to unreview lab results",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    disabled={!unreviewReason.trim()}
+                  >
+                    Unreview Results
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end">
               <Button 
                 variant="outline" 
@@ -955,7 +1076,9 @@ export function ProviderDashboard() {
                   setIsReviewDialogOpen(false);
                   setSelectedPatientGroup(null);
                   setSelectedLabForReview(null);
+                  setSelectedForUnreview(null);
                   setReviewNote("");
+                  setUnreviewReason("");
                   setGeneratedMessage("");
                 }}
               >

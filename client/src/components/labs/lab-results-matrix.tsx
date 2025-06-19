@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical, RotateCcw } from 'lucide-react';
 
 interface LabResultsMatrixProps {
   patientId: number;
@@ -14,6 +14,8 @@ interface LabResultsMatrixProps {
   onReviewEncounter?: (date: string, encounterIds: number[]) => void;
   onReviewTestGroup?: (testName: string, resultIds: number[]) => void;
   onReviewSpecific?: (testName: string, date: string, resultId: number) => void;
+  onUnreviewEncounter?: (date: string, encounterIds: number[], resultIds: number[]) => void;
+  onUnreviewTestGroup?: (testName: string, resultIds: number[]) => void;
 }
 
 interface MatrixData {
@@ -40,7 +42,9 @@ export function LabResultsMatrix({
   pendingReviewIds = [],
   onReviewEncounter,
   onReviewTestGroup,
-  onReviewSpecific
+  onReviewSpecific,
+  onUnreviewEncounter,
+  onUnreviewTestGroup
 }: LabResultsMatrixProps) {
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
   const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['Complete Blood Count', 'Basic Metabolic Panel'])); // Default open panels

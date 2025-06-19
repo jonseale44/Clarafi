@@ -260,4 +260,57 @@ router.get("/summary/:patientId", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/lab-review/unreview
+ * Remove review status from lab results (for workflow corrections)
+ */
+router.post("/unreview", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return APIResponseHandler.unauthorized(res);
+    }
+
+    const validation = BatchReviewSchema.omit({ reviewNote: true }).extend({
+      unreviewReason: z.string().min(1).max(500),
+      reviewType: z.enum(['individual', 'encounter', 'panel', 'batch', 'correction'])
+    }).safeParse(req.body);
+
+    if (!validation.success) {
+      return APIResponseHandler.badRequest(res, "Invalid request data", validation.error.errors);
+    }
+
+    const { resultIds, unreviewReason, reviewType } = validation.data;
+    const unreviewedBy = (req as any).user.id;
+
+    console.log('🏥 [LabReviewRoutes] Processing unreview request:', { 
+      resultIds, 
+      unreviewReason: unreviewReason.substring(0, 100) + (unreviewReason.length > 100 ? '...' : ''),
+      unreviewedBy,
+      reviewType 
+    });
+
+    // Perform unreview operation
+    const unreviewResult = await labReviewService.performUnreview({
+      resultIds,
+      unreviewReason,
+      unreviewedBy,
+      unreviewedAt: new Date(),
+      reviewType,
+      clinicalContext: `Unreview operation: ${unreviewReason}`
+    });
+
+    return APIResponseHandler.success(res, {
+      message: `Successfully unreviewed ${unreviewResult.successCount} lab results`,
+      resultCount: unreviewResult.successCount,
+      unreviewedResults: unreviewResult.processedResultIds,
+      auditTrail: unreviewResult.auditTrail,
+      errors: unreviewResult.errors
+    });
+
+  } catch (error) {
+    console.error('🏥 [LabReviewRoutes] Unreview error:', error);
+    return APIResponseHandler.error(res, "UNREVIEW_FAILED", "Failed to unreview lab results", 500);
+  }
+});
+
 export default router;
