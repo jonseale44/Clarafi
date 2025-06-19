@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical } from 'lucide-react';
 
 interface LabResultsMatrixProps {
   patientId: number;
@@ -43,8 +43,10 @@ export function LabResultsMatrix({
   onReviewSpecific
 }: LabResultsMatrixProps) {
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
+  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['Complete Blood Count', 'Basic Metabolic Panel'])); // Default open panels
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
   const [selectedTestRows, setSelectedTestRows] = useState<Set<string>>(new Set());
+  const [selectedPanels, setSelectedPanels] = useState<Set<string>>(new Set());
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [hoveredTestRow, setHoveredTestRow] = useState<string | null>(null);
 
@@ -57,6 +59,16 @@ export function LabResultsMatrix({
 
   const results = (labResults as any) || [];
   console.log('🧪 [LabResultsMatrix] Processing results:', results.length);
+
+  // Define lab panel groupings
+  const labPanels: { [key: string]: string[] } = {
+    'Complete Blood Count': ['Hemoglobin', 'Hematocrit', 'White Blood Cell Count', 'Red Blood Cell Count', 'Platelet Count', 'Mean Corpuscular Volume', 'Mean Corpuscular Hemoglobin', 'Mean Corpuscular Hemoglobin Concentration'],
+    'Basic Metabolic Panel': ['Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2'],
+    'Comprehensive Metabolic Panel': ['Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2', 'Total Protein', 'Albumin', 'Total Bilirubin', 'AST', 'ALT', 'Alkaline Phosphatase'],
+    'Lipid Panel': ['Total Cholesterol', 'HDL Cholesterol', 'LDL Cholesterol', 'Triglycerides'],
+    'Thyroid Function': ['TSH', 'T3', 'T4', 'Free T4'],
+    'Other': []
+  };
 
   const matrixData = useMemo(() => {
     if (!results.length) return [];
@@ -95,6 +107,39 @@ export function LabResultsMatrix({
 
     return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));
   }, [results]);
+
+  // Group tests by lab panels
+  const groupedData = useMemo(() => {
+    const groups: { [key: string]: MatrixData[] } = {};
+    
+    // Initialize groups
+    Object.keys(labPanels).forEach(panel => {
+      groups[panel] = [];
+    });
+
+    matrixData.forEach(test => {
+      let assigned = false;
+      for (const [panelName, testNames] of Object.entries(labPanels)) {
+        if (testNames.includes(test.testName)) {
+          groups[panelName].push(test);
+          assigned = true;
+          break;
+        }
+      }
+      if (!assigned) {
+        groups['Other'].push(test);
+      }
+    });
+
+    // Remove empty groups
+    Object.keys(groups).forEach(key => {
+      if (groups[key].length === 0) {
+        delete groups[key];
+      }
+    });
+
+    return groups;
+  }, [matrixData]);
 
   const dateColumns = useMemo(() => {
     const allDates = new Set<string>();
@@ -150,8 +195,28 @@ export function LabResultsMatrix({
     setSelectedTestRows(newSelected);
   };
 
+  const handlePanelClick = (panelName: string) => {
+    const newSelected = new Set(selectedPanels);
+    if (newSelected.has(panelName)) {
+      newSelected.delete(panelName);
+    } else {
+      newSelected.add(panelName);
+    }
+    setSelectedPanels(newSelected);
+  };
+
+  const togglePanelExpansion = (panelName: string) => {
+    const newExpanded = new Set(expandedPanels);
+    if (newExpanded.has(panelName)) {
+      newExpanded.delete(panelName);
+    } else {
+      newExpanded.add(panelName);
+    }
+    setExpandedPanels(newExpanded);
+  };
+
   const handleReviewSelection = () => {
-    if (selectedDates.size > 0 && selectedTestRows.size === 0) {
+    if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
       // Review by encounter(s)
       const encounterIds: number[] = [];
       selectedDates.forEach(date => {
@@ -159,6 +224,16 @@ export function LabResultsMatrix({
         encounterIds.push(...encounters);
       });
       onReviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds);
+    } else if (selectedPanels.size > 0 && selectedDates.size === 0) {
+      // Review by lab panel(s)
+      const resultIds: number[] = [];
+      selectedPanels.forEach(panelName => {
+        const panelTests = groupedData[panelName] || [];
+        panelTests.forEach(test => {
+          resultIds.push(...test.results.map(r => r.id));
+        });
+      });
+      onReviewTestGroup?.(Array.from(selectedPanels).join(', '), resultIds);
     } else if (selectedTestRows.size > 0 && selectedDates.size === 0) {
       // Review by test group(s)
       const resultIds: number[] = [];
@@ -184,6 +259,7 @@ export function LabResultsMatrix({
   const clearSelection = () => {
     setSelectedDates(new Set());
     setSelectedTestRows(new Set());
+    setSelectedPanels(new Set());
   };
 
   const getDateHeaderClass = (date: string) => {
@@ -307,7 +383,7 @@ export function LabResultsMatrix({
                 <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-muted/30">
                   <div className="flex items-center gap-2">
                     Test
-                    {(selectedDates.size > 0 || selectedTestRows.size > 0) && (
+                    {(selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) && (
                       <div className="flex gap-1">
                         <Button
                           size="sm"
@@ -348,91 +424,154 @@ export function LabResultsMatrix({
             </thead>
             
             <tbody>
-              {matrixData.flatMap((test) => {
-                const rows = [
-                  <tr key={test.testName} className="border-b hover:bg-muted/20">
+              {Object.entries(groupedData).flatMap(([panelName, tests]) => {
+                const panelRows = [];
+                
+                // Panel header row
+                const isPanelSelected = selectedPanels.has(panelName);
+                const isPanelExpanded = expandedPanels.has(panelName);
+                const panelHasPendingResults = tests.some(test => 
+                  test.results.some(result => result.needsReview)
+                );
+                
+                let panelClass = "border-b-2 border-gray-300 bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors";
+                if (isPanelSelected) {
+                  panelClass += " bg-blue-200";
+                } else if (panelHasPendingResults) {
+                  panelClass += " bg-yellow-100";
+                }
+                
+                panelRows.push(
+                  <tr key={`panel-${panelName}`} className={panelClass}>
                     <td 
-                      className={getTestRowClass(test.testName)}
-                      onClick={() => handleTestRowClick(test.testName)}
-                      onMouseEnter={() => setHoveredTestRow(test.testName)}
-                      onMouseLeave={() => setHoveredTestRow(null)}
+                      className="p-3 sticky left-0 bg-inherit"
+                      onClick={() => handlePanelClick(panelName)}
                     >
                       <div className="flex items-center gap-2">
-                        {selectedTestRows.has(test.testName) && <TestTube className="h-3 w-3 text-blue-600" />}
-                        {test.results.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleTestExpansion(test.testName);
-                            }}
-                            className="h-5 w-5 p-0"
-                          >
-                            {expandedTests.has(test.testName) ? (
-                              <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ChevronRight className="h-3 w-3" />
-                            )}
-                          </Button>
-                        )}
+                        {isPanelSelected && <FlaskConical className="h-4 w-4 text-blue-600" />}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePanelExpansion(panelName);
+                          }}
+                          className="h-6 w-6 p-0"
+                        >
+                          {isPanelExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
                         <div>
-                          <div className="font-medium text-sm">{test.testName}</div>
+                          <div className="font-semibold text-sm">{panelName}</div>
                           <div className="text-xs text-muted-foreground">
-                            ({test.unit})
+                            {tests.length} tests
+                            {panelHasPendingResults && " • Pending review"}
                           </div>
                         </div>
                       </div>
                     </td>
-                    
-                    {displayColumns.map(date => {
-                      const result = test.results.find(r => r.date === date);
-                      return (
-                        <td key={date} className="p-3 text-center">
-                          {result ? (
-                            <div className="relative">
-                              <div className={`px-2 py-1 rounded text-sm ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview)}`}>
-                                {result.value}
-                                {result.criticalFlag && (
-                                  <AlertTriangle className="inline h-3 w-3 ml-1" />
+                    {displayColumns.map(date => (
+                      <td key={date} className="p-3 text-center">
+                        <span className="text-muted-foreground text-xs">—</span>
+                      </td>
+                    ))}
+                  </tr>
+                );
+                
+                // Individual test rows (only if panel is expanded)
+                if (isPanelExpanded) {
+                  tests.forEach((test) => {
+                    const testRows = [
+                      <tr key={test.testName} className="border-b hover:bg-muted/20">
+                        <td 
+                          className={getTestRowClass(test.testName)}
+                          onClick={() => handleTestRowClick(test.testName)}
+                          onMouseEnter={() => setHoveredTestRow(test.testName)}
+                          onMouseLeave={() => setHoveredTestRow(null)}
+                        >
+                          <div className="flex items-center gap-2 ml-6">
+                            {selectedTestRows.has(test.testName) && <TestTube className="h-3 w-3 text-blue-600" />}
+                            {test.results.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleTestExpansion(test.testName);
+                                }}
+                                className="h-5 w-5 p-0"
+                              >
+                                {expandedTests.has(test.testName) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
                                 )}
-                                {result.needsReview && (
-                                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
-                                )}
+                              </Button>
+                            )}
+                            <div>
+                              <div className="font-medium text-sm">{test.testName}</div>
+                              <div className="text-xs text-muted-foreground">
+                                ({test.unit})
                               </div>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
+                          </div>
                         </td>
+                        
+                        {displayColumns.map(date => {
+                          const result = test.results.find(r => r.date === date);
+                          return (
+                            <td key={date} className="p-3 text-center">
+                              {result ? (
+                                <div className="relative">
+                                  <div className={`px-2 py-1 rounded text-sm ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview)}`}>
+                                    {result.value}
+                                    {result.criticalFlag && (
+                                      <AlertTriangle className="inline h-3 w-3 ml-1" />
+                                    )}
+                                    {result.needsReview && (
+                                      <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ];
+                    
+                    if (expandedTests.has(test.testName)) {
+                      testRows.push(
+                        <tr key={`${test.testName}-expanded`}>
+                          <td colSpan={displayColumns.length + 1} className="bg-muted/10 p-4">
+                            <div className="space-y-2 text-sm ml-6">
+                              <div>
+                                <span className="font-medium">Reference Range: </span>
+                                {test.referenceRange}
+                              </div>
+                              <div>
+                                <span className="font-medium">Test Code: </span>
+                                {test.testCode}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Click test values to view detailed result information
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
                       );
-                    })}
-                  </tr>
-                ];
-                
-                if (expandedTests.has(test.testName)) {
-                  rows.push(
-                    <tr key={`${test.testName}-expanded`}>
-                      <td colSpan={displayColumns.length + 1} className="bg-muted/10 p-4">
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className="font-medium">Reference Range: </span>
-                            {test.referenceRange}
-                          </div>
-                          <div>
-                            <span className="font-medium">Test Code: </span>
-                            {test.testCode}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Click test values to view detailed result information
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
+                    }
+                    
+                    panelRows.push(...testRows);
+                  });
                 }
                 
-                return rows;
+                return panelRows;
               })}
             </tbody>
           </table>

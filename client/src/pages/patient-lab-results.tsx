@@ -56,11 +56,16 @@ export function PatientLabResults() {
             patientId={parseInt(patientId)} 
             mode="full"
             showTitle={false}
-            onReviewResult={(resultId, testName, encounterId) => {
-              // Navigate to encounter if available
-              if (encounterId) {
-                window.location.href = `/encounters/${encounterId}`;
+            onReviewEncounter={(date, encounterIds) => {
+              if (encounterIds.length > 0) {
+                window.location.href = `/encounters/${encounterIds[0]}`;
               }
+            }}
+            onReviewTestGroup={(testName, resultIds) => {
+              console.log('Review test group:', testName, resultIds);
+            }}
+            onReviewSpecific={(testName, date, resultId) => {
+              console.log('Review specific:', testName, date, resultId);
             }}
           />
         </TabsContent>
