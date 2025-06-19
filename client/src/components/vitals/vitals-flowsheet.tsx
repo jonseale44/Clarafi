@@ -843,15 +843,17 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     }
   }, [entry.id, entry.systolicBp, entry.diastolicBp, entry.heartRate, entry.temperature, entry.weight, entry.height, entry.respiratoryRate, entry.oxygenSaturation, entry.painScale, encounterId, patientId]);
 
-  // Auto-parse functionality with debouncing
+  // Auto-parse functionality with debouncing - prevent multiple calls
   const debouncedParse = useCallback(
     (() => {
       let timeoutId: NodeJS.Timeout;
+      let lastParsedText = '';
       return (text: string) => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
-          if (text.trim() && text.length > 5) { // Only parse if meaningful text
+          if (text.trim() && text.length > 5 && text !== lastParsedText && !quickParseMutation.isPending) {
             console.log("🔄 [Auto-Parse] Triggering auto-parse for:", text);
+            lastParsedText = text;
             quickParseMutation.mutate(text);
           }
         }, 1500); // 1.5 second delay after user stops typing
@@ -860,12 +862,12 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     [quickParseMutation]
   );
 
-  // Trigger auto-parse when quickParseText changes - but avoid triggering on empty text
-  useEffect(() => {
-    if (quickParseText && quickParseText.trim().length > 5) {
-      debouncedParse(quickParseText);
-    }
-  }, [quickParseText, debouncedParse]);
+  // Disabled auto-parse to prevent infinite loops - will be manually triggered
+  // useEffect(() => {
+  //   if (quickParseText && quickParseText.trim().length > 5 && !quickParseMutation.isPending) {
+  //     debouncedParse(quickParseText);
+  //   }
+  // }, [quickParseText, debouncedParse, quickParseMutation.isPending]);
 
   const updateField = (field: keyof VitalsEntry, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
