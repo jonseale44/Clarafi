@@ -35,7 +35,7 @@ router.post("/generate-message", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error generating lab message:", error);
-    return APIResponseHandler.error(res, "MESSAGE_GENERATION_ERROR", "Failed to generate lab message");
+    return APIResponseHandler.error(res, error as Error, 500, "MESSAGE_GENERATION_ERROR");
   }
 });
 
@@ -175,7 +175,7 @@ router.get("/preview/:patientId/:encounterId", async (req: Request, res: Respons
     });
   } catch (error) {
     console.error("Error generating message preview:", error);
-    return APIResponseHandler.error(res, "PREVIEW_ERROR", "Failed to generate message preview");
+    return APIResponseHandler.error(res, error as Error, 500, "PREVIEW_ERROR");
   }
 });
 
