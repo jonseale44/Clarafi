@@ -66,6 +66,7 @@ export function ProviderDashboard() {
   const [selectedLabResult, setSelectedLabResult] = useState<LabOrderToReview | null>(null);
   const [selectedPatientGroup, setSelectedPatientGroup] = useState<any>(null);
   const [selectedLabForReview, setSelectedLabForReview] = useState<any>(null);
+  const [showUniversalReview, setShowUniversalReview] = useState(false);
   const [reviewNote, setReviewNote] = useState("");
   const [reviewingInProgress, setReviewingInProgress] = useState(false);
   const [reviewedResultIds, setReviewedResultIds] = useState<Set<number>>(new Set());
@@ -825,85 +826,79 @@ export function ProviderDashboard() {
                         setReviewingInProgress(true);
                         
                         try {
-                          console.log('🔍 [Dashboard] Starting review process for:', selectedLabForReview);
+                          console.log('🔍 [Dashboard] Starting professional lab review process for:', selectedLabForReview);
                           
-                          const promises: Promise<any>[] = [];
-                          let resultIdsToReview: number[] = [];
+                          let reviewResponse;
                           
                           if (selectedLabForReview.type === 'encounter' && selectedLabForReview.date && selectedLabForReview.patientId) {
-                            console.log('🔍 [Dashboard] Processing encounter review - fetching actual lab results for date:', selectedLabForReview.date);
+                            // Use professional lab review service for date-based review
+                            console.log('🔍 [Dashboard] Using professional date-based review service');
                             
-                            // Fetch the actual lab results for this patient and filter by date
-                            try {
-                              const response = await fetch(`/api/patients/${selectedLabForReview.patientId}/lab-results`);
-                              const actualLabResults = await response.json();
-                              
-                              console.log('🔍 [Dashboard] Fetched', actualLabResults.length, 'actual lab results');
-                              
-                              // Filter lab results by the selected date
-                              const selectedDate = new Date(selectedLabForReview.date);
-                              const selectedDateOnly = selectedDate.toISOString().split('T')[0];
-                              
-                              const matchingResults = actualLabResults.filter((result: any) => {
-                                if (!result.resultAvailableAt) return false;
-                                
-                                const resultDate = new Date(result.resultAvailableAt);
-                                if (isNaN(resultDate.getTime())) return false;
-                                
-                                const resultDateOnly = resultDate.toISOString().split('T')[0];
-                                const exactMatch = result.resultAvailableAt === selectedLabForReview.date;
-                                const dateOnlyMatch = resultDateOnly === selectedDateOnly;
-                                
-                                console.log('🔍 [Dashboard] Checking result', result.id, ':', {
-                                  resultAvailableAt: result.resultAvailableAt,
-                                  resultDateOnly,
-                                  selectedDate: selectedLabForReview.date,
-                                  selectedDateOnly,
-                                  exactMatch,
-                                  dateOnlyMatch
-                                });
-                                
-                                return exactMatch || dateOnlyMatch;
-                              });
-                              
-                              resultIdsToReview = matchingResults.map((result: any) => result.id);
-                              console.log('🔍 [Dashboard] Found', resultIdsToReview.length, 'matching results:', resultIdsToReview);
-                              
-                              resultIdsToReview.forEach((resultId: number) => {
-                                promises.push(
-                                  reviewLabResultMutation.mutateAsync({
-                                    resultId,
-                                    reviewNote: reviewNote
-                                  })
-                                );
-                              });
-                            } catch (fetchError) {
-                              console.error('🔍 [Dashboard] Error fetching lab results:', fetchError);
-                              throw fetchError;
-                            }
-                          } else if (selectedLabForReview.type === 'testGroup') {
-                            console.log('🔍 [Dashboard] Processing test group review with resultIds:', selectedLabForReview.resultIds);
-                            resultIdsToReview = selectedLabForReview.resultIds || [];
-                            resultIdsToReview.forEach((resultId: number) => {
-                              promises.push(
-                                reviewLabResultMutation.mutateAsync({
-                                  resultId,
-                                  reviewNote: reviewNote
-                                })
-                              );
-                            });
-                          } else {
-                            console.log('🔍 [Dashboard] Processing specific review with resultId:', selectedLabForReview.resultId);
-                            resultIdsToReview = [selectedLabForReview.resultId];
-                            promises.push(
-                              reviewLabResultMutation.mutateAsync({
-                                resultId: selectedLabForReview.resultId,
-                                reviewNote: reviewNote
+                            reviewResponse = await fetch('/api/lab-review/by-date', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                patientId: selectedLabForReview.patientId,
+                                selectedDate: selectedLabForReview.date,
+                                reviewNote: reviewNote,
+                                reviewType: 'encounter'
                               })
-                            );
+                            });
+                            
+                          } else if (selectedLabForReview.type === 'testGroup' && selectedLabForReview.testName) {
+                            // Use professional panel-based review service
+                            console.log('🔍 [Dashboard] Using professional panel-based review service');
+                            
+                            reviewResponse = await fetch('/api/lab-review/by-panel', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                patientId: selectedLabForReview.patientId,
+                                panelNames: [selectedLabForReview.testName],
+                                reviewNote: reviewNote,
+                                reviewType: 'panel'
+                              })
+                            });
+                            
+                          } else if (selectedLabForReview.resultIds && selectedLabForReview.resultIds.length > 0) {
+                            // Use professional batch review service
+                            console.log('🔍 [Dashboard] Using professional batch review service');
+                            
+                            reviewResponse = await fetch('/api/lab-review/batch', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                resultIds: selectedLabForReview.resultIds,
+                                reviewNote: reviewNote,
+                                reviewType: selectedLabForReview.type
+                              })
+                            });
+                            
+                          } else if (selectedLabForReview.resultId) {
+                            // Single result review
+                            reviewResponse = await fetch('/api/lab-review/batch', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                resultIds: [selectedLabForReview.resultId],
+                                reviewNote: reviewNote,
+                                reviewType: 'individual'
+                              })
+                            });
                           }
                           
-                          console.log('🔍 [Dashboard] Total result IDs to review:', resultIdsToReview);
+                          if (!reviewResponse) {
+                            throw new Error('No valid review type configured');
+                          }
+                          
+                          const reviewResult = await reviewResponse.json();
+                          console.log('🔍 [Dashboard] Professional review completed:', reviewResult);
+                          
+                          if (!reviewResponse.ok) {
+                            throw new Error(reviewResult.error?.message || 'Review failed');
+                          }
+                          
+
                           
                           await Promise.all(promises);
                           
