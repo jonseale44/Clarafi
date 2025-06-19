@@ -13,6 +13,7 @@ import { PatientView } from "@/pages/patient-view";
 import { EncounterView } from "@/pages/encounter-view";
 
 import { VitalsFlowsheetPage } from "@/pages/vitals-flowsheet-page";
+import { LabCommunicationPage } from "@/pages/lab-communication";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
 
       <ProtectedRoute path="/encounters/:encounterId/vitals" component={VitalsFlowsheetPage} />
       <ProtectedRoute path="/vitals-flowsheet/:encounterId" component={VitalsFlowsheetPage} />
+      <ProtectedRoute path="/lab-communication" component={LabCommunicationPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

@@ -12,7 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Patient, Vitals } from "@shared/schema";
 import { Link } from "wouter";
-import { UserPlus, Trash2 } from "lucide-react";
+import { UserPlus, Trash2, MessageSquare } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -352,6 +352,13 @@ export default function Dashboard() {
               >
                 Imaging
               </button>
+              
+              <Link href="/lab-communication">
+                <button className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+                  <MessageSquare className="h-4 w-4" />
+                  Lab Communication
+                </button>
+              </Link>
             </nav>
           </div>
           
