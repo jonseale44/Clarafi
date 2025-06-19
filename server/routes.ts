@@ -34,7 +34,7 @@ import {
   vitals,
   encounters as encountersTable,
 } from "../shared/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -388,9 +388,8 @@ async function generateSOAPNoteDirect(
     db
       .select()
       .from(vitals)
-      .where(eq(vitals.patientId, patientId))
-      .orderBy(desc(vitals.createdAt))
-      .limit(5),
+      .where(and(eq(vitals.patientId, patientId), eq(vitals.encounterId, parseInt(encounterId))))
+      .orderBy(desc(vitals.recordedAt)),
     db
       .select()
       .from(encountersTable)
