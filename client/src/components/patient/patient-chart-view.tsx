@@ -134,6 +134,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'Invalid Date';
     // Parse date as local date to avoid timezone conversion issues
     const [year, month, day] = dateString.split('-').map(Number);
     const localDate = new Date(year, month - 1, day); // month is 0-indexed
