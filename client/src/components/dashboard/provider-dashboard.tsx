@@ -19,7 +19,9 @@ import {
   User,
   Eye,
   PenTool,
-  RefreshCw
+  RefreshCw,
+  MessageSquare,
+  Send
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -55,6 +57,7 @@ interface LabOrderToReview {
   priority: string;
   results?: any;
   criticalFlag: boolean;
+  encounterId?: number;
 }
 
 export function ProviderDashboard() {
@@ -62,6 +65,8 @@ export function ProviderDashboard() {
   const [selectedLabResult, setSelectedLabResult] = useState<LabOrderToReview | null>(null);
   const [reviewNote, setReviewNote] = useState("");
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [generatedMessage, setGeneratedMessage] = useState("");
+  const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -161,6 +166,7 @@ export function ProviderDashboard() {
   const handleReviewLabResult = (lab: LabOrderToReview) => {
     setSelectedLabResult(lab);
     setReviewNote("");
+    setGeneratedMessage("");
     setIsReviewDialogOpen(true);
   };
 
@@ -180,6 +186,47 @@ export function ProviderDashboard() {
       title: "Data Refreshed",
       description: "Dashboard data has been updated.",
     });
+  };
+
+  const handleGeneratePatientMessage = async () => {
+    if (!selectedLabResult) return;
+    
+    setIsGeneratingMessage(true);
+    try {
+      const response = await fetch('/api/lab-communication/generate-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: selectedLabResult.patientId,
+          encounterId: selectedLabResult.encounterId || 305, // Use encounter 305 as fallback
+          resultIds: [selectedLabResult.id],
+          messageType: selectedLabResult.criticalFlag ? 'abnormal_results' : 'normal_results',
+          preferredChannel: 'portal',
+          forceGenerate: true
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedMessage(data.message || "AI message generated successfully. Check the approval queue for review.");
+        toast({
+          title: "Message Generated",
+          description: "Patient communication has been generated and queued for approval.",
+        });
+      } else {
+        throw new Error('Failed to generate message');
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Could not generate patient message. Please try again.",
+      });
+    } finally {
+      setIsGeneratingMessage(false);
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -599,6 +646,33 @@ export function ProviderDashboard() {
                   onChange={(e) => setReviewNote(e.target.value)}
                   rows={4}
                 />
+              </div>
+
+              {/* Patient Communication Section */}
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Patient Communication</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeneratePatientMessage}
+                    disabled={isGeneratingMessage}
+                    className="flex items-center gap-2"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {isGeneratingMessage ? "Generating..." : "Generate AI Message"}
+                  </Button>
+                </div>
+                
+                {generatedMessage && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Send className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Generated Message</span>
+                    </div>
+                    <p className="text-sm text-blue-700">{generatedMessage}</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2">
