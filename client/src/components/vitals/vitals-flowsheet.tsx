@@ -917,21 +917,29 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
           <Label className="text-sm font-medium text-blue-900">
             Quick Parse Vitals
           </Label>
-          {quickParseMutation.isPending && (
-            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700">
-              Auto-parsing...
-            </Badge>
-          )}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              if (quickParseText.trim() && quickParseText.length > 5) {
+                quickParseMutation.mutate(quickParseText.trim());
+              }
+            }}
+            disabled={quickParseMutation.isPending || !quickParseText.trim()}
+            className="text-xs h-6"
+          >
+            {quickParseMutation.isPending ? 'Parsing...' : 'Parse'}
+          </Button>
         </div>
         <Textarea
-          placeholder="Start typing vitals... (auto-parses as you type) e.g., '120/80, P 80, RR 23, 98% on room air'"
+          placeholder="Enter vitals text then click Parse. e.g., '120/80, P 80, RR 23, 98% on room air'"
           value={quickParseText}
           onChange={(e) => setQuickParseText(e.target.value)}
           className="flex-1 min-h-[60px] resize-none"
           rows={2}
         />
         <p className="text-xs text-blue-700 mt-2">
-          ✨ Auto-parsing enabled - form fields fill automatically as you type. Examples: "BP 120/80", "HR 75", "Temp 98.6F"
+          Enter vitals text above and click "Parse" to automatically fill form fields. Examples: "BP 120/80", "HR 75", "Temp 98.6F"
         </p>
       </div>
 
