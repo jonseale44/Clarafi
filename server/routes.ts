@@ -138,7 +138,7 @@ KNOWN ALLERGIES:
 ${knownAllergies}
 
 RECENT VITALS:
-${recentVitals}
+${encounterVitals}
   `.trim();
 
   // Create nursing template prompt with current state for intelligent merging
@@ -436,7 +436,7 @@ KNOWN ALLERGIES:
 ${knownAllergies}
 
 RECENT VITALS:
-${recentVitals}
+${encounterVitals}
   `.trim();
 
   // Create sophisticated SOAP prompt with your finely-tuned specifications
