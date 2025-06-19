@@ -2,14 +2,14 @@ import {
   users, patients, encounters, vitals, medications, diagnoses,
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
-  patientPhysicalFindings, medicalProblems,
+  patientPhysicalFindings, medicalProblems, externalLabs,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
   type Medication, type InsertMedication
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -534,13 +534,13 @@ export class DatabaseStorage implements IStorage {
         orderedAt: labOrders.orderedAt,
         orderedByName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
         
-        // Review provider info
+        // Review provider info  
         reviewedByName: sql<string>`concat(reviewer.first_name, ' ', reviewer.last_name)`,
       })
       .from(labResults)
       .innerJoin(labOrders, eq(labResults.labOrderId, labOrders.id))
       .leftJoin(users, eq(labOrders.orderedBy, users.id))
-      .leftJoin(users.as('reviewer'), eq(labResults.reviewedBy, users.id))
+      .leftJoin(sql`users reviewer`, eq(labResults.reviewedBy, sql`reviewer.id`))
       .where(eq(labResults.patientId, patientId))
       .orderBy(desc(labResults.resultAvailableAt));
   }
