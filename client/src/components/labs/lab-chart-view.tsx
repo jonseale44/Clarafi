@@ -8,12 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { format, parseISO } from "date-fns";
 import {
   TestTube, AlertTriangle, Clock, Eye, CheckCircle2,
-  Search, Download
+  Search, Download, Info
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -95,6 +97,39 @@ export function LabChartView({ patientId, patientName }: LabChartViewProps) {
     }
   };
 
+  // Helper function to get test abbreviations
+  const getTestAbbreviation = (testName: string): string => {
+    const abbreviations: { [key: string]: string } = {
+      'White Blood Cell Count': 'WBC',
+      'Red Blood Cell Count': 'RBC', 
+      'Mean Corpuscular Volume': 'MCV',
+      'Mean Corpuscular Hemoglobin': 'MCH',
+      'Mean Corpuscular Hemoglobin Concentration': 'MCHC',
+      'Platelet Count': 'PLT',
+      'Hemoglobin': 'HGB',
+      'Hematocrit': 'HCT'
+    };
+    return abbreviations[testName] || testName;
+  };
+
+  // Helper function to get flag color
+  const getFlagColor = (flag: string): string => {
+    if (!flag || flag === 'N') return '';
+    if (flag === 'H' || flag === 'HH') return 'text-red-600 font-medium';
+    if (flag === 'L' || flag === 'LL') return 'text-blue-600 font-medium';
+    return 'text-orange-600 font-medium';
+  };
+
+  // Group results by panel/category for compact display
+  const groupedResults = filteredResults.reduce((groups: any, result: LabResult) => {
+    const panelName = result.testCategory || 'Miscellaneous';
+    if (!groups[panelName]) {
+      groups[panelName] = [];
+    }
+    groups[panelName].push(result);
+    return groups;
+  }, {});
+
   return (
     <div className="space-y-6">
       {/* Header with summary stats */}
@@ -166,75 +201,99 @@ export function LabChartView({ patientId, patientName }: LabChartViewProps) {
           <TabsTrigger value="critical">Critical Values</TabsTrigger>
         </TabsList>
 
-        {/* Lab Results Tab */}
+        {/* Lab Results Tab - Compact View */}
         <TabsContent value="results" className="space-y-4">
           {resultsLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredResults.map((result: LabResult) => (
-                <Card key={result.id} className={`${result.criticalFlag ? 'border-red-200 bg-red-50' : ''}`}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center space-x-3">
-                          <h4 className="font-semibold text-lg">{result.testName}</h4>
-                          {result.abnormalFlag && (
-                            <Badge variant={getStatusColor(result.abnormalFlag)}>
-                              {result.abnormalFlag}
-                            </Badge>
-                          )}
-                          {result.criticalFlag && (
-                            <Badge variant="destructive">Critical</Badge>
-                          )}
-                          {!result.reviewedBy && (
-                            <Badge variant="outline">Pending Review</Badge>
-                          )}
+            <ScrollArea className="h-[600px]">
+              <div className="space-y-4">
+                {Object.entries(groupedResults).map(([panelName, results]: [string, any]) => (
+                  <Card key={panelName}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <TestTube className="h-4 w-4" />
+                          {panelName}
+                        </CardTitle>
+                        <div className="text-sm text-muted-foreground">
+                          {results[0]?.resultAvailableAt && format(parseISO(results[0].resultAvailableAt), 'MMM dd, yyyy')}
                         </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Ultra-Compact Results Grid */}
+                      <div className="p-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="grid grid-cols-7 gap-1 text-xs font-medium text-muted-foreground mb-1 py-1 px-2 bg-gray-100 rounded cursor-help">
+                                <div className="col-span-3">Test</div>
+                                <div className="col-span-2 text-right">Result</div>
+                                <div className="col-span-1 text-center">Flag</div>
+                                <div className="col-span-1 flex items-center justify-center">
+                                  <Info className="h-3 w-3" />
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-md">
+                              <div className="text-xs font-medium mb-2">Reference Ranges for {panelName}</div>
+                              <div className="space-y-1 text-xs">
+                                {results.map((result: LabResult, idx: number) => (
+                                  <div key={idx} className="flex justify-between gap-4">
+                                    <span className="font-medium">{getTestAbbreviation(result.testName)}:</span>
+                                    <span className="text-muted-foreground">{result.referenceRange || 'N/A'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-600">Result:</span>
-                            <p className="font-mono text-lg">
-                              {result.resultValue} {result.resultUnits || ''}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-600">Reference:</span>
-                            <p>{result.referenceRange || 'N/A'}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-600">Date:</span>
-                            <p>{format(parseISO(result.resultAvailableAt), "MMM d, yyyy HH:mm")}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-600">Status:</span>
-                            <p className="capitalize">{result.resultStatus}</p>
-                          </div>
+                        <div className="space-y-0">
+                          {results.map((result: LabResult) => (
+                            <div key={result.id} className={`grid grid-cols-7 gap-1 py-1 px-2 text-sm hover:bg-gray-50 rounded border-b border-gray-100 last:border-b-0 ${result.criticalFlag ? 'bg-red-50 border-red-200' : ''}`}>
+                              <div className="col-span-3 font-medium text-xs flex items-center gap-1">
+                                {result.criticalFlag && <AlertTriangle className="h-3 w-3 text-red-500" />}
+                                {getTestAbbreviation(result.testName)}
+                              </div>
+                              <div className="col-span-2 text-right font-mono text-sm">
+                                <span className={getFlagColor(result.abnormalFlag)}>
+                                  {result.resultValue} <span className="text-xs text-gray-500">{result.resultUnits}</span>
+                                </span>
+                              </div>
+                              <div className="col-span-1 text-center">
+                                {result.abnormalFlag && result.abnormalFlag !== 'N' && (
+                                  <Badge variant={result.abnormalFlag.includes('H') ? 'destructive' : 'secondary'} className="text-xs px-1 py-0 h-4">
+                                    {result.abnormalFlag}
+                                  </Badge>
+                                )}
+                                {result.criticalFlag && (
+                                  <Badge variant="destructive" className="text-xs px-1 py-0 h-4">
+                                    CRIT
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="col-span-1"></div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-
-                      <div className="flex items-center space-x-2 ml-4">
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Details
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {filteredResults.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  <TestTube className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Lab Results Found</h3>
-                  <p>No laboratory results match your current filters.</p>
-                </div>
-              )}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {filteredResults.length === 0 && (
+                  <div className="text-center py-12 text-gray-500">
+                    <TestTube className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Lab Results Found</h3>
+                    <p>No laboratory results match your current filters.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           )}
         </TabsContent>
 
@@ -301,57 +360,63 @@ export function LabChartView({ patientId, patientName }: LabChartViewProps) {
           )}
         </TabsContent>
 
-        {/* Critical Values Tab */}
+        {/* Critical Values Tab - Compact View */}
         <TabsContent value="critical" className="space-y-4">
-          <div className="space-y-3">
-            {criticalResults.map((result: LabResult) => (
-              <Card key={result.id} className="border-red-200 bg-red-50">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center space-x-3">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                        <h4 className="font-semibold text-lg text-red-900">{result.testName}</h4>
-                        <Badge variant="destructive">Critical</Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium text-red-700">Critical Value:</span>
-                          <p className="font-mono text-lg text-red-900">
-                            {result.resultValue} {result.resultUnits || ''}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-red-700">Reference:</span>
-                          <p className="text-red-800">{result.referenceRange || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-red-700">Date:</span>
-                          <p className="text-red-800">{format(parseISO(result.resultAvailableAt), "MMM d, yyyy HH:mm")}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Button size="sm" variant="destructive">
-                        <AlertTriangle className="h-4 w-4 mr-1" />
-                        Acknowledge
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {criticalResults.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-green-300" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Critical Values</h3>
-                <p>No critical laboratory values require immediate attention.</p>
+          <ScrollArea className="h-[600px]">
+            <div className="p-2">
+              <div className="grid grid-cols-7 gap-1 text-xs font-medium text-muted-foreground mb-2 py-1 px-2 bg-red-100 rounded">
+                <div className="col-span-3 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 text-red-600" />
+                  Test
+                </div>
+                <div className="col-span-2 text-right">Critical Value</div>
+                <div className="col-span-1 text-center">Flag</div>
+                <div className="col-span-1 text-center">Date</div>
               </div>
-            )}
-          </div>
+              
+              <div className="space-y-1">
+                {criticalResults.map((result: LabResult) => (
+                  <TooltipProvider key={result.id}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="grid grid-cols-7 gap-1 py-2 text-sm border-l-4 border-red-400 bg-red-50 hover:bg-red-100 rounded px-2 cursor-help">
+                          <div className="col-span-3 font-medium text-sm">
+                            {getTestAbbreviation(result.testName)}
+                          </div>
+                          <div className="col-span-2 text-right font-mono font-semibold text-red-600">
+                            {result.resultValue} <span className="text-xs">{result.resultUnits}</span>
+                          </div>
+                          <div className="col-span-1 text-center">
+                            <Badge variant="destructive" className="text-xs h-4">
+                              CRIT
+                            </Badge>
+                          </div>
+                          <div className="col-span-1 text-center text-xs text-muted-foreground">
+                            {format(parseISO(result.resultAvailableAt), 'MMM dd')}
+                          </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <div className="text-xs">
+                          <div><strong>Full Name:</strong> {result.testName}</div>
+                          <div><strong>Reference:</strong> {result.referenceRange || 'N/A'}</div>
+                          <div><strong>Status:</strong> {result.reviewedBy ? 'Reviewed' : 'Pending Review'}</div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+              
+              {criticalResults.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-green-300" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Critical Values</h3>
+                  <p>No critical laboratory values require immediate attention.</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </TabsContent>
       </Tabs>
     </div>
