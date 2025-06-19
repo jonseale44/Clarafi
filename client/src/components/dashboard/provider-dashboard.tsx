@@ -283,14 +283,19 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors" onClick={() => setActiveTab("lab-reviews")}>
           <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <TestTube className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-blue-800">Lab Orders to Review</p>
-                <p className="text-2xl font-bold text-blue-900">{stats?.labOrdersToReview || 0}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <TestTube className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-800">Lab Orders to Review</p>
+                  <p className="text-2xl font-bold text-blue-900">{stats?.labOrdersToReview || 0}</p>
+                </div>
               </div>
+              <Button size="sm" variant="outline" className="bg-white hover:bg-blue-50">
+                Review
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -346,10 +351,9 @@ export function ProviderDashboard() {
 
       {/* Detailed Views */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pending-encounters">Pending Encounters</TabsTrigger>
-          <TabsTrigger value="lab-reviews">Lab Reviews</TabsTrigger>
           <TabsTrigger value="signatures">Signatures Needed</TabsTrigger>
         </TabsList>
 

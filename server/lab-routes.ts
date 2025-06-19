@@ -14,7 +14,19 @@ const router = Router();
 
 /**
  * GET /api/patients/:patientId/lab-results-enhanced
- * Enhanced lab results with AI interpretation and trending
+ * 
+ * ENHANCED LAB RESULTS ENDPOINT - Use this for comprehensive clinical review
+ * 
+ * Features:
+ * - AI interpretation and clinical context
+ * - Historical trending analysis
+ * - Provider review status tracking
+ * - Clinical decision support data
+ * 
+ * Use cases: Clinical review interfaces, comprehensive lab tables, provider workflows
+ * Performance: Slower due to complex joins and AI data processing
+ * 
+ * For basic lab displays, use /api/patients/:patientId/lab-results instead
  */
 router.get("/patients/:patientId/lab-results-enhanced", async (req: Request, res: Response) => {
   try {

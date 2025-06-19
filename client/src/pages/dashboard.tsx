@@ -244,13 +244,7 @@ export default function Dashboard() {
           </Card>
         );
       
-      case "lab-orders":
-        return (
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Laboratory Orders</h2>
-            <p className="text-gray-600">Lab order management and results tracking.</p>
-          </Card>
-        );
+
       
       case "imaging":
         return (
@@ -332,16 +326,7 @@ export default function Dashboard() {
               >
                 Voice Recording
               </button>
-              <button
-                onClick={() => setActiveTab("lab-orders")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "lab-orders" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                Lab Orders
-              </button>
+
               <button
                 onClick={() => setActiveTab("imaging")}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${

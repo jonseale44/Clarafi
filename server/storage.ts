@@ -476,6 +476,19 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(labOrders.orderedAt));
   }
 
+  /**
+   * BASIC LAB RESULTS ENDPOINT - Use for simple displays and fast loading
+   * 
+   * Features:
+   * - Basic result data only
+   * - Fast query performance
+   * - Essential fields for display
+   * 
+   * Use cases: Lab result matrices, quick patient overviews, encounter summaries
+   * Performance: Fast due to minimal joins
+   * 
+   * For comprehensive clinical review, use /api/patients/:patientId/lab-results-enhanced
+   */
   async getPatientLabResults(patientId: number): Promise<any[]> {
     return await db
       .select({
