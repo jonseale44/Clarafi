@@ -28,8 +28,43 @@ const VitalsEntrySchema = z.object({
 });
 
 /**
+ * GET /api/vitals/patient/:patientId
+ * Get ALL vitals entries for a patient across all encounters (production EMR pattern)
+ * Optional query params: ?currentEncounterId=X to mark which vitals are editable
+ */
+router.get("/patient/:patientId", async (req, res) => {
+  try {
+    const patientId = parseInt(req.params.patientId);
+    const currentEncounterId = req.query.currentEncounterId ? parseInt(req.query.currentEncounterId as string) : null;
+    
+    if (isNaN(patientId)) {
+      return APIResponseHandler.badRequest(res, "Invalid patient ID");
+    }
+
+    const vitalsEntries = await storage.getVitalsByPatient(patientId);
+    
+    // Sort by recorded time, most recent first
+    const sortedEntries = vitalsEntries.sort((a, b) => 
+      new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+    );
+
+    // Mark which entries are editable based on current encounter
+    const enrichedEntries = sortedEntries.map(entry => ({
+      ...entry,
+      isEditable: currentEncounterId ? entry.encounterId === currentEncounterId : false,
+      encounterContext: entry.encounterId === currentEncounterId ? 'current' : 'historical'
+    }));
+
+    return APIResponseHandler.success(res, enrichedEntries);
+  } catch (error) {
+    console.error("❌ [VitalsFlowsheet] Error fetching patient vitals:", error);
+    return APIResponseHandler.error(res, "VITALS_FETCH_ERROR", "Failed to fetch patient vitals");
+  }
+});
+
+/**
  * GET /api/vitals/encounter/:encounterId
- * Get all vitals entries for a specific encounter
+ * Get all vitals entries for a specific encounter (legacy support)
  */
 router.get("/encounter/:encounterId", async (req, res) => {
   try {

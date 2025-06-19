@@ -48,6 +48,9 @@ interface VitalsEntry {
   oxygenSaturation?: number;
   respiratoryRate?: number;
   painScale?: number;
+  // Production EMR fields for global vitals access
+  isEditable?: boolean;
+  encounterContext?: 'current' | 'historical';
   notes?: string;
   alerts?: string[];
   parsedFromText?: boolean;
