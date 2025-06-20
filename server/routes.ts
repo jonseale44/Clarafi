@@ -2965,10 +2965,31 @@ Return only valid JSON without markdown formatting.`;
         );
       }
 
-      // For lab orders, send to laboratory
+      // Process order type-specific workflows
       if (order.orderType === "lab") {
-        // Here you would send to lab interface (HL7, etc.)
-        console.log(`🧪 [Lab] Signed lab order: ${order.testName}`);
+        console.log(`🧪 [Lab] Processing signed lab order: ${order.testName}`);
+        try {
+          const { LabOrderProcessor } = await import("./lab-order-processor.js");
+          await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
+        } catch (labError) {
+          console.error(`❌ [Lab] Failed to process lab order:`, labError);
+        }
+      } else if (order.orderType === "imaging") {
+        console.log(`🩻 [Imaging] Processing signed imaging order: ${order.studyType}`);
+        try {
+          const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
+          await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
+        } catch (imagingError) {
+          console.error(`❌ [Imaging] Failed to process imaging order:`, imagingError);
+        }
+      } else if (order.orderType === "referral") {
+        console.log(`👨‍⚕️ [Referral] Processing signed referral order: ${order.specialtyType}`);
+        try {
+          const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
+          await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
+        } catch (referralError) {
+          console.error(`❌ [Referral] Failed to process referral order:`, referralError);
+        }
       }
 
       // Generate PDF for signed order
