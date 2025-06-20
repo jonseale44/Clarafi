@@ -324,7 +324,7 @@ router.post("/orders/bulk-sign", async (req: Request, res: Response) => {
         }
 
         // Validate order
-        const orderValidation = await this.validateOrder(order[0]);
+        const orderValidation = await validateOrder(order[0]);
         if (!orderValidation.isValid) {
           results.failed.push({ 
             orderId, 
