@@ -173,29 +173,25 @@ export class EncounterValidationService {
     console.log(`📄 [ValidationService] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
     
     try {
-      const { PDFGenerationService } = await import("./pdf-generation-service.js");
-      const pdfService = new PDFGenerationService();
+      const { pdfService } = await import("./pdf-service.js");
       
       let pdfBuffer: Buffer | null = null;
       
       if (signedOrder.orderType === 'medication') {
         console.log(`📄 [ValidationService] Generating medication PDF for order ${orderId}`);
         pdfBuffer = await pdfService.generateMedicationPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [ValidationService] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
       } else if (signedOrder.orderType === 'lab') {
         console.log(`📄 [ValidationService] Generating lab PDF for order ${orderId}`);
         pdfBuffer = await pdfService.generateLabPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [ValidationService] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
       } else if (signedOrder.orderType === 'imaging') {
         console.log(`📄 [ValidationService] Generating imaging PDF for order ${orderId}`);
         pdfBuffer = await pdfService.generateImagingPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [ValidationService] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
       } else {
         console.log(`📄 [ValidationService] ⚠️ Unknown order type: ${signedOrder.orderType}, skipping PDF generation`);
       }
       
       if (pdfBuffer) {
-        console.log(`📄 [ValidationService] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId}`);
+        console.log(`📄 [ValidationService] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`);
       }
       
       console.log(`📄 [ValidationService] ===== PDF GENERATION COMPLETED =====`);
