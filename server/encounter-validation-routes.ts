@@ -167,13 +167,22 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       .returning();
 
     // Trigger order delivery processing for all signed orders
-    console.log(`📄 [ValidationSign] Triggering order delivery processing for order ${orderId}`);
+    console.log(`📄 [ValidationSign] ===== TRIGGERING ORDER DELIVERY PROCESSING =====`);
+    console.log(`📄 [ValidationSign] Order ID: ${orderId}, User ID: ${userId}`);
+    console.log(`📄 [ValidationSign] Order details:`, JSON.stringify(signedOrder, null, 2));
+    
     try {
+      console.log(`📄 [ValidationSign] Importing order delivery service...`);
       const { orderDeliveryService } = await import("./order-delivery-service.js");
+      console.log(`📄 [ValidationSign] ✅ Order delivery service imported successfully`);
+      
+      console.log(`📄 [ValidationSign] Calling processSignedOrder(${orderId}, ${userId})...`);
       await orderDeliveryService.processSignedOrder(orderId, userId);
-      console.log(`✅ [ValidationSign] Order delivery processing completed for order ${orderId}`);
+      console.log(`✅ [ValidationSign] ===== ORDER DELIVERY PROCESSING COMPLETED =====`);
     } catch (deliveryError) {
-      console.error(`❌ [ValidationSign] Failed to process order delivery for order ${orderId}:`, deliveryError);
+      console.error(`❌ [ValidationSign] ===== ORDER DELIVERY FAILED =====`);
+      console.error(`❌ [ValidationSign] Error:`, deliveryError);
+      console.error(`❌ [ValidationSign] Stack:`, deliveryError.stack);
     }
 
     // If this is a medication order, activate the corresponding medication

@@ -13,6 +13,38 @@ interface DeliveryResult {
 }
 
 export class OrderDeliveryService {
+
+  async processSignedOrder(orderId: number, userId: number): Promise<void> {
+    console.log(`🚀 [OrderDelivery] ===== PROCESS SIGNED ORDER START =====`);
+    console.log(`🚀 [OrderDelivery] Order ID: ${orderId}, User ID: ${userId}`);
+    
+    try {
+      // Get order details
+      console.log(`🚀 [OrderDelivery] Fetching order details...`);
+      const orderDetails = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      
+      if (orderDetails.length === 0) {
+        throw new Error(`Order ${orderId} not found`);
+      }
+      
+      const order = orderDetails[0];
+      console.log(`🚀 [OrderDelivery] Order found:`, JSON.stringify(order, null, 2));
+      
+      // Process the delivery
+      const results = await this.processOrderDelivery([orderId], order.patientId, userId);
+      console.log(`🚀 [OrderDelivery] Delivery results:`, JSON.stringify(results, null, 2));
+      
+      console.log(`✅ [OrderDelivery] ===== PROCESS SIGNED ORDER COMPLETE =====`);
+    } catch (error) {
+      console.error(`❌ [OrderDelivery] ===== PROCESS SIGNED ORDER FAILED =====`);
+      console.error(`❌ [OrderDelivery] Error:`, error);
+      throw error;
+    }
+  }
   
   async processOrderDelivery(orderIds: number[], patientId: number, providerId: number): Promise<DeliveryResult[]> {
     console.log(`📦 [OrderDelivery] ===== ORDER DELIVERY PROCESSING START =====`);
