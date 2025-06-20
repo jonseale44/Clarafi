@@ -132,43 +132,89 @@ export class PDFGenerationService {
   }
 
   async generateLabPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
-    console.log(`📄 [PDFGen] Generating lab PDF for patient ${patientId}`);
+    console.log(`📄 [PDFGen] ===== LAB PDF GENERATION START =====`);
+    console.log(`📄 [PDFGen] Patient ID: ${patientId}, Provider ID: ${providerId}`);
+    console.log(`📄 [PDFGen] Orders received:`, JSON.stringify(orders, null, 2));
     
-    const patient = await this.getPatientInfo(patientId);
-    const provider = await this.getProviderInfo(providerId);
-    
-    const template = this.getLabTemplate();
-    const compiledTemplate = Handlebars.compile(template);
-    
-    const html = compiledTemplate({
-      patient,
-      provider,
-      orders: orders.filter(o => o.orderType === 'lab'),
-      generatedDate: new Date().toLocaleDateString(),
-      generatedTime: new Date().toLocaleTimeString()
-    });
+    try {
+      const patient = await this.getPatientInfo(patientId);
+      console.log(`📄 [PDFGen] Patient info retrieved:`, JSON.stringify(patient, null, 2));
+      
+      const provider = await this.getProviderInfo(providerId);
+      console.log(`📄 [PDFGen] Provider info retrieved:`, JSON.stringify(provider, null, 2));
+      
+      const labOrders = orders.filter(o => o.orderType === 'lab');
+      console.log(`📄 [PDFGen] Filtered lab orders:`, JSON.stringify(labOrders, null, 2));
+      
+      const template = this.getLabTemplate();
+      const compiledTemplate = Handlebars.compile(template);
+      
+      const templateData = {
+        patient,
+        provider,
+        orders: labOrders,
+        generatedDate: new Date().toLocaleDateString(),
+        generatedTime: new Date().toLocaleTimeString()
+      };
+      console.log(`📄 [PDFGen] Template data:`, JSON.stringify(templateData, null, 2));
+      
+      const html = compiledTemplate(templateData);
+      console.log(`📄 [PDFGen] Generated HTML length: ${html.length} characters`);
+      console.log(`📄 [PDFGen] HTML preview (first 500 chars):`, html.substring(0, 500));
 
-    return await this.generatePDFFromHTML(html);
+      const pdfBuffer = await this.generatePDFFromHTML(html);
+      console.log(`📄 [PDFGen] PDF generated successfully, buffer size: ${pdfBuffer.length} bytes`);
+      console.log(`📄 [PDFGen] ===== LAB PDF GENERATION COMPLETE =====`);
+      
+      return pdfBuffer;
+    } catch (error) {
+      console.error(`❌ [PDFGen] LAB PDF GENERATION FAILED:`, error);
+      console.error(`❌ [PDFGen] Error stack:`, error.stack);
+      throw error;
+    }
   }
 
   async generateImagingPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
-    console.log(`📄 [PDFGen] Generating imaging PDF for patient ${patientId}`);
+    console.log(`📄 [PDFGen] ===== IMAGING PDF GENERATION START =====`);
+    console.log(`📄 [PDFGen] Patient ID: ${patientId}, Provider ID: ${providerId}`);
+    console.log(`📄 [PDFGen] Orders received:`, JSON.stringify(orders, null, 2));
     
-    const patient = await this.getPatientInfo(patientId);
-    const provider = await this.getProviderInfo(providerId);
-    
-    const template = this.getImagingTemplate();
-    const compiledTemplate = Handlebars.compile(template);
-    
-    const html = compiledTemplate({
-      patient,
-      provider,
-      orders: orders.filter(o => o.orderType === 'imaging'),
-      generatedDate: new Date().toLocaleDateString(),
-      generatedTime: new Date().toLocaleTimeString()
-    });
+    try {
+      const patient = await this.getPatientInfo(patientId);
+      console.log(`📄 [PDFGen] Patient info retrieved:`, JSON.stringify(patient, null, 2));
+      
+      const provider = await this.getProviderInfo(providerId);
+      console.log(`📄 [PDFGen] Provider info retrieved:`, JSON.stringify(provider, null, 2));
+      
+      const imagingOrders = orders.filter(o => o.orderType === 'imaging');
+      console.log(`📄 [PDFGen] Filtered imaging orders:`, JSON.stringify(imagingOrders, null, 2));
+      
+      const template = this.getImagingTemplate();
+      const compiledTemplate = Handlebars.compile(template);
+      
+      const templateData = {
+        patient,
+        provider,
+        orders: imagingOrders,
+        generatedDate: new Date().toLocaleDateString(),
+        generatedTime: new Date().toLocaleTimeString()
+      };
+      console.log(`📄 [PDFGen] Template data:`, JSON.stringify(templateData, null, 2));
+      
+      const html = compiledTemplate(templateData);
+      console.log(`📄 [PDFGen] Generated HTML length: ${html.length} characters`);
+      console.log(`📄 [PDFGen] HTML preview (first 500 chars):`, html.substring(0, 500));
 
-    return await this.generatePDFFromHTML(html);
+      const pdfBuffer = await this.generatePDFFromHTML(html);
+      console.log(`📄 [PDFGen] PDF generated successfully, buffer size: ${pdfBuffer.length} bytes`);
+      console.log(`📄 [PDFGen] ===== IMAGING PDF GENERATION COMPLETE =====`);
+      
+      return pdfBuffer;
+    } catch (error) {
+      console.error(`❌ [PDFGen] IMAGING PDF GENERATION FAILED:`, error);
+      console.error(`❌ [PDFGen] Error stack:`, error.stack);
+      throw error;
+    }
   }
 
   private async generatePDFFromHTML(html: string): Promise<Buffer> {

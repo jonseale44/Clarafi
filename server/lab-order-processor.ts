@@ -144,6 +144,12 @@ export class LabOrderProcessor {
           loincCode: result.loincCode,
           specimenCollectedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
           receivedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+          aiInterpretation: {
+            clinicalSignificance: result.clinicalSignificance || 'Within normal limits',
+            suggestedActions: result.suggestedActions || [],
+            trendAnalysis: 'No previous results for comparison',
+            riskAssessment: result.abnormalFlag ? 'Review recommended' : 'Low risk'
+          },
           createdAt: new Date()
         });
       }

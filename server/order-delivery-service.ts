@@ -239,54 +239,76 @@ export class OrderDeliveryService {
     
     const orderIds = labOrders.map(o => o.id);
     
-    console.log(`🧪 [LabDelivery] Processing ${labOrders.length} lab orders via ${deliveryMethod}`);
+    console.log(`🧪 [LabDelivery] ===== LAB DELIVERY START =====`);
+    console.log(`🧪 [LabDelivery] Processing ${labOrders.length} lab orders`);
+    console.log(`🧪 [LabDelivery] Delivery method: ${deliveryMethod}`);
+    console.log(`🧪 [LabDelivery] Order IDs: [${orderIds.join(', ')}]`);
+    console.log(`🧪 [LabDelivery] Patient ID: ${patientId}, Provider ID: ${providerId}`);
     
     switch (deliveryMethod) {
       case 'print_pdf':
         try {
+          console.log(`🧪 [LabDelivery] Generating PDF for lab orders...`);
           const pdfBuffer = await pdfService.generateLabPDF(labOrders, patientId, providerId);
-          return {
+          console.log(`🧪 [LabDelivery] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+          
+          const result = {
             success: true,
             deliveryMethod: 'print_pdf',
             orderIds,
             pdfBuffer,
             filename: `lab_requisition_${patientId}_${Date.now()}.pdf`
           };
+          console.log(`🧪 [LabDelivery] ===== LAB DELIVERY COMPLETE (SUCCESS) =====`);
+          return result;
         } catch (error) {
-          console.error('Failed to generate lab PDF:', error);
-          return {
+          console.error('❌ [LabDelivery] Failed to generate lab PDF:', error);
+          console.error('❌ [LabDelivery] Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
+          
+          const result = {
             success: false,
             deliveryMethod: 'print_pdf',
             orderIds,
-            error: 'Failed to generate PDF'
+            error: `Failed to generate PDF: ${error.message}`
           };
+          console.log(`🧪 [LabDelivery] ===== LAB DELIVERY COMPLETE (FAILED) =====`);
+          return result;
         }
         
       case 'mock_service':
-        // This goes through existing lab processor
         console.log(`🧪 [LabDelivery] Sending to mock lab service (existing workflow)`);
-        return {
+        const mockResult = {
           success: true,
           deliveryMethod: 'mock_service',
           orderIds
         };
+        console.log(`🧪 [LabDelivery] ===== LAB DELIVERY COMPLETE (MOCK SERVICE) =====`);
+        return mockResult;
         
       case 'real_service':
-        // Placeholder for real lab service integration
         console.log(`🧪 [LabDelivery] Would send to real lab service (placeholder)`);
-        return {
+        const realResult = {
           success: true,
           deliveryMethod: 'real_service',
           orderIds
         };
+        console.log(`🧪 [LabDelivery] ===== LAB DELIVERY COMPLETE (REAL SERVICE) =====`);
+        return realResult;
         
       default:
-        return {
+        console.error(`🧪 [LabDelivery] Unknown delivery method: ${deliveryMethod}`);
+        const errorResult = {
           success: false,
           deliveryMethod: deliveryMethod,
           orderIds,
-          error: 'Unknown delivery method'
+          error: `Unknown delivery method: ${deliveryMethod}`
         };
+        console.log(`🧪 [LabDelivery] ===== LAB DELIVERY COMPLETE (ERROR) =====`);
+        return errorResult;
     }
   }
   
@@ -299,33 +321,49 @@ export class OrderDeliveryService {
     
     const orderIds = imagingOrders.map(o => o.id);
     
-    console.log(`📷 [ImagingDelivery] Processing ${imagingOrders.length} imaging orders via ${deliveryMethod}`);
+    console.log(`📷 [ImagingDelivery] ===== IMAGING DELIVERY START =====`);
+    console.log(`📷 [ImagingDelivery] Processing ${imagingOrders.length} imaging orders`);
+    console.log(`📷 [ImagingDelivery] Delivery method: ${deliveryMethod}`);
+    console.log(`📷 [ImagingDelivery] Order IDs: [${orderIds.join(', ')}]`);
+    console.log(`📷 [ImagingDelivery] Patient ID: ${patientId}, Provider ID: ${providerId}`);
     
     switch (deliveryMethod) {
       case 'print_pdf':
         try {
+          console.log(`📷 [ImagingDelivery] Generating PDF for imaging orders...`);
           const pdfBuffer = await pdfService.generateImagingPDF(imagingOrders, patientId, providerId);
-          return {
+          console.log(`📷 [ImagingDelivery] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+          
+          const result = {
             success: true,
             deliveryMethod: 'print_pdf',
             orderIds,
             pdfBuffer,
             filename: `imaging_requisition_${patientId}_${Date.now()}.pdf`
           };
+          console.log(`📷 [ImagingDelivery] ===== IMAGING DELIVERY COMPLETE (SUCCESS) =====`);
+          return result;
         } catch (error) {
-          console.error('Failed to generate imaging PDF:', error);
-          return {
+          console.error('❌ [ImagingDelivery] Failed to generate imaging PDF:', error);
+          console.error('❌ [ImagingDelivery] Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
+          
+          const result = {
             success: false,
             deliveryMethod: 'print_pdf',
             orderIds,
-            error: 'Failed to generate PDF'
+            error: `Failed to generate PDF: ${error.message}`
           };
+          console.log(`📷 [ImagingDelivery] ===== IMAGING DELIVERY COMPLETE (FAILED) =====`);
+          return result;
         }
         
       case 'mock_service':
-        // Placeholder for mock imaging service
         console.log(`📷 [ImagingDelivery] Would send to mock imaging service (placeholder)`);
-        return {
+        const mockResult = {
           success: true,
           deliveryMethod: 'mock_service',
           orderIds
