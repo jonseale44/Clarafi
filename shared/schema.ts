@@ -764,6 +764,28 @@ export const patientOrderPreferences = pgTable("patient_order_preferences", {
   lastUpdatedBy: integer("last_updated_by").references(() => users.id),
 });
 
+// Signed orders tracking table for post-signature management
+export const signedOrders = pgTable("signed_orders", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  patientId: integer("patient_id").notNull().references(() => patients.id),
+  encounterId: integer("encounter_id").references(() => encounters.id),
+  orderType: varchar("order_type", { length: 50 }).notNull(),
+  deliveryMethod: varchar("delivery_method", { length: 50 }).notNull(),
+  deliveryStatus: varchar("delivery_status", { length: 50 }).notNull().default("pending"), // pending, delivered, failed, cancelled
+  deliveryAttempts: integer("delivery_attempts").notNull().default(0),
+  lastDeliveryAttempt: timestamp("last_delivery_attempt"),
+  deliveryError: text("delivery_error"),
+  canChangeDelivery: boolean("can_change_delivery").notNull().default(true), // For SureScripts time window
+  deliveryLockReason: varchar("delivery_lock_reason", { length: 255 }), // "pharmacy_confirmed", "time_expired", etc.
+  originalDeliveryMethod: varchar("original_delivery_method", { length: 50 }).notNull(),
+  deliveryChanges: jsonb("delivery_changes").default("[]"), // Audit trail of delivery method changes
+  signedAt: timestamp("signed_at").notNull(),
+  signedBy: integer("signed_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Medication Formulary - 500 Most Commonly Prescribed Medications
 export const medicationFormulary = pgTable("medication_formulary", {
   id: serial("id").primaryKey(),
@@ -1055,6 +1077,25 @@ export const patientOrderPreferencesRelations = relations(patientOrderPreference
   }),
   lastUpdatedByUser: one(users, {
     fields: [patientOrderPreferences.lastUpdatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const signedOrdersRelations = relations(signedOrders, ({ one }) => ({
+  order: one(orders, {
+    fields: [signedOrders.orderId],
+    references: [orders.id],
+  }),
+  patient: one(patients, {
+    fields: [signedOrders.patientId],
+    references: [patients.id],
+  }),
+  encounter: one(encounters, {
+    fields: [signedOrders.encounterId],
+    references: [encounters.id],
+  }),
+  signedByUser: one(users, {
+    fields: [signedOrders.signedBy],
     references: [users.id],
   }),
 }));
