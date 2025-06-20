@@ -49,7 +49,7 @@ export function EmbeddedPDFViewer({
     queryKey: showAllPDFs ? ["/api/pdfs"] : [`/api/patients/${patientId}/pdfs`],
   });
 
-  const files = pdfData || [];
+  const files = pdfData?.files || [];
 
   const handleViewPDF = (filename: string) => {
     setSelectedPDF(filename);

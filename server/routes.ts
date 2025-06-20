@@ -3237,6 +3237,10 @@ Return only valid JSON without markdown formatting.`;
   // PDF download routes (for accessing generated PDFs)
   const pdfDownloadRoutes = await import("./pdf-download-routes.js");
   app.use("/api", pdfDownloadRoutes.default);
+  
+  // PDF viewer routes (for embedded viewing)
+  const pdfViewerRoutes = await import("./pdf-viewer-routes.js");
+  app.use("/api", pdfViewerRoutes.default);
   app.use("/api/external-lab-mock", externalLabMockRouter);
 
   // Legacy dynamic vitals routes removed - now using static imports above
