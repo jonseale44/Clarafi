@@ -647,6 +647,32 @@ export function registerRoutes(app: Express): Server {
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/patients", patientOrderPreferencesRoutes);
 
+  // PDF download endpoint
+  app.get("/api/orders/download-pdf/:filename", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const filename = req.params.filename;
+      console.log(`📄 [PDF Download] Request for file: ${filename}`);
+
+      // For security, validate filename format
+      if (!/^(prescription|lab_requisition|imaging_requisition)_\d+_\d+\.pdf$/.test(filename)) {
+        return res.status(400).json({ error: "Invalid filename format" });
+      }
+
+      // In production, you'd store PDFs and serve them from file system or cloud storage
+      // For now, we'll regenerate the PDF on demand based on the filename pattern
+      res.status(501).json({ 
+        error: "PDF download not yet implemented - PDFs are generated inline during signing",
+        message: "PDFs are currently generated and displayed directly when orders are signed"
+      });
+
+    } catch (error: any) {
+      console.error("❌ [PDF Download] Error:", error);
+      res.status(500).json({ error: "Failed to download PDF" });
+    }
+  });
+
   // Enhanced medical problems routes (JSONB visit history)
   app.use("/api", enhancedMedicalProblemsRoutes);
 

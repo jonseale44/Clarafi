@@ -1,0 +1,471 @@
+import puppeteer from 'puppeteer';
+import Handlebars from 'handlebars';
+import { db } from './db.js';
+import { patients, users } from '../shared/schema.js';
+import { eq } from 'drizzle-orm';
+
+interface Order {
+  id: number;
+  patientId: number;
+  orderType: string;
+  priority?: string;
+  clinicalIndication?: string;
+  
+  // Medication fields
+  medicationName?: string;
+  dosage?: string;
+  sig?: string;
+  quantity?: number;
+  refills?: number;
+  daysSupply?: number;
+  diagnosisCode?: string;
+  
+  // Lab fields
+  testName?: string;
+  labName?: string;
+  specimenType?: string;
+  fastingRequired?: boolean;
+  
+  // Imaging fields
+  studyType?: string;
+  region?: string;
+  laterality?: string;
+  contrastNeeded?: boolean;
+  
+  // Provider info
+  orderedBy?: number;
+  orderedAt?: string;
+}
+
+interface Patient {
+  id: number;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: string;
+  mrn: string;
+  contactNumber?: string;
+  address?: string;
+}
+
+interface Provider {
+  id: number;
+  firstName: string;
+  lastName: string;
+  credentials?: string;
+  npi?: string;
+}
+
+export class PDFGenerationService {
+  private browser: any = null;
+
+  async initBrowser() {
+    if (!this.browser) {
+      this.browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+    }
+    return this.browser;
+  }
+
+  async closeBrowser() {
+    if (this.browser) {
+      await this.browser.close();
+      this.browser = null;
+    }
+  }
+
+  async generateMedicationPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
+    console.log(`📄 [PDFGen] Generating medication PDF for patient ${patientId}`);
+    
+    const patient = await this.getPatientInfo(patientId);
+    const provider = await this.getProviderInfo(providerId);
+    
+    const template = this.getMedicationTemplate();
+    const compiledTemplate = Handlebars.compile(template);
+    
+    const html = compiledTemplate({
+      patient,
+      provider,
+      orders: orders.filter(o => o.orderType === 'medication'),
+      generatedDate: new Date().toLocaleDateString(),
+      generatedTime: new Date().toLocaleTimeString()
+    });
+
+    return await this.generatePDFFromHTML(html);
+  }
+
+  async generateLabPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
+    console.log(`📄 [PDFGen] Generating lab PDF for patient ${patientId}`);
+    
+    const patient = await this.getPatientInfo(patientId);
+    const provider = await this.getProviderInfo(providerId);
+    
+    const template = this.getLabTemplate();
+    const compiledTemplate = Handlebars.compile(template);
+    
+    const html = compiledTemplate({
+      patient,
+      provider,
+      orders: orders.filter(o => o.orderType === 'lab'),
+      generatedDate: new Date().toLocaleDateString(),
+      generatedTime: new Date().toLocaleTimeString()
+    });
+
+    return await this.generatePDFFromHTML(html);
+  }
+
+  async generateImagingPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
+    console.log(`📄 [PDFGen] Generating imaging PDF for patient ${patientId}`);
+    
+    const patient = await this.getPatientInfo(patientId);
+    const provider = await this.getProviderInfo(providerId);
+    
+    const template = this.getImagingTemplate();
+    const compiledTemplate = Handlebars.compile(template);
+    
+    const html = compiledTemplate({
+      patient,
+      provider,
+      orders: orders.filter(o => o.orderType === 'imaging'),
+      generatedDate: new Date().toLocaleDateString(),
+      generatedTime: new Date().toLocaleTimeString()
+    });
+
+    return await this.generatePDFFromHTML(html);
+  }
+
+  private async generatePDFFromHTML(html: string): Promise<Buffer> {
+    const browser = await this.initBrowser();
+    const page = await browser.newPage();
+    
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    const pdf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '0.5in',
+        right: '0.5in',
+        bottom: '0.5in',
+        left: '0.5in'
+      }
+    });
+    
+    await page.close();
+    return pdf;
+  }
+
+  private async getPatientInfo(patientId: number): Promise<Patient> {
+    const result = await db
+      .select()
+      .from(patients)
+      .where(eq(patients.id, patientId))
+      .limit(1);
+    
+    return result[0];
+  }
+
+  private async getProviderInfo(providerId: number): Promise<Provider> {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, providerId))
+      .limit(1);
+    
+    return result[0];
+  }
+
+  private getMedicationTemplate(): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Prescription</title>
+    <style>
+        body { 
+            font-family: 'Times New Roman', serif; 
+            margin: 0; 
+            padding: 20px; 
+            font-size: 12pt;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+        }
+        .clinic-name { 
+            font-size: 18pt; 
+            font-weight: bold; 
+            margin-bottom: 5px; 
+        }
+        .provider-info { 
+            font-size: 10pt; 
+            margin-bottom: 20px; 
+        }
+        .patient-info { 
+            margin-bottom: 20px; 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+        }
+        .prescription { 
+            margin-bottom: 15px; 
+            padding: 10px; 
+            border-left: 3px solid #007bff; 
+        }
+        .rx-symbol { 
+            font-size: 18pt; 
+            font-weight: bold; 
+            color: #007bff; 
+        }
+        .medication-name { 
+            font-size: 14pt; 
+            font-weight: bold; 
+            margin: 5px 0; 
+        }
+        .sig { 
+            font-style: italic; 
+            margin: 5px 0; 
+        }
+        .footer { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            font-size: 8pt; 
+            color: #666; 
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="clinic-name">Medical Practice</div>
+        <div>{{provider.firstName}} {{provider.lastName}}, {{provider.credentials}}</div>
+        {{#if provider.npi}}<div>NPI: {{provider.npi}}</div>{{/if}}
+    </div>
+
+    <div class="patient-info">
+        <strong>Patient:</strong> {{patient.firstName}} {{patient.lastName}}<br>
+        <strong>DOB:</strong> {{patient.dateOfBirth}}<br>
+        <strong>MRN:</strong> {{patient.mrn}}<br>
+        {{#if patient.address}}<strong>Address:</strong> {{patient.address}}<br>{{/if}}
+    </div>
+
+    {{#each orders}}
+    <div class="prescription">
+        <span class="rx-symbol">℞</span>
+        <div class="medication-name">{{medicationName}} {{dosage}}</div>
+        <div class="sig">Sig: {{sig}}</div>
+        <div><strong>Quantity:</strong> {{quantity}} {{#if daysSupply}}({{daysSupply}} day supply){{/if}}</div>
+        <div><strong>Refills:</strong> {{refills}}</div>
+        {{#if diagnosisCode}}<div><strong>Diagnosis:</strong> {{diagnosisCode}}</div>{{/if}}
+        {{#if clinicalIndication}}<div><strong>Indication:</strong> {{clinicalIndication}}</div>{{/if}}
+    </div>
+    {{/each}}
+
+    <div style="margin-top: 40px;">
+        <div>Provider Signature: _________________________</div>
+        <div style="margin-top: 10px;">Date: {{generatedDate}}</div>
+    </div>
+
+    <div class="footer">
+        Generated on {{generatedDate}} at {{generatedTime}}
+    </div>
+</body>
+</html>
+    `;
+  }
+
+  private getLabTemplate(): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Laboratory Requisition</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            font-size: 11pt;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+        }
+        .patient-info { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 20px; 
+            border: 1px solid #000; 
+            padding: 10px; 
+        }
+        .order-item { 
+            margin-bottom: 10px; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+        }
+        .test-name { 
+            font-weight: bold; 
+            font-size: 12pt; 
+        }
+        .priority-urgent { 
+            color: red; 
+            font-weight: bold; 
+        }
+        .priority-stat { 
+            color: red; 
+            font-weight: bold; 
+            text-decoration: underline; 
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>LABORATORY REQUISITION</h2>
+        <div>{{provider.firstName}} {{provider.lastName}}, {{provider.credentials}}</div>
+    </div>
+
+    <div class="patient-info">
+        <div>
+            <strong>Patient Name:</strong> {{patient.firstName}} {{patient.lastName}}<br>
+            <strong>DOB:</strong> {{patient.dateOfBirth}}<br>
+            <strong>Gender:</strong> {{patient.gender}}
+        </div>
+        <div>
+            <strong>MRN:</strong> {{patient.mrn}}<br>
+            <strong>Date:</strong> {{generatedDate}}<br>
+            {{#if patient.contactNumber}}<strong>Phone:</strong> {{patient.contactNumber}}{{/if}}
+        </div>
+    </div>
+
+    <h3>TESTS ORDERED:</h3>
+    {{#each orders}}
+    <div class="order-item">
+        <div class="test-name">
+            {{testName}}
+            {{#if priority}}
+                {{#if (eq priority "urgent")}}
+                    <span class="priority-urgent">[URGENT]</span>
+                {{else if (eq priority "stat")}}
+                    <span class="priority-stat">[STAT]</span>
+                {{/if}}
+            {{/if}}
+        </div>
+        {{#if labName}}<div><strong>Panel:</strong> {{labName}}</div>{{/if}}
+        <div><strong>Specimen:</strong> {{specimenType}}</div>
+        {{#if fastingRequired}}<div style="color: red;"><strong>*** FASTING REQUIRED ***</strong></div>{{/if}}
+        {{#if clinicalIndication}}<div><strong>Clinical Indication:</strong> {{clinicalIndication}}</div>{{/if}}
+    </div>
+    {{/each}}
+
+    <div style="margin-top: 30px;">
+        <div>Ordering Provider: {{provider.firstName}} {{provider.lastName}}, {{provider.credentials}}</div>
+        <div>Signature: _________________________  Date: {{generatedDate}}</div>
+    </div>
+</body>
+</html>
+    `;
+  }
+
+  private getImagingTemplate(): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Imaging Requisition</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            font-size: 11pt;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+        }
+        .patient-info { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 20px; 
+            border: 1px solid #000; 
+            padding: 10px; 
+        }
+        .order-item { 
+            margin-bottom: 15px; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+        }
+        .study-name { 
+            font-weight: bold; 
+            font-size: 12pt; 
+        }
+        .contrast-warning { 
+            color: #ff6600; 
+            font-weight: bold; 
+        }
+        .priority-urgent { 
+            color: red; 
+            font-weight: bold; 
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>IMAGING REQUISITION</h2>
+        <div>{{provider.firstName}} {{provider.lastName}}, {{provider.credentials}}</div>
+    </div>
+
+    <div class="patient-info">
+        <div>
+            <strong>Patient Name:</strong> {{patient.firstName}} {{patient.lastName}}<br>
+            <strong>DOB:</strong> {{patient.dateOfBirth}}<br>
+            <strong>Gender:</strong> {{patient.gender}}
+        </div>
+        <div>
+            <strong>MRN:</strong> {{patient.mrn}}<br>
+            <strong>Date:</strong> {{generatedDate}}<br>
+            {{#if patient.contactNumber}}<strong>Phone:</strong> {{patient.contactNumber}}{{/if}}
+        </div>
+    </div>
+
+    <h3>IMAGING STUDIES ORDERED:</h3>
+    {{#each orders}}
+    <div class="order-item">
+        <div class="study-name">
+            {{studyType}} - {{region}}
+            {{#if (eq priority "urgent")}}
+                <span class="priority-urgent">[URGENT]</span>
+            {{/if}}
+        </div>
+        {{#if laterality}}<div><strong>Laterality:</strong> {{laterality}}</div>{{/if}}
+        {{#if contrastNeeded}}<div class="contrast-warning"><strong>*** CONTRAST REQUIRED ***</strong></div>{{/if}}
+        {{#if clinicalIndication}}<div><strong>Clinical Indication:</strong> {{clinicalIndication}}</div>{{/if}}
+    </div>
+    {{/each}}
+
+    <div style="margin-top: 30px;">
+        <div>Ordering Provider: {{provider.firstName}} {{provider.lastName}}, {{provider.credentials}}</div>
+        <div>Signature: _________________________  Date: {{generatedDate}}</div>
+    </div>
+</body>
+</html>
+    `;
+  }
+}
+
+// Register Handlebars helpers
+Handlebars.registerHelper('eq', function(a, b) {
+  return a === b;
+});
+
+export const pdfService = new PDFGenerationService();
