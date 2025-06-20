@@ -166,27 +166,7 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       .where(eq(orders.id, orderId))
       .returning();
 
-    // Trigger order delivery processing for all signed orders (PDF generation happens here)
-    console.log(`📄 [ValidationSign] ===== TRIGGERING ORDER DELIVERY PROCESSING =====`);
-    console.log(`📄 [ValidationSign] Order ID: ${orderId}, User ID: ${userId}`);
-    console.log(`📄 [ValidationSign] Order details:`, JSON.stringify(signedOrder, null, 2));
-    console.log(`📄 [ValidationSign] 🚨 THIS IS WHERE PDF GENERATION SHOULD BE TRIGGERED 🚨`);
-    
-    try {
-      console.log(`📄 [ValidationSign] Importing order delivery service...`);
-      const { orderDeliveryService } = await import("./order-delivery-service.js");
-      console.log(`📄 [ValidationSign] ✅ Order delivery service imported successfully`);
-      
-      console.log(`📄 [ValidationSign] 🎯 CALLING PDF GENERATION PIPELINE: processSignedOrder(${orderId}, ${userId})...`);
-      await orderDeliveryService.processSignedOrder(orderId, userId);
-      console.log(`✅ [ValidationSign] ===== ORDER DELIVERY PROCESSING COMPLETED =====`);
-      console.log(`✅ [ValidationSign] 📄 PDF GENERATION PIPELINE FINISHED`);
-    } catch (deliveryError) {
-      console.error(`❌ [ValidationSign] ===== ORDER DELIVERY FAILED =====`);
-      console.error(`❌ [ValidationSign] 📄 PDF GENERATION PIPELINE FAILED`);
-      console.error(`❌ [ValidationSign] Error:`, deliveryError);
-      console.error(`❌ [ValidationSign] Stack:`, deliveryError.stack);
-    }
+
 
     // If this is a medication order, activate the corresponding medication
     console.log(`🔍 [ValidationSign] === INDIVIDUAL ORDER SIGNED ===`);
@@ -259,41 +239,7 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       console.error(`📄 [ValidationSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
       // Continue with response - order is still signed
     }
-    console.log(`📄 [SingleSign] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
-    
-    try {
-      const { PDFGenerationService } = await import("./pdf-generation-service.js");
-      const pdfService = new PDFGenerationService();
-      
-      let pdfBuffer: Buffer | null = null;
-      
-      if (signedOrder.orderType === 'medication') {
-        console.log(`📄 [SingleSign] Generating medication PDF for order ${orderId}`);
-        pdfBuffer = await pdfService.generateMedicationPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [SingleSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
-      } else if (signedOrder.orderType === 'lab') {
-        console.log(`📄 [SingleSign] Generating lab PDF for order ${orderId}`);
-        pdfBuffer = await pdfService.generateLabPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [SingleSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
-      } else if (signedOrder.orderType === 'imaging') {
-        console.log(`📄 [SingleSign] Generating imaging PDF for order ${orderId}`);
-        pdfBuffer = await pdfService.generateImagingPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [SingleSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
-      } else {
-        console.log(`📄 [SingleSign] ⚠️ Unknown order type: ${signedOrder.orderType}, skipping PDF generation`);
-      }
-      
-      if (pdfBuffer) {
-        console.log(`📄 [SingleSign] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId}`);
-      }
-      
-      console.log(`📄 [SingleSign] ===== PDF GENERATION COMPLETED =====`);
-      
-    } catch (pdfError) {
-      console.error(`📄 [SingleSign] ❌ PDF generation failed for order ${orderId}:`, pdfError);
-      console.error(`📄 [SingleSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
-      // Continue with response - order is still signed
-    }
+
 
     res.json({
       success: true,
@@ -433,8 +379,7 @@ router.post("/orders/bulk-sign", async (req: Request, res: Response) => {
     console.log(`📄 [BulkSign] Total signed orders: ${results.signed.length}`);
     
     try {
-      const { PDFGenerationService } = await import("./pdf-generation-service.js");
-      const pdfService = new PDFGenerationService();
+      const { pdfService } = await import("./pdf-service.js");
       
       // Group orders by type and patient for PDF generation
       const ordersByTypeAndPatient = results.signed.reduce((acc: any, order: any) => {
