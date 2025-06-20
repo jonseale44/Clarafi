@@ -321,14 +321,22 @@ export class PDFGenerationService {
       const page = await browser.newPage();
       console.log(`📄 [PDFGen] Page created successfully`);
       
+      // Set page timeouts
+      page.setDefaultTimeout(60000);
+      page.setDefaultNavigationTimeout(60000);
+      
       console.log(`📄 [PDFGen] Setting content... HTML length: ${html.length}`);
-      await page.setContent(html, { waitUntil: 'networkidle0' });
-      console.log(`📄 [PDFGen] Content set successfully, waiting for network idle`);
+      await page.setContent(html, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000 
+      });
+      console.log(`📄 [PDFGen] Content set successfully`);
       
       console.log(`📄 [PDFGen] Generating PDF...`);
       const pdf = await page.pdf({
         format: 'A4',
         printBackground: true,
+        timeout: 30000,
         margin: {
           top: '0.5in',
           right: '0.5in',
