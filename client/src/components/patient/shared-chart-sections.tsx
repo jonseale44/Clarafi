@@ -160,6 +160,15 @@ export function SharedChartSections({
           </div>
         );
       
+      case "documents":
+        return (
+          <EmbeddedPDFViewer 
+            patientId={patientId} 
+            title="Patient Documents"
+            showAllPDFs={false}
+          />
+        );
+
       case "attachments":
         return (
           <div className="space-y-4">

@@ -35,6 +35,7 @@ import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
 import { EncounterSignaturePanel } from "./encounter-signature-panel";
 import { EncounterWorkflowControls } from "./encounter-workflow-controls";
+import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
@@ -59,6 +60,7 @@ const chartSections = [
   { id: "labs", label: "Labs" },
   { id: "vitals", label: "Vitals" },
   { id: "imaging", label: "Imaging" },
+  { id: "documents", label: "Patient Documents" },
   { id: "family-history", label: "Family History" },
   { id: "social-history", label: "Social History" },
   { id: "surgical-history", label: "Surgical History" },
@@ -2500,6 +2502,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                       patientId={patient.id} 
                       encounterId={encounterId}
                       readOnly={false}
+                    />
+                  ) : section.id === "documents" ? (
+                    <EmbeddedPDFViewer 
+                      patientId={patient.id} 
+                      title="Patient Documents"
+                      showAllPDFs={false}
                     />
                   ) : section.id === "ai-debug" ? (
                     <AIDebugSection patientId={patient.id} />

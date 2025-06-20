@@ -67,6 +67,7 @@ const nursingChartSections = [
   { id: "vitals", label: "Vitals" },
   { id: "labs", label: "Labs" },
   { id: "imaging", label: "Imaging" },
+  { id: "documents", label: "Patient Documents" },
   { id: "family-history", label: "Family History" },
   { id: "social-history", label: "Social History" },
   { id: "surgical-history", label: "Surgical History" },
