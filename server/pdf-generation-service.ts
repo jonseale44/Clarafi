@@ -114,7 +114,8 @@ export class PDFGenerationService {
             headless: true,
             executablePath: systemChromiumPath,
             args: replicaArgs,
-            timeout: 30000,
+            timeout: 60000,
+            protocolTimeout: 60000,
             handleSIGINT: false,
             handleSIGTERM: false,
             handleSIGHUP: false
@@ -129,7 +130,8 @@ export class PDFGenerationService {
             this.browser = await puppeteer.launch({
               headless: true,
               args: replicaArgs,
-              timeout: 30000,
+              timeout: 60000,
+              protocolTimeout: 60000,
               handleSIGINT: false,
               handleSIGTERM: false,
               handleSIGHUP: false
@@ -143,7 +145,8 @@ export class PDFGenerationService {
             this.browser = await puppeteer.launch({
               headless: true,
               args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-              timeout: 30000,
+              timeout: 60000,
+              protocolTimeout: 60000,
               handleSIGINT: false,
               handleSIGTERM: false,
               handleSIGHUP: false
