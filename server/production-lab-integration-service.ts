@@ -73,10 +73,13 @@ export class ProductionLabIntegrationService {
       }
 
       const regularOrder = regularOrderResult[0];
+      console.log(`🔄 [ProductionLab] Converting regular order to lab order:`, regularOrder.testName);
       
       // Create production-compliant lab order entry
       const labOrderData = await this.createProductionLabOrder(regularOrder);
       const [newLabOrder] = await db.insert(labOrders).values(labOrderData).returning();
+      
+      console.log(`✅ [ProductionLab] Created lab order ${newLabOrder.id} for ${regularOrder.testName}`);
       
       // Submit to external lab system
       const submission = await this.submitToExternalLab(newLabOrder);
