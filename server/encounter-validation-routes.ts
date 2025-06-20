@@ -166,21 +166,24 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       .where(eq(orders.id, orderId))
       .returning();
 
-    // Trigger order delivery processing for all signed orders
+    // Trigger order delivery processing for all signed orders (PDF generation happens here)
     console.log(`📄 [ValidationSign] ===== TRIGGERING ORDER DELIVERY PROCESSING =====`);
     console.log(`📄 [ValidationSign] Order ID: ${orderId}, User ID: ${userId}`);
     console.log(`📄 [ValidationSign] Order details:`, JSON.stringify(signedOrder, null, 2));
+    console.log(`📄 [ValidationSign] 🚨 THIS IS WHERE PDF GENERATION SHOULD BE TRIGGERED 🚨`);
     
     try {
       console.log(`📄 [ValidationSign] Importing order delivery service...`);
       const { orderDeliveryService } = await import("./order-delivery-service.js");
       console.log(`📄 [ValidationSign] ✅ Order delivery service imported successfully`);
       
-      console.log(`📄 [ValidationSign] Calling processSignedOrder(${orderId}, ${userId})...`);
+      console.log(`📄 [ValidationSign] 🎯 CALLING PDF GENERATION PIPELINE: processSignedOrder(${orderId}, ${userId})...`);
       await orderDeliveryService.processSignedOrder(orderId, userId);
       console.log(`✅ [ValidationSign] ===== ORDER DELIVERY PROCESSING COMPLETED =====`);
+      console.log(`✅ [ValidationSign] 📄 PDF GENERATION PIPELINE FINISHED`);
     } catch (deliveryError) {
       console.error(`❌ [ValidationSign] ===== ORDER DELIVERY FAILED =====`);
+      console.error(`❌ [ValidationSign] 📄 PDF GENERATION PIPELINE FAILED`);
       console.error(`❌ [ValidationSign] Error:`, deliveryError);
       console.error(`❌ [ValidationSign] Stack:`, deliveryError.stack);
     }

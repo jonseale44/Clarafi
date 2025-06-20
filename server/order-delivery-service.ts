@@ -368,23 +368,29 @@ export class OrderDeliveryService {
           deliveryMethod: 'mock_service',
           orderIds
         };
+        console.log(`📷 [ImagingDelivery] ===== IMAGING DELIVERY COMPLETE (MOCK SERVICE) =====`);
+        return mockResult;
         
       case 'real_service':
-        // Placeholder for real imaging service integration
         console.log(`📷 [ImagingDelivery] Would send to real imaging service (placeholder)`);
-        return {
+        const realResult = {
           success: true,
           deliveryMethod: 'real_service',
           orderIds
         };
+        console.log(`📷 [ImagingDelivery] ===== IMAGING DELIVERY COMPLETE (REAL SERVICE) =====`);
+        return realResult;
         
       default:
-        return {
+        console.error(`📷 [ImagingDelivery] Unknown delivery method: ${deliveryMethod}`);
+        const errorResult = {
           success: false,
           deliveryMethod: deliveryMethod,
           orderIds,
-          error: 'Unknown delivery method'
+          error: `Unknown delivery method: ${deliveryMethod}`
         };
+        console.log(`📷 [ImagingDelivery] ===== IMAGING DELIVERY COMPLETE (ERROR) =====`);
+        return errorResult;
     }
   }
   
