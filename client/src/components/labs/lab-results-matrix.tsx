@@ -82,13 +82,69 @@ export function LabResultsMatrix({
 
   const results = (labResults as any) || [];
 
-  // Define lab panel groupings (stable reference)
+  // Define lab panel groupings following real EMR standards
+  // This ensures ALL components of standard panels are grouped together correctly
   const labPanels = useMemo(() => ({
-    'Complete Blood Count': ['Hemoglobin', 'Hematocrit', 'White Blood Cell Count', 'Red Blood Cell Count', 'Platelet Count', 'Mean Corpuscular Volume', 'Mean Corpuscular Hemoglobin', 'Mean Corpuscular Hemoglobin Concentration'],
-    'Basic Metabolic Panel': ['Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2'],
-    'Comprehensive Metabolic Panel': ['Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2', 'Total Protein', 'Albumin', 'Total Bilirubin', 'AST', 'ALT', 'Alkaline Phosphatase'],
-    'Lipid Panel': ['Total Cholesterol', 'HDL Cholesterol', 'LDL Cholesterol', 'Triglycerides'],
-    'Thyroid Function': ['TSH', 'T3', 'T4', 'Free T4'],
+    'Complete Blood Count': [
+      // Core CBC components
+      'Hemoglobin', 'Hematocrit', 'White Blood Cell Count', 'Red Blood Cell Count', 'Platelet Count',
+      // CBC indices
+      'Mean Corpuscular Volume', 'Mean Corpuscular Hemoglobin', 'Mean Corpuscular Hemoglobin Concentration',
+      // CBC differential - CRITICAL: These were being incorrectly categorized as "Other"
+      'Lymphocytes %', 'Neutrophils %', 'Monocytes %', 'Eosinophils %', 'Basophils %',
+      // Absolute counts
+      'Lymphocytes Absolute', 'Neutrophils Absolute', 'Monocytes Absolute', 'Eosinophils Absolute', 'Basophils Absolute',
+      // Additional CBC components
+      'Red Cell Distribution Width', 'Mean Platelet Volume', 'Platelet Distribution Width',
+      // Common alternative naming variations used in different lab systems
+      'WBC', 'RBC', 'HGB', 'HCT', 'PLT', 'MCV', 'MCH', 'MCHC', 'RDW', 'MPV', 'PDW',
+      'LYMPH', 'NEUT', 'MONO', 'EOS', 'BASO', 'Lymph %', 'Neut %', 'Mono %', 'Eos %', 'Baso %'
+    ],
+    'Basic Metabolic Panel': [
+      'Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2',
+      // Alternative naming variations
+      'Blood Urea Nitrogen', 'Carbon Dioxide', 'Na', 'K', 'Cl', 'Creat', 'Glucose Random', 'Glucose Fasting'
+    ],
+    'Comprehensive Metabolic Panel': [
+      // All BMP components are included in CMP
+      'Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2',
+      'Blood Urea Nitrogen', 'Carbon Dioxide', 'Na', 'K', 'Cl', 'Creat',
+      // Additional CMP-specific components
+      'Total Protein', 'Albumin', 'Total Bilirubin', 'AST', 'ALT', 'Alkaline Phosphatase',
+      // Alternative naming
+      'SGOT', 'SGPT', 'Alk Phos', 'T Bili', 'T Protein', 'Alb', 'TP', 'ALB'
+    ],
+    'Lipid Panel': [
+      'Total Cholesterol', 'HDL Cholesterol', 'LDL Cholesterol', 'Triglycerides',
+      // Alternative naming
+      'Cholesterol Total', 'HDL', 'LDL', 'CHOL', 'TG', 'TRIG'
+    ],
+    'Thyroid Function': [
+      'TSH', 'T3', 'T4', 'Free T4', 'Free T3',
+      // Alternative naming
+      'Thyroid Stimulating Hormone', 'Thyroxine', 'Triiodothyronine', 'FT4', 'FT3'
+    ],
+    'Coagulation Studies': [
+      'PT', 'PTT', 'INR', 'Prothrombin Time', 'Partial Thromboplastin Time', 
+      'International Normalized Ratio', 'aPTT', 'PT/INR'
+    ],
+    'Liver Function': [
+      'AST', 'ALT', 'Total Bilirubin', 'Direct Bilirubin', 'Alkaline Phosphatase', 'GGT',
+      'SGOT', 'SGPT', 'T Bili', 'D Bili', 'Alk Phos', 'Gamma-Glutamyl Transferase'
+    ],
+    'Renal Function': [
+      'BUN', 'Creatinine', 'BUN/Creatinine Ratio', 'eGFR', 'Urea', 'Creat'
+    ],
+    'Cardiac Markers': [
+      'Troponin I', 'Troponin T', 'CK-MB', 'CK', 'BNP', 'NT-proBNP', 'Creatine Kinase'
+    ],
+    'Hemoglobin A1c': [
+      'Hemoglobin A1c', 'HbA1c', 'A1c', 'Glycated Hemoglobin'
+    ],
+    'Urinalysis': [
+      'Protein', 'Glucose', 'Ketones', 'Blood', 'Leukocyte Esterase', 'Nitrites',
+      'Specific Gravity', 'pH', 'Color', 'Clarity'
+    ],
     'Other': []
   }), []);
 
