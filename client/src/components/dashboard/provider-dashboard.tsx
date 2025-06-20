@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
+import { FixedLabReview } from "@/components/labs/fixed-lab-review";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -74,6 +75,8 @@ export function ProviderDashboard() {
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [selectedForUnreview, setSelectedForUnreview] = useState<any>(null);
   const [unreviewReason, setUnreviewReason] = useState("");
+  const [showFixedLabReview, setShowFixedLabReview] = useState(false);
+  const [selectedPatientForReview, setSelectedPatientForReview] = useState<{id: number, name: string} | null>(null);
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   
   const { toast } = useToast();
@@ -673,11 +676,12 @@ export function ProviderDashboard() {
                         <Button 
                           size="sm"
                           onClick={() => {
-                            setSelectedPatientGroup(group);
-                            setReviewNote("");
-                            setGeneratedMessage("");
+                            setSelectedPatientForReview({
+                              id: group.patientId,
+                              name: group.patientName
+                            });
+                            setShowFixedLabReview(true);
                           }}
-                          variant={selectedPatientGroup?.patientId === group.patientId ? "default" : "outline"}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Review Results
@@ -1128,6 +1132,19 @@ export function ProviderDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Fixed Lab Review Dialog */}
+      {selectedPatientForReview && (
+        <FixedLabReview
+          patientId={selectedPatientForReview.id}
+          patientName={selectedPatientForReview.name}
+          isOpen={showFixedLabReview}
+          onClose={() => {
+            setShowFixedLabReview(false);
+            setSelectedPatientForReview(null);
+          }}
+        />
+      )}
     </div>
   );
 }
