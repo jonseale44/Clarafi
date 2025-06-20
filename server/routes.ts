@@ -41,6 +41,8 @@ import {
   allergies,
   vitals,
   encounters as encountersTable,
+  labOrders,
+  labResults,
 } from "../shared/schema.js";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -1043,36 +1045,35 @@ export function registerRoutes(app: Express): Server {
 
       const patientId = parseInt(req.params.patientId);
       
-      // Get lab orders with results count to determine status
-      const labOrdersWithResults = await db
-        .select({
-          id: labOrders.id,
-          testName: labOrders.testName,
-          orderStatus: labOrders.orderStatus,
-          priority: labOrders.priority,
-          orderedAt: labOrders.orderedAt,
-          resultCount: sql<number>`COUNT(${labResults.id})`.as('resultCount')
-        })
-        .from(labOrders)
-        .leftJoin(labResults, eq(labOrders.id, labResults.labOrderId))
-        .where(eq(labOrders.patientId, patientId))
-        .groupBy(labOrders.id, labOrders.testName, labOrders.orderStatus, labOrders.priority, labOrders.orderedAt)
-        .orderBy(desc(labOrders.orderedAt));
-
-      // Format orders with proper status based on results availability
-      const formattedOrders = labOrdersWithResults.map(order => ({
-        id: order.id,
-        testName: order.testName,
-        orderStatus: order.resultCount > 0 ? 'results_available' : 
-                    order.orderStatus === 'transmitted' ? 'pending' : order.orderStatus,
-        priority: order.priority || 'Routine',
-        orderedAt: order.orderedAt,
-        orderDate: order.orderedAt,
-        collectionDate: order.resultCount > 0 ? order.orderedAt : null
-      }));
+      // Use storage method to get lab orders data safely
+      const labOrdersData = await storage.getPatientLabOrders(patientId);
       
-      res.json(formattedOrders);
+      // Get result counts for each lab order to determine status
+      const ordersWithStatus = await Promise.all(
+        labOrdersData.map(async (order: any) => {
+          const resultCount = await db
+            .select({ count: sql<number>`COUNT(*)` })
+            .from(labResults)
+            .where(eq(labResults.labOrderId, order.id));
+          
+          const hasResults = resultCount[0]?.count > 0;
+          
+          return {
+            id: order.id,
+            testName: order.testName,
+            orderStatus: hasResults ? 'results_available' : 
+                        order.orderStatus === 'transmitted' ? 'pending' : order.orderStatus,
+            priority: order.priority || 'Routine',
+            orderedAt: order.orderedAt,
+            orderDate: order.orderedAt,
+            collectionDate: hasResults ? order.acknowledgedAt : null
+          };
+        })
+      );
+      
+      res.json(ordersWithStatus);
     } catch (error: any) {
+      console.error('Lab orders API error:', error);
       res.status(500).json({ message: error.message });
     }
   });
