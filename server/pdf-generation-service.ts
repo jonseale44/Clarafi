@@ -69,8 +69,7 @@ export class PDFGenerationService {
         console.log(`📄 [PDFGen] Browser args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-web-security', '--single-process']`);
         
         this.browser = await puppeteer.launch({
-          headless: true,
-          executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
+          headless: 'new',
           args: [
             '--no-sandbox',
             '--disable-setuid-sandbox', 
@@ -86,7 +85,9 @@ export class PDFGenerationService {
             '--disable-extensions',
             '--disable-features=VizDisplayCompositor',
             '--disable-ipc-flooding-protection',
-            '--disable-default-apps'
+            '--disable-default-apps',
+            '--disable-blink-features=AutomationControlled',
+            '--disable-features=VizDisplayCompositor'
           ]
         });
         

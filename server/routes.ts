@@ -3235,6 +3235,10 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api/lab-review", labReviewRoutes);
   app.use("/api/lab-simulator", labSimulatorRoutes);
   app.use("/api/lab-status", labStatusDashboardRoutes);
+
+  // PDF test routes (for debugging PDF generation)
+  const pdfTestRoutes = await import("./pdf-test-routes.js");
+  app.use("/api", pdfTestRoutes.default);
   app.use("/api/external-lab-mock", externalLabMockRouter);
 
   // Legacy dynamic vitals routes removed - now using static imports above
