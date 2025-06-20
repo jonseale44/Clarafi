@@ -1041,8 +1041,48 @@ export function registerRoutes(app: Express): Server {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const patientId = parseInt(req.params.patientId);
-      const labOrders = await storage.getPatientLabOrders(patientId);
-      res.json(labOrders);
+      
+      // Get both immediate orders (from orders table) and processed orders (from lab_orders table)
+      const { orders, labOrders } = await import("@shared/schema");
+      
+      // Get immediate pending orders from orders table - these show IMMEDIATELY when placed
+      const immediateOrders = await db
+        .select({
+          id: orders.id,
+          testName: orders.testName,
+          orderStatus: orders.orderStatus,
+          priority: orders.priority,
+          orderedAt: orders.createdAt,
+          orderDate: orders.createdAt,
+          collectionDate: orders.createdAt,
+          source: 'immediate'
+        })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.patientId, patientId),
+            eq(orders.orderType, 'lab')
+          )
+        )
+        .orderBy(desc(orders.createdAt));
+
+      // Get processed lab orders (for tracking external lab status)
+      const processedOrders = await storage.getPatientLabOrders(patientId);
+      
+      // Combine and format - immediate orders show as "pending" until processed
+      const combinedOrders = [
+        ...immediateOrders.map(order => ({
+          ...order,
+          orderStatus: order.orderStatus === 'approved' ? 'pending' : order.orderStatus,
+          collectionDate: null // Pending orders haven't been collected yet
+        })),
+        ...processedOrders.map(order => ({
+          ...order,
+          source: 'processed'
+        }))
+      ];
+      
+      res.json(combinedOrders);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
