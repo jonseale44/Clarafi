@@ -358,12 +358,6 @@ export default function Dashboard() {
       
       <main className="flex-1 overflow-auto p-6">
         {renderTabContent()}
-        
-        {activeTab === "dashboard" && (
-          <div className="mt-8">
-            <PDFViewer />
-          </div>
-        )}
       </main>
     </div>
   );
