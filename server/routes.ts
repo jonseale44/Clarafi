@@ -1067,23 +1067,19 @@ export function registerRoutes(app: Express): Server {
         )
         .orderBy(desc(orders.createdAt));
 
-      // Get processed lab orders (for tracking external lab status)
-      const processedOrders = await storage.getPatientLabOrders(patientId);
+      // Format immediate orders for frontend
+      const formattedOrders = immediateOrders.map(order => ({
+        id: order.id,
+        testName: order.testName,
+        orderStatus: order.orderStatus === 'approved' ? 'pending' : order.orderStatus,
+        priority: order.priority || 'Routine',
+        orderedAt: order.orderedAt,
+        orderDate: order.orderedAt,
+        collectionDate: null,
+        source: 'immediate'
+      }));
       
-      // Combine and format - immediate orders show as "pending" until processed
-      const combinedOrders = [
-        ...immediateOrders.map(order => ({
-          ...order,
-          orderStatus: order.orderStatus === 'approved' ? 'pending' : order.orderStatus,
-          collectionDate: null // Pending orders haven't been collected yet
-        })),
-        ...processedOrders.map(order => ({
-          ...order,
-          source: 'processed'
-        }))
-      ];
-      
-      res.json(combinedOrders);
+      res.json(formattedOrders);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
