@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Send
 } from "lucide-react";
+import { PDFViewer } from "@/components/PDFViewer";
 import { formatDistanceToNow, format } from "date-fns";
 
 interface DashboardStats {
@@ -1145,6 +1146,9 @@ export function ProviderDashboard() {
           }}
         />
       )}
+
+      {/* PDF Downloads Section */}
+      <PDFViewer />
     </div>
   );
 }
