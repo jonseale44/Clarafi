@@ -12,7 +12,7 @@
 
 import { db } from "./db.js";
 import { orders, labOrders, labResults } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 export class LabOrderProcessor {
   
@@ -60,18 +60,9 @@ export class LabOrderProcessor {
     console.log(`🔬 [LabProcessor] Converting order ${order.id}: ${order.testName || order.labName}`);
     
     try {
-      // Check if already converted (avoid duplicates)
-      const existingLabOrder = await db.select()
-        .from(labOrders)
-        .where(and(
-          eq(labOrders.patientId, order.patientId),
-          eq(labOrders.encounterId, order.encounterId),
-          eq(labOrders.testName, order.testName || order.labName)
-        ))
-        .limit(1);
-      
-      if (existingLabOrder.length > 0) {
-        console.log(`⚠️ [LabProcessor] Order ${order.id} already converted, skipping`);
+      // Check if this specific order was already converted (check by reference_id)
+      if (order.referenceId) {
+        console.log(`⚠️ [LabProcessor] Order ${order.id} already has reference_id ${order.referenceId}, skipping`);
         return;
       }
       
