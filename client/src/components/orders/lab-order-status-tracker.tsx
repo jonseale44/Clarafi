@@ -1,7 +1,4 @@
-/**
- * Lab Order Status Tracker Component
- * Shows real-time status of lab orders with external lab tracking
- */
+
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
