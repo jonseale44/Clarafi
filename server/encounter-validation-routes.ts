@@ -166,6 +166,16 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       .where(eq(orders.id, orderId))
       .returning();
 
+    // Trigger order delivery processing for all signed orders
+    console.log(`📄 [ValidationSign] Triggering order delivery processing for order ${orderId}`);
+    try {
+      const { orderDeliveryService } = await import("./order-delivery-service.js");
+      await orderDeliveryService.processSignedOrder(orderId, userId);
+      console.log(`✅ [ValidationSign] Order delivery processing completed for order ${orderId}`);
+    } catch (deliveryError) {
+      console.error(`❌ [ValidationSign] Failed to process order delivery for order ${orderId}:`, deliveryError);
+    }
+
     // If this is a medication order, activate the corresponding medication
     console.log(`🔍 [ValidationSign] === INDIVIDUAL ORDER SIGNED ===`);
     console.log(`🔍 [ValidationSign] Order ID: ${orderId}, Type: ${signedOrder.orderType}`);
