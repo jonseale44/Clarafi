@@ -125,6 +125,7 @@ export class LabOrderProcessor {
         await db.insert(labResults).values({
           labOrderId: labOrder.id,
           patientId: labOrder.patientId,
+          loincCode: result.loincCode || labOrder.loincCode,
           testCode: result.testCode,
           testName: result.testName,
           testCategory: labOrder.testCategory,
