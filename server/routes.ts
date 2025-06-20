@@ -2880,15 +2880,23 @@ Return only valid JSON without markdown formatting.`;
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
 
-      // For lab orders, automatically process through production lab system
-      if (order.orderType === "lab") {
-        try {
+      // Process all order types through production systems
+      try {
+        if (order.orderType === "lab") {
           const { LabOrderProcessor } = await import("./lab-order-processor.js");
           await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
           console.log(`🧪 [Order Signing] Processed lab order ${orderId} through production system`);
-        } catch (error) {
-          console.error(`❌ [Order Signing] Failed to process lab order ${orderId}:`, error);
+        } else if (order.orderType === "imaging") {
+          const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
+          await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
+          console.log(`🩻 [Order Signing] Processed imaging order ${orderId} through production system`);
+        } else if (order.orderType === "referral") {
+          const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
+          await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
+          console.log(`👨‍⚕️ [Order Signing] Processed referral order ${orderId} through production system`);
         }
+      } catch (error) {
+        console.error(`❌ [Order Signing] Failed to process ${order.orderType} order ${orderId}:`, error);
       }
 
       // For medication orders, activate pending medications
