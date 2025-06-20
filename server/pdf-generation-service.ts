@@ -68,52 +68,106 @@ export class PDFGenerationService {
         console.log(`📄 [PDFGen] 🚀 Launching new Puppeteer browser instance...`);
         console.log(`📄 [PDFGen] Browser args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-web-security', '--single-process']`);
         
-        // Try to launch browser with fallback options
-        const launchOptions = {
-          headless: 'new',
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox', 
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--single-process',
-            '--no-zygote',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
-            '--disable-extensions',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-ipc-flooding-protection',
-            '--disable-default-apps',
-            '--disable-blink-features=AutomationControlled'
-          ]
-        };
+        // Configure environment for Replit
+        process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'false';
+        process.env.DISPLAY = ':99';
+        
+        const replicaArgs = [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-features=TranslateUI',
+          '--disable-extensions',
+          '--disable-default-apps',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-ipc-flooding-protection',
+          '--disable-hang-monitor',
+          '--disable-client-side-phishing-detection',
+          '--disable-popup-blocking',
+          '--disable-prompt-on-repost',
+          '--disable-sync',
+          '--metrics-recording-only',
+          '--no-first-run',
+          '--safebrowsing-disable-auto-update',
+          '--disable-background-networking',
+          '--disable-background-timer-throttling',
+          '--disable-renderer-backgrounding',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-component-extensions-with-background-pages',
+          '--single-process',
+          '--no-zygote'
+        ];
 
+        console.log(`📄 [PDFGen] Attempting Replit-optimized browser launch...`);
+        
         try {
-          // First try with system chromium
-          console.log(`📄 [PDFGen] Attempting to launch with system chromium...`);
-          this.browser = await puppeteer.launch(launchOptions);
-        } catch (systemError) {
-          console.error(`📄 [PDFGen] System chromium failed:`, systemError.message);
+          // Try with bundled Chromium first (most reliable in Replit)
+          this.browser = await puppeteer.launch({
+            headless: 'new',
+            args: replicaArgs,
+            pipe: true,
+            timeout: 30000
+          });
+          console.log(`📄 [PDFGen] ✅ Successfully launched with bundled Chromium`);
+        } catch (bundledError) {
+          console.error(`📄 [PDFGen] Bundled Chromium failed:`, bundledError.message);
           
           try {
-            // Fallback to bundled chromium
-            console.log(`📄 [PDFGen] Falling back to bundled chromium...`);
-            this.browser = await puppeteer.launch({
-              ...launchOptions,
-              executablePath: undefined // Use bundled chromium
-            });
-          } catch (bundledError) {
-            console.error(`📄 [PDFGen] Bundled chromium also failed:`, bundledError.message);
+            // Fallback to system Chromium if available
+            const systemChromiumPaths = [
+              '/nix/store/*/bin/chromium',
+              '/usr/bin/chromium',
+              '/usr/bin/chromium-browser',
+              '/usr/bin/google-chrome'
+            ];
             
-            // Final fallback - try with minimal args
-            console.log(`📄 [PDFGen] Final fallback with minimal arguments...`);
+            let systemPath = null;
+            const { execSync } = await import('child_process');
+            const fs = await import('fs');
+            
+            for (const path of systemChromiumPaths) {
+              try {
+                const expandedPath = path.includes('*') ? 
+                  execSync(`ls ${path} 2>/dev/null | head -1`, {encoding: 'utf8'}).trim() : 
+                  path;
+                if (expandedPath && fs.existsSync(expandedPath)) {
+                  systemPath = expandedPath;
+                  break;
+                }
+              } catch (e) {
+                continue;
+              }
+            }
+            
+            if (systemPath) {
+              console.log(`📄 [PDFGen] Trying system Chromium at: ${systemPath}`);
+              this.browser = await puppeteer.launch({
+                headless: 'new',
+                executablePath: systemPath,
+                args: replicaArgs,
+                pipe: true,
+                timeout: 30000
+              });
+              console.log(`📄 [PDFGen] ✅ Successfully launched with system Chromium`);
+            } else {
+              throw new Error('No suitable Chromium executable found');
+            }
+          } catch (systemError) {
+            console.error(`📄 [PDFGen] System Chromium failed:`, systemError.message);
+            
+            // Final fallback with minimal configuration
+            console.log(`📄 [PDFGen] Attempting minimal configuration fallback...`);
             this.browser = await puppeteer.launch({
               headless: true,
-              args: ['--no-sandbox', '--disable-setuid-sandbox']
+              args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+              timeout: 30000
             });
+            console.log(`📄 [PDFGen] ✅ Successfully launched with minimal configuration`);
           }
         }
         
