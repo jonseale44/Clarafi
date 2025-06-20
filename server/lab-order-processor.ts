@@ -138,7 +138,7 @@ export class LabOrderProcessor {
           verificationStatus: 'verified',
           resultAvailableAt: new Date(),
           resultFinalizedAt: new Date(),
-          externalLabId: 1,
+          externalLabId: '1',
           externalResultId: `RES_${labOrder.externalOrderId}_${result.testCode}`,
           sourceType: 'external_lab',
           loincCode: result.loincCode,
