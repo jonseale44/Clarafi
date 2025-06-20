@@ -674,16 +674,7 @@ export function registerRoutes(app: Express): Server {
   app.use("/api/encounters", nursingSummaryRoutes);
   
   // Lab management routes
-  app.get("/api/patients/:patientId/lab-orders", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      const patientId = parseInt(req.params.patientId);
-      const labOrders = await storage.getPatientLabOrders(patientId);
-      res.json(labOrders);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+
 
   // Removed duplicate - using main lab results endpoint below
 
@@ -778,17 +769,7 @@ export function registerRoutes(app: Express): Server {
   // Removed duplicate - using main lab results endpoint
 
   // Lab orders endpoint for compatibility  
-  app.get("/api/patients/:patientId/lab-orders", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const patientId = parseInt(req.params.patientId);
-      const labOrders = await storage.getPatientLabOrders(patientId);
-      res.json(labOrders);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+  // REMOVED DUPLICATE - main lab-orders endpoint below
 
   // Encounter routes
   app.get("/api/patients/:patientId/encounters", async (req, res) => {
