@@ -176,9 +176,19 @@ export class OrderDeliveryService {
     switch (deliveryMethod) {
       case 'print_pdf':
         try {
-          console.log(`💊 [MedDelivery] Generating PDF for medication orders...`);
+          console.log(`💊 [MedDelivery] ===== MEDICATION PDF GENERATION START =====`);
+          console.log(`💊 [MedDelivery] Calling pdfService.generateMedicationPDF with:`);
+          console.log(`💊 [MedDelivery] - Orders: ${medicationOrders.length} items`);
+          console.log(`💊 [MedDelivery] - Patient ID: ${patientId}`);
+          console.log(`💊 [MedDelivery] - Provider ID: ${providerId}`);
+          console.log(`💊 [MedDelivery] - Orders details:`, JSON.stringify(medicationOrders, null, 2));
+          
           const pdfBuffer = await pdfService.generateMedicationPDF(medicationOrders, patientId, providerId);
-          console.log(`💊 [MedDelivery] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+          
+          console.log(`💊 [MedDelivery] ===== MEDICATION PDF GENERATION COMPLETE =====`);
+          console.log(`💊 [MedDelivery] PDF buffer size: ${pdfBuffer.length} bytes`);
+          console.log(`💊 [MedDelivery] PDF buffer type: ${typeof pdfBuffer}`);
+          console.log(`💊 [MedDelivery] PDF buffer is Buffer: ${Buffer.isBuffer(pdfBuffer)}`);
           
           const result = {
             success: true,

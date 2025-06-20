@@ -60,22 +60,49 @@ export class PDFGenerationService {
   private browser: any = null;
 
   async initBrowser() {
-    console.log(`📄 [PDFGen] Initializing Puppeteer browser...`);
+    console.log(`📄 [PDFGen] ===== BROWSER INITIALIZATION START =====`);
+    console.log(`📄 [PDFGen] Checking browser instance...`);
     
     if (!this.browser) {
       try {
-        console.log(`📄 [PDFGen] Launching Puppeteer with args: ['--no-sandbox', '--disable-setuid-sandbox']`);
+        console.log(`📄 [PDFGen] 🚀 Launching new Puppeteer browser instance...`);
+        console.log(`📄 [PDFGen] Browser args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-web-security', '--single-process']`);
+        
         this.browser = await puppeteer.launch({
           headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--single-process',
+            '--no-zygote',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=TranslateUI',
+            '--disable-extensions',
+            '--disable-features=VizDisplayCompositor'
+          ]
         });
-        console.log(`📄 [PDFGen] Puppeteer browser launched successfully`);
+        
+        console.log(`📄 [PDFGen] ✅ Browser launched successfully`);
+        console.log(`📄 [PDFGen] Browser process PID:`, this.browser.process()?.pid || 'N/A');
+        console.log(`📄 [PDFGen] Browser version:`, await this.browser.version());
+        console.log(`📄 [PDFGen] ===== BROWSER INITIALIZATION COMPLETE =====`);
       } catch (error) {
-        console.error(`❌ [PDFGen] Failed to launch Puppeteer browser:`, error);
+        console.error(`❌ [PDFGen] ===== BROWSER INITIALIZATION FAILED =====`);
+        console.error(`❌ [PDFGen] Error launching Puppeteer:`, error);
+        console.error(`❌ [PDFGen] Error name:`, error.name);
+        console.error(`❌ [PDFGen] Error message:`, error.message);
+        console.error(`❌ [PDFGen] Error stack:`, error.stack);
+        console.error(`❌ [PDFGen] Error code:`, error.code);
         throw error;
       }
     } else {
-      console.log(`📄 [PDFGen] Using existing browser instance`);
+      console.log(`📄 [PDFGen] ✅ Using existing browser instance`);
+      console.log(`📄 [PDFGen] Browser connected:`, this.browser.isConnected());
     }
     
     return this.browser;
