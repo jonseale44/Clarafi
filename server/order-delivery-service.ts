@@ -258,9 +258,19 @@ export class OrderDeliveryService {
     switch (deliveryMethod) {
       case 'print_pdf':
         try {
-          console.log(`🧪 [LabDelivery] Generating PDF for lab orders...`);
+          console.log(`🧪 [LabDelivery] ===== LAB PDF GENERATION START =====`);
+          console.log(`🧪 [LabDelivery] Calling pdfService.generateLabPDF with:`);
+          console.log(`🧪 [LabDelivery] - Orders: ${labOrders.length} items`);
+          console.log(`🧪 [LabDelivery] - Patient ID: ${patientId}`);
+          console.log(`🧪 [LabDelivery] - Provider ID: ${providerId}`);
+          console.log(`🧪 [LabDelivery] - Orders details:`, JSON.stringify(labOrders, null, 2));
+          
           const pdfBuffer = await pdfService.generateLabPDF(labOrders, patientId, providerId);
-          console.log(`🧪 [LabDelivery] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+          
+          console.log(`🧪 [LabDelivery] ===== LAB PDF GENERATION COMPLETE =====`);
+          console.log(`🧪 [LabDelivery] PDF buffer size: ${pdfBuffer.length} bytes`);
+          console.log(`🧪 [LabDelivery] PDF buffer type: ${typeof pdfBuffer}`);
+          console.log(`🧪 [LabDelivery] PDF buffer is Buffer: ${Buffer.isBuffer(pdfBuffer)}`);
           
           const result = {
             success: true,
@@ -340,9 +350,19 @@ export class OrderDeliveryService {
     switch (deliveryMethod) {
       case 'print_pdf':
         try {
-          console.log(`📷 [ImagingDelivery] Generating PDF for imaging orders...`);
+          console.log(`📷 [ImagingDelivery] ===== IMAGING PDF GENERATION START =====`);
+          console.log(`📷 [ImagingDelivery] Calling pdfService.generateImagingPDF with:`);
+          console.log(`📷 [ImagingDelivery] - Orders: ${imagingOrders.length} items`);
+          console.log(`📷 [ImagingDelivery] - Patient ID: ${patientId}`);
+          console.log(`📷 [ImagingDelivery] - Provider ID: ${providerId}`);
+          console.log(`📷 [ImagingDelivery] - Orders details:`, JSON.stringify(imagingOrders, null, 2));
+          
           const pdfBuffer = await pdfService.generateImagingPDF(imagingOrders, patientId, providerId);
-          console.log(`📷 [ImagingDelivery] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+          
+          console.log(`📷 [ImagingDelivery] ===== IMAGING PDF GENERATION COMPLETE =====`);
+          console.log(`📷 [ImagingDelivery] PDF buffer size: ${pdfBuffer.length} bytes`);
+          console.log(`📷 [ImagingDelivery] PDF buffer type: ${typeof pdfBuffer}`);
+          console.log(`📷 [ImagingDelivery] PDF buffer is Buffer: ${Buffer.isBuffer(pdfBuffer)}`);
           
           const result = {
             success: true,
