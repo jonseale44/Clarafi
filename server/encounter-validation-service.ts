@@ -175,6 +175,18 @@ export class EncounterValidationService {
         const { ProductionLabIntegrationService } = await import("./production-lab-integration-service.js");
         await ProductionLabIntegrationService.processProductionLabOrder(orderId);
         console.log(`✅ [ValidationService] Successfully processed lab order ${orderId} through production lab system`);
+        
+        // Immediately trigger result generation for realistic workflow
+        console.log(`🔬 [ValidationService] Triggering result generation for lab order ${orderId}`);
+        setTimeout(async () => {
+          try {
+            await ProductionLabIntegrationService.generateLabResults(orderId);
+            console.log(`✅ [ValidationService] Generated results for lab order ${orderId}`);
+          } catch (resultError) {
+            console.error(`❌ [ValidationService] Failed to generate results for lab order ${orderId}:`, resultError);
+          }
+        }, 2000); // 2 second delay for realistic processing
+        
       } catch (labError) {
         console.error(`❌ [ValidationService] Failed to process lab order ${orderId}:`, labError);
         // Continue - order is still signed even if lab processing fails

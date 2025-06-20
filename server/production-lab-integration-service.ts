@@ -22,6 +22,7 @@ export interface ProductionLabConfig {
 
 export interface LabOrderSubmission {
   orderId: number;
+  labOrderId?: number;
   externalOrderId: string;
   requisitionNumber: string;
   hl7MessageId: string;
@@ -99,6 +100,10 @@ export class ProductionLabIntegrationService {
       await this.initiateLabWorkflow(newLabOrder.id, submission);
       
       console.log(`✅ [ProductionLab] Order ${orderId} successfully transmitted as ${submission.externalOrderId}`);
+      
+      // Store the lab order ID for result generation
+      submission.labOrderId = newLabOrder.id;
+      
       return submission;
       
     } catch (error) {
