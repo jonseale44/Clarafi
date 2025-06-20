@@ -231,46 +231,25 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
     console.log(`📄 [ValidationSign] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
     
     try {
-      const { PDFGenerationService } = await import("./pdf-generation-service.js");
-      const pdfService = new PDFGenerationService();
+      const { pdfService } = await import("./pdf-service.js");
       
       let pdfBuffer: Buffer | null = null;
       
       if (signedOrder.orderType === 'medication') {
         console.log(`📄 [ValidationSign] Generating medication PDF for order ${orderId}`);
         pdfBuffer = await pdfService.generateMedicationPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [ValidationSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
       } else if (signedOrder.orderType === 'lab') {
         console.log(`📄 [ValidationSign] Generating lab PDF for order ${orderId}`);
         pdfBuffer = await pdfService.generateLabPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [ValidationSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
       } else if (signedOrder.orderType === 'imaging') {
         console.log(`📄 [ValidationSign] Generating imaging PDF for order ${orderId}`);
         pdfBuffer = await pdfService.generateImagingPDF([signedOrder], signedOrder.patientId, userId);
-        console.log(`📄 [ValidationSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
       } else {
         console.log(`📄 [ValidationSign] ⚠️ Unknown order type: ${signedOrder.orderType}, skipping PDF generation`);
       }
       
       if (pdfBuffer) {
-        console.log(`📄 [ValidationSign] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId}`);
-        
-        // Save PDF to filesystem for user access
-        const fs = await import('fs');
-        const path = await import('path');
-        
-        const pdfDir = '/tmp/pdfs';
-        if (!fs.existsSync(pdfDir)) {
-          fs.mkdirSync(pdfDir, { recursive: true });
-        }
-        
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `${signedOrder.orderType}-order-${orderId}-${timestamp}.pdf`;
-        const filepath = path.join(pdfDir, filename);
-        
-        fs.writeFileSync(filepath, pdfBuffer);
-        console.log(`📄 [ValidationSign] 💾 PDF saved to: ${filepath}`);
-        console.log(`📄 [ValidationSign] 🔗 PDF accessible at: /tmp/pdfs/${filename}`);
+        console.log(`📄 [ValidationSign] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`);
       }
       
       console.log(`📄 [ValidationSign] ===== PDF GENERATION COMPLETED =====`);

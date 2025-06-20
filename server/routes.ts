@@ -2976,46 +2976,25 @@ Return only valid JSON without markdown formatting.`;
       console.log(`📄 [IndividualSign] Order type: ${order.orderType}, Patient: ${order.patientId}`);
       
       try {
-        const { PDFGenerationService } = await import("./pdf-generation-service.js");
-        const pdfService = new PDFGenerationService();
+        const { pdfService } = await import("./pdf-service.js");
         
         let pdfBuffer: Buffer | null = null;
         
         if (order.orderType === 'medication') {
           console.log(`📄 [IndividualSign] Generating medication PDF for order ${orderId}`);
           pdfBuffer = await pdfService.generateMedicationPDF([updatedOrder], order.patientId, userId);
-          console.log(`📄 [IndividualSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
         } else if (order.orderType === 'lab') {
           console.log(`📄 [IndividualSign] Generating lab PDF for order ${orderId}`);
           pdfBuffer = await pdfService.generateLabPDF([updatedOrder], order.patientId, userId);
-          console.log(`📄 [IndividualSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
         } else if (order.orderType === 'imaging') {
           console.log(`📄 [IndividualSign] Generating imaging PDF for order ${orderId}`);
           pdfBuffer = await pdfService.generateImagingPDF([updatedOrder], order.patientId, userId);
-          console.log(`📄 [IndividualSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
         } else {
           console.log(`📄 [IndividualSign] ⚠️ Unknown order type: ${order.orderType}, skipping PDF generation`);
         }
         
         if (pdfBuffer) {
-          console.log(`📄 [IndividualSign] ✅ Successfully generated ${order.orderType} PDF for order ${orderId}`);
-          
-          // Save PDF to filesystem for user access
-          const fs = await import('fs');
-          const path = await import('path');
-          
-          const pdfDir = '/tmp/pdfs';
-          if (!fs.existsSync(pdfDir)) {
-            fs.mkdirSync(pdfDir, { recursive: true });
-          }
-          
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const filename = `${order.orderType}-order-${orderId}-${timestamp}.pdf`;
-          const filepath = path.join(pdfDir, filename);
-          
-          fs.writeFileSync(filepath, pdfBuffer);
-          console.log(`📄 [IndividualSign] 💾 PDF saved to: ${filepath}`);
-          console.log(`📄 [IndividualSign] 🔗 PDF accessible at: /tmp/pdfs/${filename}`);
+          console.log(`📄 [IndividualSign] ✅ Successfully generated ${order.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`);
         }
         
         console.log(`📄 [IndividualSign] ===== PDF GENERATION COMPLETED =====`);
@@ -3253,9 +3232,7 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api/lab-simulator", labSimulatorRoutes);
   app.use("/api/lab-status", labStatusDashboardRoutes);
 
-  // PDF test routes (for debugging PDF generation)
-  const pdfTestRoutes = await import("./pdf-test-routes.js");
-  app.use("/api", pdfTestRoutes.default);
+
   
   // PDF download routes (for accessing generated PDFs)
   const pdfDownloadRoutes = await import("./pdf-download-routes.js");
