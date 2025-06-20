@@ -2833,14 +2833,14 @@ Return only valid JSON without markdown formatting.`;
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
 
-      // For lab orders, automatically start external lab simulation
+      // For lab orders, automatically process through production lab system
       if (order.orderType === "lab") {
         try {
-          const { labOrderIntegration } = await import("./lab-order-integration-service");
-          await labOrderIntegration.processSignedLabOrder(orderId);
-          console.log(`🧪 [Order Signing] Started external lab simulation for order ${orderId}`);
+          const { LabOrderProcessor } = await import("./lab-order-processor.js");
+          await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
+          console.log(`🧪 [Order Signing] Processed lab order ${orderId} through production system`);
         } catch (error) {
-          console.error(`❌ [Order Signing] Failed to start lab simulation for order ${orderId}:`, error);
+          console.error(`❌ [Order Signing] Failed to process lab order ${orderId}:`, error);
         }
       }
 

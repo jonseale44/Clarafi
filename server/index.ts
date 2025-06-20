@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./init-db";
 import { seedLabData } from "./lab-sample-data";
+import "./lab-order-background-processor.js"; // Auto-start background processor
 
 const app = express();
 app.use(express.json());
