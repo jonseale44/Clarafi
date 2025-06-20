@@ -100,7 +100,10 @@ export class PDFGenerationService {
           '--disable-backgrounding-occluded-windows',
           '--disable-component-extensions-with-background-pages',
           '--single-process',
-          '--no-zygote'
+          '--no-zygote',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--run-all-compositor-stages-before-draw'
         ];
 
         console.log(`📄 [PDFGen] Attempting Replit-optimized browser launch...`);
