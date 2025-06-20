@@ -323,33 +323,47 @@ export class PDFGenerationService {
       const browser = await this.initBrowser();
       console.log(`📄 [PDFGen] Browser initialized successfully`);
       
-      console.log(`📄 [PDFGen] Creating new page...`);
-      const page = await browser.newPage();
+      console.log(`📄 [PDFGen] Creating new page with race condition protection...`);
+      const page = await Promise.race([
+        browser.newPage(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Page creation timeout after 30s')), 30000)
+        )
+      ]);
       console.log(`📄 [PDFGen] Page created successfully`);
       
-      // Set page timeouts
-      page.setDefaultTimeout(60000);
-      page.setDefaultNavigationTimeout(60000);
+      // Disable features to improve performance
+      await page.setJavaScriptEnabled(false);
+      await page.setRequestInterception(false);
       
       console.log(`📄 [PDFGen] Setting content... HTML length: ${html.length}`);
-      await page.setContent(html, { 
-        waitUntil: 'domcontentloaded',
-        timeout: 30000 
-      });
+      await Promise.race([
+        page.setContent(html, { 
+          waitUntil: 'domcontentloaded',
+          timeout: 20000 
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Content setting timeout after 25s')), 25000)
+        )
+      ]);
       console.log(`📄 [PDFGen] Content set successfully`);
       
       console.log(`📄 [PDFGen] Generating PDF...`);
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        timeout: 30000,
-        margin: {
-          top: '0.5in',
-          right: '0.5in',
-          bottom: '0.5in',
-          left: '0.5in'
-        }
-      });
+      const pdf = await Promise.race([
+        page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '0.5in',
+            right: '0.5in',
+            bottom: '0.5in',
+            left: '0.5in'
+          }
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('PDF generation timeout after 20s')), 20000)
+        )
+      ]);
       console.log(`📄 [PDFGen] PDF generated, size: ${pdf.length} bytes`);
       
       console.log(`📄 [PDFGen] Closing page...`);

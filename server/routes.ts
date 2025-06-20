@@ -3023,6 +3023,28 @@ Return only valid JSON without markdown formatting.`;
       } catch (pdfError) {
         console.error(`📄 [IndividualSign] ❌ PDF generation failed for order ${orderId}:`, pdfError);
         console.error(`📄 [IndividualSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
+        
+        // Fallback to text-based order documentation
+        try {
+          console.log(`📄 [IndividualSign] 🔄 Attempting fallback PDF generation...`);
+          const { PDFFallbackService } = await import("./pdf-fallback-service.js");
+          
+          let content = '';
+          if (order.orderType === 'medication') {
+            content = PDFFallbackService.generateMedicationPDFContent([updatedOrder], order.patientId, userId);
+          } else if (order.orderType === 'lab') {
+            content = PDFFallbackService.generateLabPDFContent([updatedOrder], order.patientId, userId);
+          } else if (order.orderType === 'imaging') {
+            content = PDFFallbackService.generateImagingPDFContent([updatedOrder], order.patientId, userId);
+          }
+          
+          if (content) {
+            await PDFFallbackService.saveFallbackPDF(content, order.orderType, orderId);
+            console.log(`📄 [IndividualSign] ✅ Fallback documentation saved for order ${orderId}`);
+          }
+        } catch (fallbackError) {
+          console.error(`📄 [IndividualSign] ❌ Fallback generation also failed:`, fallbackError);
+        }
         // Continue with response - order is still signed
       }
 
