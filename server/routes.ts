@@ -639,7 +639,7 @@ IMPORTANT INSTRUCTIONS:
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-export function registerRoutes(app: Express): Server {
+export async function registerRoutes(app: Express): Promise<Server> {
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
 
@@ -648,9 +648,9 @@ export function registerRoutes(app: Express): Server {
   app.use("/api/patients", patientOrderPreferencesRoutes);
 
   // Signed orders routes
-  const signedOrdersRoutes = await import("./signed-orders-routes.js");
-  app.use("/api/patients", signedOrdersRoutes.default);
-  app.use("/api/signed-orders", signedOrdersRoutes.default);
+  const signedOrdersRoutes = (await import("./signed-orders-routes.js")).default;
+  app.use("/api/patients", signedOrdersRoutes);
+  app.use("/api/signed-orders", signedOrdersRoutes);
 
   // PDF download endpoint
   app.get("/api/orders/download-pdf/:filename", async (req, res) => {
