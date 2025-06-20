@@ -99,9 +99,7 @@ export class LabOrderProcessor {
         requisitionNumber: this.generateRequisitionNumber(order.id),
         targetLabId: 1,
         acknowledgedAt: new Date(),
-        transmittedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        transmittedAt: new Date()
       }).returning();
       
       console.log(`✅ [LabProcessor] Created lab order ${newLabOrder.id} for external processing`);
