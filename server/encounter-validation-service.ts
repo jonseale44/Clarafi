@@ -168,6 +168,44 @@ export class EncounterValidationService {
       }
     }
 
+    // Generate PDF for signed order
+    console.log(`📄 [ValidationService] ===== PDF GENERATION STARTING =====`);
+    console.log(`📄 [ValidationService] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
+    
+    try {
+      const { PDFGenerationService } = await import("./pdf-generation-service.js");
+      const pdfService = new PDFGenerationService();
+      
+      let pdfBuffer: Buffer | null = null;
+      
+      if (signedOrder.orderType === 'medication') {
+        console.log(`📄 [ValidationService] Generating medication PDF for order ${orderId}`);
+        pdfBuffer = await pdfService.generateMedicationPDF([signedOrder], signedOrder.patientId, userId);
+        console.log(`📄 [ValidationService] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
+      } else if (signedOrder.orderType === 'lab') {
+        console.log(`📄 [ValidationService] Generating lab PDF for order ${orderId}`);
+        pdfBuffer = await pdfService.generateLabPDF([signedOrder], signedOrder.patientId, userId);
+        console.log(`📄 [ValidationService] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
+      } else if (signedOrder.orderType === 'imaging') {
+        console.log(`📄 [ValidationService] Generating imaging PDF for order ${orderId}`);
+        pdfBuffer = await pdfService.generateImagingPDF([signedOrder], signedOrder.patientId, userId);
+        console.log(`📄 [ValidationService] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
+      } else {
+        console.log(`📄 [ValidationService] ⚠️ Unknown order type: ${signedOrder.orderType}, skipping PDF generation`);
+      }
+      
+      if (pdfBuffer) {
+        console.log(`📄 [ValidationService] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId}`);
+      }
+      
+      console.log(`📄 [ValidationService] ===== PDF GENERATION COMPLETED =====`);
+      
+    } catch (pdfError) {
+      console.error(`📄 [ValidationService] ❌ PDF generation failed for order ${orderId}:`, pdfError);
+      console.error(`📄 [ValidationService] ❌ PDF Error stack:`, (pdfError as Error).stack);
+      // Continue with response - order is still signed
+    }
+
     // For lab orders, trigger automatic processing through lab order processor
     if (signedOrder.orderType === "lab") {
       console.log(`🧪 [ValidationService] Triggering lab order processing for signed order: ${orderId}`);
