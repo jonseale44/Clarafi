@@ -33,11 +33,11 @@ async function testPuppeteer() {
   ];
 
   try {
-    console.log('🔧 [PuppeteerTest] Attempting bundled Chromium...');
+    console.log('🔧 [PuppeteerTest] Attempting system Chromium...');
     const browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
+      executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium-browser',
       args: replicaArgs,
-      pipe: true,
       timeout: 30000
     });
     

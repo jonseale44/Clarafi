@@ -28,14 +28,17 @@ export class OrderDeliveryService {
         .from(orders)
         .where(and(
           eq(orders.patientId, patientId),
-          eq(orders.orderStatus, 'approved')
+          or(
+            eq(orders.orderStatus, 'approved'),
+            eq(orders.orderStatus, 'draft')
+          )
         ))
         .limit(10);
       
-      console.log(`🧪 [OrderDelivery] Found ${testOrders.length} approved orders for testing`);
+      console.log(`🧪 [OrderDelivery] Found ${testOrders.length} orders for testing:`, testOrders.map(o => `${o.id}:${o.orderType}:${o.orderStatus}`));
       
       if (testOrders.length === 0) {
-        throw new Error('No approved orders found for PDF testing');
+        throw new Error('No orders found for PDF testing');
       }
       
       // Test each order type
