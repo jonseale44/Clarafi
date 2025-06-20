@@ -1,6 +1,6 @@
 import { pdfService } from './pdf-generation-service.js';
 import { db } from './db.js';
-import { patientOrderPreferences, orders } from '../shared/schema.js';
+import { patientOrderPreferences, orders, signedOrders } from '../shared/schema.js';
 import { eq, and, inArray } from 'drizzle-orm';
 
 interface DeliveryResult {
@@ -92,6 +92,29 @@ export class OrderDeliveryService {
         console.log(`📦 [OrderDelivery] Imaging delivery result:`, JSON.stringify(result, null, 2));
       }
       
+      // Record signed orders for post-signature management
+      console.log(`📦 [OrderDelivery] Recording signed orders for post-signature management...`);
+      for (const orderDetail of orderDetails) {
+        try {
+          const signedOrderData = {
+            orderId: orderDetail.id,
+            patientId: orderDetail.patientId,
+            encounterId: orderDetail.encounterId,
+            orderType: orderDetail.orderType,
+            deliveryMethod: this.getDeliveryMethodForOrder(orderDetail.orderType, prefs),
+            deliveryStatus: 'pending',
+            originalDeliveryMethod: this.getDeliveryMethodForOrder(orderDetail.orderType, prefs),
+            signedAt: new Date(),
+            signedBy: providerId
+          };
+
+          await db.insert(signedOrders).values(signedOrderData);
+          console.log(`📦 [OrderDelivery] Recorded signed order ${orderDetail.id} in tracking table`);
+        } catch (recordError) {
+          console.error(`❌ [OrderDelivery] Failed to record signed order ${orderDetail.id}:`, recordError);
+        }
+      }
+
       console.log(`📦 [OrderDelivery] ===== ORDER DELIVERY PROCESSING COMPLETE =====`);
       console.log(`📦 [OrderDelivery] Total results: ${results.length}`);
       
@@ -301,6 +324,19 @@ export class OrderDeliveryService {
       imagingDeliveryMethod: 'print_pdf',
       medicationDeliveryMethod: 'preferred_pharmacy'
     };
+  }
+
+  private getDeliveryMethodForOrder(orderType: string, prefs: any): string {
+    switch (orderType) {
+      case 'medication':
+        return prefs.medicationDeliveryMethod || 'preferred_pharmacy';
+      case 'lab':
+        return prefs.labDeliveryMethod || 'mock_service';
+      case 'imaging':
+        return prefs.imagingDeliveryMethod || 'print_pdf';
+      default:
+        return 'unknown';
+    }
   }
 }
 

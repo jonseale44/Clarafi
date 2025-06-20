@@ -647,6 +647,11 @@ export function registerRoutes(app: Express): Server {
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/patients", patientOrderPreferencesRoutes);
 
+  // Signed orders routes
+  const signedOrdersRoutes = await import("./signed-orders-routes.js");
+  app.use("/api/patients", signedOrdersRoutes.default);
+  app.use("/api/signed-orders", signedOrdersRoutes.default);
+
   // PDF download endpoint
   app.get("/api/orders/download-pdf/:filename", async (req, res) => {
     try {
@@ -2900,6 +2905,28 @@ Return only valid JSON without markdown formatting.`;
         console.log(
           `📋 [IndividualSign] Encounter ID: ${order.encounterId}, Patient ID: ${order.patientId}`,
         );
+
+      // Process delivery for the signed order
+      console.log(`📋 [Sign Order] ===== DELIVERY PROCESSING START =====`);
+      console.log(`📋 [Sign Order] Order details:`, JSON.stringify(order, null, 2));
+      console.log(`📋 [Sign Order] Updated order details:`, JSON.stringify(updatedOrder, null, 2));
+      
+      const { orderDeliveryService } = await import('./order-delivery-service.js');
+      let deliveryResults = [];
+      
+      try {
+        console.log(`📋 [Sign Order] Calling orderDeliveryService.processOrderDelivery`);
+        console.log(`📋 [Sign Order] Parameters: orderIds=[${orderId}], patientId=${order.patientId}, providerId=${userId}`);
+        
+        deliveryResults = await orderDeliveryService.processOrderDelivery([orderId], order.patientId, userId);
+        console.log(`📋 [Sign Order] Delivery processing completed successfully`);
+        console.log(`📋 [Sign Order] Delivery results:`, JSON.stringify(deliveryResults, null, 2));
+        console.log(`📋 [Sign Order] ===== DELIVERY PROCESSING COMPLETE =====`);
+      } catch (deliveryError) {
+        console.error('❌ [Sign Order] Error processing delivery:', deliveryError);
+        console.error('❌ [Sign Order] Delivery error stack:', deliveryError.stack);
+        console.log(`📋 [Sign Order] ===== DELIVERY PROCESSING FAILED =====`);
+      }
         console.log(`📋 [IndividualSign] User ID: ${userId}`);
 
         try {
