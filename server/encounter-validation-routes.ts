@@ -254,6 +254,23 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
       
       if (pdfBuffer) {
         console.log(`📄 [ValidationSign] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId}`);
+        
+        // Save PDF to filesystem for user access
+        const fs = await import('fs');
+        const path = await import('path');
+        
+        const pdfDir = '/tmp/pdfs';
+        if (!fs.existsSync(pdfDir)) {
+          fs.mkdirSync(pdfDir, { recursive: true });
+        }
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `${signedOrder.orderType}-order-${orderId}-${timestamp}.pdf`;
+        const filepath = path.join(pdfDir, filename);
+        
+        fs.writeFileSync(filepath, pdfBuffer);
+        console.log(`📄 [ValidationSign] 💾 PDF saved to: ${filepath}`);
+        console.log(`📄 [ValidationSign] 🔗 PDF accessible at: /tmp/pdfs/${filename}`);
       }
       
       console.log(`📄 [ValidationSign] ===== PDF GENERATION COMPLETED =====`);

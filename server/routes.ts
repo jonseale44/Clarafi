@@ -2999,6 +2999,23 @@ Return only valid JSON without markdown formatting.`;
         
         if (pdfBuffer) {
           console.log(`📄 [IndividualSign] ✅ Successfully generated ${order.orderType} PDF for order ${orderId}`);
+          
+          // Save PDF to filesystem for user access
+          const fs = await import('fs');
+          const path = await import('path');
+          
+          const pdfDir = '/tmp/pdfs';
+          if (!fs.existsSync(pdfDir)) {
+            fs.mkdirSync(pdfDir, { recursive: true });
+          }
+          
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename = `${order.orderType}-order-${orderId}-${timestamp}.pdf`;
+          const filepath = path.join(pdfDir, filename);
+          
+          fs.writeFileSync(filepath, pdfBuffer);
+          console.log(`📄 [IndividualSign] 💾 PDF saved to: ${filepath}`);
+          console.log(`📄 [IndividualSign] 🔗 PDF accessible at: /tmp/pdfs/${filename}`);
         }
         
         console.log(`📄 [IndividualSign] ===== PDF GENERATION COMPLETED =====`);
@@ -3239,6 +3256,10 @@ Return only valid JSON without markdown formatting.`;
   // PDF test routes (for debugging PDF generation)
   const pdfTestRoutes = await import("./pdf-test-routes.js");
   app.use("/api", pdfTestRoutes.default);
+  
+  // PDF download routes (for accessing generated PDFs)
+  const pdfDownloadRoutes = await import("./pdf-download-routes.js");
+  app.use("/api", pdfDownloadRoutes.default);
   app.use("/api/external-lab-mock", externalLabMockRouter);
 
   // Legacy dynamic vitals routes removed - now using static imports above
