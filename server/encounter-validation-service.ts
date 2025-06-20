@@ -168,25 +168,14 @@ export class EncounterValidationService {
       }
     }
 
-    // For lab orders, process through production-ready external lab integration
+    // For lab orders, trigger automatic processing through lab order processor
     if (signedOrder.orderType === "lab") {
-      console.log(`🏥 [ValidationService] Processing lab order through production lab integration: ${orderId}`);
+      console.log(`🧪 [ValidationService] Triggering lab order processing for signed order: ${orderId}`);
       try {
-        const { ProductionLabIntegrationService } = await import("./production-lab-integration-service.js");
-        await ProductionLabIntegrationService.processProductionLabOrder(orderId);
-        console.log(`✅ [ValidationService] Successfully processed lab order ${orderId} through production lab system`);
-        
-        // Immediately trigger result generation for realistic workflow
-        console.log(`🔬 [ValidationService] Triggering result generation for lab order ${orderId}`);
-        setTimeout(async () => {
-          try {
-            await ProductionLabIntegrationService.generateLabResults(orderId);
-            console.log(`✅ [ValidationService] Generated results for lab order ${orderId}`);
-          } catch (resultError) {
-            console.error(`❌ [ValidationService] Failed to generate results for lab order ${orderId}:`, resultError);
-          }
-        }, 2000); // 2 second delay for realistic processing
-        
+        const { LabOrderProcessor } = await import("./lab-order-processor.js");
+        // Process immediately since order is now signed
+        await LabOrderProcessor.processSignedLabOrders(signedOrder.patientId, signedOrder.encounterId);
+        console.log(`✅ [ValidationService] Lab order processing initiated for order ${orderId}`);
       } catch (labError) {
         console.error(`❌ [ValidationService] Failed to process lab order ${orderId}:`, labError);
         // Continue - order is still signed even if lab processing fails
