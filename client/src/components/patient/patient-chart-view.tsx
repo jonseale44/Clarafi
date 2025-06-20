@@ -12,6 +12,7 @@ import { NursingEncounterView } from "./nursing-encounter-view";
 import { SharedChartSections } from "./shared-chart-sections";
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
+import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +30,7 @@ const chartSections = [
   { id: "labs", label: "Labs", icon: null },
   { id: "vitals", label: "Vitals", icon: null },
   { id: "imaging", label: "Imaging", icon: null },
+  { id: "documents", label: "Patient Documents", icon: null },
   { id: "family-history", label: "Family History", icon: null },
   { id: "social-history", label: "Social History", icon: null },
   { id: "surgical-history", label: "Surgical History", icon: null },
@@ -182,6 +184,8 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
         return <EnhancedMedicalProblemsList patientId={patientId} mode="patient-chart" isReadOnly={false} />;
       case "labs":
         return <LabResultsMatrix patientId={patientId} mode="full" />;
+      case "documents":
+        return <EmbeddedPDFViewer patientId={patientId} title="Patient Documents" />;
       case "medication":
       case "allergies":
       case "vitals":

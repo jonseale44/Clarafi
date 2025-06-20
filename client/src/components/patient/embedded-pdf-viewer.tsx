@@ -44,17 +44,9 @@ export function EmbeddedPDFViewer({
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Fetch PDFs - filter by patient if not showing all
+  // Fetch PDFs - use patient-specific endpoint if not showing all
   const { data: pdfData, isLoading, refetch } = useQuery({
-    queryKey: ["/api/pdfs", patientId],
-    select: (data: { files: PDFFile[] }) => {
-      if (showAllPDFs) return data.files;
-      // Filter PDFs for this specific patient
-      return data.files.filter(file => 
-        file.filename.includes(`-${patientId}-`) || 
-        file.patientId === patientId
-      );
-    }
+    queryKey: showAllPDFs ? ["/api/pdfs"] : [`/api/patients/${patientId}/pdfs`],
   });
 
   const files = pdfData || [];
@@ -298,7 +290,7 @@ export function EmbeddedPDFViewer({
             {/* PDF Viewer */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={`/api/pdfs/${selectedPDF}#toolbar=1&navpanes=1&scrollbar=1`}
+                src={`/api/pdfs/${selectedPDF}/view#toolbar=1&navpanes=1&scrollbar=1`}
                 className="w-full h-full border-0"
                 title={`PDF Viewer - ${selectedPDF}`}
               />

@@ -33,7 +33,7 @@ router.get("/pdfs/:filename", requireAuth, async (req: Request, res: Response) =
     console.log(`📄 [PDFDownload] ✅ PDF found, size: ${stat.size} bytes`);
     
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Length', stat.size);
     
     const stream = fs.createReadStream(filepath);
