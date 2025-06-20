@@ -15,64 +15,92 @@ interface DeliveryResult {
 export class OrderDeliveryService {
   
   async processOrderDelivery(orderIds: number[], patientId: number, providerId: number): Promise<DeliveryResult[]> {
-    console.log(`📦 [OrderDelivery] Processing delivery for orders: [${orderIds.join(', ')}]`);
+    console.log(`📦 [OrderDelivery] ===== ORDER DELIVERY PROCESSING START =====`);
+    console.log(`📦 [OrderDelivery] Order IDs: [${orderIds.join(', ')}]`);
+    console.log(`📦 [OrderDelivery] Patient ID: ${patientId}, Provider ID: ${providerId}`);
     
-    // Get orders details
-    const orderDetails = await db
-      .select()
-      .from(orders)
-      .where(inArray(orders.id, orderIds));
-    
-    // Get patient preferences
-    const preferences = await db
-      .select()
-      .from(patientOrderPreferences)
-      .where(eq(patientOrderPreferences.patientId, patientId))
-      .limit(1);
-    
-    const prefs = preferences[0] || this.getDefaultPreferences();
-    
-    // Group orders by type
-    const medicationOrders = orderDetails.filter(o => o.orderType === 'medication');
-    const labOrders = orderDetails.filter(o => o.orderType === 'lab');
-    const imagingOrders = orderDetails.filter(o => o.orderType === 'imaging');
-    
-    const results: DeliveryResult[] = [];
-    
-    // Process medication orders
-    if (medicationOrders.length > 0) {
-      const result = await this.processMedicationDelivery(
-        medicationOrders, 
-        prefs.medicationDeliveryMethod, 
-        patientId, 
-        providerId
-      );
-      results.push(result);
+    try {
+      // Get orders details
+      console.log(`📦 [OrderDelivery] Fetching order details from database...`);
+      const orderDetails = await db
+        .select()
+        .from(orders)
+        .where(inArray(orders.id, orderIds));
+      
+      console.log(`📦 [OrderDelivery] Found ${orderDetails.length} orders in database`);
+      console.log(`📦 [OrderDelivery] Order details:`, JSON.stringify(orderDetails, null, 2));
+      
+      // Get patient preferences
+      console.log(`📦 [OrderDelivery] Fetching patient preferences...`);
+      const preferences = await db
+        .select()
+        .from(patientOrderPreferences)
+        .where(eq(patientOrderPreferences.patientId, patientId))
+        .limit(1);
+      
+      const prefs = preferences[0] || this.getDefaultPreferences();
+      console.log(`📦 [OrderDelivery] Patient preferences:`, JSON.stringify(prefs, null, 2));
+      
+      // Group orders by type
+      const medicationOrders = orderDetails.filter(o => o.orderType === 'medication');
+      const labOrders = orderDetails.filter(o => o.orderType === 'lab');
+      const imagingOrders = orderDetails.filter(o => o.orderType === 'imaging');
+      
+      console.log(`📦 [OrderDelivery] Order grouping:`);
+      console.log(`📦 [OrderDelivery] - Medications: ${medicationOrders.length}`);
+      console.log(`📦 [OrderDelivery] - Labs: ${labOrders.length}`);
+      console.log(`📦 [OrderDelivery] - Imaging: ${imagingOrders.length}`);
+      
+      const results: DeliveryResult[] = [];
+      
+      // Process medication orders
+      if (medicationOrders.length > 0) {
+        console.log(`📦 [OrderDelivery] Processing ${medicationOrders.length} medication orders...`);
+        const result = await this.processMedicationDelivery(
+          medicationOrders, 
+          prefs.medicationDeliveryMethod, 
+          patientId, 
+          providerId
+        );
+        results.push(result);
+        console.log(`📦 [OrderDelivery] Medication delivery result:`, JSON.stringify(result, null, 2));
+      }
+      
+      // Process lab orders
+      if (labOrders.length > 0) {
+        console.log(`📦 [OrderDelivery] Processing ${labOrders.length} lab orders...`);
+        const result = await this.processLabDelivery(
+          labOrders, 
+          prefs.labDeliveryMethod, 
+          patientId, 
+          providerId
+        );
+        results.push(result);
+        console.log(`📦 [OrderDelivery] Lab delivery result:`, JSON.stringify(result, null, 2));
+      }
+      
+      // Process imaging orders
+      if (imagingOrders.length > 0) {
+        console.log(`📦 [OrderDelivery] Processing ${imagingOrders.length} imaging orders...`);
+        const result = await this.processImagingDelivery(
+          imagingOrders, 
+          prefs.imagingDeliveryMethod, 
+          patientId, 
+          providerId
+        );
+        results.push(result);
+        console.log(`📦 [OrderDelivery] Imaging delivery result:`, JSON.stringify(result, null, 2));
+      }
+      
+      console.log(`📦 [OrderDelivery] ===== ORDER DELIVERY PROCESSING COMPLETE =====`);
+      console.log(`📦 [OrderDelivery] Total results: ${results.length}`);
+      
+      return results;
+    } catch (error) {
+      console.error(`❌ [OrderDelivery] ORDER DELIVERY PROCESSING FAILED:`, error);
+      console.error(`❌ [OrderDelivery] Error stack:`, error.stack);
+      throw error;
     }
-    
-    // Process lab orders
-    if (labOrders.length > 0) {
-      const result = await this.processLabDelivery(
-        labOrders, 
-        prefs.labDeliveryMethod, 
-        patientId, 
-        providerId
-      );
-      results.push(result);
-    }
-    
-    // Process imaging orders
-    if (imagingOrders.length > 0) {
-      const result = await this.processImagingDelivery(
-        imagingOrders, 
-        prefs.imagingDeliveryMethod, 
-        patientId, 
-        providerId
-      );
-      results.push(result);
-    }
-    
-    return results;
   }
   
   private async processMedicationDelivery(
@@ -84,45 +112,66 @@ export class OrderDeliveryService {
     
     const orderIds = medicationOrders.map(o => o.id);
     
-    console.log(`💊 [MedDelivery] Processing ${medicationOrders.length} medication orders via ${deliveryMethod}`);
+    console.log(`💊 [MedDelivery] ===== MEDICATION DELIVERY START =====`);
+    console.log(`💊 [MedDelivery] Processing ${medicationOrders.length} medication orders`);
+    console.log(`💊 [MedDelivery] Delivery method: ${deliveryMethod}`);
+    console.log(`💊 [MedDelivery] Order IDs: [${orderIds.join(', ')}]`);
+    console.log(`💊 [MedDelivery] Patient ID: ${patientId}, Provider ID: ${providerId}`);
     
     switch (deliveryMethod) {
       case 'print_pdf':
         try {
+          console.log(`💊 [MedDelivery] Generating PDF for medication orders...`);
           const pdfBuffer = await pdfService.generateMedicationPDF(medicationOrders, patientId, providerId);
-          return {
+          console.log(`💊 [MedDelivery] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+          
+          const result = {
             success: true,
             deliveryMethod: 'print_pdf',
             orderIds,
             pdfBuffer,
             filename: `prescription_${patientId}_${Date.now()}.pdf`
           };
+          console.log(`💊 [MedDelivery] ===== MEDICATION DELIVERY COMPLETE (SUCCESS) =====`);
+          return result;
         } catch (error) {
-          console.error('Failed to generate medication PDF:', error);
-          return {
+          console.error('❌ [MedDelivery] Failed to generate medication PDF:', error);
+          console.error('❌ [MedDelivery] Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
+          
+          const result = {
             success: false,
             deliveryMethod: 'print_pdf',
             orderIds,
-            error: 'Failed to generate PDF'
+            error: `Failed to generate PDF: ${error.message}`
           };
+          console.log(`💊 [MedDelivery] ===== MEDICATION DELIVERY COMPLETE (FAILED) =====`);
+          return result;
         }
         
       case 'preferred_pharmacy':
-        // Placeholder for SureScripts integration
         console.log(`💊 [MedDelivery] Would send to preferred pharmacy (placeholder)`);
-        return {
+        const result = {
           success: true,
           deliveryMethod: 'preferred_pharmacy',
           orderIds
         };
+        console.log(`💊 [MedDelivery] ===== MEDICATION DELIVERY COMPLETE (PHARMACY) =====`);
+        return result;
         
       default:
-        return {
+        console.error(`💊 [MedDelivery] Unknown delivery method: ${deliveryMethod}`);
+        const errorResult = {
           success: false,
           deliveryMethod: deliveryMethod,
           orderIds,
-          error: 'Unknown delivery method'
+          error: `Unknown delivery method: ${deliveryMethod}`
         };
+        console.log(`💊 [MedDelivery] ===== MEDICATION DELIVERY COMPLETE (ERROR) =====`);
+        return errorResult;
     }
   }
   

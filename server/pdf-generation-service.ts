@@ -60,12 +60,24 @@ export class PDFGenerationService {
   private browser: any = null;
 
   async initBrowser() {
+    console.log(`📄 [PDFGen] Initializing Puppeteer browser...`);
+    
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
+      try {
+        console.log(`📄 [PDFGen] Launching Puppeteer with args: ['--no-sandbox', '--disable-setuid-sandbox']`);
+        this.browser = await puppeteer.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        });
+        console.log(`📄 [PDFGen] Puppeteer browser launched successfully`);
+      } catch (error) {
+        console.error(`❌ [PDFGen] Failed to launch Puppeteer browser:`, error);
+        throw error;
+      }
+    } else {
+      console.log(`📄 [PDFGen] Using existing browser instance`);
     }
+    
     return this.browser;
   }
 
@@ -77,23 +89,46 @@ export class PDFGenerationService {
   }
 
   async generateMedicationPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
-    console.log(`📄 [PDFGen] Generating medication PDF for patient ${patientId}`);
+    console.log(`📄 [PDFGen] ===== MEDICATION PDF GENERATION START =====`);
+    console.log(`📄 [PDFGen] Patient ID: ${patientId}, Provider ID: ${providerId}`);
+    console.log(`📄 [PDFGen] Orders received:`, JSON.stringify(orders, null, 2));
     
-    const patient = await this.getPatientInfo(patientId);
-    const provider = await this.getProviderInfo(providerId);
-    
-    const template = this.getMedicationTemplate();
-    const compiledTemplate = Handlebars.compile(template);
-    
-    const html = compiledTemplate({
-      patient,
-      provider,
-      orders: orders.filter(o => o.orderType === 'medication'),
-      generatedDate: new Date().toLocaleDateString(),
-      generatedTime: new Date().toLocaleTimeString()
-    });
+    try {
+      const patient = await this.getPatientInfo(patientId);
+      console.log(`📄 [PDFGen] Patient info retrieved:`, JSON.stringify(patient, null, 2));
+      
+      const provider = await this.getProviderInfo(providerId);
+      console.log(`📄 [PDFGen] Provider info retrieved:`, JSON.stringify(provider, null, 2));
+      
+      const medicationOrders = orders.filter(o => o.orderType === 'medication');
+      console.log(`📄 [PDFGen] Filtered medication orders:`, JSON.stringify(medicationOrders, null, 2));
+      
+      const template = this.getMedicationTemplate();
+      const compiledTemplate = Handlebars.compile(template);
+      
+      const templateData = {
+        patient,
+        provider,
+        orders: medicationOrders,
+        generatedDate: new Date().toLocaleDateString(),
+        generatedTime: new Date().toLocaleTimeString()
+      };
+      console.log(`📄 [PDFGen] Template data:`, JSON.stringify(templateData, null, 2));
+      
+      const html = compiledTemplate(templateData);
+      console.log(`📄 [PDFGen] Generated HTML length: ${html.length} characters`);
+      console.log(`📄 [PDFGen] HTML preview (first 500 chars):`, html.substring(0, 500));
 
-    return await this.generatePDFFromHTML(html);
+      const pdfBuffer = await this.generatePDFFromHTML(html);
+      console.log(`📄 [PDFGen] PDF generated successfully, buffer size: ${pdfBuffer.length} bytes`);
+      console.log(`📄 [PDFGen] ===== MEDICATION PDF GENERATION COMPLETE =====`);
+      
+      return pdfBuffer;
+    } catch (error) {
+      console.error(`❌ [PDFGen] MEDICATION PDF GENERATION FAILED:`, error);
+      console.error(`❌ [PDFGen] Error stack:`, error.stack);
+      throw error;
+    }
   }
 
   async generateLabPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
@@ -137,24 +172,49 @@ export class PDFGenerationService {
   }
 
   private async generatePDFFromHTML(html: string): Promise<Buffer> {
-    const browser = await this.initBrowser();
-    const page = await browser.newPage();
+    console.log(`📄 [PDFGen] ===== PDF FROM HTML GENERATION START =====`);
     
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '0.5in',
-        right: '0.5in',
-        bottom: '0.5in',
-        left: '0.5in'
-      }
-    });
-    
-    await page.close();
-    return pdf;
+    try {
+      console.log(`📄 [PDFGen] Initializing browser...`);
+      const browser = await this.initBrowser();
+      console.log(`📄 [PDFGen] Browser initialized successfully`);
+      
+      console.log(`📄 [PDFGen] Creating new page...`);
+      const page = await browser.newPage();
+      console.log(`📄 [PDFGen] Page created successfully`);
+      
+      console.log(`📄 [PDFGen] Setting content... HTML length: ${html.length}`);
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      console.log(`📄 [PDFGen] Content set successfully, waiting for network idle`);
+      
+      console.log(`📄 [PDFGen] Generating PDF...`);
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '0.5in',
+          right: '0.5in',
+          bottom: '0.5in',
+          left: '0.5in'
+        }
+      });
+      console.log(`📄 [PDFGen] PDF generated, size: ${pdf.length} bytes`);
+      
+      console.log(`📄 [PDFGen] Closing page...`);
+      await page.close();
+      console.log(`📄 [PDFGen] Page closed successfully`);
+      console.log(`📄 [PDFGen] ===== PDF FROM HTML GENERATION COMPLETE =====`);
+      
+      return pdf;
+    } catch (error) {
+      console.error(`❌ [PDFGen] PDF FROM HTML GENERATION FAILED:`, error);
+      console.error(`❌ [PDFGen] Error details:`, {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      throw error;
+    }
   }
 
   private async getPatientInfo(patientId: number): Promise<Patient> {
