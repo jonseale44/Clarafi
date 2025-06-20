@@ -30,12 +30,15 @@ interface MatrixData {
     value: string;
     abnormalFlag?: string;
     criticalFlag?: boolean;
-    id: number;
+    id: number | string;
     encounterId?: number;
     needsReview?: boolean;
     isReviewed?: boolean;
     reviewedBy?: number;
     orderedBy?: number;
+    isPending?: boolean;
+    externalOrderId?: string;
+    requisitionNumber?: string;
   }>;
 }
 
@@ -75,12 +78,20 @@ export function LabResultsMatrix({
     return result.reviewedBy === currentUserId || result.orderedBy === currentUserId;
   };
 
-  const { data: labResults, isLoading } = useQuery({
+  const { data: labResults, isLoading: resultsLoading } = useQuery({
     queryKey: [`/api/patients/${patientId}/lab-results`],
     enabled: !!patientId
   });
 
+  const { data: labOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: [`/api/patients/${patientId}/lab-orders`],
+    enabled: !!patientId
+  });
+
+  const isLoading = resultsLoading || ordersLoading;
+
   const results = (labResults as any) || [];
+  const orders = (labOrders as any) || [];
 
   // Define lab panel groupings following real EMR standards
   // This ensures ALL components of standard panels are grouped together correctly
@@ -149,10 +160,11 @@ export function LabResultsMatrix({
   }), []);
 
   const matrixData = useMemo(() => {
-    if (!results.length) return [];
+    if (!results.length && !orders.length) return [];
 
     const testGroups = new Map<string, MatrixData>();
 
+    // Process existing results
     results.forEach((result: any) => {
       const key = result.testName;
       
@@ -192,8 +204,62 @@ export function LabResultsMatrix({
         needsReview: pendingReviewIds.includes(result.id) && result.reviewedBy === null,
         isReviewed: result.reviewedBy !== null,
         reviewedBy: result.reviewedBy,
-        orderedBy: result.orderedBy
+        orderedBy: result.orderedBy,
+        isPending: false,
+        externalOrderId: result.externalOrderId,
+        requisitionNumber: result.requisitionNumber
       });
+    });
+
+    // Process pending orders (only if no results exist for that order)
+    orders.forEach((order: any) => {
+      if (order.orderStatus === 'pending') {
+        const key = order.testName;
+        const hasResults = results.some((result: any) => result.labOrderId === order.id);
+        
+        if (!hasResults) {
+          if (!testGroups.has(key)) {
+            testGroups.set(key, {
+              testName: order.testName,
+              testCode: order.testCode || 'N/A',
+              unit: '',
+              referenceRange: 'Pending',
+              results: []
+            });
+          }
+
+          const testGroup = testGroups.get(key)!;
+          let orderDate = order.orderedAt;
+          try {
+            if (orderDate) {
+              const parsedDate = new Date(orderDate);
+              if (isNaN(parsedDate.getTime())) {
+                orderDate = new Date().toISOString();
+              }
+            } else {
+              orderDate = new Date().toISOString();
+            }
+          } catch (error) {
+            orderDate = new Date().toISOString();
+          }
+
+          testGroup.results.push({
+            date: orderDate,
+            value: 'PENDING',
+            abnormalFlag: 'PENDING',
+            criticalFlag: false,
+            id: `pending_${order.id}`,
+            encounterId: order.encounterId,
+            needsReview: false,
+            isReviewed: false,
+            reviewedBy: null,
+            orderedBy: order.orderedBy,
+            isPending: true,
+            externalOrderId: order.externalOrderId,
+            requisitionNumber: order.requisitionNumber
+          });
+        }
+      }
     });
 
     // Sort results by date for each test
@@ -208,7 +274,7 @@ export function LabResultsMatrix({
     });
 
     return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));
-  }, [results, pendingReviewIds]);
+  }, [results, orders, pendingReviewIds]);
 
   // Group tests by lab panels
   const groupedData = useMemo(() => {
