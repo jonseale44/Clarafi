@@ -227,7 +227,42 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
     console.log(`🔍 [ValidationSign] === END INDIVIDUAL ORDER SIGNING ===`);
 
     // Generate PDF for signed order
-    console.log(`📄 [SingleSign] ===== PDF GENERATION STARTING =====`);
+    console.log(`📄 [ValidationSign] ===== PDF GENERATION STARTING =====`);
+    console.log(`📄 [ValidationSign] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
+    
+    try {
+      const { PDFGenerationService } = await import("./pdf-generation-service.js");
+      const pdfService = new PDFGenerationService();
+      
+      let pdfBuffer: Buffer | null = null;
+      
+      if (signedOrder.orderType === 'medication') {
+        console.log(`📄 [ValidationSign] Generating medication PDF for order ${orderId}`);
+        pdfBuffer = await pdfService.generateMedicationPDF([signedOrder], signedOrder.patientId, userId);
+        console.log(`📄 [ValidationSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
+      } else if (signedOrder.orderType === 'lab') {
+        console.log(`📄 [ValidationSign] Generating lab PDF for order ${orderId}`);
+        pdfBuffer = await pdfService.generateLabPDF([signedOrder], signedOrder.patientId, userId);
+        console.log(`📄 [ValidationSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
+      } else if (signedOrder.orderType === 'imaging') {
+        console.log(`📄 [ValidationSign] Generating imaging PDF for order ${orderId}`);
+        pdfBuffer = await pdfService.generateImagingPDF([signedOrder], signedOrder.patientId, userId);
+        console.log(`📄 [ValidationSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
+      } else {
+        console.log(`📄 [ValidationSign] ⚠️ Unknown order type: ${signedOrder.orderType}, skipping PDF generation`);
+      }
+      
+      if (pdfBuffer) {
+        console.log(`📄 [ValidationSign] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId}`);
+      }
+      
+      console.log(`📄 [ValidationSign] ===== PDF GENERATION COMPLETED =====`);
+      
+    } catch (pdfError) {
+      console.error(`📄 [ValidationSign] ❌ PDF generation failed for order ${orderId}:`, pdfError);
+      console.error(`📄 [ValidationSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
+      // Continue with response - order is still signed
+    }
     console.log(`📄 [SingleSign] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
     
     try {
