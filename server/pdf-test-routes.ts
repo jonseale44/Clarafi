@@ -1,8 +1,10 @@
 import { Router, Request, Response } from "express";
+import { APIResponseHandler } from "./api-response-handler.js";
+import { requireAuth } from "./auth.js";
+import { pdfService } from "./pdf-generation-service.js";
 import { db } from "./db.js";
 import { orders } from "../shared/schema.js";
 import { eq, and, inArray } from "drizzle-orm";
-import { orderDeliveryService } from "./order-delivery-service.js";
 
 const router = Router();
 
@@ -49,19 +51,7 @@ router.post("/test/pdf-generation/:patientId", async (req: Request, res: Respons
     }
 
     // Test PDF generation directly
-    console.log(`🧪 [PDFTest] Testing PDF generation directly...`);
-    
-    // Get approved orders for testing
-    const testOrders = await db
-      .select()
-      .from(orders)
-      .where(and(
-        eq(orders.patientId, patientId),
-        eq(orders.orderStatus, 'approved')
-      ))
-      .limit(5);
-    
-    console.log(`🧪 [PDFTest] Found ${testOrders.length} approved orders for testing`);
+    console.log(`🧪 [PDFTest] Testing PDF generation with found orders...`);
     
     const results = [];
     
@@ -145,8 +135,8 @@ router.post("/test/pdf-generation/:patientId", async (req: Request, res: Respons
     };
 
     console.log(`🧪 [PDFTest] ===== PDF GENERATION TEST COMPLETE =====`);
-    console.log(`🧪 [PDFTest] Results count: ${deliveryResults.length}`);
-    console.log(`🧪 [PDFTest] Results summary:`, deliveryResults.map(r => ({
+    console.log(`🧪 [PDFTest] Results count: ${results.length}`);
+    console.log(`🧪 [PDFTest] Results summary:`, results.map(r => ({
       success: r.success,
       deliveryMethod: r.deliveryMethod,
       orderCount: r.orderIds.length,
