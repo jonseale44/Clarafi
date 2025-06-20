@@ -1,7 +1,7 @@
 import { pdfService } from './pdf-generation-service.js';
 import { db } from './db.js';
 import { patientOrderPreferences, orders, signedOrders } from '../shared/schema.js';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, or } from 'drizzle-orm';
 
 interface DeliveryResult {
   success: boolean;

@@ -48,9 +48,101 @@ router.post("/test/pdf-generation/:patientId", async (req: Request, res: Respons
       });
     }
 
-    // Process the orders through the delivery service
-    console.log(`🧪 [PDFTest] Processing orders through delivery service...`);
-    const deliveryResults = await orderDeliveryService.testPDFGeneration(patientId, userId);
+    // Test PDF generation directly
+    console.log(`🧪 [PDFTest] Testing PDF generation directly...`);
+    
+    // Get approved orders for testing
+    const testOrders = await db
+      .select()
+      .from(orders)
+      .where(and(
+        eq(orders.patientId, patientId),
+        eq(orders.orderStatus, 'approved')
+      ))
+      .limit(5);
+    
+    console.log(`🧪 [PDFTest] Found ${testOrders.length} approved orders for testing`);
+    
+    const results = [];
+    
+    // Test medication PDF if available
+    const medicationOrders = testOrders.filter(o => o.orderType === 'medication');
+    if (medicationOrders.length > 0) {
+      try {
+        console.log(`🧪 [PDFTest] Testing medication PDF with ${medicationOrders.length} orders...`);
+        const pdfBuffer = await pdfService.generateMedicationPDF(medicationOrders, patientId, userId);
+        results.push({
+          type: 'medication',
+          success: true,
+          orderCount: medicationOrders.length,
+          pdfSize: pdfBuffer.length
+        });
+        console.log(`🧪 [PDFTest] ✅ Medication PDF generated: ${pdfBuffer.length} bytes`);
+      } catch (error) {
+        console.error(`🧪 [PDFTest] ❌ Medication PDF failed:`, error);
+        results.push({
+          type: 'medication',
+          success: false,
+          error: error.message
+        });
+      }
+    }
+    
+    // Test lab PDF if available  
+    const labOrders = testOrders.filter(o => o.orderType === 'lab');
+    if (labOrders.length > 0) {
+      try {
+        console.log(`🧪 [PDFTest] Testing lab PDF with ${labOrders.length} orders...`);
+        const pdfBuffer = await pdfService.generateLabPDF(labOrders, patientId, userId);
+        results.push({
+          type: 'lab',
+          success: true,
+          orderCount: labOrders.length,
+          pdfSize: pdfBuffer.length
+        });
+        console.log(`🧪 [PDFTest] ✅ Lab PDF generated: ${pdfBuffer.length} bytes`);
+      } catch (error) {
+        console.error(`🧪 [PDFTest] ❌ Lab PDF failed:`, error);
+        results.push({
+          type: 'lab',
+          success: false,
+          error: error.message
+        });
+      }
+    }
+    
+    // Test imaging PDF if available
+    const imagingOrders = testOrders.filter(o => o.orderType === 'imaging');
+    if (imagingOrders.length > 0) {
+      try {
+        console.log(`🧪 [PDFTest] Testing imaging PDF with ${imagingOrders.length} orders...`);
+        const pdfBuffer = await pdfService.generateImagingPDF(imagingOrders, patientId, userId);
+        results.push({
+          type: 'imaging',
+          success: true,
+          orderCount: imagingOrders.length,
+          pdfSize: pdfBuffer.length
+        });
+        console.log(`🧪 [PDFTest] ✅ Imaging PDF generated: ${pdfBuffer.length} bytes`);
+      } catch (error) {
+        console.error(`🧪 [PDFTest] ❌ Imaging PDF failed:`, error);
+        results.push({
+          type: 'imaging',
+          success: false,
+          error: error.message
+        });
+      }
+    }
+    
+    const deliveryResults = {
+      success: results.length > 0,
+      results,
+      summary: {
+        totalTests: results.length,
+        successful: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length
+      }
+    };
 
     console.log(`🧪 [PDFTest] ===== PDF GENERATION TEST COMPLETE =====`);
     console.log(`🧪 [PDFTest] Results count: ${deliveryResults.length}`);
