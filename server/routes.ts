@@ -2971,6 +2971,44 @@ Return only valid JSON without markdown formatting.`;
         console.log(`🧪 [Lab] Signed lab order: ${order.testName}`);
       }
 
+      // Generate PDF for signed order
+      console.log(`📄 [IndividualSign] ===== PDF GENERATION STARTING =====`);
+      console.log(`📄 [IndividualSign] Order type: ${order.orderType}, Patient: ${order.patientId}`);
+      
+      try {
+        const { PDFGenerationService } = await import("./pdf-generation-service.js");
+        const pdfService = new PDFGenerationService();
+        
+        let pdfBuffer: Buffer | null = null;
+        
+        if (order.orderType === 'medication') {
+          console.log(`📄 [IndividualSign] Generating medication PDF for order ${orderId}`);
+          pdfBuffer = await pdfService.generateMedicationPDF([updatedOrder], order.patientId, userId);
+          console.log(`📄 [IndividualSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
+        } else if (order.orderType === 'lab') {
+          console.log(`📄 [IndividualSign] Generating lab PDF for order ${orderId}`);
+          pdfBuffer = await pdfService.generateLabPDF([updatedOrder], order.patientId, userId);
+          console.log(`📄 [IndividualSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
+        } else if (order.orderType === 'imaging') {
+          console.log(`📄 [IndividualSign] Generating imaging PDF for order ${orderId}`);
+          pdfBuffer = await pdfService.generateImagingPDF([updatedOrder], order.patientId, userId);
+          console.log(`📄 [IndividualSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
+        } else {
+          console.log(`📄 [IndividualSign] ⚠️ Unknown order type: ${order.orderType}, skipping PDF generation`);
+        }
+        
+        if (pdfBuffer) {
+          console.log(`📄 [IndividualSign] ✅ Successfully generated ${order.orderType} PDF for order ${orderId}`);
+        }
+        
+        console.log(`📄 [IndividualSign] ===== PDF GENERATION COMPLETED =====`);
+        
+      } catch (pdfError) {
+        console.error(`📄 [IndividualSign] ❌ PDF generation failed for order ${orderId}:`, pdfError);
+        console.error(`📄 [IndividualSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
+        // Continue with response - order is still signed
+      }
+
       res.json({
         success: true,
         order: updatedOrder,
@@ -3051,6 +3089,71 @@ Return only valid JSON without markdown formatting.`;
           );
           // Continue with response even if activation fails
         }
+      }
+
+      // Generate PDFs for signed orders  
+      console.log(`📄 [RouteBulkSign] ===== PDF GENERATION STARTING =====`);
+      console.log(`📄 [RouteBulkSign] Total signed orders: ${signedOrders.length}`);
+      
+      try {
+        const { PDFGenerationService } = await import("./pdf-generation-service.js");
+        const pdfService = new PDFGenerationService();
+        
+        // Group orders by type and patient for PDF generation
+        const ordersByTypeAndPatient = signedOrders.reduce((acc: any, order: any) => {
+          const key = `${order.patientId}_${order.orderType}`;
+          if (!acc[key]) {
+            acc[key] = {
+              patientId: order.patientId,
+              orderType: order.orderType,
+              orders: []
+            };
+          }
+          acc[key].orders.push(order);
+          return acc;
+        }, {});
+
+        console.log(`📄 [RouteBulkSign] Grouped orders by type and patient:`, Object.keys(ordersByTypeAndPatient));
+
+        for (const [key, group] of Object.entries(ordersByTypeAndPatient)) {
+          const { patientId, orderType, orders } = group as any;
+          
+          console.log(`📄 [RouteBulkSign] Processing ${orderType} orders for patient ${patientId}`);
+          
+          try {
+            let pdfBuffer: Buffer | null = null;
+            
+            if (orderType === 'medication') {
+              console.log(`📄 [RouteBulkSign] Generating medication PDF for patient ${patientId}`);
+              pdfBuffer = await pdfService.generateMedicationPDF(orders, patientId, userId);
+              console.log(`📄 [RouteBulkSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
+            } else if (orderType === 'lab') {
+              console.log(`📄 [RouteBulkSign] Generating lab PDF for patient ${patientId}`);
+              pdfBuffer = await pdfService.generateLabPDF(orders, patientId, userId);
+              console.log(`📄 [RouteBulkSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
+            } else if (orderType === 'imaging') {
+              console.log(`📄 [RouteBulkSign] Generating imaging PDF for patient ${patientId}`);
+              pdfBuffer = await pdfService.generateImagingPDF(orders, patientId, userId);
+              console.log(`📄 [RouteBulkSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
+            } else {
+              console.log(`📄 [RouteBulkSign] ⚠️ Unknown order type: ${orderType}, skipping PDF generation`);
+            }
+            
+            if (pdfBuffer) {
+              console.log(`📄 [RouteBulkSign] ✅ Successfully generated ${orderType} PDF for patient ${patientId}`);
+            }
+            
+          } catch (pdfError) {
+            console.error(`📄 [RouteBulkSign] ❌ Failed to generate ${orderType} PDF for patient ${patientId}:`, pdfError);
+            console.error(`📄 [RouteBulkSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
+          }
+        }
+        
+        console.log(`📄 [RouteBulkSign] ===== PDF GENERATION COMPLETED =====`);
+        
+      } catch (pdfError) {
+        console.error(`📄 [RouteBulkSign] ❌ PDF generation system error:`, pdfError);
+        console.error(`📄 [RouteBulkSign] ❌ System error stack:`, (pdfError as Error).stack);
       }
 
       res.json({
