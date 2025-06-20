@@ -558,7 +558,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(orders)
       .where(and(
         eq(orders.patientId, patientId),
-        eq(orders.orderStatus, 'draft')
+        sql`${orders.orderStatus} IN ('draft', 'pending')`
       ))
       .orderBy(desc(orders.createdAt));
   }

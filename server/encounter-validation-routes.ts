@@ -393,6 +393,10 @@ router.post("/orders/bulk-sign", async (req: Request, res: Response) => {
       }
     }
 
+    console.log(`🔍 [BulkSign] BEFORE PDF GENERATION - Results object:`, JSON.stringify(results, null, 2));
+    console.log(`🔍 [BulkSign] Signed orders array:`, results.signed);
+    console.log(`🔍 [BulkSign] Signed orders length:`, results.signed.length);
+
     // Generate PDFs for signed orders
     console.log(`📄 [BulkSign] ===== PDF GENERATION STARTING =====`);
     console.log(`📄 [BulkSign] Total signed orders: ${results.signed.length}`);
