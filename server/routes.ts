@@ -1045,32 +1045,34 @@ export function registerRoutes(app: Express): Server {
 
       const patientId = parseInt(req.params.patientId);
       
-      // Use storage method to get lab orders data safely
-      const labOrdersData = await storage.getPatientLabOrders(patientId);
-      
-      // Get result counts for each lab order to determine status
-      const ordersWithStatus = await Promise.all(
-        labOrdersData.map(async (order: any) => {
-          const resultQuery = await db
-            .select()
-            .from(labResults)
-            .where(eq(labResults.labOrderId, order.id));
-          
-          const hasResults = resultQuery.length > 0;
-
-          
-          return {
-            id: order.id,
-            testName: order.testName,
-            orderStatus: hasResults ? 'results_available' : 
-                        order.orderStatus === 'transmitted' ? 'pending' : order.orderStatus,
-            priority: order.priority || 'Routine',
-            orderedAt: order.orderedAt,
-            orderDate: order.orderedAt,
-            collectionDate: hasResults ? order.acknowledgedAt : null
-          };
+      // Get lab orders directly from lab_orders table for proper status tracking
+      const labOrdersData = await db
+        .select({
+          id: labOrders.id,
+          testName: labOrders.testName,
+          orderStatus: labOrders.orderStatus,
+          priority: labOrders.priority,
+          orderedAt: labOrders.orderedAt,
+          acknowledgedAt: labOrders.acknowledgedAt,
+          externalOrderId: labOrders.externalOrderId,
+          requisitionNumber: labOrders.requisitionNumber
         })
-      );
+        .from(labOrders)
+        .where(eq(labOrders.patientId, patientId))
+        .orderBy(desc(labOrders.orderedAt));
+      
+      // Check for results and format response
+      const ordersWithStatus = labOrdersData.map((order: any) => ({
+        id: order.id,
+        testName: order.testName,
+        orderStatus: order.orderStatus === 'transmitted' ? 'pending' : order.orderStatus,
+        priority: order.priority || 'Routine',
+        orderedAt: order.orderedAt,
+        orderDate: order.orderedAt,
+        collectionDate: order.acknowledgedAt,
+        externalOrderId: order.externalOrderId,
+        requisitionNumber: order.requisitionNumber
+      }));
       
       res.json(ordersWithStatus);
     } catch (error: any) {
