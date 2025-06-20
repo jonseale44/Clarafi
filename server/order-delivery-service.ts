@@ -13,6 +13,94 @@ interface DeliveryResult {
 }
 
 export class OrderDeliveryService {
+  
+  /**
+   * Test PDF generation for debugging purposes
+   */
+  async testPDFGeneration(patientId: number, providerId: number): Promise<any> {
+    console.log(`🧪 [OrderDelivery] ===== PDF GENERATION TEST START =====`);
+    console.log(`🧪 [OrderDelivery] Patient ID: ${patientId}, Provider ID: ${providerId}`);
+    
+    try {
+      // Get existing orders for testing
+      const testOrders = await db
+        .select()
+        .from(orders)
+        .where(and(
+          eq(orders.patientId, patientId),
+          eq(orders.orderStatus, 'approved')
+        ))
+        .limit(10);
+      
+      console.log(`🧪 [OrderDelivery] Found ${testOrders.length} approved orders for testing`);
+      
+      if (testOrders.length === 0) {
+        throw new Error('No approved orders found for PDF testing');
+      }
+      
+      // Test each order type
+      const results = [];
+      const medicationOrders = testOrders.filter(o => o.orderType === 'medication');
+      const labOrders = testOrders.filter(o => o.orderType === 'lab');
+      const imagingOrders = testOrders.filter(o => o.orderType === 'imaging');
+      
+      console.log(`🧪 [OrderDelivery] Order breakdown: ${medicationOrders.length} meds, ${labOrders.length} labs, ${imagingOrders.length} imaging`);
+      
+      // Test medication PDF
+      if (medicationOrders.length > 0) {
+        try {
+          console.log(`🧪 [OrderDelivery] Testing medication PDF...`);
+          const medResult = await this.processMedicationDelivery(medicationOrders, 'print_pdf', patientId, providerId);
+          results.push({ type: 'medication', ...medResult });
+          console.log(`🧪 [OrderDelivery] ✅ Medication PDF test completed`);
+        } catch (error) {
+          console.error(`🧪 [OrderDelivery] ❌ Medication PDF test failed:`, error);
+          results.push({ type: 'medication', success: false, error: error.message });
+        }
+      }
+      
+      // Test lab PDF
+      if (labOrders.length > 0) {
+        try {
+          console.log(`🧪 [OrderDelivery] Testing lab PDF...`);
+          const labResult = await this.processLabDelivery(labOrders, 'print_pdf', patientId, providerId);
+          results.push({ type: 'lab', ...labResult });
+          console.log(`🧪 [OrderDelivery] ✅ Lab PDF test completed`);
+        } catch (error) {
+          console.error(`🧪 [OrderDelivery] ❌ Lab PDF test failed:`, error);
+          results.push({ type: 'lab', success: false, error: error.message });
+        }
+      }
+      
+      // Test imaging PDF
+      if (imagingOrders.length > 0) {
+        try {
+          console.log(`🧪 [OrderDelivery] Testing imaging PDF...`);
+          const imagingResult = await this.processImagingDelivery(imagingOrders, 'print_pdf', patientId, providerId);
+          results.push({ type: 'imaging', ...imagingResult });
+          console.log(`🧪 [OrderDelivery] ✅ Imaging PDF test completed`);
+        } catch (error) {
+          console.error(`🧪 [OrderDelivery] ❌ Imaging PDF test failed:`, error);
+          results.push({ type: 'imaging', success: false, error: error.message });
+        }
+      }
+      
+      console.log(`🧪 [OrderDelivery] ===== PDF GENERATION TEST COMPLETE =====`);
+      return {
+        success: true,
+        results,
+        summary: {
+          totalTests: results.length,
+          successful: results.filter(r => r.success).length,
+          failed: results.filter(r => !r.success).length
+        }
+      };
+      
+    } catch (error) {
+      console.error(`🧪 [OrderDelivery] ===== PDF GENERATION TEST FAILED =====`, error);
+      throw error;
+    }
+  }
 
   async processSignedOrder(orderId: number, userId: number): Promise<void> {
     console.log(`🚀 [OrderDelivery] ===== PROCESS SIGNED ORDER START =====`);

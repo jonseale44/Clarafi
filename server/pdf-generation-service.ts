@@ -68,7 +68,8 @@ export class PDFGenerationService {
         console.log(`📄 [PDFGen] 🚀 Launching new Puppeteer browser instance...`);
         console.log(`📄 [PDFGen] Browser args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-web-security', '--single-process']`);
         
-        this.browser = await puppeteer.launch({
+        // Try to launch browser with fallback options
+        const launchOptions = {
           headless: 'new',
           args: [
             '--no-sandbox',
@@ -86,10 +87,35 @@ export class PDFGenerationService {
             '--disable-features=VizDisplayCompositor',
             '--disable-ipc-flooding-protection',
             '--disable-default-apps',
-            '--disable-blink-features=AutomationControlled',
-            '--disable-features=VizDisplayCompositor'
+            '--disable-blink-features=AutomationControlled'
           ]
-        });
+        };
+
+        try {
+          // First try with system chromium
+          console.log(`📄 [PDFGen] Attempting to launch with system chromium...`);
+          this.browser = await puppeteer.launch(launchOptions);
+        } catch (systemError) {
+          console.error(`📄 [PDFGen] System chromium failed:`, systemError.message);
+          
+          try {
+            // Fallback to bundled chromium
+            console.log(`📄 [PDFGen] Falling back to bundled chromium...`);
+            this.browser = await puppeteer.launch({
+              ...launchOptions,
+              executablePath: undefined // Use bundled chromium
+            });
+          } catch (bundledError) {
+            console.error(`📄 [PDFGen] Bundled chromium also failed:`, bundledError.message);
+            
+            // Final fallback - try with minimal args
+            console.log(`📄 [PDFGen] Final fallback with minimal arguments...`);
+            this.browser = await puppeteer.launch({
+              headless: true,
+              args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+          }
+        }
         
         console.log(`📄 [PDFGen] ✅ Browser launched successfully`);
         console.log(`📄 [PDFGen] Browser process PID:`, this.browser.process()?.pid || 'N/A');

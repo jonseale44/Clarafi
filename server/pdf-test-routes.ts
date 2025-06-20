@@ -50,11 +50,7 @@ router.post("/test/pdf-generation/:patientId", async (req: Request, res: Respons
 
     // Process the orders through the delivery service
     console.log(`🧪 [PDFTest] Processing orders through delivery service...`);
-    const deliveryResults = await orderDeliveryService.processOrderDelivery(
-      testOrders.map(o => o.id),
-      patientId,
-      userId
-    );
+    const deliveryResults = await orderDeliveryService.testPDFGeneration(patientId, userId);
 
     console.log(`🧪 [PDFTest] ===== PDF GENERATION TEST COMPLETE =====`);
     console.log(`🧪 [PDFTest] Results count: ${deliveryResults.length}`);
