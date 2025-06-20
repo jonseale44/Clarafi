@@ -739,6 +739,31 @@ export const orders = pgTable("orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Patient Order Delivery Preferences
+export const patientOrderPreferences = pgTable("patient_order_preferences", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull().unique(),
+  
+  // Lab order delivery preferences
+  labDeliveryMethod: text("lab_delivery_method").default("mock_service"), // 'mock_service', 'real_service', 'print_pdf'
+  labServiceProvider: text("lab_service_provider"), // Name of the actual lab service when real_service is selected
+  
+  // Imaging order delivery preferences  
+  imagingDeliveryMethod: text("imaging_delivery_method").default("print_pdf"), // 'mock_service', 'real_service', 'print_pdf'
+  imagingServiceProvider: text("imaging_service_provider"), // Name of the actual imaging service when real_service is selected
+  
+  // Medication order delivery preferences
+  medicationDeliveryMethod: text("medication_delivery_method").default("preferred_pharmacy"), // 'preferred_pharmacy', 'print_pdf'
+  preferredPharmacy: text("preferred_pharmacy"), // Name/address of preferred pharmacy
+  pharmacyPhone: text("pharmacy_phone"), // Pharmacy contact number
+  pharmacyFax: text("pharmacy_fax"), // Pharmacy fax number
+  
+  // Audit trail
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastUpdatedBy: integer("last_updated_by").references(() => users.id),
+});
+
 // Medication Formulary - 500 Most Commonly Prescribed Medications
 export const medicationFormulary = pgTable("medication_formulary", {
   id: serial("id").primaryKey(),
@@ -1023,6 +1048,17 @@ export const medicalProblemsRelations = relations(medicalProblems, ({ one }) => 
   }),
 }));
 
+export const patientOrderPreferencesRelations = relations(patientOrderPreferences, ({ one }) => ({
+  patient: one(patients, {
+    fields: [patientOrderPreferences.patientId],
+    references: [patients.id],
+  }),
+  lastUpdatedByUser: one(users, {
+    fields: [patientOrderPreferences.lastUpdatedBy],
+    references: [users.id],
+  }),
+}));
+
 // Medical Problems Types
 export type MedicalProblem = typeof medicalProblems.$inferSelect;
 export type InsertMedicalProblem = z.infer<typeof insertMedicalProblemSchema>;
@@ -1264,3 +1300,20 @@ export type SocialHistory = typeof socialHistory.$inferSelect;
 export type Allergy = typeof allergies.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
+
+// Patient Order Preferences schema and types
+export const insertPatientOrderPreferencesSchema = createInsertSchema(patientOrderPreferences).pick({
+  patientId: true,
+  labDeliveryMethod: true,
+  labServiceProvider: true,
+  imagingDeliveryMethod: true,
+  imagingServiceProvider: true,
+  medicationDeliveryMethod: true,
+  preferredPharmacy: true,
+  pharmacyPhone: true,
+  pharmacyFax: true,
+  lastUpdatedBy: true,
+});
+
+export type PatientOrderPreferences = typeof patientOrderPreferences.$inferSelect;
+export type InsertPatientOrderPreferences = z.infer<typeof insertPatientOrderPreferencesSchema>;
