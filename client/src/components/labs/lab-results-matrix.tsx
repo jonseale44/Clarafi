@@ -626,7 +626,7 @@ export function LabResultsMatrix({
 
   return (
     <Card>
-      {showTitle && (
+      {showTitle && mode !== 'encounter' && (
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Lab Results Matrix</CardTitle>
