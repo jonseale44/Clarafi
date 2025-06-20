@@ -1043,40 +1043,32 @@ export function registerRoutes(app: Express): Server {
 
       const patientId = parseInt(req.params.patientId);
       
-      // Get both immediate orders (from orders table) and processed orders (from lab_orders table)
-      const { orders, labOrders } = await import("@shared/schema");
-      
-      // Get immediate pending orders from orders table - these show IMMEDIATELY when placed
-      const immediateOrders = await db
+      // Get lab orders with results count to determine status
+      const labOrdersWithResults = await db
         .select({
-          id: orders.id,
-          testName: orders.testName,
-          orderStatus: orders.orderStatus,
-          priority: orders.priority,
-          orderedAt: orders.createdAt,
-          orderDate: orders.createdAt,
-          collectionDate: orders.createdAt,
-          source: 'immediate'
+          id: labOrders.id,
+          testName: labOrders.testName,
+          orderStatus: labOrders.orderStatus,
+          priority: labOrders.priority,
+          orderedAt: labOrders.orderedAt,
+          resultCount: sql<number>`COUNT(${labResults.id})`.as('resultCount')
         })
-        .from(orders)
-        .where(
-          and(
-            eq(orders.patientId, patientId),
-            eq(orders.orderType, 'lab')
-          )
-        )
-        .orderBy(desc(orders.createdAt));
+        .from(labOrders)
+        .leftJoin(labResults, eq(labOrders.id, labResults.labOrderId))
+        .where(eq(labOrders.patientId, patientId))
+        .groupBy(labOrders.id, labOrders.testName, labOrders.orderStatus, labOrders.priority, labOrders.orderedAt)
+        .orderBy(desc(labOrders.orderedAt));
 
-      // Format immediate orders for frontend
-      const formattedOrders = immediateOrders.map(order => ({
+      // Format orders with proper status based on results availability
+      const formattedOrders = labOrdersWithResults.map(order => ({
         id: order.id,
         testName: order.testName,
-        orderStatus: order.orderStatus === 'approved' ? 'pending' : order.orderStatus,
+        orderStatus: order.resultCount > 0 ? 'results_available' : 
+                    order.orderStatus === 'transmitted' ? 'pending' : order.orderStatus,
         priority: order.priority || 'Routine',
         orderedAt: order.orderedAt,
         orderDate: order.orderedAt,
-        collectionDate: null,
-        source: 'immediate'
+        collectionDate: order.resultCount > 0 ? order.orderedAt : null
       }));
       
       res.json(formattedOrders);
