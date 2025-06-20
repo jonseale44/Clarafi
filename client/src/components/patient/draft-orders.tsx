@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool } from "lucide-react";
 import { MedicationInputHelper } from "./medication-input-helper";
 import { FastMedicationIntelligence } from "./fast-medication-intelligence";
+import { OrderPreferencesDialog } from "./order-preferences-dialog";
+import { OrderPreferencesIndicator } from "./order-preferences-indicator";
 
 interface Order {
   id: number;
@@ -461,14 +463,38 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
-              <TabsTrigger value="medication">
-                Meds ({getOrdersByType("medication").length})
+              <TabsTrigger value="medication" className="relative">
+                <div className="flex items-center gap-1">
+                  Meds ({getOrdersByType("medication").length})
+                  <OrderPreferencesIndicator patientId={patientId} orderType="medication" />
+                  <OrderPreferencesDialog patientId={patientId} orderType="medication">
+                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-1">
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </OrderPreferencesDialog>
+                </div>
               </TabsTrigger>
-              <TabsTrigger value="lab">
-                Labs ({getOrdersByType("lab").length})
+              <TabsTrigger value="lab" className="relative">
+                <div className="flex items-center gap-1">
+                  Labs ({getOrdersByType("lab").length})
+                  <OrderPreferencesIndicator patientId={patientId} orderType="lab" />
+                  <OrderPreferencesDialog patientId={patientId} orderType="lab">
+                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-1">
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </OrderPreferencesDialog>
+                </div>
               </TabsTrigger>
-              <TabsTrigger value="imaging">
-                Imaging ({getOrdersByType("imaging").length})
+              <TabsTrigger value="imaging" className="relative">
+                <div className="flex items-center gap-1">
+                  Imaging ({getOrdersByType("imaging").length})
+                  <OrderPreferencesIndicator patientId={patientId} orderType="imaging" />
+                  <OrderPreferencesDialog patientId={patientId} orderType="imaging">
+                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-1">
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </OrderPreferencesDialog>
+                </div>
               </TabsTrigger>
               <TabsTrigger value="referral">
                 Referrals ({getOrdersByType("referral").length})
@@ -493,8 +519,19 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }
             {["medication", "lab", "imaging", "referral"].map((type) => (
               <TabsContent key={type} value={type} className="space-y-2">
                 <div className="flex justify-between items-center mb-3">
-                  <div className="text-sm text-gray-600">
-                    {getOrdersByType(type).length} {type} orders
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-gray-600">
+                      {getOrdersByType(type).length} {type} orders
+                    </div>
+                    {(type === "medication" || type === "lab" || type === "imaging") && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        Delivery:
+                        <OrderPreferencesIndicator 
+                          patientId={patientId} 
+                          orderType={type as "medication" | "lab" | "imaging"} 
+                        />
+                      </div>
+                    )}
                   </div>
                   {getOrdersByType(type).some((order: Order) => order.orderStatus === 'draft') && (
                     <Button 

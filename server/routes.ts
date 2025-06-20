@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { APIResponseHandler } from "./api-response-handler.js";
+import patientOrderPreferencesRoutes from "./patient-order-preferences-routes.js";
 import {
   insertPatientSchema,
   insertEncounterSchema,
@@ -644,6 +645,7 @@ export function registerRoutes(app: Express): Server {
 
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);
+  app.use("/api/patients", patientOrderPreferencesRoutes);
 
   // Enhanced medical problems routes (JSONB visit history)
   app.use("/api", enhancedMedicalProblemsRoutes);
