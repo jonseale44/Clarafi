@@ -240,7 +240,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               </div>
-            ) : groupedResults.length === 0 ? (
+            ) : groupedResults.length === 0 && pendingOrders.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <div>
@@ -251,6 +251,20 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                     onClick={() => setIsFullViewOpen(true)}
                   >
                     View all patient lab history
+                  </Button>
+                </div>
+              </div>
+            ) : groupedResults.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <div>
+                  <p>No results yet - check Pending tab for active orders</p>
+                  <Button 
+                    variant="outline" 
+                    className="text-sm mt-2"
+                    onClick={() => setActiveTab("pending")}
+                  >
+                    View Pending Orders ({pendingOrders.length})
                   </Button>
                 </div>
               </div>

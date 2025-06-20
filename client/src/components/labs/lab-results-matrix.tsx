@@ -715,27 +715,31 @@ export function LabResultsMatrix({
                               {result ? (
                                 <div className="relative">
                                   <div 
-                                    className={`px-1 py-0.5 rounded text-xs cursor-pointer transition-all ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview, result.isReviewed, canUnreview(result))} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
+                                    className={`px-1 py-0.5 rounded text-xs transition-all ${result.isPending ? 'bg-blue-100 text-blue-800 border border-blue-300' : `cursor-pointer ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview, result.isReviewed, canUnreview(result))}`} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
                                     onClick={() => {
                                       // Only trigger individual lab result actions for specific review/unreview
                                       // This preserves the single-click review behavior for individual results
-                                      if (result.needsReview) {
-
-                                        onReviewSpecific?.(test.testName, date, result.id);
-                                      } else if (result.isReviewed && canUnreview(result)) {
-
-                                        onUnreviewSpecific?.(test.testName, date, result.id);
+                                      if (!result.isPending) {
+                                        if (result.needsReview) {
+                                          onReviewSpecific?.(test.testName, date, result.id);
+                                        } else if (result.isReviewed && canUnreview(result)) {
+                                          onUnreviewSpecific?.(test.testName, date, result.id);
+                                        }
                                       }
                                     }}
+                                    title={result.isPending ? `Order placed. External ID: ${result.externalOrderId || 'N/A'}` : undefined}
                                   >
                                     {result.value}
-                                    {result.criticalFlag && (
+                                    {result.isPending && (
+                                      <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-1 animate-pulse" />
+                                    )}
+                                    {!result.isPending && result.criticalFlag && (
                                       <AlertTriangle className="inline h-3 w-3 ml-1" />
                                     )}
-                                    {result.needsReview && (
+                                    {!result.isPending && result.needsReview && (
                                       <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
                                     )}
-                                    {result.isReviewed && canUnreview(result) && (
+                                    {!result.isPending && result.isReviewed && canUnreview(result) && (
                                       <span className="inline-block w-2 h-2 bg-green-500 rounded-full ml-1" title="Click to unreview" />
                                     )}
                                   </div>
