@@ -1051,12 +1051,13 @@ export function registerRoutes(app: Express): Server {
       // Get result counts for each lab order to determine status
       const ordersWithStatus = await Promise.all(
         labOrdersData.map(async (order: any) => {
-          const resultCount = await db
-            .select({ count: sql<number>`COUNT(*)` })
+          const resultQuery = await db
+            .select()
             .from(labResults)
             .where(eq(labResults.labOrderId, order.id));
           
-          const hasResults = resultCount[0]?.count > 0;
+          const hasResults = resultQuery.length > 0;
+
           
           return {
             id: order.id,
