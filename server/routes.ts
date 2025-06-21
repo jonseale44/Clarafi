@@ -3210,7 +3210,7 @@ Return only valid JSON without markdown formatting.`;
                 break;
                 
               case 'imaging':
-                deliveryMethod = prefs?.imagingDeliveryMethod || "print_pdf";
+                deliveryMethod = prefs?.imagingDeliveryMethod || "mock_service";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
                 deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
                                   deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
