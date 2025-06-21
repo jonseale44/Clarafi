@@ -3026,10 +3026,16 @@ Return only valid JSON without markdown formatting.`;
       } catch (deliveryError) {
         console.error('❌ [IndividualSign] Error checking delivery preferences:', deliveryError);
         console.error('❌ [IndividualSign] Error stack:', (deliveryError as Error).stack);
-        // Fallback to PDF generation
-        shouldGeneratePDF = true;
-        deliveryMethod = 'print_pdf';
-        deliveryEndpoint = 'PDF Generation (Fallback)';
+        // Fallback to mock service for labs, PDF for others
+        if (order.orderType === 'lab') {
+          shouldGeneratePDF = false;
+          deliveryMethod = 'mock_service';
+          deliveryEndpoint = 'Mock Lab Service (Fallback)';
+        } else {
+          shouldGeneratePDF = true;
+          deliveryMethod = 'print_pdf';
+          deliveryEndpoint = 'PDF Generation (Fallback)';
+        }
       }
 
       // Generate PDF only if delivery method requires it
@@ -3249,8 +3255,8 @@ Return only valid JSON without markdown formatting.`;
           // Process each order type for this patient
           for (const [orderType, orders] of Object.entries(ordersByType)) {
             let shouldGeneratePDF = false;
-            let deliveryMethod = 'print_pdf';
-            let deliveryEndpoint = 'PDF Generation';
+            let deliveryMethod = orderType === 'lab' ? 'mock_service' : 'print_pdf';
+            let deliveryEndpoint = orderType === 'lab' ? 'Mock Lab Service' : 'PDF Generation';
             
             // Determine delivery method based on order type and preferences
             console.log(`📋 [RouteBulkSign] Processing ${orderType} orders for patient ${patientId}`);
