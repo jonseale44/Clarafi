@@ -32,13 +32,17 @@ router.get("/pdfs/:filename/view", requireAuth, async (req: Request, res: Respon
     const stat = fs.statSync(filepath);
     console.log(`📄 [PDFView] ✅ PDF found for viewing, size: ${stat.size} bytes`);
     
-    // Set headers for inline viewing
+    // Set headers for inline viewing with proper CORS and security
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Length', stat.size);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Access-Control-Allow-Origin', req.get('origin') || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
     
     const stream = fs.createReadStream(filepath);
     stream.pipe(res);

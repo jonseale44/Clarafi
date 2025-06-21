@@ -288,12 +288,31 @@ export function EmbeddedPDFViewer({
             </div>
             
             {/* PDF Viewer */}
-            <div className="flex-1 overflow-hidden">
-              <iframe
-                src={`/api/pdfs/${selectedPDF}/view#toolbar=1&navpanes=1&scrollbar=1`}
-                className="w-full h-full border-0"
-                title={`PDF Viewer - ${selectedPDF}`}
-              />
+            <div className="flex-1 overflow-hidden bg-gray-100 flex items-center justify-center">
+              <div className="text-center">
+                <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium mb-2">PDF Viewer</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Click "View in New Tab" to open the PDF in a separate window
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    onClick={() => window.open(`/api/pdfs/${selectedPDF}/view`, '_blank')}
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View in New Tab
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleDownloadPDF(selectedPDF)}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download PDF
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
