@@ -428,6 +428,9 @@ export function LabResultsMatrix({
 
   const maxColumns = mode === 'compact' ? 5 : mode === 'encounter' ? 3 : 10;
   const displayColumns = dateColumns.slice(0, maxColumns);
+  
+  // Define encounterColumns for compatibility with existing compact mode logic
+  const encounterColumns = dateColumns;
 
   // Group results by date for date-level review
   const resultsByDate = useMemo(() => {
