@@ -93,68 +93,36 @@ export function LabResultsMatrix({
   const results = (labResults as any) || [];
   const orders = (labOrders as any) || [];
 
-  // Define lab panel groupings following real EMR standards
-  // This ensures ALL components of standard panels are grouped together correctly
+  // Define lab panel groupings with proper hierarchy - CMP takes precedence over BMP
   const labPanels = useMemo(() => ({
-    'Complete Blood Count': [
-      // Core CBC components
-      'Hemoglobin', 'Hematocrit', 'White Blood Cell Count', 'Red Blood Cell Count', 'Platelet Count',
-      // CBC indices
-      'Mean Corpuscular Volume', 'Mean Corpuscular Hemoglobin', 'Mean Corpuscular Hemoglobin Concentration',
-      // CBC differential - CRITICAL: These were being incorrectly categorized as "Other"
+    'CBC': [
+      'White Blood Cell Count', 'WBC', 'Red Blood Cell Count', 'RBC', 
+      'Hemoglobin', 'HGB', 'Hematocrit', 'HCT', 'Platelet Count', 'PLT',
+      'Mean Corpuscular Volume', 'MCV', 'Mean Corpuscular Hemoglobin', 'MCH', 
+      'Mean Corpuscular Hemoglobin Concentration', 'MCHC', 'Red Cell Distribution Width', 'RDW',
+      'Mean Platelet Volume', 'MPV', 'Platelet Distribution Width', 'PDW',
       'Lymphocytes %', 'Neutrophils %', 'Monocytes %', 'Eosinophils %', 'Basophils %',
-      // Absolute counts
       'Lymphocytes Absolute', 'Neutrophils Absolute', 'Monocytes Absolute', 'Eosinophils Absolute', 'Basophils Absolute',
-      // Additional CBC components
-      'Red Cell Distribution Width', 'Mean Platelet Volume', 'Platelet Distribution Width',
-      // Common alternative naming variations used in different lab systems
-      'WBC', 'RBC', 'HGB', 'HCT', 'PLT', 'MCV', 'MCH', 'MCHC', 'RDW', 'MPV', 'PDW',
       'LYMPH', 'NEUT', 'MONO', 'EOS', 'BASO', 'Lymph %', 'Neut %', 'Mono %', 'Eos %', 'Baso %'
     ],
-    'Basic Metabolic Panel': [
-      'Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2',
+    'CMP': [
+      // Core electrolytes and kidney function
+      'Glucose', 'Sodium', 'Potassium', 'Chloride', 'Blood Urea Nitrogen', 'BUN', 'Creatinine', 'Carbon Dioxide', 'CO2',
+      // Liver function components
+      'Total Protein', 'Albumin', 'Total Bilirubin', 'AST (SGOT)', 'ALT (SGPT)', 'Alkaline Phosphatase', 'Calcium',
       // Alternative naming variations
-      'Blood Urea Nitrogen', 'Carbon Dioxide', 'Na', 'K', 'Cl', 'Creat', 'Glucose Random', 'Glucose Fasting'
-    ],
-    'Comprehensive Metabolic Panel': [
-      // All BMP components are included in CMP
-      'Glucose', 'Sodium', 'Potassium', 'Chloride', 'BUN', 'Creatinine', 'CO2',
-      'Blood Urea Nitrogen', 'Carbon Dioxide', 'Na', 'K', 'Cl', 'Creat',
-      // Additional CMP-specific components
-      'Total Protein', 'Albumin', 'Total Bilirubin', 'AST', 'ALT', 'Alkaline Phosphatase',
-      // Alternative naming
-      'SGOT', 'SGPT', 'Alk Phos', 'T Bili', 'T Protein', 'Alb', 'TP', 'ALB'
+      'Na', 'K', 'Cl', 'Creat', 'AST', 'ALT', 'SGOT', 'SGPT', 'Alk Phos', 'T Bili', 'T Protein', 'Alb', 'TP', 'ALB', 'Ca'
     ],
     'Lipid Panel': [
       'Total Cholesterol', 'HDL Cholesterol', 'LDL Cholesterol', 'Triglycerides',
-      // Alternative naming
       'Cholesterol Total', 'HDL', 'LDL', 'CHOL', 'TG', 'TRIG'
     ],
     'Thyroid Function': [
       'TSH', 'T3', 'T4', 'Free T4', 'Free T3',
-      // Alternative naming
       'Thyroid Stimulating Hormone', 'Thyroxine', 'Triiodothyronine', 'FT4', 'FT3'
     ],
-    'Coagulation Studies': [
-      'PT', 'PTT', 'INR', 'Prothrombin Time', 'Partial Thromboplastin Time', 
-      'International Normalized Ratio', 'aPTT', 'PT/INR'
-    ],
-    'Liver Function': [
-      'AST', 'ALT', 'Total Bilirubin', 'Direct Bilirubin', 'Alkaline Phosphatase', 'GGT',
-      'SGOT', 'SGPT', 'T Bili', 'D Bili', 'Alk Phos', 'Gamma-Glutamyl Transferase'
-    ],
-    'Renal Function': [
-      'BUN', 'Creatinine', 'BUN/Creatinine Ratio', 'eGFR', 'Urea', 'Creat'
-    ],
-    'Cardiac Markers': [
-      'Troponin I', 'Troponin T', 'CK-MB', 'CK', 'BNP', 'NT-proBNP', 'Creatine Kinase'
-    ],
-    'Hemoglobin A1c': [
+    'HbA1c': [
       'Hemoglobin A1c', 'HbA1c', 'A1c', 'Glycated Hemoglobin'
-    ],
-    'Urinalysis': [
-      'Protein', 'Glucose', 'Ketones', 'Blood', 'Leukocyte Esterase', 'Nitrites',
-      'Specific Gravity', 'pH', 'Color', 'Clarity'
     ],
     'Other': []
   }), []);
@@ -276,7 +244,7 @@ export function LabResultsMatrix({
     return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));
   }, [results, orders, pendingReviewIds]);
 
-  // Group tests by lab panels
+  // Group tests by lab panels with proper standard lab table structure
   const groupedData = useMemo(() => {
     const groups: { [key: string]: MatrixData[] } = {};
     
@@ -285,23 +253,29 @@ export function LabResultsMatrix({
       groups[panel] = [];
     });
 
+    // Process each test and assign to the most specific panel
     matrixData.forEach(test => {
       let assigned = false;
-      for (const [panelName, testNames] of Object.entries(labPanels)) {
-        if (testNames.includes(test.testName)) {
+      
+      // Check panels in order of specificity (CMP before BMP, etc.)
+      const panelOrder = ['CMP', 'CBC', 'Lipid Panel', 'Thyroid Function', 'HbA1c', 'Other'];
+      
+      for (const panelName of panelOrder) {
+        if (labPanels[panelName] && labPanels[panelName].includes(test.testName)) {
           groups[panelName].push(test);
           assigned = true;
           break;
         }
       }
+      
       if (!assigned) {
         groups['Other'].push(test);
       }
     });
 
-    // Remove empty groups
+    // Remove empty groups except 'Other'
     Object.keys(groups).forEach(key => {
-      if (groups[key].length === 0) {
+      if (groups[key].length === 0 && key !== 'Other') {
         delete groups[key];
       }
     });
@@ -660,26 +634,23 @@ export function LabResultsMatrix({
       
       <CardContent className="p-0">
         <div className="overflow-x-auto max-h-[70vh]">
-          <table className="w-full border-collapse text-xs">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b bg-muted/30">
-                <th className="text-left p-2 font-medium min-w-[180px] sticky left-0 bg-muted/30 text-xs">
+              <tr className="border-b-2 border-gray-300 bg-gray-50">
+                <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-gray-50 border-r border-gray-300">
                   Test
                 </th>
                 {displayColumns.map(encounter => (
                   <th 
                     key={encounter.encounterId} 
-                    className={getDateHeaderClass(encounter.date)}
+                    className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100"
                     onClick={(e) => handleDateClick(encounter.date, e.shiftKey)}
                     onMouseEnter={() => setHoveredDate(encounter.date)}
                     onMouseLeave={() => setHoveredDate(null)}
                   >
-                    <div className="text-xs whitespace-pre-line flex flex-col items-center justify-center gap-1 leading-tight">
-                      {selectedDates.has(encounter.date) && <Calendar className="h-2 w-2" />}
-                      <span className="text-xs font-medium">{encounter.displayDate}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        Encounter #{encounter.encounterId}
-                      </span>
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <span className="text-sm font-medium">{format(new Date(encounter.date), 'yyyy-MM-dd')}</span>
+                      <span className="text-xs text-gray-600">{format(new Date(encounter.date), 'HH:mm')}</span>
                     </div>
                   </th>
                 ))}

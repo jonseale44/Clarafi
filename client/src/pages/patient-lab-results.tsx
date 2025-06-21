@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
+import { StandardLabMatrix } from "@/components/labs/standard-lab-matrix";
 import { ComprehensiveLabTable } from "@/components/labs/comprehensive-lab-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
