@@ -309,35 +309,51 @@ export function LabResultsMatrix({
     return groups;
   }, [matrixData, labPanels]);
 
-  const dateColumns = useMemo(() => {
-    const allDates = new Set<string>();
+  // Group results by encounter instead of individual dates
+  const encounterColumns = useMemo(() => {
+    const encounterMap = new Map<number, {
+      encounterId: number;
+      date: string;
+      displayDate: string;
+      resultCount: number;
+    }>();
+    
     matrixData.forEach(test => {
-      test.results.forEach(result => allDates.add(result.date));
+      test.results.forEach(result => {
+        if (result.encounterId && typeof result.encounterId === 'number') {
+          if (!encounterMap.has(result.encounterId)) {
+            encounterMap.set(result.encounterId, {
+              encounterId: result.encounterId,
+              date: result.date,
+              displayDate: format(new Date(result.date), 'MM/dd/yyyy HH:mm'),
+              resultCount: 0
+            });
+          }
+          encounterMap.get(result.encounterId)!.resultCount++;
+        }
+      });
     });
-    return Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+    return Array.from(encounterMap.values())
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [matrixData]);
 
   const maxColumns = mode === 'compact' ? 5 : mode === 'encounter' ? 3 : 10;
-  const displayColumns = dateColumns.slice(0, maxColumns);
+  const displayColumns = encounterColumns.slice(0, maxColumns);
+
+  // Legacy dateColumns for backward compatibility
+  const dateColumns = useMemo(() => {
+    return encounterColumns.map(enc => enc.date);
+  }, [encounterColumns]);
 
   // Group results by encounter for encounter-level review
   const encountersByDate = useMemo(() => {
     const encounters = new Map<string, number[]>();
-    matrixData.forEach(test => {
-      test.results.forEach(result => {
-        if (result.encounterId) {
-          const date = result.date;
-          if (!encounters.has(date)) {
-            encounters.set(date, []);
-          }
-          if (!encounters.get(date)!.includes(result.encounterId)) {
-            encounters.get(date)!.push(result.encounterId);
-          }
-        }
-      });
+    encounterColumns.forEach(enc => {
+      encounters.set(enc.date, [enc.encounterId]);
     });
     return encounters;
-  }, [matrixData]);
+  }, [encounterColumns]);
 
   const handleDateClick = (date: string, isShiftClick: boolean) => {
     // Selection behavior for visual highlighting - this should happen first
@@ -650,17 +666,20 @@ export function LabResultsMatrix({
                 <th className="text-left p-2 font-medium min-w-[180px] sticky left-0 bg-muted/30 text-xs">
                   Test
                 </th>
-                {displayColumns.map(date => (
+                {displayColumns.map(encounter => (
                   <th 
-                    key={date} 
-                    className={getDateHeaderClass(date)}
-                    onClick={(e) => handleDateClick(date, e.shiftKey)}
-                    onMouseEnter={() => setHoveredDate(date)}
+                    key={encounter.encounterId} 
+                    className={getDateHeaderClass(encounter.date)}
+                    onClick={(e) => handleDateClick(encounter.date, e.shiftKey)}
+                    onMouseEnter={() => setHoveredDate(encounter.date)}
                     onMouseLeave={() => setHoveredDate(null)}
                   >
-                    <div className="text-xs whitespace-pre-line flex items-center justify-center gap-1 leading-tight">
-                      {selectedDates.has(date) && <Calendar className="h-2 w-2" />}
-                      <span className="text-xs">{formatDate(date)}</span>
+                    <div className="text-xs whitespace-pre-line flex flex-col items-center justify-center gap-1 leading-tight">
+                      {selectedDates.has(encounter.date) && <Calendar className="h-2 w-2" />}
+                      <span className="text-xs font-medium">{encounter.displayDate}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Encounter #{encounter.encounterId}
+                      </span>
                     </div>
                   </th>
                 ))}
@@ -764,12 +783,12 @@ export function LabResultsMatrix({
                           </div>
                         </td>
                         
-                        {displayColumns.map(date => {
-                          const result = test.results.find(r => r.date === date);
-                          const isDateSelected = selectedDates.has(date);
+                        {displayColumns.map(encounter => {
+                          const result = test.results.find(r => r.encounterId === encounter.encounterId);
+                          const isDateSelected = selectedDates.has(encounter.date);
                           const isEncounterHighlighted = result?.encounterId && 
-                            selectedDates.has(date) && 
-                            encountersByDate.get(date)?.includes(result.encounterId);
+                            selectedDates.has(encounter.date) && 
+                            result.encounterId === encounter.encounterId;
                           
                           let cellClass = "p-1 text-center transition-colors";
                           if (isDateSelected || isEncounterHighlighted) {
@@ -777,7 +796,7 @@ export function LabResultsMatrix({
                           }
                           
                           return (
-                            <td key={date} className={cellClass}>
+                            <td key={encounter.encounterId} className={cellClass}>
                               {result ? (
                                 <div className="relative">
                                   <div 
@@ -920,10 +939,10 @@ export function LabResultsMatrix({
           </div>
         )}
         
-        {mode === 'compact' && dateColumns.length > maxColumns && (
+        {mode === 'compact' && encounterColumns.length > maxColumns && (
           <div className="p-2 text-center border-t bg-muted/10">
             <div className="text-xs text-muted-foreground">
-              Showing {maxColumns} most recent of {dateColumns.length} total
+              Showing {maxColumns} most recent of {encounterColumns.length} total encounters
             </div>
             <Button variant="link" size="sm" className="mt-1 text-xs h-6">
               View All
