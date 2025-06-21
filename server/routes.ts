@@ -2879,7 +2879,6 @@ Return only valid JSON without markdown formatting.`;
       console.log(
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
-
       // Check delivery preferences and generate PDF only if needed
       console.log(`📋 [IndividualSign] ===== DELIVERY PREFERENCE CHECK =====`);
       
@@ -3099,9 +3098,37 @@ Return only valid JSON without markdown formatting.`;
           console.error(`❌ [Referral] Failed to process referral order:`, referralError);
         }
       }
-      
-      try {
-        // Get patient delivery preferences
+
+      res.json({
+        success: true,
+        order: updatedOrder,
+        message: `${order.orderType} order signed successfully`,
+      });
+    } catch (error: any) {
+      console.error("❌ [Order Signing] Error signing order:", error);
+      res.status(500).json({ error: "Failed to sign order" });
+    }
+  });
+
+  // For medication orders, activate pending medications
+  if (order.orderType === "medication") {
+    console.log(
+      `📋 [IndividualSign] === INDIVIDUAL MEDICATION ORDER SIGNING ===`,
+    );
+    console.log(
+      `📋 [IndividualSign] Order ID: ${orderId}, Type: ${order.orderType}`,
+    );
+    console.log(
+      `📋 [IndividualSign] Medication: ${order.medicationName}, Dosage: ${order.dosage}`,
+    );
+    console.log(
+      `📋 [IndividualSign] Encounter ID: ${order.encounterId}, Patient ID: ${order.patientId}`,
+    );
+
+    console.log(`📋 [IndividualSign] User ID: ${userId}`);
+
+    try {
+      const { medicationDelta } = await import("./medication-delta-service.js");
         const { patientOrderPreferences } = await import("../shared/schema.js");
         const { eq } = await import("drizzle-orm");
         
