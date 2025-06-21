@@ -3280,7 +3280,7 @@ Return only valid JSON without markdown formatting.`;
                 
               case 'imaging':
                 console.log(`📋 [RouteBulkSign] IMAGING ORDER - Raw pref: ${prefs?.imagingDeliveryMethod}`);
-                deliveryMethod = prefs?.imagingDeliveryMethod || "mock_service";
+                deliveryMethod = prefs?.imagingDeliveryMethod || "print_pdf";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
                 deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
                                   deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
@@ -3316,6 +3316,7 @@ Return only valid JSON without markdown formatting.`;
                 deliveryMethod: deliveryMethod,
                 deliveryEndpoint: deliveryEndpoint,
                 deliveryStatus: 'pending' as const,
+                originalDeliveryMethod: deliveryMethod,
                 signedAt: new Date(),
                 signedBy: userId,
                 canChangeDelivery: true,

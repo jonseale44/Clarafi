@@ -225,11 +225,12 @@ export class EncounterValidationService {
       const signedOrderData = {
         orderId: signedOrder.id,
         patientId: signedOrder.patientId,
-        providerId: userId,
+        encounterId: signedOrder.encounterId,
         orderType: signedOrder.orderType,
         deliveryMethod: deliveryMethod,
         deliveryEndpoint: deliveryEndpoint,
         deliveryStatus: 'pending' as const,
+        originalDeliveryMethod: deliveryMethod,
         signedAt: new Date(),
         signedBy: userId,
         canChangeDelivery: true,
