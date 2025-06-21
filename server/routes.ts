@@ -2914,27 +2914,92 @@ Return only valid JSON without markdown formatting.`;
           `📋 [IndividualSign] Encounter ID: ${order.encounterId}, Patient ID: ${order.patientId}`,
         );
 
-      // Process delivery for the signed order
+      // Process delivery based on patient preferences
       console.log(`📋 [Sign Order] ===== DELIVERY PROCESSING START =====`);
-      console.log(`📋 [Sign Order] Order details:`, JSON.stringify(order, null, 2));
-      console.log(`📋 [Sign Order] Updated order details:`, JSON.stringify(updatedOrder, null, 2));
+      console.log(`📋 [Sign Order] Order type: ${order.orderType}, Patient: ${order.patientId}`);
       
-      const { orderDeliveryService } = await import('./order-delivery-service.js');
-      let deliveryResults = [];
+      let shouldGeneratePDF = false;
+      let deliveryMethod = 'print_pdf';
+      let deliveryEndpoint = 'PDF Generation';
       
       try {
-        console.log(`📋 [Sign Order] Calling orderDeliveryService.processOrderDelivery`);
-        console.log(`📋 [Sign Order] Parameters: orderIds=[${orderId}], patientId=${order.patientId}, providerId=${userId}`);
+        // Get patient delivery preferences
+        const { patientOrderPreferences } = await import("../shared/schema.js");
+        const { eq } = await import("drizzle-orm");
         
-        deliveryResults = await orderDeliveryService.processOrderDelivery([orderId], order.patientId, userId);
-        console.log(`📋 [Sign Order] Delivery processing completed successfully`);
-        console.log(`📋 [Sign Order] Delivery results:`, JSON.stringify(deliveryResults, null, 2));
-        console.log(`📋 [Sign Order] ===== DELIVERY PROCESSING COMPLETE =====`);
+        const preferences = await db
+          .select()
+          .from(patientOrderPreferences)
+          .where(eq(patientOrderPreferences.patientId, order.patientId))
+          .limit(1);
+
+        const prefs = preferences[0];
+        
+        // Determine delivery method based on order type and preferences
+        switch (order.orderType) {
+          case 'lab':
+            deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
+            shouldGeneratePDF = deliveryMethod === "print_pdf";
+            deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
+                              deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
+                              "PDF Generation";
+            break;
+            
+          case 'imaging':
+            deliveryMethod = prefs?.imagingDeliveryMethod || "print_pdf";
+            shouldGeneratePDF = deliveryMethod === "print_pdf";
+            deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
+                              deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
+                              "PDF Generation";
+            break;
+            
+          case 'medication':
+            deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
+            shouldGeneratePDF = deliveryMethod === "print_pdf";
+            deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
+                              "PDF Generation";
+            break;
+            
+          default:
+            shouldGeneratePDF = true;
+        }
+
+        console.log(`📋 [Sign Order] Delivery method: ${deliveryMethod}, Endpoint: ${deliveryEndpoint}, Generate PDF: ${shouldGeneratePDF}`);
+        
+        // Record signed order with delivery details
+        const { signedOrders } = await import("../shared/schema.js");
+        
+        const signedOrderData = {
+          orderId: order.id,
+          patientId: order.patientId,
+          providerId: userId,
+          orderType: order.orderType,
+          deliveryMethod: deliveryMethod,
+          deliveryEndpoint: deliveryEndpoint,
+          deliveryStatus: 'pending' as const,
+          signedAt: new Date(),
+          signedBy: userId,
+          canChangeDelivery: true,
+          deliveryLockReason: null,
+          deliveryChanges: [],
+          deliveryMetadata: {
+            preferences: prefs,
+            shouldGeneratePDF: shouldGeneratePDF
+          }
+        };
+
+        await db.insert(signedOrders).values(signedOrderData);
+        console.log(`📋 [Sign Order] Recorded delivery preferences for order ${orderId}`);
+        
       } catch (deliveryError) {
-        console.error('❌ [Sign Order] Error processing delivery:', deliveryError);
-        console.error('❌ [Sign Order] Delivery error stack:', deliveryError.stack);
-        console.log(`📋 [Sign Order] ===== DELIVERY PROCESSING FAILED =====`);
+        console.error('❌ [Sign Order] Error processing delivery preferences:', deliveryError);
+        // Fallback to PDF generation
+        shouldGeneratePDF = true;
+        deliveryMethod = 'print_pdf';
+        deliveryEndpoint = 'PDF Generation (Fallback)';
       }
+      
+      console.log(`📋 [Sign Order] ===== DELIVERY PROCESSING COMPLETE =====`);
         console.log(`📋 [IndividualSign] User ID: ${userId}`);
 
         try {
