@@ -1146,23 +1146,6 @@ export function ProviderDashboard() {
           }}
         />
       )}
-
-      {/* PDF Downloads Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-5 w-5" />
-            <span>Patient Documents</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Documents in Patient Charts</h3>
-            <p className="text-sm">Order PDFs and patient documents are accessible within individual patient charts for secure, organized access.</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
