@@ -128,12 +128,15 @@ export function LabResultsMatrix({
   }), []);
 
   const matrixData = useMemo(() => {
+    console.log('🧪 [LabResultsMatrix] Processing data - results:', results.length, 'orders:', orders.length);
+    
     if (!results.length && !orders.length) return [];
 
     const testGroups = new Map<string, MatrixData>();
 
     // Process existing results
     results.forEach((result: any) => {
+      console.log('🧪 [LabResultsMatrix] Processing result:', result.testName, 'encounter:', result.encounterId);
       const key = result.testName;
       
       if (!testGroups.has(key)) {
@@ -289,10 +292,11 @@ export function LabResultsMatrix({
     return flatList;
   }, [matrixData, labPanels]);
 
-  // Group results by encounter instead of individual dates
-  const encounterColumns = useMemo(() => {
-    const encounterMap = new Map<number, {
-      encounterId: number;
+  // Create date-based columns since encounter IDs are null
+  const dateColumns = useMemo(() => {
+    console.log('🧪 [LabResultsMatrix] Building date columns from matrixData:', matrixData.length);
+    
+    const dateMap = new Map<string, {
       date: string;
       displayDate: string;
       resultCount: number;
@@ -300,40 +304,47 @@ export function LabResultsMatrix({
     
     matrixData.forEach(test => {
       test.results.forEach(result => {
-        if (result.encounterId && typeof result.encounterId === 'number') {
-          if (!encounterMap.has(result.encounterId)) {
-            encounterMap.set(result.encounterId, {
-              encounterId: result.encounterId,
-              date: result.date,
-              displayDate: format(new Date(result.date), 'MM/dd/yyyy HH:mm'),
-              resultCount: 0
-            });
-          }
-          encounterMap.get(result.encounterId)!.resultCount++;
+        const dateKey = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+        console.log('🧪 [LabResultsMatrix] Processing result for date columns:', dateKey);
+        
+        if (!dateMap.has(dateKey)) {
+          dateMap.set(dateKey, {
+            date: result.date,
+            displayDate: dateKey,
+            resultCount: 0
+          });
         }
+        dateMap.get(dateKey)!.resultCount++;
       });
     });
 
-    return Array.from(encounterMap.values())
+    const columns = Array.from(dateMap.values())
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    console.log('🧪 [LabResultsMatrix] Generated date columns:', columns.length, columns);
+    return columns;
   }, [matrixData]);
 
   const maxColumns = mode === 'compact' ? 5 : mode === 'encounter' ? 3 : 10;
-  const displayColumns = encounterColumns.slice(0, maxColumns);
+  const displayColumns = dateColumns.slice(0, maxColumns);
 
-  // Legacy dateColumns for backward compatibility
-  const dateColumns = useMemo(() => {
-    return encounterColumns.map(enc => enc.date);
-  }, [encounterColumns]);
-
-  // Group results by encounter for encounter-level review
-  const encountersByDate = useMemo(() => {
-    const encounters = new Map<string, number[]>();
-    encounterColumns.forEach(enc => {
-      encounters.set(enc.date, [enc.encounterId]);
+  // Group results by date for date-level review
+  const resultsByDate = useMemo(() => {
+    const results = new Map<string, number[]>();
+    dateColumns.forEach(col => {
+      const resultIds: number[] = [];
+      matrixData.forEach(test => {
+        test.results.forEach(result => {
+          const resultDateKey = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+          if (resultDateKey === col.displayDate) {
+            resultIds.push(result.id as number);
+          }
+        });
+      });
+      results.set(col.date, resultIds);
     });
-    return encounters;
-  }, [encounterColumns]);
+    return results;
+  }, [dateColumns, matrixData]);
 
   const handleDateClick = (date: string, isShiftClick: boolean) => {
     // Selection behavior for visual highlighting - this should happen first
@@ -646,17 +657,17 @@ export function LabResultsMatrix({
                 <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-gray-50 border-r border-gray-300">
                   Test
                 </th>
-                {displayColumns.map(encounter => (
+                {displayColumns.map((dateCol, index) => (
                   <th 
-                    key={encounter.encounterId} 
+                    key={`date-${index}`} 
                     className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100"
-                    onClick={(e) => handleDateClick(encounter.date, e.shiftKey)}
-                    onMouseEnter={() => setHoveredDate(encounter.date)}
+                    onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
+                    onMouseEnter={() => setHoveredDate(dateCol.date)}
                     onMouseLeave={() => setHoveredDate(null)}
                   >
                     <div className="flex flex-col items-center justify-center gap-1">
-                      <span className="text-sm font-medium">{format(new Date(encounter.date), 'yyyy-MM-dd')}</span>
-                      <span className="text-xs text-gray-600">{format(new Date(encounter.date), 'HH:mm')}</span>
+                      <span className="text-sm font-medium">{format(new Date(dateCol.date), 'yyyy-MM-dd')}</span>
+                      <span className="text-xs text-gray-600">{format(new Date(dateCol.date), 'HH:mm')}</span>
                     </div>
                   </th>
                 ))}
@@ -672,8 +683,8 @@ export function LabResultsMatrix({
                       <td className="p-3 sticky left-0 bg-gray-100 font-bold text-sm border-r border-gray-300">
                         {item.name}
                       </td>
-                      {displayColumns.map(encounter => (
-                        <td key={encounter.encounterId} className="p-3 text-center border-r border-gray-200">
+                      {displayColumns.map((dateCol, index) => (
+                        <td key={`panel-${index}`} className="p-3 text-center border-r border-gray-200">
                           <span className="text-muted-foreground text-xs">—</span>
                         </td>
                       ))}
@@ -705,9 +716,12 @@ export function LabResultsMatrix({
                         </div>
                       </td>
                       
-                      {displayColumns.map(encounter => {
-                        const result = test.results.find(r => r.encounterId === encounter.encounterId);
-                        const isDateSelected = selectedDates.has(encounter.date);
+                      {displayColumns.map((dateCol, index) => {
+                        const result = test.results.find(r => {
+                          const resultDateKey = format(new Date(r.date), 'yyyy-MM-dd HH:mm');
+                          return resultDateKey === dateCol.displayDate;
+                        });
+                        const isDateSelected = selectedDates.has(dateCol.date);
                         
                         let cellClass = "p-3 text-center border-r border-gray-200 transition-colors";
                         if (isDateSelected) {
@@ -715,7 +729,7 @@ export function LabResultsMatrix({
                         }
                         
                         return (
-                          <td key={encounter.encounterId} className={cellClass}>
+                          <td key={`test-${index}`} className={cellClass}>
                             {result ? (
                               <div 
                                 className={`px-2 py-1 rounded text-sm font-medium transition-all ${
@@ -732,9 +746,9 @@ export function LabResultsMatrix({
                                 onClick={() => {
                                   if (!result.isPending) {
                                     if (result.needsReview) {
-                                      onReviewSpecific?.(test.testName, encounter.date, result.id);
+                                      onReviewSpecific?.(test.testName, dateCol.date, result.id);
                                     } else if (result.isReviewed && canUnreview(result)) {
-                                      onUnreviewSpecific?.(test.testName, encounter.date, result.id);
+                                      onUnreviewSpecific?.(test.testName, dateCol.date, result.id);
                                     }
                                   }
                                 }}
