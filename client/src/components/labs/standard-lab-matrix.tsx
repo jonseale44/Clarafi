@@ -76,16 +76,25 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [labResults]);
 
-  // Get value for specific test in specific encounter
+  // Get value for specific test in specific encounter with better matching
   const getTestValue = (testKey: string, encounterId: number) => {
     const encounter = encounterData.find(e => e.encounterId === encounterId);
     if (!encounter) return null;
     
-    const result = encounter.results.find(r => 
-      r.testName === testKey || 
-      r.testName.includes(testKey) ||
-      testKey.includes(r.testName)
-    );
+    const result = encounter.results.find(r => {
+      // Exact match first
+      if (r.testName === testKey) return true;
+      
+      // Normalize names for matching
+      const normalizeTestName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const normalizedResult = normalizeTestName(r.testName);
+      const normalizedKey = normalizeTestName(testKey);
+      
+      // Check for common variations
+      return normalizedResult === normalizedKey ||
+             normalizedResult.includes(normalizedKey) ||
+             normalizedKey.includes(normalizedResult);
+    });
     
     return result ? result.resultValue : null;
   };

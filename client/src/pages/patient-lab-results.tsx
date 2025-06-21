@@ -58,47 +58,10 @@ export function PatientLabResults() {
         </TabsList>
         
         <TabsContent value="matrix">
-          <LabResultsMatrix 
+          <StandardLabMatrix 
             patientId={parseInt(patientId)} 
             mode="full"
             showTitle={false}
-            currentUserId={(currentUser as any)?.id}
-            onReviewEncounter={(date, encounterIds) => {
-              if (encounterIds.length > 0) {
-                window.location.href = `/encounters/${encounterIds[0]}`;
-              }
-            }}
-            onReviewTestGroup={(testName, resultIds) => {
-              console.log('Review test group:', testName, resultIds);
-            }}
-            onReviewSpecific={(testName, date, resultId) => {
-              console.log('Review specific:', testName, date, resultId);
-            }}
-            onUnreviewSpecific={async (testName, date, resultId) => {
-              try {
-                const response = await fetch(`/api/lab-review/unreview/${resultId}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ unreviewReason: `Unreviewed from patient chart for ${testName}` }),
-                });
-                
-                if (!response.ok) throw new Error('Failed to unreview lab result');
-                
-                toast({
-                  title: "Lab Result Unreviewed",
-                  description: `${testName} has been marked as unreviewed.`,
-                });
-                
-                // Refresh lab data
-                window.location.reload();
-              } catch (error) {
-                toast({
-                  title: "Error",
-                  description: "Failed to unreview lab result.",
-                  variant: "destructive"
-                });
-              }
-            }}
           />
         </TabsContent>
         
