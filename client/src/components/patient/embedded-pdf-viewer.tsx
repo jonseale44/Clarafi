@@ -45,9 +45,9 @@ export function EmbeddedPDFViewer({
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Fetch PDFs - use patient-specific endpoint if not showing all
+  // Fetch patient-specific PDFs only
   const { data: pdfData, isLoading, refetch } = useQuery({
-    queryKey: showAllPDFs ? ["/api/pdfs"] : [`/api/patients/${patientId}/pdfs`],
+    queryKey: [`/api/patients/${patientId}/pdfs`],
   });
 
   const files = pdfData?.files || [];

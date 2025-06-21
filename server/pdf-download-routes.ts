@@ -46,38 +46,6 @@ router.get("/pdfs/:filename", requireAuth, async (req: Request, res: Response) =
   }
 });
 
-/**
- * GET /api/pdfs
- * List available PDF files
- */
-router.get("/pdfs", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const pdfDir = '/tmp/pdfs';
-    
-    if (!fs.existsSync(pdfDir)) {
-      return res.json({ files: [] });
-    }
-    
-    const files = fs.readdirSync(pdfDir)
-      .filter(file => file.endsWith('.pdf'))
-      .map(file => {
-        const filepath = path.join(pdfDir, file);
-        const stat = fs.statSync(filepath);
-        return {
-          filename: file,
-          size: stat.size,
-          created: stat.birthtime,
-          downloadUrl: `/api/pdfs/${file}`
-        };
-      })
-      .sort((a, b) => b.created.getTime() - a.created.getTime());
-    
-    console.log(`📄 [PDFList] Found ${files.length} PDF files`);
-    res.json({ files });
-  } catch (error) {
-    console.error(`📄 [PDFList] ❌ Error listing PDFs:`, error);
-    res.status(500).json({ error: "Failed to list PDFs" });
-  }
-});
+// Legacy global PDF listing removed - PDFs are now patient-specific only
 
 export default router;

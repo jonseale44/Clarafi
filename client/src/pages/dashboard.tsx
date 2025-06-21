@@ -5,7 +5,7 @@ import { EncountersTab } from "@/components/patient/encounters-tab";
 import { PatientChartView } from "@/components/patient/patient-chart-view";
 import { ProviderDashboard } from "@/components/dashboard/provider-dashboard";
 import { UserProfileMenu } from "@/components/user-profile-menu";
-import { PDFViewer } from "@/components/PDFViewer";
+// Legacy PDFViewer import removed - PDFs are now in patient charts only
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
