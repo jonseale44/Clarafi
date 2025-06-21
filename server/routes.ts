@@ -2880,6 +2880,8 @@ Return only valid JSON without markdown formatting.`;
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
 
+
+
       // Process all order types through production systems
       try {
         if (order.orderType === "lab") {
@@ -2999,6 +3001,7 @@ Return only valid JSON without markdown formatting.`;
           .limit(1);
 
         const prefs = preferences[0];
+        console.log(`📋 [IndividualSign] Found preferences for patient ${order.patientId}:`, prefs);
         
         // Determine delivery method based on order type and preferences
         switch (order.orderType) {
