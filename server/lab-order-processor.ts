@@ -148,6 +148,7 @@ export class LabOrderProcessor {
           previousDate: null, // Track when previous result was taken
           trendDirection: null, // Track result trends
           percentChange: null, // Track percentage change from previous
+          qcFlags: null, // Quality control flags
           aiInterpretation: JSON.stringify({
             clinicalSignificance: result.clinicalSignificance || 'Within normal limits',
             suggestedActions: result.suggestedActions || [],
