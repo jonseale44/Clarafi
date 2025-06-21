@@ -211,7 +211,8 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
     console.log(`📄 [ValidationSign] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
     
     try {
-      const { pdfService } = await import("./pdf-service.js");
+      const { PDFGenerationService } = await import("./pdf-generation-service.js");
+      const pdfService = new PDFGenerationService();
       
       let pdfBuffer: Buffer | null = null;
       
@@ -379,7 +380,8 @@ router.post("/orders/bulk-sign", async (req: Request, res: Response) => {
     console.log(`📄 [BulkSign] Total signed orders: ${results.signed.length}`);
     
     try {
-      const { pdfService } = await import("./pdf-service.js");
+      const { PDFGenerationService } = await import("./pdf-generation-service.js");
+      const pdfService = new PDFGenerationService();
       
       // Group orders by type and patient for PDF generation
       const ordersByTypeAndPatient = results.signed.reduce((acc: any, order: any) => {
