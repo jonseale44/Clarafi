@@ -14,7 +14,8 @@ import {
   Calendar,
   User,
   FileCheck,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -291,13 +292,32 @@ export function EmbeddedPDFViewer({
             <div className="flex-1 overflow-hidden bg-gray-100 flex items-center justify-center">
               <div className="text-center">
                 <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-lg font-medium mb-2">PDF Viewer</p>
+                <p className="text-lg font-medium mb-2">Medical Document Viewer</p>
                 <p className="text-sm text-gray-600 mb-4">
-                  Click "View in New Tab" to open the PDF in a separate window
+                  Access your PDF documents securely. Click "View in New Tab" for full document view.
                 </p>
                 <div className="flex gap-2 justify-center">
                   <Button
-                    onClick={() => window.open(`/api/pdfs/${selectedPDF}/view`, '_blank')}
+                    onClick={() => {
+                      // Use fetch to get the PDF as blob, then create object URL
+                      fetch(`/api/pdfs/${selectedPDF}/view`, {
+                        credentials: 'include'
+                      })
+                      .then(response => response.blob())
+                      .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                        // Clean up after 5 minutes
+                        setTimeout(() => URL.revokeObjectURL(url), 300000);
+                      })
+                      .catch(error => {
+                        toast({
+                          title: "Error",
+                          description: "Failed to open PDF in new tab",
+                          variant: "destructive"
+                        });
+                      });
+                    }}
                     className="flex items-center gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />
