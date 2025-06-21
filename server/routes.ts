@@ -2998,7 +2998,7 @@ Return only valid JSON without markdown formatting.`;
         const signedOrderData = {
           orderId: order.id,
           patientId: order.patientId,
-          providerId: userId,
+          encounterId: order.encounterId,
           orderType: order.orderType,
           deliveryMethod: deliveryMethod,
           deliveryEndpoint: deliveryEndpoint,
@@ -3311,7 +3311,7 @@ Return only valid JSON without markdown formatting.`;
               const signedOrderData = {
                 orderId: order.id,
                 patientId: order.patientId,
-                providerId: userId,
+                encounterId: order.encounterId,
                 orderType: order.orderType,
                 deliveryMethod: deliveryMethod,
                 deliveryEndpoint: deliveryEndpoint,
