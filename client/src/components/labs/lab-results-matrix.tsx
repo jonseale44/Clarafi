@@ -781,7 +781,9 @@ export function LabResultsMatrix({
                                     : result.abnormalFlag && result.abnormalFlag !== 'N'
                                     ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
                                     : result.needsReview
-                                    ? 'bg-orange-100 text-orange-800 border border-orange-300'
+                                    ? 'bg-orange-100 text-orange-800 border border-orange-300 font-bold'
+                                    : result.isReviewed
+                                    ? 'bg-green-100 text-green-800 border border-green-300'
                                     : 'text-gray-900'
                                 } ${result.needsReview ? 'cursor-pointer hover:scale-105 hover:shadow-md' : ''}`}
                                 onClick={() => {
@@ -890,6 +892,256 @@ export function LabResultsMatrix({
               </Button>
             </div>
           </div>
+        )}
+
+        {/* Integrated Review Panel */}
+        {(selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) && (
+          <Collapsible open={isReviewPanelOpen} onOpenChange={setIsReviewPanelOpen}>
+            <div className="border-t bg-slate-50">
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-100">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-blue-800">Review Selected Lab Results</span>
+                    <Badge variant="secondary">
+                      {(() => {
+                        let totalResults = 0;
+                        
+                        if (selectedDates.size > 0) {
+                          selectedDates.forEach(selectedDate => {
+                            matrixData.forEach(test => {
+                              const matchingResults = test.results.filter(result => result.date === selectedDate);
+                              totalResults += matchingResults.length;
+                            });
+                          });
+                        }
+                        
+                        if (selectedTestRows.size > 0) {
+                          selectedTestRows.forEach(testName => {
+                            const test = matrixData.find(t => t.testName === testName);
+                            if (test) totalResults += test.results.length;
+                          });
+                        }
+                        
+                        if (selectedPanels.size > 0) {
+                          selectedPanels.forEach(panelName => {
+                            const panelTests = groupedData[panelName] || [];
+                            panelTests.forEach(test => {
+                              totalResults += test.results.length;
+                            });
+                          });
+                        }
+                        
+                        return `${totalResults} result${totalResults !== 1 ? 's' : ''}`;
+                      })()}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {currentUser?.role === 'provider' && (
+                      <Badge variant="outline" className="text-green-700 border-green-300">
+                        Review Authorized
+                      </Badge>
+                    )}
+                    {isReviewPanelOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent className="px-3 pb-3">
+                <div className="space-y-4">
+                  {/* Quick Pick Templates */}
+                  <div className="space-y-2">
+                    <Label htmlFor="review-template">Quick-Pick Templates</Label>
+                    <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a template or write custom note..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REVIEW_TEMPLATES.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Review Note */}
+                  <div className="space-y-2">
+                    <Label htmlFor="review-note">Clinical Review Note</Label>
+                    <Textarea
+                      id="review-note"
+                      placeholder="Enter your clinical review and interpretation..."
+                      value={reviewNote}
+                      onChange={(e) => setReviewNote(e.target.value)}
+                      className="min-h-[80px]"
+                    />
+                    {selectedTemplate && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const template = REVIEW_TEMPLATES.find(t => t.id === selectedTemplate);
+                          if (template) {
+                            setReviewNote(template.value);
+                          }
+                        }}
+                      >
+                        Apply Template
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Communication and Assignment */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Staff Assignment */}
+                    <div className="space-y-2">
+                      <Label>Assign Follow-up To</Label>
+                      <Select value={assignedStaff} onValueChange={setAssignedStaff}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select staff member..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(staffMembers || []).map((staff: any) => (
+                            <SelectItem key={staff.id} value={staff.id.toString()}>
+                              {staff.firstName} {staff.lastName} ({staff.role})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Communication Options */}
+                    <div className="space-y-2">
+                      <Label>Patient Communication</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="portal-release"
+                            checked={communicationPlan.portalRelease}
+                            onCheckedChange={(checked) => 
+                              setCommunicationPlan(prev => ({ ...prev, portalRelease: !!checked }))
+                            }
+                          />
+                          <Label htmlFor="portal-release" className="text-sm">Release to patient portal</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="phone-call"
+                            checked={communicationPlan.phoneCall}
+                            onCheckedChange={(checked) => 
+                              setCommunicationPlan(prev => ({ ...prev, phoneCall: !!checked }))
+                            }
+                          />
+                          <Label htmlFor="phone-call" className="text-sm">Phone call required</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="sms-text"
+                            checked={communicationPlan.smsText}
+                            onCheckedChange={(checked) => 
+                              setCommunicationPlan(prev => ({ ...prev, smsText: !!checked }))
+                            }
+                          />
+                          <Label htmlFor="sms-text" className="text-sm">SMS notification</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="urgent-contact"
+                            checked={communicationPlan.urgentContact}
+                            onCheckedChange={(checked) => 
+                              setCommunicationPlan(prev => ({ ...prev, urgentContact: !!checked }))
+                            }
+                          />
+                          <Label htmlFor="urgent-contact" className="text-sm">Urgent contact needed</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsReviewPanelOpen(false);
+                          setReviewNote('');
+                          setSelectedTemplate('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {currentUser?.role === 'provider' ? (
+                        <Button
+                          onClick={async () => {
+                            // Collect all selected result IDs
+                            const resultIds: number[] = [];
+                            
+                            if (selectedDates.size > 0) {
+                              selectedDates.forEach(selectedDate => {
+                                matrixData.forEach(test => {
+                                  const matchingResults = test.results.filter(result => result.date === selectedDate);
+                                  resultIds.push(...matchingResults.map(r => r.id as number));
+                                });
+                              });
+                            }
+                            
+                            if (selectedTestRows.size > 0) {
+                              selectedTestRows.forEach(testName => {
+                                const test = matrixData.find(t => t.testName === testName);
+                                if (test) {
+                                  resultIds.push(...test.results.map(r => r.id as number));
+                                }
+                              });
+                            }
+                            
+                            if (selectedPanels.size > 0) {
+                              selectedPanels.forEach(panelName => {
+                                const panelTests = groupedData[panelName] || [];
+                                panelTests.forEach(test => {
+                                  resultIds.push(...test.results.map(r => r.id as number));
+                                });
+                              });
+                            }
+
+                            reviewMutation.mutate({
+                              resultIds,
+                              reviewNote,
+                              reviewTemplate: selectedTemplate,
+                              assignedTo: assignedStaff ? parseInt(assignedStaff) : undefined,
+                              communicationPlan
+                            });
+                          }}
+                          disabled={reviewMutation.isPending}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {reviewMutation.isPending ? (
+                            <>Processing...</>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4 mr-2" />
+                              Complete Review
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <Badge variant="destructive">
+                          Only providers can review lab results
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         )}
         
         {mode === 'compact' && encounterColumns.length > maxColumns && (
