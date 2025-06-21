@@ -2898,7 +2898,7 @@ Return only valid JSON without markdown formatting.`;
           .limit(1);
 
         const prefs = preferences[0];
-        console.log(`📋 [IndividualSign] Found preferences for patient ${order.patientId}:`, prefs);
+        console.log(`📋 [IndividualSign] Found preferences for patient ${order.patientId}:`, JSON.stringify(prefs));
         
         // Determine delivery method based on order type and preferences
         switch (order.orderType) {
@@ -2916,7 +2916,6 @@ Return only valid JSON without markdown formatting.`;
             deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
                               deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
                               "PDF Generation";
-            console.log(`📋 [IndividualSign] IMAGING ORDER DEBUG: prefs=${JSON.stringify(prefs)}, method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
             break;
             
           case 'medication':
@@ -2930,7 +2929,7 @@ Return only valid JSON without markdown formatting.`;
             shouldGeneratePDF = true;
         }
 
-        console.log(`📋 [IndividualSign] Order ${orderId}: Delivery method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
+        console.log(`📋 [IndividualSign] Order ${orderId}: Type=${order.orderType}, Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
         
         // Record signed order with delivery details
         const { signedOrders } = await import("../shared/schema.js");
@@ -2955,10 +2954,11 @@ Return only valid JSON without markdown formatting.`;
         };
 
         await db.insert(signedOrders).values(signedOrderData);
-        console.log(`📋 [IndividualSign] Recorded delivery preferences for order ${orderId}`);
+        console.log(`📋 [IndividualSign] ✅ Recorded delivery preferences for order ${orderId}`);
         
       } catch (deliveryError) {
         console.error('❌ [IndividualSign] Error checking delivery preferences:', deliveryError);
+        console.error('❌ [IndividualSign] Error stack:', (deliveryError as Error).stack);
         // Fallback to PDF generation
         shouldGeneratePDF = true;
         deliveryMethod = 'print_pdf';
