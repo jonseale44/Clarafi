@@ -149,13 +149,16 @@ export class LabOrderProcessor {
           trendDirection: null, // Track result trends
           percentChange: null, // Track percentage change from previous
           qcFlags: null, // Quality control flags
+          sourceSystem: 'mock_lab', // Source system identifier
+          interfaceVersion: '1.0', // Interface version
           aiInterpretation: JSON.stringify({
             clinicalSignificance: result.clinicalSignificance || 'Within normal limits',
             suggestedActions: result.suggestedActions || [],
             trendAnalysis: 'No previous results for comparison',
             riskAssessment: result.abnormalFlag ? 'Review recommended' : 'Low risk'
           }),
-          createdAt: new Date()
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
       }
       
