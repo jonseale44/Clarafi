@@ -20,7 +20,7 @@ export class LabOrderProcessor {
    * Process all signed lab orders for a patient/encounter
    * Called automatically when lab orders are signed
    */
-  static async processSignedLabOrders(patientId: number, encounterId?: number) {
+  static async processSignedLabOrders(patientId: number, encounterId?: number, deliveryMethod?: string) {
     console.log(`🧪 [LabProcessor] Processing signed lab orders for patient ${patientId}, encounter ${encounterId || 'all'}`);
     
     try {
@@ -42,7 +42,7 @@ export class LabOrderProcessor {
       console.log(`🧪 [LabProcessor] Found ${signedLabOrders.length} signed lab orders to process`);
       
       for (const order of signedLabOrders) {
-        await this.convertToProductionLabOrder(order);
+        await this.convertToProductionLabOrder(order, deliveryMethod);
       }
       
       console.log(`✅ [LabProcessor] Successfully processed ${signedLabOrders.length} lab orders`);
@@ -56,7 +56,7 @@ export class LabOrderProcessor {
   /**
    * Convert a single signed lab order to production lab system
    */
-  private static async convertToProductionLabOrder(order: any) {
+  private static async convertToProductionLabOrder(order: any, deliveryMethod?: string) {
     console.log(`🔬 [LabProcessor] Converting order ${order.id}: ${order.testName || order.labName}`);
     
     try {
@@ -100,10 +100,15 @@ export class LabOrderProcessor {
         .set({ referenceId: newLabOrder.id })
         .where(eq(orders.id, order.id));
       
-      // Generate results immediately for testing
-      console.log(`📊 [LabProcessor] Generating results for ${order.testName}`);
-      await this.generateLabResults(newLabOrder);
-      console.log(`✅ [LabProcessor] Successfully generated results for ${order.testName}`);
+      // Generate mock results only for mock_service delivery method
+      if (deliveryMethod === "mock_service" || !deliveryMethod) {
+        console.log(`📊 [LabProcessor] Generating mock results for ${order.testName} (delivery: ${deliveryMethod || 'default'})`);
+        await this.generateLabResults(newLabOrder);
+        console.log(`✅ [LabProcessor] Successfully generated mock results for ${order.testName}`);
+      } else {
+        console.log(`📋 [LabProcessor] Skipping mock result generation for ${order.testName} (delivery: ${deliveryMethod})`);
+        console.log(`📋 [LabProcessor] Order will remain pending until real results are received`);
+      }
       
     } catch (error) {
       console.error(`❌ [LabProcessor] Failed to convert order ${order.id}:`, error);

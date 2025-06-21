@@ -3001,28 +3001,19 @@ Return only valid JSON without markdown formatting.`;
         await db.insert(signedOrders).values(signedOrderData);
         console.log(`📋 [IndividualSign] ✅ Recorded delivery preferences for order ${orderId}`);
         
-        // Process through production systems ONLY if delivery method requires it
-        console.log(`🔄 [IndividualSign] Checking if production processing needed for ${order.orderType} order ${orderId}`);
+        // Process ALL orders through production systems for proper pending status
+        console.log(`🔄 [IndividualSign] Processing ${order.orderType} order ${orderId} through production systems`);
         try {
           if (order.orderType === "lab") {
-            if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
-              console.log(`🧪 [IndividualSign] Lab delivery method is ${deliveryMethod} - processing through lab system`);
-              const { LabOrderProcessor } = await import("./lab-order-processor.js");
-              await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
-              console.log(`✅ [IndividualSign] Successfully processed lab order ${orderId} through production system`);
-            } else {
-              console.log(`📄 [IndividualSign] Lab delivery method is ${deliveryMethod} - skipping lab system processing (PDF only)`);
-            }
+            console.log(`🧪 [IndividualSign] Processing lab order through lab system (delivery method: ${deliveryMethod})`);
+            const { LabOrderProcessor } = await import("./lab-order-processor.js");
+            await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId, deliveryMethod);
+            console.log(`✅ [IndividualSign] Successfully processed lab order ${orderId} - will appear as pending`);
           } else if (order.orderType === "imaging") {
-            if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
-              const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
-              await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
-              console.log(`🩻 [IndividualSign] Processed imaging order ${orderId} through production system`);
-            } else {
-              console.log(`📄 [IndividualSign] Imaging delivery method is ${deliveryMethod} - skipping production processing (PDF only)`);
-            }
+            const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
+            await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
+            console.log(`🩻 [IndividualSign] Processed imaging order ${orderId} through production system`);
           } else if (order.orderType === "referral") {
-            // Referrals always get processed since they don't have PDF-only mode
             const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
             await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
             console.log(`👨‍⚕️ [IndividualSign] Processed referral order ${orderId} through production system`);
@@ -3363,28 +3354,19 @@ Return only valid JSON without markdown formatting.`;
               console.log(`📋 [RouteBulkSign] ✅ PDF generation skipped for patient ${patientId} ${orderType} orders - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
             }
             
-            // Process through production systems ONLY if delivery method requires it
-            console.log(`🔄 [RouteBulkSign] Checking if production processing needed for ${orderType} orders (patient ${patientId})`);
+            // Process ALL orders through production systems for proper pending status
+            console.log(`🔄 [RouteBulkSign] Processing ${orderType} orders through production systems (patient ${patientId})`);
             try {
               if (orderType === "lab") {
-                if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
-                  console.log(`🧪 [RouteBulkSign] Lab delivery method is ${deliveryMethod} - processing through lab system`);
-                  const { LabOrderProcessor } = await import("./lab-order-processor.js");
-                  await LabOrderProcessor.processSignedLabOrders(parseInt(patientId), (orders as any)[0].encounterId);
-                  console.log(`✅ [RouteBulkSign] Successfully processed ${(orders as any).length} lab orders through production system`);
-                } else {
-                  console.log(`📄 [RouteBulkSign] Lab delivery method is ${deliveryMethod} - skipping lab system processing (PDF only)`);
-                }
+                console.log(`🧪 [RouteBulkSign] Processing lab orders through lab system (delivery method: ${deliveryMethod})`);
+                const { LabOrderProcessor } = await import("./lab-order-processor.js");
+                await LabOrderProcessor.processSignedLabOrders(parseInt(patientId), (orders as any)[0].encounterId, deliveryMethod);
+                console.log(`✅ [RouteBulkSign] Successfully processed ${(orders as any).length} lab orders - will appear as pending`);
               } else if (orderType === "imaging") {
-                if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
-                  const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
-                  await ImagingOrderProcessor.processSignedImagingOrders(parseInt(patientId), (orders as any)[0].encounterId);
-                  console.log(`🩻 [RouteBulkSign] Processed ${(orders as any).length} imaging orders through production system`);
-                } else {
-                  console.log(`📄 [RouteBulkSign] Imaging delivery method is ${deliveryMethod} - skipping production processing (PDF only)`);
-                }
+                const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
+                await ImagingOrderProcessor.processSignedImagingOrders(parseInt(patientId), (orders as any)[0].encounterId);
+                console.log(`🩻 [RouteBulkSign] Processed ${(orders as any).length} imaging orders through production system`);
               } else if (orderType === "referral") {
-                // Referrals always get processed since they don't have PDF-only mode
                 const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
                 await ReferralOrderProcessor.processSignedReferralOrders(parseInt(patientId), (orders as any)[0].encounterId);
                 console.log(`👨‍⚕️ [RouteBulkSign] Processed ${(orders as any).length} referral orders through production system`);
