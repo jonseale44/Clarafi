@@ -244,8 +244,8 @@ export function LabResultsMatrix({
     return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));
   }, [results, orders, pendingReviewIds]);
 
-  // Group tests by lab panels with proper standard lab table structure
-  const groupedData = useMemo(() => {
+  // Create flat list of tests organized by panel but displayed as flat rows
+  const flatTestData = useMemo(() => {
     const groups: { [key: string]: MatrixData[] } = {};
     
     // Initialize groups
@@ -258,7 +258,7 @@ export function LabResultsMatrix({
       let assigned = false;
       
       // Check panels in order of specificity (CMP before BMP, etc.)
-      const panelOrder = ['CMP', 'CBC', 'Lipid Panel', 'Thyroid Function', 'HbA1c', 'Other'];
+      const panelOrder = ['CBC', 'CMP', 'Lipid Panel', 'Thyroid Function', 'HbA1c', 'Other'];
       
       for (const panelName of panelOrder) {
         if (labPanels[panelName] && labPanels[panelName].includes(test.testName)) {
@@ -273,14 +273,20 @@ export function LabResultsMatrix({
       }
     });
 
-    // Remove empty groups except 'Other'
-    Object.keys(groups).forEach(key => {
-      if (groups[key].length === 0 && key !== 'Other') {
-        delete groups[key];
+    // Create flat list with panel headers
+    const flatList: Array<{ type: 'panel', name: string } | { type: 'test', data: MatrixData, panel: string }> = [];
+    
+    const panelOrder = ['CBC', 'CMP', 'Lipid Panel', 'Thyroid Function', 'HbA1c', 'Other'];
+    panelOrder.forEach(panelName => {
+      if (groups[panelName] && groups[panelName].length > 0) {
+        flatList.push({ type: 'panel', name: panelName });
+        groups[panelName].forEach(test => {
+          flatList.push({ type: 'test', data: test, panel: panelName });
+        });
       }
     });
 
-    return groups;
+    return flatList;
   }, [matrixData, labPanels]);
 
   // Group results by encounter instead of individual dates
@@ -658,184 +664,105 @@ export function LabResultsMatrix({
             </thead>
             
             <tbody>
-              {Object.entries(groupedData).flatMap(([panelName, tests]) => {
-                const panelRows = [];
-                
-                // Panel header row
-                const isPanelSelected = selectedPanels.has(panelName);
-                const isPanelExpanded = expandedPanels.has(panelName);
-                const panelHasPendingResults = tests.some(test => 
-                  test.results.some(result => result.needsReview)
-                );
-                
-                let panelClass = "border-b-2 border-gray-300 bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors";
-                if (isPanelSelected) {
-                  panelClass += " bg-blue-200";
-                } else if (panelHasPendingResults) {
-                  panelClass += " bg-yellow-100";
-                }
-                
-                panelRows.push(
-                  <tr key={`panel-${panelName}`} className={panelClass}>
-                    <td 
-                      className="p-2 sticky left-0 bg-inherit"
-                      onClick={() => handlePanelClick(panelName)}
-                    >
-                      <div className="flex items-center gap-1">
-                        {isPanelSelected && <FlaskConical className="h-3 w-3 text-blue-600" />}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePanelExpansion(panelName);
-                          }}
-                          className="h-4 w-4 p-0"
-                        >
-                          {isPanelExpanded ? (
-                            <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronRight className="h-3 w-3" />
-                          )}
-                        </Button>
-                        <div>
-                          <div className="font-semibold text-sm">{panelName}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {tests.length} tests
-                            {panelHasPendingResults && " • Pending review"}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    {displayColumns.map(encounter => (
-                      <td key={encounter.encounterId} className="p-3 text-center">
-                        <span className="text-muted-foreground text-xs">—</span>
+              {flatTestData.map((item, index) => {
+                if (item.type === 'panel') {
+                  // Panel header row - always visible
+                  return (
+                    <tr key={`panel-${item.name}`} className="border-b-2 border-gray-300 bg-gray-100">
+                      <td className="p-3 sticky left-0 bg-gray-100 font-bold text-sm border-r border-gray-300">
+                        {item.name}
                       </td>
-                    ))}
-                  </tr>
-                );
-                
-                // Individual test rows (only if panel is expanded)
-                if (isPanelExpanded) {
-                  tests.forEach((test) => {
-                    const testRows = [
-                      <tr key={test.testName} className="border-b hover:bg-muted/20">
-                        <td 
-                          className={`${getTestRowClass(test.testName)} cursor-pointer transition-colors`}
-                          onClick={() => handleTestRowClick(test.testName)}
-                          onMouseEnter={() => setHoveredTestRow(test.testName)}
-                          onMouseLeave={() => setHoveredTestRow(null)}
-                        >
-                          <div className="flex items-center gap-1 ml-4">
-                            {selectedTestRows.has(test.testName) && <TestTube className="h-2 w-2 text-blue-600" />}
-                            {test.results.length > 1 && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleTestExpansion(test.testName);
-                                }}
-                                className="h-4 w-4 p-0"
-                              >
-                                {expandedTests.has(test.testName) ? (
-                                  <ChevronDown className="h-2 w-2" />
-                                ) : (
-                                  <ChevronRight className="h-2 w-2" />
-                                )}
-                              </Button>
-                            )}
-                            <div>
-                              <div className="font-medium text-xs">{test.testName}</div>
-                              <div className="text-xs text-muted-foreground opacity-75">
-                                ({test.unit})
-                              </div>
-                            </div>
-                          </div>
+                      {displayColumns.map(encounter => (
+                        <td key={encounter.encounterId} className="p-3 text-center border-r border-gray-200">
+                          <span className="text-muted-foreground text-xs">—</span>
                         </td>
-                        
-                        {displayColumns.map(encounter => {
-                          const result = test.results.find(r => r.encounterId === encounter.encounterId);
-                          const isDateSelected = selectedDates.has(encounter.date);
-                          const isEncounterHighlighted = result?.encounterId && 
-                            selectedDates.has(encounter.date) && 
-                            result.encounterId === encounter.encounterId;
-                          
-                          let cellClass = "p-1 text-center transition-colors";
-                          if (isDateSelected || isEncounterHighlighted) {
-                            cellClass += " bg-blue-50 border-2 border-blue-200";
-                          }
-                          
-                          return (
-                            <td key={encounter.encounterId} className={cellClass}>
-                              {result ? (
-                                <div className="relative">
-                                  <div 
-                                    className={`px-1 py-0.5 rounded text-xs transition-all ${result.isPending ? 'bg-blue-100 text-blue-800 border border-blue-300' : `cursor-pointer ${getValueClass(result.abnormalFlag, result.criticalFlag, result.needsReview, result.isReviewed, canUnreview(result))}`} ${result.needsReview ? 'hover:scale-105 hover:shadow-md' : ''}`}
-                                    onClick={() => {
-                                      // Only trigger individual lab result actions for specific review/unreview
-                                      // This preserves the single-click review behavior for individual results
-                                      if (!result.isPending) {
-                                        if (result.needsReview) {
-                                          onReviewSpecific?.(test.testName, date, result.id);
-                                        } else if (result.isReviewed && canUnreview(result)) {
-                                          onUnreviewSpecific?.(test.testName, date, result.id);
-                                        }
-                                      }
-                                    }}
-                                    title={result.isPending ? `Order placed. External ID: ${result.externalOrderId || 'N/A'}` : undefined}
-                                  >
-                                    {result.value}
-                                    {result.isPending && (
-                                      <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-1 animate-pulse" />
-                                    )}
-                                    {!result.isPending && result.criticalFlag && (
-                                      <AlertTriangle className="inline h-3 w-3 ml-1" />
-                                    )}
-                                    {!result.isPending && result.needsReview && (
-                                      <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
-                                    )}
-                                    {!result.isPending && result.isReviewed && canUnreview(result) && (
-                                      <span className="inline-block w-2 h-2 bg-green-500 rounded-full ml-1" title="Click to unreview" />
-                                    )}
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">—</span>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ];
-                    
-                    if (expandedTests.has(test.testName)) {
-                      testRows.push(
-                        <tr key={`${test.testName}-expanded`}>
-                          <td colSpan={displayColumns.length + 1} className="bg-muted/10 p-4">
-                            <div className="space-y-2 text-sm ml-6">
-                              <div>
-                                <span className="font-medium">Reference Range: </span>
-                                {test.referenceRange}
-                              </div>
-                              <div>
-                                <span className="font-medium">Test Code: </span>
-                                {test.testCode}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Click test values to view detailed result information
-                              </div>
+                      ))}
+                    </tr>
+                  );
+                } else {
+                  // Test row - always visible, no accordion
+                  const test = item.data;
+                  const isTestSelected = selectedTestRows.has(test.testName);
+                  
+                  return (
+                    <tr 
+                      key={test.testName} 
+                      className={`border-b hover:bg-muted/20 ${isTestSelected ? 'bg-blue-50' : ''}`}
+                    >
+                      <td 
+                        className="p-3 sticky left-0 bg-white border-r border-gray-200 cursor-pointer transition-colors"
+                        onClick={() => handleTestRowClick(test.testName)}
+                        onMouseEnter={() => setHoveredTestRow(test.testName)}
+                        onMouseLeave={() => setHoveredTestRow(null)}
+                      >
+                        <div className="flex flex-col">
+                          <div className="font-medium text-sm">{test.testName}</div>
+                          {test.unit && (
+                            <div className="text-xs text-muted-foreground">
+                              ({test.unit})
                             </div>
+                          )}
+                        </div>
+                      </td>
+                      
+                      {displayColumns.map(encounter => {
+                        const result = test.results.find(r => r.encounterId === encounter.encounterId);
+                        const isDateSelected = selectedDates.has(encounter.date);
+                        
+                        let cellClass = "p-3 text-center border-r border-gray-200 transition-colors";
+                        if (isDateSelected) {
+                          cellClass += " bg-blue-50 border-2 border-blue-200";
+                        }
+                        
+                        return (
+                          <td key={encounter.encounterId} className={cellClass}>
+                            {result ? (
+                              <div 
+                                className={`px-2 py-1 rounded text-sm font-medium transition-all ${
+                                  result.isPending 
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-300' 
+                                    : result.criticalFlag
+                                    ? 'bg-red-100 text-red-800 border border-red-300'
+                                    : result.abnormalFlag && result.abnormalFlag !== 'N'
+                                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                                    : result.needsReview
+                                    ? 'bg-orange-100 text-orange-800 border border-orange-300'
+                                    : 'text-gray-900'
+                                } ${result.needsReview ? 'cursor-pointer hover:scale-105 hover:shadow-md' : ''}`}
+                                onClick={() => {
+                                  if (!result.isPending) {
+                                    if (result.needsReview) {
+                                      onReviewSpecific?.(test.testName, encounter.date, result.id);
+                                    } else if (result.isReviewed && canUnreview(result)) {
+                                      onUnreviewSpecific?.(test.testName, encounter.date, result.id);
+                                    }
+                                  }
+                                }}
+                                title={result.isPending ? `Order placed. External ID: ${result.externalOrderId || 'N/A'}` : undefined}
+                              >
+                                {result.value}
+                                {result.isPending && (
+                                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-1 animate-pulse" />
+                                )}
+                                {!result.isPending && result.criticalFlag && (
+                                  <AlertTriangle className="inline h-3 w-3 ml-1" />
+                                )}
+                                {!result.isPending && result.needsReview && (
+                                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
+                                )}
+                                {!result.isPending && result.isReviewed && canUnreview(result) && (
+                                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full ml-1" title="Click to unreview" />
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">—</span>
+                            )}
                           </td>
-                        </tr>
-                      );
-                    }
-                    
-                    panelRows.push(...testRows);
-                  });
+                        );
+                      })}
+                    </tr>
+                  );
                 }
-                
-                return panelRows;
               })}
             </tbody>
           </table>
