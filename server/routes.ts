@@ -2879,6 +2879,50 @@ Return only valid JSON without markdown formatting.`;
       console.log(
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
+
+      // For medication orders, activate pending medications
+      if (order.orderType === "medication") {
+        try {
+          const { medicationDelta } = await import(
+            "./medication-delta-service.js"
+          );
+
+          await medicationDelta.signMedicationOrders(
+            order.encounterId || 0,
+            [orderId],
+            userId,
+          );
+
+          console.log(
+            `✅ [IndividualSign] Successfully activated medication order ${orderId}`,
+          );
+        } catch (medicationError) {
+          console.error(
+            `❌ [IndividualSign] Failed to activate medication order ${orderId}:`,
+            medicationError,
+          );
+          // Continue with response even if activation fails
+        }
+      }
+
+      // Process all order types through production systems
+      try {
+        if (order.orderType === "lab") {
+          const { LabOrderProcessor } = await import("./lab-order-processor.js");
+          await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
+          console.log(`🧪 [Order Signing] Processed lab order ${orderId} through production system`);
+        } else if (order.orderType === "imaging") {
+          const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
+          await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
+          console.log(`🩻 [Order Signing] Processed imaging order ${orderId} through production system`);
+        } else if (order.orderType === "referral") {
+          const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
+          await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
+          console.log(`👨‍⚕️ [Order Signing] Processed referral order ${orderId} through production system`);
+        }
+      } catch (error) {
+        console.error(`❌ [Order Signing] Failed to process ${order.orderType} order ${orderId}:`, error);
+      }
       
       // Check delivery preferences and generate PDF only if needed
       console.log(`📋 [IndividualSign] ===== DELIVERY PREFERENCE CHECK =====`);
