@@ -3016,6 +3016,7 @@ Return only valid JSON without markdown formatting.`;
             deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
                               deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
                               "PDF Generation";
+            console.log(`📋 [IndividualSign] IMAGING ORDER DEBUG: prefs=${JSON.stringify(prefs)}, method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
             break;
             
           case 'medication':
@@ -3289,6 +3290,8 @@ Return only valid JSON without markdown formatting.`;
             }
 
             // Generate PDF only if delivery method requires it
+            console.log(`📄 [RouteBulkSign] DEBUG: Patient ${patientId}, orderType=${orderType}, shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`);
+            
             if (shouldGeneratePDF) {
               console.log(`📄 [RouteBulkSign] Generating ${orderType} PDF for patient ${patientId}`);
               
@@ -3296,15 +3299,20 @@ Return only valid JSON without markdown formatting.`;
                 let pdfBuffer: Buffer | null = null;
                 
                 if (orderType === 'medication') {
+                  console.log(`📄 [RouteBulkSign] Calling generateMedicationPDF with ${orders.length} orders`);
                   pdfBuffer = await pdfService.generateMedicationPDF(orders, parseInt(patientId), userId);
                 } else if (orderType === 'lab') {
+                  console.log(`📄 [RouteBulkSign] Calling generateLabPDF with ${orders.length} orders`);
                   pdfBuffer = await pdfService.generateLabPDF(orders, parseInt(patientId), userId);
                 } else if (orderType === 'imaging') {
+                  console.log(`📄 [RouteBulkSign] Calling generateImagingPDF with ${orders.length} orders`);
                   pdfBuffer = await pdfService.generateImagingPDF(orders, parseInt(patientId), userId);
                 }
                 
                 if (pdfBuffer) {
                   console.log(`📄 [RouteBulkSign] ✅ Generated ${orderType} PDF for patient ${patientId} (${pdfBuffer.length} bytes)`);
+                } else {
+                  console.log(`📄 [RouteBulkSign] ⚠️ PDF generation returned null for ${orderType} orders`);
                 }
                 
               } catch (pdfError) {
