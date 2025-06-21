@@ -3121,8 +3121,7 @@ Return only valid JSON without markdown formatting.`;
       console.log(`📄 [RouteBulkSign] Total signed orders: ${signedOrders.length}`);
       
       try {
-        const { PDFGenerationService } = await import("./pdf-generation-service.js");
-        const pdfService = new PDFGenerationService();
+        const { pdfService } = await import("./pdf-service.js");
         
         // Group orders by type and patient for PDF generation
         const ordersByTypeAndPatient = signedOrders.reduce((acc: any, order: any) => {
