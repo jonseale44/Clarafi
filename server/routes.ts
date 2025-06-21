@@ -3184,68 +3184,142 @@ Return only valid JSON without markdown formatting.`;
         }
       }
 
-      // Generate PDFs for signed orders  
-      console.log(`📄 [RouteBulkSign] ===== PDF GENERATION STARTING =====`);
-      console.log(`📄 [RouteBulkSign] Total signed orders: ${signedOrders.length}`);
+      // Process delivery based on patient preferences
+      console.log(`📋 [RouteBulkSign] ===== DELIVERY PROCESSING STARTING =====`);
+      console.log(`📋 [RouteBulkSign] Total signed orders: ${signedOrders.length}`);
       
       try {
         const { pdfService } = await import("./pdf-service.js");
+        const { patientOrderPreferences } = await import("../shared/schema.js");
+        const { eq } = await import("drizzle-orm");
         
-        // Group orders by type and patient for PDF generation
-        const ordersByTypeAndPatient = signedOrders.reduce((acc: any, order: any) => {
-          const key = `${order.patientId}_${order.orderType}`;
-          if (!acc[key]) {
-            acc[key] = {
-              patientId: order.patientId,
-              orderType: order.orderType,
-              orders: []
-            };
+        // Group orders by patient to get delivery preferences
+        const ordersByPatient = signedOrders.reduce((acc: any, order: any) => {
+          if (!acc[order.patientId]) {
+            acc[order.patientId] = [];
           }
-          acc[key].orders.push(order);
+          acc[order.patientId].push(order);
           return acc;
         }, {});
 
-        console.log(`📄 [RouteBulkSign] Grouped orders by type and patient:`, Object.keys(ordersByTypeAndPatient));
+        console.log(`📋 [RouteBulkSign] Processing orders for ${Object.keys(ordersByPatient).length} patients`);
 
-        for (const [key, group] of Object.entries(ordersByTypeAndPatient)) {
-          const { patientId, orderType, orders } = group as any;
+        for (const [patientId, patientOrders] of Object.entries(ordersByPatient)) {
+          console.log(`📋 [RouteBulkSign] Processing ${(patientOrders as any).length} orders for patient ${patientId}`);
           
-          console.log(`📄 [RouteBulkSign] Processing ${orderType} orders for patient ${patientId}`);
+          // Get patient delivery preferences
+          const preferences = await db
+            .select()
+            .from(patientOrderPreferences)
+            .where(eq(patientOrderPreferences.patientId, parseInt(patientId)))
+            .limit(1);
+
+          const prefs = preferences[0];
           
-          try {
-            let pdfBuffer: Buffer | null = null;
+          // Group orders by type for this patient
+          const ordersByType = (patientOrders as any).reduce((acc: any, order: any) => {
+            if (!acc[order.orderType]) {
+              acc[order.orderType] = [];
+            }
+            acc[order.orderType].push(order);
+            return acc;
+          }, {});
+
+          // Process each order type for this patient
+          for (const [orderType, orders] of Object.entries(ordersByType)) {
+            let shouldGeneratePDF = false;
+            let deliveryMethod = 'print_pdf';
+            let deliveryEndpoint = 'PDF Generation';
             
-            if (orderType === 'medication') {
-              console.log(`📄 [RouteBulkSign] Generating medication PDF for patient ${patientId}`);
-              pdfBuffer = await pdfService.generateMedicationPDF(orders, patientId, userId);
-              console.log(`📄 [RouteBulkSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
-            } else if (orderType === 'lab') {
-              console.log(`📄 [RouteBulkSign] Generating lab PDF for patient ${patientId}`);
-              pdfBuffer = await pdfService.generateLabPDF(orders, patientId, userId);
-              console.log(`📄 [RouteBulkSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
-            } else if (orderType === 'imaging') {
-              console.log(`📄 [RouteBulkSign] Generating imaging PDF for patient ${patientId}`);
-              pdfBuffer = await pdfService.generateImagingPDF(orders, patientId, userId);
-              console.log(`📄 [RouteBulkSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
+            // Determine delivery method based on order type and preferences
+            switch (orderType) {
+              case 'lab':
+                deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
+                shouldGeneratePDF = deliveryMethod === "print_pdf";
+                deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
+                                  deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
+                                  "PDF Generation";
+                break;
+                
+              case 'imaging':
+                deliveryMethod = prefs?.imagingDeliveryMethod || "print_pdf";
+                shouldGeneratePDF = deliveryMethod === "print_pdf";
+                deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
+                                  deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
+                                  "PDF Generation";
+                break;
+                
+              case 'medication':
+                deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
+                shouldGeneratePDF = deliveryMethod === "print_pdf";
+                deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
+                                  "PDF Generation";
+                break;
+                
+              default:
+                shouldGeneratePDF = true;
+            }
+
+            console.log(`📋 [RouteBulkSign] Patient ${patientId}, ${orderType} orders: Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
+            
+            // Record signed orders with delivery details
+            const { signedOrders: signedOrdersTable } = await import("../shared/schema.js");
+            
+            for (const order of (orders as any)) {
+              const signedOrderData = {
+                orderId: order.id,
+                patientId: order.patientId,
+                providerId: userId,
+                orderType: order.orderType,
+                deliveryMethod: deliveryMethod,
+                deliveryEndpoint: deliveryEndpoint,
+                deliveryStatus: 'pending' as const,
+                signedAt: new Date(),
+                signedBy: userId,
+                canChangeDelivery: true,
+                deliveryLockReason: null,
+                deliveryChanges: [],
+                deliveryMetadata: {
+                  preferences: prefs,
+                  shouldGeneratePDF: shouldGeneratePDF
+                }
+              };
+
+              await db.insert(signedOrdersTable).values(signedOrderData);
+            }
+
+            // Generate PDF only if delivery method requires it
+            if (shouldGeneratePDF) {
+              console.log(`📄 [RouteBulkSign] Generating ${orderType} PDF for patient ${patientId}`);
+              
+              try {
+                let pdfBuffer: Buffer | null = null;
+                
+                if (orderType === 'medication') {
+                  pdfBuffer = await pdfService.generateMedicationPDF(orders, parseInt(patientId), userId);
+                } else if (orderType === 'lab') {
+                  pdfBuffer = await pdfService.generateLabPDF(orders, parseInt(patientId), userId);
+                } else if (orderType === 'imaging') {
+                  pdfBuffer = await pdfService.generateImagingPDF(orders, parseInt(patientId), userId);
+                }
+                
+                if (pdfBuffer) {
+                  console.log(`📄 [RouteBulkSign] ✅ Generated ${orderType} PDF for patient ${patientId} (${pdfBuffer.length} bytes)`);
+                }
+                
+              } catch (pdfError) {
+                console.error(`📄 [RouteBulkSign] ❌ Failed to generate ${orderType} PDF for patient ${patientId}:`, pdfError);
+              }
             } else {
-              console.log(`📄 [RouteBulkSign] ⚠️ Unknown order type: ${orderType}, skipping PDF generation`);
+              console.log(`📋 [RouteBulkSign] ✅ PDF generation skipped for patient ${patientId} ${orderType} orders - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
             }
-            
-            if (pdfBuffer) {
-              console.log(`📄 [RouteBulkSign] ✅ Successfully generated ${orderType} PDF for patient ${patientId}`);
-            }
-            
-          } catch (pdfError) {
-            console.error(`📄 [RouteBulkSign] ❌ Failed to generate ${orderType} PDF for patient ${patientId}:`, pdfError);
-            console.error(`📄 [RouteBulkSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
           }
         }
         
-        console.log(`📄 [RouteBulkSign] ===== PDF GENERATION COMPLETED =====`);
+        console.log(`📋 [RouteBulkSign] ===== DELIVERY PROCESSING COMPLETED =====`);
         
-      } catch (pdfError) {
-        console.error(`📄 [RouteBulkSign] ❌ PDF generation system error:`, pdfError);
-        console.error(`📄 [RouteBulkSign] ❌ System error stack:`, (pdfError as Error).stack);
+      } catch (error) {
+        console.error(`📋 [RouteBulkSign] ❌ Delivery processing error:`, error);
       }
 
       res.json({
