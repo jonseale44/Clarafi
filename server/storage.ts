@@ -3,6 +3,7 @@ import {
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
+  signedOrders,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
