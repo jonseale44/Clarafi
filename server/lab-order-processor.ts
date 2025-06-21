@@ -100,10 +100,10 @@ export class LabOrderProcessor {
         .set({ referenceId: newLabOrder.id })
         .where(eq(orders.id, order.id));
       
-      // Schedule result generation (testing timing)
-      setTimeout(async () => {
-        await this.generateLabResults(newLabOrder);
-      }, 30000); // 30 second delay for testing
+      // Generate results immediately for testing
+      console.log(`📊 [LabProcessor] Generating results for ${order.testName}`);
+      await this.generateLabResults(newLabOrder);
+      console.log(`✅ [LabProcessor] Successfully generated results for ${order.testName}`);
       
     } catch (error) {
       console.error(`❌ [LabProcessor] Failed to convert order ${order.id}:`, error);
