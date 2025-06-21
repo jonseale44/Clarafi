@@ -736,8 +736,8 @@ export function LabResultsMatrix({
                         </div>
                       </div>
                     </td>
-                    {displayColumns.map(date => (
-                      <td key={date} className="p-3 text-center">
+                    {displayColumns.map(encounter => (
+                      <td key={encounter.encounterId} className="p-3 text-center">
                         <span className="text-muted-foreground text-xs">—</span>
                       </td>
                     ))}
