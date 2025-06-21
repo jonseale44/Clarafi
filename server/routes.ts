@@ -2879,12 +2879,16 @@ Return only valid JSON without markdown formatting.`;
       console.log(
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
+      
       // Check delivery preferences and generate PDF only if needed
       console.log(`📋 [IndividualSign] ===== DELIVERY PREFERENCE CHECK =====`);
+      console.log(`📋 [IndividualSign] Order details: ID=${orderId}, Type=${order.orderType}, Patient=${order.patientId}`);
       
       let shouldGeneratePDF = false;
       let deliveryMethod = 'print_pdf';
       let deliveryEndpoint = 'PDF Generation';
+      
+      console.log(`📋 [IndividualSign] Initial values: shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`);
       
       try {
         // Get patient delivery preferences
@@ -2898,37 +2902,48 @@ Return only valid JSON without markdown formatting.`;
           .limit(1);
 
         const prefs = preferences[0];
-        console.log(`📋 [IndividualSign] Found preferences for patient ${order.patientId}:`, JSON.stringify(prefs));
+        console.log(`📋 [IndividualSign] Raw preferences query result:`, JSON.stringify(preferences));
+        console.log(`📋 [IndividualSign] Selected preferences:`, JSON.stringify(prefs));
         
         // Determine delivery method based on order type and preferences
+        console.log(`📋 [IndividualSign] Processing order type: ${order.orderType}`);
+        
         switch (order.orderType) {
           case 'lab':
+            console.log(`📋 [IndividualSign] LAB ORDER - Raw pref: ${prefs?.labDeliveryMethod}`);
             deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
             shouldGeneratePDF = deliveryMethod === "print_pdf";
             deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
                               deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
                               "PDF Generation";
+            console.log(`📋 [IndividualSign] LAB ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`);
             break;
             
           case 'imaging':
+            console.log(`📋 [IndividualSign] IMAGING ORDER - Raw pref: ${prefs?.imagingDeliveryMethod}`);
             deliveryMethod = prefs?.imagingDeliveryMethod || "mock_service";
             shouldGeneratePDF = deliveryMethod === "print_pdf";
             deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
                               deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
                               "PDF Generation";
+            console.log(`📋 [IndividualSign] IMAGING ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`);
             break;
             
           case 'medication':
+            console.log(`📋 [IndividualSign] MEDICATION ORDER - Raw pref: ${prefs?.medicationDeliveryMethod}`);
             deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
             shouldGeneratePDF = deliveryMethod === "print_pdf";
             deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
                               "PDF Generation";
+            console.log(`📋 [IndividualSign] MEDICATION ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`);
             break;
             
           default:
+            console.log(`📋 [IndividualSign] UNKNOWN ORDER TYPE - Defaulting to PDF`);
             shouldGeneratePDF = true;
         }
 
+        console.log(`📋 [IndividualSign] ===== FINAL DECISION =====`);
         console.log(`📋 [IndividualSign] Order ${orderId}: Type=${order.orderType}, Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
         
         // Record signed order with delivery details
@@ -2966,6 +2981,9 @@ Return only valid JSON without markdown formatting.`;
       }
 
       // Generate PDF only if delivery method requires it
+      console.log(`📋 [IndividualSign] ===== PDF GENERATION DECISION =====`);
+      console.log(`📋 [IndividualSign] shouldGeneratePDF = ${shouldGeneratePDF}`);
+      
       if (shouldGeneratePDF) {
         console.log(`📄 [IndividualSign] ===== PDF GENERATION STARTING =====`);
         console.log(`📄 [IndividualSign] Order type: ${order.orderType}, Patient: ${order.patientId}`);
@@ -3200,31 +3218,41 @@ Return only valid JSON without markdown formatting.`;
             let deliveryEndpoint = 'PDF Generation';
             
             // Determine delivery method based on order type and preferences
+            console.log(`📋 [RouteBulkSign] Processing ${orderType} orders for patient ${patientId}`);
+            console.log(`📋 [RouteBulkSign] Raw preferences:`, JSON.stringify(prefs));
+            
             switch (orderType) {
               case 'lab':
+                console.log(`📋 [RouteBulkSign] LAB ORDER - Raw pref: ${prefs?.labDeliveryMethod}`);
                 deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
                 deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
                                   deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
                                   "PDF Generation";
+                console.log(`📋 [RouteBulkSign] LAB ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
                 break;
                 
               case 'imaging':
+                console.log(`📋 [RouteBulkSign] IMAGING ORDER - Raw pref: ${prefs?.imagingDeliveryMethod}`);
                 deliveryMethod = prefs?.imagingDeliveryMethod || "mock_service";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
                 deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
                                   deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
                                   "PDF Generation";
+                console.log(`📋 [RouteBulkSign] IMAGING ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
                 break;
                 
               case 'medication':
+                console.log(`📋 [RouteBulkSign] MEDICATION ORDER - Raw pref: ${prefs?.medicationDeliveryMethod}`);
                 deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
                 deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
                                   "PDF Generation";
+                console.log(`📋 [RouteBulkSign] MEDICATION ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
                 break;
                 
               default:
+                console.log(`📋 [RouteBulkSign] UNKNOWN ORDER TYPE - Defaulting to PDF`);
                 shouldGeneratePDF = true;
             }
 
@@ -3257,7 +3285,8 @@ Return only valid JSON without markdown formatting.`;
             }
 
             // Generate PDF only if delivery method requires it
-            console.log(`📄 [RouteBulkSign] DEBUG: Patient ${patientId}, orderType=${orderType}, shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`);
+            console.log(`📄 [RouteBulkSign] ===== PDF GENERATION DECISION =====`);
+            console.log(`📄 [RouteBulkSign] Patient ${patientId}, orderType=${orderType}, shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`);
             
             if (shouldGeneratePDF) {
               console.log(`📄 [RouteBulkSign] Generating ${orderType} PDF for patient ${patientId}`);
