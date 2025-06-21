@@ -54,34 +54,33 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
     'Other': []
   };
 
-  // Group results by encounter
-  const encounterData = useMemo(() => {
+  // Group results by date since encounter IDs are null
+  const dateColumns = useMemo(() => {
     const results = Array.isArray(labResults) ? labResults as LabResult[] : [];
-    const encounters = new Map<number, { date: string; results: LabResult[] }>();
+    const dateMap = new Map<string, { date: string; results: LabResult[] }>();
     
     results.forEach(result => {
-      if (result.encounterId) {
-        if (!encounters.has(result.encounterId)) {
-          encounters.set(result.encounterId, {
-            date: result.resultAvailableAt,
-            results: []
-          });
-        }
-        encounters.get(result.encounterId)!.results.push(result);
+      const dateKey = format(new Date(result.resultAvailableAt), 'yyyy-MM-dd HH:mm');
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, {
+          date: result.resultAvailableAt,
+          results: []
+        });
       }
+      dateMap.get(dateKey)!.results.push(result);
     });
 
-    return Array.from(encounters.entries())
-      .map(([encounterId, data]) => ({ encounterId, ...data }))
+    return Array.from(dateMap.entries())
+      .map(([dateKey, data]) => ({ dateKey, ...data }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [labResults]);
 
-  // Get value for specific test in specific encounter with better matching
-  const getTestValue = (testKey: string, encounterId: number) => {
-    const encounter = encounterData.find(e => e.encounterId === encounterId);
-    if (!encounter) return null;
+  // Get value for specific test in specific date
+  const getTestValue = (testKey: string, dateKey: string) => {
+    const dateData = dateColumns.find(d => d.dateKey === dateKey);
+    if (!dateData) return null;
     
-    const result = encounter.results.find(r => {
+    const result = dateData.results.find(r => {
       // Exact match first
       if (r.testName === testKey) return true;
       
@@ -99,11 +98,11 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
     return result ? result.resultValue : null;
   };
 
-  const getCellClass = (value: string | null, testKey: string, encounterId: number) => {
+  const getCellClass = (value: string | null, testKey: string, dateKey: string) => {
     if (!value) return 'p-3 text-center border-r border-gray-200 text-gray-400';
     
-    const encounter = encounterData.find(e => e.encounterId === encounterId);
-    const result = encounter?.results.find(r => 
+    const dateData = dateColumns.find(d => d.dateKey === dateKey);
+    const result = dateData?.results.find(r => 
       r.testName === testKey || 
       r.testName.includes(testKey) ||
       testKey.includes(r.testName)
@@ -129,7 +128,7 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
   }
 
   const maxColumns = mode === 'compact' ? 4 : 8;
-  const displayEncounters = encounterData.slice(0, maxColumns);
+  const displayDates = dateColumns.slice(0, maxColumns);
 
   return (
     <Card>
@@ -147,14 +146,14 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
                 <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-gray-50 border-r border-gray-300">
                   Test
                 </th>
-                {displayEncounters.map(encounter => (
+                {displayDates.map((dateCol, index) => (
                   <th 
-                    key={encounter.encounterId}
+                    key={`date-${index}`}
                     className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px]"
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-sm">{format(new Date(encounter.date), 'yyyy-MM-dd')}</span>
-                      <span className="text-xs text-gray-600">{format(new Date(encounter.date), 'HH:mm')}</span>
+                      <span className="text-sm">{format(new Date(dateCol.date), 'yyyy-MM-dd')}</span>
+                      <span className="text-xs text-gray-600">{format(new Date(dateCol.date), 'HH:mm')}</span>
                     </div>
                   </th>
                 ))}
@@ -172,8 +171,8 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
                       <td className="p-3 sticky left-0 bg-gray-100 border-r border-gray-300">
                         <div className="font-bold text-base text-gray-800">{panelName}</div>
                       </td>
-                      {displayEncounters.map(encounter => (
-                        <td key={encounter.encounterId} className="p-3 border-r border-gray-300 bg-gray-100"></td>
+                      {displayDates.map((dateCol, index) => (
+                        <td key={`panel-${index}`} className="p-3 border-r border-gray-300 bg-gray-100"></td>
                       ))}
                     </tr>
                     
@@ -185,12 +184,12 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
                             <span className="font-medium text-gray-900">{test.name} {test.unit}</span>
                           </div>
                         </td>
-                        {displayEncounters.map(encounter => {
-                          const value = getTestValue(test.key, encounter.encounterId);
+                        {displayDates.map((dateCol, index) => {
+                          const value = getTestValue(test.key, dateCol.dateKey);
                           return (
                             <td 
-                              key={encounter.encounterId}
-                              className={getCellClass(value, test.key, encounter.encounterId)}
+                              key={`test-${index}`}
+                              className={getCellClass(value, test.key, dateCol.dateKey)}
                             >
                               {value || '—'}
                             </td>
@@ -205,10 +204,10 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
           </table>
         </div>
         
-        {mode === 'compact' && encounterData.length > maxColumns && (
+        {mode === 'compact' && dateColumns.length > maxColumns && (
           <div className="p-3 text-center border-t bg-gray-50">
             <div className="text-sm text-gray-600">
-              Showing {maxColumns} most recent of {encounterData.length} total encounters
+              Showing {maxColumns} most recent of {dateColumns.length} total dates
             </div>
           </div>
         )}
