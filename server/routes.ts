@@ -3033,7 +3033,6 @@ Return only valid JSON without markdown formatting.`;
           `📋 [IndividualSign] Encounter ID: ${order.encounterId}, Patient ID: ${order.patientId}`,
         );
 
-
         console.log(`📋 [IndividualSign] User ID: ${userId}`);
 
         try {
@@ -3070,33 +3069,6 @@ Return only valid JSON without markdown formatting.`;
         console.log(
           `📋 [IndividualSign] === END INDIVIDUAL MEDICATION SIGNING ===`,
         );
-      }
-
-      // Process order type-specific workflows
-      if (order.orderType === "lab") {
-        console.log(`🧪 [Lab] Processing signed lab order: ${order.testName}`);
-        try {
-          const { LabOrderProcessor } = await import("./lab-order-processor.js");
-          await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
-        } catch (labError) {
-          console.error(`❌ [Lab] Failed to process lab order:`, labError);
-        }
-      } else if (order.orderType === "imaging") {
-        console.log(`🩻 [Imaging] Processing signed imaging order: ${order.studyType}`);
-        try {
-          const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
-          await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
-        } catch (imagingError) {
-          console.error(`❌ [Imaging] Failed to process imaging order:`, imagingError);
-        }
-      } else if (order.orderType === "referral") {
-        console.log(`👨‍⚕️ [Referral] Processing signed referral order: ${order.specialtyType}`);
-        try {
-          const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
-          await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
-        } catch (referralError) {
-          console.error(`❌ [Referral] Failed to process referral order:`, referralError);
-        }
       }
 
       res.json({
