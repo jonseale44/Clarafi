@@ -52,6 +52,9 @@ export interface ReviewRequest {
   reviewedAt: Date;
   reviewType: 'individual' | 'encounter' | 'panel' | 'batch';
   clinicalContext?: string;
+  reviewTemplate?: string;
+  assignedTo?: number;
+  communicationPlan?: any;
 }
 
 export interface UnreviewRequest {
@@ -226,12 +229,14 @@ export class LabReviewService {
       const processedResults: number[] = [];
       const errors: Array<{ resultId: number; error: string }> = [];
 
-      // Validate all result IDs exist and are not already reviewed
+      // Validate all result IDs exist 
       const existingResults = await db
         .select({
           id: labResults.id,
           reviewedBy: labResults.reviewedBy,
-          reviewedAt: labResults.reviewedAt
+          reviewedAt: labResults.reviewedAt,
+          needsReview: labResults.needsReview,
+          reviewStatus: labResults.reviewStatus
         })
         .from(labResults)
         .where(inArray(labResults.id, request.resultIds));
@@ -261,13 +266,30 @@ export class LabReviewService {
         }
 
         try {
-          // Update the result with review information
+          // Create audit history entry
+          const historyEntry = {
+            reviewedBy: request.reviewedBy,
+            reviewedAt: request.reviewedAt.toISOString(),
+            reviewNote: request.reviewNote,
+            reviewTemplate: request.reviewTemplate,
+            action: 'reviewed' as const,
+            previousNote: existing.reviewedBy ? "Previously reviewed" : undefined
+          };
+
+          // Update the result with new audit fields
           await db
             .update(labResults)
             .set({
               reviewedBy: request.reviewedBy,
               reviewedAt: request.reviewedAt,
-              providerNotes: request.reviewNote
+              providerNotes: request.reviewNote, // Keep legacy field
+              needsReview: false,
+              reviewStatus: 'reviewed',
+              reviewNote: request.reviewNote,
+              reviewTemplate: request.reviewTemplate,
+              reviewHistory: [historyEntry], // Will append to existing array in production
+              assignedTo: request.assignedTo,
+              communicationPlan: request.communicationPlan
             })
             .where(eq(labResults.id, resultId));
 

@@ -2913,8 +2913,8 @@ Return only valid JSON without markdown formatting.`;
       console.log(`📋 [IndividualSign] Order details: ID=${orderId}, Type=${order.orderType}, Patient=${order.patientId}`);
       
       let shouldGeneratePDF = false;
-      let deliveryMethod = 'print_pdf';
-      let deliveryEndpoint = 'PDF Generation';
+      let deliveryMethod = 'mock_service';
+      let deliveryEndpoint = 'Mock Lab Service';
       
       console.log(`📋 [IndividualSign] Initial values: shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`);
       
