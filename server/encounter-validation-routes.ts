@@ -206,38 +206,125 @@ router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
     }
     console.log(`🔍 [ValidationSign] === END INDIVIDUAL ORDER SIGNING ===`);
 
-    // Generate PDF for signed order
-    console.log(`📄 [ValidationSign] ===== PDF GENERATION STARTING =====`);
-    console.log(`📄 [ValidationSign] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
+    // Check delivery preferences and generate PDF only if needed
+    console.log(`📋 [ValidationSign] ===== DELIVERY PREFERENCE CHECK =====`);
+    
+    let shouldGeneratePDF = false;
+    let deliveryMethod = 'print_pdf';
+    let deliveryEndpoint = 'PDF Generation';
     
     try {
-      const { pdfService } = await import("./pdf-service.js");
+      // Get patient delivery preferences
+      const { patientOrderPreferences } = await import("../shared/schema.js");
       
-      let pdfBuffer: Buffer | null = null;
+      const preferences = await db
+        .select()
+        .from(patientOrderPreferences)
+        .where(eq(patientOrderPreferences.patientId, signedOrder.patientId))
+        .limit(1);
+
+      const prefs = preferences[0];
       
-      if (signedOrder.orderType === 'medication') {
-        console.log(`📄 [ValidationSign] Generating medication PDF for order ${orderId}`);
-        pdfBuffer = await pdfService.generateMedicationPDF([signedOrder], signedOrder.patientId, userId);
-      } else if (signedOrder.orderType === 'lab') {
-        console.log(`📄 [ValidationSign] Generating lab PDF for order ${orderId}`);
-        pdfBuffer = await pdfService.generateLabPDF([signedOrder], signedOrder.patientId, userId);
-      } else if (signedOrder.orderType === 'imaging') {
-        console.log(`📄 [ValidationSign] Generating imaging PDF for order ${orderId}`);
-        pdfBuffer = await pdfService.generateImagingPDF([signedOrder], signedOrder.patientId, userId);
-      } else {
-        console.log(`📄 [ValidationSign] ⚠️ Unknown order type: ${signedOrder.orderType}, skipping PDF generation`);
+      // Determine delivery method based on order type and preferences
+      switch (signedOrder.orderType) {
+        case 'lab':
+          deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
+          shouldGeneratePDF = deliveryMethod === "print_pdf";
+          deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
+                            deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
+                            "PDF Generation";
+          break;
+          
+        case 'imaging':
+          deliveryMethod = prefs?.imagingDeliveryMethod || "print_pdf";
+          shouldGeneratePDF = deliveryMethod === "print_pdf";
+          deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
+                            deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
+                            "PDF Generation";
+          break;
+          
+        case 'medication':
+          deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
+          shouldGeneratePDF = deliveryMethod === "print_pdf";
+          deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
+                            "PDF Generation";
+          break;
+          
+        default:
+          shouldGeneratePDF = true;
       }
+
+      console.log(`📋 [ValidationSign] Order ${orderId}: Delivery method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
       
-      if (pdfBuffer) {
-        console.log(`📄 [ValidationSign] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`);
+      // Record signed order with delivery details
+      const { signedOrders } = await import("../shared/schema.js");
+      
+      const signedOrderData = {
+        orderId: signedOrder.id,
+        patientId: signedOrder.patientId,
+        providerId: userId,
+        orderType: signedOrder.orderType,
+        deliveryMethod: deliveryMethod,
+        deliveryEndpoint: deliveryEndpoint,
+        deliveryStatus: 'pending' as const,
+        signedAt: new Date(),
+        signedBy: userId,
+        canChangeDelivery: true,
+        deliveryLockReason: null,
+        deliveryChanges: [],
+        deliveryMetadata: {
+          preferences: prefs,
+          shouldGeneratePDF: shouldGeneratePDF
+        }
+      };
+
+      await db.insert(signedOrders).values(signedOrderData);
+      console.log(`📋 [ValidationSign] Recorded delivery preferences for order ${orderId}`);
+      
+    } catch (deliveryError) {
+      console.error('❌ [ValidationSign] Error checking delivery preferences:', deliveryError);
+      // Fallback to PDF generation
+      shouldGeneratePDF = true;
+      deliveryMethod = 'print_pdf';
+      deliveryEndpoint = 'PDF Generation (Fallback)';
+    }
+
+    // Generate PDF only if delivery method requires it
+    if (shouldGeneratePDF) {
+      console.log(`📄 [ValidationSign] ===== PDF GENERATION STARTING =====`);
+      console.log(`📄 [ValidationSign] Order type: ${signedOrder.orderType}, Patient: ${signedOrder.patientId}`);
+      
+      try {
+        const { pdfService } = await import("./pdf-service.js");
+        
+        let pdfBuffer: Buffer | null = null;
+        
+        if (signedOrder.orderType === 'medication') {
+          console.log(`📄 [ValidationSign] Generating medication PDF for order ${orderId}`);
+          pdfBuffer = await pdfService.generateMedicationPDF([signedOrder], signedOrder.patientId, userId);
+        } else if (signedOrder.orderType === 'lab') {
+          console.log(`📄 [ValidationSign] Generating lab PDF for order ${orderId}`);
+          pdfBuffer = await pdfService.generateLabPDF([signedOrder], signedOrder.patientId, userId);
+        } else if (signedOrder.orderType === 'imaging') {
+          console.log(`📄 [ValidationSign] Generating imaging PDF for order ${orderId}`);
+          pdfBuffer = await pdfService.generateImagingPDF([signedOrder], signedOrder.patientId, userId);
+        } else {
+          console.log(`📄 [ValidationSign] ⚠️ Unknown order type: ${signedOrder.orderType}, skipping PDF generation`);
+        }
+        
+        if (pdfBuffer) {
+          console.log(`📄 [ValidationSign] ✅ Successfully generated ${signedOrder.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`);
+        }
+        
+        console.log(`📄 [ValidationSign] ===== PDF GENERATION COMPLETED =====`);
+        
+      } catch (pdfError) {
+        console.error(`📄 [ValidationSign] ❌ PDF generation failed for order ${orderId}:`, pdfError);
+        console.error(`📄 [ValidationSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
+        // Continue with response - order is still signed
       }
-      
-      console.log(`📄 [ValidationSign] ===== PDF GENERATION COMPLETED =====`);
-      
-    } catch (pdfError) {
-      console.error(`📄 [ValidationSign] ❌ PDF generation failed for order ${orderId}:`, pdfError);
-      console.error(`📄 [ValidationSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
-      // Continue with response - order is still signed
+    } else {
+      console.log(`📋 [ValidationSign] ✅ PDF generation skipped - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
     }
 
 
@@ -374,69 +461,141 @@ router.post("/orders/bulk-sign", async (req: Request, res: Response) => {
     console.log(`🔍 [BulkSign] Signed orders array:`, results.signed);
     console.log(`🔍 [BulkSign] Signed orders length:`, results.signed.length);
 
-    // Generate PDFs for signed orders
-    console.log(`📄 [BulkSign] ===== PDF GENERATION STARTING =====`);
-    console.log(`📄 [BulkSign] Total signed orders: ${results.signed.length}`);
+    // Process delivery based on patient preferences
+    console.log(`📋 [BulkSign] ===== DELIVERY PROCESSING STARTING =====`);
+    console.log(`📋 [BulkSign] Total signed orders: ${results.signed.length}`);
     
     try {
       const { pdfService } = await import("./pdf-service.js");
+      const { patientOrderPreferences } = await import("../shared/schema.js");
       
-      // Group orders by type and patient for PDF generation
-      const ordersByTypeAndPatient = results.signed.reduce((acc: any, order: any) => {
-        const key = `${order.patientId}_${order.orderType}`;
-        if (!acc[key]) {
-          acc[key] = {
-            patientId: order.patientId,
-            orderType: order.orderType,
-            orders: []
-          };
+      // Group orders by patient to get delivery preferences
+      const ordersByPatient = results.signed.reduce((acc: any, order: any) => {
+        if (!acc[order.patientId]) {
+          acc[order.patientId] = [];
         }
-        acc[key].orders.push(order);
+        acc[order.patientId].push(order);
         return acc;
       }, {});
 
-      console.log(`📄 [BulkSign] Grouped orders by type and patient:`, Object.keys(ordersByTypeAndPatient));
+      console.log(`📋 [BulkSign] Processing orders for ${Object.keys(ordersByPatient).length} patients`);
 
-      for (const [key, group] of Object.entries(ordersByTypeAndPatient)) {
-        const { patientId, orderType, orders } = group as any;
+      for (const [patientId, patientOrders] of Object.entries(ordersByPatient)) {
+        console.log(`📋 [BulkSign] Processing ${(patientOrders as any).length} orders for patient ${patientId}`);
         
-        console.log(`📄 [BulkSign] Processing ${orderType} orders for patient ${patientId}`);
-        console.log(`📄 [BulkSign] Orders:`, orders.map((o: any) => ({ id: o.id, orderType: o.orderType, orderDetails: o.orderDetails })));
+        // Get patient delivery preferences
+        const preferences = await db
+          .select()
+          .from(patientOrderPreferences)
+          .where(eq(patientOrderPreferences.patientId, parseInt(patientId)))
+          .limit(1);
+
+        const prefs = preferences[0];
         
-        try {
-          let pdfBuffer: Buffer | null = null;
+        // Group orders by type for this patient
+        const ordersByType = (patientOrders as any).reduce((acc: any, order: any) => {
+          if (!acc[order.orderType]) {
+            acc[order.orderType] = [];
+          }
+          acc[order.orderType].push(order);
+          return acc;
+        }, {});
+
+        // Process each order type for this patient
+        for (const [orderType, orders] of Object.entries(ordersByType)) {
+          let shouldGeneratePDF = false;
+          let deliveryMethod = 'print_pdf';
+          let deliveryEndpoint = 'PDF Generation';
           
-          if (orderType === 'medication') {
-            console.log(`📄 [BulkSign] Generating medication PDF for patient ${patientId}`);
-            pdfBuffer = await pdfService.generateMedicationPDF(orders, patientId, userId);
-            console.log(`📄 [BulkSign] ✅ Medication PDF generated (${pdfBuffer.length} bytes)`);
-          } else if (orderType === 'lab') {
-            console.log(`📄 [BulkSign] Generating lab PDF for patient ${patientId}`);
-            pdfBuffer = await pdfService.generateLabPDF(orders, patientId, userId);
-            console.log(`📄 [BulkSign] ✅ Lab PDF generated (${pdfBuffer.length} bytes)`);
-          } else if (orderType === 'imaging') {
-            console.log(`📄 [BulkSign] Generating imaging PDF for patient ${patientId}`);
-            pdfBuffer = await pdfService.generateImagingPDF(orders, patientId, userId);
-            console.log(`📄 [BulkSign] ✅ Imaging PDF generated (${pdfBuffer.length} bytes)`);
+          // Determine delivery method based on order type and preferences
+          switch (orderType) {
+            case 'lab':
+              deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
+              shouldGeneratePDF = deliveryMethod === "print_pdf";
+              deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
+                                deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
+                                "PDF Generation";
+              break;
+              
+            case 'imaging':
+              deliveryMethod = prefs?.imagingDeliveryMethod || "print_pdf";
+              shouldGeneratePDF = deliveryMethod === "print_pdf";
+              deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
+                                deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
+                                "PDF Generation";
+              break;
+              
+            case 'medication':
+              deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
+              shouldGeneratePDF = deliveryMethod === "print_pdf";
+              deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
+                                "PDF Generation";
+              break;
+              
+            default:
+              shouldGeneratePDF = true;
+          }
+
+          console.log(`📋 [BulkSign] Patient ${patientId}, ${orderType} orders: Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
+          
+          // Record signed orders with delivery details
+          const { signedOrders } = await import("../shared/schema.js");
+          
+          for (const order of (orders as any)) {
+            const signedOrderData = {
+              orderId: order.id,
+              patientId: order.patientId,
+              providerId: userId,
+              orderType: order.orderType,
+              deliveryMethod: deliveryMethod,
+              deliveryEndpoint: deliveryEndpoint,
+              deliveryStatus: 'pending' as const,
+              signedAt: new Date(),
+              signedBy: userId,
+              canChangeDelivery: true,
+              deliveryLockReason: null,
+              deliveryChanges: [],
+              deliveryMetadata: {
+                preferences: prefs,
+                shouldGeneratePDF: shouldGeneratePDF
+              }
+            };
+
+            await db.insert(signedOrders).values(signedOrderData);
+          }
+
+          // Generate PDF only if delivery method requires it
+          if (shouldGeneratePDF) {
+            console.log(`📄 [BulkSign] Generating ${orderType} PDF for patient ${patientId}`);
+            
+            try {
+              let pdfBuffer: Buffer | null = null;
+              
+              if (orderType === 'medication') {
+                pdfBuffer = await pdfService.generateMedicationPDF(orders, parseInt(patientId), userId);
+              } else if (orderType === 'lab') {
+                pdfBuffer = await pdfService.generateLabPDF(orders, parseInt(patientId), userId);
+              } else if (orderType === 'imaging') {
+                pdfBuffer = await pdfService.generateImagingPDF(orders, parseInt(patientId), userId);
+              }
+              
+              if (pdfBuffer) {
+                console.log(`📄 [BulkSign] ✅ Generated ${orderType} PDF for patient ${patientId} (${pdfBuffer.length} bytes)`);
+              }
+              
+            } catch (pdfError) {
+              console.error(`📄 [BulkSign] ❌ Failed to generate ${orderType} PDF for patient ${patientId}:`, pdfError);
+            }
           } else {
-            console.log(`📄 [BulkSign] ⚠️ Unknown order type: ${orderType}, skipping PDF generation`);
+            console.log(`📋 [BulkSign] ✅ PDF generation skipped for patient ${patientId} ${orderType} orders - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
           }
-          
-          if (pdfBuffer) {
-            console.log(`📄 [BulkSign] ✅ Successfully generated ${orderType} PDF for patient ${patientId}`);
-          }
-          
-        } catch (pdfError) {
-          console.error(`📄 [BulkSign] ❌ Failed to generate ${orderType} PDF for patient ${patientId}:`, pdfError);
-          console.error(`📄 [BulkSign] ❌ PDF Error stack:`, (pdfError as Error).stack);
         }
       }
       
-      console.log(`📄 [BulkSign] ===== PDF GENERATION COMPLETED =====`);
+      console.log(`📋 [BulkSign] ===== DELIVERY PROCESSING COMPLETED =====`);
       
-    } catch (pdfError) {
-      console.error(`📄 [BulkSign] ❌ PDF generation system error:`, pdfError);
-      console.error(`📄 [BulkSign] ❌ System error stack:`, (pdfError as Error).stack);
+    } catch (error) {
+      console.error(`📋 [BulkSign] ❌ Delivery processing error:`, error);
     }
 
     res.json({
