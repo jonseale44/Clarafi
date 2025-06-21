@@ -531,6 +531,43 @@ export const labResults = pgTable("lab_results", {
   reviewedAt: timestamp("reviewed_at"),
   providerNotes: text("provider_notes"),
   
+  // Enhanced audit trail for comprehensive review workflow
+  needsReview: boolean("needs_review").default(true), // True if requires provider review
+  reviewStatus: text("review_status").default("pending"), // 'pending', 'reviewed', 'amended', 'signed_off'
+  reviewNote: text("review_note"), // Clinical interpretation and notes
+  reviewTemplate: text("review_template"), // Quick-pick template used
+  
+  // Audit trail
+  reviewHistory: jsonb("review_history").default([]).$type<Array<{
+    reviewedBy: number;
+    reviewedAt: string;
+    reviewNote?: string;
+    reviewTemplate?: string;
+    action: 'reviewed' | 'amended' | 'unreviewed';
+    previousNote?: string;
+  }>>(),
+  
+  // Communication and routing
+  assignedTo: integer("assigned_to").references(() => users.id), // Assigned to staff member for follow-up
+  communicationStatus: text("communication_status").default("none"), // 'none', 'pending', 'completed'
+  communicationPlan: jsonb("communication_plan").$type<{
+    patientNotification?: boolean;
+    phoneCall?: boolean;
+    smsText?: boolean;
+    letter?: boolean;
+    portalRelease?: boolean;
+    urgentContact?: boolean;
+    assignedStaff?: number;
+    dueDate?: string;
+    notes?: string;
+  }>(),
+  
+  // Portal and patient communication controls
+  portalReleaseStatus: text("portal_release_status").default("hold"), // 'hold', 'approved', 'released', 'blocked'
+  portalReleaseBy: integer("portal_release_by").references(() => users.id),
+  portalReleaseAt: timestamp("portal_release_at"),
+  blockPortalRelease: boolean("block_portal_release").default(false), // Override for sensitive results
+  
   // AI-enhanced interpretation
   aiInterpretation: jsonb("ai_interpretation").$type<{
     clinicalSignificance?: string;

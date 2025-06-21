@@ -1,9 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical, RotateCcw } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useToast } from '@/hooks/use-toast';
+import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical, RotateCcw, User, MessageSquare, Phone, Mail, Send, ChevronUp } from 'lucide-react';
 
 interface LabResultsMatrixProps {
   patientId: number;
@@ -19,6 +26,17 @@ interface LabResultsMatrixProps {
   onUnreviewTestGroup?: (testName: string, resultIds: number[]) => void;
   onUnreviewSpecific?: (testName: string, date: string, resultId: number) => void;
 }
+
+// Quick-pick review templates
+const REVIEW_TEMPLATES = [
+  { id: 'normal', label: 'Normal - No action needed', value: 'Results reviewed. All values within normal limits. No action required.' },
+  { id: 'followup', label: 'Follow-up recommended', value: 'Results reviewed. Recommend follow-up in [timeframe]. Patient to be contacted.' },
+  { id: 'abnormal_monitor', label: 'Abnormal - Monitor', value: 'Results reviewed. Abnormal values noted. Continue monitoring. Recheck in [timeframe].' },
+  { id: 'abnormal_action', label: 'Abnormal - Action required', value: 'Results reviewed. Abnormal values require intervention. Plan: [specify action].' },
+  { id: 'critical_contacted', label: 'Critical - Patient contacted', value: 'Critical results reviewed. Patient contacted at [time] via [method]. Plan discussed.' },
+  { id: 'trending', label: 'Trending appropriately', value: 'Results reviewed. Values trending as expected. Continue current management.' },
+  { id: 'medication_adjust', label: 'Medication adjustment needed', value: 'Results reviewed. Medication adjustment indicated. Plan: [specify changes].' },
+];
 
 interface MatrixData {
   testName: string;
@@ -64,7 +82,90 @@ export function LabResultsMatrix({
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [hoveredTestRow, setHoveredTestRow] = useState<string | null>(null);
   
+  // Review interface state
+  const [isReviewPanelOpen, setIsReviewPanelOpen] = useState<boolean>(false);
+  const [reviewNote, setReviewNote] = useState<string>('');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [assignedStaff, setAssignedStaff] = useState<string>('');
+  const [communicationPlan, setCommunicationPlan] = useState({
+    patientNotification: false,
+    phoneCall: false,
+    smsText: false,
+    letter: false,
+    portalRelease: true,
+    urgentContact: false
+  });
+  
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Get current user for permission checks
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/user'],
+    enabled: !!currentUserId
+  });
+
+  // Get staff members for assignment
+  const { data: staffMembers = [] } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: isReviewPanelOpen
+  });
+
+  // Review mutation
+  const reviewMutation = useMutation({
+    mutationFn: async (reviewData: {
+      resultIds: number[];
+      reviewNote: string;
+      reviewTemplate?: string;
+      assignedTo?: number;
+      communicationPlan: any;
+    }) => {
+      const response = await fetch('/api/lab-review/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resultIds: reviewData.resultIds,
+          reviewNote: reviewData.reviewNote,
+          reviewTemplate: reviewData.reviewTemplate,
+          reviewType: 'batch',
+          assignedTo: reviewData.assignedTo,
+          communicationPlan: reviewData.communicationPlan
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Review failed');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Review Completed",
+        description: `Successfully reviewed ${data.data?.resultCount || 0} lab results`,
+      });
+      
+      // Clear selections and close panel
+      setSelectedDates(new Set());
+      setSelectedTestRows(new Set());
+      setSelectedPanels(new Set());
+      setIsReviewPanelOpen(false);
+      setReviewNote('');
+      setSelectedTemplate('');
+      setAssignedStaff('');
+      
+      // Refresh lab results
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Review Failed",
+        description: error.message || "Failed to complete lab review",
+        variant: "destructive"
+      });
+    }
+  });
 
 
 
@@ -404,54 +505,8 @@ export function LabResultsMatrix({
   };
 
   const handleReviewSelection = () => {
-
-
-    if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
-      // Review by date(s) - collect all result IDs for selected dates
-      const resultIds: number[] = [];
-      
-      selectedDates.forEach(date => {
-        const dateResultIds = resultsByDate.get(date) || [];
-        resultIds.push(...dateResultIds);
-      });
-      
-      // Since we don't have encounter IDs, pass empty array but include result IDs
-      onReviewEncounter?.(Array.from(selectedDates).join(', '), []);
-    } else if (selectedPanels.size > 0 && selectedDates.size === 0) {
-      // Review by lab panel(s)
-      const resultIds: number[] = [];
-      selectedPanels.forEach(panelName => {
-        const panelTests = groupedData[panelName] || [];
-        panelTests.forEach(test => {
-          resultIds.push(...test.results.map(r => r.id));
-        });
-      });
-
-      onReviewTestGroup?.(Array.from(selectedPanels).join(', '), resultIds);
-    } else if (selectedTestRows.size > 0 && selectedDates.size === 0) {
-      // Review by test group(s)
-      const resultIds: number[] = [];
-      selectedTestRows.forEach(testName => {
-        const test = matrixData.find(t => t.testName === testName);
-        if (test) {
-          resultIds.push(...test.results.map(r => r.id));
-        }
-      });
-
-      onReviewTestGroup?.(Array.from(selectedTestRows).join(', '), resultIds);
-    } else if (selectedTestRows.size === 1 && selectedDates.size === 1) {
-      // Review specific test on specific date
-      const testName = Array.from(selectedTestRows)[0];
-      const date = Array.from(selectedDates)[0];
-      const test = matrixData.find(t => t.testName === testName);
-      const result = test?.results.find(r => r.date === date);
-
-      if (result) {
-        onReviewSpecific?.(testName, date, result.id);
-      }
-    } else {
-
-    }
+    // Open the integrated review panel instead of calling callbacks
+    setIsReviewPanelOpen(true);
   };
 
   const handleUnreviewSelection = () => {

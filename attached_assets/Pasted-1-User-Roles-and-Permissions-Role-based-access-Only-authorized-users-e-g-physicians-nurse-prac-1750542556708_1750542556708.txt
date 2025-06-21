@@ -1,0 +1,33 @@
+1. User Roles and Permissions
+Role-based access: Only authorized users (e.g., physicians, nurse practitioners, authorized RNs) can review and sign off labs.
+Ordering Provider Restriction: Often, only the provider who ordered the lab (or a provider in the same group/coverage role) can review/sign-off.
+Audit Trail: The system must track who viewed and who formally reviewed each lab result, with date and time stamps.
+Read vs. Review/Sign-off: Office staff, lab techs, and nurses may see or pend abnormal results but cannot “review/sign-off” in an official clinical sense.
+2. Review Workflow and Documentation
+Review Note Required: System prompts the reviewing clinician to leave a brief interpretative comment ("normal", "repeat test in 3 months", "call patient about abnormal potassium", etc.).
+Result Routing: Provider’s notes/decisions can be routed to the relevant nurse/MA for follow-up, patient call, or further action.
+Structured & Unstructured Entry: EMRs often offer both quick-pick comments and free text for clarity and efficiency.
+3. Notification System
+Alerts for Critical Results: Immediate, highlighted notification for results flagged as critical (per lab standards).
+Provider Notification: Results are “routed” or queued for reviewers based on ordering, coverage schedules, and clinical escalation protocols.
+Result Acknowledgment Required: Users may be required to acknowledge reviews via a checked box or digital signature.
+Patient Notification Process: EMR facilitates (but restricts to authorized users) the review and release of results to the patient portal, sometimes only after provider review.
+4. Abnormal Result Handling
+Flagging Abnormal/Critical Values: Visual indicators, separate queues, auto-prioritization of abnormal or critical results.
+Protocol Enforcement: For example, a TSH value <0.1, or critically high potassium, may block release to patient portal and require verbal contact/documented escalation.
+Review Required Before Release: Many institutions require all labs to be reviewed by a provider before patient can view them online.
+5. Auditability, Quality, and Compliance
+Documentation of Every Action: Who ordered, who reviewed, who notified patient, and when.
+Change History: If a review/note is edited after the first entry, all revisions are logged.
+HIPAA Compliance: Strict enforcement of “minimum necessary” principle and secure access auditing.
+Order-Result Linkage: Each result is tied to its original order, maintaining a clear chain of information.
+6. Clinical Decision Support
+Reference Ranges: Each result displays with the appropriate age/sex-specific range.
+Auto-interpretation (optional): Some EMRs provide auto-coded normal/abnormal flags and offer suggested follow-up actions.
+Integration with CPOE: Review process enables direct ordering of further labs/imaging/follow-up appointments.
+7. Patient Portal Release
+Delay/Provider Review Requirements: Option to delay release to portal to allow provider review, especially for sensitive or abnormal results.
+Customizable Release Rules: Labs can be suppressed from automatic release under certain criteria (HIV, genetic tests, etc.).
+8. Error Handling & Correction
+Amendment Process: If results are amended by the lab, EMR must notify the reviewing provider and document changes.
+Comment Field for Labs: Labs and pathologists can append their own comments/interpretations for clarity.
