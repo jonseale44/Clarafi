@@ -2880,7 +2880,125 @@ Return only valid JSON without markdown formatting.`;
         `✅ [Order Signing] Signed ${order.orderType} order ${orderId} by user ${userId}`,
       );
 
+      // Check delivery preferences and generate PDF only if needed
+      console.log(`📋 [IndividualSign] ===== DELIVERY PREFERENCE CHECK =====`);
+      
+      let shouldGeneratePDF = false;
+      let deliveryMethod = 'print_pdf';
+      let deliveryEndpoint = 'PDF Generation';
+      
+      try {
+        // Get patient delivery preferences
+        const { patientOrderPreferences } = await import("../shared/schema.js");
+        const { eq } = await import("drizzle-orm");
+        
+        const preferences = await db
+          .select()
+          .from(patientOrderPreferences)
+          .where(eq(patientOrderPreferences.patientId, order.patientId))
+          .limit(1);
 
+        const prefs = preferences[0];
+        console.log(`📋 [IndividualSign] Found preferences for patient ${order.patientId}:`, prefs);
+        
+        // Determine delivery method based on order type and preferences
+        switch (order.orderType) {
+          case 'lab':
+            deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
+            shouldGeneratePDF = deliveryMethod === "print_pdf";
+            deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
+                              deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
+                              "PDF Generation";
+            break;
+            
+          case 'imaging':
+            deliveryMethod = prefs?.imagingDeliveryMethod || "mock_service";
+            shouldGeneratePDF = deliveryMethod === "print_pdf";
+            deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
+                              deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
+                              "PDF Generation";
+            console.log(`📋 [IndividualSign] IMAGING ORDER DEBUG: prefs=${JSON.stringify(prefs)}, method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
+            break;
+            
+          case 'medication':
+            deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
+            shouldGeneratePDF = deliveryMethod === "print_pdf";
+            deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
+                              "PDF Generation";
+            break;
+            
+          default:
+            shouldGeneratePDF = true;
+        }
+
+        console.log(`📋 [IndividualSign] Order ${orderId}: Delivery method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
+        
+        // Record signed order with delivery details
+        const { signedOrders } = await import("../shared/schema.js");
+        
+        const signedOrderData = {
+          orderId: order.id,
+          patientId: order.patientId,
+          providerId: userId,
+          orderType: order.orderType,
+          deliveryMethod: deliveryMethod,
+          deliveryEndpoint: deliveryEndpoint,
+          deliveryStatus: 'pending' as const,
+          signedAt: new Date(),
+          signedBy: userId,
+          canChangeDelivery: true,
+          deliveryLockReason: null,
+          deliveryChanges: [],
+          deliveryMetadata: {
+            preferences: prefs,
+            shouldGeneratePDF: shouldGeneratePDF
+          }
+        };
+
+        await db.insert(signedOrders).values(signedOrderData);
+        console.log(`📋 [IndividualSign] Recorded delivery preferences for order ${orderId}`);
+        
+      } catch (deliveryError) {
+        console.error('❌ [IndividualSign] Error checking delivery preferences:', deliveryError);
+        // Fallback to PDF generation
+        shouldGeneratePDF = true;
+        deliveryMethod = 'print_pdf';
+        deliveryEndpoint = 'PDF Generation (Fallback)';
+      }
+
+      // Generate PDF only if delivery method requires it
+      if (shouldGeneratePDF) {
+        console.log(`📄 [IndividualSign] ===== PDF GENERATION STARTING =====`);
+        console.log(`📄 [IndividualSign] Order type: ${order.orderType}, Patient: ${order.patientId}`);
+        
+        try {
+          const { pdfService } = await import("./pdf-service.js");
+          
+          let pdfBuffer: Buffer | null = null;
+          
+          if (order.orderType === 'medication') {
+            console.log(`📄 [IndividualSign] Generating medication PDF for order ${orderId}`);
+            pdfBuffer = await pdfService.generateMedicationPDF([updatedOrder], order.patientId, userId);
+          } else if (order.orderType === 'lab') {
+            console.log(`📄 [IndividualSign] Generating lab PDF for order ${orderId}`);
+            pdfBuffer = await pdfService.generateLabPDF([updatedOrder], order.patientId, userId);
+          } else if (order.orderType === 'imaging') {
+            console.log(`📄 [IndividualSign] Generating imaging PDF for order ${orderId}`);
+            pdfBuffer = await pdfService.generateImagingPDF([updatedOrder], order.patientId, userId);
+          } else {
+            console.log(`📄 [IndividualSign] Unknown order type: ${order.orderType}, skipping PDF generation`);
+          }
+          
+          if (pdfBuffer) {
+            console.log(`📄 [IndividualSign] Generated ${order.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`);
+          }
+          
+        } catch (pdfError) {
+          console.error(`📄 [IndividualSign] PDF generation failed for order ${orderId}:`, pdfError);
+        }
+      } else {
+        console.log(`📋 [IndividualSign] PDF generation skipped - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
+      }
 
       // Process all order types through production systems
       try {
@@ -2981,13 +3099,6 @@ Return only valid JSON without markdown formatting.`;
           console.error(`❌ [Referral] Failed to process referral order:`, referralError);
         }
       }
-
-      // Check delivery preferences and generate PDF only if needed
-      console.log(`📋 [IndividualSign] ===== DELIVERY PREFERENCE CHECK =====`);
-      
-      let shouldGeneratePDF = false;
-      let deliveryMethod = 'print_pdf';
-      let deliveryEndpoint = 'PDF Generation';
       
       try {
         // Get patient delivery preferences
