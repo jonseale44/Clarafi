@@ -142,15 +142,15 @@ export class LabOrderProcessor {
           externalLabId: '1',
           externalResultId: `RES_${labOrder.externalOrderId}_${result.testCode}`,
           sourceType: 'external_lab',
-          loincCode: result.loincCode,
           specimenCollectedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
           receivedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-          aiInterpretation: {
+          previousValue: null, // Track previous result for trending
+          aiInterpretation: JSON.stringify({
             clinicalSignificance: result.clinicalSignificance || 'Within normal limits',
             suggestedActions: result.suggestedActions || [],
             trendAnalysis: 'No previous results for comparison',
             riskAssessment: result.abnormalFlag ? 'Review recommended' : 'Low risk'
-          },
+          }),
           createdAt: new Date()
         });
       }

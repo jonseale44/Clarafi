@@ -1,0 +1,51 @@
+essor] Order 2308 already has reference_id 203, skipping
+✅ [LabProcessor] Successfully processed 10 lab orders
+✅ [LabBackground] Successfully processed orders for patient 131, encounter 366
+6:17:59 PM [express] GET /api/patients/131/encounters 304 in 261ms :: [{"id":367,"patientId":131,"pr…
+📊 [LabProcessor] Generating results for Comprehensive Metabolic Panel
+❌ [LabProcessor] Failed to generate results: error: column "previous_date" of relation "lab_results" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Function.generateLabResults (/home/runner/workspace/server/lab-order-processor.ts:125:9)
+    at async Timeout._onTimeout (/home/runner/workspace/server/lab-order-processor.ts:105:9) {
+  length: 138,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '599',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+📊 [LabProcessor] Generating results for Complete Blood Count with Differential
+❌ [LabProcessor] Failed to generate results: error: column "previous_date" of relation "lab_results" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Function.generateLabResults (/home/runner/workspace/server/lab-order-processor.ts:125:9)
+    at async Timeout._onTimeout (/home/runner/workspace/server/lab-order-processor.ts:105:9) {
+  length: 138,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '599',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
