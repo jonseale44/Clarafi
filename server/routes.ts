@@ -2892,9 +2892,11 @@ Return only valid JSON without markdown formatting.`;
       
       try {
         // Get patient delivery preferences
+        console.log(`📋 [IndividualSign] About to import schema and drizzle-orm`);
         const { patientOrderPreferences } = await import("../shared/schema.js");
         const { eq } = await import("drizzle-orm");
         
+        console.log(`📋 [IndividualSign] Querying preferences for patient ${order.patientId}`);
         const preferences = await db
           .select()
           .from(patientOrderPreferences)
