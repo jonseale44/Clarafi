@@ -64,30 +64,6 @@ router.post("/encounters/:encounterId/sign", async (req: Request, res: Response)
   }
 });
 
-/**
- * POST /api/orders/:orderId/sign
- * Sign individual order
- */
-router.post("/orders/:orderId/sign", async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    const orderId = parseInt(req.params.orderId);
-    const userId = req.user!.id;
-    const { signatureNote } = req.body;
-
-    const signedOrder = await encounterValidation.signOrder(orderId, userId, signatureNote);
-
-    res.json({
-      success: true,
-      order: signedOrder,
-      signedAt: new Date()
-    });
-
-  } catch (error) {
-    console.error("Error signing order:", error);
-    res.status(500).json({ error: "Failed to sign order" });
-  }
-});
+// Individual order signing removed - handled by main routes.ts
 
 export default router;
