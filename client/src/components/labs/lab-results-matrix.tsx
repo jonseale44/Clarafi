@@ -407,26 +407,16 @@ export function LabResultsMatrix({
 
 
     if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
-      // Review by encounter(s) - collect all result IDs for selected dates
-      const encounterIds: number[] = [];
+      // Review by date(s) - collect all result IDs for selected dates
       const resultIds: number[] = [];
       
       selectedDates.forEach(date => {
-        const encounters = encountersByDate.get(date) || [];
-        encounterIds.push(...encounters);
-        
-        // Collect all lab result IDs for this date
-        matrixData.forEach(test => {
-          test.results.forEach(result => {
-            if (result.date === date) {
-              resultIds.push(result.id);
-            }
-          });
-        });
+        const dateResultIds = resultsByDate.get(date) || [];
+        resultIds.push(...dateResultIds);
       });
       
-
-      onReviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds);
+      // Since we don't have encounter IDs, pass empty array but include result IDs
+      onReviewEncounter?.(Array.from(selectedDates).join(', '), []);
     } else if (selectedPanels.size > 0 && selectedDates.size === 0) {
       // Review by lab panel(s)
       const resultIds: number[] = [];
@@ -468,13 +458,9 @@ export function LabResultsMatrix({
 
 
     if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
-      // Unreview by encounter(s) - get reviewed results for these dates
-      const encounterIds: number[] = [];
+      // Unreview by date(s) - get reviewed results for these dates
       const resultIds: number[] = [];
       selectedDates.forEach(date => {
-        const encounters = encountersByDate.get(date) || [];
-        encounterIds.push(...encounters);
-        
         // Get all reviewed results for this date (results that are NOT pending review)
         matrixData.forEach(test => {
           test.results.forEach(result => {
@@ -485,7 +471,7 @@ export function LabResultsMatrix({
         });
       });
 
-      onUnreviewEncounter?.(Array.from(selectedDates).join(', '), encounterIds, resultIds);
+      onUnreviewEncounter?.(Array.from(selectedDates).join(', '), [], resultIds);
     } else if (selectedTestRows.size > 0 && selectedDates.size === 0) {
       // Unreview by test group(s) - get reviewed results for these tests
       const resultIds: number[] = [];
