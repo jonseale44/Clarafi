@@ -2905,29 +2905,8 @@ Return only valid JSON without markdown formatting.`;
         }
       }
 
-      // Process all order types through production systems - CRITICAL for lab pending functionality
-      console.log(`🔄 [IndividualSign] Starting production processing for ${order.orderType} order ${orderId}`);
-      try {
-        if (order.orderType === "lab") {
-          console.log(`🧪 [IndividualSign] Importing LabOrderProcessor for order ${orderId}`);
-          const { LabOrderProcessor } = await import("./lab-order-processor.js");
-          console.log(`🧪 [IndividualSign] Calling processSignedLabOrders for patient ${order.patientId}, encounter ${order.encounterId}`);
-          await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
-          console.log(`✅ [IndividualSign] Successfully processed lab order ${orderId} - should now appear as pending in lab section`);
-        } else if (order.orderType === "imaging") {
-          const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
-          await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
-          console.log(`🩻 [IndividualSign] Processed imaging order ${orderId} through production system`);
-        } else if (order.orderType === "referral") {
-          const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
-          await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
-          console.log(`👨‍⚕️ [IndividualSign] Processed referral order ${orderId} through production system`);
-        }
-      } catch (error) {
-        console.error(`❌ [IndividualSign] CRITICAL ERROR - Failed to process ${order.orderType} order ${orderId}:`, error);
-        console.error(`❌ [IndividualSign] Error stack:`, error.stack);
-        // Continue with order signing even if production processing fails
-      }
+      // MOVED: Production system processing now happens after delivery preference check
+      // This ensures lab orders only get processed through lab system when delivery method requires it
       
       // Check delivery preferences and generate PDF only if needed
       console.log(`📋 [IndividualSign] ===== DELIVERY PREFERENCE CHECK =====`);
@@ -3021,6 +3000,37 @@ Return only valid JSON without markdown formatting.`;
 
         await db.insert(signedOrders).values(signedOrderData);
         console.log(`📋 [IndividualSign] ✅ Recorded delivery preferences for order ${orderId}`);
+        
+        // Process through production systems ONLY if delivery method requires it
+        console.log(`🔄 [IndividualSign] Checking if production processing needed for ${order.orderType} order ${orderId}`);
+        try {
+          if (order.orderType === "lab") {
+            if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
+              console.log(`🧪 [IndividualSign] Lab delivery method is ${deliveryMethod} - processing through lab system`);
+              const { LabOrderProcessor } = await import("./lab-order-processor.js");
+              await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
+              console.log(`✅ [IndividualSign] Successfully processed lab order ${orderId} through production system`);
+            } else {
+              console.log(`📄 [IndividualSign] Lab delivery method is ${deliveryMethod} - skipping lab system processing (PDF only)`);
+            }
+          } else if (order.orderType === "imaging") {
+            if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
+              const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
+              await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
+              console.log(`🩻 [IndividualSign] Processed imaging order ${orderId} through production system`);
+            } else {
+              console.log(`📄 [IndividualSign] Imaging delivery method is ${deliveryMethod} - skipping production processing (PDF only)`);
+            }
+          } else if (order.orderType === "referral") {
+            // Referrals always get processed since they don't have PDF-only mode
+            const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
+            await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
+            console.log(`👨‍⚕️ [IndividualSign] Processed referral order ${orderId} through production system`);
+          }
+        } catch (error) {
+          console.error(`❌ [IndividualSign] Failed to process ${order.orderType} order ${orderId} through production systems:`, error);
+          console.error(`❌ [IndividualSign] Error stack:`, error.stack);
+        }
         
       } catch (deliveryError) {
         console.error('❌ [IndividualSign] Error checking delivery preferences:', deliveryError);
@@ -3351,6 +3361,37 @@ Return only valid JSON without markdown formatting.`;
               }
             } else {
               console.log(`📋 [RouteBulkSign] ✅ PDF generation skipped for patient ${patientId} ${orderType} orders - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
+            }
+            
+            // Process through production systems ONLY if delivery method requires it
+            console.log(`🔄 [RouteBulkSign] Checking if production processing needed for ${orderType} orders (patient ${patientId})`);
+            try {
+              if (orderType === "lab") {
+                if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
+                  console.log(`🧪 [RouteBulkSign] Lab delivery method is ${deliveryMethod} - processing through lab system`);
+                  const { LabOrderProcessor } = await import("./lab-order-processor.js");
+                  await LabOrderProcessor.processSignedLabOrders(parseInt(patientId), (orders as any)[0].encounterId);
+                  console.log(`✅ [RouteBulkSign] Successfully processed ${(orders as any).length} lab orders through production system`);
+                } else {
+                  console.log(`📄 [RouteBulkSign] Lab delivery method is ${deliveryMethod} - skipping lab system processing (PDF only)`);
+                }
+              } else if (orderType === "imaging") {
+                if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
+                  const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
+                  await ImagingOrderProcessor.processSignedImagingOrders(parseInt(patientId), (orders as any)[0].encounterId);
+                  console.log(`🩻 [RouteBulkSign] Processed ${(orders as any).length} imaging orders through production system`);
+                } else {
+                  console.log(`📄 [RouteBulkSign] Imaging delivery method is ${deliveryMethod} - skipping production processing (PDF only)`);
+                }
+              } else if (orderType === "referral") {
+                // Referrals always get processed since they don't have PDF-only mode
+                const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
+                await ReferralOrderProcessor.processSignedReferralOrders(parseInt(patientId), (orders as any)[0].encounterId);
+                console.log(`👨‍⚕️ [RouteBulkSign] Processed ${(orders as any).length} referral orders through production system`);
+              }
+            } catch (error) {
+              console.error(`❌ [RouteBulkSign] Failed to process ${orderType} orders through production systems:`, error);
+              console.error(`❌ [RouteBulkSign] Error stack:`, error.stack);
             }
           }
         }
