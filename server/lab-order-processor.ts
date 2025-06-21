@@ -156,6 +156,8 @@ export class LabOrderProcessor {
           qcFlags: null, // Quality control flags
           sourceSystem: 'mock_lab', // Source system identifier
           interfaceVersion: '1.0', // Interface version
+          needsReview: true, // Add the missing column
+          reviewStatus: 'pending', // Add review status
           aiInterpretation: JSON.stringify({
             clinicalSignificance: result.clinicalSignificance || 'Within normal limits',
             suggestedActions: result.suggestedActions || [],
