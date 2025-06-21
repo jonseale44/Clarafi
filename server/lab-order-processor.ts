@@ -145,6 +145,7 @@ export class LabOrderProcessor {
           specimenCollectedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
           receivedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
           previousValue: null, // Track previous result for trending
+          previousDate: null, // Track when previous result was taken
           aiInterpretation: JSON.stringify({
             clinicalSignificance: result.clinicalSignificance || 'Within normal limits',
             suggestedActions: result.suggestedActions || [],
