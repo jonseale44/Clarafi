@@ -218,6 +218,14 @@ export class DatabaseStorage implements IStorage {
       await db.delete(patientOrderPreferences).where(eq(patientOrderPreferences.patientId, id));
       console.log(`🗑️ [Storage] Deleted patient order preferences for patient ${id}`);
       
+      // Delete imaging orders before encounters (foreign key constraint)
+      await db.delete(imagingOrders).where(eq(imagingOrders.patientId, id));
+      console.log(`🗑️ [Storage] Deleted imaging orders for patient ${id}`);
+      
+      // Delete imaging results if they exist
+      await db.delete(imagingResults).where(eq(imagingResults.patientId, id));
+      console.log(`🗑️ [Storage] Deleted imaging results for patient ${id}`);
+      
       // Delete encounters (main foreign key constraint)
       await db.delete(encounters).where(eq(encounters.patientId, id));
       console.log(`🗑️ [Storage] Deleted encounters for patient ${id}`);
