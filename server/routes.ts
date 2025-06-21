@@ -2905,23 +2905,28 @@ Return only valid JSON without markdown formatting.`;
         }
       }
 
-      // Process all order types through production systems
+      // Process all order types through production systems - CRITICAL for lab pending functionality
+      console.log(`🔄 [IndividualSign] Starting production processing for ${order.orderType} order ${orderId}`);
       try {
         if (order.orderType === "lab") {
+          console.log(`🧪 [IndividualSign] Importing LabOrderProcessor for order ${orderId}`);
           const { LabOrderProcessor } = await import("./lab-order-processor.js");
+          console.log(`🧪 [IndividualSign] Calling processSignedLabOrders for patient ${order.patientId}, encounter ${order.encounterId}`);
           await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
-          console.log(`🧪 [Order Signing] Processed lab order ${orderId} through production system`);
+          console.log(`✅ [IndividualSign] Successfully processed lab order ${orderId} - should now appear as pending in lab section`);
         } else if (order.orderType === "imaging") {
           const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
           await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
-          console.log(`🩻 [Order Signing] Processed imaging order ${orderId} through production system`);
+          console.log(`🩻 [IndividualSign] Processed imaging order ${orderId} through production system`);
         } else if (order.orderType === "referral") {
           const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
           await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
-          console.log(`👨‍⚕️ [Order Signing] Processed referral order ${orderId} through production system`);
+          console.log(`👨‍⚕️ [IndividualSign] Processed referral order ${orderId} through production system`);
         }
       } catch (error) {
-        console.error(`❌ [Order Signing] Failed to process ${order.orderType} order ${orderId}:`, error);
+        console.error(`❌ [IndividualSign] CRITICAL ERROR - Failed to process ${order.orderType} order ${orderId}:`, error);
+        console.error(`❌ [IndividualSign] Error stack:`, error.stack);
+        // Continue with order signing even if production processing fails
       }
       
       // Check delivery preferences and generate PDF only if needed
@@ -3063,24 +3068,7 @@ Return only valid JSON without markdown formatting.`;
         console.log(`📋 [IndividualSign] PDF generation skipped - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
       }
 
-      // Process all order types through production systems
-      try {
-        if (order.orderType === "lab") {
-          const { LabOrderProcessor } = await import("./lab-order-processor.js");
-          await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId);
-          console.log(`🧪 [Order Signing] Processed lab order ${orderId} through production system`);
-        } else if (order.orderType === "imaging") {
-          const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
-          await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
-          console.log(`🩻 [Order Signing] Processed imaging order ${orderId} through production system`);
-        } else if (order.orderType === "referral") {
-          const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
-          await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
-          console.log(`👨‍⚕️ [Order Signing] Processed referral order ${orderId} through production system`);
-        }
-      } catch (error) {
-        console.error(`❌ [Order Signing] Failed to process ${order.orderType} order ${orderId}:`, error);
-      }
+      // DUPLICATE REMOVED - production processing already handled above
 
       // For medication orders, activate pending medications
       if (order.orderType === "medication") {
