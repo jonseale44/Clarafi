@@ -227,6 +227,14 @@ export const familyHistory = pgTable("family_history", {
   familyMember: text("family_member").notNull(), // 'father', 'mother', 'brother'
   medicalHistory: text("medical_history"), // "DM2, h/o CAD, died of MI at age 70"
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  
+  // Source tracking for multi-source family history data
+  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'family_reported', 'imported_records'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceNotes: text("source_notes"), // Additional context about data source
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
+  enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -238,6 +246,14 @@ export const medicalHistory = pgTable("medical_history", {
   conditionCategory: text("condition_category").notNull(), // 'cardiac', 'endocrine', 'surgical'
   historyText: text("history_text").notNull(),
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  
+  // Source tracking for multi-source medical history data
+  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'provider_verified', 'imported_records'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceNotes: text("source_notes"), // Additional context about data source
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
+  enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -250,6 +266,14 @@ export const socialHistory = pgTable("social_history", {
   currentStatus: text("current_status").notNull(),
   historyNotes: text("history_notes"),
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  
+  // Source tracking for multi-source social history data
+  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'provider_observed', 'imported_records'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceNotes: text("source_notes"), // Additional context about data source
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
+  enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -262,6 +286,14 @@ export const allergies = pgTable("allergies", {
   reaction: text("reaction"),
   severity: text("severity"),
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  
+  // Source tracking for multi-source allergy data
+  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'family_reported', 'imported_records'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceNotes: text("source_notes"), // Additional context about data source
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
+  enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -294,6 +326,13 @@ export const vitals = pgTable("vitals", {
   alerts: text("alerts").array(),
   parsedFromText: boolean("parsed_from_text").default(false),
   originalText: text("original_text"),
+  
+  // Source tracking for multi-source vital data
+  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'device_imported', 'patient_reported', 'imported_records'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceNotes: text("source_notes"), // Additional context about data source
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
+  enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
