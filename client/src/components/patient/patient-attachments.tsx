@@ -380,29 +380,62 @@ export function PatientAttachments({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                  {getFileIcon(uploadFile!.type)}
-                  <span className="text-sm font-medium">{uploadFile!.name}</span>
-                  <span className="text-xs text-gray-500">({formatFileSize(uploadFile!.size)})</span>
-                </div>
+                {uploadMode === 'single' && uploadFile ? (
+                  <>
+                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      {getFileIcon(uploadFile.type)}
+                      <span className="text-sm font-medium">{uploadFile.name}</span>
+                      <span className="text-xs text-gray-500">({formatFileSize(uploadFile.size)})</span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter a title for this attachment"
+                      />
+                    </div>
+                  </>
+                ) : uploadMode === 'multiple' && uploadFiles.length > 0 ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="font-medium text-sm text-blue-600 dark:text-blue-400">
+                        Bulk Upload ({uploadFiles.length} files)
+                      </div>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {uploadFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between space-x-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              {getFileIcon(file.type)}
+                              <span className="font-medium truncate">{file.name}</span>
+                              <span className="text-xs text-gray-500 whitespace-nowrap">({formatFileSize(file.size)})</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFile(index)}
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : null}
                 
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter a title for this attachment"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Label htmlFor="description">
+                    {uploadMode === 'multiple' ? 'Description (applies to all files)' : 'Description (Optional)'}
+                  </Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Add a description..."
+                    placeholder={uploadMode === 'multiple' ? "Add a description for all files..." : "Add a description..."}
                     rows={2}
                   />
                 </div>
@@ -414,22 +447,26 @@ export function PatientAttachments({
                     onCheckedChange={setIsConfidential}
                   />
                   <Label htmlFor="confidential" className="text-sm">
-                    Mark as confidential
+                    Mark as confidential {uploadMode === 'multiple' ? '(applies to all files)' : ''}
                   </Label>
                 </div>
                 
                 <div className="flex space-x-2">
-                  <Button 
-                    onClick={handleUpload} 
-                    disabled={uploadMutation.isPending}
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploadMutation.isPending || bulkUploadMutation.isPending}
                     className="flex-1"
                   >
-                    {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+                    {uploadMutation.isPending || bulkUploadMutation.isPending 
+                      ? "Uploading..." 
+                      : uploadMode === 'multiple' 
+                        ? `Upload ${uploadFiles.length} Files` 
+                        : "Upload"}
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={resetUploadForm}
-                    disabled={uploadMutation.isPending}
+                    disabled={uploadMutation.isPending || bulkUploadMutation.isPending}
                   >
                     Cancel
                   </Button>
