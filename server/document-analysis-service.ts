@@ -277,9 +277,12 @@ export class DocumentAnalysisService {
         
         // Validate base64 format
         if (!base64String.match(/^[A-Za-z0-9+/]*={0,2}$/)) {
-          console.error(`📄 [DocumentAnalysis] Invalid base64 format detected`);
+          console.error(`📄 [DocumentAnalysis] Invalid base64 format detected in composite`);
+          console.error(`📄 [DocumentAnalysis] Invalid characters found in base64 string`);
           throw new Error('Generated base64 string contains invalid characters');
         }
+        
+        console.log(`📄 [DocumentAnalysis] Base64 validation passed for composite image`);
         
         // Clean up all files
         await fs.unlink(compositeFile);
@@ -314,15 +317,10 @@ export class DocumentAnalysisService {
     console.log(`📄 [DocumentAnalysis] Base64 string length: ${imageBase64.length}`);
     console.log(`📄 [DocumentAnalysis] Base64 prefix: ${imageBase64.substring(0, 100)}...`);
     
-    // Validate base64 format before sending
-    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-    if (!base64Regex.test(imageBase64)) {
-      console.error(`📄 [DocumentAnalysis] Invalid base64 format - contains invalid characters`);
-      throw new Error('Base64 string validation failed');
-    }
-    
-    // Check for data URL prefix and strip if present
+    // Clean and validate base64 format
     let cleanBase64 = imageBase64;
+    
+    // Remove data URL prefix if present
     if (imageBase64.startsWith('data:image/')) {
       const base64Index = imageBase64.indexOf('base64,');
       if (base64Index !== -1) {
@@ -330,6 +328,22 @@ export class DocumentAnalysisService {
         console.log(`📄 [DocumentAnalysis] Stripped data URL prefix, new length: ${cleanBase64.length}`);
       }
     }
+    
+    // Validate base64 format
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(cleanBase64)) {
+      console.error(`📄 [DocumentAnalysis] Invalid base64 format - contains invalid characters`);
+      console.error(`📄 [DocumentAnalysis] First 200 chars: ${cleanBase64.substring(0, 200)}`);
+      throw new Error('Base64 string validation failed - invalid characters detected');
+    }
+    
+    // Additional validation - check for minimum length
+    if (cleanBase64.length < 100) {
+      console.error(`📄 [DocumentAnalysis] Base64 string too short: ${cleanBase64.length} characters`);
+      throw new Error('Base64 string too short to be valid image data');
+    }
+    
+    console.log(`📄 [DocumentAnalysis] Base64 validation passed - ${cleanBase64.length} characters`);
 
     const prompt = `Analyze this medical document and extract all information. Return JSON in this exact format:
 
