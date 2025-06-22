@@ -218,58 +218,52 @@ export class DocumentAnalysisService {
       console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
       console.log(`📄 [DocumentAnalysis] Output prefix: ${outputPrefix}`);
       
-      const command = `pdftoppm -png -f 1 -l 1 -r 150 "${filePath}" "${outputPrefix}"`;
+      // Convert all pages (remove -f 1 -l 1 to process entire PDF)
+      const command = `pdftoppm -png -r 150 "${filePath}" "${outputPrefix}"`;
       console.log(`📄 [DocumentAnalysis] Command: ${command}`);
       
       const { stdout, stderr } = await execAsync(command);
       console.log(`📄 [DocumentAnalysis] pdftoppm stdout:`, stdout);
       if (stderr) console.log(`📄 [DocumentAnalysis] pdftoppm stderr:`, stderr);
       
-      // pdftoppm can create files with either -1.png or -01.png suffix, check both
-      let convertedFile = `${outputPrefix}-01.png`;
-      console.log(`📄 [DocumentAnalysis] Looking for file: ${convertedFile}`);
+      // Find all generated pages
+      const { stdout: lsOutput } = await execAsync(`ls -1 /tmp/pdf_convert_${timestamp}*.png 2>/dev/null || echo ""`);
+      const pageFiles = lsOutput.trim().split('\n').filter(f => f.length > 0);
       
-      // Check if file exists, try both naming conventions
-      try {
-        await fs.access(convertedFile);
-        console.log(`📄 [DocumentAnalysis] File exists (-01 format), reading...`);
-      } catch (accessError) {
-        console.log(`📄 [DocumentAnalysis] -01 format not found, trying -1 format...`);
+      if (pageFiles.length === 0) {
+        throw new Error(`No converted pages found for timestamp ${timestamp}`);
+      }
+      
+      console.log(`📄 [DocumentAnalysis] Found ${pageFiles.length} pages: ${pageFiles.join(', ')}`);
+      
+      // Combine all pages into a single composite image using ImageMagick
+      if (pageFiles.length === 1) {
+        // Single page - simple conversion
+        const imageBuffer = await fs.readFile(pageFiles[0]);
+        const base64String = `data:image/png;base64,${imageBuffer.toString('base64')}`;
         
-        // Try alternative naming convention
-        convertedFile = `${outputPrefix}-1.png`;
-        try {
-          await fs.access(convertedFile);
-          console.log(`📄 [DocumentAnalysis] File exists (-1 format), reading...`);
-        } catch (secondAccessError) {
-          console.error(`📄 [DocumentAnalysis] Neither file format found`);
-          
-          // Check what files were actually created
-          try {
-            const { stdout: lsOutput } = await execAsync(`ls -la /tmp/pdf_convert_${timestamp}*`);
-            console.log(`📄 [DocumentAnalysis] Created files:`, lsOutput);
-          } catch (lsError) {
-            console.log(`📄 [DocumentAnalysis] No files created with expected pattern`);
-          }
-          
-          throw new Error(`Converted file not found. Tried: ${outputPrefix}-01.png and ${outputPrefix}-1.png`);
+        // Clean up
+        await fs.unlink(pageFiles[0]);
+        return base64String;
+      } else {
+        // Multiple pages - create vertical composite
+        const compositeFile = `/tmp/pdf_composite_${timestamp}.png`;
+        const montageCommand = `montage ${pageFiles.join(' ')} -tile 1x${pageFiles.length} -geometry +0+10 "${compositeFile}"`;
+        
+        console.log(`📄 [DocumentAnalysis] Creating composite image from ${pageFiles.length} pages`);
+        await execAsync(montageCommand);
+        
+        const imageBuffer = await fs.readFile(compositeFile);
+        const base64String = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+        
+        // Clean up all files
+        await fs.unlink(compositeFile);
+        for (const file of pageFiles) {
+          await fs.unlink(file);
         }
+        
+        return base64String;
       }
-      
-      const imageBuffer = await fs.readFile(convertedFile);
-      console.log(`📄 [DocumentAnalysis] Read file buffer, size: ${imageBuffer.length} bytes`);
-      
-      // Clean up
-      try {
-        await fs.unlink(convertedFile);
-        console.log(`📄 [DocumentAnalysis] Cleaned up temporary file`);
-      } catch (cleanupError) {
-        console.warn(`📄 [DocumentAnalysis] Failed to cleanup file:`, cleanupError);
-      }
-      
-      const base64String = imageBuffer.toString('base64');
-      console.log(`📄 [DocumentAnalysis] PDF conversion successful, base64 length: ${base64String.length} characters`);
-      return base64String;
       
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
