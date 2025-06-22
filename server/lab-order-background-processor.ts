@@ -67,26 +67,53 @@ export class LabOrderBackgroundProcessor {
       if (pendingOrders.length > 0) {
         console.log(`📋 [LabBackground] Found ${pendingOrders.length} pending lab orders to process`);
         
-        // Group by patient/encounter for efficient processing
-        const groupedOrders = new Map<string, typeof pendingOrders>();
+        // Import signed orders table to check delivery preferences
+        const { signedOrders } = await import("@shared/schema");
+        
+        // Get delivery preferences for each order
+        const ordersWithPreferences = [];
         for (const order of pendingOrders) {
-          const key = `${order.patientId}-${order.encounterId}`;
-          if (!groupedOrders.has(key)) {
-            groupedOrders.set(key, []);
+          const signedOrderData = await db.select()
+            .from(signedOrders)
+            .where(eq(signedOrders.orderId, order.id))
+            .limit(1);
+          
+          const deliveryMethod = signedOrderData[0]?.deliveryMethod || "mock_service";
+          console.log(`📋 [LabBackground] Order ${order.id} (${order.testName}) delivery method: ${deliveryMethod}`);
+          
+          // Only process orders that should go through lab services
+          if (deliveryMethod === "mock_service" || deliveryMethod === "real_service") {
+            ordersWithPreferences.push({ order, deliveryMethod });
+            console.log(`✅ [LabBackground] Order ${order.id} will be processed through lab system`);
+          } else {
+            console.log(`📄 [LabBackground] Order ${order.id} is PDF-only (${deliveryMethod}) - skipping lab processing`);
           }
-          groupedOrders.get(key)!.push(order);
         }
-
-        // Process each group
-        for (const [key, orderGroup] of groupedOrders) {
-          const [patientId, encounterId] = key.split('-').map(Number);
-          try {
-            console.log(`🔄 [LabBackground] Processing ${orderGroup.length} orders for patient ${patientId}, encounter ${encounterId}`);
-            await LabOrderProcessor.processSignedLabOrders(patientId, encounterId, "mock_service");
-            console.log(`✅ [LabBackground] Successfully processed orders for patient ${patientId}, encounter ${encounterId}`);
-          } catch (error) {
-            console.error(`❌ [LabBackground] Failed to process orders for patient ${patientId}, encounter ${encounterId}:`, error);
+        
+        if (ordersWithPreferences.length > 0) {
+          // Group by patient/encounter for efficient processing
+          const groupedOrders = new Map<string, typeof ordersWithPreferences>();
+          for (const { order, deliveryMethod } of ordersWithPreferences) {
+            const key = `${order.patientId}-${order.encounterId}-${deliveryMethod}`;
+            if (!groupedOrders.has(key)) {
+              groupedOrders.set(key, []);
+            }
+            groupedOrders.get(key)!.push({ order, deliveryMethod });
           }
+
+          // Process each group
+          for (const [key, orderGroup] of groupedOrders) {
+            const [patientId, encounterId, deliveryMethod] = key.split('-');
+            try {
+              console.log(`🔄 [LabBackground] Processing ${orderGroup.length} lab service orders for patient ${patientId}, encounter ${encounterId} (${deliveryMethod})`);
+              await LabOrderProcessor.processSignedLabOrders(Number(patientId), Number(encounterId), deliveryMethod);
+              console.log(`✅ [LabBackground] Successfully processed ${orderGroup.length} lab service orders`);
+            } catch (error) {
+              console.error(`❌ [LabBackground] Failed to process lab service orders for patient ${patientId}, encounter ${encounterId}:`, error);
+            }
+          }
+        } else {
+          console.log(`📄 [LabBackground] All pending orders are PDF-only - no lab processing needed`);
         }
       }
 
