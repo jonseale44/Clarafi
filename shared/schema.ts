@@ -1616,3 +1616,88 @@ export type AttachmentExtractedContent = typeof attachmentExtractedContent.$infe
 export type InsertAttachmentExtractedContent = z.infer<typeof insertAttachmentExtractedContentSchema>;
 export type DocumentProcessingQueue = typeof documentProcessingQueue.$inferSelect;
 export type InsertDocumentProcessingQueue = z.infer<typeof insertDocumentProcessingQueueSchema>;
+
+// Zod schemas for source tracking fields
+export const insertVitalSchema = createInsertSchema(vitals).pick({
+  patientId: true,
+  encounterId: true,
+  recordedAt: true,
+  recordedBy: true,
+  entryType: true,
+  systolicBp: true,
+  diastolicBp: true,
+  heartRate: true,
+  temperature: true,
+  weight: true,
+  height: true,
+  bmi: true,
+  oxygenSaturation: true,
+  respiratoryRate: true,
+  painScale: true,
+  notes: true,
+  alerts: true,
+  parsedFromText: true,
+  originalText: true,
+  sourceType: true,
+  sourceConfidence: true,
+  sourceNotes: true,
+  extractedFromAttachmentId: true,
+  enteredBy: true,
+});
+
+export const insertAllergySchema = createInsertSchema(allergies).pick({
+  patientId: true,
+  allergen: true,
+  reaction: true,
+  severity: true,
+  lastUpdatedEncounter: true,
+  sourceType: true,
+  sourceConfidence: true,
+  sourceNotes: true,
+  extractedFromAttachmentId: true,
+  enteredBy: true,
+});
+
+export const insertFamilyHistorySchema = createInsertSchema(familyHistory).pick({
+  patientId: true,
+  familyMember: true,
+  medicalHistory: true,
+  lastUpdatedEncounter: true,
+  sourceType: true,
+  sourceConfidence: true,
+  sourceNotes: true,
+  extractedFromAttachmentId: true,
+  enteredBy: true,
+});
+
+export const insertMedicalHistorySchema = createInsertSchema(medicalHistory).pick({
+  patientId: true,
+  conditionCategory: true,
+  historyText: true,
+  lastUpdatedEncounter: true,
+  sourceType: true,
+  sourceConfidence: true,
+  sourceNotes: true,
+  extractedFromAttachmentId: true,
+  enteredBy: true,
+});
+
+export const insertSocialHistorySchema = createInsertSchema(socialHistory).pick({
+  patientId: true,
+  category: true,
+  currentStatus: true,
+  historyNotes: true,
+  lastUpdatedEncounter: true,
+  sourceType: true,
+  sourceConfidence: true,
+  sourceNotes: true,
+  extractedFromAttachmentId: true,
+  enteredBy: true,
+});
+
+export type InsertVital = z.infer<typeof insertVitalSchema>;
+export type Vital = typeof vitals.$inferSelect;
+export type InsertAllergy = z.infer<typeof insertAllergySchema>;
+export type InsertFamilyHistory = z.infer<typeof insertFamilyHistorySchema>;
+export type InsertMedicalHistory = z.infer<typeof insertMedicalHistorySchema>;
+export type InsertSocialHistory = z.infer<typeof insertSocialHistorySchema>;
