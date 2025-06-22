@@ -22,7 +22,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface PatientAttachment {
@@ -67,20 +67,17 @@ export function PatientAttachments({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isConfidential, setIsConfidential] = useState(false);
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
+
+  const [showUploadForm, setShowUploadForm] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get attachments
+  // Get attachments - always show all patient attachments, regardless of mode
   const { data: attachments = [], isLoading } = useQuery({
-    queryKey: ["/api/patients", patientId, "attachments", encounterId],
+    queryKey: ["/api/patients", patientId, "attachments"],
     queryFn: async () => {
-      const url = encounterId 
-        ? `/api/patients/${patientId}/attachments?encounterId=${encounterId}`
-        : `/api/patients/${patientId}/attachments`;
-      
-      const response = await fetch(url);
+      const response = await fetch(`/api/patients/${patientId}/attachments`);
       if (!response.ok) throw new Error('Failed to fetch attachments');
       return response.json() as Promise<PatientAttachment[]>;
     },
@@ -155,7 +152,8 @@ export function PatientAttachments({
     setTitle("");
     setDescription("");
     setIsConfidential(false);
-    setShowUploadDialog(false);
+
+    setShowUploadForm(false);
   };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -176,7 +174,7 @@ export function PatientAttachments({
     if (files.length > 0) {
       setUploadFile(files[0]);
       setTitle(files[0].name);
-      setShowUploadDialog(true);
+      setShowUploadForm(true);
     }
   }, []);
 
@@ -185,8 +183,10 @@ export function PatientAttachments({
     if (files && files.length > 0) {
       setUploadFile(files[0]);
       setTitle(files[0].name);
-      setShowUploadDialog(true);
+      setShowUploadForm(true);
     }
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
   };
 
   const handleUpload = () => {
@@ -242,28 +242,15 @@ export function PatientAttachments({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Attachments</h2>
-        {!isReadOnly && (
-          <Button 
-            onClick={() => setShowUploadDialog(true)}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload File
-          </Button>
-        )}
       </div>
 
-      {/* Upload Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Upload Attachment</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {!uploadFile ? (
+      {/* Upload Interface - Always Visible */}
+      {!isReadOnly && (
+        <Card>
+          <CardContent className="pt-6">
+            {!showUploadForm ? (
               <div 
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
                   isDragOver 
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
                     : 'border-gray-300 hover:border-gray-400'
@@ -271,6 +258,7 @@ export function PatientAttachments({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
+                onClick={() => document.getElementById('file-upload')?.click()}
               >
                 <Input
                   type="file"
@@ -279,25 +267,23 @@ export function PatientAttachments({
                   className="hidden"
                   id="file-upload"
                 />
-                <Label htmlFor="file-upload" className="cursor-pointer">
-                  <div className="space-y-2">
-                    <Upload className={`h-10 w-10 mx-auto ${
-                      isDragOver ? 'text-blue-500' : 'text-gray-400'
-                    }`} />
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      <span className="font-medium">Click to upload</span> or drag and drop
-                      <br />
-                      PDF, Images, Documents (up to 100MB)
-                    </div>
+                <div className="space-y-2">
+                  <Upload className={`h-10 w-10 mx-auto ${
+                    isDragOver ? 'text-blue-500' : 'text-gray-400'
+                  }`} />
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Click to upload</span> or drag and drop
+                    <br />
+                    PDF, Images, Documents (up to 100MB)
                   </div>
-                </Label>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                  {getFileIcon(uploadFile.type)}
-                  <span className="text-sm font-medium">{uploadFile.name}</span>
-                  <span className="text-xs text-gray-500">({formatFileSize(uploadFile.size)})</span>
+                  {getFileIcon(uploadFile!.type)}
+                  <span className="text-sm font-medium">{uploadFile!.name}</span>
+                  <span className="text-xs text-gray-500">({formatFileSize(uploadFile!.size)})</span>
                 </div>
                 
                 <div className="space-y-2">
@@ -350,21 +336,23 @@ export function PatientAttachments({
                 </div>
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Attachments List */}
       {attachments.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8 text-gray-500">
-              <File className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium">No attachments yet</p>
-              <p className="text-sm">Upload patient documents, images, and files here.</p>
-            </div>
-          </CardContent>
-        </Card>
+        !isReadOnly ? null : (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8 text-gray-500">
+                <File className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium">No attachments yet</p>
+                <p className="text-sm">No patient documents uploaded.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )
       ) : (
         <div className="space-y-3">
           {attachments.map((attachment) => (
