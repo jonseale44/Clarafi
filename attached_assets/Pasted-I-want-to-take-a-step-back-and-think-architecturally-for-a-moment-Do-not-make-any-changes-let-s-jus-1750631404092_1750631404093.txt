@@ -1,0 +1,13 @@
+I want to take a step back and think architecturally for a moment. Do not make any changes let’s just examine what we have and discuss options. I am intending to arrange certain patient chart sections in such a way that they can incorporate structured data from the attachments or from patient SOAP notes, etc. We already have some capability to do that in the medical problems section, which incorporates information from the SOAP notes and direct user input, and the medications, which incorporates information from orders and direct user input. But I will also want to be able to do this from attachments. Not only that, I will want to incorporate this ability to almost all the patient chart sections. Let me really spell this out so you understand my vision. 
+
+
+
+Structured data from attachments -> medical problems visit history + medications + allergies + labs + vitals + imaging + family history + social history + surgical history
+
+Structured data from direct user input -> medical problems visit history + medications + allergies + labs + vitals + imaging + family history + social history + surgical history
+
+Structured data from the SOAP note ->  medical problems visit history + medications + allergies + labs + vitals + imaging + family history + social history + surgical history
+
+Etc and so on. 
+
+Now let’s look at it from the receiving sections. Take vitals, for instance. Some vitals will be directly input by the nurse, others by the provider, and still others might be uploaded automatically via the attachments (such as an old set of vitals in an old medical record). Labs are another good example. Labs can be incorporated from our mock service currently and, in the future, from real laboratory but I would want to also be able to have them incorporated from the attachments. Now obviously this is going to require a lot of GPT filtering and JSON parsing etc. That’s not what I’m asking about. My vision is complex but the question is simple, do we have the architecture set up such that we can clearly LABEL these sources of information based on their input type, so that when a user reviews the vitals, they can QUICKLY determine that this set of vitals was manually entered by the nurse during an encounter. Or this other set of vitals was uploaded from an attachment, which explains why it was dated 10 years ago and why the confidence for those vitals is lower. I am almost certain that SOME of this infrastructure exists, but I want to clarify before getting deeper into this. AGAIN, DO NOT MAKE ANY CHANGES, JUST EVALUATE AND REPORT YOUR FINDINGS AND OPINIONS. 
