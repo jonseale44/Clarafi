@@ -89,17 +89,27 @@ export class DocumentAnalysisService {
       }
 
       console.log(`📄 [DocumentAnalysis] Processing ${attachment.originalFileName} (${attachment.mimeType})`);
+      console.log(`📄 [DocumentAnalysis] File path: ${attachment.filePath}`);
 
       let imageData: string;
 
-      if (attachment.mimeType.startsWith('image/')) {
-        // For images, convert to base64
-        imageData = await this.imageToBase64(attachment.filePath);
-      } else if (attachment.mimeType === 'application/pdf') {
-        // For PDFs, convert to image then to base64
-        imageData = await this.pdfToBase64Image(attachment.filePath);
-      } else {
-        throw new Error(`Unsupported file type: ${attachment.mimeType}`);
+      try {
+        if (attachment.mimeType.startsWith('image/')) {
+          console.log(`📄 [DocumentAnalysis] Processing as image file`);
+          // For images, convert to base64
+          imageData = await this.imageToBase64(attachment.filePath);
+        } else if (attachment.mimeType === 'application/pdf') {
+          console.log(`📄 [DocumentAnalysis] Processing as PDF file`);
+          // For PDFs, convert to image then to base64
+          imageData = await this.pdfToBase64Image(attachment.filePath);
+        } else {
+          throw new Error(`Unsupported file type: ${attachment.mimeType}`);
+        }
+        
+        console.log(`📄 [DocumentAnalysis] Successfully converted file to base64, length: ${imageData.length}`);
+      } catch (conversionError) {
+        console.error(`📄 [DocumentAnalysis] File conversion failed:`, conversionError);
+        throw conversionError;
       }
 
       // Process with GPT-4.1 Vision
@@ -137,10 +147,14 @@ export class DocumentAnalysisService {
         .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
       // Increment attempts
+      const [currentQueue] = await db.select()
+        .from(documentProcessingQueue)
+        .where(eq(documentProcessingQueue.attachmentId, attachmentId));
+      
       await db.update(documentProcessingQueue)
         .set({ 
           status: "failed",
-          attempts: db.sql`${documentProcessingQueue.attempts} + 1`,
+          attempts: (currentQueue?.attempts || 0) + 1,
           lastAttempt: new Date()
         })
         .where(eq(documentProcessingQueue.attachmentId, attachmentId));
@@ -151,12 +165,36 @@ export class DocumentAnalysisService {
    * Convert image to base64
    */
   private async imageToBase64(filePath: string): Promise<string> {
-    const imageBuffer = await sharp(filePath)
-      .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 95 })
-      .toBuffer();
+    console.log(`📄 [DocumentAnalysis] Converting image to base64: ${filePath}`);
     
-    return imageBuffer.toString('base64');
+    try {
+      // Check if file exists
+      await fs.access(filePath);
+      
+      const imageBuffer = await sharp(filePath)
+        .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 95 })
+        .toBuffer();
+      
+      const base64String = imageBuffer.toString('base64');
+      console.log(`📄 [DocumentAnalysis] Image converted to base64, length: ${base64String.length} characters`);
+      
+      // Validate base64 string
+      if (base64String.length === 0) {
+        throw new Error("Generated base64 string is empty");
+      }
+      
+      // Test base64 validity
+      const testBuffer = Buffer.from(base64String, 'base64');
+      if (testBuffer.length === 0) {
+        throw new Error("Invalid base64 string generated");
+      }
+      
+      return base64String;
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] Image conversion failed:`, error);
+      throw new Error(`Failed to convert image to base64: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
@@ -166,6 +204,10 @@ export class DocumentAnalysisService {
     console.log(`📄 [DocumentAnalysis] Converting PDF to image: ${filePath}`);
     
     try {
+      // Check if PDF file exists
+      await fs.access(filePath);
+      console.log(`📄 [DocumentAnalysis] PDF file exists, proceeding with conversion`);
+      
       // Convert first page of PDF to image
       const convert = fromPath(filePath, {
         density: 200,           // Resolution
@@ -176,15 +218,33 @@ export class DocumentAnalysisService {
         height: 2048
       });
 
+      console.log(`📄 [DocumentAnalysis] Starting PDF page conversion...`);
       const result = await convert(1, { responseType: "buffer" });
+      console.log(`📄 [DocumentAnalysis] PDF conversion result:`, {
+        hasBuffer: !!result.buffer,
+        bufferLength: result.buffer?.length || 0,
+        resultKeys: Object.keys(result)
+      });
       
-      if (result.buffer) {
-        return result.buffer.toString('base64');
+      if (result.buffer && result.buffer.length > 0) {
+        const base64String = result.buffer.toString('base64');
+        console.log(`📄 [DocumentAnalysis] PDF converted to base64, length: ${base64String.length} characters`);
+        
+        // Validate base64 string
+        if (base64String.length === 0) {
+          throw new Error("Generated base64 string is empty");
+        }
+        
+        return base64String;
       } else {
-        throw new Error("No buffer returned from PDF conversion");
+        throw new Error("No buffer returned from PDF conversion or buffer is empty");
       }
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
+      console.error(`📄 [DocumentAnalysis] Error details:`, {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw new Error(`Failed to convert PDF to image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -200,6 +260,8 @@ export class DocumentAnalysisService {
     documentType: string;
   }> {
     console.log(`📄 [DocumentAnalysis] Calling GPT-4.1 Vision for analysis`);
+    console.log(`📄 [DocumentAnalysis] Base64 string length: ${imageBase64.length}`);
+    console.log(`📄 [DocumentAnalysis] Base64 prefix: ${imageBase64.substring(0, 50)}...`);
 
     const prompt = `Analyze this medical document and extract all information. Return JSON in this exact format:
 
@@ -224,47 +286,62 @@ Extract ALL visible text including:
 
 Preserve the original structure and formatting where possible. Be thorough and accurate.`;
 
-    const response = await this.openai.chat.completions.create({
-      model: "gpt-4.1",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: prompt
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`,
-                detail: "high"
+    try {
+      console.log(`📄 [DocumentAnalysis] Making OpenAI API call...`);
+      const response = await this.openai.chat.completions.create({
+        model: "gpt-4.1",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: prompt
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
+                  detail: "high"
+                }
               }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 4000
-    });
+            ]
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+        max_tokens: 4000
+      });
 
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error("No response from GPT-4.1");
+      console.log(`📄 [DocumentAnalysis] OpenAI API response received`);
+      console.log(`📄 [DocumentAnalysis] Response usage:`, response.usage);
+
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No response from GPT-4.1");
+      }
+
+      console.log(`📄 [DocumentAnalysis] Raw response content:`, content);
+
+      const result = JSON.parse(content);
+      
+      console.log(`📄 [DocumentAnalysis] GPT-4.1 analysis complete`);
+      console.log(`📄 [DocumentAnalysis] Detected document type: ${result.documentType}`);
+      console.log(`📄 [DocumentAnalysis] Generated title: ${result.title}`);
+
+      return {
+        extractedText: result.extractedText || "",
+        title: result.title || originalFileName,
+        documentType: result.documentType || "other"
+      };
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] OpenAI API call failed:`, error);
+      if (error instanceof Error) {
+        console.error(`📄 [DocumentAnalysis] Error message:`, error.message);
+        console.error(`📄 [DocumentAnalysis] Error stack:`, error.stack);
+      }
+      throw error;
     }
-
-    const result = JSON.parse(content);
-    
-    console.log(`📄 [DocumentAnalysis] GPT-4.1 analysis complete`);
-    console.log(`📄 [DocumentAnalysis] Detected document type: ${result.documentType}`);
-    console.log(`📄 [DocumentAnalysis] Generated title: ${result.title}`);
-
-    return {
-      extractedText: result.extractedText || "",
-      title: result.title || originalFileName,
-      documentType: result.documentType || "other"
-    };
   }
 
   /**
