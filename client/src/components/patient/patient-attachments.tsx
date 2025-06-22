@@ -98,6 +98,7 @@ export function PatientAttachments({
       if (!response.ok) throw new Error('Failed to fetch attachments');
       return response.json() as Promise<PatientAttachment[]>;
     },
+    refetchInterval: 3000, // Poll every 3 seconds to update processing status
   });
 
   // Single file upload mutation
