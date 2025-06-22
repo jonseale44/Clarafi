@@ -3,11 +3,12 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { db } from "./db.js";
-import { patientAttachments, insertPatientAttachmentSchema } from "../shared/schema.js";
+import { patientAttachments, insertPatientAttachmentSchema, attachmentExtractedContent } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import sharp from "sharp";
 import { createHash } from "crypto";
+import { documentAnalysisService } from "./document-analysis-service.js";
 
 const router = Router();
 
@@ -144,6 +145,14 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     console.log(`📎 [Attachments] File uploaded successfully: ${req.file.originalname} for patient ${patientId}`);
     console.log(`📎 [Attachments] Attachment created with ID: ${attachment.id}`);
     
+    // Queue for document analysis
+    try {
+      await documentAnalysisService.queueDocument(attachment.id);
+    } catch (analysisError) {
+      console.error('📎 [Attachments] Failed to queue document for analysis:', analysisError);
+      // Continue - don't fail the upload if analysis queueing fails
+    }
+    
     res.status(201).json(attachment);
   } catch (error) {
     console.error('File upload error:', error);
@@ -220,6 +229,14 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
         
         createdAttachments.push(attachment);
         console.log(`📎 [Attachments] File processed: ${file.originalname} -> ID: ${attachment.id}`);
+        
+        // Queue for document analysis
+        try {
+          await documentAnalysisService.queueDocument(attachment.id);
+        } catch (analysisError) {
+          console.error(`📎 [Attachments] Failed to queue document ${attachment.id} for analysis:`, analysisError);
+          // Continue with other files
+        }
       } catch (fileError) {
         console.error(`📎 [Backend] Error processing file ${file.originalname}:`, fileError);
         // Clean up this specific file
@@ -278,7 +295,7 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
   }
 });
 
-// Get patient attachments
+// Get patient attachments with extracted content
 router.get('/:patientId/attachments', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
@@ -288,7 +305,21 @@ router.get('/:patientId/attachments', async (req: Request, res: Response) => {
     const patientId = parseInt(req.params.patientId);
     const { encounterId } = req.query;
     
-    let query = db.select().from(patientAttachments).where(eq(patientAttachments.patientId, patientId));
+    let query = db.select({
+      ...patientAttachments,
+      extractedContent: {
+        id: attachmentExtractedContent.id,
+        extractedText: attachmentExtractedContent.extractedText,
+        aiGeneratedTitle: attachmentExtractedContent.aiGeneratedTitle,
+        documentType: attachmentExtractedContent.documentType,
+        processingStatus: attachmentExtractedContent.processingStatus,
+        errorMessage: attachmentExtractedContent.errorMessage,
+        processedAt: attachmentExtractedContent.processedAt
+      }
+    })
+    .from(patientAttachments)
+    .leftJoin(attachmentExtractedContent, eq(patientAttachments.id, attachmentExtractedContent.attachmentId))
+    .where(eq(patientAttachments.patientId, patientId));
     
     if (encounterId) {
       query = query.where(and(
@@ -510,6 +541,82 @@ router.delete('/:patientId/attachments', async (req: Request, res: Response) => 
   } catch (error) {
     console.error('Error in bulk delete:', error);
     res.status(500).json({ error: 'Bulk delete failed' });
+  }
+});
+
+// Get extracted content for an attachment
+router.get('/:patientId/attachments/:attachmentId/content', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    const attachmentId = parseInt(req.params.attachmentId);
+    
+    // Verify attachment belongs to patient
+    const [attachment] = await db.select()
+      .from(patientAttachments)
+      .where(and(
+        eq(patientAttachments.id, attachmentId),
+        eq(patientAttachments.patientId, patientId)
+      ));
+    
+    if (!attachment) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+    
+    const content = await documentAnalysisService.getExtractedContent(attachmentId);
+    
+    if (!content) {
+      return res.status(404).json({ error: 'No extracted content found' });
+    }
+    
+    res.json(content);
+  } catch (error) {
+    console.error('Error fetching extracted content:', error);
+    res.status(500).json({ error: 'Failed to fetch extracted content' });
+  }
+});
+
+// Update extracted content (for manual edits)
+router.put('/:patientId/attachments/:attachmentId/content', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    const attachmentId = parseInt(req.params.attachmentId);
+    const { extractedText, aiGeneratedTitle, documentType } = req.body;
+    
+    // Verify attachment belongs to patient
+    const [attachment] = await db.select()
+      .from(patientAttachments)
+      .where(and(
+        eq(patientAttachments.id, attachmentId),
+        eq(patientAttachments.patientId, patientId)
+      ));
+    
+    if (!attachment) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+    
+    // Update extracted content
+    const [updatedContent] = await db.update(attachmentExtractedContent)
+      .set({
+        extractedText,
+        aiGeneratedTitle,
+        documentType
+      })
+      .where(eq(attachmentExtractedContent.attachmentId, attachmentId))
+      .returning();
+    
+    console.log(`📎 [Attachments] Content updated for attachment ${attachmentId} by user ${req.user!.id}`);
+    res.json(updatedContent);
+  } catch (error) {
+    console.error('Error updating extracted content:', error);
+    res.status(500).json({ error: 'Failed to update extracted content' });
   }
 });
 

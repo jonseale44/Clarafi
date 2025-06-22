@@ -19,11 +19,17 @@ import {
   Clock,
   User,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  FileSearch,
+  Loader2,
+  Brain,
+  FileX
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PatientAttachment {
   id: number;
@@ -47,6 +53,15 @@ interface PatientAttachment {
   virusScanStatus: string;
   createdAt: string;
   updatedAt: string;
+  extractedContent?: {
+    id: number;
+    extractedText: string;
+    aiGeneratedTitle: string;
+    documentType: string;
+    processingStatus: string;
+    errorMessage?: string;
+    processedAt: string;
+  };
 }
 
 interface PatientAttachmentsProps {
@@ -333,6 +348,72 @@ export function PatientAttachments({
     window.open(`/api/patients/${patientId}/attachments/${attachment.id}/download`, '_blank');
   };
 
+  const getProcessingStatusBadge = (attachment: PatientAttachment) => {
+    const status = attachment.extractedContent?.processingStatus;
+    
+    if (!status || status === 'pending') {
+      return (
+        <Badge variant="secondary" className="text-xs">
+          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          Processing
+        </Badge>
+      );
+    }
+    
+    if (status === 'processing') {
+      return (
+        <Badge variant="secondary" className="text-xs">
+          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          Analyzing
+        </Badge>
+      );
+    }
+    
+    if (status === 'completed') {
+      return (
+        <Badge variant="default" className="text-xs bg-green-600">
+          <Brain className="h-3 w-3 mr-1" />
+          Analyzed
+        </Badge>
+      );
+    }
+    
+    if (status === 'failed') {
+      return (
+        <Badge variant="destructive" className="text-xs">
+          <FileX className="h-3 w-3 mr-1" />
+          Failed
+        </Badge>
+      );
+    }
+    
+    return null;
+  };
+
+  const getDocumentTypeBadge = (documentType: string) => {
+    const typeMap: Record<string, { label: string; color: string }> = {
+      'lab_results': { label: 'Lab Results', color: 'bg-blue-600' },
+      'H&P': { label: 'H&P', color: 'bg-purple-600' },
+      'discharge_summary': { label: 'Discharge', color: 'bg-orange-600' },
+      'nursing_notes': { label: 'Nursing', color: 'bg-teal-600' },
+      'radiology_report': { label: 'Radiology', color: 'bg-indigo-600' },
+      'prescription': { label: 'Prescription', color: 'bg-green-600' },
+      'insurance_card': { label: 'Insurance', color: 'bg-yellow-600' },
+      'referral': { label: 'Referral', color: 'bg-pink-600' },
+      'operative_note': { label: 'Operative', color: 'bg-red-600' },
+      'pathology_report': { label: 'Pathology', color: 'bg-gray-600' },
+      'other': { label: 'Other', color: 'bg-gray-500' }
+    };
+    
+    const type = typeMap[documentType] || typeMap['other'];
+    
+    return (
+      <Badge className={`text-xs text-white ${type.color}`}>
+        {type.label}
+      </Badge>
+    );
+  };
+
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith('image/')) return <Image className="h-4 w-4" />;
     if (mimeType === 'application/pdf') return <FileText className="h-4 w-4" />;
@@ -582,8 +663,10 @@ export function PatientAttachments({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2 mb-1">
                         <h3 className="font-medium truncate">
-                          {attachment.title || attachment.originalFileName}
+                          {attachment.extractedContent?.aiGeneratedTitle || attachment.title || attachment.originalFileName}
                         </h3>
+                        {attachment.extractedContent?.documentType && getDocumentTypeBadge(attachment.extractedContent.documentType)}
+                        {getProcessingStatusBadge(attachment)}
                         {attachment.isConfidential && (
                           <Badge variant="destructive" className="text-xs">
                             <AlertTriangle className="h-3 w-3 mr-1" />
