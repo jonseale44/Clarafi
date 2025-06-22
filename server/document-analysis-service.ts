@@ -14,6 +14,7 @@ import {
   patientAttachments 
 } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
+import { attachmentChartProcessor } from "./attachment-chart-processor.js";
 
 export class DocumentAnalysisService {
   private openai: OpenAI;
@@ -136,6 +137,11 @@ export class DocumentAnalysisService {
       console.log(`📄 [DocumentAnalysis] Extracted text length: ${result.extractedText?.length || 0} characters`);
       console.log(`📄 [DocumentAnalysis] Document type: ${result.documentType}`);
       console.log(`📄 [DocumentAnalysis] AI title: ${result.title}`);
+
+      // Trigger chart processing for completed documents
+      this.triggerChartProcessing(attachmentId).catch(error => {
+        console.error(`📄 [DocumentAnalysis] Chart processing failed for attachment ${attachmentId}:`, error);
+      });
 
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] Processing failed for attachment ${attachmentId}:`, error);
@@ -466,6 +472,21 @@ Preserve the original structure and formatting where possible. Be thorough and a
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] Manual reprocessing failed for attachment ${attachmentId}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Trigger chart processing for completed documents
+   */
+  private async triggerChartProcessing(attachmentId: number): Promise<void> {
+    console.log(`📄 [DocumentAnalysis] Triggering chart processing for attachment ${attachmentId}`);
+    
+    try {
+      // Process in background to avoid blocking document analysis
+      await attachmentChartProcessor.processCompletedAttachment(attachmentId);
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] Chart processing error for attachment ${attachmentId}:`, error);
+      // Don't re-throw - chart processing failures shouldn't break document analysis
     }
   }
 }
