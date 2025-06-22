@@ -23,10 +23,12 @@ export interface Order {
 }
 
 export class PDFService {
-  private ensurePDFDirectory(): void {
+  private async ensurePDFDirectory(): Promise<void> {
     const pdfDir = '/tmp/pdfs';
-    if (!fs.existsSync(pdfDir)) {
-      fs.mkdirSync(pdfDir, { recursive: true });
+    try {
+      await fs.promises.access(pdfDir);
+    } catch {
+      await fs.promises.mkdir(pdfDir, { recursive: true });
     }
   }
 
@@ -78,20 +80,24 @@ export class PDFService {
     doc.on('data', chunk => chunks.push(chunk));
     
     return new Promise((resolve, reject) => {
-      doc.on('end', () => {
+      doc.on('end', async () => {
         const pdfBuffer = Buffer.concat(chunks);
         console.log(`📄 [PDFService] Medication PDF generated: ${pdfBuffer.length} bytes`);
         
-        // Save to filesystem
-        this.ensurePDFDirectory();
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `medication-orders-${patientId}-${timestamp}.pdf`;
-        const filepath = path.join('/tmp/pdfs', filename);
-        
-        fs.writeFileSync(filepath, pdfBuffer);
-        console.log(`📄 [PDFService] PDF saved: ${filepath}`);
-        
-        resolve(pdfBuffer);
+        try {
+          // Save to filesystem
+          await this.ensurePDFDirectory();
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename = `medication-orders-${patientId}-${timestamp}.pdf`;
+          const filepath = path.join('/tmp/pdfs', filename);
+          
+          await fs.promises.writeFile(filepath, pdfBuffer);
+          console.log(`📄 [PDFService] PDF saved: ${filepath}`);
+          
+          resolve(pdfBuffer);
+        } catch (error) {
+          reject(error);
+        }
       });
       
       doc.on('error', reject);
@@ -162,20 +168,24 @@ export class PDFService {
     doc.on('data', chunk => chunks.push(chunk));
     
     return new Promise((resolve, reject) => {
-      doc.on('end', () => {
+      doc.on('end', async () => {
         const pdfBuffer = Buffer.concat(chunks);
         console.log(`📄 [PDFService] Lab PDF generated: ${pdfBuffer.length} bytes`);
         
-        // Save to filesystem
-        this.ensurePDFDirectory();
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `lab-orders-${patientId}-${timestamp}.pdf`;
-        const filepath = path.join('/tmp/pdfs', filename);
-        
-        fs.writeFileSync(filepath, pdfBuffer);
-        console.log(`📄 [PDFService] PDF saved: ${filepath}`);
-        
-        resolve(pdfBuffer);
+        try {
+          // Save to filesystem
+          await this.ensurePDFDirectory();
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename = `lab-orders-${patientId}-${timestamp}.pdf`;
+          const filepath = path.join('/tmp/pdfs', filename);
+          
+          await fs.promises.writeFile(filepath, pdfBuffer);
+          console.log(`📄 [PDFService] PDF saved: ${filepath}`);
+          
+          resolve(pdfBuffer);
+        } catch (error) {
+          reject(error);
+        }
       });
       
       doc.on('error', reject);
@@ -224,20 +234,24 @@ export class PDFService {
     doc.on('data', chunk => chunks.push(chunk));
     
     return new Promise((resolve, reject) => {
-      doc.on('end', () => {
+      doc.on('end', async () => {
         const pdfBuffer = Buffer.concat(chunks);
         console.log(`📄 [PDFService] Imaging PDF generated: ${pdfBuffer.length} bytes`);
         
-        // Save to filesystem
-        this.ensurePDFDirectory();
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `imaging-orders-${patientId}-${timestamp}.pdf`;
-        const filepath = path.join('/tmp/pdfs', filename);
-        
-        fs.writeFileSync(filepath, pdfBuffer);
-        console.log(`📄 [PDFService] PDF saved: ${filepath}`);
-        
-        resolve(pdfBuffer);
+        try {
+          // Save to filesystem
+          await this.ensurePDFDirectory();
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename = `imaging-orders-${patientId}-${timestamp}.pdf`;
+          const filepath = path.join('/tmp/pdfs', filename);
+          
+          await fs.promises.writeFile(filepath, pdfBuffer);
+          console.log(`📄 [PDFService] PDF saved: ${filepath}`);
+          
+          resolve(pdfBuffer);
+        } catch (error) {
+          reject(error);
+        }
       });
       
       doc.on('error', reject);

@@ -66,16 +66,20 @@ router.get("/patients/:patientId/pdfs", requireAuth, async (req: Request, res: R
     const patientId = parseInt(req.params.patientId);
     const pdfDir = '/tmp/pdfs';
     
-    if (!fs.existsSync(pdfDir)) {
+    try {
+      await fs.promises.access(pdfDir);
+    } catch {
       return res.json({ files: [] });
     }
     
-    const files = fs.readdirSync(pdfDir)
-      .filter(file => file.endsWith('.pdf'))
-      .filter(file => file.includes(`-${patientId}-`)) // Filter by patient ID in filename
-      .map(file => {
-        const filepath = path.join(pdfDir, file);
-        const stat = fs.statSync(filepath);
+    const dirFiles = await fs.promises.readdir(pdfDir);
+    const files = await Promise.all(
+      dirFiles
+        .filter(file => file.endsWith('.pdf'))
+        .filter(file => file.includes(`-${patientId}-`)) // Filter by patient ID in filename
+        .map(async file => {
+          const filepath = path.join(pdfDir, file);
+          const stat = await fs.promises.stat(filepath);
         
         // Extract order type from filename
         let orderType = 'document';
@@ -83,17 +87,19 @@ router.get("/patients/:patientId/pdfs", requireAuth, async (req: Request, res: R
         else if (file.includes('lab-orders')) orderType = 'lab';
         else if (file.includes('imaging-orders')) orderType = 'imaging';
         
-        return {
-          filename: file,
-          size: stat.size,
-          created: stat.birthtime,
-          downloadUrl: `/api/pdfs/${file}`,
-          viewUrl: `/api/pdfs/${file}/view`,
-          patientId: patientId,
-          orderType: orderType
-        };
-      })
-      .sort((a, b) => b.created.getTime() - a.created.getTime());
+          return {
+            filename: file,
+            size: stat.size,
+            created: stat.birthtime,
+            downloadUrl: `/api/pdfs/${file}`,
+            viewUrl: `/api/pdfs/${file}/view`,
+            patientId: patientId,
+            orderType: orderType
+          };
+        })
+    );
+    
+    files.sort((a, b) => b.created.getTime() - a.created.getTime());
     
     console.log(`📄 [PatientPDFs] Found ${files.length} PDF files for patient ${patientId}`);
     res.json({ files });
