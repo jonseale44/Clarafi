@@ -272,17 +272,6 @@ export function LabResultsMatrix({
     }, 1000); // 1 second debounce
     
     setSaveTimer(timer);
-
-    } catch (error: any) {
-      console.error('🤖 [LabMatrix] GPT review generation error:', error);
-      toast({
-        variant: "destructive",
-        title: "AI Review Failed",
-        description: error.message || "Failed to generate AI review. Please try again.",
-      });
-    } finally {
-      setIsGeneratingGPTReview(false);
-    }
   };
 
   // GPT Review approval handler
