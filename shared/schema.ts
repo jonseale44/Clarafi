@@ -651,6 +651,10 @@ export const gptLabReviewNotes = pgTable("gpt_lab_review_notes", {
   // GPT processing metadata
   gptModel: text("gpt_model").default("gpt-4"), // Track which model was used
   promptVersion: text("prompt_version").default("v1.0"), // Track prompt iterations
+  
+  // Revision tracking
+  revisedBy: integer("revised_by").references(() => users.id), // Who made manual edits
+  revisionReason: text("revision_reason"), // Why manual edits were made
   processingTime: integer("processing_time"), // milliseconds
   tokensUsed: integer("tokens_used"),
   

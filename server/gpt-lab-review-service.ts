@@ -387,6 +387,40 @@ The patient and nurse messages should be identical in content but different in p
   }
 
   /**
+   * Update GPT review content (provider edits)
+   */
+  static async updateGPTReview(reviewId: number, updates: {
+    clinicalReview?: string;
+    patientMessage?: string;
+    nurseMessage?: string;
+    revisedBy: number;
+    revisionReason: string;
+  }): Promise<void> {
+    const updateData: any = {
+      updatedAt: new Date(),
+      revisedBy: updates.revisedBy,
+      revisionReason: updates.revisionReason,
+      status: "revised" // Mark as revised when edited
+    };
+
+    if (updates.clinicalReview !== undefined) {
+      updateData.clinicalReview = updates.clinicalReview;
+    }
+    if (updates.patientMessage !== undefined) {
+      updateData.patientMessage = updates.patientMessage;
+    }
+    if (updates.nurseMessage !== undefined) {
+      updateData.nurseMessage = updates.nurseMessage;
+    }
+
+    await db.update(gptLabReviewNotes)
+      .set(updateData)
+      .where(eq(gptLabReviewNotes.id, reviewId));
+
+    console.log(`🤖 [GPTLabReview] Review ${reviewId} updated by user ${updates.revisedBy}`);
+  }
+
+  /**
    * Approve GPT review for sending
    */
   static async approveGPTReview(reviewId: number, approvedBy: number): Promise<void> {

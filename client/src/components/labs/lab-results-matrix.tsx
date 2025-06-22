@@ -102,6 +102,14 @@ export function LabResultsMatrix({
   const [isApprovingGPTReview, setIsApprovingGPTReview] = useState(false);
   const [showGPTReviewEditor, setShowGPTReviewEditor] = useState(false);
   
+  // Editable review states
+  const [editableReviewId, setEditableReviewId] = useState<number | null>(null);
+  const [editableClinicalReview, setEditableClinicalReview] = useState('');
+  const [editablePatientMessage, setEditablePatientMessage] = useState('');
+  const [editableNurseMessage, setEditableNurseMessage] = useState('');
+  const [reviewSaveStatus, setReviewSaveStatus] = useState<'saved' | 'saving' | 'editing'>('saved');
+  const [saveTimer, setSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -190,6 +198,80 @@ export function LabResultsMatrix({
         title: "AI Review Generated",
         description: `GPT-4.1 has analyzed ${resultIds.length} lab results and generated clinical interpretations.`,
       });
+
+    } catch (error: any) {
+      console.error('🤖 [LabMatrix] GPT review generation error:', error);
+      toast({
+        variant: "destructive",
+        title: "AI Review Failed",
+        description: error.message || "Failed to generate AI review. Please try again.",
+      });
+    } finally {
+      setIsGeneratingGPTReview(false);
+    }
+  };
+
+  // Toggle edit mode for GPT review
+  const toggleEditMode = (reviewId: number) => {
+    if (editableReviewId === reviewId) {
+      // Exit edit mode
+      setEditableReviewId(null);
+      setReviewSaveStatus('saved');
+    } else {
+      // Enter edit mode
+      setEditableReviewId(reviewId);
+      setEditableClinicalReview(generatedGPTReview?.clinicalReview || '');
+      setEditablePatientMessage(generatedGPTReview?.patientMessage || '');
+      setEditableNurseMessage(generatedGPTReview?.nurseMessage || '');
+      setReviewSaveStatus('editing');
+    }
+  };
+
+  // Debounced save function for GPT review edits
+  const debouncedSaveReview = (field: string, value: string) => {
+    setReviewSaveStatus('saving');
+    
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+    
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/gpt-lab-review/update', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reviewId: editableReviewId,
+            [field]: value,
+            revisionReason: 'Provider manual edit'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save review changes');
+        }
+
+        setReviewSaveStatus('saved');
+        
+        // Update the generatedGPTReview state to reflect changes
+        setGeneratedGPTReview(prev => ({
+          ...prev,
+          [field]: value,
+          status: 'revised'
+        }));
+
+      } catch (error) {
+        console.error('Error saving review changes:', error);
+        setReviewSaveStatus('editing');
+        toast({
+          variant: "destructive",
+          title: "Save Failed",
+          description: "Failed to save review changes. Please try again.",
+        });
+      }
+    }, 1000); // 1 second debounce
+    
+    setSaveTimer(timer);
 
     } catch (error: any) {
       console.error('🤖 [LabMatrix] GPT review generation error:', error);
@@ -1258,52 +1340,107 @@ export function LabResultsMatrix({
                     </div>
                     
                     {generatedGPTReview && (
-                      <div className="space-y-3 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                      <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">🤖</span>
                             <span className="font-medium text-blue-800">AI Clinical Review</span>
                             <Badge variant="outline" className="text-xs">{generatedGPTReview.status}</Badge>
+                            {editableReviewId === generatedGPTReview.id && (
+                              <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                {reviewSaveStatus === 'saving' ? 'Saving...' : reviewSaveStatus === 'saved' ? 'Saved' : 'Editing'}
+                              </Badge>
+                            )}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            Generated in {generatedGPTReview.processingTime}ms • {generatedGPTReview.tokensUsed} tokens
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <div className="p-3 bg-white border border-blue-200 rounded">
-                            <Label className="text-sm font-medium text-blue-700">Clinical Interpretation</Label>
-                            <p className="text-sm text-gray-700 mt-1">{generatedGPTReview.clinicalReview}</p>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="p-3 bg-white border border-green-200 rounded">
-                              <Label className="text-sm font-medium text-green-700">Patient Message</Label>
-                              <p className="text-sm text-gray-700 mt-1">{generatedGPTReview.patientMessage}</p>
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs text-gray-500">
+                              Generated in {generatedGPTReview.processingTime}ms • {generatedGPTReview.tokensUsed} tokens
                             </div>
-                            
-                            <div className="p-3 bg-white border border-orange-200 rounded">
-                              <Label className="text-sm font-medium text-orange-700">Nurse Message</Label>
-                              <p className="text-sm text-gray-700 mt-1">{generatedGPTReview.nurseMessage}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 pt-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleApproveGPTReview(generatedGPTReview.id)}
-                              disabled={isApprovingGPTReview || generatedGPTReview.status === 'approved'}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              {isApprovingGPTReview ? 'Approving...' : 'Approve & Send'}
-                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setShowGPTReviewEditor(true)}
-                              className="border-blue-200 text-blue-700"
+                              onClick={() => toggleEditMode(generatedGPTReview.id)}
+                              className="text-xs"
                             >
-                              Edit Review
+                              {editableReviewId === generatedGPTReview.id ? 'Exit Edit' : 'Edit Review'}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {/* Clinical Interpretation */}
+                          <div className="p-3 bg-white border border-blue-200 rounded">
+                            <Label className="text-sm font-medium text-blue-700 mb-2 block">Clinical Interpretation</Label>
+                            {editableReviewId === generatedGPTReview.id ? (
+                              <Textarea
+                                value={editableClinicalReview}
+                                onChange={(e) => {
+                                  setEditableClinicalReview(e.target.value);
+                                  debouncedSaveReview('clinicalReview', e.target.value);
+                                }}
+                                className="text-sm min-h-[60px] resize-none"
+                                placeholder="Enter clinical interpretation..."
+                              />
+                            ) : (
+                              <p className="text-sm text-gray-700">{generatedGPTReview.clinicalReview}</p>
+                            )}
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* Patient Message */}
+                            <div className="p-3 bg-white border border-green-200 rounded">
+                              <Label className="text-sm font-medium text-green-700 mb-2 block">Patient Message</Label>
+                              {editableReviewId === generatedGPTReview.id ? (
+                                <Textarea
+                                  value={editablePatientMessage}
+                                  onChange={(e) => {
+                                    setEditablePatientMessage(e.target.value);
+                                    debouncedSaveReview('patientMessage', e.target.value);
+                                  }}
+                                  className="text-sm min-h-[80px] resize-none"
+                                  placeholder="Enter patient message..."
+                                />
+                              ) : (
+                                <p className="text-sm text-gray-700">{generatedGPTReview.patientMessage}</p>
+                              )}
+                            </div>
+                            
+                            {/* Nurse Message */}
+                            <div className="p-3 bg-white border border-orange-200 rounded">
+                              <Label className="text-sm font-medium text-orange-700 mb-2 block">Nurse Message</Label>
+                              {editableReviewId === generatedGPTReview.id ? (
+                                <Textarea
+                                  value={editableNurseMessage}
+                                  onChange={(e) => {
+                                    setEditableNurseMessage(e.target.value);
+                                    debouncedSaveReview('nurseMessage', e.target.value);
+                                  }}
+                                  className="text-sm min-h-[80px] resize-none"
+                                  placeholder="Enter nurse message..."
+                                />
+                              ) : (
+                                <p className="text-sm text-gray-700">{generatedGPTReview.nurseMessage}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                        
+                        <div className="flex justify-between items-center pt-3 border-t border-blue-200">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            {generatedGPTReview.status === 'revised' && (
+                              <span>Last edited by provider</span>
+                            )}
+                            {editableReviewId === generatedGPTReview.id && reviewSaveStatus === 'saved' && (
+                              <span className="text-green-600">Changes saved automatically</span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Approve & Send
                             </Button>
                             <Button
                               variant="outline"
@@ -1314,6 +1451,7 @@ export function LabResultsMatrix({
                               Dismiss
                             </Button>
                           </div>
+                        </div>
                         </div>
                       </div>
                     )}
