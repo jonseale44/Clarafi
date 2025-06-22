@@ -54,21 +54,24 @@ export class AttachmentChartProcessor {
 
       console.log(`📋 [AttachmentChartProcessor] Processing ${extractedContent.documentType} document`);
 
-      // Process based on document type
+      // Process ALL documents for vitals extraction (not just H&P)
+      console.log(`📋 [AttachmentChartProcessor] Processing document type: ${extractedContent.documentType || 'unknown'}`);
+      
+      // Try to extract vitals from any medical document
+      await this.processDocumentForVitals(attachment, extractedContent);
+      
+      // Process specific document types for additional data
       switch (extractedContent.documentType) {
-        case 'H&P':
-          await this.processHPDocument(attachment, extractedContent);
-          break;
         case 'lab_results':
-          // Future: process lab results
+          // Future: process lab results for specific lab values
           console.log(`📋 [AttachmentChartProcessor] Lab results processing not yet implemented`);
           break;
         case 'discharge_summary':
-          // Future: process discharge summaries
+          // Future: process discharge summaries for medications/diagnoses
           console.log(`📋 [AttachmentChartProcessor] Discharge summary processing not yet implemented`);
           break;
         default:
-          console.log(`📋 [AttachmentChartProcessor] No processing rules for document type: ${extractedContent.documentType}`);
+          console.log(`📋 [AttachmentChartProcessor] Generic document processing completed`);
       }
 
     } catch (error) {
@@ -77,10 +80,10 @@ export class AttachmentChartProcessor {
   }
 
   /**
-   * Process H&P document for vitals extraction
+   * Process any medical document for vitals extraction
    */
-  private async processHPDocument(attachment: any, extractedContent: any): Promise<void> {
-    console.log(`🩺 [AttachmentChartProcessor] Extracting vitals from H&P document`);
+  private async processDocumentForVitals(attachment: any, extractedContent: any): Promise<void> {
+    console.log(`🩺 [AttachmentChartProcessor] Extracting vitals from medical document (${extractedContent.documentType || 'unknown type'})`);
 
     if (!extractedContent.extractedText) {
       console.log(`🩺 [AttachmentChartProcessor] No extracted text available for vitals parsing`);
@@ -105,10 +108,11 @@ export class AttachmentChartProcessor {
         };
       }
 
-      // Use enhanced vitals parser for H&P documents
-      const vitalsResult = await this.parseVitalsFromHPText(
+      // Use enhanced vitals parser for any medical document
+      const vitalsResult = await this.parseVitalsFromMedicalText(
         extractedContent.extractedText, 
-        patientContext
+        patientContext,
+        extractedContent.documentType || 'unknown'
       );
 
       if (vitalsResult.success && vitalsResult.data) {
@@ -125,31 +129,32 @@ export class AttachmentChartProcessor {
 
         console.log(`✅ [AttachmentChartProcessor] Vitals saved to database for patient ${attachment.patientId}`);
       } else {
-        console.log(`📋 [AttachmentChartProcessor] No vitals found in H&P document or parsing failed`);
+        console.log(`📋 [AttachmentChartProcessor] No vitals found in document or parsing failed`);
         if (vitalsResult.errors) {
           console.log(`📋 [AttachmentChartProcessor] Parsing errors:`, vitalsResult.errors);
         }
       }
 
     } catch (error) {
-      console.error(`📋 [AttachmentChartProcessor] Error extracting vitals from H&P:`, error);
+      console.error(`📋 [AttachmentChartProcessor] Error extracting vitals from document:`, error);
     }
   }
 
   /**
-   * Enhanced vitals parsing specifically for H&P documents
+   * Enhanced vitals parsing for any medical document
    * Extracts date context and handles full document text
    */
-  private async parseVitalsFromHPText(
+  private async parseVitalsFromMedicalText(
     fullText: string, 
-    patientContext?: { age?: number; gender?: string }
+    patientContext?: { age?: number; gender?: string },
+    documentType?: string
   ): Promise<any> {
-    console.log(`🩺 [AttachmentChartProcessor] Parsing vitals from H&P text (${fullText.length} characters)`);
+    console.log(`🩺 [AttachmentChartProcessor] Parsing vitals from ${documentType || 'medical'} document (${fullText.length} characters)`);
 
-    // Enhanced prompt for H&P document processing
-    const prompt = `You are a medical AI assistant that extracts vital signs from H&P (History & Physical) documents.
+    // Enhanced prompt for any medical document processing
+    const prompt = `You are a medical AI assistant that extracts vital signs from medical documents of any type.
 
-Analyze this H&P document text and extract vital signs along with their date context. Return ONLY a valid JSON object:
+Analyze this medical document text and extract vital signs along with their date context. Return ONLY a valid JSON object:
 
 {
   "systolicBp": number or null,
@@ -168,8 +173,8 @@ Analyze this H&P document text and extract vital signs along with their date con
   "warnings": ["array of critical value warnings"]
 }
 
-CRITICAL RULES FOR H&P DOCUMENTS:
-- Look for vitals in "Physical Exam", "Vital Signs", "Objective" sections
+CRITICAL RULES FOR MEDICAL DOCUMENTS:
+- Look for vitals in ANY section: "Physical Exam", "Vital Signs", "Objective", "Assessment", "Nursing Notes", "Progress Notes", etc.
 - Convert units: °C to °F, kg to lbs, cm to inches
 - Extract visit date from document headers, encounter dates, or clinical context
 - If multiple dates present, use the date most likely associated with the vital signs
@@ -179,10 +184,12 @@ CRITICAL RULES FOR H&P DOCUMENTS:
 - Return null for any values not found
 - Flag critical values in warnings array
 - Use dateConfidence to indicate how certain you are about the extracted date
+- EXTRACT VITALS FROM ANY TYPE OF MEDICAL DOCUMENT (H&P, Progress Notes, Nursing Notes, Discharge Summaries, etc.)
 
 Patient context: ${patientContext ? `Age ${patientContext.age}, Gender ${patientContext.gender}` : 'Unknown'}
+Document type: ${documentType || 'Unknown'}
 
-H&P Document Text:
+Medical Document Text:
 ${fullText}`;
 
     try {
@@ -204,7 +211,7 @@ ${fullText}`;
         };
       }
 
-      console.log(`🩺 [AttachmentChartProcessor] Raw H&P vitals response:`, content);
+      console.log(`🩺 [AttachmentChartProcessor] Raw medical document vitals response:`, content);
 
       let parsedData;
       try {
@@ -255,7 +262,7 @@ ${fullText}`;
       };
 
     } catch (error) {
-      console.error(`❌ [AttachmentChartProcessor] H&P vitals parsing error:`, error);
+      console.error(`❌ [AttachmentChartProcessor] Medical document vitals parsing error:`, error);
       return {
         success: false,
         errors: [error instanceof Error ? error.message : "Unknown error"],
@@ -290,7 +297,8 @@ ${fullText}`;
       }
 
       // Build source notes
-      const sourceNotes = `Extracted from H&P document (Confidence: ${vitalsResult.confidence}%)`;
+      const docType = extractedContent?.documentType || 'medical document';
+      const sourceNotes = `Extracted from ${docType} (Confidence: ${vitalsResult.confidence}%)`;
       
       const vitalsEntry = {
         patientId: patientId,

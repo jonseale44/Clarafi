@@ -537,13 +537,12 @@ export function VitalsFlowsheet({
                       {entry.encounterContext === 'current' && (
                         <div className="text-xs text-green-600 font-medium">Current</div>
                       )}
-                      {entry.sourceType && (
+                      {entry.sourceType && entry.sourceType !== 'manual_entry' && (
                         <div className="mt-1">
-                          <SourceIndicator 
-                            sourceType={entry.sourceType}
-                            confidence={entry.sourceConfidence ? parseFloat(entry.sourceConfidence) : undefined}
-                            size="xs"
-                          />
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                            {entry.sourceType === 'attachment_extracted' ? 'Doc Extract' : entry.sourceType}
+                            {entry.sourceConfidence && ` ${Math.round(parseFloat(entry.sourceConfidence) * 100)}%`}
+                          </Badge>
                         </div>
                       )}
                     </TableHead>
