@@ -96,6 +96,12 @@ export function LabResultsMatrix({
     urgentContact: false
   });
   
+  // GPT Review states
+  const [isGeneratingGPTReview, setIsGeneratingGPTReview] = useState(false);
+  const [generatedGPTReview, setGeneratedGPTReview] = useState<any>(null);
+  const [isApprovingGPTReview, setIsApprovingGPTReview] = useState(false);
+  const [showGPTReviewEditor, setShowGPTReviewEditor] = useState(false);
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -110,6 +116,131 @@ export function LabResultsMatrix({
     queryKey: ['/api/users'],
     enabled: isReviewPanelOpen
   });
+
+  // GPT Review generation handler
+  const handleGenerateGPTReview = async () => {
+    if (selectedDates.size === 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "No Selection",
+        description: "Please select lab results to generate an AI review.",
+      });
+      return;
+    }
+
+    setIsGeneratingGPTReview(true);
+    
+    try {
+      // Collect all selected result IDs (same logic as review button)
+      const resultIds: number[] = [];
+      
+      if (selectedDates.size > 0) {
+        selectedDates.forEach(selectedDisplayDate => {
+          matrixData.forEach(test => {
+            const matchingResults = test.results.filter(result => {
+              const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+              return resultDisplayDate === selectedDisplayDate;
+            });
+            resultIds.push(...matchingResults.map(r => r.id as number));
+          });
+        });
+      }
+      
+      if (selectedTestRows.size > 0) {
+        selectedTestRows.forEach(testName => {
+          const test = matrixData.find(t => t.testName === testName);
+          if (test) {
+            resultIds.push(...test.results.map(r => r.id as number));
+          }
+        });
+      }
+      
+      if (selectedPanels.size > 0) {
+        selectedPanels.forEach(panelName => {
+          const panelTests = groupedData[panelName] || [];
+          panelTests.forEach(test => {
+            resultIds.push(...test.results.map(r => r.id as number));
+          });
+        });
+      }
+
+      console.log(`🤖 [LabMatrix] Generating GPT review for ${resultIds.length} results:`, resultIds);
+
+      const response = await fetch('/api/gpt-lab-review/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patientId,
+          resultIds: resultIds,
+          encounterId: undefined // Will be determined by the service if needed
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to generate GPT review');
+      }
+
+      const result = await response.json();
+      console.log('🤖 [LabMatrix] GPT review generated:', result);
+      
+      setGeneratedGPTReview(result.data.review);
+      
+      toast({
+        title: "AI Review Generated",
+        description: `GPT-4.1 has analyzed ${resultIds.length} lab results and generated clinical interpretations.`,
+      });
+
+    } catch (error: any) {
+      console.error('🤖 [LabMatrix] GPT review generation error:', error);
+      toast({
+        variant: "destructive",
+        title: "AI Review Failed",
+        description: error.message || "Failed to generate AI review. Please try again.",
+      });
+    } finally {
+      setIsGeneratingGPTReview(false);
+    }
+  };
+
+  // GPT Review approval handler
+  const handleApproveGPTReview = async (reviewId: number) => {
+    setIsApprovingGPTReview(true);
+    
+    try {
+      const response = await fetch('/api/gpt-lab-review/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewId })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to approve GPT review');
+      }
+
+      // Update the review status
+      setGeneratedGPTReview((prev: any) => ({
+        ...prev,
+        status: 'approved'
+      }));
+      
+      toast({
+        title: "AI Review Approved",
+        description: "The AI-generated review has been approved and can now be sent to patients and nurses.",
+      });
+
+    } catch (error: any) {
+      console.error('🤖 [LabMatrix] GPT review approval error:', error);
+      toast({
+        variant: "destructive",
+        title: "Approval Failed",
+        description: error.message || "Failed to approve AI review. Please try again.",
+      });
+    } finally {
+      setIsApprovingGPTReview(false);
+    }
+  };
 
   // Review mutation
   const reviewMutation = useMutation({
@@ -1095,6 +1226,97 @@ export function LabResultsMatrix({
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* GPT Lab Review Section */}
+                  <div className="border-t pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+                        <Label className="font-medium text-blue-800">AI-Powered Lab Review</Label>
+                        <Badge variant="secondary" className="text-xs">GPT-4.1</Badge>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateGPTReview}
+                        disabled={isGeneratingGPTReview}
+                        className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                      >
+                        {isGeneratingGPTReview ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-lg">🤖</span>
+                            Generate AI Review
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {generatedGPTReview && (
+                      <div className="space-y-3 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🤖</span>
+                            <span className="font-medium text-blue-800">AI Clinical Review</span>
+                            <Badge variant="outline" className="text-xs">{generatedGPTReview.status}</Badge>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Generated in {generatedGPTReview.processingTime}ms • {generatedGPTReview.tokensUsed} tokens
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="p-3 bg-white border border-blue-200 rounded">
+                            <Label className="text-sm font-medium text-blue-700">Clinical Interpretation</Label>
+                            <p className="text-sm text-gray-700 mt-1">{generatedGPTReview.clinicalReview}</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="p-3 bg-white border border-green-200 rounded">
+                              <Label className="text-sm font-medium text-green-700">Patient Message</Label>
+                              <p className="text-sm text-gray-700 mt-1">{generatedGPTReview.patientMessage}</p>
+                            </div>
+                            
+                            <div className="p-3 bg-white border border-orange-200 rounded">
+                              <Label className="text-sm font-medium text-orange-700">Nurse Message</Label>
+                              <p className="text-sm text-gray-700 mt-1">{generatedGPTReview.nurseMessage}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleApproveGPTReview(generatedGPTReview.id)}
+                              disabled={isApprovingGPTReview || generatedGPTReview.status === 'approved'}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              {isApprovingGPTReview ? 'Approving...' : 'Approve & Send'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowGPTReviewEditor(true)}
+                              className="border-blue-200 text-blue-700"
+                            >
+                              Edit Review
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setGeneratedGPTReview(null)}
+                              className="text-gray-600"
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}

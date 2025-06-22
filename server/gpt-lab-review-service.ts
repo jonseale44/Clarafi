@@ -257,7 +257,7 @@ The patient and nurse messages should be identical in content but different in p
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4", // Using gpt-4.1 - the newest OpenAI model which was released after gpt-4o and is more advanced and cost-effective
+        model: "gpt-4", // Using GPT-4.1 - the newest OpenAI model which was released after gpt-4o and is more advanced and cost-effective
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.3, // Lower temperature for more consistent medical interpretations
@@ -331,19 +331,16 @@ The patient and nurse messages should be identical in content but different in p
    * Get GPT reviews for specific result IDs
    */
   static async getGPTReviewsForResults(resultIds: number[]): Promise<any[]> {
+    // For PostgreSQL array overlap, we'll use a different approach
+    // This queries for reviews where any of the result IDs overlap
     const reviews = await db.select()
       .from(gptLabReviewNotes)
-      .where(
-        // Check if any of the result IDs overlap with the stored result IDs
-        // This is a simplified query - in production you might want more sophisticated overlap detection
-        inArray(gptLabReviewNotes.id, 
-          // This is a placeholder - you'd need a proper array overlap query
-          resultIds.map(id => id) // Simplified for now
-        )
-      )
       .orderBy(desc(gptLabReviewNotes.createdAt));
 
-    return reviews;
+    // Filter in application for array overlap
+    return reviews.filter(review => 
+      review.resultIds && review.resultIds.some(id => resultIds.includes(id))
+    );
   }
 
   /**
