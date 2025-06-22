@@ -55,6 +55,12 @@ interface VitalsEntry {
   alerts?: string[];
   parsedFromText?: boolean;
   originalText?: string;
+  // Source tracking fields
+  sourceType?: string;
+  sourceConfidence?: string;
+  sourceNotes?: string;
+  extractedFromAttachmentId?: number;
+  enteredBy?: number;
 }
 
 interface Patient {
@@ -530,6 +536,15 @@ export function VitalsFlowsheet({
                       )}
                       {entry.encounterContext === 'current' && (
                         <div className="text-xs text-green-600 font-medium">Current</div>
+                      )}
+                      {entry.sourceType && (
+                        <div className="mt-1">
+                          <SourceIndicator 
+                            sourceType={entry.sourceType}
+                            confidence={entry.sourceConfidence ? parseFloat(entry.sourceConfidence) : undefined}
+                            size="xs"
+                          />
+                        </div>
                       )}
                     </TableHead>
                   ))}
