@@ -82,7 +82,7 @@ export class LabOrderBackgroundProcessor {
           const [patientId, encounterId] = key.split('-').map(Number);
           try {
             console.log(`🔄 [LabBackground] Processing ${orderGroup.length} orders for patient ${patientId}, encounter ${encounterId}`);
-            await LabOrderProcessor.processSignedLabOrders(patientId, encounterId);
+            await LabOrderProcessor.processSignedLabOrders(patientId, encounterId, "mock_service");
             console.log(`✅ [LabBackground] Successfully processed orders for patient ${patientId}, encounter ${encounterId}`);
           } catch (error) {
             console.error(`❌ [LabBackground] Failed to process orders for patient ${patientId}, encounter ${encounterId}:`, error);
