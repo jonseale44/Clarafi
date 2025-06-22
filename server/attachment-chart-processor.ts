@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import { db } from "./db.js";
 import { VitalsParserService } from "./vitals-parser-service.js";
 import { 
@@ -15,12 +16,14 @@ import { eq } from "drizzle-orm";
  */
 export class AttachmentChartProcessor {
   private vitalsParser: VitalsParserService;
-  private openai: any;
+  private openai: OpenAI;
 
   constructor() {
     this.vitalsParser = new VitalsParserService();
-    // Access OpenAI instance for enhanced H&P processing
-    this.openai = this.vitalsParser.openai;
+    // Initialize OpenAI for enhanced H&P processing
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
   }
 
   /**
