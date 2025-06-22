@@ -607,7 +607,81 @@ export const labResults = pgTable("lab_results", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-
+// GPT Lab Review Notes - AI-powered clinical interpretations
+export const gptLabReviewNotes = pgTable("gpt_lab_review_notes", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id),
+  
+  // Lab results being reviewed
+  resultIds: integer("result_ids").array().notNull(), // Array of lab result IDs
+  
+  // GPT-generated content
+  clinicalReview: text("clinical_review").notNull(), // 2-3 sentence clinical interpretation
+  patientMessage: text("patient_message").notNull(), // Message for patient in lay terms
+  nurseMessage: text("nurse_message").notNull(), // Message for nurse calling patient
+  
+  // Clinical context used
+  patientContext: jsonb("patient_context").$type<{
+    demographics: {
+      age: number;
+      gender: string;
+      mrn: string;
+    };
+    activeProblems: string[];
+    currentMedications: Array<{
+      name: string;
+      dosage: string;
+      frequency: string;
+    }>;
+    allergies: Array<{
+      allergen: string;
+      reaction: string;
+      severity: string;
+    }>;
+    recentSOAP: string;
+    priorLabResults: Array<{
+      testName: string;
+      value: string;
+      date: string;
+      abnormalFlag?: string;
+    }>;
+  }>(),
+  
+  // GPT processing metadata
+  gptModel: text("gpt_model").default("gpt-4"), // Track which model was used
+  promptVersion: text("prompt_version").default("v1.0"), // Track prompt iterations
+  processingTime: integer("processing_time"), // milliseconds
+  tokensUsed: integer("tokens_used"),
+  
+  // Review workflow
+  status: text("status").default("draft"), // 'draft', 'pending_approval', 'approved', 'sent', 'archived'
+  generatedBy: integer("generated_by").references(() => users.id).notNull(), // Provider who requested
+  reviewedBy: integer("reviewed_by").references(() => users.id), // Provider who approved
+  generatedAt: timestamp("generated_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+  
+  // Message delivery tracking
+  patientMessageSent: boolean("patient_message_sent").default(false),
+  nurseMessageSent: boolean("nurse_message_sent").default(false),
+  patientMessageSentAt: timestamp("patient_message_sent_at"),
+  nurseMessageSentAt: timestamp("nurse_message_sent_at"),
+  
+  // Audit trail
+  revisionHistory: jsonb("revision_history").default([]).$type<Array<{
+    revisedAt: string;
+    revisedBy: number;
+    changes: {
+      clinicalReview?: { old: string; new: string };
+      patientMessage?: { old: string; new: string };
+      nurseMessage?: { old: string; new: string };
+    };
+    reason: string;
+  }>>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // Imaging Orders
 export const imagingOrders = pgTable("imaging_orders", {

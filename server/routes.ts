@@ -28,6 +28,7 @@ import labEntryRoutes from "./lab-entry-routes";
 import labWorkflowRoutes from "./lab-workflow-routes";
 import labCommunicationRoutes from "./lab-communication-routes";
 import labReviewRoutes from "./lab-review-routes";
+import gptLabReviewRoutes from "./gpt-lab-review-routes";
 import labSimulatorRoutes from "./lab-simulator-routes";
 import labStatusDashboardRoutes from "./lab-status-dashboard-routes";
 import { externalLabMockRouter } from "./external-lab-mock-service";
@@ -3467,6 +3468,7 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api/lab-workflow", labWorkflowRoutes);
   app.use("/api/lab-communication", labCommunicationRoutes);
   app.use("/api/lab-review", labReviewRoutes);
+  app.use("/api/gpt-lab-review", gptLabReviewRoutes);
   app.use("/api/lab-simulator", labSimulatorRoutes);
   app.use("/api/lab-status", labStatusDashboardRoutes);
 
