@@ -1019,6 +1019,7 @@ export const patientsRelations = relations(patients, ({ many }) => ({
   imagingOrders: many(imagingOrders),
   imagingResults: many(imagingResults),
   orders: many(orders),
+  attachments: many(patientAttachments),
 }));
 
 export const encountersRelations = relations(encounters, ({ one, many }) => ({
@@ -1044,6 +1045,7 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
   labOrders: many(labOrders),
   imagingOrders: many(imagingOrders),
   orders: many(orders),
+  attachments: many(patientAttachments),
 }));
 
 export const appointmentsRelations = relations(appointments, ({ one, many }) => ({
@@ -1473,3 +1475,61 @@ export const insertPatientOrderPreferencesSchema = createInsertSchema(patientOrd
 
 export type PatientOrderPreferences = typeof patientOrderPreferences.$inferSelect;
 export type InsertPatientOrderPreferences = z.infer<typeof insertPatientOrderPreferencesSchema>;
+
+// Patient Attachments
+export const patientAttachments = pgTable("patient_attachments", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id), // Optional encounter association
+  
+  // File metadata
+  fileName: text("file_name").notNull(),
+  originalFileName: text("original_file_name").notNull(),
+  fileSize: integer("file_size").notNull(), // bytes
+  mimeType: text("mime_type").notNull(),
+  fileExtension: text("file_extension").notNull(),
+  
+  // Storage information
+  filePath: text("file_path").notNull(),
+  thumbnailPath: text("thumbnail_path"), // For images/PDFs
+  
+  // Categorization
+  category: text("category").notNull().default("general"), // 'lab_results', 'insurance', 'referrals', 'imaging', 'general'
+  title: text("title"), // User-provided title
+  description: text("description"), // User-provided description
+  tags: text("tags").array().default([]), // Search tags
+  
+  // Security and access
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  isConfidential: boolean("is_confidential").default(false),
+  accessLevel: text("access_level").default("standard"), // 'public', 'standard', 'restricted'
+  
+  // Status
+  processingStatus: text("processing_status").default("completed"), // 'processing', 'completed', 'failed'
+  virusScanStatus: text("virus_scan_status").default("pending"), // 'pending', 'clean', 'infected'
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPatientAttachmentSchema = createInsertSchema(patientAttachments).pick({
+  patientId: true,
+  encounterId: true,
+  fileName: true,
+  originalFileName: true,
+  fileSize: true,
+  mimeType: true,
+  fileExtension: true,
+  filePath: true,
+  thumbnailPath: true,
+  category: true,
+  title: true,
+  description: true,
+  tags: true,
+  uploadedBy: true,
+  isConfidential: true,
+  accessLevel: true,
+});
+
+export type PatientAttachment = typeof patientAttachments.$inferSelect;
+export type InsertPatientAttachment = z.infer<typeof insertPatientAttachmentSchema>;
