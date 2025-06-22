@@ -256,31 +256,74 @@ Format your response as JSON:
 The patient and nurse messages should be identical in content but different in phrasing - the patient message should be direct to the patient, while the nurse message should be phrased as instructions for what the nurse should tell the patient.`;
 
     try {
+      console.log(`🤖 [GPTLabReview] Sending prompt to GPT-4 (${prompt.length} characters)`);
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4", // Using GPT-4.1 - the newest OpenAI model which was released after gpt-4o and is more advanced and cost-effective
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "You are an experienced physician. Always respond with valid JSON in the exact format requested."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
         temperature: 0.3, // Lower temperature for more consistent medical interpretations
+        max_tokens: 1500, // Ensure enough tokens for complete response
       });
+
+      console.log(`🤖 [GPTLabReview] GPT-4 response received, usage:`, response.usage);
 
       const content = response.choices[0].message.content;
       if (!content) {
+        console.error('🤖 [GPTLabReview] No response content from GPT');
         throw new Error('No response content from GPT');
       }
 
-      const parsedResponse = JSON.parse(content);
+      console.log(`🤖 [GPTLabReview] Raw GPT response (${content.length} chars):`, content.substring(0, 200) + '...');
+
+      // Extract JSON from the response if it's wrapped in markdown or other text
+      let jsonContent = content;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[0];
+      }
+
+      console.log(`🤖 [GPTLabReview] Parsing JSON content:`, jsonContent.substring(0, 200) + '...');
       
+      const parsedResponse = JSON.parse(jsonContent);
+      
+      console.log(`🤖 [GPTLabReview] Successfully parsed GPT response:`, {
+        clinicalReview: parsedResponse.clinicalReview?.length || 0,
+        patientMessage: parsedResponse.patientMessage?.length || 0,
+        nurseMessage: parsedResponse.nurseMessage?.length || 0
+      });
+
       return {
-        clinicalReview: parsedResponse.clinicalReview,
-        patientMessage: parsedResponse.patientMessage,
-        nurseMessage: parsedResponse.nurseMessage,
+        clinicalReview: parsedResponse.clinicalReview || 'No clinical review generated',
+        patientMessage: parsedResponse.patientMessage || 'No patient message generated',
+        nurseMessage: parsedResponse.nurseMessage || 'No nurse message generated',
         processingTime: 0, // Will be calculated by caller
         tokensUsed: response.usage?.total_tokens || 0
       };
 
-    } catch (error) {
-      console.error('🤖 [GPTLabReview] GPT API error:', error);
-      throw new Error(`GPT processing failed: ${error.message}`);
+    } catch (error: any) {
+      console.error('🤖 [GPTLabReview] GPT API error details:', {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        type: error.type,
+        param: error.param,
+        response: error.response?.data
+      });
+      
+      if (error.response?.data) {
+        console.error('🤖 [GPTLabReview] Full OpenAI error response:', error.response.data);
+      }
+      
+      throw new Error(`GPT processing failed: ${error.status || 'Unknown'} ${error.message}`);
     }
   }
 

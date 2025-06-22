@@ -74,8 +74,14 @@ router.post("/generate", async (req: Request, res: Response) => {
       }
     });
 
-  } catch (error) {
-    console.error('🤖 [GPTLabReviewRoutes] Generate review error:', error);
+  } catch (error: any) {
+    console.error('🤖 [GPTLabReviewRoutes] Generate review error details:', {
+      message: error.message,
+      stack: error.stack,
+      patientId,
+      resultIds,
+      requestedBy
+    });
     return APIResponseHandler.error(res, "GPT_REVIEW_FAILED", error.message || "Failed to generate GPT lab review", 500);
   }
 });
