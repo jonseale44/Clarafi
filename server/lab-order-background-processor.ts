@@ -53,7 +53,7 @@ export class LabOrderBackgroundProcessor {
    */
   private static async processOrders() {
     try {
-      // Find signed lab orders that haven't been processed yet (no reference_id)
+      // Step 1: Find signed lab orders that haven't been processed yet (no reference_id)
       const pendingOrders = await db.select()
         .from(orders)
         .where(
@@ -89,8 +89,50 @@ export class LabOrderBackgroundProcessor {
           }
         }
       }
+
+      // Step 2: Process transmitted lab orders that are ready for results (simulate lab processing delay)
+      await this.processTransmittedOrders();
+      
     } catch (error) {
       console.error(`❌ [LabBackground] Error in background processor:`, error);
+    }
+  }
+
+  /**
+   * Process transmitted lab orders that are ready for result generation
+   */
+  private static async processTransmittedOrders() {
+    try {
+      const { labOrders } = await import("@shared/schema");
+      const { eq, and, lt } = await import("drizzle-orm");
+      
+      // Find transmitted orders that are older than 30 seconds (simulating lab processing time)
+      const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
+      
+      const transmittedOrders = await db.select()
+        .from(labOrders)
+        .where(
+          and(
+            eq(labOrders.orderStatus, 'transmitted'),
+            lt(labOrders.transmittedAt, thirtySecondsAgo)
+          )
+        );
+
+      if (transmittedOrders.length > 0) {
+        console.log(`🧪 [LabBackground] Found ${transmittedOrders.length} transmitted orders ready for result generation`);
+        
+        for (const labOrder of transmittedOrders) {
+          try {
+            console.log(`📊 [LabBackground] Generating results for ${labOrder.testName} (ID: ${labOrder.id})`);
+            await LabOrderProcessor.generateLabResultsForOrder(labOrder);
+            console.log(`✅ [LabBackground] Successfully generated results for ${labOrder.testName}`);
+          } catch (error) {
+            console.error(`❌ [LabBackground] Failed to generate results for order ${labOrder.id}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`❌ [LabBackground] Error processing transmitted orders:`, error);
     }
   }
 }

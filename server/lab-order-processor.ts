@@ -100,11 +100,10 @@ export class LabOrderProcessor {
         .set({ referenceId: newLabOrder.id })
         .where(eq(orders.id, order.id));
       
-      // Generate mock results only for mock_service delivery method
-      if (deliveryMethod === "mock_service" || !deliveryMethod) {
-        console.log(`📊 [LabProcessor] Generating mock results for ${order.testName} (delivery: ${deliveryMethod || 'default'})`);
-        await this.generateLabResults(newLabOrder);
-        console.log(`✅ [LabProcessor] Successfully generated mock results for ${order.testName}`);
+      // For mock_service, leave order as "transmitted" initially to simulate pending state
+      if (deliveryMethod === "mock_service") {
+        console.log(`📋 [LabProcessor] Order ${order.testName} transmitted - results will be generated after delay (delivery: ${deliveryMethod})`);
+        console.log(`⏱️ [LabProcessor] Order will remain in 'transmitted' status until background processor generates results`);
       } else {
         console.log(`📋 [LabProcessor] Skipping mock result generation for ${order.testName} (delivery: ${deliveryMethod})`);
         console.log(`📋 [LabProcessor] Order will remain pending until real results are received`);
@@ -116,6 +115,13 @@ export class LabOrderProcessor {
     }
   }
   
+  /**
+   * Public method to generate lab results for a specific lab order (called by background processor)
+   */
+  static async generateLabResultsForOrder(labOrder: any) {
+    return this.generateLabResults(labOrder);
+  }
+
   /**
    * Generate realistic lab results for a lab order
    */
