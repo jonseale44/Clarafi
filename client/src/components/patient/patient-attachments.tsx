@@ -705,11 +705,56 @@ export function PatientAttachments({
                   </div>
                   
                   <div className="flex items-center space-x-2 ml-4">
+                    {/* View Extracted Text Button */}
+                    {attachment.extractedContent?.processingStatus === 'completed' && attachment.extractedContent.extractedText && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-600 hover:text-green-800"
+                            title="View extracted text"
+                          >
+                            <FileSearch className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh]">
+                          <DialogHeader>
+                            <DialogTitle>
+                              Extracted Content: {attachment.extractedContent.aiGeneratedTitle || attachment.originalFileName}
+                            </DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="flex items-center space-x-2">
+                              {attachment.extractedContent.documentType && getDocumentTypeBadge(attachment.extractedContent.documentType)}
+                              <span className="text-sm text-gray-500">
+                                Processed: {formatDistanceToNow(new Date(attachment.extractedContent.processedAt), { addSuffix: true })}
+                              </span>
+                            </div>
+                            <ScrollArea className="h-96 w-full rounded border p-4">
+                              <div className="whitespace-pre-wrap text-sm">
+                                {attachment.extractedContent.extractedText}
+                              </div>
+                            </ScrollArea>
+                            <div className="flex justify-end space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigator.clipboard.writeText(attachment.extractedContent!.extractedText)}
+                              >
+                                Copy Text
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDownload(attachment)}
-                      title="Download"
+                      title="Download original file"
                     >
                       <Download className="h-4 w-4" />
                     </Button>

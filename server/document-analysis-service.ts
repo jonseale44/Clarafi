@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import fs from "fs/promises";
 import path from "path";
 import sharp from "sharp";
-import pdf from "pdf-parse";
+import { fromPath } from "pdf2pic";
 import { db } from "./db.js";
 import { 
   attachmentExtractedContent, 
@@ -163,53 +163,33 @@ export class DocumentAnalysisService {
    * Convert PDF to base64 image
    */
   private async pdfToBase64Image(filePath: string): Promise<string> {
-    // Read PDF file
-    const pdfBuffer = await fs.readFile(filePath);
-    
-    // Try to extract first page as image using sharp (if PDF contains images)
-    // For now, we'll use a simple approach - convert PDF to image using external tools would be ideal
-    // But for MVP, let's try reading the PDF content and creating a text-based image
+    console.log(`📄 [DocumentAnalysis] Converting PDF to image: ${filePath}`);
     
     try {
-      // First attempt: try to extract text and create a simple image representation
-      const pdfData = await pdf(pdfBuffer);
+      // Convert first page of PDF to image
+      const convert = fromPath(filePath, {
+        density: 200,           // Resolution
+        saveFilename: "page",
+        savePath: "/tmp",       // Temporary directory
+        format: "jpeg",
+        width: 2048,
+        height: 2048
+      });
+
+      const result = await convert(1, { responseType: "buffer" });
       
-      if (pdfData.text && pdfData.text.length > 50) {
-        // Create a simple text image for GPT to read
-        const textImage = await this.createTextImage(pdfData.text.substring(0, 4000)); // Limit text
-        return textImage;
+      if (result.buffer) {
+        return result.buffer.toString('base64');
+      } else {
+        throw new Error("No buffer returned from PDF conversion");
       }
-    } catch (pdfError) {
-      console.log(`📄 [DocumentAnalysis] PDF text extraction failed, will need image conversion`);
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
+      throw new Error(`Failed to convert PDF to image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    // Fallback: For now, create a placeholder that indicates PDF processing needed
-    // In production, you'd use pdf2pic or similar to convert PDF pages to images
-    throw new Error("PDF image conversion not yet implemented - needs pdf2pic integration");
   }
 
-  /**
-   * Create a text-based image for OCR
-   */
-  private async createTextImage(text: string): Promise<string> {
-    // Create a simple white background image with text
-    // This is a fallback - ideally PDFs would be converted to actual page images
-    const width = 800;
-    const height = 1000;
-    
-    const textBuffer = await sharp({
-      create: {
-        width,
-        height,
-        channels: 3,
-        background: { r: 255, g: 255, b: 255 }
-      }
-    })
-    .png()
-    .toBuffer();
 
-    return textBuffer.toString('base64');
-  }
 
   /**
    * Analyze document with GPT-4.1 Vision
