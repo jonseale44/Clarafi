@@ -241,8 +241,13 @@ export class DocumentAnalysisService {
       // Combine all pages into a single composite image using ImageMagick
       if (pageFiles.length === 1) {
         // Single page - simple conversion
+        console.log(`📄 [DocumentAnalysis] Processing single page: ${pageFiles[0]}`);
         const imageBuffer = await fs.readFile(pageFiles[0]);
-        const base64String = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+        console.log(`📄 [DocumentAnalysis] Single page buffer size: ${imageBuffer.length} bytes`);
+        
+        const base64String = imageBuffer.toString('base64');
+        console.log(`📄 [DocumentAnalysis] Single page base64 length: ${base64String.length} characters`);
+        console.log(`📄 [DocumentAnalysis] Single page base64 preview: ${base64String.substring(0, 50)}...`);
         
         // Clean up
         await fs.unlink(pageFiles[0]);
@@ -253,10 +258,28 @@ export class DocumentAnalysisService {
         const convertCommand = `convert ${pageFiles.join(' ')} -append "${compositeFile}"`;
         
         console.log(`📄 [DocumentAnalysis] Creating composite image from ${pageFiles.length} pages`);
-        await execAsync(convertCommand);
+        console.log(`📄 [DocumentAnalysis] Convert command: ${convertCommand}`);
+        
+        const { stdout: convertOut, stderr: convertErr } = await execAsync(convertCommand);
+        if (convertOut) console.log(`📄 [DocumentAnalysis] Convert stdout: ${convertOut}`);
+        if (convertErr) console.log(`📄 [DocumentAnalysis] Convert stderr: ${convertErr}`);
+        
+        // Verify composite file was created
+        const compositeStats = await fs.stat(compositeFile);
+        console.log(`📄 [DocumentAnalysis] Composite file created: ${compositeStats.size} bytes`);
         
         const imageBuffer = await fs.readFile(compositeFile);
-        const base64String = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+        console.log(`📄 [DocumentAnalysis] Composite buffer size: ${imageBuffer.length} bytes`);
+        
+        const base64String = imageBuffer.toString('base64');
+        console.log(`📄 [DocumentAnalysis] Composite base64 length: ${base64String.length} characters`);
+        console.log(`📄 [DocumentAnalysis] Composite base64 preview: ${base64String.substring(0, 50)}...`);
+        
+        // Validate base64 format
+        if (!base64String.match(/^[A-Za-z0-9+/]*={0,2}$/)) {
+          console.error(`📄 [DocumentAnalysis] Invalid base64 format detected`);
+          throw new Error('Generated base64 string contains invalid characters');
+        }
         
         // Clean up all files
         await fs.unlink(compositeFile);
@@ -289,7 +312,24 @@ export class DocumentAnalysisService {
   }> {
     console.log(`📄 [DocumentAnalysis] Calling GPT-4.1 Vision for analysis`);
     console.log(`📄 [DocumentAnalysis] Base64 string length: ${imageBase64.length}`);
-    console.log(`📄 [DocumentAnalysis] Base64 prefix: ${imageBase64.substring(0, 50)}...`);
+    console.log(`📄 [DocumentAnalysis] Base64 prefix: ${imageBase64.substring(0, 100)}...`);
+    
+    // Validate base64 format before sending
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(imageBase64)) {
+      console.error(`📄 [DocumentAnalysis] Invalid base64 format - contains invalid characters`);
+      throw new Error('Base64 string validation failed');
+    }
+    
+    // Check for data URL prefix and strip if present
+    let cleanBase64 = imageBase64;
+    if (imageBase64.startsWith('data:image/')) {
+      const base64Index = imageBase64.indexOf('base64,');
+      if (base64Index !== -1) {
+        cleanBase64 = imageBase64.substring(base64Index + 7);
+        console.log(`📄 [DocumentAnalysis] Stripped data URL prefix, new length: ${cleanBase64.length}`);
+      }
+    }
 
     const prompt = `Analyze this medical document and extract all information. Return JSON in this exact format:
 
@@ -315,7 +355,7 @@ Extract ALL visible text including:
 Preserve the original structure and formatting where possible. Be thorough and accurate.`;
 
     try {
-      console.log(`📄 [DocumentAnalysis] Making OpenAI API call...`);
+      console.log(`📄 [DocumentAnalysis] Making OpenAI API call with clean base64...`);
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1",
         messages: [
@@ -329,7 +369,7 @@ Preserve the original structure and formatting where possible. Be thorough and a
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`,
+                  url: `data:image/png;base64,${cleanBase64}`,
                   detail: "high"
                 }
               }
