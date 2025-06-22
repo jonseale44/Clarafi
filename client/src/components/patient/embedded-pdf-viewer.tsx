@@ -18,16 +18,18 @@ import {
   ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
+import { 
+  downloadPDF, 
+  printPDF, 
+  viewPDFInNewTab, 
+  formatFileSize, 
+  getOrderTypeColor, 
+  getOrderTypeFromFilename,
+  getOrderTypeLabel,
+  type PDFFile 
+} from "@/lib/pdf-utils";
 
-interface PDFFile {
-  filename: string;
-  size: number;
-  created: string;
-  downloadUrl: string;
-  patientId?: number;
-  orderType?: string;
-  generatedBy?: string;
-}
+// PDFFile interface now imported from pdf-utils
 
 interface EmbeddedPDFViewerProps {
   patientId: number;
@@ -56,92 +58,8 @@ export function EmbeddedPDFViewer({
     setSelectedPDF(filename);
   };
 
-  const handleDownloadPDF = async (filename: string) => {
-    try {
-      const response = await fetch(`/api/pdfs/${filename}`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        toast({
-          title: "Downloaded",
-          description: `${filename} has been downloaded`,
-        });
-      } else {
-        throw new Error('Download failed');
-      }
-    } catch (error) {
-      toast({
-        title: "Download Failed",
-        description: "Unable to download the PDF file",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handlePrintPDF = async (filename: string) => {
-    try {
-      // Open PDF in new window for printing
-      const response = await fetch(`/api/pdfs/${filename}`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const printWindow = window.open(url, '_blank');
-        
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.print();
-            // Clean up URL after printing
-            setTimeout(() => {
-              window.URL.revokeObjectURL(url);
-            }, 1000);
-          };
-        }
-        
-        toast({
-          title: "Print Ready",
-          description: `${filename} opened for printing`,
-        });
-      } else {
-        throw new Error('Print preparation failed');
-      }
-    } catch (error) {
-      toast({
-        title: "Print Failed",
-        description: "Unable to prepare PDF for printing",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const getOrderTypeColor = (filename: string) => {
-    if (filename.includes('medication')) return 'bg-blue-100 text-blue-800';
-    if (filename.includes('lab')) return 'bg-green-100 text-green-800';
-    if (filename.includes('imaging')) return 'bg-purple-100 text-purple-800';
-    return 'bg-gray-100 text-gray-800';
-  };
-
-  const getOrderTypeFromFilename = (filename: string) => {
-    if (filename.includes('medication')) return 'Medication Order';
-    if (filename.includes('lab')) return 'Lab Order';
-    if (filename.includes('imaging')) return 'Imaging Order';
-    return 'Medical Document';
-  };
+  const handleDownloadPDF = (filename: string) => downloadPDF(filename, toast);
+  const handlePrintPDF = (filename: string) => printPDF(filename, toast);
 
   if (isLoading) {
     return (
@@ -199,8 +117,8 @@ export function EmbeddedPDFViewer({
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge className={getOrderTypeColor(file.filename)}>
-                        {getOrderTypeFromFilename(file.filename)}
+                      <Badge className={getOrderTypeColor(getOrderTypeFromFilename(file.filename))}>
+                        {getOrderTypeLabel(getOrderTypeFromFilename(file.filename))}
                       </Badge>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3 mr-1" />
@@ -298,26 +216,7 @@ export function EmbeddedPDFViewer({
                 </p>
                 <div className="flex gap-2 justify-center">
                   <Button
-                    onClick={() => {
-                      // Use fetch to get the PDF as blob, then create object URL
-                      fetch(`/api/pdfs/${selectedPDF}/view`, {
-                        credentials: 'include'
-                      })
-                      .then(response => response.blob())
-                      .then(blob => {
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
-                        // Clean up after 5 minutes
-                        setTimeout(() => URL.revokeObjectURL(url), 300000);
-                      })
-                      .catch(error => {
-                        toast({
-                          title: "Error",
-                          description: "Failed to open PDF in new tab",
-                          variant: "destructive"
-                        });
-                      });
-                    }}
+                    onClick={() => viewPDFInNewTab(selectedPDF, toast)}
                     className="flex items-center gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />

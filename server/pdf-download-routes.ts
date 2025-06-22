@@ -27,6 +27,9 @@ router.get("/pdfs/:filename", requireAuth, async (req: Request, res: Response) =
       return res.status(400).json({ error: "Invalid filename format" });
     }
     
+    // TODO: Add authorization check - verify user can access this patient's PDF
+    // Extract patient ID from filename and verify user permissions
+    
     // Check if file exists
     if (!(await pdfExists(filename))) {
       console.log(`📄 [PDFDownload] ❌ PDF not found: ${filename}`);

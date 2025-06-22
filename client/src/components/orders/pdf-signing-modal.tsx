@@ -13,12 +13,17 @@ import {
   Loader2
 } from "lucide-react";
 import { format } from "date-fns";
+import { 
+  downloadPDF, 
+  printPDF, 
+  formatFileSize, 
+  getOrderTypeColor, 
+  getOrderTypeLabel,
+  type PDFFile 
+} from "@/lib/pdf-utils";
 
-interface PDFFile {
-  filename: string;
-  size: number;
-  created: string;
-  orderType: string;
+// PDFFile interface now imported from pdf-utils
+interface ExtendedPDFFile extends PDFFile {
   orderIds: number[];
 }
 
@@ -42,7 +47,7 @@ export function PDFSigningModal({
   title = "Sign Orders & Generate Documents"
 }: PDFSigningModalProps) {
   const [selectedPDF, setSelectedPDF] = useState<string | null>(null);
-  const [generatedPDFs, setGeneratedPDFs] = useState<PDFFile[]>([]);
+  const [generatedPDFs, setGeneratedPDFs] = useState<ExtendedPDFFile[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const { toast } = useToast();

@@ -34,6 +34,9 @@ router.get("/pdfs/:filename/view", requireAuth, async (req: Request, res: Respon
       return res.status(400).json({ error: "Invalid filename format" });
     }
     
+    // TODO: Add authorization check - verify user can access this patient's PDF
+    // Extract patient ID from filename and verify user permissions
+    
     // Check if file exists
     if (!(await pdfExists(filename))) {
       console.log(`📄 [PDFView] ❌ PDF not found: ${filename}`);
@@ -77,6 +80,9 @@ router.get("/pdfs/:filename/view", requireAuth, async (req: Request, res: Respon
 router.get("/patients/:patientId/pdfs", requireAuth, async (req: Request, res: Response) => {
   try {
     const patientId = parseInt(req.params.patientId);
+    
+    // TODO: Add authorization check - verify user can access this patient's data
+    // This should check if the authenticated user has permission to view this patient's PDFs
     
     try {
       await (await import('fs')).promises.access(PDF_CONFIG.STORAGE_DIR);
