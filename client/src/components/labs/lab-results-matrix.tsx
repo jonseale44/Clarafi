@@ -463,18 +463,25 @@ export function LabResultsMatrix({
   }, [dateColumns, matrixData]);
 
   const handleDateClick = (date: string, isShiftClick: boolean) => {
+    console.log('🧪 [LabResultsMatrix] Date clicked:', date, 'isShiftClick:', isShiftClick);
+    
+    // Convert ISO date to display format for consistent matching
+    const displayDate = format(new Date(date), 'yyyy-MM-dd HH:mm');
+    console.log('🧪 [LabResultsMatrix] Converted to display format:', displayDate);
+    
     // Selection behavior for visual highlighting - this should happen first
     const newSelected = new Set(selectedDates);
-    if (newSelected.has(date)) {
-      newSelected.delete(date);
+    if (newSelected.has(displayDate)) {
+      newSelected.delete(displayDate);
     } else {
       if (isShiftClick) {
-        newSelected.add(date);
+        newSelected.add(displayDate);
       } else {
         newSelected.clear();
-        newSelected.add(date);
+        newSelected.add(displayDate);
       }
     }
+    console.log('🧪 [LabResultsMatrix] Updated selected dates:', Array.from(newSelected));
     setSelectedDates(newSelected);
     
     // Note: Auto-review is now only triggered via the Review Selected button
@@ -778,7 +785,7 @@ export function LabResultsMatrix({
                           const resultDateKey = format(new Date(r.date), 'yyyy-MM-dd HH:mm');
                           return resultDateKey === dateCol.displayDate;
                         });
-                        const isDateSelected = selectedDates.has(dateCol.date);
+                        const isDateSelected = selectedDates.has(dateCol.displayDate);
                         
                         let cellClass = "p-3 text-center border-r border-gray-200 transition-colors";
                         if (isDateSelected) {
@@ -853,11 +860,21 @@ export function LabResultsMatrix({
                   // Count results for selected dates (encounters)
                   if (selectedDates.size > 0) {
                     selectedDates.forEach(selectedDisplayDate => {
+                      console.log('🔍 [LabResultsMatrix] Counting results for selected display date:', selectedDisplayDate);
                       matrixData.forEach(test => {
                         const matchingResults = test.results.filter(result => {
                           // Convert result date to display format for comparison
                           const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
-                          return resultDisplayDate === selectedDisplayDate;
+                          const matches = resultDisplayDate === selectedDisplayDate;
+                          if (matches) {
+                            console.log('🔍 [LabResultsMatrix] Found matching result for count:', {
+                              testName: test.testName,
+                              resultId: result.id,
+                              resultDisplayDate,
+                              selectedDisplayDate
+                            });
+                          }
+                          return matches;
                         });
                         totalResults += matchingResults.length;
                       });
