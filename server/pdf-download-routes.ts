@@ -1,4 +1,6 @@
 import { Router, Request, Response } from "express";
+import { validatePDFFilename, getPDFFilePath, pdfExists, getPDFStats } from "./pdf-utils.js";
+
 // Use centralized auth check instead of local middleware
 const requireAuth = (req: any, res: any, next: any) => {
   if (!req.isAuthenticated()) {
@@ -6,8 +8,6 @@ const requireAuth = (req: any, res: any, next: any) => {
   }
   next();
 };
-import path from "path";
-import fs from "fs";
 
 const router = Router();
 
@@ -18,28 +18,34 @@ const router = Router();
 router.get("/pdfs/:filename", requireAuth, async (req: Request, res: Response) => {
   try {
     const filename = req.params.filename;
-    const pdfDir = '/tmp/pdfs';
-    const filepath = path.join(pdfDir, filename);
     
     console.log(`📄 [PDFDownload] Request for PDF: ${filename}`);
-    console.log(`📄 [PDFDownload] Full path: ${filepath}`);
     
-    // Use async file operations to avoid blocking
-    try {
-      await fs.promises.access(filepath);
-    } catch {
-      console.log(`📄 [PDFDownload] ❌ PDF not found: ${filepath}`);
+    // Validate filename for security
+    if (!validatePDFFilename(filename)) {
+      console.log(`📄 [PDFDownload] ❌ Invalid filename: ${filename}`);
+      return res.status(400).json({ error: "Invalid filename format" });
+    }
+    
+    // Check if file exists
+    if (!(await pdfExists(filename))) {
+      console.log(`📄 [PDFDownload] ❌ PDF not found: ${filename}`);
       return res.status(404).json({ error: "PDF not found" });
     }
     
-    const stat = await fs.promises.stat(filepath);
+    const stat = await getPDFStats(filename);
+    if (!stat) {
+      return res.status(404).json({ error: "PDF not found" });
+    }
+    
+    const filepath = getPDFFilePath(filename);
     console.log(`📄 [PDFDownload] ✅ PDF found, size: ${stat.size} bytes`);
     
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Length', stat.size);
     
-    const stream = fs.createReadStream(filepath);
+    const stream = (await import('fs')).createReadStream(filepath);
     stream.pipe(res);
     
     console.log(`📄 [PDFDownload] ✅ PDF download started for: ${filename}`);

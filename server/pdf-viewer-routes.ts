@@ -1,6 +1,12 @@
 import { Router, Request, Response } from "express";
-import path from "path";
-import fs from "fs";
+import { 
+  validatePDFFilename, 
+  getPDFFilePath, 
+  pdfExists, 
+  getPDFStats,
+  getOrderTypeFromFilename,
+  PDF_CONFIG
+} from "./pdf-utils.js";
 
 // Use centralized auth check instead of local middleware
 const requireAuth = (req: any, res: any, next: any) => {
@@ -19,20 +25,27 @@ const router = Router();
 router.get("/pdfs/:filename/view", requireAuth, async (req: Request, res: Response) => {
   try {
     const filename = req.params.filename;
-    const pdfDir = '/tmp/pdfs';
-    const filepath = path.join(pdfDir, filename);
     
     console.log(`📄 [PDFView] Request to view PDF: ${filename}`);
     
-    // Use async file operations to avoid blocking
-    try {
-      await fs.promises.access(filepath);
-    } catch {
-      console.log(`📄 [PDFView] ❌ PDF not found: ${filepath}`);
+    // Validate filename for security
+    if (!validatePDFFilename(filename)) {
+      console.log(`📄 [PDFView] ❌ Invalid filename: ${filename}`);
+      return res.status(400).json({ error: "Invalid filename format" });
+    }
+    
+    // Check if file exists
+    if (!(await pdfExists(filename))) {
+      console.log(`📄 [PDFView] ❌ PDF not found: ${filename}`);
       return res.status(404).json({ error: "PDF not found" });
     }
     
-    const stat = await fs.promises.stat(filepath);
+    const stat = await getPDFStats(filename);
+    if (!stat) {
+      return res.status(404).json({ error: "PDF not found" });
+    }
+    
+    const filepath = getPDFFilePath(filename);
     console.log(`📄 [PDFView] ✅ PDF found for viewing, size: ${stat.size} bytes`);
     
     // Set headers for inline viewing with proper CORS and security
@@ -47,7 +60,7 @@ router.get("/pdfs/:filename/view", requireAuth, async (req: Request, res: Respon
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
     
-    const stream = fs.createReadStream(filepath);
+    const stream = (await import('fs')).createReadStream(filepath);
     stream.pipe(res);
     
     console.log(`📄 [PDFView] ✅ PDF viewing started for: ${filename}`);
@@ -64,28 +77,23 @@ router.get("/pdfs/:filename/view", requireAuth, async (req: Request, res: Respon
 router.get("/patients/:patientId/pdfs", requireAuth, async (req: Request, res: Response) => {
   try {
     const patientId = parseInt(req.params.patientId);
-    const pdfDir = '/tmp/pdfs';
     
     try {
-      await fs.promises.access(pdfDir);
+      await (await import('fs')).promises.access(PDF_CONFIG.STORAGE_DIR);
     } catch {
       return res.json({ files: [] });
     }
     
-    const dirFiles = await fs.promises.readdir(pdfDir);
+    const dirFiles = await (await import('fs')).promises.readdir(PDF_CONFIG.STORAGE_DIR);
     const files = await Promise.all(
       dirFiles
         .filter(file => file.endsWith('.pdf'))
         .filter(file => file.includes(`-${patientId}-`)) // Filter by patient ID in filename
         .map(async file => {
-          const filepath = path.join(pdfDir, file);
-          const stat = await fs.promises.stat(filepath);
+          const stat = await getPDFStats(file);
+          if (!stat) return null;
         
-        // Extract order type from filename
-        let orderType = 'document';
-        if (file.includes('medication-orders')) orderType = 'medication';
-        else if (file.includes('lab-orders')) orderType = 'lab';
-        else if (file.includes('imaging-orders')) orderType = 'imaging';
+          const orderType = getOrderTypeFromFilename(file);
         
           return {
             filename: file,
@@ -97,7 +105,7 @@ router.get("/patients/:patientId/pdfs", requireAuth, async (req: Request, res: R
             orderType: orderType
           };
         })
-    );
+    ).then(results => results.filter(Boolean));
     
     files.sort((a, b) => b.created.getTime() - a.created.getTime());
     
