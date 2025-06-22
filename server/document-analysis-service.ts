@@ -59,10 +59,12 @@ export class DocumentAnalysisService {
 
     console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} queued for processing`);
     
-    // Process immediately in background
-    this.processDocument(attachmentId).catch(error => {
-      console.error(`📄 [DocumentAnalysis] Background processing failed for attachment ${attachmentId}:`, error);
-    });
+    // Process immediately in background with delay to ensure database consistency
+    setTimeout(() => {
+      this.processDocument(attachmentId).catch(error => {
+        console.error(`📄 [DocumentAnalysis] Background processing failed for attachment ${attachmentId}:`, error);
+      });
+    }, 100);
   }
 
   /**
