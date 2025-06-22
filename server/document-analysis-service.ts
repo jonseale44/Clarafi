@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import fs from "fs/promises";
 import path from "path";
 import sharp from "sharp";
-import { fromPath } from "pdf2pic";
+// Removed pdf2pic import - using direct pdftoppm approach
 import { exec } from "child_process";
 import { promisify } from "util";
 
@@ -39,13 +39,9 @@ export class DocumentAnalysisService {
       .from(attachmentExtractedContent)
       .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
-    if (existingQueue && existingQueue.status === 'completed') {
-      console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} already completed, skipping`);
-      return;
-    }
-    
+    // Skip if already successfully processed
     if (existingContent && existingContent.processingStatus === 'completed') {
-      console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} content already processed, skipping`);
+      console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} already processed successfully`);
       return;
     }
 
@@ -102,23 +98,20 @@ export class DocumentAnalysisService {
 
       let imageData: string;
 
-      try {
-        if (attachment.mimeType.startsWith('image/')) {
-          console.log(`📄 [DocumentAnalysis] Processing as image file`);
-          // For images, convert to base64
-          imageData = await this.imageToBase64(attachment.filePath);
-        } else if (attachment.mimeType === 'application/pdf') {
-          console.log(`📄 [DocumentAnalysis] Processing as PDF file`);
-          // For PDFs, convert to image then to base64
-          imageData = await this.pdfToBase64Image(attachment.filePath);
-        } else {
-          throw new Error(`Unsupported file type: ${attachment.mimeType}`);
-        }
-        
-        console.log(`📄 [DocumentAnalysis] Successfully converted file to base64, length: ${imageData.length}`);
-      } catch (conversionError) {
-        console.error(`📄 [DocumentAnalysis] File conversion failed:`, conversionError);
-        throw conversionError;
+      if (attachment.mimeType.startsWith('image/')) {
+        console.log(`📄 [DocumentAnalysis] Processing as image file`);
+        imageData = await this.imageToBase64(attachment.filePath);
+      } else if (attachment.mimeType === 'application/pdf') {
+        console.log(`📄 [DocumentAnalysis] Processing as PDF file`);
+        imageData = await this.pdfToBase64Image(attachment.filePath);
+      } else {
+        throw new Error(`Unsupported file type: ${attachment.mimeType}`);
+      }
+      
+      console.log(`📄 [DocumentAnalysis] Successfully converted file to base64, length: ${imageData.length}`);
+      
+      if (!imageData || imageData.length === 0) {
+        throw new Error("Generated base64 data is empty");
       }
 
       // Process with GPT-4.1 Vision
