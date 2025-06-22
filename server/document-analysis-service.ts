@@ -270,27 +270,57 @@ export class DocumentAnalysisService {
         console.error(`📄 [DocumentAnalysis] PDF conversion error:`, conversionError);
         
         // Try fallback method using poppler-utils directly
-        console.log(`📄 [DocumentAnalysis] Trying fallback conversion method...`);
+        console.log(`📄 [DocumentAnalysis] Trying fallback conversion method with pdftoppm...`);
         try {
-          const outputPath = `/tmp/pdf_convert_${Date.now()}.png`;
-          await execAsync(`pdftoppm -png -f 1 -l 1 -r 150 "${filePath}" "${outputPath.replace('.png', '')}"`);
+          const timestamp = Date.now();
+          const outputPrefix = `/tmp/pdf_convert_${timestamp}`;
           
-          const convertedFile = `${outputPath.replace('.png', '')}-1.png`;
+          console.log(`📄 [DocumentAnalysis] Running pdftoppm command...`);
+          console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
+          console.log(`📄 [DocumentAnalysis] Output prefix: ${outputPrefix}`);
+          
+          const command = `pdftoppm -png -f 1 -l 1 -r 150 "${filePath}" "${outputPrefix}"`;
+          console.log(`📄 [DocumentAnalysis] Command: ${command}`);
+          
+          const { stdout, stderr } = await execAsync(command);
+          console.log(`📄 [DocumentAnalysis] pdftoppm stdout:`, stdout);
+          console.log(`📄 [DocumentAnalysis] pdftoppm stderr:`, stderr);
+          
+          // Check what files were created
+          const { stdout: lsOutput } = await execAsync(`ls -la /tmp/pdf_convert_${timestamp}*`);
+          console.log(`📄 [DocumentAnalysis] Created files:`, lsOutput);
+          
+          // pdftoppm creates files with -01.png suffix for first page
+          const convertedFile = `${outputPrefix}-01.png`;
+          console.log(`📄 [DocumentAnalysis] Looking for file: ${convertedFile}`);
+          
+          // Check if file exists
+          try {
+            await fs.access(convertedFile);
+            console.log(`📄 [DocumentAnalysis] File exists, reading...`);
+          } catch (accessError) {
+            console.error(`📄 [DocumentAnalysis] File does not exist:`, accessError);
+            throw new Error(`Converted file not found: ${convertedFile}`);
+          }
+          
           const imageBuffer = await fs.readFile(convertedFile);
+          console.log(`📄 [DocumentAnalysis] Read file buffer, size: ${imageBuffer.length} bytes`);
           
           // Clean up
           try {
             await fs.unlink(convertedFile);
+            console.log(`📄 [DocumentAnalysis] Cleaned up temporary file`);
           } catch (cleanupError) {
             console.warn(`📄 [DocumentAnalysis] Failed to cleanup fallback file:`, cleanupError);
           }
           
           const base64String = imageBuffer.toString('base64');
-          console.log(`📄 [DocumentAnalysis] Fallback conversion successful, length: ${base64String.length} characters`);
+          console.log(`📄 [DocumentAnalysis] Fallback conversion successful, base64 length: ${base64String.length} characters`);
           return base64String;
           
         } catch (fallbackError) {
-          console.error(`📄 [DocumentAnalysis] Fallback conversion also failed:`, fallbackError);
+          console.error(`📄 [DocumentAnalysis] Fallback conversion failed:`, fallbackError);
+          console.error(`📄 [DocumentAnalysis] Fallback error stack:`, fallbackError instanceof Error ? fallbackError.stack : 'No stack');
           throw new Error(`All PDF conversion methods failed: ${conversionError instanceof Error ? conversionError.message : 'Unknown error'}`);
         }
       }
@@ -417,13 +447,23 @@ Preserve the original structure and formatting where possible. Be thorough and a
     const queueItems = await db.select()
       .from(documentProcessingQueue)
       .where(and(
-        eq(documentProcessingQueue.status, "queued"),
-        db.sql`${documentProcessingQueue.attempts} < 3`
+        eq(documentProcessingQueue.status, "queued")
       ));
 
+    console.log(`📄 [DocumentAnalysis] Found ${queueItems.length} items in queue to process`);
+
     for (const item of queueItems) {
+      console.log(`📄 [DocumentAnalysis] Processing queued item: attachment ${item.attachmentId}`);
       await this.processDocument(item.attachmentId);
     }
+  }
+
+  /**
+   * Manually trigger processing for testing
+   */
+  async reprocessDocument(attachmentId: number): Promise<void> {
+    console.log(`📄 [DocumentAnalysis] Manually reprocessing attachment ${attachmentId}`);
+    await this.processDocument(attachmentId);
   }
 }
 
