@@ -210,12 +210,12 @@ export class DocumentAnalysisService {
       
       // Convert first page of PDF to image
       const convert = fromPath(filePath, {
-        density: 200,           // Resolution
+        density: 150,           // Lower resolution for better compatibility
         saveFilename: "page",
         savePath: "/tmp",       // Temporary directory
-        format: "jpeg",
-        width: 2048,
-        height: 2048
+        format: "png",          // Use PNG instead of JPEG for better quality
+        width: 1600,            // Smaller size for better processing
+        height: 1600
       });
 
       console.log(`📄 [DocumentAnalysis] Starting PDF page conversion...`);
