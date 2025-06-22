@@ -1,0 +1,48 @@
+:22 PM [express] DELETE /api/patients/143 500 in 726ms :: {"message":"update or delete on table …
+10:58:27 PM [express] GET /api/patients/143/encounters 304 in 131ms :: [{"id":386,"patientId":143,"pr…
+10:58:28 PM [express] GET /api/users 304 in 132ms :: [{"id":6,"username":"Jamienurse","email":"jamien…
+❌ [VitalsFlowsheet] Error fetching patient vitals: error: column "entered_by" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getVitalsByPatient (/home/runner/workspace/server/storage.ts:298:12)
+    at async <anonymous> (/home/runner/workspace/server/vitals-flowsheet-routes.ts:44:27) {
+  length: 111,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '370',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+[API Error Failed to fetch patient vitals] VITALS_FETCH_ERROR 
+node:_http_server:351
+    throw new ERR_HTTP_INVALID_STATUS_CODE(originalStatusCode);
+          ^
+
+RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: Failed to fetch patient vitals
+    at ServerResponse.writeHead (node:_http_server:351:11)
+    at ServerResponse.writeHead (/home/runner/workspace/node_modules/on-headers/index.js:44:26)
+    at ServerResponse._implicitHeader (node:_http_server:337:8)
+    at writetop (/home/runner/workspace/node_modules/express-session/index.js:284:15)
+    at ServerResponse.end (/home/runner/workspace/node_modules/express-session/index.js:364:16)
+    at ServerResponse.send (/home/runner/workspace/node_modules/express/lib/response.js:232:10)
+    at ServerResponse.json (/home/runner/workspace/node_modules/express/lib/response.js:278:15)
+    at ServerResponse.res.json (/home/runner/workspace/server/index.ts:20:28)
+    at Function.error (/home/runner/workspace/server/api-response-handler.ts:59:35)
+    at <anonymous> (/home/runner/workspace/server/vitals-flowsheet-routes.ts:61:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  code: 'ERR_HTTP_INVALID_STATUS_CODE'
+}
+
+Node.js v20.18.1
