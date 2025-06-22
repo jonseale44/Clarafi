@@ -30,7 +30,7 @@ export class DocumentAnalysisService {
   async queueDocument(attachmentId: number): Promise<void> {
     console.log(`📄 [DocumentAnalysis] Queuing attachment ${attachmentId} for processing`);
     
-    // Check if already queued or processed
+    // Check if already queued or processed (skip check for reprocessing)
     const [existingQueue] = await db.select()
       .from(documentProcessingQueue)
       .where(eq(documentProcessingQueue.attachmentId, attachmentId));
@@ -39,8 +39,13 @@ export class DocumentAnalysisService {
       .from(attachmentExtractedContent)
       .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
-    if (existingQueue || existingContent) {
-      console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} already queued/processed`);
+    if (existingQueue && existingQueue.status === 'completed') {
+      console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} already completed, skipping`);
+      return;
+    }
+    
+    if (existingContent && existingContent.processingStatus === 'completed') {
+      console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} content already processed, skipping`);
       return;
     }
 
@@ -210,120 +215,60 @@ export class DocumentAnalysisService {
     try {
       // Check if PDF file exists
       await fs.access(filePath);
-      console.log(`📄 [DocumentAnalysis] PDF file exists, proceeding with conversion`);
+      console.log(`📄 [DocumentAnalysis] PDF file exists, proceeding with direct pdftoppm conversion`);
       
-      // Convert first page of PDF to image using different approach
-      const options = {
-        density: 100,           
-        saveFilename: "untitled",
-        savePath: "/tmp",       
-        format: "png",          
-        width: 1200,            
-        height: 1600
-      };
-
-      console.log(`📄 [DocumentAnalysis] Starting PDF page conversion with options:`, options);
+      // Use pdftoppm directly since it's the most reliable method
+      const timestamp = Date.now();
+      const outputPrefix = `/tmp/pdf_convert_${timestamp}`;
       
-      const convert = fromPath(filePath, options);
+      console.log(`📄 [DocumentAnalysis] Running pdftoppm command...`);
+      console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
+      console.log(`📄 [DocumentAnalysis] Output prefix: ${outputPrefix}`);
       
+      const command = `pdftoppm -png -f 1 -l 1 -r 150 "${filePath}" "${outputPrefix}"`;
+      console.log(`📄 [DocumentAnalysis] Command: ${command}`);
+      
+      const { stdout, stderr } = await execAsync(command);
+      console.log(`📄 [DocumentAnalysis] pdftoppm stdout:`, stdout);
+      if (stderr) console.log(`📄 [DocumentAnalysis] pdftoppm stderr:`, stderr);
+      
+      // pdftoppm creates files with -01.png suffix for first page
+      const convertedFile = `${outputPrefix}-01.png`;
+      console.log(`📄 [DocumentAnalysis] Looking for file: ${convertedFile}`);
+      
+      // Check if file exists
       try {
-        // Try different page conversion approaches
-        const result = await convert(1, { responseType: "buffer" });
-        console.log(`📄 [DocumentAnalysis] PDF conversion result:`, {
-          hasBuffer: !!result.buffer,
-          bufferLength: result.buffer?.length || 0,
-          resultKeys: Object.keys(result),
-          resultType: typeof result
-        });
+        await fs.access(convertedFile);
+        console.log(`📄 [DocumentAnalysis] File exists, reading...`);
+      } catch (accessError) {
+        console.error(`📄 [DocumentAnalysis] File does not exist:`, accessError);
         
-        // Check if we got a valid buffer
-        if (result.buffer && Buffer.isBuffer(result.buffer) && result.buffer.length > 0) {
-          const base64String = result.buffer.toString('base64');
-          console.log(`📄 [DocumentAnalysis] PDF converted to base64, length: ${base64String.length} characters`);
-          return base64String;
-        }
-        
-        // If buffer approach failed, try alternative method
-        console.log(`📄 [DocumentAnalysis] Buffer approach failed, trying alternative conversion...`);
-        const altResult = await convert(1);
-        
-        if (altResult && typeof altResult === 'object' && 'path' in altResult) {
-          console.log(`📄 [DocumentAnalysis] Alternative conversion created file at:`, altResult.path);
-          // Read the generated image file
-          const imageBuffer = await fs.readFile(altResult.path);
-          
-          // Clean up temporary file
-          try {
-            await fs.unlink(altResult.path);
-          } catch (cleanupError) {
-            console.warn(`📄 [DocumentAnalysis] Failed to cleanup temp file:`, cleanupError);
-          }
-          
-          const base64String = imageBuffer.toString('base64');
-          console.log(`📄 [DocumentAnalysis] PDF converted via file method, length: ${base64String.length} characters`);
-          return base64String;
-        }
-        
-        throw new Error("Both buffer and file conversion methods failed");
-        
-      } catch (conversionError) {
-        console.error(`📄 [DocumentAnalysis] PDF conversion error:`, conversionError);
-        
-        // Try fallback method using poppler-utils directly
-        console.log(`📄 [DocumentAnalysis] Trying fallback conversion method with pdftoppm...`);
+        // Check what files were actually created
         try {
-          const timestamp = Date.now();
-          const outputPrefix = `/tmp/pdf_convert_${timestamp}`;
-          
-          console.log(`📄 [DocumentAnalysis] Running pdftoppm command...`);
-          console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
-          console.log(`📄 [DocumentAnalysis] Output prefix: ${outputPrefix}`);
-          
-          const command = `pdftoppm -png -f 1 -l 1 -r 150 "${filePath}" "${outputPrefix}"`;
-          console.log(`📄 [DocumentAnalysis] Command: ${command}`);
-          
-          const { stdout, stderr } = await execAsync(command);
-          console.log(`📄 [DocumentAnalysis] pdftoppm stdout:`, stdout);
-          console.log(`📄 [DocumentAnalysis] pdftoppm stderr:`, stderr);
-          
-          // Check what files were created
           const { stdout: lsOutput } = await execAsync(`ls -la /tmp/pdf_convert_${timestamp}*`);
           console.log(`📄 [DocumentAnalysis] Created files:`, lsOutput);
-          
-          // pdftoppm creates files with -01.png suffix for first page
-          const convertedFile = `${outputPrefix}-01.png`;
-          console.log(`📄 [DocumentAnalysis] Looking for file: ${convertedFile}`);
-          
-          // Check if file exists
-          try {
-            await fs.access(convertedFile);
-            console.log(`📄 [DocumentAnalysis] File exists, reading...`);
-          } catch (accessError) {
-            console.error(`📄 [DocumentAnalysis] File does not exist:`, accessError);
-            throw new Error(`Converted file not found: ${convertedFile}`);
-          }
-          
-          const imageBuffer = await fs.readFile(convertedFile);
-          console.log(`📄 [DocumentAnalysis] Read file buffer, size: ${imageBuffer.length} bytes`);
-          
-          // Clean up
-          try {
-            await fs.unlink(convertedFile);
-            console.log(`📄 [DocumentAnalysis] Cleaned up temporary file`);
-          } catch (cleanupError) {
-            console.warn(`📄 [DocumentAnalysis] Failed to cleanup fallback file:`, cleanupError);
-          }
-          
-          const base64String = imageBuffer.toString('base64');
-          console.log(`📄 [DocumentAnalysis] Fallback conversion successful, base64 length: ${base64String.length} characters`);
-          return base64String;
-          
-        } catch (fallbackError) {
-          console.error(`📄 [DocumentAnalysis] Fallback conversion failed:`, fallbackError);
-          console.error(`📄 [DocumentAnalysis] Fallback error stack:`, fallbackError instanceof Error ? fallbackError.stack : 'No stack');
-          throw new Error(`All PDF conversion methods failed: ${conversionError instanceof Error ? conversionError.message : 'Unknown error'}`);
+        } catch (lsError) {
+          console.log(`📄 [DocumentAnalysis] No files created with expected pattern`);
         }
+        
+        throw new Error(`Converted file not found: ${convertedFile}`);
       }
+      
+      const imageBuffer = await fs.readFile(convertedFile);
+      console.log(`📄 [DocumentAnalysis] Read file buffer, size: ${imageBuffer.length} bytes`);
+      
+      // Clean up
+      try {
+        await fs.unlink(convertedFile);
+        console.log(`📄 [DocumentAnalysis] Cleaned up temporary file`);
+      } catch (cleanupError) {
+        console.warn(`📄 [DocumentAnalysis] Failed to cleanup file:`, cleanupError);
+      }
+      
+      const base64String = imageBuffer.toString('base64');
+      console.log(`📄 [DocumentAnalysis] PDF conversion successful, base64 length: ${base64String.length} characters`);
+      return base64String;
+      
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
       console.error(`📄 [DocumentAnalysis] Error details:`, {
@@ -463,7 +408,15 @@ Preserve the original structure and formatting where possible. Be thorough and a
    */
   async reprocessDocument(attachmentId: number): Promise<void> {
     console.log(`📄 [DocumentAnalysis] Manually reprocessing attachment ${attachmentId}`);
-    await this.processDocument(attachmentId);
+    
+    // Force process regardless of current status
+    try {
+      await this.processDocument(attachmentId);
+      console.log(`📄 [DocumentAnalysis] Manual reprocessing completed for attachment ${attachmentId}`);
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] Manual reprocessing failed for attachment ${attachmentId}:`, error);
+      throw error;
+    }
   }
 }
 
