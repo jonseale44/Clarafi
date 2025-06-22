@@ -89,15 +89,30 @@ export function PatientAttachments({
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      console.log('📎 [Frontend] Starting upload for patient:', patientId);
+      console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
+      
       const response = await fetch(`/api/patients/${patientId}/attachments`, {
         method: 'POST',
         body: formData,
       });
+      
+      console.log('📎 [Frontend] Response status:', response.status);
+      console.log('📎 [Frontend] Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      const responseText = await response.text();
+      console.log('📎 [Frontend] Raw response text:', responseText);
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
+        throw new Error(`Upload failed: ${response.status} - ${responseText}`);
       }
-      return response.json();
+      
+      try {
+        return JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('📎 [Frontend] JSON parse error:', parseError);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });

@@ -706,6 +706,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Vitals flowsheet routes (enhanced vitals management)
   app.use("/api/vitals", vitalsFlowsheetRoutes);
+  
+  // Patient attachments routes
+  app.use("/api/patients", patientAttachmentsRoutes);
 
   // Nursing summary routes
   app.use("/api/encounters", nursingSummaryRoutes);

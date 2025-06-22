@@ -92,12 +92,26 @@ async function generateThumbnail(filePath: string, mimeType: string): Promise<st
 
 // Upload attachment
 router.post('/:patientId/attachments', upload.single('file'), async (req: Request, res: Response) => {
+  console.log('📎 [Backend] Upload request received');
+  console.log('📎 [Backend] Patient ID:', req.params.patientId);
+  console.log('📎 [Backend] Auth status:', !!req.isAuthenticated?.());
+  console.log('📎 [Backend] User:', req.user?.id);
+  console.log('📎 [Backend] File info:', req.file ? {
+    filename: req.file.filename,
+    originalname: req.file.originalname,
+    size: req.file.size,
+    mimetype: req.file.mimetype
+  } : 'No file');
+  console.log('📎 [Backend] Request body:', req.body);
+  
   try {
     if (!req.isAuthenticated()) {
+      console.log('📎 [Backend] Authentication failed');
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     if (!req.file) {
+      console.log('📎 [Backend] No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
@@ -127,7 +141,8 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     const validatedData = insertPatientAttachmentSchema.parse(attachmentData);
     const [attachment] = await db.insert(patientAttachments).values(validatedData).returning();
 
-    console.log(`📎 [Attachments] File uploaded: ${req.file.originalname} for patient ${patientId}`);
+    console.log(`📎 [Attachments] File uploaded successfully: ${req.file.originalname} for patient ${patientId}`);
+    console.log(`📎 [Attachments] Attachment created with ID: ${attachment.id}`);
     
     res.status(201).json(attachment);
   } catch (error) {
