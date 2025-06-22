@@ -225,26 +225,35 @@ export class DocumentAnalysisService {
       console.log(`📄 [DocumentAnalysis] pdftoppm stdout:`, stdout);
       if (stderr) console.log(`📄 [DocumentAnalysis] pdftoppm stderr:`, stderr);
       
-      // pdftoppm creates files with -01.png suffix for first page
-      const convertedFile = `${outputPrefix}-01.png`;
+      // pdftoppm can create files with either -1.png or -01.png suffix, check both
+      let convertedFile = `${outputPrefix}-01.png`;
       console.log(`📄 [DocumentAnalysis] Looking for file: ${convertedFile}`);
       
-      // Check if file exists
+      // Check if file exists, try both naming conventions
       try {
         await fs.access(convertedFile);
-        console.log(`📄 [DocumentAnalysis] File exists, reading...`);
+        console.log(`📄 [DocumentAnalysis] File exists (-01 format), reading...`);
       } catch (accessError) {
-        console.error(`📄 [DocumentAnalysis] File does not exist:`, accessError);
+        console.log(`📄 [DocumentAnalysis] -01 format not found, trying -1 format...`);
         
-        // Check what files were actually created
+        // Try alternative naming convention
+        convertedFile = `${outputPrefix}-1.png`;
         try {
-          const { stdout: lsOutput } = await execAsync(`ls -la /tmp/pdf_convert_${timestamp}*`);
-          console.log(`📄 [DocumentAnalysis] Created files:`, lsOutput);
-        } catch (lsError) {
-          console.log(`📄 [DocumentAnalysis] No files created with expected pattern`);
+          await fs.access(convertedFile);
+          console.log(`📄 [DocumentAnalysis] File exists (-1 format), reading...`);
+        } catch (secondAccessError) {
+          console.error(`📄 [DocumentAnalysis] Neither file format found`);
+          
+          // Check what files were actually created
+          try {
+            const { stdout: lsOutput } = await execAsync(`ls -la /tmp/pdf_convert_${timestamp}*`);
+            console.log(`📄 [DocumentAnalysis] Created files:`, lsOutput);
+          } catch (lsError) {
+            console.log(`📄 [DocumentAnalysis] No files created with expected pattern`);
+          }
+          
+          throw new Error(`Converted file not found. Tried: ${outputPrefix}-01.png and ${outputPrefix}-1.png`);
         }
-        
-        throw new Error(`Converted file not found: ${convertedFile}`);
       }
       
       const imageBuffer = await fs.readFile(convertedFile);

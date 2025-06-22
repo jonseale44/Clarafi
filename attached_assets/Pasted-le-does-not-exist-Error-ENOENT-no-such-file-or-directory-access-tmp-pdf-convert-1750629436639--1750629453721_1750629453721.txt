@@ -1,0 +1,28 @@
+le does not exist: Error: ENOENT: no such file or directory, access '/tmp/pdf_convert_1750629436639-01.png'
+    at async Object.access (node:internal/fs/promises:606:10)
+    at async DocumentAnalysisService.pdfToBase64Image (/home/runner/workspace/server/document-analysis-service.ts:234:9)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:106:21) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'access',
+  path: '/tmp/pdf_convert_1750629436639-01.png'
+}
+📄 [DocumentAnalysis] Created files: -rw-r--r-- 1 runner runner 35496 Jun 22 21:57 /tmp/pdf_convert_1750629436639-1.png
+
+📄 [DocumentAnalysis] PDF conversion failed: Error: Converted file not found: /tmp/pdf_convert_1750629436639-01.png
+    at DocumentAnalysisService.pdfToBase64Image (/home/runner/workspace/server/document-analysis-service.ts:247:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:106:21)
+📄 [DocumentAnalysis] Error details: {
+  message: 'Converted file not found: /tmp/pdf_convert_1750629436639-01.png',
+  stack: 'Error: Converted file not found: /tmp/pdf_convert_1750629436639-01.png\n' +
+    '    at DocumentAnalysisService.pdfToBase64Image (/home/runner/workspace/server/document-analysis-service.ts:247:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:106:21)'
+}
+📄 [DocumentAnalysis] Processing failed for attachment 25: Error: Failed to convert PDF to image: Converted file not found: /tmp/pdf_convert_1750629436639-01.png
+    at DocumentAnalysisService.pdfToBase64Image (/home/runner/workspace/server/document-analysis-service.ts:271:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:106:21)
+9:57:18 PM [express] GET /api/patients/143/draft-orders 304 in 136ms :: []
+9:57:20 PM [express] GET /api/patients/143/draft-orders 304 in 139ms :: []
