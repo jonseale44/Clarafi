@@ -1512,6 +1512,29 @@ export const patientAttachments = pgTable("patient_attachments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Document Extracted Content
+export const attachmentExtractedContent = pgTable("attachment_extracted_content", {
+  id: serial("id").primaryKey(),
+  attachmentId: integer("attachment_id").references(() => patientAttachments.id).notNull().unique(),
+  extractedText: text("extracted_text"),
+  aiGeneratedTitle: text("ai_generated_title"),
+  documentType: text("document_type"), // "lab_results", "H&P", "discharge_summary", etc.
+  processingStatus: text("processing_status").default("pending"), // "pending", "processing", "completed", "failed"
+  errorMessage: text("error_message"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Document Processing Queue
+export const documentProcessingQueue = pgTable("document_processing_queue", {
+  id: serial("id").primaryKey(),
+  attachmentId: integer("attachment_id").references(() => patientAttachments.id).notNull(),
+  status: text("status").default("queued"), // "queued", "processing", "completed", "failed"
+  attempts: integer("attempts").default(0),
+  lastAttempt: timestamp("last_attempt"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertPatientAttachmentSchema = createInsertSchema(patientAttachments).pick({
   patientId: true,
   encounterId: true,
@@ -1531,5 +1554,26 @@ export const insertPatientAttachmentSchema = createInsertSchema(patientAttachmen
   accessLevel: true,
 });
 
+export const insertAttachmentExtractedContentSchema = createInsertSchema(attachmentExtractedContent).pick({
+  attachmentId: true,
+  extractedText: true,
+  aiGeneratedTitle: true,
+  documentType: true,
+  processingStatus: true,
+  errorMessage: true,
+  processedAt: true,
+});
+
+export const insertDocumentProcessingQueueSchema = createInsertSchema(documentProcessingQueue).pick({
+  attachmentId: true,
+  status: true,
+  attempts: true,
+  lastAttempt: true,
+});
+
 export type PatientAttachment = typeof patientAttachments.$inferSelect;
 export type InsertPatientAttachment = z.infer<typeof insertPatientAttachmentSchema>;
+export type AttachmentExtractedContent = typeof attachmentExtractedContent.$inferSelect;
+export type InsertAttachmentExtractedContent = z.infer<typeof insertAttachmentExtractedContentSchema>;
+export type DocumentProcessingQueue = typeof documentProcessingQueue.$inferSelect;
+export type InsertDocumentProcessingQueue = z.infer<typeof insertDocumentProcessingQueueSchema>;
