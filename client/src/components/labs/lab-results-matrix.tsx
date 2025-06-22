@@ -518,11 +518,12 @@ export function LabResultsMatrix({
     if (selectedDates.size > 0 && selectedTestRows.size === 0 && selectedPanels.size === 0) {
       // Unreview by date(s) - get reviewed results for these dates
       const resultIds: number[] = [];
-      selectedDates.forEach(date => {
+      selectedDates.forEach(selectedDisplayDate => {
         // Get all reviewed results for this date (results that are NOT pending review)
         matrixData.forEach(test => {
           test.results.forEach(result => {
-            if (result.date === date && !result.needsReview && result.isReviewed) { 
+            const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+            if (resultDisplayDate === selectedDisplayDate && !result.needsReview && result.isReviewed) { 
               resultIds.push(result.id);
             }
           });
@@ -839,18 +840,16 @@ export function LabResultsMatrix({
                   
                   // Count results for selected dates (encounters)
                   if (selectedDates.size > 0) {
-                    selectedDates.forEach(selectedDate => {
+                    selectedDates.forEach(selectedDisplayDate => {
                       matrixData.forEach(test => {
                         const matchingResults = test.results.filter(result => {
-                          // Direct date string comparison
-                          const match = result.date === selectedDate;
-
-                          return match;
+                          // Convert result date to display format for comparison
+                          const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+                          return resultDisplayDate === selectedDisplayDate;
                         });
                         totalResults += matchingResults.length;
                       });
                     });
-
                   }
                   
                   // Count results for selected test rows
@@ -911,9 +910,12 @@ export function LabResultsMatrix({
                         let totalResults = 0;
                         
                         if (selectedDates.size > 0) {
-                          selectedDates.forEach(selectedDate => {
+                          selectedDates.forEach(selectedDisplayDate => {
                             matrixData.forEach(test => {
-                              const matchingResults = test.results.filter(result => result.date === selectedDate);
+                              const matchingResults = test.results.filter(result => {
+                                const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+                                return resultDisplayDate === selectedDisplayDate;
+                              });
                               totalResults += matchingResults.length;
                             });
                           });
@@ -1088,9 +1090,12 @@ export function LabResultsMatrix({
                             const resultIds: number[] = [];
                             
                             if (selectedDates.size > 0) {
-                              selectedDates.forEach(selectedDate => {
+                              selectedDates.forEach(selectedDisplayDate => {
                                 matrixData.forEach(test => {
-                                  const matchingResults = test.results.filter(result => result.date === selectedDate);
+                                  const matchingResults = test.results.filter(result => {
+                                    const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+                                    return resultDisplayDate === selectedDisplayDate;
+                                  });
                                   resultIds.push(...matchingResults.map(r => r.id as number));
                                 });
                               });
