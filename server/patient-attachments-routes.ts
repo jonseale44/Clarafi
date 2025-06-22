@@ -428,4 +428,89 @@ router.delete('/:patientId/attachments/:attachmentId', async (req: Request, res:
   }
 });
 
+// Delete all attachments for a patient
+router.delete('/:patientId/attachments', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    const { encounterId } = req.query;
+    
+    console.log('📎 [Backend] Bulk delete request received');
+    console.log('📎 [Backend] Patient ID:', patientId);
+    console.log('📎 [Backend] Encounter ID filter:', encounterId);
+    console.log('📎 [Backend] User:', req.user!.id);
+    
+    // Get all attachments to be deleted
+    let query = db.select().from(patientAttachments).where(eq(patientAttachments.patientId, patientId));
+    
+    if (encounterId) {
+      query = query.where(and(
+        eq(patientAttachments.patientId, patientId),
+        eq(patientAttachments.encounterId, parseInt(encounterId as string))
+      ));
+    }
+    
+    const attachmentsToDelete = await query;
+    
+    if (attachmentsToDelete.length === 0) {
+      return res.json({ 
+        message: 'No attachments found to delete',
+        deletedCount: 0 
+      });
+    }
+    
+    console.log(`📎 [Backend] Found ${attachmentsToDelete.length} attachments to delete`);
+    
+    // Delete from database first
+    let deleteQuery = db.delete(patientAttachments).where(eq(patientAttachments.patientId, patientId));
+    
+    if (encounterId) {
+      deleteQuery = deleteQuery.where(and(
+        eq(patientAttachments.patientId, patientId),
+        eq(patientAttachments.encounterId, parseInt(encounterId as string))
+      ));
+    }
+    
+    await deleteQuery;
+    
+    // Delete files from disk
+    let filesDeleted = 0;
+    let fileErrors = 0;
+    
+    for (const attachment of attachmentsToDelete) {
+      try {
+        await fs.unlink(attachment.filePath);
+        filesDeleted++;
+        
+        if (attachment.thumbnailPath) {
+          try {
+            await fs.unlink(attachment.thumbnailPath);
+          } catch (thumbError) {
+            console.error(`📎 [Backend] Failed to delete thumbnail for ${attachment.originalFileName}:`, thumbError);
+          }
+        }
+      } catch (error) {
+        console.error(`📎 [Backend] Failed to delete file ${attachment.originalFileName}:`, error);
+        fileErrors++;
+      }
+    }
+    
+    console.log(`📎 [Attachments] Bulk delete completed: ${attachmentsToDelete.length} attachments deleted from DB, ${filesDeleted} files deleted from disk, ${fileErrors} file errors by user ${req.user!.id}`);
+    
+    res.json({ 
+      message: `Successfully deleted ${attachmentsToDelete.length} attachments`,
+      deletedCount: attachmentsToDelete.length,
+      filesDeleted,
+      fileErrors
+    });
+    
+  } catch (error) {
+    console.error('Error in bulk delete:', error);
+    res.status(500).json({ error: 'Bulk delete failed' });
+  }
+});
+
 export default router;

@@ -191,6 +191,36 @@ export function PatientAttachments({
     },
   });
 
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const url = new URL(`/api/patients/${patientId}/attachments`, window.location.origin);
+      if (encounterId && mode === "encounter") {
+        url.searchParams.append('encounterId', encounterId.toString());
+      }
+      
+      const response = await fetch(url.toString(), {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Bulk delete failed');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
+      toast({ 
+        title: "Bulk delete successful", 
+        description: `Successfully deleted ${data.deletedCount} attachments.` 
+      });
+    },
+    onError: () => {
+      toast({ 
+        title: "Bulk delete failed", 
+        description: "Failed to delete attachments.",
+        variant: "destructive" 
+      });
+    },
+  });
+
   const resetUploadForm = () => {
     setUploadFile(null);
     setUploadFiles([]);
@@ -492,6 +522,54 @@ export function PatientAttachments({
         )
       ) : (
         <div className="space-y-3">
+          {/* Attachments Header with Bulk Actions */}
+          {!isReadOnly && (
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <File className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {attachments.length} attachment{attachments.length !== 1 ? 's' : ''}
+                  {mode === "encounter" && encounterId && " for this encounter"}
+                </span>
+              </div>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={bulkDeleteMutation.isPending}
+                    className="text-xs"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    {bulkDeleteMutation.isPending ? "Deleting..." : "Delete All"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete All Attachments</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete all {attachments.length} attachment{attachments.length !== 1 ? 's' : ''}?
+                      {mode === "encounter" && encounterId && " This will only delete attachments for this encounter."}
+                      {mode !== "encounter" && " This will delete all attachments for this patient."}
+                      <br /><br />
+                      <strong>This action cannot be undone.</strong>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => bulkDeleteMutation.mutate()}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete All
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+          
           {attachments.map((attachment) => (
             <Card key={attachment.id}>
               <CardContent className="p-4">
