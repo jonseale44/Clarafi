@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-// Simple auth middleware
+// Use centralized auth check instead of local middleware
 const requireAuth = (req: any, res: any, next: any) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: 'Authentication required' });
@@ -24,12 +24,15 @@ router.get("/pdfs/:filename", requireAuth, async (req: Request, res: Response) =
     console.log(`📄 [PDFDownload] Request for PDF: ${filename}`);
     console.log(`📄 [PDFDownload] Full path: ${filepath}`);
     
-    if (!fs.existsSync(filepath)) {
+    // Use async file operations to avoid blocking
+    try {
+      await fs.promises.access(filepath);
+    } catch {
       console.log(`📄 [PDFDownload] ❌ PDF not found: ${filepath}`);
       return res.status(404).json({ error: "PDF not found" });
     }
     
-    const stat = fs.statSync(filepath);
+    const stat = await fs.promises.stat(filepath);
     console.log(`📄 [PDFDownload] ✅ PDF found, size: ${stat.size} bytes`);
     
     res.setHeader('Content-Type', 'application/pdf');
