@@ -1,5 +1,6 @@
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
+import { PatientAttachments } from "./patient-attachments";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
 import { Card, CardContent } from "@/components/ui/card";
@@ -171,18 +172,12 @@ export function SharedChartSections({
 
       case "attachments":
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Attachments</h2>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Document attachments coming soon</p>
-                  <p className="text-sm">Upload and manage patient documents.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <PatientAttachments 
+            patientId={patientId} 
+            encounterId={encounterId}
+            mode={mode}
+            isReadOnly={isReadOnly}
+          />
         );
       
       case "appointments":
