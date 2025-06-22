@@ -90,9 +90,9 @@ async function generateThumbnail(filePath: string, mimeType: string): Promise<st
   }
 }
 
-// Upload attachment
+// Upload single attachment (legacy endpoint)
 router.post('/:patientId/attachments', upload.single('file'), async (req: Request, res: Response) => {
-  console.log('📎 [Backend] Upload request received');
+  console.log('📎 [Backend] Single upload request received');
   console.log('📎 [Backend] Patient ID:', req.params.patientId);
   console.log('📎 [Backend] Auth status:', !!req.isAuthenticated?.());
   console.log('📎 [Backend] User:', req.user?.id);
@@ -158,6 +158,123 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     }
     
     res.status(500).json({ error: 'File upload failed' });
+  }
+});
+
+// Upload multiple attachments
+router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (req: Request, res: Response) => {
+  console.log('📎 [Backend] Bulk upload request received');
+  console.log('📎 [Backend] Patient ID:', req.params.patientId);
+  console.log('📎 [Backend] Auth status:', !!req.isAuthenticated?.());
+  console.log('📎 [Backend] User:', req.user?.id);
+  console.log('📎 [Backend] Files count:', req.files ? (req.files as Express.Multer.File[]).length : 0);
+  console.log('📎 [Backend] Request body:', req.body);
+  
+  const uploadedFiles: Express.Multer.File[] = [];
+  const createdAttachments: any[] = [];
+  
+  try {
+    if (!req.isAuthenticated()) {
+      console.log('📎 [Backend] Authentication failed');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) {
+      console.log('📎 [Backend] No files in request');
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    const { encounterId, isConfidential, globalDescription } = req.body;
+    
+    console.log(`📎 [Backend] Processing ${files.length} files for patient ${patientId}`);
+    
+    // Process each file
+    for (const file of files) {
+      uploadedFiles.push(file);
+      
+      try {
+        // Generate thumbnail if applicable
+        const thumbnailPath = await generateThumbnail(file.path, file.mimetype);
+        
+        const attachmentData = {
+          patientId,
+          encounterId: encounterId ? parseInt(encounterId) : undefined,
+          fileName: file.filename,
+          originalFileName: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          fileExtension: path.extname(file.originalname).toLowerCase(),
+          filePath: file.path,
+          thumbnailPath,
+          title: file.originalname, // Use original filename as title for bulk uploads
+          description: globalDescription || null,
+          uploadedBy: req.user!.id,
+          isConfidential: isConfidential === 'true',
+          category: 'general',
+        };
+
+        const validatedData = insertPatientAttachmentSchema.parse(attachmentData);
+        const [attachment] = await db.insert(patientAttachments).values(validatedData).returning();
+        
+        createdAttachments.push(attachment);
+        console.log(`📎 [Attachments] File processed: ${file.originalname} -> ID: ${attachment.id}`);
+      } catch (fileError) {
+        console.error(`📎 [Backend] Error processing file ${file.originalname}:`, fileError);
+        // Clean up this specific file
+        try {
+          await fs.unlink(file.path);
+        } catch (unlinkError) {
+          console.error('Failed to clean up file:', unlinkError);
+        }
+        
+        // Continue with other files but track the error
+        throw new Error(`Failed to process file: ${file.originalname}`);
+      }
+    }
+
+    console.log(`📎 [Attachments] Bulk upload completed: ${createdAttachments.length} files uploaded successfully for patient ${patientId}`);
+    
+    res.status(201).json({
+      message: `Successfully uploaded ${createdAttachments.length} files`,
+      attachments: createdAttachments,
+      count: createdAttachments.length
+    });
+    
+  } catch (error) {
+    console.error('Bulk file upload error:', error);
+    
+    // Clean up all uploaded files if any error occurred
+    for (const file of uploadedFiles) {
+      try {
+        await fs.unlink(file.path);
+      } catch (unlinkError) {
+        console.error('Failed to clean up file:', unlinkError);
+      }
+    }
+    
+    // Also clean up any created attachments from DB
+    if (createdAttachments.length > 0) {
+      try {
+        const attachmentIds = createdAttachments.map(a => a.id);
+        await db.delete(patientAttachments).where(
+          and(
+            eq(patientAttachments.patientId, parseInt(req.params.patientId)),
+            // @ts-ignore - drizzle inArray typing issue
+            patientAttachments.id.in?.(attachmentIds)
+          )
+        );
+        console.log('📎 [Backend] Cleaned up partial attachments from DB');
+      } catch (cleanupError) {
+        console.error('📎 [Backend] Failed to cleanup partial attachments:', cleanupError);
+      }
+    }
+    
+    res.status(500).json({ 
+      error: 'Bulk file upload failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

@@ -63,10 +63,12 @@ export function PatientAttachments({
   isReadOnly = false 
 }: PatientAttachmentsProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isConfidential, setIsConfidential] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'single' | 'multiple'>('single');
 
   const [showUploadForm, setShowUploadForm] = useState(false);
   
@@ -83,10 +85,10 @@ export function PatientAttachments({
     },
   });
 
-  // Upload mutation
+  // Single file upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      console.log('📎 [Frontend] Starting upload for patient:', patientId);
+      console.log('📎 [Frontend] Starting single upload for patient:', patientId);
       console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
       
       const response = await fetch(`/api/patients/${patientId}/attachments`, {
@@ -125,6 +127,48 @@ export function PatientAttachments({
     },
   });
 
+  // Multiple files upload mutation
+  const bulkUploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      console.log('📎 [Frontend] Starting bulk upload for patient:', patientId);
+      console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
+      
+      const response = await fetch(`/api/patients/${patientId}/attachments/bulk`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const responseText = await response.text();
+      console.log('📎 [Frontend] Bulk upload response:', responseText);
+      
+      if (!response.ok) {
+        throw new Error(`Bulk upload failed: ${response.status} - ${responseText}`);
+      }
+      
+      try {
+        return JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('📎 [Frontend] JSON parse error:', parseError);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
+      toast({ 
+        title: "Bulk upload successful", 
+        description: `Successfully uploaded ${data.count} files.` 
+      });
+      resetUploadForm();
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Bulk upload failed", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (attachmentId: number) => {
@@ -149,10 +193,11 @@ export function PatientAttachments({
 
   const resetUploadForm = () => {
     setUploadFile(null);
+    setUploadFiles([]);
     setTitle("");
     setDescription("");
     setIsConfidential(false);
-
+    setUploadMode('single');
     setShowUploadForm(false);
   };
 
@@ -172,8 +217,19 @@ export function PatientAttachments({
     
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-      setUploadFile(files[0]);
-      setTitle(files[0].name);
+      if (files.length === 1) {
+        // Single file mode
+        setUploadFile(files[0]);
+        setUploadFiles([]);
+        setTitle(files[0].name);
+        setUploadMode('single');
+      } else {
+        // Multiple files mode
+        setUploadFiles(files);
+        setUploadFile(null);
+        setTitle('');
+        setUploadMode('multiple');
+      }
       setShowUploadForm(true);
     }
   }, []);
@@ -181,27 +237,66 @@ export function PatientAttachments({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      setUploadFile(files[0]);
-      setTitle(files[0].name);
+      const fileArray = Array.from(files);
+      
+      if (fileArray.length === 1) {
+        // Single file mode
+        setUploadFile(fileArray[0]);
+        setUploadFiles([]);
+        setTitle(fileArray[0].name);
+        setUploadMode('single');
+      } else {
+        // Multiple files mode
+        setUploadFiles(fileArray);
+        setUploadFile(null);
+        setTitle('');
+        setUploadMode('multiple');
+      }
+      
       setShowUploadForm(true);
     }
-    // Reset the input so the same file can be selected again
+    // Reset the input so the same files can be selected again
     e.target.value = '';
   };
 
   const handleUpload = () => {
-    if (!uploadFile) return;
+    if (uploadMode === 'single' && !uploadFile) return;
+    if (uploadMode === 'multiple' && uploadFiles.length === 0) return;
     
     const formData = new FormData();
-    formData.append('file', uploadFile);
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('isConfidential', isConfidential.toString());
-    if (encounterId) {
-      formData.append('encounterId', encounterId.toString());
-    }
     
-    uploadMutation.mutate(formData);
+    if (uploadMode === 'single' && uploadFile) {
+      // Single file upload
+      formData.append('file', uploadFile);
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('isConfidential', isConfidential.toString());
+      if (encounterId) {
+        formData.append('encounterId', encounterId.toString());
+      }
+      uploadMutation.mutate(formData);
+    } else if (uploadMode === 'multiple' && uploadFiles.length > 0) {
+      // Multiple files upload
+      uploadFiles.forEach(file => {
+        formData.append('files', file);
+      });
+      formData.append('globalDescription', description);
+      formData.append('isConfidential', isConfidential.toString());
+      if (encounterId) {
+        formData.append('encounterId', encounterId.toString());
+      }
+      bulkUploadMutation.mutate(formData);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    if (uploadMode === 'multiple') {
+      const newFiles = uploadFiles.filter((_, i) => i !== index);
+      setUploadFiles(newFiles);
+      if (newFiles.length === 0) {
+        setShowUploadForm(false);
+      }
+    }
   };
 
   const handleDownload = (attachment: PatientAttachment) => {
@@ -266,6 +361,7 @@ export function PatientAttachments({
                   onChange={handleFileSelect}
                   className="hidden"
                   id="file-upload"
+                  multiple
                 />
                 <div className="space-y-2">
                   <Upload className={`h-10 w-10 mx-auto ${
@@ -274,7 +370,11 @@ export function PatientAttachments({
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-medium">Click to upload</span> or drag and drop
                     <br />
-                    PDF, Images, Documents (up to 100MB)
+                    PDF, Images, Documents (up to 100MB each)
+                    <br />
+                    <span className="text-xs text-blue-600 dark:text-blue-400">
+                      Select multiple files for bulk upload
+                    </span>
                   </div>
                 </div>
               </div>
