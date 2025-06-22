@@ -641,4 +641,44 @@ router.put('/:patientId/attachments/:attachmentId/content', async (req: Request,
   }
 });
 
+// Manual reprocess endpoint for testing
+router.post('/:patientId/attachments/:attachmentId/reprocess', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    const attachmentId = parseInt(req.params.attachmentId);
+    
+    // Verify attachment belongs to patient
+    const [attachment] = await db.select()
+      .from(patientAttachments)
+      .where(and(
+        eq(patientAttachments.id, attachmentId),
+        eq(patientAttachments.patientId, patientId)
+      ));
+    
+    if (!attachment) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+    
+    // Reset processing status
+    await db.update(attachmentExtractedContent)
+      .set({ processingStatus: 'pending', errorMessage: null })
+      .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+    
+    // Trigger reprocessing in background
+    documentAnalysisService.reprocessDocument(attachmentId).catch(error => {
+      console.error(`📄 [DocumentAnalysis] Background reprocessing failed for attachment ${attachmentId}:`, error);
+    });
+    
+    console.log(`📎 [Attachments] Reprocessing triggered for attachment ${attachmentId} by user ${req.user!.id}`);
+    res.json({ message: 'Reprocessing started' });
+  } catch (error) {
+    console.error('Error triggering reprocess:', error);
+    res.status(500).json({ error: 'Failed to trigger reprocessing' });
+  }
+});
+
 export default router;
