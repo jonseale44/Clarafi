@@ -501,7 +501,22 @@ router.delete('/:patientId/attachments', async (req: Request, res: Response) => 
     
     console.log(`📎 [Backend] Found ${attachmentsToDelete.length} attachments to delete`);
     
-    // Delete from database first
+    // Delete related records first (foreign key constraints)
+    const attachmentIds = attachmentsToDelete.map(a => a.id);
+    
+    // Delete extracted content for all attachment IDs
+    for (const attachmentId of attachmentIds) {
+      await db.delete(attachmentExtractedContent)
+        .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+    }
+    
+    // Delete processing queue entries for all attachment IDs
+    for (const attachmentId of attachmentIds) {
+      await db.delete(documentProcessingQueue)
+        .where(eq(documentProcessingQueue.attachmentId, attachmentId));
+    }
+    
+    // Delete from database
     let deleteQuery = db.delete(patientAttachments).where(eq(patientAttachments.patientId, patientId));
     
     if (encounterId) {

@@ -3,6 +3,10 @@ import fs from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 import { fromPath } from "pdf2pic";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 import { db } from "./db.js";
 import { 
   attachmentExtractedContent, 
@@ -264,7 +268,31 @@ export class DocumentAnalysisService {
         
       } catch (conversionError) {
         console.error(`📄 [DocumentAnalysis] PDF conversion error:`, conversionError);
-        throw new Error(`PDF conversion failed: ${conversionError instanceof Error ? conversionError.message : 'Unknown error'}`);
+        
+        // Try fallback method using poppler-utils directly
+        console.log(`📄 [DocumentAnalysis] Trying fallback conversion method...`);
+        try {
+          const outputPath = `/tmp/pdf_convert_${Date.now()}.png`;
+          await execAsync(`pdftoppm -png -f 1 -l 1 -r 150 "${filePath}" "${outputPath.replace('.png', '')}"`);
+          
+          const convertedFile = `${outputPath.replace('.png', '')}-1.png`;
+          const imageBuffer = await fs.readFile(convertedFile);
+          
+          // Clean up
+          try {
+            await fs.unlink(convertedFile);
+          } catch (cleanupError) {
+            console.warn(`📄 [DocumentAnalysis] Failed to cleanup fallback file:`, cleanupError);
+          }
+          
+          const base64String = imageBuffer.toString('base64');
+          console.log(`📄 [DocumentAnalysis] Fallback conversion successful, length: ${base64String.length} characters`);
+          return base64String;
+          
+        } catch (fallbackError) {
+          console.error(`📄 [DocumentAnalysis] Fallback conversion also failed:`, fallbackError);
+          throw new Error(`All PDF conversion methods failed: ${conversionError instanceof Error ? conversionError.message : 'Unknown error'}`);
+        }
       }
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
