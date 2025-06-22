@@ -120,6 +120,13 @@ export function LabResultsMatrix({
       assignedTo?: number;
       communicationPlan: any;
     }) => {
+      console.log('🔍 [LabResultsMatrix] Review mutation starting with payload:', {
+        resultIds: reviewData.resultIds,
+        resultIdsCount: reviewData.resultIds.length,
+        reviewNote: reviewData.reviewNote,
+        reviewType: 'batch'
+      });
+
       const response = await fetch('/api/lab-review/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,12 +140,17 @@ export function LabResultsMatrix({
         })
       });
       
+      console.log('🔍 [LabResultsMatrix] API response status:', response.status, response.statusText);
+      
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Review failed');
+        console.error('🔍 [LabResultsMatrix] API error response:', error);
+        throw new Error(error.error?.message || error.message || 'Review failed');
       }
       
-      return response.json();
+      const result = await response.json();
+      console.log('🔍 [LabResultsMatrix] API success response:', result);
+      return result;
     },
     onSuccess: (data) => {
       toast({
@@ -1091,10 +1103,21 @@ export function LabResultsMatrix({
                             
                             if (selectedDates.size > 0) {
                               selectedDates.forEach(selectedDisplayDate => {
+                                console.log('🔍 [LabResultsMatrix] Processing selected display date:', selectedDisplayDate);
                                 matrixData.forEach(test => {
                                   const matchingResults = test.results.filter(result => {
                                     const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
-                                    return resultDisplayDate === selectedDisplayDate;
+                                    const matches = resultDisplayDate === selectedDisplayDate;
+                                    if (matches) {
+                                      console.log('🔍 [LabResultsMatrix] Found matching result:', {
+                                        testName: test.testName,
+                                        resultId: result.id,
+                                        resultDate: result.date,
+                                        resultDisplayDate,
+                                        selectedDisplayDate
+                                      });
+                                    }
+                                    return matches;
                                   });
                                   resultIds.push(...matchingResults.map(r => r.id as number));
                                 });
@@ -1118,6 +1141,18 @@ export function LabResultsMatrix({
                                 });
                               });
                             }
+
+                            console.log('🔍 [LabResultsMatrix] Starting review mutation with data:', {
+                              resultIds,
+                              resultIdsCount: resultIds.length,
+                              reviewNote,
+                              reviewTemplate: selectedTemplate,
+                              assignedTo: assignedStaff ? parseInt(assignedStaff) : undefined,
+                              communicationPlan,
+                              selectedDates: Array.from(selectedDates),
+                              selectedTestRows: Array.from(selectedTestRows),
+                              selectedPanels: Array.from(selectedPanels)
+                            });
 
                             reviewMutation.mutate({
                               resultIds,

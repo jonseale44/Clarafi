@@ -171,8 +171,11 @@ router.post("/batch", async (req: Request, res: Response) => {
       return APIResponseHandler.unauthorized(res);
     }
 
+    console.log('🏥 [LabReviewRoutes] Raw request body:', req.body);
+    
     const validation = BatchReviewSchema.safeParse(req.body);
     if (!validation.success) {
+      console.error('🏥 [LabReviewRoutes] Validation failed:', validation.error.errors);
       return APIResponseHandler.badRequest(res, "Invalid request data", validation.error.errors);
     }
 
