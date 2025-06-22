@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { db } from "./db.js";
-import { patientAttachments, insertPatientAttachmentSchema, attachmentExtractedContent } from "../shared/schema.js";
+import { patientAttachments, insertPatientAttachmentSchema, attachmentExtractedContent, documentProcessingQueue } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import sharp from "sharp";
@@ -433,6 +433,12 @@ router.delete('/:patientId/attachments/:attachmentId', async (req: Request, res:
       return res.status(404).json({ error: 'Attachment not found' });
     }
     
+    // Delete extracted content first (foreign key constraint)
+    await db.delete(attachmentExtractedContent).where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+    
+    // Delete from processing queue
+    await db.delete(documentProcessingQueue).where(eq(documentProcessingQueue.attachmentId, attachmentId));
+
     // Delete from database
     await db.delete(patientAttachments)
       .where(and(

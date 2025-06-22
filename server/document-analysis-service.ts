@@ -208,36 +208,63 @@ export class DocumentAnalysisService {
       await fs.access(filePath);
       console.log(`📄 [DocumentAnalysis] PDF file exists, proceeding with conversion`);
       
-      // Convert first page of PDF to image
-      const convert = fromPath(filePath, {
-        density: 150,           // Lower resolution for better compatibility
-        saveFilename: "page",
-        savePath: "/tmp",       // Temporary directory
-        format: "png",          // Use PNG instead of JPEG for better quality
-        width: 1600,            // Smaller size for better processing
+      // Convert first page of PDF to image using different approach
+      const options = {
+        density: 100,           
+        saveFilename: "untitled",
+        savePath: "/tmp",       
+        format: "png",          
+        width: 1200,            
         height: 1600
-      });
+      };
 
-      console.log(`📄 [DocumentAnalysis] Starting PDF page conversion...`);
-      const result = await convert(1, { responseType: "buffer" });
-      console.log(`📄 [DocumentAnalysis] PDF conversion result:`, {
-        hasBuffer: !!result.buffer,
-        bufferLength: result.buffer?.length || 0,
-        resultKeys: Object.keys(result)
-      });
+      console.log(`📄 [DocumentAnalysis] Starting PDF page conversion with options:`, options);
       
-      if (result.buffer && result.buffer.length > 0) {
-        const base64String = result.buffer.toString('base64');
-        console.log(`📄 [DocumentAnalysis] PDF converted to base64, length: ${base64String.length} characters`);
+      const convert = fromPath(filePath, options);
+      
+      try {
+        // Try different page conversion approaches
+        const result = await convert(1, { responseType: "buffer" });
+        console.log(`📄 [DocumentAnalysis] PDF conversion result:`, {
+          hasBuffer: !!result.buffer,
+          bufferLength: result.buffer?.length || 0,
+          resultKeys: Object.keys(result),
+          resultType: typeof result
+        });
         
-        // Validate base64 string
-        if (base64String.length === 0) {
-          throw new Error("Generated base64 string is empty");
+        // Check if we got a valid buffer
+        if (result.buffer && Buffer.isBuffer(result.buffer) && result.buffer.length > 0) {
+          const base64String = result.buffer.toString('base64');
+          console.log(`📄 [DocumentAnalysis] PDF converted to base64, length: ${base64String.length} characters`);
+          return base64String;
         }
         
-        return base64String;
-      } else {
-        throw new Error("No buffer returned from PDF conversion or buffer is empty");
+        // If buffer approach failed, try alternative method
+        console.log(`📄 [DocumentAnalysis] Buffer approach failed, trying alternative conversion...`);
+        const altResult = await convert(1);
+        
+        if (altResult && typeof altResult === 'object' && 'path' in altResult) {
+          console.log(`📄 [DocumentAnalysis] Alternative conversion created file at:`, altResult.path);
+          // Read the generated image file
+          const imageBuffer = await fs.readFile(altResult.path);
+          
+          // Clean up temporary file
+          try {
+            await fs.unlink(altResult.path);
+          } catch (cleanupError) {
+            console.warn(`📄 [DocumentAnalysis] Failed to cleanup temp file:`, cleanupError);
+          }
+          
+          const base64String = imageBuffer.toString('base64');
+          console.log(`📄 [DocumentAnalysis] PDF converted via file method, length: ${base64String.length} characters`);
+          return base64String;
+        }
+        
+        throw new Error("Both buffer and file conversion methods failed");
+        
+      } catch (conversionError) {
+        console.error(`📄 [DocumentAnalysis] PDF conversion error:`, conversionError);
+        throw new Error(`PDF conversion failed: ${conversionError instanceof Error ? conversionError.message : 'Unknown error'}`);
       }
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
