@@ -246,12 +246,12 @@ export class DocumentAnalysisService {
         await fs.unlink(pageFiles[0]);
         return base64String;
       } else {
-        // Multiple pages - create vertical composite
+        // Multiple pages - create vertical composite using convert instead of montage
         const compositeFile = `/tmp/pdf_composite_${timestamp}.png`;
-        const montageCommand = `montage ${pageFiles.join(' ')} -tile 1x${pageFiles.length} -geometry +0+10 "${compositeFile}"`;
+        const convertCommand = `convert ${pageFiles.join(' ')} -append "${compositeFile}"`;
         
         console.log(`📄 [DocumentAnalysis] Creating composite image from ${pageFiles.length} pages`);
-        await execAsync(montageCommand);
+        await execAsync(convertCommand);
         
         const imageBuffer = await fs.readFile(compositeFile);
         const base64String = `data:image/png;base64,${imageBuffer.toString('base64')}`;

@@ -1,0 +1,28 @@
+ChildProcess._handle.onexit (node:internal/child_process:304:5) {
+  code: 1,
+  killed: false,
+  signal: null,
+  cmd: 'montage /tmp/pdf_convert_1750630418034-01.png /tmp/pdf_convert_1750630418034-02.png /tmp/pdf_convert_1750630418034-03.png /tmp/pdf_convert_1750630418034-04.png /tmp/pdf_convert_1750630418034-05.png /tmp/pdf_convert_1750630418034-06.png /tmp/pdf_convert_1750630418034-07.png /tmp/pdf_convert_1750630418034-08.png /tmp/pdf_convert_1750630418034-09.png /tmp/pdf_convert_1750630418034-10.png -tile 1x10 -geometry +0+10 "/tmp/pdf_composite_1750630418034.png"',
+  stdout: '',
+  stderr: "montage: unable to read font `' @ error/annotate.c/RenderFreetype/1654.\n"
+}
+📄 [DocumentAnalysis] Error details: {
+  message: 'Command failed: montage /tmp/pdf_convert_1750630418034-01.png /tmp/pdf_convert_1750630418034-02.png /tmp/pdf_convert_1750630418034-03.png /tmp/pdf_convert_1750630418034-04.png /tmp/pdf_convert_1750630418034-05.png /tmp/pdf_convert_1750630418034-06.png /tmp/pdf_convert_1750630418034-07.png /tmp/pdf_convert_1750630418034-08.png /tmp/pdf_convert_1750630418034-09.png /tmp/pdf_convert_1750630418034-10.png -tile 1x10 -geometry +0+10 "/tmp/pdf_composite_1750630418034.png"\n' +
+    "montage: unable to read font `' @ error/annotate.c/RenderFreetype/1654.\n",
+  stack: 'Error: Command failed: montage /tmp/pdf_convert_1750630418034-01.png /tmp/pdf_convert_1750630418034-02.png /tmp/pdf_convert_1750630418034-03.png /tmp/pdf_convert_1750630418034-04.png /tmp/pdf_convert_1750630418034-05.png /tmp/pdf_convert_1750630418034-06.png /tmp/pdf_convert_1750630418034-07.png /tmp/pdf_convert_1750630418034-08.png /tmp/pdf_convert_1750630418034-09.png /tmp/pdf_convert_1750630418034-10.png -tile 1x10 -geometry +0+10 "/tmp/pdf_composite_1750630418034.png"\n' +
+    "montage: unable to read font `' @ error/annotate.c/RenderFreetype/1654.\n" +
+    '\n' +
+    '    at genericNodeError (node:internal/errors:984:15)\n' +
+    '    at wrappedFn (node:internal/errors:538:14)\n' +
+    '    at ChildProcess.exithandler (node:child_process:422:12)\n' +
+    '    at ChildProcess.emit (node:events:518:28)\n' +
+    '    at maybeClose (node:internal/child_process:1104:16)\n' +
+    '    at ChildProcess._handle.onexit (node:internal/child_process:304:5)'
+}
+📄 [DocumentAnalysis] Processing failed for attachment 29: Error: Failed to convert PDF to image: Command failed: montage /tmp/pdf_convert_1750630418034-01.png /tmp/pdf_convert_1750630418034-02.png /tmp/pdf_convert_1750630418034-03.png /tmp/pdf_convert_1750630418034-04.png /tmp/pdf_convert_1750630418034-05.png /tmp/pdf_convert_1750630418034-06.png /tmp/pdf_convert_1750630418034-07.png /tmp/pdf_convert_1750630418034-08.png /tmp/pdf_convert_1750630418034-09.png /tmp/pdf_convert_1750630418034-10.png -tile 1x10 -geometry +0+10 "/tmp/pdf_composite_1750630418034.png"
+montage: unable to read font `' @ error/annotate.c/RenderFreetype/1654.
+
+    at DocumentAnalysisService.pdfToBase64Image (/home/runner/workspace/server/document-analysis-service.ts:274:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:106:21)
+10:13:44 PM [express] GET /api/patients/143/atta
