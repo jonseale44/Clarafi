@@ -31,6 +31,41 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
+// Utility functions to format dates without timezone conversion
+const formatVitalsDate = (dateString: string) => {
+  // Handle both ISO strings and date-only strings
+  let year: number, month: number, day: number;
+  
+  if (dateString.includes('T') || dateString.includes(' ')) {
+    // Full datetime string - extract just the date part
+    const datePart = dateString.split('T')[0].split(' ')[0];
+    const [y, m, d] = datePart.split('-').map(Number);
+    year = y;
+    month = m;
+    day = d;
+  } else {
+    // Date-only string
+    const [y, m, d] = dateString.split('-').map(Number);
+    year = y;
+    month = m;
+    day = d;
+  }
+  
+  const yearStr = year.toString().slice(-2); // Get last 2 digits of year
+  const monthStr = month.toString().padStart(2, '0');
+  const dayStr = day.toString().padStart(2, '0');
+  return `${monthStr}/${dayStr}/${yearStr}`;
+};
+
+const formatVitalsTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return format(date, 'HH:mm');
+};
+
+const formatVitalsDateTime = (dateString: string) => {
+  return `${formatVitalsDate(dateString)} ${formatVitalsTime(dateString)}`;
+};
+
 interface VitalsEntry {
   id: number;
   encounterId: number;
@@ -529,8 +564,12 @@ export function VitalsFlowsheet({
                   <TableHead className="font-semibold text-xs py-2 w-24">Parameter</TableHead>
                   {vitalsEntries.map((entry) => (
                     <TableHead key={entry.id} className="font-semibold text-xs py-2 text-center min-w-20">
-                      <div className="text-xs text-gray-500">{format(new Date(entry.recordedAt), 'MM/dd')}</div>
-                      <div className="text-xs">{format(new Date(entry.recordedAt), 'HH:mm')}</div>
+                      <div 
+                        className="text-xs text-gray-700 cursor-help" 
+                        title={`Recorded: ${formatVitalsDateTime(entry.recordedAt)}`}
+                      >
+                        {formatVitalsDate(entry.recordedAt)}
+                      </div>
                       {entry.encounterContext === 'historical' && (
                         <div className="text-xs text-orange-600 font-medium">Historical</div>
                       )}
