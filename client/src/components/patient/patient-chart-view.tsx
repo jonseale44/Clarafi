@@ -48,12 +48,22 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const queryClient = useQueryClient();
 
   // Handle URL parameters for navigation from vitals to attachments
+  const [highlightAttachmentId, setHighlightAttachmentId] = useState<number | null>(null);
+  
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const section = urlParams.get('section');
+    const highlight = urlParams.get('highlight');
+    
     if (section && chartSections.some(s => s.id === section)) {
       setActiveSection(section);
       setExpandedSections(prev => new Set([...prev, section]));
+    }
+    
+    if (highlight) {
+      setHighlightAttachmentId(parseInt(highlight));
+      // Clear highlight after 5 seconds
+      setTimeout(() => setHighlightAttachmentId(null), 5000);
     }
   }, []);
 
@@ -205,7 +215,13 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       case "surgical-history":
       case "attachments":
       case "appointments":
-        return <SharedChartSections patientId={patientId} mode="patient-chart" isReadOnly={false} sectionId={activeSection} />;
+        return <SharedChartSections 
+          patientId={patientId} 
+          mode="patient-chart" 
+          isReadOnly={false} 
+          sectionId={activeSection}
+          highlightAttachmentId={highlightAttachmentId}
+        />;
       case "ai-debug":
         return <AIDebugSection patientId={patientId} />;
       default:

@@ -13,6 +13,7 @@ interface SharedChartSectionsProps {
   encounterId?: number;
   isReadOnly?: boolean;
   sectionId?: string;
+  highlightAttachmentId?: number;
 }
 
 // Vitals Section Component
@@ -44,7 +45,8 @@ export function SharedChartSections({
   mode, 
   encounterId,
   isReadOnly = false,
-  sectionId 
+  sectionId,
+  highlightAttachmentId
 }: SharedChartSectionsProps) {
   
   const renderSectionContent = (targetSectionId: string) => {
@@ -177,6 +179,7 @@ export function SharedChartSections({
             encounterId={encounterId}
             mode={mode}
             isReadOnly={isReadOnly}
+            highlightAttachmentId={highlightAttachmentId}
           />
         );
       

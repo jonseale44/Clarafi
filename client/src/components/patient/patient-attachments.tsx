@@ -69,13 +69,15 @@ interface PatientAttachmentsProps {
   encounterId?: number;
   mode?: "patient-chart" | "encounter";
   isReadOnly?: boolean;
+  highlightAttachmentId?: number;
 }
 
 export function PatientAttachments({ 
   patientId, 
   encounterId, 
   mode = "patient-chart",
-  isReadOnly = false 
+  isReadOnly = false,
+  highlightAttachmentId
 }: PatientAttachmentsProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -653,7 +655,10 @@ export function PatientAttachments({
           )}
           
           {attachments.map((attachment) => (
-            <Card key={attachment.id}>
+            <Card 
+              key={attachment.id}
+              className={highlightAttachmentId === attachment.id ? "ring-2 ring-blue-500 bg-blue-50" : ""}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3 flex-1">
