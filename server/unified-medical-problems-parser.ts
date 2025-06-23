@@ -192,8 +192,8 @@ ATTACHMENT PROCESSING RULES:
 - CRITICAL: Extract the PRIMARY document date for ALL medical problems from this attachment
 - Look for "Date of Service:", "Date:", "Date/Time:", signature dates, or document headers
 - ALL problems from this single attachment should use the SAME extracted document date
-- Common date formats: "10/12/2022", "MM/DD/YYYY", "Date of Service: MM/DD/YYYY"
-- If multiple dates exist, prioritize: Date of Service > Document signature date > Header date
+- Common date indicators: "Date of Service:", "Date:", header dates, signature dates
+- If multiple dates exist, prioritize: Date of Service > Document signature date > Header date  
 - If no specific date found, use null (system will default to current date)
 ` : "NO ATTACHMENT CONTENT PROVIDED"}
 
@@ -243,14 +243,11 @@ EXAMPLES:
 1. SOAP has "Type 2 DM with neuropathy" + existing "Type 2 DM" (E11.9):
    {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1}
 
-2. Attachment containing "HTN" + existing "Hypertension":
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension", "source_type": "attachment", "extracted_date": "[ACTUAL_DATE_FROM_DOCUMENT]"}
+2. Attachment with HTN + existing Hypertension:
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation", "source_type": "attachment", "extracted_date": null}
 
-3. Same attachment with "COPD" + NO existing respiratory conditions:
-   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Chronic obstructive pulmonary disease", "icd10_change": {"from": null, "to": "J44.1"}, "source_type": "attachment", "visit_notes": "Historical diagnosis documented in attachment", "extracted_date": "[SAME_DATE_AS_ABOVE]"}
-
-4. Same attachment with "DM2" + NO existing diabetes:
-   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus", "icd10_change": {"from": null, "to": "E11.9"}, "source_type": "attachment", "visit_notes": "Historical diagnosis documented in attachment", "extracted_date": "[SAME_DATE_AS_ABOVE]"}
+3. Same attachment with COPD + no existing respiratory conditions:
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Chronic obstructive pulmonary disease", "source_type": "attachment", "extracted_date": null}
 
 Critical: Extract ALL medical conditions from both sources. Create new problems liberally for attachment content. Use medical intelligence to match synonyms but err on the side of creating new problems when in doubt.
 `;
