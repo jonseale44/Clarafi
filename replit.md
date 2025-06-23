@@ -107,7 +107,17 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### File Processing Pipeline Consolidation (June 23, 2025)
+- Consolidated `multiPagePngToBase64Images()` and `pdfToBase64Images()` into unified `extractPageImages()` function
+- Implemented UUID-based temporary file naming to prevent collisions
+- Added centralized cleanup with error handling using `cleanupTempFiles()`
+- Standardized resize parameters: 2048x2048 for single pages, 3000x3000 for multi-page documents
+- Removed legacy comment from single upload endpoint
+
 ## Changelog
 
 Changelog:
 - June 23, 2025. Initial setup
+- June 23, 2025. File processing technical debt cleanup

@@ -117,26 +117,15 @@ export class DocumentAnalysisService {
         summary: string;
       };
 
-      if (attachment.mimeType.startsWith("image/")) {
-        console.log(`📄 [DocumentAnalysis] Processing as image file (checking for multi-page)`);
-        const base64Images = await this.multiPagePngToBase64Images(attachment.filePath);
+      if (attachment.mimeType.startsWith("image/") || attachment.mimeType === "application/pdf") {
+        console.log(`📄 [DocumentAnalysis] Processing ${attachment.mimeType} file`);
+        const base64Images = await this.extractPageImages(attachment.filePath, attachment.mimeType);
         
         if (base64Images.length === 1) {
-          console.log(`📄 [DocumentAnalysis] Single page image processing`);
+          console.log(`📄 [DocumentAnalysis] Single page processing`);
           result = await this.analyzeWithGPT(base64Images[0], attachment.originalFileName);
         } else {
-          console.log(`📄 [DocumentAnalysis] Multi-page image processing (${base64Images.length} pages)`);
-          result = await this.analyzeMultiplePagesWithGPT(base64Images, attachment.originalFileName);
-        }
-      } else if (attachment.mimeType === "application/pdf") {
-        console.log(`📄 [DocumentAnalysis] Processing as PDF file (page-by-page)`);
-        const base64Images = await this.pdfToBase64Images(attachment.filePath);
-        
-        if (base64Images.length === 1) {
-          console.log(`📄 [DocumentAnalysis] Single page PDF processing`);
-          result = await this.analyzeWithGPT(base64Images[0], attachment.originalFileName);
-        } else {
-          console.log(`📄 [DocumentAnalysis] Multi-page PDF processing (${base64Images.length} pages)`);
+          console.log(`📄 [DocumentAnalysis] Multi-page processing (${base64Images.length} pages)`);
           result = await this.analyzeMultiplePagesWithGPT(base64Images, attachment.originalFileName);
         }
       } else {
@@ -230,12 +219,9 @@ export class DocumentAnalysisService {
    * Convert image to base64
    */
   private async imageToBase64(filePath: string): Promise<string> {
-    console.log(
-      `📄 [DocumentAnalysis] Converting image to base64: ${filePath}`,
-    );
+    console.log(`📄 [DocumentAnalysis] Converting single image to base64: ${filePath}`);
 
     try {
-      // Check if file exists
       await fs.access(filePath);
 
       const imageBuffer = await sharp(filePath)
@@ -244,24 +230,15 @@ export class DocumentAnalysisService {
         .toBuffer();
 
       const base64String = imageBuffer.toString("base64");
-      console.log(
-        `📄 [DocumentAnalysis] Image converted to base64, length: ${base64String.length} characters`,
-      );
+      console.log(`📄 [DocumentAnalysis] Single image base64 length: ${base64String.length} characters`);
 
-      // Validate base64 string
       if (base64String.length === 0) {
         throw new Error("Generated base64 string is empty");
       }
 
-      // Test base64 validity
-      const testBuffer = Buffer.from(base64String, "base64");
-      if (testBuffer.length === 0) {
-        throw new Error("Invalid base64 string generated");
-      }
-
       return base64String;
     } catch (error) {
-      console.error(`📄 [DocumentAnalysis] Image conversion failed:`, error);
+      console.error(`📄 [DocumentAnalysis] Single image conversion failed:`, error);
       throw new Error(
         `Failed to convert image to base64: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -269,167 +246,129 @@ export class DocumentAnalysisService {
   }
 
   /**
-   * Convert multi-page PNG to individual page base64 images
+   * Clean up temporary files with error handling
    */
-  private async multiPagePngToBase64Images(filePath: string): Promise<string[]> {
-    console.log(`📄 [DocumentAnalysis] Processing multi-page PNG: ${filePath}`);
-    
+  private async cleanupTempFiles(filePattern: string): Promise<void> {
     try {
-      await fs.access(filePath);
+      const { stdout } = await execAsync(`ls -1 ${filePattern} 2>/dev/null || echo ""`);
+      const files = stdout.trim().split('\n').filter(f => f.length > 0);
       
-      // Use ImageMagick to extract all pages from PNG
-      const timestamp = Date.now();
-      const outputPrefix = `/tmp/png_page_${timestamp}`;
-      
-      // Extract all pages from multi-page PNG
-      const command = `convert "${filePath}" "${outputPrefix}_%d.png"`;
-      console.log(`📄 [DocumentAnalysis] Extracting PNG pages: ${command}`);
-      
-      const { stdout, stderr } = await execAsync(command);
-      if (stderr && !stderr.includes('Warning')) {
-        console.log(`📄 [DocumentAnalysis] ImageMagick stderr: ${stderr}`);
+      for (const file of files) {
+        try {
+          await fs.unlink(file);
+        } catch (unlinkError) {
+          console.warn(`📄 [DocumentAnalysis] Failed to clean up temp file ${file}:`, unlinkError);
+        }
       }
-      
-      // Find all generated pages
-      const { stdout: lsOutput } = await execAsync(`ls -1 /tmp/png_page_${timestamp}_*.png 2>/dev/null || echo ""`);
-      const pageFiles = lsOutput.trim().split('\n').filter(f => f.length > 0);
-      
-      if (pageFiles.length === 0) {
-        // Fallback to single page processing
-        console.log(`📄 [DocumentAnalysis] No multiple pages found, processing as single PNG`);
-        return [await this.imageToBase64(filePath)];
-      }
-      
-      console.log(`📄 [DocumentAnalysis] Found ${pageFiles.length} PNG pages: ${pageFiles.join(', ')}`);
-      
-      // Process each page with high quality
-      const base64Images: string[] = [];
-      for (const pageFile of pageFiles) {
-        const imageBuffer = await sharp(pageFile)
-          .resize(3000, 3000, { fit: 'inside', withoutEnlargement: true })
-          .jpeg({ quality: 95 })
-          .toBuffer();
-        
-        const base64String = imageBuffer.toString('base64');
-        console.log(`📄 [DocumentAnalysis] PNG page base64 length: ${base64String.length} characters`);
-        base64Images.push(base64String);
-        
-        // Clean up page file
-        await fs.unlink(pageFile);
-      }
-      
-      return base64Images;
-      
     } catch (error) {
-      console.error(`📄 [DocumentAnalysis] Multi-page PNG processing failed:`, error);
-      // Fallback to single page processing
-      return [await this.imageToBase64(filePath)];
+      console.warn(`📄 [DocumentAnalysis] Failed to list temp files for cleanup:`, error);
     }
   }
 
   /**
-   * Convert PDF to individual page base64 images (parallel processing)
+   * Extract pages from documents (PDF or multi-page images) to base64 images
+   * Unified function that handles both PDFs and multi-page PNGs
    */
-  private async pdfToBase64Images(filePath: string): Promise<string[]> {
-    console.log(`📄 [DocumentAnalysis] Converting PDF to image: ${filePath}`);
+  private async extractPageImages(filePath: string, mimeType: string): Promise<string[]> {
+    console.log(`📄 [DocumentAnalysis] Extracting pages from: ${filePath} (${mimeType})`);
+
+    // Generate UUID-based temp directory to avoid collisions
+    const sessionId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const tempPattern = `/tmp/page_extract_${sessionId}*`;
 
     try {
-      // Check if PDF file exists
       await fs.access(filePath);
-      console.log(
-        `📄 [DocumentAnalysis] PDF file exists, proceeding with direct pdftoppm conversion`,
-      );
 
-      // Use pdftoppm directly since it's the most reliable method
-      const timestamp = Date.now();
-      const outputPrefix = `/tmp/pdf_convert_${timestamp}`;
-
-      console.log(`📄 [DocumentAnalysis] Running pdftoppm command...`);
-      console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
-      console.log(`📄 [DocumentAnalysis] Output prefix: ${outputPrefix}`);
-
-      // Convert all pages to high-resolution individual images
-      const command = `pdftoppm -jpeg -r 150 "${filePath}" "${outputPrefix}"`;
-      console.log(`📄 [DocumentAnalysis] Command: ${command}`);
+      let command: string;
+      let expectedExtension: string;
+      
+      if (mimeType === "application/pdf") {
+        // Use pdftoppm for PDFs (most reliable)
+        const outputPrefix = `/tmp/page_extract_${sessionId}`;
+        command = `pdftoppm -jpeg -r 150 "${filePath}" "${outputPrefix}"`;
+        expectedExtension = ".jpg";
+        console.log(`📄 [DocumentAnalysis] PDF extraction command: ${command}`);
+      } else {
+        // Use ImageMagick convert for multi-page images
+        const outputPrefix = `/tmp/page_extract_${sessionId}`;
+        command = `convert "${filePath}" "${outputPrefix}_%d.png"`;
+        expectedExtension = ".png";
+        console.log(`📄 [DocumentAnalysis] Image extraction command: ${command}`);
+      }
 
       const { stdout, stderr } = await execAsync(command);
       if (stderr && !stderr.includes('Warning')) {
-        console.log(`📄 [DocumentAnalysis] pdftoppm stderr: ${stderr}`);
+        console.log(`📄 [DocumentAnalysis] Command stderr: ${stderr}`);
       }
 
       // Find all generated pages
-      const { stdout: lsOutput } = await execAsync(
-        `ls -1 /tmp/pdf_convert_${timestamp}*.jpg 2>/dev/null || echo ""`,
-      );
-      const pageFiles = lsOutput
-        .trim()
-        .split("\n")
-        .filter((f) => f.length > 0);
+      const listPattern = mimeType === "application/pdf" 
+        ? `/tmp/page_extract_${sessionId}*.jpg`
+        : `/tmp/page_extract_${sessionId}_*.png`;
+      
+      const { stdout: lsOutput } = await execAsync(`ls -1 ${listPattern} 2>/dev/null || echo ""`);
+      const pageFiles = lsOutput.trim().split('\n').filter(f => f.length > 0);
 
       if (pageFiles.length === 0) {
-        throw new Error(`No converted pages found for timestamp ${timestamp}`);
+        // For images, fallback to single page processing
+        if (mimeType.startsWith("image/")) {
+          console.log(`📄 [DocumentAnalysis] No multiple pages found, processing as single image`);
+          return [await this.imageToBase64(filePath)];
+        }
+        throw new Error(`No pages extracted from ${mimeType} file`);
       }
 
-      console.log(
-        `📄 [DocumentAnalysis] Found ${pageFiles.length} pages: ${pageFiles.join(", ")}`,
-      );
+      console.log(`📄 [DocumentAnalysis] Found ${pageFiles.length} pages: ${pageFiles.join(", ")}`);
 
-      // Combine all pages into a single composite image using ImageMagick
-      if (pageFiles.length === 1) {
-        // Single page - apply same constraints as PNG processing
-        console.log(
-          `📄 [DocumentAnalysis] Processing single page: ${pageFiles[0]}`,
-        );
-        console.log(
-          `📄 [DocumentAnalysis] Applying PNG-equivalent size constraints`,
-        );
-        const imageBuffer = await sharp(pageFiles[0])
-          .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
-          .jpeg({ quality: 95 })
-          .toBuffer();
-
-        const base64String = imageBuffer.toString("base64");
-        console.log(
-          `📄 [DocumentAnalysis] Single page base64 length: ${base64String.length} characters`,
-        );
-        console.log(
-          `📄 [DocumentAnalysis] Estimated Vision API tokens: ~${Math.ceil(base64String.length / 4)}`,
-        );
-        console.log(
-          `📄 [DocumentAnalysis] Token efficiency: ${base64String.length < 500000 ? "✅ GOOD" : "⚠️ HIGH"} (target: <500K chars)`,
-        );
-
-        // Clean up
-        await fs.unlink(pageFiles[0]);
-        return [base64String];
-      } else {
-        // Process each page with high quality (no composite)
-        const base64Images: string[] = [];
-        for (const pageFile of pageFiles) {
+      const base64Images: string[] = [];
+      
+      try {
+        for (let i = 0; i < pageFiles.length; i++) {
+          const pageFile = pageFiles[i];
+          
+          // Use consistent sizing: 2048x2048 for single page, 3000x3000 for multi-page
+          const maxSize = pageFiles.length === 1 ? 2048 : 3000;
+          
           const imageBuffer = await sharp(pageFile)
-            .resize(3000, 3000, { fit: 'inside', withoutEnlargement: true })
+            .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
             .jpeg({ quality: 95 })
             .toBuffer();
           
           const base64String = imageBuffer.toString('base64');
-          console.log(`📄 [DocumentAnalysis] PDF page base64 length: ${base64String.length} characters`);
-          base64Images.push(base64String);
+          console.log(`📄 [DocumentAnalysis] Page ${i + 1} base64 length: ${base64String.length} characters`);
           
-          // Clean up page file
-          await fs.unlink(pageFile);
+          if (pageFiles.length === 1) {
+            console.log(`📄 [DocumentAnalysis] Token efficiency: ${base64String.length < 500000 ? "✅ GOOD" : "⚠️ HIGH"} (target: <500K chars)`);
+          }
+          
+          base64Images.push(base64String);
         }
         
         return base64Images;
-
+        
+      } finally {
+        // Always clean up temp files
+        await this.cleanupTempFiles(tempPattern);
       }
+      
     } catch (error) {
-      console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
-      console.error(`📄 [DocumentAnalysis] Error details:`, {
-        message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
-      });
+      // Ensure cleanup on error
+      await this.cleanupTempFiles(tempPattern);
+      
+      console.error(`📄 [DocumentAnalysis] Page extraction failed:`, error);
+      
+      // For images, try fallback to single page processing
+      if (mimeType.startsWith("image/")) {
+        console.log(`📄 [DocumentAnalysis] Attempting fallback to single image processing`);
+        try {
+          return [await this.imageToBase64(filePath)];
+        } catch (fallbackError) {
+          console.error(`📄 [DocumentAnalysis] Fallback also failed:`, fallbackError);
+        }
+      }
+      
       throw new Error(
-        `Failed to convert PDF to image: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to extract pages from ${mimeType}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
