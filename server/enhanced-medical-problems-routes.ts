@@ -325,10 +325,12 @@ router.post("/medical-problems/process-encounter", async (req, res) => {
 
     // Process the encounter using the medical problems delta service
     const startTime = Date.now();
-    const result = await medicalProblemsDelta.processSOAPDelta(
+    const result = await unifiedMedicalProblemsParser.processUnified(
       patientId,
       encounterId,
       soapNote,
+      null, // No attachment content for SOAP processing
+      null, // No attachment ID for SOAP processing
       providerId,
       triggerType || "manual_edit"
     );
