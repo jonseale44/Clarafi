@@ -136,12 +136,20 @@ Input: "${vitalsText}"`;
       }
 
       console.log("🩺 [VitalsParser] Cleaned content:", cleanedContent);
+      console.log("🩺 [VitalsParser] Content length:", cleanedContent.length);
+      console.log("🩺 [VitalsParser] Starts with [:", cleanedContent.startsWith("["));
+      console.log("🩺 [VitalsParser] Starts with {:", cleanedContent.startsWith("{"));
 
       let parsedData: ParsedVitalsData[];
       try {
         const parsed = JSON.parse(cleanedContent);
+        console.log("🩺 [VitalsParser] Parsed JSON type:", typeof parsed);
+        console.log("🩺 [VitalsParser] Is array:", Array.isArray(parsed));
+        console.log("🩺 [VitalsParser] Parsed data preview:", JSON.stringify(parsed).substring(0, 200));
+        
         // Handle both array and single object responses from GPT
         parsedData = Array.isArray(parsed) ? parsed : [parsed];
+        console.log("🩺 [VitalsParser] Final parsedData length:", parsedData.length);
       } catch (parseError) {
         console.error("❌ [VitalsParser] JSON parse error:", parseError);
         return {
