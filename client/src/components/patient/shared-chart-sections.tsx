@@ -27,7 +27,7 @@ function VitalsSection({ patientId, encounterId, mode }: {
   encounterId?: number, 
   mode: "patient-chart" | "encounter" 
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
   
   const { data: patient } = useQuery({
     queryKey: [`/api/patients/${patientId}`],
@@ -53,162 +53,75 @@ function VitalsSection({ patientId, encounterId, mode }: {
   const vitalsCount = vitalsEntries.length;
   const hasAlerts = vitalsEntries.some((v: any) => v.alerts?.length > 0);
 
-  if (isExpanded) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold">Vitals - Full View</h3>
-            <Badge variant="secondary" className="text-xs">
-              {vitalsCount} entries
-            </Badge>
-            {hasAlerts && (
-              <Badge variant="destructive" className="text-xs">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Alerts
-              </Badge>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(false)}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <Minimize2 className="h-4 w-4 mr-1" />
-            Collapse
-          </Button>
-        </div>
-        
-        <VitalsFlowsheet
-          encounterId={encounterId!}
-          patientId={patientId}
-          patient={patient as any}
-          readOnly={false}
-          showAllPatientVitals={mode === "patient-chart"}
-        />
-      </div>
-    );
-  }
-
+  // Always show the full view as baseline
   return (
-    <Card className="relative">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-base">Vitals Summary</CardTitle>
-            <Badge variant="secondary" className="text-xs">
-              {vitalsCount} entries
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Activity className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold">Vitals</h3>
+          <Badge variant="secondary" className="text-xs">
+            {vitalsCount} entries
+          </Badge>
+          {hasAlerts && (
+            <Badge variant="destructive" className="text-xs">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Alerts
             </Badge>
-            {hasAlerts && (
-              <Badge variant="destructive" className="text-xs">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Alerts
-              </Badge>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(true)}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          >
-            <Expand className="h-4 w-4 mr-1" />
-            Expand
-          </Button>
+          )}
         </div>
-      </CardHeader>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsFullScreenOpen(true)}
+          className="text-gray-700 hover:text-gray-900"
+        >
+          <Expand className="h-4 w-4 mr-1" />
+          Full Screen
+        </Button>
+      </div>
       
-      <CardContent className="pt-0">
-        {latestVitals ? (
-          <div className="space-y-3">
-            {/* Latest Vitals Quick View */}
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Most Recent</span>
-                <span className="text-xs text-gray-500">
-                  {format(new Date(latestVitals.recordedAt), 'MMM d, yyyy HH:mm')}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                {latestVitals.systolicBp && latestVitals.diastolicBp && (
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">BP</span>
-                    <span className="font-medium">
-                      {latestVitals.systolicBp}/{latestVitals.diastolicBp}
-                    </span>
-                  </div>
-                )}
-                
-                {latestVitals.heartRate && (
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">HR</span>
-                    <span className="font-medium">{latestVitals.heartRate} bpm</span>
-                  </div>
-                )}
-                
-                {latestVitals.temperature && (
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">Temp</span>
-                    <span className="font-medium">{latestVitals.temperature}°F</span>
-                  </div>
-                )}
-                
-                {latestVitals.oxygenSaturation && (
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">SpO2</span>
-                    <span className="font-medium">{latestVitals.oxygenSaturation}%</span>
-                  </div>
-                )}
-              </div>
-              
-              {latestVitals.sourceType && latestVitals.sourceType !== 'manual_entry' && (
-                <div className="mt-2 pt-2 border-t border-gray-200">
-                  <Badge variant="outline" className="text-xs">
-                    {latestVitals.sourceType === 'attachment_extracted' ? 'Document Extract' : latestVitals.sourceType}
+      <VitalsFlowsheet
+        encounterId={encounterId!}
+        patientId={patientId}
+        patient={patient as any}
+        readOnly={false}
+        showAllPatientVitals={mode === "patient-chart"}
+      />
+
+      {/* Full Screen Modal */}
+      <Dialog open={isFullScreenOpen} onOpenChange={setIsFullScreenOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full overflow-hidden p-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-6 w-6 text-blue-600" />
+                <DialogTitle className="text-xl">Vitals - Full Screen View</DialogTitle>
+                <Badge variant="secondary">
+                  {vitalsCount} entries
+                </Badge>
+                {hasAlerts && (
+                  <Badge variant="destructive">
+                    <AlertTriangle className="h-4 w-4 mr-1" />
+                    Alerts
                   </Badge>
-                </div>
-              )}
-            </div>
-            
-            {/* Quick Actions */}
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <TrendingUp className="h-4 w-4" />
-                <span>
-                  {vitalsCount > 1 ? `${vitalsCount} total entries` : '1 entry'}
-                </span>
+                )}
               </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsExpanded(true)}
-                className="text-xs"
-              >
-                View All & Add New
-              </Button>
             </div>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto px-6 py-4">
+            <VitalsFlowsheet
+              encounterId={encounterId!}
+              patientId={patientId}
+              patient={patient as any}
+              readOnly={false}
+              showAllPatientVitals={mode === "patient-chart"}
+            />
           </div>
-        ) : (
-          <div className="text-center py-6 text-gray-500">
-            <Activity className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No vitals recorded yet</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="mt-2 text-xs"
-            >
-              Add First Entry
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
