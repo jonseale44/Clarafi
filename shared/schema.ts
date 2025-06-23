@@ -304,7 +304,7 @@ export const allergies = pgTable("allergies", {
 export const vitals = pgTable("vitals", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
-  encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id),
   recordedAt: timestamp("recorded_at").notNull().defaultNow(),
   recordedBy: text("recorded_by").notNull(),
   entryType: text("entry_type").notNull().default("routine"), // 'admission', 'routine', 'recheck', 'discharge', etc.
