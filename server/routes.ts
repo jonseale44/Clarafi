@@ -705,6 +705,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;
   app.use("/api/vitals", unifiedVitalsAPI);
   
+  // Parse-only endpoint for Quick Parse form population
+  const { parseVitalsOnly } = await import("./vitals-parse-only-api.js");
+  app.post("/api/vitals/parse-only", parseVitalsOnly);
+  
   // Debug endpoint for testing multiple vitals extraction
   app.post("/api/debug/test-vitals", async (req, res) => {
     try {

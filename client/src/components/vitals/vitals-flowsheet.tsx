@@ -296,16 +296,13 @@ export function VitalsFlowsheet({
     return encounterMatch ? encounterMatch[1] : null;
   };
 
-  // Quick parse mutation using server-side GPT parsing
+  // Quick parse mutation for form population (parse-only)
   const quickParseMutation = useMutation({
     mutationFn: async (text: string) => {
       console.log("🩺 [VitalsFlowsheet] Starting GPT parsing for text:", text);
       
-      // Get the current encounter ID from URL or props
-      const currentEncounterId = encounterId || getCurrentEncounterId();
-      
-      // Use server-side GPT parsing via vitals-parser-service.ts
-      const response = await fetch('/api/vitals/parse-text', {
+      // Use parse-only endpoint to get structured data for form population
+      const response = await fetch('/api/vitals/parse-only', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -313,8 +310,7 @@ export function VitalsFlowsheet({
         credentials: 'include',
         body: JSON.stringify({
           text: text,
-          patientId: Number(patientId),
-          encounterId: currentEncounterId ? Number(currentEncounterId) : null
+          patientId: Number(patientId)
         })
       });
 
@@ -327,21 +323,51 @@ export function VitalsFlowsheet({
         throw new Error(apiResponse.error?.message || 'Parse failed');
       }
 
-      console.log("🩺 [VitalsFlowsheet] Unified API response:", apiResponse);
+      console.log("🩺 [VitalsFlowsheet] Parse-only API response:", apiResponse);
       return apiResponse;
     },
     onSuccess: (result) => {
-      console.log("🩺 [VitalsFlowsheet] Unified vitals response:", result);
+      console.log("🩺 [VitalsFlowsheet] Parse-only vitals response:", result);
       
-      if (result.success) {
-        toast({
-          title: "Vitals Parsed and Saved",
-          description: `Successfully processed ${result.vitalsCount || 1} vital sign set(s)`,
-        });
+      if (result.success && result.vitals) {
+        // Get the current encounter ID from URL or props
+        const currentEncounterId = encounterId || getCurrentEncounterId();
         
-        // Clear the text and refresh the vitals data
+        // Transform parsed data to vitals entry format for form population
+        const newEntry: Partial<VitalsEntry> = {
+          encounterId: currentEncounterId ? Number(currentEncounterId) : null,
+          patientId: Number(patientId),
+          entryType: 'routine',
+          recordedAt: result.vitals.extractedDate 
+            ? new Date(result.vitals.extractedDate + 'T00:00:00.000Z').toISOString()
+            : new Date().toISOString(),
+          systolicBp: result.vitals.systolicBp,
+          diastolicBp: result.vitals.diastolicBp,
+          heartRate: result.vitals.heartRate,
+          temperature: result.vitals.temperature,
+          weight: result.vitals.weight,
+          height: result.vitals.height,
+          bmi: result.vitals.bmi,
+          oxygenSaturation: result.vitals.oxygenSaturation,
+          respiratoryRate: result.vitals.respiratoryRate,
+          painScale: result.vitals.painScale,
+          parsedFromText: true,
+          originalText: quickParseText,
+          notes: result.vitals.parsedText || "",
+          alerts: result.vitals.warnings || []
+        };
+        
+        console.log("🩺 [VitalsFlowsheet] Created new entry for form:", newEntry);
+        setEditingEntry(newEntry as VitalsEntry);
+        setShowAddDialog(true);
+        
+        // Clear the quick parse text since it's now in the form
         setQuickParseText("");
-        queryClient.invalidateQueries({ queryKey: ['/api/vitals/patient', Number(patientId)] });
+        
+        toast({
+          title: "Vitals Parsed Successfully",
+          description: `Extracted ${Object.keys(result.vitals).filter(k => result.vitals[k] !== null && result.vitals[k] !== undefined).length} vital signs. Review and save.`,
+        });
       } else {
         toast({
           title: "Parse Failed", 
