@@ -144,11 +144,6 @@ export class DocumentAnalysisService {
       }
 
       console.log(`📄 [DocumentAnalysis] ✅ Document processing complete`);
-        attachment.originalFileName,
-      );
-      console.log(
-        `📄 [DocumentAnalysis] ✅ GPT-4.1 Vision processing complete`,
-      );
 
       // Save results
       console.log(
@@ -425,49 +420,7 @@ export class DocumentAnalysisService {
         }
         
         return base64Images;
-          .toBuffer();
-        console.log(
-          `📄 [DocumentAnalysis] Composite buffer size: ${imageBuffer.length} bytes`,
-        );
 
-        const base64String = imageBuffer.toString("base64");
-        console.log(
-          `📄 [DocumentAnalysis] Composite base64 length: ${base64String.length} characters`,
-        );
-        console.log(
-          `📄 [DocumentAnalysis] Estimated Vision API tokens: ~${Math.ceil(base64String.length / 4)}`,
-        );
-        console.log(
-          `📄 [DocumentAnalysis] Token efficiency: ${base64String.length < 500000 ? "✅ GOOD" : "⚠️ HIGH"} (target: <500K chars)`,
-        );
-        console.log(
-          `📄 [DocumentAnalysis] Composite base64 preview: ${base64String.substring(0, 50)}...`,
-        );
-
-        // Validate base64 format
-        if (!base64String.match(/^[A-Za-z0-9+/]*={0,2}$/)) {
-          console.error(
-            `📄 [DocumentAnalysis] Invalid base64 format detected in composite`,
-          );
-          console.error(
-            `📄 [DocumentAnalysis] Invalid characters found in base64 string`,
-          );
-          throw new Error(
-            "Generated base64 string contains invalid characters",
-          );
-        }
-
-        console.log(
-          `📄 [DocumentAnalysis] Base64 validation passed for composite image`,
-        );
-
-        // Clean up all files
-        await fs.unlink(compositeFile);
-        for (const file of pageFiles) {
-          await fs.unlink(file);
-        }
-
-        return base64String;
       }
     } catch (error) {
       console.error(`📄 [DocumentAnalysis] PDF conversion failed:`, error);
