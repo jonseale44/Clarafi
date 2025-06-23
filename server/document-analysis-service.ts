@@ -110,32 +110,40 @@ export class DocumentAnalysisService {
       );
       console.log(`📄 [DocumentAnalysis] File path: ${attachment.filePath}`);
 
-      let imageData: string;
+      let result: {
+        extractedText: string;
+        title: string;
+        documentType: string;
+        summary: string;
+      };
 
       if (attachment.mimeType.startsWith("image/")) {
-        console.log(`📄 [DocumentAnalysis] Processing as image file`);
-        imageData = await this.imageToBase64(attachment.filePath);
+        console.log(`📄 [DocumentAnalysis] Processing as image file (checking for multi-page)`);
+        const base64Images = await this.multiPagePngToBase64Images(attachment.filePath);
+        
+        if (base64Images.length === 1) {
+          console.log(`📄 [DocumentAnalysis] Single page image processing`);
+          result = await this.analyzeWithGPT(base64Images[0], attachment.originalFileName);
+        } else {
+          console.log(`📄 [DocumentAnalysis] Multi-page image processing (${base64Images.length} pages)`);
+          result = await this.analyzeMultiplePagesWithGPT(base64Images, attachment.originalFileName);
+        }
       } else if (attachment.mimeType === "application/pdf") {
-        console.log(`📄 [DocumentAnalysis] Processing as PDF file`);
-        imageData = await this.pdfToBase64Image(attachment.filePath);
+        console.log(`📄 [DocumentAnalysis] Processing as PDF file (page-by-page)`);
+        const base64Images = await this.pdfToBase64Images(attachment.filePath);
+        
+        if (base64Images.length === 1) {
+          console.log(`📄 [DocumentAnalysis] Single page PDF processing`);
+          result = await this.analyzeWithGPT(base64Images[0], attachment.originalFileName);
+        } else {
+          console.log(`📄 [DocumentAnalysis] Multi-page PDF processing (${base64Images.length} pages)`);
+          result = await this.analyzeMultiplePagesWithGPT(base64Images, attachment.originalFileName);
+        }
       } else {
         throw new Error(`Unsupported file type: ${attachment.mimeType}`);
       }
 
-      console.log(
-        `📄 [DocumentAnalysis] Successfully converted file to base64, length: ${imageData.length}`,
-      );
-
-      if (!imageData || imageData.length === 0) {
-        throw new Error("Generated base64 data is empty");
-      }
-
-      // Process with GPT-4.1 Vision
-      console.log(
-        `📄 [DocumentAnalysis] 🤖 Calling GPT-4.1 Vision for OCR processing`,
-      );
-      const result = await this.analyzeWithGPT(
-        imageData,
+      console.log(`📄 [DocumentAnalysis] ✅ Document processing complete`);
         attachment.originalFileName,
       );
       console.log(
@@ -398,7 +406,7 @@ export class DocumentAnalysisService {
 
         // Clean up
         await fs.unlink(pageFiles[0]);
-        return base64String;
+        return [base64String];
       } else {
         // Process each page with high quality (no composite)
         const base64Images: string[] = [];
@@ -417,21 +425,6 @@ export class DocumentAnalysisService {
         }
         
         return base64Images;
-
-        const { stdout: convertOut, stderr: convertErr } =
-          await execAsync(convertCommand);
-        if (convertOut)
-          console.log(`📄 [DocumentAnalysis] Convert stdout: ${convertOut}`);
-        if (convertErr)
-          console.log(`📄 [DocumentAnalysis] Convert stderr: ${convertErr}`);
-
-        // Apply same size constraints as PNG processing using Sharp
-        console.log(
-          `📄 [DocumentAnalysis] Applying PNG-equivalent size constraints`,
-        );
-        const imageBuffer = await sharp(compositeFile)
-          .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
-          .jpeg({ quality: 95 })
           .toBuffer();
         console.log(
           `📄 [DocumentAnalysis] Composite buffer size: ${imageBuffer.length} bytes`,
