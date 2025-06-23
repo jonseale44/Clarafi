@@ -404,7 +404,18 @@ export const medications = pgTable("medications", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Enhanced Medical Problems with JSONB Visit History
+/**
+ * LONGITUDINAL MEDICAL PROBLEMS TABLE (PATIENT PROBLEM LIST)
+ * 
+ * PURPOSE: Cross-encounter tracking of ongoing patient conditions
+ * SCOPE: Patient-wide historical view with visit history tracking
+ * 
+ * IMPORTANT: This is DIFFERENT from diagnoses table:
+ * - medicalProblems = Longitudinal problem list (diabetes, hypertension across years)
+ * - diagnoses = Billing codes for specific encounters (chest pain visit today)
+ * 
+ * Both tables serve different business purposes and should coexist.
+ */
 export const medicalProblems = pgTable("medical_problems", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
@@ -423,7 +434,19 @@ export const medicalProblems = pgTable("medical_problems", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Legacy Diagnoses (keeping for backward compatibility)
+/**
+ * BILLING DIAGNOSES TABLE (NOT LEGACY - ACTIVE BILLING SYSTEM)
+ * 
+ * PURPOSE: Encounter-specific billing codes for insurance/coding
+ * SCOPE: Single encounter billing (what you're treating TODAY)
+ * 
+ * IMPORTANT: This is DIFFERENT from medicalProblems table:
+ * - diagnoses = Billing codes for THIS encounter (required for reimbursement)
+ * - medicalProblems = Longitudinal patient problem list (ongoing conditions across encounters)
+ * 
+ * Both tables serve different business purposes and should coexist.
+ * DO NOT deprecate this table - it's essential for medical billing.
+ */
 export const diagnoses = pgTable("diagnoses", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),

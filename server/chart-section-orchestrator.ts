@@ -1,8 +1,22 @@
 /**
- * Chart Section Orchestrator
+ * CHART SECTION ORCHESTRATOR - SCALABLE PARALLEL PROCESSING ARCHITECTURE
  * 
- * Coordinates parallel processing of multiple chart sections for optimal performance
- * This will be used when we have 10+ chart section parsers to prevent 30+ second delays
+ * ⚠️  IMPORTANT: DO NOT REMOVE OR REFACTOR WITHOUT UNDERSTANDING THE VISION ⚠️
+ * 
+ * PURPOSE: Coordinates parallel processing of 10+ chart sections simultaneously
+ * GOAL: Prevent 30+ second delays when processing comprehensive medical documents
+ * 
+ * CURRENT STATUS: 2 of 10+ processors implemented (vitals, medical-problems)
+ * FUTURE EXPANSION: Will add medications, allergies, labs, social-history, etc.
+ * 
+ * ARCHITECTURE NOTES:
+ * - Each processor runs independently in parallel
+ * - Priority-based processing (medical-problems=1, vitals=2, etc.)
+ * - Graceful failure handling per section
+ * - Designed for horizontal scaling across multiple chart sections
+ * 
+ * DO NOT DELETE: This is intentional architecture, not technical debt
+ * DO NOT DUPLICATE: Check if processor already exists before creating new ones
  */
 
 import { chartSectionQueue } from "./chart-section-queue.js";

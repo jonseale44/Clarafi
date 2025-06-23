@@ -7,7 +7,7 @@
  */
 
 import crypto from "crypto";
-import { medicalProblemsDelta } from "./medical-problems-delta-service.js";
+import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
 
 interface EncounterProcessingState {
   encounterId: number;
@@ -59,11 +59,13 @@ class MedicalProblemsOrchestrator {
     const soapHash = this.generateSOAPHash(soapNote);
 
     try {
-      // Process with initial tier context
-      const result = await medicalProblemsDelta.processSOAPDelta(
+      // Process with unified parser directly
+      const result = await unifiedMedicalProblemsParser.processUnified(
         patientId,
         encounterId,
         soapNote,
+        null, // No attachment content for SOAP processing
+        null, // No attachment ID for SOAP processing
         providerId,
         "recording_complete" // Use recording completion trigger type
       );
@@ -124,11 +126,13 @@ class MedicalProblemsOrchestrator {
     console.log(`🎯 [MedicalOrchestrator] SOAP content changed - processing revision`);
 
     try {
-      // Process with revision tier context
-      const result = await medicalProblemsDelta.processSOAPDelta(
+      // Process with unified parser directly
+      const result = await unifiedMedicalProblemsParser.processUnified(
         patientId,
         encounterId,
         soapNote,
+        null, // No attachment content for SOAP processing
+        null, // No attachment ID for SOAP processing
         providerId,
         "manual_edit" // Use manual edit trigger type for revisions
       );
