@@ -354,15 +354,23 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
       return;
     }
 
-    // Get encounter details for dating
-    let encounterDate = new Date();
-    if (encounterId) {
+    // Determine appropriate date for visit history
+    let visitDate: string;
+    if (change.extracted_date) {
+      // Use extracted date from attachment content
+      visitDate = change.extracted_date;
+    } else if (encounterId) {
+      // Use encounter date for SOAP note content
       const encounter = await db
         .select()
         .from(encounters)
         .where(eq(encounters.id, encounterId))
         .limit(1);
-      encounterDate = encounter[0]?.startTime || new Date();
+      const encounterDate = encounter[0]?.startTime || new Date();
+      visitDate = encounterDate.toISOString().split("T")[0];
+    } else {
+      // Fallback to current date
+      visitDate = new Date().toISOString().split("T")[0];
     }
 
     // Transfer existing visit history
@@ -372,7 +380,7 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
 
     // Add new visit entry for this evolution
     const newVisitEntry: UnifiedVisitHistoryEntry = {
-      date: encounterDate.toISOString().split("T")[0],
+      date: visitDate,
       notes: change.visit_notes || `Diagnosis evolved: ${change.icd10_change?.from} → ${change.icd10_change?.to}`,
       source: change.source_type === "attachment" ? "attachment" : "encounter",
       encounterId: encounterId || undefined,
@@ -429,18 +437,27 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
     attachmentId: number | null
   ): Promise<void> {
     
-    let encounterDate = new Date();
-    if (encounterId) {
+    // Determine appropriate date for visit history
+    let visitDate: string;
+    if (change.extracted_date) {
+      // Use extracted date from attachment content
+      visitDate = change.extracted_date;
+    } else if (encounterId) {
+      // Use encounter date for SOAP note content
       const encounter = await db
         .select()
         .from(encounters)
         .where(eq(encounters.id, encounterId))
         .limit(1);
-      encounterDate = encounter[0]?.startTime || new Date();
+      const encounterDate = encounter[0]?.startTime || new Date();
+      visitDate = encounterDate.toISOString().split("T")[0];
+    } else {
+      // Fallback to current date
+      visitDate = new Date().toISOString().split("T")[0];
     }
 
     const visitEntry: UnifiedVisitHistoryEntry = {
-      date: encounterDate.toISOString().split("T")[0],
+      date: visitDate,
       notes: change.visit_notes || "",
       source: change.source_type === "attachment" ? "attachment" : "encounter",
       encounterId: encounterId || undefined,
@@ -457,7 +474,7 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
       problemTitle: change.problem_title!,
       currentIcd10Code: change.icd10_change?.to,
       problemStatus: "active",
-      firstDiagnosedDate: encounterDate.toISOString().split("T")[0],
+      firstDiagnosedDate: visitDate,
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
       visitHistory: [visitEntry],
@@ -495,14 +512,23 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
       ? existingProblem.visitHistory as UnifiedVisitHistoryEntry[]
       : [];
 
-    let encounterDate = new Date();
-    if (encounterId) {
+    // Determine appropriate date for visit history
+    let visitDate: string;
+    if (change.extracted_date) {
+      // Use extracted date from attachment content
+      visitDate = change.extracted_date;
+    } else if (encounterId) {
+      // Use encounter date for SOAP note content
       const encounter = await db
         .select()
         .from(encounters)
         .where(eq(encounters.id, encounterId))
         .limit(1);
-      encounterDate = encounter[0]?.startTime || new Date();
+      const encounterDate = encounter[0]?.startTime || new Date();
+      visitDate = encounterDate.toISOString().split("T")[0];
+    } else {
+      // Fallback to current date
+      visitDate = new Date().toISOString().split("T")[0];
     }
 
     // Check for existing visit from this source
@@ -520,7 +546,7 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
       // Update existing visit
       const updatedVisit: UnifiedVisitHistoryEntry = {
         ...visitHistory[existingVisitIndex],
-        date: encounterDate.toISOString().split("T")[0],
+        date: visitDate,
         notes: change.visit_notes || visitHistory[existingVisitIndex].notes,
         icd10AtVisit: change.icd10_change?.to || visitHistory[existingVisitIndex].icd10AtVisit,
         confidence: change.confidence
@@ -531,7 +557,7 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
     } else {
       // Add new visit
       const newVisitEntry: UnifiedVisitHistoryEntry = {
-        date: encounterDate.toISOString().split("T")[0],
+        date: visitDate,
         notes: change.visit_notes || "",
         source: change.source_type === "attachment" ? "attachment" : "encounter",
         encounterId: encounterId || undefined,
