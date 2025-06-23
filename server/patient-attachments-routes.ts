@@ -182,12 +182,12 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
 
 // Upload multiple attachments
 router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (req: Request, res: Response) => {
-  console.log('📎 [Backend] Bulk upload request received');
-  console.log('📎 [Backend] Patient ID:', req.params.patientId);
-  console.log('📎 [Backend] Auth status:', !!req.isAuthenticated?.());
-  console.log('📎 [Backend] User:', req.user?.id);
-  console.log('📎 [Backend] Files count:', req.files ? (req.files as Express.Multer.File[]).length : 0);
-  console.log('📎 [Backend] Request body:', req.body);
+  console.log('🔥 [UPLOAD WORKFLOW] ============= STARTING BULK ATTACHMENT UPLOAD =============');
+  console.log('📎 [AttachmentUpload] Patient ID:', req.params.patientId);
+  console.log('📎 [AttachmentUpload] Auth status:', !!req.isAuthenticated?.());
+  console.log('📎 [AttachmentUpload] User:', req.user?.id);
+  console.log('📎 [AttachmentUpload] Files count:', req.files ? (req.files as Express.Multer.File[]).length : 0);
+  console.log('📎 [AttachmentUpload] Request body:', req.body);
   
   const uploadedFiles: Express.Multer.File[] = [];
   const createdAttachments: any[] = [];
@@ -200,14 +200,14 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
 
     const files = req.files as Express.Multer.File[];
     if (!files || files.length === 0) {
-      console.log('📎 [Backend] No files in request');
+      console.log('📎 [AttachmentUpload] ❌ No files provided in bulk upload');
       return res.status(400).json({ error: 'No files uploaded' });
     }
 
     const patientId = parseInt(req.params.patientId);
     const { encounterId, isConfidential, globalDescription } = req.body;
     
-    console.log(`📎 [Backend] Processing ${files.length} files for patient ${patientId}`);
+    console.log(`📎 [AttachmentUpload] Processing ${files.length} files for patient ${patientId}`);
     
     // Process each file
     for (const file of files) {
@@ -238,13 +238,16 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
         const [attachment] = await db.insert(patientAttachments).values(validatedData).returning();
         
         createdAttachments.push(attachment);
-        console.log(`📎 [Attachments] File processed: ${file.originalname} -> ID: ${attachment.id}`);
+        console.log(`📎 [AttachmentUpload] ✅ File processed: ${file.originalname} -> Attachment ID: ${attachment.id}`);
+        console.log(`📎 [AttachmentUpload] File details: ${file.mimetype}, ${file.size} bytes`);
         
         // Queue for document analysis
         try {
+          console.log(`📎 [AttachmentUpload] 🔄 Queuing attachment ${attachment.id} for document analysis`);
           await documentAnalysisService.queueDocument(attachment.id);
+          console.log(`📎 [AttachmentUpload] ✅ Document analysis queued successfully for ${attachment.id}`);
         } catch (analysisError) {
-          console.error(`📎 [Attachments] Failed to queue document ${attachment.id} for analysis:`, analysisError);
+          console.error(`📎 [AttachmentUpload] ❌ Failed to queue document ${attachment.id} for analysis:`, analysisError);
           // Continue with other files
         }
       } catch (fileError) {
@@ -261,7 +264,9 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
       }
     }
 
-    console.log(`📎 [Attachments] Bulk upload completed: ${createdAttachments.length} files uploaded successfully for patient ${patientId}`);
+    console.log(`🔥 [UPLOAD WORKFLOW] ============= BULK UPLOAD COMPLETE =============`);
+    console.log(`📎 [AttachmentUpload] ✅ Successfully uploaded ${createdAttachments.length} files for patient ${patientId}`);
+    console.log(`📎 [AttachmentUpload] ✅ All files queued for document analysis`);
     
     res.status(201).json({
       message: `Successfully uploaded ${createdAttachments.length} files`,
