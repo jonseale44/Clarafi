@@ -40,6 +40,7 @@ export interface UnifiedProblemChange {
   source_type: "encounter" | "attachment";
   transfer_visit_history_from?: number; // problem_id to transfer history from
   extracted_date?: string; // ISO date string extracted from attachment content
+  consolidation_reasoning?: string; // GPT's reasoning for consolidation decisions
 }
 
 export interface UnifiedProcessingResult {
@@ -150,7 +151,7 @@ export class UnifiedMedicalProblemsParser {
     
     const unifiedPrompt = `
 UNIFIED MEDICAL PROBLEMS PROCESSING
-You are processing medical problems from multiple sources with different rules for each source.
+You are an expert medical AI that intelligently consolidates medical problems from multiple sources while avoiding duplication.
 
 EXISTING MEDICAL PROBLEMS:
 ${existingProblems.length === 0 
@@ -171,10 +172,13 @@ ${soapNote}
 
 SOAP NOTE PROCESSING RULES:
 - This is CURRENT encounter data from ${triggerType}
+- PRIMARY RESPONSIBILITY: Consolidate and update existing problems intelligently
+- BEFORE creating new problems, systematically check for matches using medical synonyms and ICD code families
 - Can UPDATE existing diagnoses when they evolve (e.g., DM2 → DM2 with neuropathy)
-- Can ADD new visit entries to existing problems
-- Can CREATE new problems
-- Should use action "EVOLVE_PROBLEM" when diagnosis significantly changes and needs new problem with transferred history
+- Can ADD new visit entries to existing problems with current encounter details
+- Should use action "EVOLVE_PROBLEM" when diagnosis significantly changes (e.g., E11.9 → E11.40)
+- Only CREATE new problems when no reasonable match exists in current problem list
+- Apply clinical intelligence to recognize condition variations (HTN/Hypertension, DM/Diabetes, etc.)
 ` : "NO SOAP NOTE PROVIDED"}
 
 ${attachmentContent ? `
@@ -183,17 +187,15 @@ ${attachmentContent}
 
 ATTACHMENT PROCESSING RULES:
 - This is HISTORICAL data from attachment ID ${attachmentId}
-- FREELY CREATE new problems for any medical conditions found that don't exist in the existing problems list
-- Use medical intelligence to match conditions by meaning, not just exact wording (e.g., "HTN" = "Hypertension")
-- ADD visit history to existing problems when the condition already exists
-- CREATE new problems liberally - attachment data often contains comprehensive historical information
-- Only avoid duplicates when the same condition clearly exists (use synonyms/ICD code matching)
-- Historical data is valuable for building complete medical history
+- PRIMARY RESPONSIBILITY: Enrich existing problems with historical visit data
+- MANDATORY CONSOLIDATION FIRST: Before creating any new problem, systematically evaluate if it matches existing problems
+- Use advanced medical intelligence to match conditions by meaning, synonyms, abbreviations, and ICD code families
+- ADD visit history with historical context to existing problems when condition already exists
+- UPDATE existing problems with additional historical visit information and clinical details
+- Only CREATE new problems when the condition genuinely doesn't exist in current problem list
 - CRITICAL: Extract the PRIMARY document date for ALL medical problems from this attachment
 - Look for "Date of Service:", "Date:", "Date/Time:", signature dates, or document headers
 - ALL problems from this single attachment should use the SAME extracted document date
-- Common date indicators: "Date of Service:", "Date:", header dates, signature dates
-- If multiple dates exist, prioritize: Date of Service > Document signature date > Header date  
 - If no specific date found, use null (system will default to current date)
 ` : "NO ATTACHMENT CONTENT PROVIDED"}
 
@@ -202,11 +204,59 @@ PATIENT CONTEXT:
 - Age: ${this.calculateAge(patient.dateOfBirth)}
 - Processing Date: ${new Date().toISOString()}
 
+MEDICAL INTELLIGENCE CONSOLIDATION RULES:
+You must use sophisticated medical knowledge to identify matching conditions. Apply this decision tree systematically:
+
+STEP 1 - EXACT MATCH CHECK:
+- Problem titles that are identical or near-identical
+- Same ICD-10 codes or codes within the same family (e.g., E11.x family for diabetes)
+
+STEP 2 - MEDICAL SYNONYM MATCHING:
+Common medical synonyms you MUST recognize and consolidate:
+- HTN = Hypertension = High Blood Pressure = Essential Hypertension
+- DM = Diabetes = Type 2 Diabetes = T2DM = Diabetes Mellitus
+- COPD = Chronic Obstructive Pulmonary Disease = Emphysema/Chronic Bronchitis
+- CAD = Coronary Artery Disease = Ischemic Heart Disease = CHD
+- CHF = Congestive Heart Failure = Heart Failure = HF
+- CKD = Chronic Kidney Disease = Chronic Renal Disease
+- GERD = Gastroesophageal Reflux Disease = Acid Reflux
+- OSA = Obstructive Sleep Apnea = Sleep Apnea
+- RA = Rheumatoid Arthritis
+- OA = Osteoarthritis = Degenerative Joint Disease
+- Depression = Major Depressive Disorder = MDD
+- Anxiety = Generalized Anxiety Disorder = GAD
+- A-Fib = Atrial Fibrillation = AFib
+- PE = Pulmonary Embolism
+- DVT = Deep Vein Thrombosis = Deep Venous Thrombosis
+- UTI = Urinary Tract Infection
+- PUD = Peptic Ulcer Disease
+- IBS = Irritable Bowel Syndrome
+
+STEP 3 - CLINICAL CONDITION EVOLUTION:
+Recognize when conditions are the same problem with progression:
+- "Diabetes" → "Diabetes with neuropathy" (same underlying condition, evolved)
+- "Hypertension" → "Hypertension with target organ damage" (same condition, progression)
+- "Heart Failure" → "Heart Failure with reduced ejection fraction" (same condition, specified)
+
+STEP 4 - ICD-10 CODE FAMILY ANALYSIS:
+Conditions sharing ICD-10 prefixes are often the same underlying problem:
+- E11.x = Type 2 Diabetes family (E11.9, E11.40, E11.21 are all diabetes variations)
+- I10-I15 = Hypertensive diseases
+- J44.x = COPD family
+- I50.x = Heart failure family
+
+CONFIDENCE-BASED MATCHING THRESHOLDS:
+- 95%+ confidence: Definite match, consolidate immediately
+- 85-94% confidence: Likely match, consolidate with detailed notes
+- 70-84% confidence: Possible match, consolidate if reasonable clinical correlation
+- <70% confidence: Different conditions, create new problem
+
 UNIFIED PROCESSING INTELLIGENCE:
-1. SOURCE AWARENESS: You must identify which source each problem comes from
-2. CONFLICT RESOLUTION: If same condition appears in both sources, prefer current encounter data
-3. VISIT HISTORY TRANSFER: Use "EVOLVE_PROBLEM" when diagnosis changes significantly (e.g., E11.9 → E11.40)
-4. HISTORICAL INTEGRATION: Attachment data should supplement, not replace, current encounter data
+1. CONSOLIDATION FIRST: Always attempt to match before creating new problems
+2. SOURCE AWARENESS: Track which source contributed each piece of information
+3. CONFLICT RESOLUTION: If same condition appears in both sources, prefer current encounter data for diagnosis, attachment data for historical context
+4. VISIT HISTORY ENRICHMENT: Attachment data should add rich historical context to existing problems
+5. CLINICAL EVOLUTION: Use "EVOLVE_PROBLEM" when diagnosis changes significantly with ICD code family change
 
 RESPONSE FORMAT - Return ONLY valid JSON:
 {
@@ -215,41 +265,32 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "action": "NEW_PROBLEM" | "ADD_VISIT" | "UPDATE_ICD" | "EVOLVE_PROBLEM" | "RESOLVE",
       "problem_id": number | null,
       "problem_title": "string",
-      "visit_notes": "Clinical notes",
+      "visit_notes": "Clinical notes with consolidation reasoning",
       "icd10_change": {"from": "old_code", "to": "new_code"} | null,
       "confidence": 0.95,
       "source_type": "encounter" | "attachment",
       "transfer_visit_history_from": number | null,
-      "extracted_date": "2011-10-07" | null
+      "extracted_date": "2011-10-07" | null,
+      "consolidation_reasoning": "Why this was matched/not matched with existing problems"
     }
   ]
 }
 
-IMPORTANT: For attachment content, extract the PRIMARY document date from the ACTUAL document:
-- Look for: "Date of Service:", document headers, signature dates, visit dates
-- Extract the ACTUAL date from THIS specific document content
-- Do NOT use example dates from these instructions
-- ALL medical problems from the same attachment MUST use the SAME extracted date
-- If no clear date found in the document → use null (system will default to current date)
+ENHANCED EXAMPLES:
 
-ACTION DEFINITIONS:
-- NEW_PROBLEM: Create entirely new medical problem
-- ADD_VISIT: Add visit history entry to existing problem
-- UPDATE_ICD: Update ICD code of existing problem (minor evolution)
-- EVOLVE_PROBLEM: Create new problem and transfer visit history from old problem (major evolution)
-- RESOLVE: Mark existing problem as resolved
+1. SOAP has "Type 2 DM with neuropathy" + existing "Type 2 Diabetes" (E11.9):
+   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40"}
 
-EXAMPLES:
-1. SOAP has "Type 2 DM with neuropathy" + existing "Type 2 DM" (E11.9):
-   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1}
+2. Attachment with "HTN" + existing "Hypertension" (I10):
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context"}
 
-2. Attachment with HTN + existing Hypertension:
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation", "source_type": "attachment", "extracted_date": null}
+3. Attachment with "High Blood Pressure" + existing "Essential Hypertension":
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence"}
 
-3. Same attachment with COPD + no existing respiratory conditions:
-   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Chronic obstructive pulmonary disease", "source_type": "attachment", "extracted_date": null}
+4. Attachment with completely new condition "Atrial Fibrillation" + no existing cardiac rhythm problems:
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib"}
 
-Critical: Extract ALL medical conditions from both sources. Create new problems liberally for attachment content. Use medical intelligence to match synonyms but err on the side of creating new problems when in doubt.
+CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition against existing problems using the consolidation rules above. Document your reasoning for each decision in the consolidation_reasoning field. Prioritize consolidation over creation of new problems unless you have strong clinical evidence they are different conditions.
 `;
 
     console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1-nano`);
@@ -278,6 +319,9 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
       console.log(`🤖 [UnifiedGPT] Parsed ${changes.length} changes`);
       changes.forEach((change: any, index: number) => {
         console.log(`🤖 [UnifiedGPT] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing'} (${change.source_type})`);
+        if (change.consolidation_reasoning) {
+          console.log(`🤖 [UnifiedGPT] 🧠 Reasoning: ${change.consolidation_reasoning}`);
+        }
         if (change.extracted_date) {
           console.log(`🤖 [UnifiedGPT] ✅ Extracted date: ${change.extracted_date}`);
         } else {

@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Consolidation Intelligence Enhancement (June 23, 2025)
+- Enhanced GPT prompts with comprehensive medical synonym matching (HTN=Hypertension, DM=Diabetes, etc.)
+- Added systematic consolidation decision tree with confidence-based matching thresholds
+- Implemented mandatory consolidation-first approach for attachment processing
+- Added consolidation reasoning field to track GPT's decision-making process
+- Strengthened encounter route with intelligent problem updating vs. new problem creation
+- All consolidation logic routes through GPT intelligence rather than regex/frontend logic
+
 ### File Processing Pipeline Consolidation (June 23, 2025)
 - Consolidated `multiPagePngToBase64Images()` and `pdfToBase64Images()` into unified `extractPageImages()` function
 - Implemented UUID-based temporary file naming to prevent collisions
