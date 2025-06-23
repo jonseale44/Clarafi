@@ -708,34 +708,21 @@ export const NursingTemplateAssessment = forwardRef<
         if (response.ok) {
           const parseResult = await response.json();
           
-          if (parseResult.success && parseResult.data) {
-            console.log("✅ [NursingTemplate] Vitals parsed successfully:", parseResult.data);
+          if (parseResult.success) {
+            console.log("✅ [NursingTemplate] Vitals parsed and saved:", parseResult);
             
-            // Save parsed vitals to database
-            const vitalsEntry = {
-              patientId: parseInt(patientId),
-              encounterId: parseInt(encounterId),
-              recordedBy: "Nursing Assessment",
-              recordedAt: new Date().toISOString(),
-              parsedFromText: true,
-              originalText: vitalsText,
-              ...parseResult.data
-            };
-
-            const saveResponse = await fetch('/api/vitals/entries', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify(vitalsEntry)
+            // Clear the vitals text after successful processing
+            setFormData(prev => ({
+              ...prev,
+              vitals: ''
+            }));
+            
+            toast({
+              title: "Vitals Saved",
+              description: `Successfully processed ${parseResult.vitalsCount || 1} vital sign set(s)`
             });
-
-            if (saveResponse.ok) {
-              console.log("✅ [NursingTemplate] Vitals saved to database");
-              toast({
-                title: "Vitals Saved",
-                description: "Vital signs automatically saved to patient chart"
-              });
-            }
+          } else {
+            console.log("⚠️ [NursingTemplate] No vitals extracted from text");
           }
         }
       } catch (error) {

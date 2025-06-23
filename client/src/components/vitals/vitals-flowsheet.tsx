@@ -321,7 +321,7 @@ export function VitalsFlowsheet({
       return apiResponse;
     },
     onSuccess: (result) => {
-      console.log("🩺 [VitalsFlowsheet] Processing successful GPT parse result:", result);
+      console.log("🩺 [VitalsFlowsheet] Unified vitals response:", result);
       if (result.success && result.data) {
         // Transform GPT parsed data to vitals entry format - using correct camelCase field names
         const newEntry: Partial<VitalsEntry> = {
