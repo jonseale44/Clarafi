@@ -295,7 +295,7 @@ export function VitalsFlowsheet({
       console.log("🩺 [VitalsFlowsheet] Starting GPT parsing for text:", text);
       
       // Use server-side GPT parsing via vitals-parser-service.ts
-      const response = await fetch('/api/vitals/parse', {
+      const response = await fetch('/api/vitals/parse-text', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

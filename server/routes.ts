@@ -701,8 +701,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
 
-  // Vitals parser API (single source of truth for GPT parsing)
-  app.use("/api/vitals", vitalsParserAPI);
+  // Unified vitals processing (handles both immediate parsing and attachment extraction)
+  const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;
+  app.use("/api/vitals", unifiedVitalsAPI);
   
   // Debug endpoint for testing multiple vitals extraction
   app.post("/api/debug/test-vitals", async (req, res) => {
