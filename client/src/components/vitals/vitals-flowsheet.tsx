@@ -289,10 +289,20 @@ export function VitalsFlowsheet({
     enabled: !!patientId
   });
 
+  // Helper function to get current encounter ID from URL or context
+  const getCurrentEncounterId = () => {
+    const urlPath = window.location.pathname;
+    const encounterMatch = urlPath.match(/\/encounters\/(\d+)/);
+    return encounterMatch ? encounterMatch[1] : null;
+  };
+
   // Quick parse mutation using server-side GPT parsing
   const quickParseMutation = useMutation({
     mutationFn: async (text: string) => {
       console.log("🩺 [VitalsFlowsheet] Starting GPT parsing for text:", text);
+      
+      // Get the current encounter ID from URL or props
+      const currentEncounterId = encounterId || getCurrentEncounterId();
       
       // Use server-side GPT parsing via vitals-parser-service.ts
       const response = await fetch('/api/vitals/parse-text', {
@@ -304,7 +314,7 @@ export function VitalsFlowsheet({
         body: JSON.stringify({
           text: text,
           patientId: Number(patientId),
-          encounterId: currentEncounterId || null
+          encounterId: currentEncounterId ? Number(currentEncounterId) : null
         })
       });
 
