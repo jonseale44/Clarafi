@@ -2,7 +2,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
 import { APIResponseHandler } from './api-response-handler';
-import { ensureAuthenticated } from './auth';
+// Use centralized auth check instead of importing from auth module
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+};
 import { db } from './db';
 import { vitalsAlertReviews, vitals, users } from '../shared/schema';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -21,7 +27,7 @@ const ReviewAlertsSchema = z.object({
  * Review (dismiss) critical alerts for a specific vitals entry
  * Only providers can review alerts
  */
-router.post('/:vitalsId/review-alerts', ensureAuthenticated, async (req, res) => {
+router.post('/:vitalsId/review-alerts', requireAuth, async (req, res) => {
   try {
     const vitalsId = parseInt(req.params.vitalsId);
     const user = req.user as any;
@@ -74,7 +80,7 @@ router.post('/:vitalsId/review-alerts', ensureAuthenticated, async (req, res) =>
  * GET /api/vitals/patient/:patientId/alert-reviews
  * Get all alert reviews for a patient's vitals
  */
-router.get('/patient/:patientId/alert-reviews', ensureAuthenticated, async (req, res) => {
+router.get('/patient/:patientId/alert-reviews', requireAuth, async (req, res) => {
   try {
     const patientId = parseInt(req.params.patientId);
     
@@ -106,7 +112,7 @@ router.get('/patient/:patientId/alert-reviews', ensureAuthenticated, async (req,
  * GET /api/vitals/:vitalsId/unreviewed-alerts
  * Get unreviewed alerts for a specific vitals entry
  */
-router.get('/:vitalsId/unreviewed-alerts', ensureAuthenticated, async (req, res) => {
+router.get('/:vitalsId/unreviewed-alerts', requireAuth, async (req, res) => {
   try {
     const vitalsId = parseInt(req.params.vitalsId);
     

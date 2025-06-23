@@ -149,6 +149,77 @@ export function VitalsFlowsheet({
 
   const isProvider = currentUser?.role === 'provider' || currentUser?.role === 'admin';
 
+  // Query for unreviewed alerts for each vitals entry
+  const { data: unreviewedAlertsMap = {} } = useQuery({
+    queryKey: [`/api/vitals/unreviewed-alerts`, patientId],
+    queryFn: async () => {
+      const alertsMap: Record<number, string[]> = {};
+      
+      // Get unreviewed alerts for each vitals entry that has alerts
+      const entriesWithAlerts = vitalsEntries.filter(entry => entry.alerts && entry.alerts.length > 0);
+      
+      for (const entry of entriesWithAlerts) {
+        try {
+          const response = await fetch(`/api/vitals/${entry.id}/unreviewed-alerts`, {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const unreviewedAlerts = await response.json();
+            if (unreviewedAlerts.length > 0) {
+              alertsMap[entry.id] = unreviewedAlerts;
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to fetch unreviewed alerts for vitals ${entry.id}:`, error);
+        }
+      }
+      
+      return alertsMap;
+    },
+    enabled: vitalsEntries.some(entry => entry.alerts && entry.alerts.length > 0),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Mutation to review alerts
+  const reviewAlertsMutation = useMutation({
+    mutationFn: async ({ vitalsId, alertTexts, reviewNotes }: {
+      vitalsId: number;
+      alertTexts: string[];
+      reviewNotes?: string;
+    }) => {
+      const response = await fetch(`/api/vitals/${vitalsId}/review-alerts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ vitalsId, alertTexts, reviewNotes })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to review alerts: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Alerts Reviewed",
+        description: `Successfully reviewed ${variables.alertTexts.length} critical alert(s)`,
+      });
+      
+      // Refresh unreviewed alerts
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/vitals/unreviewed-alerts`, patientId] 
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Review Failed",
+        description: error instanceof Error ? error.message : "Failed to review alerts",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Navigate to attachment source
   const navigateToAttachment = (attachmentId: number) => {
     // Navigate to patient chart attachments section with attachment ID highlighted
@@ -852,20 +923,81 @@ export function VitalsFlowsheet({
       </Card>
 
       {/* Critical Alerts */}
-      {vitalsEntries.some((entry) => entry.alerts && entry.alerts.length > 0) && (
+      {Object.keys(unreviewedAlertsMap).length > 0 && (
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <div className="font-medium text-red-800">Critical Values Detected:</div>
-            <ul className="mt-1 list-disc list-inside text-red-700">
-              {vitalsEntries.flatMap((entry) => 
-                entry.alerts?.map((alert, index) => (
-                  <li key={`${entry.id}-${index}`}>
-                    {format(new Date(entry.recordedAt), 'HH:mm')} - {alert}
-                  </li>
-                )) || []
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-medium text-red-800">Critical Values Detected:</div>
+              {isProvider && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-700 border-red-300 hover:bg-red-100"
+                  onClick={() => {
+                    // Review all unreviewed alerts at once
+                    Object.entries(unreviewedAlertsMap).forEach(([vitalsId, alerts]) => {
+                      reviewAlertsMutation.mutate({
+                        vitalsId: parseInt(vitalsId),
+                        alertTexts: alerts,
+                        reviewNotes: "Bulk review - provider acknowledged"
+                      });
+                    });
+                  }}
+                  disabled={reviewAlertsMutation.isPending}
+                >
+                  {reviewAlertsMutation.isPending ? "Reviewing..." : "Review All"}
+                </Button>
               )}
-            </ul>
+            </div>
+            
+            <div className="space-y-2">
+              {Object.entries(unreviewedAlertsMap).map(([vitalsId, alerts]) => {
+                const entry = vitalsEntries.find(e => e.id === parseInt(vitalsId));
+                if (!entry) return null;
+                
+                return (
+                  <div key={vitalsId} className="bg-white p-3 rounded border border-red-200">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-red-800 mb-1">
+                          {format(new Date(entry.recordedAt), 'MMM dd, yyyy HH:mm')}
+                        </div>
+                        <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
+                          {alerts.map((alert, index) => (
+                            <li key={index}>{alert}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      {isProvider && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="ml-3 text-red-700 border-red-300 hover:bg-red-100"
+                          onClick={() => {
+                            reviewAlertsMutation.mutate({
+                              vitalsId: parseInt(vitalsId),
+                              alertTexts: alerts,
+                              reviewNotes: "Provider reviewed and acknowledged"
+                            });
+                          }}
+                          disabled={reviewAlertsMutation.isPending}
+                        >
+                          {reviewAlertsMutation.isPending ? "Reviewing..." : "Review"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {!isProvider && (
+              <div className="mt-2 text-xs text-red-600">
+                Only providers can review and dismiss critical alerts.
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
