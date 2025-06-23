@@ -91,7 +91,7 @@ async function generateThumbnail(filePath: string, mimeType: string): Promise<st
   }
 }
 
-// Upload single attachment (legacy endpoint)
+// Upload single attachment
 router.post('/:patientId/attachments', upload.single('file'), async (req: Request, res: Response) => {
   console.log('🔥 [UPLOAD WORKFLOW] ============= STARTING ATTACHMENT UPLOAD =============');
   console.log('📎 [AttachmentUpload] Single upload request received');
