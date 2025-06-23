@@ -226,16 +226,17 @@ export class DocumentAnalysisService {
       console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
       console.log(`📄 [DocumentAnalysis] Output prefix: ${outputPrefix}`);
       
-      // Convert all pages (remove -f 1 -l 1 to process entire PDF)
-      const command = `pdftoppm -png -r 150 "${filePath}" "${outputPrefix}"`;
+      // Convert all pages with token-optimized settings
+      // Reduced DPI (100 vs 150) and JPEG format for smaller files
+      const command = `pdftoppm -jpeg -r 100 "${filePath}" "${outputPrefix}"`;
       console.log(`📄 [DocumentAnalysis] Command: ${command}`);
       
       const { stdout, stderr } = await execAsync(command);
       console.log(`📄 [DocumentAnalysis] pdftoppm stdout:`, stdout);
       if (stderr) console.log(`📄 [DocumentAnalysis] pdftoppm stderr:`, stderr);
       
-      // Find all generated pages
-      const { stdout: lsOutput } = await execAsync(`ls -1 /tmp/pdf_convert_${timestamp}*.png 2>/dev/null || echo ""`);
+      // Find all generated pages (now JPEG format)
+      const { stdout: lsOutput } = await execAsync(`ls -1 /tmp/pdf_convert_${timestamp}*.jpg 2>/dev/null || echo ""`);
       const pageFiles = lsOutput.trim().split('\n').filter(f => f.length > 0);
       
       if (pageFiles.length === 0) {
@@ -259,11 +260,11 @@ export class DocumentAnalysisService {
         await fs.unlink(pageFiles[0]);
         return base64String;
       } else {
-        // Multiple pages - create vertical composite using convert instead of montage
-        const compositeFile = `/tmp/pdf_composite_${timestamp}.png`;
-        const convertCommand = `convert ${pageFiles.join(' ')} -append "${compositeFile}"`;
+        // Multiple pages - create optimized composite with compression
+        const compositeFile = `/tmp/pdf_composite_${timestamp}.jpg`;
+        const convertCommand = `convert ${pageFiles.join(' ')} -append -quality 80 -resize 1600x "${compositeFile}"`;
         
-        console.log(`📄 [DocumentAnalysis] Creating composite image from ${pageFiles.length} pages`);
+        console.log(`📄 [DocumentAnalysis] Creating token-optimized composite from ${pageFiles.length} pages`);
         console.log(`📄 [DocumentAnalysis] Convert command: ${convertCommand}`);
         
         const { stdout: convertOut, stderr: convertErr } = await execAsync(convertCommand);
@@ -279,6 +280,8 @@ export class DocumentAnalysisService {
         
         const base64String = imageBuffer.toString('base64');
         console.log(`📄 [DocumentAnalysis] Composite base64 length: ${base64String.length} characters`);
+        console.log(`📄 [DocumentAnalysis] Estimated Vision API tokens: ~${Math.ceil(base64String.length / 4)}`);
+        console.log(`📄 [DocumentAnalysis] Token efficiency: ${base64String.length < 500000 ? '✅ GOOD' : '⚠️ HIGH'} (target: <500K chars)`);
         console.log(`📄 [DocumentAnalysis] Composite base64 preview: ${base64String.substring(0, 50)}...`);
         
         // Validate base64 format
