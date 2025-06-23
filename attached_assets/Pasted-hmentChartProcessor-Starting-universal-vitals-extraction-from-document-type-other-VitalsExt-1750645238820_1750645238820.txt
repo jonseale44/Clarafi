@@ -1,0 +1,35 @@
+hmentChartProcessor] 🩺 Starting universal vitals extraction from document type: other
+🩺 [VitalsExtraction] Extracting vitals from medical document (other)
+🩺 [VitalsExtraction] Document text length: 177 characters
+🩺 [VitalsExtraction] 🔍 Fetching patient context for patient 146
+🩺 [AttachmentChartProcessor] Parsing vitals from other document (177 characters)
+🩺 [AttachmentChartProcessor] Raw medical document vitals response: {
+  "systolicBp": 128,
+  "diastolicBp": 74,
+  "heartRate": 78,
+  "temperature": "98.2",
+  "weight": "181.5",
+  "height": "66.14",
+  "bmi": null,
+  "oxygenSaturation": "98.0",
+  "respiratoryRate": 16,
+  "painScale": null,
+  "extractedDate": "2022-01-04",
+  "dateConfidence": "high",
+  "vitalsSection": "Vital Sign        01/04/2022\nBP (mmHg)        128/74\nHR (bpm)         78\nTemp (°F)        98.2\nRR (/min)        16\nSpO₂ (%)         98\nWeight (kg)      82.5\nHeight (cm)      168",
+  "warnings": []
+}
+📋 [AttachmentChartProcessor] No vitals found in document or parsing failed
+🔥 [VITALS WORKFLOW] ============= VITALS EXTRACTION FAILED =============
+📋 [AttachmentChartProcessor] Generic document processing completed
+2:19:30 AM [express] GET /api/patients/146/attachments 200 in 139ms :: [{"id":48,"patientId":146,"en…
+2:19:31 AM [express] GET /api/patients/146/encounters 304 in 132ms :: [{"id":389,"patientId":146,"pr…
+2:19:34 AM [express] GET /api/patients/146/attachments 304 in 133ms :: [{"id":48,"patientId":146,"en…
+2:19:37 AM [express] GET /api/patients/146/attachments 304 in 133ms :: [{"id":48,"patientId":146,"en…
+2:19:40 AM [express] GET /api/patients/146/attachments 304 in 132ms :: [{"id":48,"patientId":146,"en…
+2:19:46 AM [express] GET /api/user 304 in 101ms :: {"id":2,"username":"jonseale","email":"jonathanse…
+2:19:46 AM [express] GET /api/patients 304 in 129ms :: [{"id":146,"mrn":"MRN890344909","firstName":"…
+2:19:46 AM [express] GET /api/dashboard/lab-orders-to-review 304 in 130ms :: []
+2:19:46 AM [express] GET /api/dashboard/pending-encounters 304 in 133ms :: [{"id":389,"patientId":14…
+2:19:46 AM [express] GET /api/dashboard/stats 304 in 229ms :: {"pendingEncounters":1,"labOrdersToRev…
+2:19:46 AM [express] GET /api/patients/146 304 in 133ms :: {"id":146,"mrn":"MRN890344909","firstName…
