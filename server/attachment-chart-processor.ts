@@ -214,7 +214,7 @@ ${fullText}`;
         model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 1000,
+        max_tokens: 1500,
         response_format: { type: "json_object" }
       });
 

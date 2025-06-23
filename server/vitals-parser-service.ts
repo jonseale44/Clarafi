@@ -96,14 +96,14 @@ CRITICAL INTELLIGENCE RULES:
 Input: "${vitalsText}"`;
 
       console.log("🩺 [VitalsParser] 🤖 Calling OpenAI GPT-4.1-nano...");
-      console.log("🩺 [VitalsParser] 🤖 Model: gpt-4.1-nano, Temperature: 0.1, Max tokens: 800");
+      console.log("🩺 [VitalsParser] 🤖 Model: gpt-4.1-nano, Temperature: 0.1, Max tokens: 1500");
 
       const startTime = Date.now();
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 800,
+        max_tokens: 1500, // Increased to prevent truncation of multiple vitals sets
       });
       const processingTime = Date.now() - startTime;
       
@@ -142,6 +142,20 @@ Input: "${vitalsText}"`;
 
       let parsedData: ParsedVitalsData[];
       try {
+        // Check if the content looks truncated
+        if (!cleanedContent.trim().endsWith(']') && !cleanedContent.trim().endsWith('}')) {
+          console.warn("⚠️ [VitalsParser] Response appears truncated, attempting to fix...");
+          // Try to find the last complete vitals set
+          const lastCompleteObject = cleanedContent.lastIndexOf('}');
+          if (lastCompleteObject > -1) {
+            cleanedContent = cleanedContent.substring(0, lastCompleteObject + 1);
+            if (cleanedContent.trim().startsWith('[') && !cleanedContent.trim().endsWith(']')) {
+              cleanedContent = cleanedContent + ']';
+            }
+            console.log("🩺 [VitalsParser] Attempted to fix truncated JSON");
+          }
+        }
+
         const parsed = JSON.parse(cleanedContent);
         console.log("🩺 [VitalsParser] Parsed JSON type:", typeof parsed);
         console.log("🩺 [VitalsParser] Is array:", Array.isArray(parsed));
@@ -152,6 +166,7 @@ Input: "${vitalsText}"`;
         console.log("🩺 [VitalsParser] Final parsedData length:", parsedData.length);
       } catch (parseError) {
         console.error("❌ [VitalsParser] JSON parse error:", parseError);
+        console.error("❌ [VitalsParser] Content that failed to parse:", cleanedContent.substring(0, 500) + "...");
         return {
           success: false,
           errors: [`Invalid JSON response: ${parseError}`],
