@@ -795,18 +795,6 @@ export const imagingResults = pgTable("imaging_results", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Vitals Alert Reviews - Track when providers review critical alerts
-export const vitalsAlertReviews = pgTable("vitals_alert_reviews", {
-  id: serial("id").primaryKey(),
-  vitalsId: integer("vitals_id").references(() => vitals.id, { onDelete: "cascade" }).notNull(),
-  alertText: text("alert_text").notNull(), // The specific alert that was reviewed
-  reviewedBy: integer("reviewed_by").references(() => users.id).notNull(),
-  reviewedAt: timestamp("reviewed_at").defaultNow().notNull(),
-  reviewNotes: text("review_notes"), // Optional notes from the provider
-  patientId: integer("patient_id").references(() => patients.id).notNull(), // For easy querying
-  encounterId: integer("encounter_id").references(() => encounters.id), // May be null for historical vitals
-});
-
 // Patient Physical Exam Findings (GPT-managed persistent findings)
 export const patientPhysicalFindings = pgTable("patient_physical_findings", {
   id: serial("id").primaryKey(),
