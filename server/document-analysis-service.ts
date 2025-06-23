@@ -247,35 +247,40 @@ export class DocumentAnalysisService {
       
       // Combine all pages into a single composite image using ImageMagick
       if (pageFiles.length === 1) {
-        // Single page - simple conversion
+        // Single page - apply same constraints as PNG processing
         console.log(`📄 [DocumentAnalysis] Processing single page: ${pageFiles[0]}`);
-        const imageBuffer = await fs.readFile(pageFiles[0]);
-        console.log(`📄 [DocumentAnalysis] Single page buffer size: ${imageBuffer.length} bytes`);
+        console.log(`📄 [DocumentAnalysis] Applying PNG-equivalent size constraints`);
+        const imageBuffer = await sharp(pageFiles[0])
+          .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 95 })
+          .toBuffer();
         
         const base64String = imageBuffer.toString('base64');
         console.log(`📄 [DocumentAnalysis] Single page base64 length: ${base64String.length} characters`);
-        console.log(`📄 [DocumentAnalysis] Single page base64 preview: ${base64String.substring(0, 50)}...`);
+        console.log(`📄 [DocumentAnalysis] Estimated Vision API tokens: ~${Math.ceil(base64String.length / 4)}`);
+        console.log(`📄 [DocumentAnalysis] Token efficiency: ${base64String.length < 500000 ? '✅ GOOD' : '⚠️ HIGH'} (target: <500K chars)`);
         
         // Clean up
         await fs.unlink(pageFiles[0]);
         return base64String;
       } else {
-        // Multiple pages - create optimized composite with compression
+        // Multiple pages - create optimized composite with same constraints as PNG processing
         const compositeFile = `/tmp/pdf_composite_${timestamp}.jpg`;
-        const convertCommand = `convert ${pageFiles.join(' ')} -append -quality 80 -resize 1600x "${compositeFile}"`;
+        const convertCommand = `convert ${pageFiles.join(' ')} -append -quality 80 "${compositeFile}"`;
         
-        console.log(`📄 [DocumentAnalysis] Creating token-optimized composite from ${pageFiles.length} pages`);
+        console.log(`📄 [DocumentAnalysis] Creating composite from ${pageFiles.length} pages`);
         console.log(`📄 [DocumentAnalysis] Convert command: ${convertCommand}`);
         
         const { stdout: convertOut, stderr: convertErr } = await execAsync(convertCommand);
         if (convertOut) console.log(`📄 [DocumentAnalysis] Convert stdout: ${convertOut}`);
         if (convertErr) console.log(`📄 [DocumentAnalysis] Convert stderr: ${convertErr}`);
         
-        // Verify composite file was created
-        const compositeStats = await fs.stat(compositeFile);
-        console.log(`📄 [DocumentAnalysis] Composite file created: ${compositeStats.size} bytes`);
-        
-        const imageBuffer = await fs.readFile(compositeFile);
+        // Apply same size constraints as PNG processing using Sharp
+        console.log(`📄 [DocumentAnalysis] Applying PNG-equivalent size constraints`);
+        const imageBuffer = await sharp(compositeFile)
+          .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 95 })
+          .toBuffer();
         console.log(`📄 [DocumentAnalysis] Composite buffer size: ${imageBuffer.length} bytes`);
         
         const base64String = imageBuffer.toString('base64');
