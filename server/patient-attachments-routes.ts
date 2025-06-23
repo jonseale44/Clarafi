@@ -453,8 +453,7 @@ router.delete('/:patientId/attachments/:attachmentId', async (req: Request, res:
     // 1. Delete vitals records that reference this attachment
     await db.delete(vitals).where(eq(vitals.extractedFromAttachmentId, attachmentId));
     
-    // 2. Delete medical problems that reference this attachment  
-    await db.delete(medicalProblems).where(eq(medicalProblems.extractedFromAttachmentId, attachmentId));
+    // 2. Delete medical problems - no direct attachment reference needed
     
     // 3. Delete extracted content
     await db.delete(attachmentExtractedContent).where(eq(attachmentExtractedContent.attachmentId, attachmentId));
@@ -526,6 +525,11 @@ router.delete('/:patientId/attachments', async (req: Request, res: Response) => 
     
     // Delete related records first (foreign key constraints)
     const attachmentIds = attachmentsToDelete.map(a => a.id);
+    
+    // Delete vitals records that reference these attachments
+    for (const attachmentId of attachmentIds) {
+      await db.delete(vitals).where(eq(vitals.extractedFromAttachmentId, attachmentId));
+    }
     
     // Delete extracted content for all attachment IDs
     for (const attachmentId of attachmentIds) {
