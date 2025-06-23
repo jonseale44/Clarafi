@@ -337,7 +337,7 @@ export function VitalsFlowsheet({
         
         // Transform parsed data to vitals entry format for form population
         const newEntry: Partial<VitalsEntry> = {
-          encounterId: currentEncounterId ? Number(currentEncounterId) : null,
+          encounterId: currentEncounterId ? Number(currentEncounterId) : undefined,
           patientId: Number(patientId),
           entryType: 'routine',
           recordedAt: vitals.extractedDate 
@@ -885,7 +885,7 @@ export function VitalsFlowsheet({
               quickParseText={quickParseText}
               setQuickParseText={setQuickParseText}
               quickParseMutation={quickParseMutation}
-              encounterId={encounterId || editingEntry?.encounterId || 0}
+              encounterId={encounterId || editingEntry?.encounterId || undefined}
               patientId={patientId}
             />
           )}
@@ -966,9 +966,9 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     console.log("🩺 [VitalsEntryForm] DEBUG - patientId prop:", patientId);
     console.log("🩺 [VitalsEntryForm] DEBUG - formData before save:", JSON.stringify(formData, null, 2));
     
-    // Validate required IDs
-    if (!encounterId || encounterId === null) {
-      console.error("❌ [VitalsEntryForm] Missing encounterId prop - value:", encounterId);
+    // Validate required IDs - encounterId can be undefined for patient-level vitals
+    if (encounterId === 0) {
+      console.error("❌ [VitalsEntryForm] Invalid encounterId (0) - value:", encounterId);
       return;
     }
     
@@ -977,9 +977,17 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
       return;
     }
     
+    // Clean formData - remove null values for optional fields
+    const cleanedFormData = Object.entries(formData).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+
     // Ensure encounterId and patientId are included - force them from props
     const dataToSave = {
-      ...formData,
+      ...cleanedFormData,
       encounterId: encounterId,  // Force from props, not formData
       patientId: patientId,      // Force from props, not formData
       recordedBy: String(formData.recordedBy || 1)
