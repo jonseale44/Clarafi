@@ -270,6 +270,7 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
       }
 
       console.log(`🤖 [UnifiedGPT] Response received: ${content.length} characters`);
+      console.log(`🤖 [UnifiedGPT] Raw response:`, content);
       
       const parsed = JSON.parse(content);
       const changes = parsed.changes || [];
@@ -277,6 +278,11 @@ Critical: Extract ALL medical conditions from both sources. Create new problems 
       console.log(`🤖 [UnifiedGPT] Parsed ${changes.length} changes`);
       changes.forEach((change: any, index: number) => {
         console.log(`🤖 [UnifiedGPT] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing'} (${change.source_type})`);
+        if (change.extracted_date) {
+          console.log(`🤖 [UnifiedGPT] ✅ Extracted date: ${change.extracted_date}`);
+        } else {
+          console.log(`🤖 [UnifiedGPT] ⚠️ No extracted date found - will use current date`);
+        }
       });
 
       return changes;
