@@ -329,11 +329,11 @@ export function VitalsFlowsheet({
     onSuccess: (result) => {
       console.log("🩺 [VitalsFlowsheet] Parse-only vitals response:", result);
       
-      if (result.success && result.data?.vitals) {
+      if (result.success && result.vitals) {
         // Get the current encounter ID from URL or props
         const currentEncounterId = encounterId || getCurrentEncounterId();
         
-        const vitals = result.data.vitals;
+        const vitals = result.vitals;
         
         // Transform parsed data to vitals entry format for form population
         const newEntry: Partial<VitalsEntry> = {
