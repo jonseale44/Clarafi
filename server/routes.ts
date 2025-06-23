@@ -20,7 +20,7 @@ import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
-import vitalsParserAPI from "./vitals-parser-api";
+
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
 import nursingSummaryRoutes from "./nursing-summary-routes";
