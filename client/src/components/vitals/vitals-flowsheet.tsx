@@ -27,9 +27,12 @@ import {
   TrendingDown,
   Minus,
   User,
-  Stethoscope
+  Stethoscope,
+  FileText,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
+import { useLocation } from "wouter";
 
 // Utility functions to format dates without timezone conversion
 const formatVitalsDate = (dateString: string) => {
@@ -136,6 +139,14 @@ export function VitalsFlowsheet({
   const [quickParseText, setQuickParseText] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+
+  // Navigate to attachment source
+  const navigateToAttachment = (attachmentId: number) => {
+    // Navigate to patient chart attachments section with attachment ID highlighted
+    const url = `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`;
+    setLocation(url);
+  };
 
   // Calculate patient age from dateOfBirth if not provided
   const calculateAge = (dateOfBirth: string): number => {
@@ -578,10 +589,24 @@ export function VitalsFlowsheet({
                       )}
                       {entry.sourceType && entry.sourceType !== 'manual_entry' && (
                         <div className="mt-1">
-                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                            {entry.sourceType === 'attachment_extracted' ? 'Doc Extract' : entry.sourceType}
-                            {entry.sourceConfidence && ` ${Math.round(parseFloat(entry.sourceConfidence) * 100)}%`}
-                          </Badge>
+                          {entry.extractedFromAttachmentId ? (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
+                              onClick={() => navigateToAttachment(entry.extractedFromAttachmentId!)}
+                              title="Click to view source document"
+                            >
+                              <FileText className="h-3 w-3 mr-1" />
+                              {entry.sourceType === 'attachment_extracted' ? 'Doc Extract' : entry.sourceType}
+                              {entry.sourceConfidence && ` ${Math.round(parseFloat(entry.sourceConfidence) * 100)}%`}
+                              <ExternalLink className="h-2 w-2 ml-1" />
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                              {entry.sourceType === 'attachment_extracted' ? 'Doc Extract' : entry.sourceType}
+                              {entry.sourceConfidence && ` ${Math.round(parseFloat(entry.sourceConfidence) * 100)}%`}
+                            </Badge>
+                          )}
                         </div>
                       )}
                     </TableHead>

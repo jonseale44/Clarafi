@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -46,6 +46,16 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const [showEncounterDetail, setShowEncounterDetail] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Handle URL parameters for navigation from vitals to attachments
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section');
+    if (section && chartSections.some(s => s.id === section)) {
+      setActiveSection(section);
+      setExpandedSections(prev => new Set([...prev, section]));
+    }
+  }, []);
 
   // Get current user to determine role-based routing
   const { data: currentUser } = useQuery({
