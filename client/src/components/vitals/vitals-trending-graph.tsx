@@ -13,34 +13,67 @@ interface VitalsTrendingGraphProps {
 }
 
 export function VitalsTrendingGraph({ vitalsEntries, patientId }: VitalsTrendingGraphProps) {
-  const [selectedTimeRange, setSelectedTimeRange] = useState("30");
+  const [selectedTimeRange, setSelectedTimeRange] = useState("all");
   const [selectedVitals, setSelectedVitals] = useState<string[]>([
     "systolicBp", "diastolicBp", "heartRate", "temperature"
   ]);
 
+  // Debug vitals entries
+  console.log("🔍 [VitalsTrending] Component received vitals entries:", vitalsEntries?.length || 0);
+  console.log("🔍 [VitalsTrending] First few entries:", vitalsEntries?.slice(0, 2));
+
   // Filter data based on time range
   const getFilteredData = () => {
-    const days = parseInt(selectedTimeRange);
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
+    if (!vitalsEntries || vitalsEntries.length === 0) {
+      console.log("🔍 [VitalsTrending] No vitals entries available");
+      return [];
+    }
+
+    console.log("🔍 [VitalsTrending] Processing vitals entries:", vitalsEntries.length);
     
-    return vitalsEntries
-      .filter(entry => new Date(entry.recordedAt) >= cutoffDate)
+    let filteredEntries = vitalsEntries;
+    
+    // Apply time range filter
+    if (selectedTimeRange !== "all") {
+      const days = parseInt(selectedTimeRange);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      filteredEntries = vitalsEntries.filter(entry => {
+        const entryDate = new Date(entry.recordedAt);
+        return entryDate >= cutoffDate;
+      });
+    }
+    
+    const processedData = filteredEntries
       .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime())
-      .map(entry => ({
-        date: entry.recordedAt,
-        dateFormatted: format(parseISO(entry.recordedAt), "MMM dd"),
-        systolicBp: entry.systolicBp || null,
-        diastolicBp: entry.diastolicBp || null,
-        heartRate: entry.heartRate || null,
-        temperature: entry.temperature ? parseFloat(entry.temperature) : null,
-        weight: entry.weight ? parseFloat(entry.weight) : null,
-        oxygenSaturation: entry.oxygenSaturation || null,
-        respiratoryRate: entry.respiratoryRate || null,
-        painScale: entry.painScale || null,
-        recordedBy: entry.recordedBy || "Unknown",
-        encounterContext: entry.encounterContext
-      }));
+      .map(entry => {
+        try {
+          const dateObj = new Date(entry.recordedAt);
+          return {
+            date: entry.recordedAt,
+            dateFormatted: format(dateObj, "MMM dd"),
+            dateDisplay: format(dateObj, "MMM dd, yyyy"),
+            systolicBp: entry.systolicBp || null,
+            diastolicBp: entry.diastolicBp || null,
+            heartRate: entry.heartRate || null,
+            temperature: entry.temperature ? parseFloat(entry.temperature) : null,
+            weight: entry.weight ? parseFloat(entry.weight) : null,
+            oxygenSaturation: entry.oxygenSaturation || null,
+            respiratoryRate: entry.respiratoryRate || null,
+            painScale: entry.painScale || null,
+            recordedBy: entry.recordedBy || "Unknown",
+            encounterContext: entry.encounterContext
+          };
+        } catch (error) {
+          console.error("🔍 [VitalsTrending] Error processing entry:", entry, error);
+          return null;
+        }
+      })
+      .filter(entry => entry !== null);
+    
+    console.log("🔍 [VitalsTrending] Processed data points:", processedData.length);
+    return processedData;
   };
 
   const chartData = getFilteredData();
@@ -111,7 +144,7 @@ export function VitalsTrendingGraph({ vitalsEntries, patientId }: VitalsTrending
       return (
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900 mb-2">
-            {format(parseISO(data.date), "MMM dd, yyyy 'at' h:mm a")}
+            {data.dateDisplay || format(new Date(data.date), "MMM dd, yyyy 'at' h:mm a")}
           </p>
           <div className="space-y-1">
             {payload.map((entry: any, index: number) => (
@@ -174,11 +207,11 @@ export function VitalsTrendingGraph({ vitalsEntries, patientId }: VitalsTrending
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All time</SelectItem>
                 <SelectItem value="7">Last 7 days</SelectItem>
                 <SelectItem value="30">Last 30 days</SelectItem>
                 <SelectItem value="90">Last 90 days</SelectItem>
                 <SelectItem value="365">Last year</SelectItem>
-                <SelectItem value="all">All time</SelectItem>
               </SelectContent>
             </Select>
           </div>

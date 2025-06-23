@@ -37,11 +37,9 @@ function VitalsSection({ patientId, encounterId, mode }: {
     enabled: !!patientId
   });
 
-  // Fetch vitals data for summary
+  // Always fetch patient vitals to show historical data in encounter view
   const { data: vitalsData } = useQuery({
-    queryKey: mode === "encounter" && encounterId 
-      ? [`/api/vitals/encounter/${encounterId}`]
-      : [`/api/vitals/patient/${patientId}`],
+    queryKey: [`/api/vitals/patient/${patientId}`],
     enabled: !!patientId
   });
 
@@ -96,7 +94,7 @@ function VitalsSection({ patientId, encounterId, mode }: {
             patientId={patientId}
             patient={patient as any}
             readOnly={false}
-            showAllPatientVitals={mode === "patient-chart"}
+            showAllPatientVitals={true}
           />
         </TabsContent>
         
@@ -142,7 +140,7 @@ function VitalsSection({ patientId, encounterId, mode }: {
                   patientId={patientId}
                   patient={patient as any}
                   readOnly={false}
-                  showAllPatientVitals={mode === "patient-chart"}
+                  showAllPatientVitals={true}
                 />
               </TabsContent>
               
