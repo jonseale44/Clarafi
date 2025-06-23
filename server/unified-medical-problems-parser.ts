@@ -287,17 +287,17 @@ Conditions sharing ICD-10 prefixes are often the same underlying problem:
 - I50.x = Heart failure family
 
 CONFIDENCE-BASED MATCHING THRESHOLDS:
-- 95%+ confidence: Definite match, consolidate immediately
-- 85-94% confidence: Likely match, consolidate with detailed notes
-- 70-84% confidence: Possible match, consolidate if reasonable clinical correlation
-- <70% confidence: Different conditions, create new problem
+- 50%+ confidence: Likely match, consolidate with detailed reasoning
+- 30-49% confidence: Possible match, consolidate if reasonable clinical correlation exists
+- <30% confidence: Different conditions, create new problem
 
 UNIFIED PROCESSING INTELLIGENCE:
-1. CONSOLIDATION FIRST: Always attempt to match before creating new problems
+1. CONSOLIDATION LOGIC: Match conditions when they are medically related (HTN=Hypertension, DM=Diabetes). DO NOT consolidate unrelated conditions (chronic sinusitis + kidney stones makes no sense)
 2. SOURCE AWARENESS: Track which source contributed each piece of information
 3. CONFLICT RESOLUTION: If same condition appears in both sources, prefer current encounter data for diagnosis, attachment data for historical context
 4. VISIT HISTORY ENRICHMENT: Attachment data should add rich historical context to existing problems
 5. CLINICAL EVOLUTION: Use "EVOLVE_PROBLEM" when diagnosis changes significantly with ICD code family change
+6. CREATE NEW PROBLEMS: When conditions don't match existing problems, create new ones without hesitation
 
 RESPONSE FORMAT - Return ONLY valid JSON:
 {
@@ -331,7 +331,42 @@ ENHANCED EXAMPLES:
 4. Attachment with completely new condition "Atrial Fibrillation" + no existing cardiac rhythm problems:
    {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib"}
 
-CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition against existing problems using the consolidation rules above. Document your reasoning for each decision in the consolidation_reasoning field. Prioritize consolidation over creation of new problems unless you have strong clinical evidence they are different conditions.
+VISIT HISTORY FORMAT REQUIREMENTS:
+Visit history entries should be concise, clinical, and data-rich. Use medical shorthand and include specific values. Examples:
+
+PERFECT VISIT HISTORY EXAMPLES:
+- "A1c 10.0, added glipizide 10mg daily. Continue metformin 1000mg BID"
+- "A1c 9.2, patient reports dietary lapses. Reinforced lifestyle advice. Continue meds"
+- "A1c 8.5, blood glucose logs 130-170. Assess for medication adherence. Plan: Increase metformin to 1000mg BID"
+- "A1c 8.4, on metformin 500mg BID. Not at goal, consider adding sulfonylurea if persists"
+- "A1c 7.9, continue metformin 500mg BID. Patient started exercise program"
+- "A1c 7.7, mild polyuria. Renal panel normal, eye exam scheduled. Continue metformin"
+- "A1c 7.4, patient interested in nutrition class. Encouraged"
+- "A1c 7.2, started metformin 500mg BID. Discussed SMBG. Baseline renal panel normal"
+- "Dx Type 2 diabetes (A1c 7.1). Dietary changes recommended. Plan: initiate metformin if A1c rises"
+- "Fasting glucose 132, family hx of DM. Pre-diabetes counseling, lifestyle changes advised"
+- "BP 160/95, started lisinopril 10mg daily"
+- "BP 145/88, increased lisinopril to 20mg daily"
+- "BP 128/82, well controlled on lisinopril 10mg"
+- "BP 155/90, added HCTZ 25mg to lisinopril"
+- "stopped lisinopril 10mg, started losartan 50mg"
+- "Creatinine 1.8, switched from lisinopril to amlodipine 5mg"
+- "hospitalized for CHF exacerbation, EF 35%. Started carvedilol 3.125mg BID"
+- "Echo shows EF improved to 45%, uptitrated carvedilol to 6.25mg BID"
+- "no acute symptoms, continue current regimen"
+- "routine follow-up, stable"
+- "" (empty string for visits with no meaningful clinical updates)
+
+FORMATTING RULES:
+- Include specific lab values, vital signs, medication names/doses
+- Use standard medical abbreviations (BP, A1c, BID, etc.)
+- Keep entries under 100 characters when possible
+- Focus on clinical decision points and changes
+- Empty string if no meaningful clinical information
+- Use periods to separate distinct clinical facts
+- Avoid flowery language or patient education content
+
+INSTRUCTION: Systematically evaluate medical conditions against existing problems using consolidation rules. Create new problems when conditions don't reasonably match existing ones. Document reasoning in consolidation_reasoning field.
 `;
 
     console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1`);
