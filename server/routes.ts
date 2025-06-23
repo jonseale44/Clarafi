@@ -704,6 +704,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Vitals parser API (single source of truth for GPT parsing)
   app.use("/api/vitals", vitalsParserAPI);
   
+  // Debug endpoint for testing multiple vitals extraction
+  app.post("/api/debug/test-vitals", async (req, res) => {
+    try {
+      const { text } = req.body;
+      if (!text) return res.status(400).json({ error: "Text required" });
+      
+      const { VitalsParserService } = await import("./vitals-parser-service.js");
+      const parser = new VitalsParserService();
+      
+      const result = await parser.parseVitalsText(text);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Debug vitals test error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Debug endpoint to manually trigger chart processing
+  app.post("/api/debug/trigger-chart-processing/:attachmentId", async (req, res) => {
+    try {
+      const attachmentId = parseInt(req.params.attachmentId);
+      if (!attachmentId) return res.status(400).json({ error: "Invalid attachment ID" });
+      
+      const { attachmentChartProcessor } = await import("./attachment-chart-processor.js");
+      await attachmentChartProcessor.processCompletedAttachment(attachmentId);
+      
+      res.json({ success: true, message: `Chart processing triggered for attachment ${attachmentId}` });
+    } catch (error: any) {
+      console.error("Debug chart processing error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
   // Vitals flowsheet routes (enhanced vitals management)
   app.use("/api/vitals", vitalsFlowsheetRoutes);
   
