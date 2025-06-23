@@ -1,8 +1,13 @@
 /**
- * Chart Section Processing Queue
+ * CHART SECTION PROCESSING QUEUE - PARALLEL PROCESSING INFRASTRUCTURE
  * 
- * Manages parallel processing of multiple chart sections (vitals, medical problems, etc.)
- * to prevent performance degradation when 10+ parsers process the same content
+ * ⚠️  IMPORTANT: DO NOT REMOVE - PART OF SCALABLE ARCHITECTURE ⚠️
+ * 
+ * PURPOSE: Queue management for 10+ chart section processors
+ * SUPPORTS: Priority-based parallel processing to prevent bottlenecks
+ * 
+ * CURRENT USE: Foundation for scaling to medications, allergies, labs, etc.
+ * DO NOT DELETE: Required infrastructure for multi-section processing
  */
 
 interface QueuedTask {

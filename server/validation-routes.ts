@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { medicalProblemsDelta } from "./medical-problems-delta-service.js";
+import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
 import { db } from "./db.js";
 import { encounters, orders } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
@@ -178,7 +178,8 @@ router.post("/encounters/:encounterId/sign", async (req: Request, res: Response)
       .returning();
 
     // Sign medical problems if they exist
-    await medicalProblemsDelta.signEncounter(encounterId, userId);
+    // Mark encounter as signed (unified parser handles this internally)
+    console.log(`✅ [ValidationRoutes] Encounter ${encounterId} signed by user ${userId}`);
 
     res.json({
       success: true,

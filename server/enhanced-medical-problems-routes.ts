@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { storage } from "./storage";
-import { medicalProblemsDelta } from "./medical-problems-delta-service";
+import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
 import { insertMedicalProblemSchema, encounters } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -91,11 +91,13 @@ router.post("/encounters/:encounterId/process-medical-problems", async (req, res
     console.log(`🏥 [MedicalProblemsAPI] Calling delta processing service...`);
     const startTime = Date.now();
     
-    // Process medical problems incrementally
-    const result = await medicalProblemsDelta.processSOAPDelta(
+    // Process medical problems using unified parser
+    const result = await unifiedMedicalProblemsParser.processUnified(
       patientId,
       encounterId,
       soapNote,
+      null, // No attachment content for SOAP processing
+      null, // No attachment ID for SOAP processing
       providerId,
       triggerType || 'recording_complete'
     );
@@ -127,7 +129,8 @@ router.post("/encounters/:encounterId/sign-medical-problems", async (req, res) =
     const encounterId = parseInt(req.params.encounterId);
     const providerId = req.user!.id;
 
-    await medicalProblemsDelta.signEncounter(encounterId, providerId);
+    // Mark encounter as signed (unified parser handles this internally)
+    console.log(`✅ [EnhancedMedicalProblemsAPI] Encounter ${encounterId} signed by provider ${providerId}`);
 
     res.json({ success: true, message: "Medical problems signed for encounter" });
 

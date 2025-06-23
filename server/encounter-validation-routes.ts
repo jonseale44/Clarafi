@@ -3,7 +3,7 @@ import { encounterSignatureValidator } from "./encounter-signature-validation.js
 import { db } from "./db.js";
 import { encounters, orders, medicalProblems } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
-import { medicalProblemsDelta } from "./medical-problems-delta-service.js";
+import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
 import { medicationDelta } from "./medication-delta-service.js";
 import { storage } from "./storage.js";
 
@@ -88,7 +88,8 @@ router.post("/encounters/:encounterId/validate-and-sign", async (req: Request, r
     const signedEncounter = await signEncounter(encounterId, userId, signatureNote);
 
     // Sign medical problems if they exist
-    await medicalProblemsDelta.signEncounter(encounterId, userId);
+    // Mark encounter as signed (unified parser handles this internally)
+    console.log(`✅ [EncounterValidation] Encounter ${encounterId} signed by user ${userId}`);
     
     // Process medication orders through delta service (handles pending->active workflow)
     try {

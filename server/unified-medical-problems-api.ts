@@ -5,6 +5,9 @@
 
 import { Router } from "express";
 import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
+import { db } from "./db.js";
+import { medicalProblems } from "../shared/schema.js";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -139,15 +142,46 @@ router.get("/medical-problems/processing-status/:patientId", async (req, res) =>
 
     const patientId = parseInt(req.params.patientId);
     
-    // This would typically query the database for processing statistics
-    // For now, return a placeholder response
+    // Get actual processing status and statistics
+    const totalProblems = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(medicalProblems)
+      .where(eq(medicalProblems.patientId, patientId));
+
+    const encounterSources = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(medicalProblems)
+      .where(
+        and(
+          eq(medicalProblems.patientId, patientId),
+          sql`visit_history::text LIKE '%"source":"encounter"%'`
+        )
+      );
+
+    const attachmentSources = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(medicalProblems)
+      .where(
+        and(
+          eq(medicalProblems.patientId, patientId),
+          sql`visit_history::text LIKE '%"source":"attachment"%'`
+        )
+      );
+
+    const lastProcessedResult = await db
+      .select({ lastUpdated: medicalProblems.updatedAt })
+      .from(medicalProblems)
+      .where(eq(medicalProblems.patientId, patientId))
+      .orderBy(desc(medicalProblems.updatedAt))
+      .limit(1);
+
     const status = {
       patientId,
-      totalProblems: 0, // TODO: Query actual count
-      encounterSources: 0, // TODO: Count problems from encounters
-      attachmentSources: 0, // TODO: Count problems from attachments
-      lastProcessed: null, // TODO: Get last processing timestamp
-      pendingProcessing: [] // TODO: List any pending processing tasks
+      totalProblems: totalProblems[0]?.count || 0,
+      encounterSources: encounterSources[0]?.count || 0,
+      attachmentSources: attachmentSources[0]?.count || 0,
+      lastProcessed: lastProcessedResult[0]?.lastUpdated || null,
+      pendingProcessing: [] // No queue system currently implemented
     };
 
     res.json(status);
