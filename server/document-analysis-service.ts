@@ -266,9 +266,68 @@ export class DocumentAnalysisService {
   }
 
   /**
-   * Convert PDF to base64 image
+   * Convert multi-page PNG to individual page base64 images
    */
-  private async pdfToBase64Image(filePath: string): Promise<string> {
+  private async multiPagePngToBase64Images(filePath: string): Promise<string[]> {
+    console.log(`📄 [DocumentAnalysis] Processing multi-page PNG: ${filePath}`);
+    
+    try {
+      await fs.access(filePath);
+      
+      // Use ImageMagick to extract all pages from PNG
+      const timestamp = Date.now();
+      const outputPrefix = `/tmp/png_page_${timestamp}`;
+      
+      // Extract all pages from multi-page PNG
+      const command = `convert "${filePath}" "${outputPrefix}_%d.png"`;
+      console.log(`📄 [DocumentAnalysis] Extracting PNG pages: ${command}`);
+      
+      const { stdout, stderr } = await execAsync(command);
+      if (stderr && !stderr.includes('Warning')) {
+        console.log(`📄 [DocumentAnalysis] ImageMagick stderr: ${stderr}`);
+      }
+      
+      // Find all generated pages
+      const { stdout: lsOutput } = await execAsync(`ls -1 /tmp/png_page_${timestamp}_*.png 2>/dev/null || echo ""`);
+      const pageFiles = lsOutput.trim().split('\n').filter(f => f.length > 0);
+      
+      if (pageFiles.length === 0) {
+        // Fallback to single page processing
+        console.log(`📄 [DocumentAnalysis] No multiple pages found, processing as single PNG`);
+        return [await this.imageToBase64(filePath)];
+      }
+      
+      console.log(`📄 [DocumentAnalysis] Found ${pageFiles.length} PNG pages: ${pageFiles.join(', ')}`);
+      
+      // Process each page with high quality
+      const base64Images: string[] = [];
+      for (const pageFile of pageFiles) {
+        const imageBuffer = await sharp(pageFile)
+          .resize(3000, 3000, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 95 })
+          .toBuffer();
+        
+        const base64String = imageBuffer.toString('base64');
+        console.log(`📄 [DocumentAnalysis] PNG page base64 length: ${base64String.length} characters`);
+        base64Images.push(base64String);
+        
+        // Clean up page file
+        await fs.unlink(pageFile);
+      }
+      
+      return base64Images;
+      
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] Multi-page PNG processing failed:`, error);
+      // Fallback to single page processing
+      return [await this.imageToBase64(filePath)];
+    }
+  }
+
+  /**
+   * Convert PDF to individual page base64 images (parallel processing)
+   */
+  private async pdfToBase64Images(filePath: string): Promise<string[]> {
     console.log(`📄 [DocumentAnalysis] Converting PDF to image: ${filePath}`);
 
     try {
@@ -286,16 +345,16 @@ export class DocumentAnalysisService {
       console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
       console.log(`📄 [DocumentAnalysis] Output prefix: ${outputPrefix}`);
 
-      // Convert all pages with token-optimized settings
-      // Reduced DPI (100 vs 150) and JPEG format for smaller files
-      const command = `pdftoppm -jpeg -r 100 "${filePath}" "${outputPrefix}"`;
+      // Convert all pages to high-resolution individual images
+      const command = `pdftoppm -jpeg -r 150 "${filePath}" "${outputPrefix}"`;
       console.log(`📄 [DocumentAnalysis] Command: ${command}`);
 
       const { stdout, stderr } = await execAsync(command);
-      console.log(`📄 [DocumentAnalysis] pdftoppm stdout:`, stdout);
-      if (stderr) console.log(`📄 [DocumentAnalysis] pdftoppm stderr:`, stderr);
+      if (stderr && !stderr.includes('Warning')) {
+        console.log(`📄 [DocumentAnalysis] pdftoppm stderr: ${stderr}`);
+      }
 
-      // Find all generated pages (now JPEG format)
+      // Find all generated pages
       const { stdout: lsOutput } = await execAsync(
         `ls -1 /tmp/pdf_convert_${timestamp}*.jpg 2>/dev/null || echo ""`,
       );
@@ -341,14 +400,23 @@ export class DocumentAnalysisService {
         await fs.unlink(pageFiles[0]);
         return base64String;
       } else {
-        // Multiple pages - create optimized composite with same constraints as PNG processing
-        const compositeFile = `/tmp/pdf_composite_${timestamp}.jpg`;
-        const convertCommand = `convert ${pageFiles.join(" ")} -append -quality 80 "${compositeFile}"`;
-
-        console.log(
-          `📄 [DocumentAnalysis] Creating composite from ${pageFiles.length} pages`,
-        );
-        console.log(`📄 [DocumentAnalysis] Convert command: ${convertCommand}`);
+        // Process each page with high quality (no composite)
+        const base64Images: string[] = [];
+        for (const pageFile of pageFiles) {
+          const imageBuffer = await sharp(pageFile)
+            .resize(3000, 3000, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 95 })
+            .toBuffer();
+          
+          const base64String = imageBuffer.toString('base64');
+          console.log(`📄 [DocumentAnalysis] PDF page base64 length: ${base64String.length} characters`);
+          base64Images.push(base64String);
+          
+          // Clean up page file
+          await fs.unlink(pageFile);
+        }
+        
+        return base64Images;
 
         const { stdout: convertOut, stderr: convertErr } =
           await execAsync(convertCommand);
@@ -421,7 +489,44 @@ export class DocumentAnalysisService {
   }
 
   /**
-   * Analyze document with GPT-4.1 Vision
+   * Analyze multiple pages with GPT-4.1 Vision in parallel
+   */
+  private async analyzeMultiplePagesWithGPT(base64Images: string[], originalFileName: string): Promise<{
+    extractedText: string;
+    title: string;
+    documentType: string;
+    summary: string;
+  }> {
+    console.log(`📄 [DocumentAnalysis] Analyzing ${base64Images.length} pages in parallel`);
+    
+    // Process all pages in parallel
+    const pagePromises = base64Images.map(async (imageBase64, index) => {
+      console.log(`📄 [DocumentAnalysis] 🤖 Processing page ${index + 1}/${base64Images.length}`);
+      return await this.analyzeWithGPT(imageBase64, `${originalFileName} - Page ${index + 1}`);
+    });
+    
+    const pageResults = await Promise.all(pagePromises);
+    console.log(`📄 [DocumentAnalysis] ✅ All ${pageResults.length} pages processed`);
+    
+    // Combine results
+    const combinedText = pageResults.map((result, index) => 
+      `=== PAGE ${index + 1} ===\n\n${result.extractedText}`
+    ).join('\n\n');
+    
+    // Use first page for title and document type, or combine summaries
+    const firstPage = pageResults[0];
+    const combinedSummary = pageResults.map(result => result.summary).join(' ');
+    
+    return {
+      extractedText: combinedText,
+      title: firstPage.title,
+      documentType: firstPage.documentType,
+      summary: combinedSummary.length > 500 ? combinedSummary.substring(0, 497) + '...' : combinedSummary
+    };
+  }
+
+  /**
+   * Analyze single page with GPT-4.1 Vision
    */
   private async analyzeWithGPT(
     imageBase64: string,
@@ -430,6 +535,7 @@ export class DocumentAnalysisService {
     extractedText: string;
     title: string;
     documentType: string;
+    summary: string;
   }> {
     console.log(`📄 [DocumentAnalysis] Calling GPT-4.1 Vision for analysis`);
     console.log(
