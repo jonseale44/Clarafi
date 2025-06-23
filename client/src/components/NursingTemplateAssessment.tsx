@@ -694,15 +694,14 @@ export const NursingTemplateAssessment = forwardRef<
       try {
         console.log("🩺 [NursingTemplate] Parsing vitals text:", vitalsText);
         
-        const response = await fetch('/api/vitals/parse', {
+        const response = await fetch('/api/vitals/parse-text', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            vitalsText,
+            text: vitalsText,
             patientId: parseInt(patientId),
-            encounterId: parseInt(encounterId),
-            patientContext: { age: 0 } // Add patient context if available
+            encounterId: parseInt(encounterId)
           })
         });
 

@@ -302,8 +302,9 @@ export function VitalsFlowsheet({
         },
         credentials: 'include',
         body: JSON.stringify({
-          vitalsText: text,
-          patientId: patientId
+          text: text,
+          patientId: Number(patientId),
+          encounterId: currentEncounterId || null
         })
       });
 
@@ -316,9 +317,8 @@ export function VitalsFlowsheet({
         throw new Error(apiResponse.error?.message || 'Parse failed');
       }
 
-      const result = apiResponse.data;
-      console.log("🩺 [VitalsFlowsheet] GPT parser result:", result);
-      return result;
+      console.log("🩺 [VitalsFlowsheet] Unified API response:", apiResponse);
+      return apiResponse;
     },
     onSuccess: (result) => {
       console.log("🩺 [VitalsFlowsheet] Processing successful GPT parse result:", result);
