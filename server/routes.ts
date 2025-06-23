@@ -13,6 +13,7 @@ import {
 import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
+import unifiedMedicalProblemsRoutes from "./unified-medical-problems-api";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
 import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";
@@ -682,6 +683,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced medical problems routes (JSONB visit history)
   app.use("/api", enhancedMedicalProblemsRoutes);
+
+  // Unified medical problems routes (handles both SOAP and attachment processing)
+  app.use("/api", unifiedMedicalProblemsRoutes);
 
   // Enhanced medications routes (GPT-powered standardization and grouping)
   app.use("/api", enhancedMedicationRoutes);

@@ -57,8 +57,11 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Try to extract vitals from any medical document
-      await this.processDocumentForVitals(attachment, extractedContent);
+      // Process both vitals and medical problems in parallel for efficiency
+      await Promise.all([
+        this.processDocumentForVitals(attachment, extractedContent),
+        this.processDocumentForMedicalProblems(attachment, extractedContent)
+      ]);
       
       // Process specific document types for additional data
       switch (extractedContent.documentType) {
@@ -149,6 +152,46 @@ export class AttachmentChartProcessor {
 
     } catch (error) {
       console.error(`📋 [AttachmentChartProcessor] Error extracting vitals from document:`, error);
+    }
+  }
+
+  /**
+   * Process any medical document for medical problems extraction
+   * Uses unified medical problems parser for consistent processing
+   */
+  private async processDocumentForMedicalProblems(attachment: any, extractedContent: any): Promise<void> {
+    console.log(`🏥 [MedicalProblemsExtraction] Extracting medical problems from document (${extractedContent.documentType || 'unknown type'})`);
+    console.log(`🏥 [MedicalProblemsExtraction] Document text length: ${extractedContent.extractedText?.length || 0} characters`);
+
+    if (!extractedContent.extractedText) {
+      console.log(`🏥 [MedicalProblemsExtraction] ❌ No extracted text available for medical problems parsing`);
+      return;
+    }
+
+    try {
+      console.log(`🏥 [MedicalProblemsExtraction] 🔍 Starting medical problems extraction for patient ${attachment.patientId}`);
+
+      // Process medical problems using the enhanced delta service
+      const result = await medicalProblemsDelta.processAttachmentDelta(
+        attachment.patientId,
+        extractedContent.extractedText,
+        attachment.id,
+        1 // Default provider ID - TODO: Get from context
+      );
+
+      console.log(`🏥 [MedicalProblemsExtraction] ✅ Successfully processed medical problems`);
+      console.log(`🏥 [MedicalProblemsExtraction] ✅ Problems affected: ${result.total_problems_affected}`);
+      console.log(`🏥 [MedicalProblemsExtraction] ✅ Source summary:`, result.source_summary);
+
+      // Log individual changes for debugging
+      result.changes.forEach((change, index) => {
+        console.log(`🏥 [MedicalProblemsExtraction] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing problem'}`);
+      });
+
+      console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= ATTACHMENT TO MEDICAL PROBLEMS EXTRACTION COMPLETE =============`);
+
+    } catch (error) {
+      console.error(`❌ [MedicalProblemsExtraction] Error processing medical problems:`, error);
     }
   }
 
