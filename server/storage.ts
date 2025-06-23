@@ -3,7 +3,7 @@ import {
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
-  signedOrders,
+  signedOrders, gptLabReviewNotes,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
@@ -202,6 +202,10 @@ export class DatabaseStorage implements IStorage {
       
       await db.delete(labResults).where(eq(labResults.patientId, id));
       console.log(`🗑️ [Storage] Deleted lab results for patient ${id}`);
+      
+      // Delete GPT lab review notes before lab orders
+      await db.delete(gptLabReviewNotes).where(eq(gptLabReviewNotes.patientId, id));
+      console.log(`🗑️ [Storage] Deleted GPT lab review notes for patient ${id}`);
       
       await db.delete(labOrders).where(eq(labOrders.patientId, id));
       console.log(`🗑️ [Storage] Deleted lab orders for patient ${id}`);
