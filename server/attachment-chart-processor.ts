@@ -30,32 +30,37 @@ export class AttachmentChartProcessor {
    * Process completed attachment for chart data extraction
    */
   async processCompletedAttachment(attachmentId: number): Promise<void> {
+    console.log(`🔥 [VITALS WORKFLOW] ============= STARTING VITALS EXTRACTION =============`);
     console.log(`📋 [AttachmentChartProcessor] Processing completed attachment ${attachmentId}`);
 
     try {
       // Get attachment and extracted content
+      console.log(`📋 [AttachmentChartProcessor] 🔍 Fetching attachment data from database`);
       const [attachment] = await db.select()
         .from(patientAttachments)
         .where(eq(patientAttachments.id, attachmentId));
 
       if (!attachment) {
-        console.error(`📋 [AttachmentChartProcessor] Attachment ${attachmentId} not found`);
+        console.error(`📋 [AttachmentChartProcessor] ❌ Attachment ${attachmentId} not found`);
         return;
       }
+      console.log(`📋 [AttachmentChartProcessor] ✅ Found attachment: ${attachment.originalFileName} (Patient: ${attachment.patientId})`);
 
+      console.log(`📋 [AttachmentChartProcessor] 🔍 Fetching extracted content from database`);
       const [extractedContent] = await db.select()
         .from(attachmentExtractedContent)
         .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
       if (!extractedContent || extractedContent.processingStatus !== 'completed') {
-        console.log(`📋 [AttachmentChartProcessor] Attachment ${attachmentId} not ready for processing`);
+        console.log(`📋 [AttachmentChartProcessor] ❌ Attachment ${attachmentId} not ready for processing`);
         return;
       }
+      console.log(`📋 [AttachmentChartProcessor] ✅ Extracted content ready: ${extractedContent.extractedText?.length || 0} characters`);
 
-      console.log(`📋 [AttachmentChartProcessor] Processing ${extractedContent.documentType} document`);
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Processing ${extractedContent.documentType} document for chart data`);
 
       // Process ALL documents for vitals extraction (not just H&P)
-      console.log(`📋 [AttachmentChartProcessor] Processing document type: ${extractedContent.documentType || 'unknown'}`);
+      console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
       // Try to extract vitals from any medical document
       await this.processDocumentForVitals(attachment, extractedContent);
@@ -83,15 +88,17 @@ export class AttachmentChartProcessor {
    * Process any medical document for vitals extraction
    */
   private async processDocumentForVitals(attachment: any, extractedContent: any): Promise<void> {
-    console.log(`🩺 [AttachmentChartProcessor] Extracting vitals from medical document (${extractedContent.documentType || 'unknown type'})`);
+    console.log(`🩺 [VitalsExtraction] Extracting vitals from medical document (${extractedContent.documentType || 'unknown type'})`);
+    console.log(`🩺 [VitalsExtraction] Document text length: ${extractedContent.extractedText?.length || 0} characters`);
 
     if (!extractedContent.extractedText) {
-      console.log(`🩺 [AttachmentChartProcessor] No extracted text available for vitals parsing`);
+      console.log(`🩺 [VitalsExtraction] ❌ No extracted text available for vitals parsing`);
       return;
     }
 
     try {
       // Get patient context for better parsing
+      console.log(`🩺 [VitalsExtraction] 🔍 Fetching patient context for patient ${attachment.patientId}`);
       const [patient] = await db.select()
         .from(patients)
         .where(eq(patients.id, attachment.patientId));

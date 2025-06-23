@@ -29,6 +29,7 @@ export class DocumentAnalysisService {
    * Queue document for processing
    */
   async queueDocument(attachmentId: number): Promise<void> {
+    console.log(`🔥 [ANALYSIS WORKFLOW] ============= STARTING DOCUMENT ANALYSIS =============`);
     console.log(`📄 [DocumentAnalysis] Queuing attachment ${attachmentId} for processing`);
     
     // Check if already queued or processed (skip check for reprocessing)
@@ -39,12 +40,6 @@ export class DocumentAnalysisService {
     const [existingContent] = await db.select()
       .from(attachmentExtractedContent)
       .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
-
-    // Skip if already successfully processed
-    if (existingContent && existingContent.processingStatus === 'completed') {
-      console.log(`📄 [DocumentAnalysis] Attachment ${attachmentId} already processed successfully`);
-      return;
-    }
 
     // Add to queue
     await db.insert(documentProcessingQueue).values({
@@ -116,9 +111,12 @@ export class DocumentAnalysisService {
       }
 
       // Process with GPT-4.1 Vision
+      console.log(`📄 [DocumentAnalysis] 🤖 Calling GPT-4.1 Vision for OCR processing`);
       const result = await this.analyzeWithGPT(imageData, attachment.originalFileName);
+      console.log(`📄 [DocumentAnalysis] ✅ GPT-4.1 Vision processing complete`);
 
       // Save results
+      console.log(`📄 [DocumentAnalysis] 💾 Saving extraction results to database`);
       await db.update(attachmentExtractedContent)
         .set({
           extractedText: result.extractedText,
@@ -133,14 +131,15 @@ export class DocumentAnalysisService {
         .set({ status: "completed" })
         .where(eq(documentProcessingQueue.attachmentId, attachmentId));
 
-      console.log(`📄 [DocumentAnalysis] Successfully processed attachment ${attachmentId}`);
-      console.log(`📄 [DocumentAnalysis] Extracted text length: ${result.extractedText?.length || 0} characters`);
-      console.log(`📄 [DocumentAnalysis] Document type: ${result.documentType}`);
-      console.log(`📄 [DocumentAnalysis] AI title: ${result.title}`);
+      console.log(`📄 [DocumentAnalysis] ✅ Successfully processed attachment ${attachmentId}`);
+      console.log(`📄 [DocumentAnalysis] ✅ Extracted text length: ${result.extractedText?.length || 0} characters`);
+      console.log(`📄 [DocumentAnalysis] ✅ Document type: ${result.documentType}`);
+      console.log(`📄 [DocumentAnalysis] ✅ AI title: ${result.title}`);
 
       // Trigger chart processing for completed documents
+      console.log(`📄 [DocumentAnalysis] 🔄 Triggering chart processing for attachment ${attachmentId}`);
       this.triggerChartProcessing(attachmentId).catch(error => {
-        console.error(`📄 [DocumentAnalysis] Chart processing failed for attachment ${attachmentId}:`, error);
+        console.error(`📄 [DocumentAnalysis] ❌ Chart processing failed for attachment ${attachmentId}:`, error);
       });
 
     } catch (error) {

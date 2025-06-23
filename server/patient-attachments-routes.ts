@@ -93,17 +93,18 @@ async function generateThumbnail(filePath: string, mimeType: string): Promise<st
 
 // Upload single attachment (legacy endpoint)
 router.post('/:patientId/attachments', upload.single('file'), async (req: Request, res: Response) => {
-  console.log('📎 [Backend] Single upload request received');
-  console.log('📎 [Backend] Patient ID:', req.params.patientId);
-  console.log('📎 [Backend] Auth status:', !!req.isAuthenticated?.());
-  console.log('📎 [Backend] User:', req.user?.id);
-  console.log('📎 [Backend] File info:', req.file ? {
+  console.log('🔥 [UPLOAD WORKFLOW] ============= STARTING ATTACHMENT UPLOAD =============');
+  console.log('📎 [AttachmentUpload] Single upload request received');
+  console.log('📎 [AttachmentUpload] Patient ID:', req.params.patientId);
+  console.log('📎 [AttachmentUpload] Auth status:', !!req.isAuthenticated?.());
+  console.log('📎 [AttachmentUpload] User:', req.user?.id);
+  console.log('📎 [AttachmentUpload] File info:', req.file ? {
     filename: req.file.filename,
     originalname: req.file.originalname,
     size: req.file.size,
     mimetype: req.file.mimetype
   } : 'No file');
-  console.log('📎 [Backend] Request body:', req.body);
+  console.log('📎 [AttachmentUpload] Request body:', req.body);
   
   try {
     if (!req.isAuthenticated()) {
@@ -142,14 +143,23 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     const validatedData = insertPatientAttachmentSchema.parse(attachmentData);
     const [attachment] = await db.insert(patientAttachments).values(validatedData).returning();
 
-    console.log(`📎 [Attachments] File uploaded successfully: ${req.file.originalname} for patient ${patientId}`);
-    console.log(`📎 [Attachments] Attachment created with ID: ${attachment.id}`);
+    console.log(`📎 [AttachmentUpload] ✅ File uploaded successfully: ${req.file.originalname} for patient ${patientId}`);
+    console.log(`📎 [AttachmentUpload] ✅ Attachment created with ID: ${attachment.id}`);
+    console.log(`📎 [AttachmentUpload] ✅ Database record: ${JSON.stringify({
+      id: attachment.id,
+      fileName: attachment.fileName,
+      originalFileName: attachment.originalFileName,
+      fileSize: attachment.fileSize,
+      mimeType: attachment.mimeType
+    })}`);
     
     // Queue for document analysis
     try {
+      console.log(`📎 [AttachmentUpload] 🔄 Queuing attachment ${attachment.id} for document analysis`);
       await documentAnalysisService.queueDocument(attachment.id);
+      console.log(`📎 [AttachmentUpload] ✅ Successfully queued for analysis`);
     } catch (analysisError) {
-      console.error('📎 [Attachments] Failed to queue document for analysis:', analysisError);
+      console.error('📎 [AttachmentUpload] ❌ Failed to queue document for analysis:', analysisError);
       // Continue - don't fail the upload if analysis queueing fails
     }
     

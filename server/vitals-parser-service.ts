@@ -46,7 +46,10 @@ export class VitalsParserService {
       };
     }
 
-    console.log("🩺 [VitalsParser] Parsing vitals text:", vitalsText);
+    console.log("🤖 [VitalsParser] ============= STARTING GPT-4.1-NANO VITALS PARSING =============");
+    console.log("🩺 [VitalsParser] Input text length:", vitalsText.length, "characters");
+    console.log("🩺 [VitalsParser] Patient context:", patientContext);
+    console.log("🩺 [VitalsParser] Parsing vitals text:", vitalsText.substring(0, 200) + (vitalsText.length > 200 ? '...' : ''));
 
     try {
       // Enhanced GPT prompt for better vitals extraction
@@ -81,14 +84,20 @@ CRITICAL RULES:
 
 Input: "${vitalsText}"`;
 
-      console.log("🩺 [VitalsParser] Calling OpenAI...");
+      console.log("🩺 [VitalsParser] 🤖 Calling OpenAI GPT-4.1-nano...");
+      console.log("🩺 [VitalsParser] 🤖 Model: gpt-4.1-nano, Temperature: 0.1, Max tokens: 800");
 
+      const startTime = Date.now();
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 800,
       });
+      const processingTime = Date.now() - startTime;
+      
+      console.log(`🩺 [VitalsParser] ✅ OpenAI response received in ${processingTime}ms`);
+      console.log(`🩺 [VitalsParser] ✅ Token usage: ${response.usage?.total_tokens || 'unknown'} tokens`);
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
