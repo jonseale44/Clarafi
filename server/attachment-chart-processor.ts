@@ -61,6 +61,7 @@ export class AttachmentChartProcessor {
       console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems`);
       const parallelStartTime = Date.now();
       
+      // Process both vitals and medical problems in parallel for efficiency
       try {
         const [vitalsResult, medicalProblemsResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
@@ -209,40 +210,15 @@ export class AttachmentChartProcessor {
       const startTime = Date.now();
 
       // Use the unified medical problems parser for attachment processing
-      console.log(`🏥 [MedicalProblemsExtraction] 🔍 About to call unifiedMedicalProblemsParser.processUnified`);
-      console.log(`🏥 [MedicalProblemsExtraction] 🔍 Parser available:`, !!unifiedMedicalProblemsParser);
-      console.log(`🏥 [MedicalProblemsExtraction] 🔍 ProcessUnified method available:`, !!unifiedMedicalProblemsParser?.processUnified);
-      
-      // First test: Try calling the method with explicit error handling
-      try {
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 Calling processUnified with parameters:`);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 - patientId: ${attachment.patientId}`);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 - encounterId: null`);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 - soapNote: null`);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 - attachmentContent length: ${extractedContent.extractedText.length}`);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 - attachmentId: ${attachment.id}`);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 - providerId: 2`);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 - triggerType: attachment_processed`);
-        
-        const result = await unifiedMedicalProblemsParser.processUnified(
-          attachment.patientId,
-          null, // No specific encounter ID for attachment
-          null, // No SOAP note text
-          extractedContent.extractedText, // Attachment content
-          attachment.id, // Attachment ID for source tracking
-          2, // Default provider ID (Jonathan Seale) - could be made configurable
-          "attachment_processed"
-        );
-        
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 Parser result received:`, !!result);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 Parser result type:`, typeof result);
-        console.log(`🏥 [MedicalProblemsExtraction] 🔍 Parser result keys:`, result ? Object.keys(result) : 'null');
-        
-      } catch (unifiedError) {
-        console.error(`❌ [MedicalProblemsExtraction] Unified parser error:`, unifiedError);
-        console.error(`❌ [MedicalProblemsExtraction] Error stack:`, unifiedError instanceof Error ? unifiedError.stack : 'No stack');
-        throw unifiedError;
-      }
+      const result = await unifiedMedicalProblemsParser.processUnified(
+        attachment.patientId,
+        null, // No specific encounter ID for attachment
+        null, // No SOAP note text
+        extractedContent.extractedText, // Attachment content
+        attachment.id, // Attachment ID for source tracking
+        2, // Default provider ID (Jonathan Seale) - could be made configurable
+        "attachment_processed"
+      );
 
       const processingTime = Date.now() - startTime;
 
