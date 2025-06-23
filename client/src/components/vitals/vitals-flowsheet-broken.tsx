@@ -15,6 +15,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Alert,
   AlertDescription,
 } from "@/components/ui/alert";
@@ -24,10 +30,28 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus,
   Activity,
+  TrendingUp,
+  TrendingDown,
+  Minus,
   AlertTriangle,
+  Edit3,
+  FileText,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
+import { useQuery as useUserQuery } from "@tanstack/react-query";
+
+// Utility functions to format dates without timezone conversion
+const formatVitalsDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return format(date, 'MM/dd HH:mm');
+};
+
+const formatVitalsDateTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return format(date, 'MM/dd/yyyy HH:mm');
+};
 
 interface VitalsEntry {
   id: number;
@@ -35,7 +59,7 @@ interface VitalsEntry {
   patientId: number;
   recordedAt: string;
   recordedBy: string;
-  entryType: string;
+  entryType: 'admission' | 'routine' | 'recheck' | 'discharge' | 'pre-procedure' | 'post-procedure';
   systolicBp?: number;
   diastolicBp?: number;
   heartRate?: number;
@@ -46,11 +70,19 @@ interface VitalsEntry {
   oxygenSaturation?: number;
   respiratoryRate?: number;
   painScale?: number;
+  // Production EMR fields for global vitals access
   isEditable?: boolean;
   encounterContext?: 'current' | 'historical';
   notes?: string;
   alerts?: string[];
+  parsedFromText?: boolean;
+  originalText?: string;
+  // Source tracking fields
   sourceType?: string;
+  sourceConfidence?: string;
+  sourceNotes?: string;
+  extractedFromAttachmentId?: number;
+  enteredBy?: number;
 }
 
 interface Patient {
@@ -67,6 +99,18 @@ interface VitalsFlowsheetProps {
   showAllPatientVitals?: boolean;
 }
 
+interface VitalRange {
+  min: number;
+  max: number;
+  criticalLow?: number;
+  criticalHigh?: number;
+  unit: string;
+}
+
+interface AgeBasedRanges {
+  [key: string]: VitalRange;
+}
+
 export function VitalsFlowsheet({ 
   encounterId, 
   patientId, 
@@ -74,16 +118,43 @@ export function VitalsFlowsheet({
   readOnly = false,
   showAllPatientVitals = false 
 }: VitalsFlowsheetProps) {
+  const [editingEntry, setEditingEntry] = useState<VitalsEntry | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [quickParseText, setQuickParseText] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
 
   // Get current user to check if they're a provider
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = useUserQuery({
     queryKey: ["/api/user"],
   });
 
   const isProvider = currentUser?.role === 'provider' || currentUser?.role === 'admin';
+
+  // Calculate patient age from dateOfBirth if not provided
+  const calculateAge = (dateOfBirth: string): number => {
+    const today = new Date();
+    const birth = new Date(dateOfBirth);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  // Fetch patient data if not provided
+  const { data: patientData } = useQuery<Patient>({
+    queryKey: ['/api/patients', patientId],
+    enabled: !!patientId && !patient
+  });
+
+  // Use provided patient or fetched patient data
+  const currentPatient = patient || patientData;
+  const patientAge = currentPatient?.age || (currentPatient?.dateOfBirth ? calculateAge(currentPatient.dateOfBirth) : 0);
 
   // Fetch vitals data
   const vitalsQueryKey = showAllPatientVitals 
@@ -134,7 +205,7 @@ export function VitalsFlowsheet({
       return alertsMap;
     },
     enabled: vitalsEntries.some(entry => entry.alerts && entry.alerts.length > 0),
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Mutation to review alerts
@@ -163,6 +234,7 @@ export function VitalsFlowsheet({
         description: `Successfully reviewed ${variables.alertTexts.length} critical alert(s)`,
       });
       
+      // Refresh unreviewed alerts
       queryClient.invalidateQueries({ 
         queryKey: [`/api/vitals/unreviewed-alerts`, patientId] 
       });
@@ -176,6 +248,52 @@ export function VitalsFlowsheet({
     }
   });
 
+  // Get age-appropriate vital sign ranges
+  const getVitalRanges = (patientAge?: number): AgeBasedRanges => {
+    const age = patientAge || 0;
+    
+    if (age < 1) { // Infant
+      return {
+        systolic: { min: 70, max: 100, criticalLow: 60, criticalHigh: 120, unit: "mmHg" },
+        diastolic: { min: 35, max: 65, criticalLow: 30, criticalHigh: 80, unit: "mmHg" },
+        heartRate: { min: 100, max: 160, criticalLow: 80, criticalHigh: 200, unit: "bpm" },
+        temperature: { min: 97.0, max: 100.4, criticalLow: 95.0, criticalHigh: 101.5, unit: "°F" },
+        respiratoryRate: { min: 30, max: 60, criticalLow: 20, criticalHigh: 80, unit: "/min" },
+        oxygenSaturation: { min: 95, max: 100, criticalLow: 90, criticalHigh: 100, unit: "%" }
+      };
+    } else if (age < 12) { // Pediatric
+      return {
+        systolic: { min: 90, max: 110, criticalLow: 70, criticalHigh: 130, unit: "mmHg" },
+        diastolic: { min: 55, max: 75, criticalLow: 40, criticalHigh: 90, unit: "mmHg" },
+        heartRate: { min: 70, max: 110, criticalLow: 50, criticalHigh: 150, unit: "bpm" },
+        temperature: { min: 97.0, max: 100.4, criticalLow: 95.0, criticalHigh: 101.5, unit: "°F" },
+        respiratoryRate: { min: 18, max: 30, criticalLow: 12, criticalHigh: 40, unit: "/min" },
+        oxygenSaturation: { min: 95, max: 100, criticalLow: 90, criticalHigh: 100, unit: "%" }
+      };
+    } else if (age < 18) { // Adolescent
+      return {
+        systolic: { min: 100, max: 120, criticalLow: 80, criticalHigh: 140, unit: "mmHg" },
+        diastolic: { min: 60, max: 80, criticalLow: 50, criticalHigh: 90, unit: "mmHg" },
+        heartRate: { min: 60, max: 100, criticalLow: 45, criticalHigh: 120, unit: "bpm" },
+        temperature: { min: 97.0, max: 100.4, criticalLow: 95.0, criticalHigh: 101.5, unit: "°F" },
+        respiratoryRate: { min: 12, max: 20, criticalLow: 8, criticalHigh: 30, unit: "/min" },
+        oxygenSaturation: { min: 95, max: 100, criticalLow: 90, criticalHigh: 100, unit: "%" }
+      };
+    } else { // Adult
+      return {
+        systolic: { min: 90, max: 120, criticalLow: 70, criticalHigh: 180, unit: "mmHg" },
+        diastolic: { min: 60, max: 80, criticalLow: 40, criticalHigh: 110, unit: "mmHg" },
+        heartRate: { min: 60, max: 100, criticalLow: 40, criticalHigh: 120, unit: "bpm" },
+        temperature: { min: 97.0, max: 100.4, criticalLow: 95.0, criticalHigh: 101.5, unit: "°F" },
+        respiratoryRate: { min: 12, max: 20, criticalLow: 8, criticalHigh: 30, unit: "/min" },
+        oxygenSaturation: { min: 95, max: 100, criticalLow: 90, criticalHigh: 100, unit: "%" }
+      };
+    }
+  };
+
+  const ranges = getVitalRanges(patientAge);
+
+  // Add vitals loading state check
   if (vitalsLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -212,6 +330,30 @@ export function VitalsFlowsheet({
                 {vitalsEntries.length} entries
               </Badge>
             </div>
+            
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setEditingEntry({
+                    id: 0,
+                    encounterId: encounterId || 0,
+                    patientId,
+                    recordedAt: new Date().toISOString(),
+                    recordedBy: "Current User",
+                    entryType: "routine",
+                    isEditable: true,
+                    encounterContext: "current"
+                  } as VitalsEntry);
+                  setShowAddDialog(true);
+                }}
+                className="text-blue-700 border-blue-300 hover:bg-blue-50"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Vitals
+              </Button>
+            )}
           </div>
         </CardHeader>
       </Card>
@@ -229,6 +371,7 @@ export function VitalsFlowsheet({
                   variant="outline"
                   className="text-red-700 border-red-300 hover:bg-red-100"
                   onClick={() => {
+                    // Review all unreviewed alerts at once
                     Object.entries(unreviewedAlertsMap).forEach(([vitalsId, alerts]) => {
                       reviewAlertsMutation.mutate({
                         vitalsId: parseInt(vitalsId),
@@ -295,7 +438,7 @@ export function VitalsFlowsheet({
         </Alert>
       )}
 
-      {/* Vitals Table */}
+      {/* Simple vitals table for now */}
       <Card>
         <CardContent className="p-4">
           <Table>
@@ -314,7 +457,7 @@ export function VitalsFlowsheet({
               {vitalsEntries.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell className="font-medium">
-                    {format(new Date(entry.recordedAt), 'MM/dd/yyyy HH:mm')}
+                    {formatVitalsDateTime(entry.recordedAt)}
                   </TableCell>
                   <TableCell>
                     {entry.systolicBp && entry.diastolicBp 
