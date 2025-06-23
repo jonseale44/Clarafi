@@ -149,7 +149,38 @@ export function VitalsFlowsheet({
 
   const isProvider = currentUser?.role === 'provider' || currentUser?.role === 'admin';
 
-  // Query for unreviewed alerts for each vitals entry
+  // Fetch patient data if not provided
+  const { data: patientData } = useQuery<Patient>({
+    queryKey: ['/api/patients', patientId],
+    enabled: !!patientId && !patient
+  });
+
+  // Use provided patient or fetched patient data
+  const currentPatient = patient || patientData;
+  const patientAge = currentPatient?.age || (currentPatient?.dateOfBirth ? calculateAge(currentPatient.dateOfBirth) : 0);
+
+  // Fetch vitals data - moved up before unreviewed alerts query
+  const vitalsQueryKey = showAllPatientVitals 
+    ? [`/api/vitals/patient/${patientId}`]
+    : [`/api/vitals/encounter/${encounterId}`];
+
+  const { data: vitalsData, isLoading: vitalsLoading, error: vitalsError } = useQuery({
+    queryKey: vitalsQueryKey,
+    enabled: !!patientId && (!!encounterId || showAllPatientVitals),
+  });
+
+  // Process vitals data
+  let vitalsEntries: VitalsEntry[] = [];
+  if (vitalsData) {
+    const rawEntries = vitalsData.data || vitalsData || [];
+    vitalsEntries = Array.isArray(rawEntries) ? rawEntries.map((entry: any) => ({
+      ...entry,
+      isEditable: !readOnly && entry.encounterContext !== 'historical',
+      encounterContext: entry.encounterContext || (entry.encounterId === encounterId ? 'current' : 'historical')
+    })) : [];
+  }
+
+  // Query for unreviewed alerts for each vitals entry - moved after vitals data fetch
   const { data: unreviewedAlertsMap = {} } = useQuery({
     queryKey: [`/api/vitals/unreviewed-alerts`, patientId],
     queryFn: async () => {
@@ -242,16 +273,6 @@ export function VitalsFlowsheet({
     return age;
   };
 
-  // Fetch patient data if not provided
-  const { data: patientData } = useQuery<Patient>({
-    queryKey: ['/api/patients', patientId],
-    enabled: !!patientId && !patient
-  });
-
-  // Use provided patient or fetched patient data
-  const currentPatient = patient || patientData;
-  const patientAge = currentPatient?.age || (currentPatient?.dateOfBirth ? calculateAge(currentPatient.dateOfBirth) : 0);
-
   // Get age-appropriate vital sign ranges
   const getVitalRanges = (patientAge?: number): AgeBasedRanges => {
     const age = patientAge || 0;
@@ -312,68 +333,47 @@ export function VitalsFlowsheet({
     return { status: "normal", color: "text-green-600", bgColor: "bg-green-50" };
   };
 
-  // Fetch vitals entries - use patient vitals if showAllPatientVitals is true  
-  const { data: vitalsEntries = [], isLoading: vitalsLoading } = useQuery<VitalsEntry[]>({
-    queryKey: showAllPatientVitals 
-      ? ['/api/vitals/patient', patientId, encounterId]
-      : ['/api/vitals/encounter', encounterId],
-    queryFn: async () => {
-      if (showAllPatientVitals) {
-        console.log("🩺 [VitalsFlowsheet] Fetching ALL patient vitals for patient:", patientId, "current encounter:", encounterId);
-        const params = encounterId ? `?currentEncounterId=${encounterId}` : '';
-        const response = await fetch(`/api/vitals/patient/${patientId}${params}`, { 
-          credentials: 'include' 
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch patient vitals: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log("🩺 [VitalsFlowsheet] Fetched patient vitals result:", result);
-        
-        // Handle wrapped API response format
-        if (result.success && result.data) {
-          return result.data;
-        } else if (Array.isArray(result)) {
-          return result;
-        } else {
-          console.warn("🩺 [VitalsFlowsheet] Unexpected response format:", result);
-          return [];
-        }
-      } else {
-        console.log("🩺 [VitalsFlowsheet] Fetching vitals for encounter:", encounterId);
-        const response = await fetch(`/api/vitals/encounter/${encounterId}`, { 
-          credentials: 'include' 
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch vitals: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log("🩺 [VitalsFlowsheet] Fetched vitals result:", result);
-        
-        // Handle wrapped API response format
-        if (result.success && result.data) {
-          return result.data;
-        } else if (Array.isArray(result)) {
-          return result;
-        } else {
-          console.warn("🩺 [VitalsFlowsheet] Unexpected response format:", result);
-          return [];
-        }
-      }
-    },
-    enabled: !!patientId
-  });
+  // Get age-appropriate vital sign ranges
+  const ranges = getVitalRanges(patientAge);
 
-  // Helper function to get current encounter ID from URL or context
-  const getCurrentEncounterId = () => {
-    const urlPath = window.location.pathname;
-    const encounterMatch = urlPath.match(/\/encounters\/(\d+)/);
-    return encounterMatch ? encounterMatch[1] : null;
+  const getVitalStatus = (value: number | undefined, vitalType: keyof AgeBasedRanges) => {
+    if (!value || !ranges[vitalType]) return { status: "normal", color: "text-gray-600", bgColor: "bg-gray-50" };
+    
+    const range = ranges[vitalType];
+    if (range.criticalLow && value < range.criticalLow) 
+      return { status: "critical-low", color: "text-red-700", bgColor: "bg-red-100" };
+    if (range.criticalHigh && value > range.criticalHigh) 
+      return { status: "critical-high", color: "text-red-700", bgColor: "bg-red-100" };
+    if (value < range.min) 
+      return { status: "low", color: "text-blue-600", bgColor: "bg-blue-50" };
+    if (value > range.max) 
+      return { status: "high", color: "text-orange-600", bgColor: "bg-orange-50" };
+    return { status: "normal", color: "text-green-600", bgColor: "bg-green-50" };
   };
+
+  // Add vitals loading state check
+  if (vitalsLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading vitals...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (vitalsError) {
+    return (
+      <Alert className="border-red-200 bg-red-50">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          <div className="font-medium text-red-800">Error loading vitals</div>
+          <div className="text-red-700">{vitalsError.message}</div>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   // Quick parse mutation for form population (parse-only)
   const quickParseMutation = useMutation({
