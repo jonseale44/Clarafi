@@ -657,10 +657,7 @@ Preserve the original structure and formatting where possible. Be thorough and a
       console.log(
         `🔥 [CHART WORKFLOW] ============= CHART PROCESSING WORKFLOW FAILED =============`,
       );
-      throw error; // Re-throw to handle in caller}:`,
-        error,
-      );
-      // Don't re-throw - chart processing failures shouldn't break document analysis
+      throw error; // Re-throw to handle in caller
     }
   }
 }
