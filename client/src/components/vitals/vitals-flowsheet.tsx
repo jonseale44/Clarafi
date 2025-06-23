@@ -958,6 +958,20 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Validation helper function
+  const hasValidationErrors = () => {
+    const errors = [];
+    
+    if (formData.systolicBp && (formData.systolicBp < 50 || formData.systolicBp > 300)) errors.push('systolic BP');
+    if (formData.diastolicBp && (formData.diastolicBp < 20 || formData.diastolicBp > 200)) errors.push('diastolic BP');
+    if (formData.heartRate && (formData.heartRate < 30 || formData.heartRate > 250)) errors.push('heart rate');
+    if (formData.temperature && (parseFloat(formData.temperature) < 90 || parseFloat(formData.temperature) > 110)) errors.push('temperature');
+    if (formData.respiratoryRate && (formData.respiratoryRate < 5 || formData.respiratoryRate > 100)) errors.push('respiratory rate');
+    if (formData.oxygenSaturation && (parseInt(formData.oxygenSaturation) < 70 || parseInt(formData.oxygenSaturation) > 100)) errors.push('oxygen saturation');
+    
+    return errors.length > 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1081,30 +1095,87 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
           <Label htmlFor="systolicBp">Systolic BP</Label>
           <Input
             type="number"
+            min="50"
+            max="300"
             placeholder={`${ranges.systolic?.min}-${ranges.systolic?.max}`}
             value={formData.systolicBp || ''}
-            onChange={(e) => updateField('systolicBp', e.target.value ? parseInt(e.target.value) : undefined)}
+            onChange={(e) => {
+              const value = e.target.value ? parseInt(e.target.value) : undefined;
+              updateField('systolicBp', value);
+              
+              if (value && (value < 50 || value > 300)) {
+                toast({
+                  title: "Invalid Systolic BP",
+                  description: "Systolic blood pressure must be between 50-300 mmHg",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className={formData.systolicBp && (formData.systolicBp < 50 || formData.systolicBp > 300) 
+              ? "border-red-500 focus:border-red-500" 
+              : ""}
           />
+          {formData.systolicBp && (formData.systolicBp < 50 || formData.systolicBp > 300) && (
+            <p className="text-sm text-red-600 mt-1">Systolic BP must be between 50-300 mmHg</p>
+          )}
         </div>
         
         <div>
           <Label htmlFor="diastolicBp">Diastolic BP</Label>
           <Input
             type="number"
+            min="20"
+            max="200"
             placeholder={`${ranges.diastolic?.min}-${ranges.diastolic?.max}`}
             value={formData.diastolicBp || ''}
-            onChange={(e) => updateField('diastolicBp', e.target.value ? parseInt(e.target.value) : undefined)}
+            onChange={(e) => {
+              const value = e.target.value ? parseInt(e.target.value) : undefined;
+              updateField('diastolicBp', value);
+              
+              if (value && (value < 20 || value > 200)) {
+                toast({
+                  title: "Invalid Diastolic BP",
+                  description: "Diastolic blood pressure must be between 20-200 mmHg",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className={formData.diastolicBp && (formData.diastolicBp < 20 || formData.diastolicBp > 200) 
+              ? "border-red-500 focus:border-red-500" 
+              : ""}
           />
+          {formData.diastolicBp && (formData.diastolicBp < 20 || formData.diastolicBp > 200) && (
+            <p className="text-sm text-red-600 mt-1">Diastolic BP must be between 20-200 mmHg</p>
+          )}
         </div>
         
         <div>
           <Label htmlFor="heartRate">Heart Rate</Label>
           <Input
             type="number"
+            min="30"
+            max="250"
             placeholder={`${ranges.heartRate?.min}-${ranges.heartRate?.max}`}
             value={formData.heartRate || ''}
-            onChange={(e) => updateField('heartRate', e.target.value ? parseInt(e.target.value) : undefined)}
+            onChange={(e) => {
+              const value = e.target.value ? parseInt(e.target.value) : undefined;
+              updateField('heartRate', value);
+              
+              if (value && (value < 30 || value > 250)) {
+                toast({
+                  title: "Invalid Heart Rate",
+                  description: "Heart rate must be between 30-250 beats per minute",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className={formData.heartRate && (formData.heartRate < 30 || formData.heartRate > 250) 
+              ? "border-red-500 focus:border-red-500" 
+              : ""}
           />
+          {formData.heartRate && (formData.heartRate < 30 || formData.heartRate > 250) && (
+            <p className="text-sm text-red-600 mt-1">Heart rate must be between 30-250 bpm</p>
+          )}
         </div>
       </div>
 
@@ -1114,30 +1185,88 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
           <Input
             type="number"
             step="0.1"
+            min="90"
+            max="110"
             placeholder={`${ranges.temperature?.min}-${ranges.temperature?.max}`}
             value={formData.temperature || ''}
-            onChange={(e) => updateField('temperature', e.target.value ? parseFloat(e.target.value) : undefined)}
+            onChange={(e) => {
+              const value = e.target.value ? parseFloat(e.target.value) : undefined;
+              updateField('temperature', value);
+              
+              if (value && (value < 90 || value > 110)) {
+                toast({
+                  title: "Invalid Temperature",
+                  description: "Temperature must be between 90-110°F",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className={formData.temperature && (parseFloat(formData.temperature) < 90 || parseFloat(formData.temperature) > 110) 
+              ? "border-red-500 focus:border-red-500" 
+              : ""}
           />
+          {formData.temperature && (parseFloat(formData.temperature) < 90 || parseFloat(formData.temperature) > 110) && (
+            <p className="text-sm text-red-600 mt-1">Temperature must be between 90-110°F</p>
+          )}
         </div>
         
         <div>
           <Label htmlFor="respiratoryRate">Respiratory Rate</Label>
           <Input
             type="number"
+            min="5"
+            max="100"
             placeholder={`${ranges.respiratoryRate?.min}-${ranges.respiratoryRate?.max}`}
             value={formData.respiratoryRate || ''}
-            onChange={(e) => updateField('respiratoryRate', e.target.value ? parseInt(e.target.value) : undefined)}
+            onChange={(e) => {
+              const value = e.target.value ? parseInt(e.target.value) : undefined;
+              updateField('respiratoryRate', value);
+              
+              // Real-time validation feedback
+              if (value && (value < 5 || value > 100)) {
+                toast({
+                  title: "Invalid Respiratory Rate",
+                  description: "Respiratory rate must be between 5-100 breaths per minute",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className={formData.respiratoryRate && (formData.respiratoryRate < 5 || formData.respiratoryRate > 100) 
+              ? "border-red-500 focus:border-red-500" 
+              : ""}
           />
+          {formData.respiratoryRate && (formData.respiratoryRate < 5 || formData.respiratoryRate > 100) && (
+            <p className="text-sm text-red-600 mt-1">Respiratory rate must be between 5-100</p>
+          )}
         </div>
         
         <div>
           <Label htmlFor="oxygenSaturation">O2 Saturation (%)</Label>
           <Input
             type="number"
+            min="70"
+            max="100"
             placeholder={`${ranges.oxygenSaturation?.min}-${ranges.oxygenSaturation?.max}`}
             value={formData.oxygenSaturation || ''}
-            onChange={(e) => updateField('oxygenSaturation', e.target.value ? parseInt(e.target.value) : undefined)}
+            onChange={(e) => {
+              const value = e.target.value ? parseInt(e.target.value) : undefined;
+              updateField('oxygenSaturation', value);
+              
+              if (value && (value < 70 || value > 100)) {
+                toast({
+                  title: "Invalid Oxygen Saturation",
+                  description: "Oxygen saturation must be between 70-100%",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className={formData.oxygenSaturation && (parseInt(formData.oxygenSaturation) < 70 || parseInt(formData.oxygenSaturation) > 100) 
+              ? "border-red-500 focus:border-red-500" 
+              : ""}
           />
+          {formData.oxygenSaturation && (parseInt(formData.oxygenSaturation) < 70 || parseInt(formData.oxygenSaturation) > 100) && (
+            <p className="text-sm text-red-600 mt-1">Oxygen saturation must be between 70-100%</p>
+          )}
         </div>
       </div>
 
@@ -1187,7 +1316,11 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSaving}>
+        <Button 
+          type="submit" 
+          disabled={isSaving || hasValidationErrors()}
+          className={hasValidationErrors() ? "opacity-50 cursor-not-allowed" : ""}
+        >
           {isSaving ? "Saving..." : "Save Vitals"}
         </Button>
       </div>
