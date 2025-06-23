@@ -329,32 +329,34 @@ export function VitalsFlowsheet({
     onSuccess: (result) => {
       console.log("🩺 [VitalsFlowsheet] Parse-only vitals response:", result);
       
-      if (result.success && result.vitals) {
+      if (result.success && result.data?.vitals) {
         // Get the current encounter ID from URL or props
         const currentEncounterId = encounterId || getCurrentEncounterId();
+        
+        const vitals = result.data.vitals;
         
         // Transform parsed data to vitals entry format for form population
         const newEntry: Partial<VitalsEntry> = {
           encounterId: currentEncounterId ? Number(currentEncounterId) : null,
           patientId: Number(patientId),
           entryType: 'routine',
-          recordedAt: result.vitals.extractedDate 
-            ? new Date(result.vitals.extractedDate + 'T00:00:00.000Z').toISOString()
+          recordedAt: vitals.extractedDate 
+            ? new Date(vitals.extractedDate + 'T00:00:00.000Z').toISOString()
             : new Date().toISOString(),
-          systolicBp: result.vitals.systolicBp,
-          diastolicBp: result.vitals.diastolicBp,
-          heartRate: result.vitals.heartRate,
-          temperature: result.vitals.temperature,
-          weight: result.vitals.weight,
-          height: result.vitals.height,
-          bmi: result.vitals.bmi,
-          oxygenSaturation: result.vitals.oxygenSaturation,
-          respiratoryRate: result.vitals.respiratoryRate,
-          painScale: result.vitals.painScale,
+          systolicBp: vitals.systolicBp,
+          diastolicBp: vitals.diastolicBp,
+          heartRate: vitals.heartRate,
+          temperature: vitals.temperature,
+          weight: vitals.weight,
+          height: vitals.height,
+          bmi: vitals.bmi,
+          oxygenSaturation: vitals.oxygenSaturation,
+          respiratoryRate: vitals.respiratoryRate,
+          painScale: vitals.painScale,
           parsedFromText: true,
           originalText: quickParseText,
-          notes: result.vitals.parsedText || "",
-          alerts: result.vitals.warnings || []
+          notes: vitals.parsedText || "",
+          alerts: vitals.warnings || []
         };
         
         console.log("🩺 [VitalsFlowsheet] Created new entry for form:", newEntry);
@@ -366,7 +368,7 @@ export function VitalsFlowsheet({
         
         toast({
           title: "Vitals Parsed Successfully",
-          description: `Extracted ${Object.keys(result.vitals).filter(k => result.vitals[k] !== null && result.vitals[k] !== undefined).length} vital signs. Review and save.`,
+          description: `Extracted ${Object.keys(vitals).filter(k => vitals[k] !== null && vitals[k] !== undefined).length} vital signs. Review and save.`,
         });
       } else {
         toast({
