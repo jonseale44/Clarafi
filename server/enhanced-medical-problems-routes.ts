@@ -350,4 +350,41 @@ router.post("/medical-problems/process-encounter", async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/medical-problems/:problemId
+ * Delete a medical problem
+ */
+router.delete("/medical-problems/:problemId", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const problemId = parseInt(req.params.problemId);
+    
+    console.log(`🗑️ [EnhancedMedicalProblems] Deleting medical problem ${problemId}`);
+
+    // Check if problem exists
+    const existingProblem = await storage.getMedicalProblem(problemId);
+    if (!existingProblem) {
+      return res.status(404).json({ error: "Medical problem not found" });
+    }
+
+    // Delete the problem
+    await storage.deleteMedicalProblem(problemId);
+    
+    console.log(`✅ [EnhancedMedicalProblems] Successfully deleted medical problem ${problemId}`);
+    
+    res.json({ 
+      success: true, 
+      message: "Medical problem deleted successfully",
+      deletedId: problemId 
+    });
+
+  } catch (error) {
+    console.error("Error deleting medical problem:", error);
+    res.status(500).json({ error: "Failed to delete medical problem" });
+  }
+});
+
 export default router;
