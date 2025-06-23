@@ -14,14 +14,17 @@ interface ParsedVitalsData {
   parsedText?: string;
   confidence?: number;
   warnings?: string[];
+  extractedDate?: string; // ISO date string extracted by GPT
+  timeContext?: string; // e.g., "admission", "day 2", "discharge", "0800 hours"
 }
 
 interface VitalsParsingResult {
   success: boolean;
-  data?: ParsedVitalsData;
+  data?: ParsedVitalsData[];  // Changed to array for multiple vitals sets
   errors?: string[];
   confidence: number;
   originalText: string;
+  totalSetsFound?: number;
 }
 
 export class VitalsParserService {
@@ -53,35 +56,42 @@ export class VitalsParserService {
     console.log("🩺 [VitalsParser] Starting AI parsing process...");
 
     try {
-      // Enhanced GPT prompt for better vitals extraction
-      const prompt = `You are a medical AI assistant that extracts vital signs from clinical text.
+      // Enhanced GPT prompt for multiple vitals extraction with temporal intelligence
+      const prompt = `You are a medical AI assistant that extracts ALL vital signs from clinical text, including multiple sets across different dates/times.
 
-Parse this vitals text and return ONLY a valid JSON object with the following structure:
-{
-  "systolicBp": number or null,
-  "diastolicBp": number or null,
-  "heartRate": number or null,
-  "temperature": "string with decimal" or null,
-  "weight": "string with decimal" or null,
-  "height": "string with decimal" or null,
-  "bmi": "string with decimal" or null,
-  "oxygenSaturation": "string with decimal" or null,
-  "respiratoryRate": number or null,
-  "painScale": number (0-10) or null,
-  "parsedText": "cleaned interpretation",
-  "warnings": ["array of critical value warnings"]
-}
+Analyze this clinical text and identify EVERY DISTINCT SET of vital signs. Each set may be from different dates, times, or clinical contexts (admission, daily rounds, discharge, etc.).
 
-CRITICAL RULES:
+Return ONLY a valid JSON array with this structure:
+[
+  {
+    "systolicBp": number or null,
+    "diastolicBp": number or null,
+    "heartRate": number or null,
+    "temperature": "string with decimal" or null,
+    "weight": "string with decimal" or null,
+    "height": "string with decimal" or null,
+    "bmi": "string with decimal" or null,
+    "oxygenSaturation": "string with decimal" or null,
+    "respiratoryRate": number or null,
+    "painScale": number (0-10) or null,
+    "extractedDate": "YYYY-MM-DD or null if no date found",
+    "timeContext": "admission/day1/day2/discharge/0800hrs/etc or null",
+    "parsedText": "brief description of this vitals set",
+    "warnings": ["array of critical value warnings for this set"]
+  }
+]
+
+CRITICAL INTELLIGENCE RULES:
 - Convert Celsius to Fahrenheit (°F = °C × 9/5 + 32)
 - Convert kg to lbs (lbs = kg × 2.20462)
 - Convert cm to inches (inches = cm ÷ 2.54)
 - Blood pressure format: "120/80" means systolic=120, diastolic=80
-- Temperature, weight, height, BMI, O2 sat as strings with decimals
-- Heart rate, respiratory rate, pain scale as numbers
+- Use your intelligence to extract dates from context (e.g., "Day 2" relative to admission date)
+- Separate vitals by temporal context even without explicit dates
+- If same vitals repeated, only include once unless different contexts
 - Flag critical values in warnings array
-- Return null for missing values
-- No explanatory text, ONLY the JSON object
+- Return empty array if no vitals found
+- No explanatory text, ONLY the JSON array
 
 Input: "${vitalsText}"`;
 
@@ -127,9 +137,11 @@ Input: "${vitalsText}"`;
 
       console.log("🩺 [VitalsParser] Cleaned content:", cleanedContent);
 
-      let parsedData: ParsedVitalsData;
+      let parsedData: ParsedVitalsData[];
       try {
-        parsedData = JSON.parse(cleanedContent);
+        const parsed = JSON.parse(cleanedContent);
+        // Handle both array and single object responses from GPT
+        parsedData = Array.isArray(parsed) ? parsed : [parsed];
       } catch (parseError) {
         console.error("❌ [VitalsParser] JSON parse error:", parseError);
         return {
@@ -140,54 +152,73 @@ Input: "${vitalsText}"`;
         };
       }
 
-      // Calculate confidence based on how many fields were extracted
-      const vitalFields = [
-        parsedData.systolicBp,
-        parsedData.diastolicBp,
-        parsedData.heartRate,
-        parsedData.temperature,
-        parsedData.respiratoryRate,
-        parsedData.oxygenSaturation,
-      ];
-      const extractedCount = vitalFields.filter(
-        (field) => field !== null && field !== undefined,
-      ).length;
-      const confidence = Math.round(
-        (extractedCount / vitalFields.length) * 100,
-      );
+      // Calculate overall confidence based on how many vitals were extracted
+      let totalExtracted = 0;
+      let totalPossible = 0;
+      
+      parsedData.forEach((vitalSet, index) => {
+        const vitalFields = [
+          vitalSet.systolicBp,
+          vitalSet.diastolicBp,
+          vitalSet.heartRate,
+          vitalSet.temperature,
+          vitalSet.respiratoryRate,
+          vitalSet.oxygenSaturation,
+        ];
+        const setExtracted = vitalFields.filter(
+          (field) => field !== null && field !== undefined,
+        ).length;
+        totalExtracted += setExtracted;
+        totalPossible += vitalFields.length;
 
-      // Add timestamp if not present
-      if (!parsedData.parsedText) {
-        parsedData.parsedText = vitalsText;
-      }
+        // Add default parsedText if not present
+        if (!vitalSet.parsedText) {
+          vitalSet.parsedText = `Vitals set ${index + 1} from document`;
+        }
+      });
+
+      const confidence = totalPossible > 0 ? Math.round((totalExtracted / totalPossible) * 100) : 0;
 
       console.log(`🔥 [VITALS PARSING] ============= VITALS PARSING COMPLETE =============`);
-      console.log(`✅ [VitalsParser] Successfully parsed ${extractedCount} vitals with ${confidence}% confidence`);
-      console.log(`✅ [VitalsParser] Extracted vitals summary:`);
-      if (parsedData.systolicBp && parsedData.diastolicBp) {
-        console.log(`✅ [VitalsParser] - Blood Pressure: ${parsedData.systolicBp}/${parsedData.diastolicBp} mmHg`);
-      }
-      if (parsedData.heartRate) {
-        console.log(`✅ [VitalsParser] - Heart Rate: ${parsedData.heartRate} bpm`);
-      }
-      if (parsedData.temperature) {
-        console.log(`✅ [VitalsParser] - Temperature: ${parsedData.temperature}°F`);
-      }
-      if (parsedData.weight) {
-        console.log(`✅ [VitalsParser] - Weight: ${parsedData.weight} lbs`);
-      }
-      if (parsedData.height) {
-        console.log(`✅ [VitalsParser] - Height: ${parsedData.height} inches`);
-      }
-      if (parsedData.oxygenSaturation) {
-        console.log(`✅ [VitalsParser] - O2 Saturation: ${parsedData.oxygenSaturation}%`);
-      }
-      if (parsedData.respiratoryRate) {
-        console.log(`✅ [VitalsParser] - Respiratory Rate: ${parsedData.respiratoryRate} breaths/min`);
-      }
-      if (parsedData.painScale !== null && parsedData.painScale !== undefined) {
-        console.log(`✅ [VitalsParser] - Pain Scale: ${parsedData.painScale}/10`);
-      }
+      console.log(`✅ [VitalsParser] Successfully parsed ${parsedData.length} vitals sets with ${confidence}% confidence`);
+      
+      parsedData.forEach((vitalSet, index) => {
+        console.log(`✅ [VitalsParser] === VITALS SET ${index + 1} ===`);
+        if (vitalSet.extractedDate) {
+          console.log(`✅ [VitalsParser] - Date: ${vitalSet.extractedDate}`);
+        }
+        if (vitalSet.timeContext) {
+          console.log(`✅ [VitalsParser] - Context: ${vitalSet.timeContext}`);
+        }
+        if (vitalSet.systolicBp && vitalSet.diastolicBp) {
+          console.log(`✅ [VitalsParser] - Blood Pressure: ${vitalSet.systolicBp}/${vitalSet.diastolicBp} mmHg`);
+        }
+        if (vitalSet.heartRate) {
+          console.log(`✅ [VitalsParser] - Heart Rate: ${vitalSet.heartRate} bpm`);
+        }
+        if (vitalSet.temperature) {
+          console.log(`✅ [VitalsParser] - Temperature: ${vitalSet.temperature}°F`);
+        }
+        if (vitalSet.weight) {
+          console.log(`✅ [VitalsParser] - Weight: ${vitalSet.weight} lbs`);
+        }
+        if (vitalSet.height) {
+          console.log(`✅ [VitalsParser] - Height: ${vitalSet.height} inches`);
+        }
+        if (vitalSet.oxygenSaturation) {
+          console.log(`✅ [VitalsParser] - O2 Saturation: ${vitalSet.oxygenSaturation}%`);
+        }
+        if (vitalSet.respiratoryRate) {
+          console.log(`✅ [VitalsParser] - Respiratory Rate: ${vitalSet.respiratoryRate} breaths/min`);
+        }
+        if (vitalSet.painScale !== null && vitalSet.painScale !== undefined) {
+          console.log(`✅ [VitalsParser] - Pain Scale: ${vitalSet.painScale}/10`);
+        }
+        if (vitalSet.warnings && vitalSet.warnings.length > 0) {
+          console.log(`⚠️ [VitalsParser] - Warnings: ${vitalSet.warnings.join(', ')}`);
+        }
+      });
+      
       console.log(`🔥 [VITALS PARSING] ============= PARSING SUCCESS =============`);
 
       return {
@@ -195,6 +226,7 @@ Input: "${vitalsText}"`;
         data: parsedData,
         confidence,
         originalText: vitalsText,
+        totalSetsFound: parsedData.length,
       };
     } catch (error) {
       console.error("❌ [VitalsParser] Error:", error);

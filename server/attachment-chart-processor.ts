@@ -122,20 +122,27 @@ export class AttachmentChartProcessor {
         extractedContent.documentType || 'unknown'
       );
 
-      if (vitalsResult.success && vitalsResult.data) {
-        console.log(`🩺 [AttachmentChartProcessor] Successfully parsed vitals with ${vitalsResult.confidence}% confidence`);
+      if (vitalsResult.success && vitalsResult.data && vitalsResult.data.length > 0) {
+        console.log(`🩺 [AttachmentChartProcessor] Successfully parsed ${vitalsResult.data.length} vitals sets with ${vitalsResult.confidence}% confidence`);
 
-        // Save vitals to database with source tracking
-        await this.saveExtractedVitals(
-          attachment.patientId,
-          attachment.encounterId,
-          vitalsResult,
-          attachment.id,
-          vitalsResult.extractedDate,
-          extractedContent.documentType
-        );
+        // Save each vitals set to database with source tracking
+        for (let i = 0; i < vitalsResult.data.length; i++) {
+          const vitalSet = vitalsResult.data[i];
+          console.log(`🩺 [AttachmentChartProcessor] Saving vitals set ${i + 1}/${vitalsResult.data.length}`);
+          
+          await this.saveExtractedVitalSet(
+            attachment.patientId,
+            attachment.encounterId,
+            vitalSet,
+            attachment.id,
+            vitalsResult.confidence,
+            extractedContent.documentType,
+            i + 1,
+            vitalsResult.data.length
+          );
+        }
 
-        console.log(`✅ [AttachmentChartProcessor] Vitals saved to database for patient ${attachment.patientId}`);
+        console.log(`✅ [AttachmentChartProcessor] All ${vitalsResult.data.length} vitals sets saved to database for patient ${attachment.patientId}`);
       console.log(`🔥 [VITALS WORKFLOW] ============= VITALS EXTRACTION COMPLETE =============`);
       console.log(`🔥 [WORKFLOW COMPLETE] ============= ATTACHMENT TO VITALS EXTRACTION COMPLETE =============`);
       } else {
@@ -284,33 +291,42 @@ ${fullText}`;
   }
 
   /**
-   * Save extracted vitals to database with proper source tracking
+   * Save individual vitals set to database with full source attribution
    */
-  private async saveExtractedVitals(
+  private async saveExtractedVitalSet(
     patientId: number,
     encounterId: number | null,
-    vitalsResult: any,
+    vitalSet: any,
     attachmentId: number,
-    extractedDate?: string,
-    documentType?: string
+    overallConfidence: number,
+    documentType?: string,
+    setNumber?: number,
+    totalSets?: number
   ): Promise<void> {
-    console.log(`💾 [AttachmentChartProcessor] Saving extracted vitals for patient ${patientId}`);
+    const setLabel = setNumber && totalSets ? `${setNumber}/${totalSets}` : 'single';
+    console.log(`💾 [AttachmentChartProcessor] Saving vitals set ${setLabel} for patient ${patientId}`);
 
     try {
-      // Determine recorded date - use extracted date or current date
+      // Determine recorded date - use GPT-extracted date or current date
       let recordedAt = new Date();
-      if (extractedDate && vitalsResult.data.dateConfidence !== 'low') {
+      if (vitalSet.extractedDate) {
         try {
-          recordedAt = new Date(extractedDate);
-          console.log(`📅 [AttachmentChartProcessor] Using extracted date: ${extractedDate}`);
+          recordedAt = new Date(vitalSet.extractedDate);
+          console.log(`📅 [AttachmentChartProcessor] Using GPT-extracted date: ${vitalSet.extractedDate}`);
         } catch (dateError) {
-          console.log(`⚠️ [AttachmentChartProcessor] Invalid extracted date, using current date`);
+          console.log(`⚠️ [AttachmentChartProcessor] Invalid GPT-extracted date, using current date`);
         }
       }
 
-      // Build source notes
+      // Build source notes with context information
       const docType = documentType || 'medical document';
-      const sourceNotes = `Extracted from ${docType} (Confidence: ${vitalsResult.confidence}%)`;
+      let sourceNotes = `Extracted from ${docType} (Confidence: ${overallConfidence}%)`;
+      if (vitalSet.timeContext) {
+        sourceNotes += ` - Context: ${vitalSet.timeContext}`;
+      }
+      if (setNumber && totalSets && totalSets > 1) {
+        sourceNotes += ` - Set ${setNumber} of ${totalSets}`;
+      }
       
       const vitalsEntry = {
         patientId: patientId,
@@ -319,42 +335,50 @@ ${fullText}`;
         recordedBy: "System Extract",
         entryType: "routine" as const,
         
-        // Vital signs data
-        systolicBp: vitalsResult.data.systolicBp || undefined,
-        diastolicBp: vitalsResult.data.diastolicBp || undefined,
-        heartRate: vitalsResult.data.heartRate || undefined,
-        temperature: vitalsResult.data.temperature ? vitalsResult.data.temperature.toString() : undefined,
-        weight: vitalsResult.data.weight ? vitalsResult.data.weight.toString() : undefined,
-        height: vitalsResult.data.height ? vitalsResult.data.height.toString() : undefined,
-        bmi: vitalsResult.data.bmi ? vitalsResult.data.bmi.toString() : undefined,
-        oxygenSaturation: vitalsResult.data.oxygenSaturation ? vitalsResult.data.oxygenSaturation.toString() : undefined,
-        respiratoryRate: vitalsResult.data.respiratoryRate || undefined,
-        painScale: vitalsResult.data.painScale || undefined,
+        // Vital signs data from individual set
+        systolicBp: vitalSet.systolicBp || undefined,
+        diastolicBp: vitalSet.diastolicBp || undefined,
+        heartRate: vitalSet.heartRate || undefined,
+        temperature: vitalSet.temperature ? vitalSet.temperature.toString() : undefined,
+        weight: vitalSet.weight ? vitalSet.weight.toString() : undefined,
+        height: vitalSet.height ? vitalSet.height.toString() : undefined,
+        bmi: vitalSet.bmi ? vitalSet.bmi.toString() : undefined,
+        oxygenSaturation: vitalSet.oxygenSaturation ? vitalSet.oxygenSaturation.toString() : undefined,
+        respiratoryRate: vitalSet.respiratoryRate || undefined,
+        painScale: vitalSet.painScale || undefined,
         
         // Source tracking
         sourceType: "attachment_extracted" as const,
-        sourceConfidence: (vitalsResult.confidence / 100).toFixed(2),
+        sourceConfidence: (overallConfidence / 100).toFixed(2),
         sourceNotes: sourceNotes,
         extractedFromAttachmentId: attachmentId,
         enteredBy: 2, // System user - could be made configurable
         
         // Additional metadata
         parsedFromText: true,
-        originalText: vitalsResult.data.vitalsSection || vitalsResult.originalText?.substring(0, 500),
-        alerts: vitalsResult.data.warnings || undefined,
+        originalText: vitalSet.parsedText || `Vitals set ${setLabel}`,
+        alerts: vitalSet.warnings || undefined,
       };
 
-      console.log(`💾 [AttachmentChartProcessor] Inserting vitals entry:`, {
+      console.log(`💾 [AttachmentChartProcessor] Inserting vitals set ${setLabel}:`, {
         patientId: vitalsEntry.patientId,
         sourceType: vitalsEntry.sourceType,
         confidence: vitalsEntry.sourceConfidence,
+        recordedAt: vitalsEntry.recordedAt,
+        timeContext: vitalSet.timeContext,
         hasVitals: !!(vitalsEntry.systolicBp || vitalsEntry.heartRate)
       });
 
       const [savedEntry] = await db.insert(vitals).values(vitalsEntry).returning();
       
-      console.log(`🔥 [DATABASE WORKFLOW] ============= SAVING VITALS TO DATABASE =============`);
-      console.log(`💾 [VitalsSave] ✅ Vitals entry saved with ID: ${savedEntry.id}`);
+      console.log(`🔥 [DATABASE WORKFLOW] ============= SAVING VITALS SET ${setLabel} =============`);
+      console.log(`💾 [VitalsSave] ✅ Vitals set ${setLabel} saved with ID: ${savedEntry.id}`);
+      if (vitalSet.extractedDate) {
+        console.log(`💾 [VitalsSave] ✅ GPT-Extracted Date: ${vitalSet.extractedDate}`);
+      }
+      if (vitalSet.timeContext) {
+        console.log(`💾 [VitalsSave] ✅ Time Context: ${vitalSet.timeContext}`);
+      }
       if (vitalsEntry.systolicBp && vitalsEntry.diastolicBp) {
         console.log(`💾 [VitalsSave] ✅ Blood Pressure: ${vitalsEntry.systolicBp}/${vitalsEntry.diastolicBp}`);
       }
@@ -366,7 +390,7 @@ ${fullText}`;
       }
       console.log(`💾 [VitalsSave] ✅ Source Confidence: ${vitalsEntry.sourceConfidence}`);
       console.log(`💾 [VitalsSave] ✅ Attachment ID: ${attachmentId}`);
-      console.log(`🔥 [DATABASE WORKFLOW] ============= VITALS SAVED SUCCESSFULLY =============`);
+      console.log(`🔥 [DATABASE WORKFLOW] ============= VITALS SET ${setLabel} SAVED SUCCESSFULLY =============`);
 
     } catch (error) {
       console.error(`❌ [AttachmentChartProcessor] Error saving vitals:`, error);
