@@ -322,53 +322,21 @@ export function VitalsFlowsheet({
     },
     onSuccess: (result) => {
       console.log("🩺 [VitalsFlowsheet] Unified vitals response:", result);
-      if (result.success && result.data) {
-        // Transform GPT parsed data to vitals entry format - using correct camelCase field names
-        const newEntry: Partial<VitalsEntry> = {
-          encounterId,
-          patientId,
-          entryType: 'routine',
-          recordedAt: new Date().toISOString(),
-          systolicBp: result.data.systolicBp,
-          diastolicBp: result.data.diastolicBp,
-          heartRate: result.data.heartRate,
-          temperature: result.data.temperature ? parseFloat(result.data.temperature?.toString() || '0') : undefined,
-          weight: result.data.weight ? parseFloat(result.data.weight?.toString() || '0') : undefined,
-          height: result.data.height ? parseFloat(result.data.height?.toString() || '0') : undefined,
-          bmi: result.data.bmi ? parseFloat(result.data.bmi?.toString() || '0') : undefined,
-          oxygenSaturation: result.data.oxygenSaturation ? parseFloat(result.data.oxygenSaturation?.toString() || '0') : undefined,
-          respiratoryRate: result.data.respiratoryRate,
-          painScale: result.data.painScale,
-          parsedFromText: true,
-          originalText: quickParseText,
-          notes: result.data.parsedText || "", // Use the clean parsed text instead of showing the raw input
-          alerts: []
-        };
-        
-        console.log("🩺 [VitalsFlowsheet] DEBUG - encounterId value:", encounterId);
-        console.log("🩺 [VitalsFlowsheet] DEBUG - patientId value:", patientId);
-        console.log("🩺 [VitalsFlowsheet] DEBUG - newEntry object:", JSON.stringify(newEntry, null, 2));
-        
-        console.log("🩺 [VitalsFlowsheet] Encounter ID:", encounterId);
-        console.log("🩺 [VitalsFlowsheet] Patient ID:", patientId);
-        
-        console.log("🩺 [VitalsFlowsheet] Created new entry:", newEntry);
-        setEditingEntry(newEntry as VitalsEntry);
-        setShowAddDialog(true);
-        // Don't clear quickParseText immediately - let the user see what was parsed
-        // setQuickParseText(""); // Commented out to prevent double updates
-        
-        const extractedCount = Object.keys(result.data).filter(k => result.data?.[k as keyof typeof result.data] !== null && result.data?.[k as keyof typeof result.data] !== undefined).length;
+      
+      if (result.success) {
         toast({
-          title: "Vitals Parsed Successfully",
-          description: `Extracted ${extractedCount} vital signs`,
+          title: "Vitals Parsed and Saved",
+          description: `Successfully processed ${result.vitalsCount || 1} vital sign set(s)`,
         });
+        
+        // Clear the text and refresh the vitals data
+        setQuickParseText("");
+        queryClient.invalidateQueries({ queryKey: ['/api/vitals/patient', Number(patientId)] });
       } else {
-        console.error("❌ [VitalsFlowsheet] Parse result missing success or data:", result);
         toast({
-          title: "Parse Error", 
-          description: result.errors?.[0] || "Failed to parse vitals",
-          variant: "destructive"
+          title: "Parse Failed", 
+          description: result.message || "Failed to parse vitals",
+          variant: "destructive",
         });
       }
     },
