@@ -1,0 +1,35 @@
+I need to clarify the paralell processesing issue. What needs to be parallel is NOT necessarily
+the SOAP and attachments simultaneously. Those are almost always going to happen at
+different times anyway. What needs to be parallel (so as to not slow the user down) is EACH
+CHART SECTION. Imagine the scenario when we've finally built out each medical chart section
+parser. We have the vitals parser and now we're going to work on the medical problems parser
+and after that we can do the past social history and the lab and the surgical history and so on
+and so forth. Before you know it, we'll have 10 separate medical chart parsing systems which
+will all be trying to activate from the SOAP note at the same time. If we don't plan ahead about
+this, it's going to take a long time (> 30 seconds) to process that information. How can we plan
+ahead to prevent this scenario. Mind you, I'M NOT ASKING YOU TO BUILD EACH PARSING
+SECTION RIGHT NOW. That's too complicated. I just want you to understand the architecture
+before you build each section.
+1. The unified service should not completely replace the existing medicalproblmsdeltaservice.
+That service works perfectly so we should take advantage to make THAT the unified service
+that can equally process SOAP notes just like it does attachments.
+2. Review the MedicalProblemsDeltaService again and you might better find your answer to
+this one. The MedicalProblemsDeltaService is designed to fully leverage GPT's intelligence
+to let GPT decide how the visit history should be updated and/or whether a certain medical
+problem needs to change entirely, while maintaining the visit history. Suppose a patient had
+DM2 and a long list of visit histories for DM2, then on a particular encounter the doctor also
+diagnosed them with neuropathy. That would change the diagnosis but, ideally, GPT would
+carry Torward the visit history trom the old diagnosis. Since we're updating
+MedicalProblemsDeltaService to be the single funnel for both SOAP notes and
+attachments, we might need to update the logic/ prompt to include the fact that GPT must
+identify whether the source of data is an attachment or the encounter itself, since that
+might change how GPT chooses to build the visit history. So the short answer to your
+question is: GPT should be tasked with resolving conflict. The frontend can help by
+"tagging" certain data as attachment, etc, but under no circumstances should the frontend
+be attempting any medical parsing logic. That's for GPT alone.
+3. I don't want to do any "requiring provider review" yet. The provider can always edit the
+information if they want.
+4. Definitely need to include historical problems as well but, again, GPT logic should be used
+here. No frontend logic/medical thinking.
+5. NO, attachment-derive medical problems should be added automatically.
+Please read this over and again, ask any inquiring questions you need before starting.

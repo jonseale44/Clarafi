@@ -1,5 +1,6 @@
 import { db } from "./db.js";
 import { VitalsParserService } from "./vitals-parser-service.js";
+import { medicalProblemsDelta } from "./medical-problems-delta-service.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -11,7 +12,7 @@ import { eq } from "drizzle-orm";
 /**
  * Attachment Chart Processor
  * Processes completed document extractions and populates chart sections
- * Uses unified VitalsParserService for consistent vitals processing
+ * Uses unified parsers for vitals and medical problems processing
  */
 export class AttachmentChartProcessor {
   private vitalsParser: VitalsParserService;

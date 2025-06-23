@@ -9,6 +9,7 @@ import { db } from "./db";
 import { medicalProblems, encounters, patients } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
+import { unifiedMedicalProblemsParser, UnifiedProcessingResult } from "./unified-medical-problems-parser.js";
 
 export interface VisitHistoryEntry {
   date: string; // DP - authoritative medical event date (encounter date)
@@ -63,7 +64,7 @@ export class MedicalProblemsDeltaService {
 
   /**
    * Process SOAP note with encounter-scoped visit consolidation
-   * Handles multiple recordings and manual edits within same encounter
+   * Now routes through unified parser for consistent processing
    */
   async processSOAPDelta(
     patientId: number,
@@ -83,78 +84,77 @@ export class MedicalProblemsDeltaService {
     );
 
     try {
-      // Get existing medical problems and encounter visit history for context
-      console.log(
-        `🏥 [DeltaService] Fetching existing medical problems and encounter history...`,
-      );
-
-      // Get any existing visit history entries for this specific encounter
-      const existingEncounterVisits =
-        await this.getEncounterVisitHistory(encounterId);
-      console.log(
-        `🏥 [DeltaService] Found ${existingEncounterVisits.length} existing visit entries for this encounter`,
-      );
-      const existingProblems = await this.getExistingProblems(patientId);
-      console.log(
-        `🏥 [DeltaService] Found ${existingProblems.length} existing medical problems`,
-      );
-
-      // Get encounter and patient info
-      console.log(`🏥 [DeltaService] Fetching encounter and patient info...`);
-      const [encounter, patient] = await Promise.all([
-        this.getEncounterInfo(encounterId),
-        this.getPatientInfo(patientId),
-      ]);
-      console.log(
-        `🏥 [DeltaService] Patient: ${patient.firstName} ${patient.lastName}, Age: ${this.calculateAge(patient.dateOfBirth)}`,
-      );
-      console.log(
-        `🏥 [DeltaService] Encounter: ${encounter.encounterType}, Status: ${encounter.encounterStatus}`,
-      );
-
-      // Generate delta changes using GPT with encounter context
-      console.log(
-        `🏥 [DeltaService] Starting GPT encounter-scoped analysis...`,
-      );
-      const changes = await this.generateEncounterScopedChanges(
-        existingProblems,
-        existingEncounterVisits,
+      // Route through unified parser for consistent SOAP processing
+      console.log(`🏥 [DeltaService] Routing to unified parser for SOAP processing...`);
+      
+      const unifiedResult = await unifiedMedicalProblemsParser.processUnified(
+        patientId,
+        encounterId,
         soapNote,
-        encounter,
-        patient,
+        null, // No attachment content for SOAP processing
+        null, // No attachment ID for SOAP processing
         providerId,
-        triggerType,
+        triggerType
       );
-      console.log(
-        `🏥 [DeltaService] GPT analysis completed. Generated ${changes.length} changes:`,
-      );
-      changes.forEach((change, index) => {
-        console.log(
-          `🏥 [DeltaService] Change ${index + 1}: ${change.action} - ${change.problem_title || "existing problem"} (confidence: ${change.confidence})`,
-        );
-      });
-
-      // Apply changes optimistically to database
-      console.log(
-        `🏥 [DeltaService] Applying ${changes.length} changes to database...`,
-      );
-      await this.applyChangesToDatabase(changes, patientId, encounterId);
-      console.log(`🏥 [DeltaService] Database changes applied successfully`);
 
       const processingTime = Date.now() - startTime;
       console.log(`✅ [DeltaService] === DELTA PROCESSING COMPLETE ===`);
       console.log(
-        `✅ [DeltaService] Total time: ${processingTime}ms, Problems affected: ${changes.length}`,
+        `✅ [DeltaService] Total time: ${processingTime}ms, Problems affected: ${unifiedResult.total_problems_affected}`,
       );
 
+      // Convert unified result to legacy format for backward compatibility
       return {
-        changes,
+        changes: unifiedResult.changes.map(change => ({
+          problem_id: change.problem_id,
+          action: change.action as any,
+          problem_title: change.problem_title,
+          visit_notes: change.visit_notes,
+          icd10_change: change.icd10_change,
+          confidence: change.confidence
+        })),
         processing_time_ms: processingTime,
-        total_problems_affected: changes.length,
+        total_problems_affected: unifiedResult.total_problems_affected,
       };
     } catch (error) {
       console.error(`❌ [DeltaService] Error in processSOAPDelta:`, error);
       console.error(`❌ [DeltaService] Stack trace:`, (error as Error).stack);
+      throw error;
+    }
+  }
+
+  /**
+   * NEW: Process attachment content for medical problems
+   * Routes through unified parser for consistent processing
+   */
+  async processAttachmentDelta(
+    patientId: number,
+    attachmentContent: string,
+    attachmentId: number,
+    providerId: number
+  ): Promise<UnifiedProcessingResult> {
+    const startTime = Date.now();
+    console.log(`🏥 [DeltaService] === ATTACHMENT PROCESSING START ===`);
+    console.log(`🏥 [DeltaService] Patient: ${patientId}, Attachment: ${attachmentId}`);
+    console.log(`🏥 [DeltaService] Content length: ${attachmentContent.length} characters`);
+
+    try {
+      // Route through unified parser for attachment processing
+      const result = await unifiedMedicalProblemsParser.processUnified(
+        patientId,
+        null, // No encounter for attachment processing
+        null, // No SOAP note for attachment processing
+        attachmentContent,
+        attachmentId,
+        providerId,
+        "attachment_processed"
+      );
+
+      console.log(`✅ [DeltaService] Attachment processing complete in ${Date.now() - startTime}ms`);
+      return result;
+
+    } catch (error) {
+      console.error(`❌ [DeltaService] Error in processAttachmentDelta:`, error);
       throw error;
     }
   }
