@@ -2498,10 +2498,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   {section.id === "encounters" ? (
                     <div className="text-xs text-gray-600">Current encounter in progress</div>
                   ) : section.id === "vitals" ? (
-                    <VitalsFlowsheet 
+                    <SharedChartSections 
                       patientId={patient.id} 
+                      mode="encounter" 
                       encounterId={encounterId}
-                      readOnly={false}
+                      isReadOnly={false}
+                      sectionId="vitals"
                     />
                   ) : section.id === "documents" ? (
                     <EmbeddedPDFViewer 

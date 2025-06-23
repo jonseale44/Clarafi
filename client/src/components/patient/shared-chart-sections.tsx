@@ -2,12 +2,14 @@ import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
 import { PatientAttachments } from "./patient-attachments";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
+import { VitalsTrendingGraph } from "@/components/vitals/vitals-trending-graph";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Expand, Minimize2, Activity, TrendingUp, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -82,13 +84,29 @@ function VitalsSection({ patientId, encounterId, mode }: {
         </Button>
       </div>
       
-      <VitalsFlowsheet
-        encounterId={encounterId!}
-        patientId={patientId}
-        patient={patient as any}
-        readOnly={false}
-        showAllPatientVitals={mode === "patient-chart"}
-      />
+      <Tabs defaultValue="flowsheet" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="flowsheet">Vitals Table</TabsTrigger>
+          <TabsTrigger value="trending">Trending Graph</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="flowsheet" className="mt-4">
+          <VitalsFlowsheet
+            encounterId={encounterId!}
+            patientId={patientId}
+            patient={patient as any}
+            readOnly={false}
+            showAllPatientVitals={mode === "patient-chart"}
+          />
+        </TabsContent>
+        
+        <TabsContent value="trending" className="mt-4">
+          <VitalsTrendingGraph
+            vitalsEntries={vitalsEntries}
+            patientId={patientId}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Full Screen Modal */}
       <Dialog open={isFullScreenOpen} onOpenChange={setIsFullScreenOpen}>
@@ -112,13 +130,29 @@ function VitalsSection({ patientId, encounterId, mode }: {
           </DialogHeader>
           
           <div className="flex-1 overflow-auto px-6 py-4">
-            <VitalsFlowsheet
-              encounterId={encounterId!}
-              patientId={patientId}
-              patient={patient as any}
-              readOnly={false}
-              showAllPatientVitals={mode === "patient-chart"}
-            />
+            <Tabs defaultValue="flowsheet" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="flowsheet">Vitals Table</TabsTrigger>
+                <TabsTrigger value="trending">Trending Graph</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="flowsheet" className="mt-4">
+                <VitalsFlowsheet
+                  encounterId={encounterId!}
+                  patientId={patientId}
+                  patient={patient as any}
+                  readOnly={false}
+                  showAllPatientVitals={mode === "patient-chart"}
+                />
+              </TabsContent>
+              
+              <TabsContent value="trending" className="mt-4">
+                <VitalsTrendingGraph
+                  vitalsEntries={vitalsEntries}
+                  patientId={patientId}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </DialogContent>
       </Dialog>
