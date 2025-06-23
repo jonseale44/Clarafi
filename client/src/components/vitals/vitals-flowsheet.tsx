@@ -911,6 +911,7 @@ interface VitalsEntryFormProps {
 
 function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParseText, setQuickParseText, quickParseMutation, encounterId, patientId }: VitalsEntryFormProps) {
   const [formData, setFormData] = useState<Partial<VitalsEntry>>(entry);
+  const { toast } = useToast();
 
   // Update form data when entry changes (from quick parse) - but only update if the entry actually changed
   useEffect(() => {
