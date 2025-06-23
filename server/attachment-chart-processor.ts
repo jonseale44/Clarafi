@@ -1,6 +1,6 @@
 import { db } from "./db.js";
 import { VitalsParserService } from "./vitals-parser-service.js";
-import { medicalProblemsDelta } from "./medical-problems-delta-service.js";
+import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -58,10 +58,34 @@ export class AttachmentChartProcessor {
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
       // Process both vitals and medical problems in parallel for efficiency
-      await Promise.all([
-        this.processDocumentForVitals(attachment, extractedContent),
-        this.processDocumentForMedicalProblems(attachment, extractedContent)
-      ]);
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems`);
+      const parallelStartTime = Date.now();
+      
+      try {
+        const [vitalsResult, medicalProblemsResult] = await Promise.allSettled([
+          this.processDocumentForVitals(attachment, extractedContent),
+          this.processDocumentForMedicalProblems(attachment, extractedContent)
+        ]);
+        
+        // Check results and log any failures
+        if (vitalsResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] Vitals processing failed:`, vitalsResult.reason);
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Vitals processing completed successfully`);
+        }
+        
+        if (medicalProblemsResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] Medical problems processing failed:`, medicalProblemsResult.reason);
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Medical problems processing completed successfully`);
+        }
+        
+      } catch (error) {
+        console.error(`❌ [AttachmentChartProcessor] Parallel processing failed:`, error);
+      }
+      
+      const parallelTime = Date.now() - parallelStartTime;
+      console.log(`📋 [AttachmentChartProcessor] ✅ Parallel processing completed in ${parallelTime}ms`);
       
       // Process specific document types for additional data
       switch (extractedContent.documentType) {
@@ -160,38 +184,67 @@ export class AttachmentChartProcessor {
    * Uses unified medical problems parser for consistent processing
    */
   private async processDocumentForMedicalProblems(attachment: any, extractedContent: any): Promise<void> {
-    console.log(`🏥 [MedicalProblemsExtraction] Extracting medical problems from document (${extractedContent.documentType || 'unknown type'})`);
+    console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= STARTING MEDICAL PROBLEMS EXTRACTION =============`);
+    console.log(`🏥 [MedicalProblemsExtraction] Processing attachment ${attachment.id} for patient ${attachment.patientId}`);
+    console.log(`🏥 [MedicalProblemsExtraction] Document type: ${extractedContent.documentType || 'unknown type'}`);
     console.log(`🏥 [MedicalProblemsExtraction] Document text length: ${extractedContent.extractedText?.length || 0} characters`);
+    console.log(`🏥 [MedicalProblemsExtraction] Original filename: ${attachment.originalFileName}`);
 
     if (!extractedContent.extractedText) {
       console.log(`🏥 [MedicalProblemsExtraction] ❌ No extracted text available for medical problems parsing`);
+      console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= MEDICAL PROBLEMS EXTRACTION FAILED - NO TEXT =============`);
+      return;
+    }
+
+    if (extractedContent.extractedText.length < 50) {
+      console.log(`🏥 [MedicalProblemsExtraction] ⚠️ Document text too short (${extractedContent.extractedText.length} chars) for meaningful medical problems extraction`);
+      console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= MEDICAL PROBLEMS EXTRACTION SKIPPED - TEXT TOO SHORT =============`);
       return;
     }
 
     try {
-      console.log(`🏥 [MedicalProblemsExtraction] 🔍 Starting medical problems extraction for patient ${attachment.patientId}`);
+      console.log(`🏥 [MedicalProblemsExtraction] 🔍 Starting unified medical problems extraction for patient ${attachment.patientId}`);
+      console.log(`🏥 [MedicalProblemsExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
 
-      // Process medical problems using the enhanced delta service
-      const result = await medicalProblemsDelta.processAttachmentDelta(
+      const startTime = Date.now();
+
+      // Use the unified medical problems parser for attachment processing
+      const result = await unifiedMedicalProblemsParser.processUnified(
         attachment.patientId,
-        extractedContent.extractedText,
-        attachment.id,
-        1 // Default provider ID - TODO: Get from context
+        null, // No specific encounter ID for attachment
+        null, // No SOAP note text
+        extractedContent.extractedText, // Attachment content
+        attachment.id, // Attachment ID for source tracking
+        2, // Default provider ID (Jonathan Seale) - could be made configurable
+        "attachment_processed"
       );
 
-      console.log(`🏥 [MedicalProblemsExtraction] ✅ Successfully processed medical problems`);
+      const processingTime = Date.now() - startTime;
+
+      console.log(`🏥 [MedicalProblemsExtraction] ✅ Successfully processed medical problems in ${processingTime}ms`);
       console.log(`🏥 [MedicalProblemsExtraction] ✅ Problems affected: ${result.total_problems_affected}`);
+      console.log(`🏥 [MedicalProblemsExtraction] ✅ Processing time: ${result.processing_time_ms}ms`);
       console.log(`🏥 [MedicalProblemsExtraction] ✅ Source summary:`, result.source_summary);
 
       // Log individual changes for debugging
-      result.changes.forEach((change, index) => {
-        console.log(`🏥 [MedicalProblemsExtraction] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing problem'}`);
-      });
+      if (result.changes && result.changes.length > 0) {
+        console.log(`🏥 [MedicalProblemsExtraction] ✅ Changes made (${result.changes.length} total):`);
+        result.changes.forEach((change, index) => {
+          console.log(`🏥 [MedicalProblemsExtraction]   ${index + 1}. ${change.action}: ${change.problem_title || 'existing problem'} (${change.change_type || 'unknown'})`);
+          if (change.confidence) {
+            console.log(`🏥 [MedicalProblemsExtraction]      Confidence: ${change.confidence}`);
+          }
+        });
+      } else {
+        console.log(`🏥 [MedicalProblemsExtraction] ⚠️ No changes made - no medical problems detected or updated`);
+      }
 
       console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= ATTACHMENT TO MEDICAL PROBLEMS EXTRACTION COMPLETE =============`);
 
     } catch (error) {
-      console.error(`❌ [MedicalProblemsExtraction] Error processing medical problems:`, error);
+      console.error(`❌ [MedicalProblemsExtraction] Error processing medical problems from attachment ${attachment.id}:`, error);
+      console.error(`❌ [MedicalProblemsExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= MEDICAL PROBLEMS EXTRACTION FAILED =============`);
     }
   }
 
