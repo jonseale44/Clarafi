@@ -182,10 +182,12 @@ ${attachmentContent}
 
 ATTACHMENT PROCESSING RULES:
 - This is HISTORICAL data from attachment ID ${attachmentId}
-- Should ADD visit history to existing problems when possible
-- Avoid creating duplicate problems if condition already exists
-- Prefer action "ADD_VISIT" over "NEW_PROBLEM" for historical data
-- Only create new problems if genuinely new conditions not in existing list
+- FREELY CREATE new problems for any medical conditions found that don't exist in the existing problems list
+- Use medical intelligence to match conditions by meaning, not just exact wording (e.g., "HTN" = "Hypertension")
+- ADD visit history to existing problems when the condition already exists
+- CREATE new problems liberally - attachment data often contains comprehensive historical information
+- Only avoid duplicates when the same condition clearly exists (use synonyms/ICD code matching)
+- Historical data is valuable for building complete medical history
 ` : "NO ATTACHMENT CONTENT PROVIDED"}
 
 PATIENT CONTEXT:
@@ -229,7 +231,13 @@ EXAMPLES:
 2. Attachment has "HTN" + existing "Hypertension":
    {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension", "source_type": "attachment"}
 
-Critical: Extract ALL medical conditions from both sources. Use medical intelligence to match synonyms and avoid duplicates.
+3. Attachment has "COPD" + NO existing respiratory conditions:
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Chronic obstructive pulmonary disease", "icd10_change": {"from": null, "to": "J44.1"}, "source_type": "attachment", "visit_notes": "Historical diagnosis documented in attachment"}
+
+4. Attachment has "Acute MI 2019" + NO existing cardiac conditions:
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "History of myocardial infarction", "icd10_change": {"from": null, "to": "Z87.74"}, "source_type": "attachment", "visit_notes": "Historical myocardial infarction in 2019 per attachment documentation"}
+
+Critical: Extract ALL medical conditions from both sources. Create new problems liberally for attachment content. Use medical intelligence to match synonyms but err on the side of creating new problems when in doubt.
 `;
 
     console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1-nano`);
