@@ -705,9 +705,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;
   app.use("/api/vitals", unifiedVitalsAPI);
   
-  // Parse-only endpoint for Quick Parse form population
-  const { parseVitalsOnly } = await import("./vitals-parse-only-api.js");
-  app.post("/api/vitals/parse-only", parseVitalsOnly);
+  // Parse-only endpoint for Quick Parse form population (returns data without saving)
+  app.post("/api/vitals/parse-only", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { text, patientId } = req.body;
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      // Get patient context if provided
+      let patientContext = undefined;
+      if (patientId) {
+        try {
+          const { db } = await import("./db.js");
+          const { patients } = await import("../shared/schema.js");
+          const { eq } = await import("drizzle-orm");
+          
+          const [patient] = await db
+            .select()
+            .from(patients)
+            .where(eq(patients.id, patientId))
+            .limit(1);
+            
+          if (patient) {
+            const birthDate = new Date(patient.dateOfBirth);
+            const today = new Date();
+            const age = Math.floor((today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+            
+            patientContext = {
+              age: age,
+              gender: patient.gender
+            };
+          }
+        } catch (error) {
+          console.warn("Could not fetch patient context:", error);
+        }
+      }
+
+      const { VitalsParserService } = await import("./vitals-parser-service.js");
+      const vitalsParser = new VitalsParserService();
+      
+      const parseResult = await vitalsParser.parseVitalsText(text, patientContext);
+
+      if (!parseResult.success) {
+        return res.status(400).json({
+          success: false,
+          errors: parseResult.errors || ["Failed to parse vitals"]
+        });
+      }
+
+      // Return first vitals set for quick parse functionality
+      const firstVitalsSet = parseResult.data?.[0];
+      if (!firstVitalsSet) {
+        return res.status(400).json({
+          success: false,
+          errors: ["No vitals data extracted"]
+        });
+      }
+
+      res.json({
+        success: true,
+        vitals: firstVitalsSet,
+        confidence: parseResult.confidence,
+        totalSetsFound: parseResult.data?.length || 0
+      });
+
+    } catch (error: any) {
+      console.error("Parse-only vitals error:", error);
+      res.status(500).json({ error: "Failed to parse vitals" });
+    }
+  });
   
   // Debug endpoint for testing multiple vitals extraction
   app.post("/api/debug/test-vitals", async (req, res) => {
