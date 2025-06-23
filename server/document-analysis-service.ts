@@ -398,7 +398,7 @@ Preserve the original structure and formatting where possible. Be thorough and a
         ],
         response_format: { type: "json_object" },
         temperature: 0.1,
-        max_tokens: 4000
+        max_tokens: 20000
       });
 
       console.log(`📄 [DocumentAnalysis] OpenAI API response received`);
