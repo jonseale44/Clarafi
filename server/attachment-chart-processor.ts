@@ -131,7 +131,8 @@ export class AttachmentChartProcessor {
           attachment.encounterId,
           vitalsResult,
           attachment.id,
-          vitalsResult.extractedDate
+          vitalsResult.extractedDate,
+          extractedContent.documentType
         );
 
         console.log(`✅ [AttachmentChartProcessor] Vitals saved to database for patient ${attachment.patientId}`);
@@ -290,7 +291,8 @@ ${fullText}`;
     encounterId: number | null,
     vitalsResult: any,
     attachmentId: number,
-    extractedDate?: string
+    extractedDate?: string,
+    documentType?: string
   ): Promise<void> {
     console.log(`💾 [AttachmentChartProcessor] Saving extracted vitals for patient ${patientId}`);
 
@@ -307,7 +309,7 @@ ${fullText}`;
       }
 
       // Build source notes
-      const docType = extractedContent?.documentType || 'medical document';
+      const docType = documentType || 'medical document';
       const sourceNotes = `Extracted from ${docType} (Confidence: ${vitalsResult.confidence}%)`;
       
       const vitalsEntry = {
