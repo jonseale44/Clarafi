@@ -337,7 +337,7 @@ export function VitalsFlowsheet({
         
         // Transform parsed data to vitals entry format for form population
         const newEntry: Partial<VitalsEntry> = {
-          encounterId: currentEncounterId ? Number(currentEncounterId) : undefined,
+          encounterId: currentEncounterId ? Number(currentEncounterId) : null,
           patientId: Number(patientId),
           entryType: 'routine',
           recordedAt: vitals.extractedDate 

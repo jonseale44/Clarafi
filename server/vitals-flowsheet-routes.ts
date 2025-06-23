@@ -139,11 +139,8 @@ router.post("/entries", async (req, res) => {
     console.log("🩺 [VitalsFlowsheet] PatientId present?", dataToValidate.patientId !== undefined);
     console.log("🩺 [VitalsFlowsheet] PatientId value:", dataToValidate.patientId);
     
-    // Check for required fields before validation
-    if (!dataToValidate.encounterId) {
-      console.error("❌ [VitalsFlowsheet] Missing encounterId in request body");
-      return APIResponseHandler.badRequest(res, "encounterId is required");
-    }
+    // encounterId is optional - vitals can be stored at patient level or encounter level
+    console.log("🩺 [VitalsFlowsheet] EncounterId is optional for patient-level vitals");
     
     if (!dataToValidate.patientId) {
       console.error("❌ [VitalsFlowsheet] Missing patientId in request body");
