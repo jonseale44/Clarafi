@@ -51,10 +51,17 @@ router.post("/parse", async (req, res) => {
       }
     }
 
-    console.log("🩺 [VitalsParserAPI] Parsing vitals via VitalsParserService:", vitalsText);
+    console.log("🔥 [LEGACY VITALS API] ============= STANDALONE VITALS PARSING =============");
+    console.log("🩺 [VitalsParserAPI] ⚠️  LEGACY ROUTE - Manual vitals parsing (not from attachments)");
+    console.log("🩺 [VitalsParserAPI] Input text:", vitalsText.substring(0, 100) + (vitalsText.length > 100 ? '...' : ''));
+    console.log("🩺 [VitalsParserAPI] Patient ID:", patientId || 'None provided');
+    console.log("🩺 [VitalsParserAPI] Using VitalsParserService for processing...");
     
     // Use the single source of truth: VitalsParserService
     const result = await vitalsParser.parseVitalsText(vitalsText, patientContext);
+    
+    console.log("🔥 [LEGACY VITALS API] ============= STANDALONE PARSING COMPLETE =============");
+    console.log("🩺 [VitalsParserAPI] ⚠️  Note: This creates vitals without attachment source attribution");
 
     return APIResponseHandler.success(res, result);
     

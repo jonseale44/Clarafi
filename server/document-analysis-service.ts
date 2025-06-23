@@ -138,6 +138,9 @@ export class DocumentAnalysisService {
 
       // Trigger chart processing for completed documents
       console.log(`📄 [DocumentAnalysis] 🔄 Triggering chart processing for attachment ${attachmentId}`);
+      console.log(`🔥 [ANALYSIS WORKFLOW] ============= DOCUMENT ANALYSIS COMPLETE =============`);
+      console.log(`📄 [DocumentAnalysis] ✅ Starting transition to chart processing workflow`);
+      
       this.triggerChartProcessing(attachmentId).catch(error => {
         console.error(`📄 [DocumentAnalysis] ❌ Chart processing failed for attachment ${attachmentId}:`, error);
       });

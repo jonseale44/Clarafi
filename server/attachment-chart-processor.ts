@@ -135,11 +135,14 @@ export class AttachmentChartProcessor {
         );
 
         console.log(`✅ [AttachmentChartProcessor] Vitals saved to database for patient ${attachment.patientId}`);
+      console.log(`🔥 [VITALS WORKFLOW] ============= VITALS EXTRACTION COMPLETE =============`);
+      console.log(`🔥 [WORKFLOW COMPLETE] ============= ATTACHMENT TO VITALS EXTRACTION COMPLETE =============`);
       } else {
         console.log(`📋 [AttachmentChartProcessor] No vitals found in document or parsing failed`);
         if (vitalsResult.errors) {
           console.log(`📋 [AttachmentChartProcessor] Parsing errors:`, vitalsResult.errors);
         }
+        console.log(`🔥 [VITALS WORKFLOW] ============= VITALS EXTRACTION FAILED =============`);
       }
 
     } catch (error) {
@@ -348,7 +351,20 @@ ${fullText}`;
 
       const [savedEntry] = await db.insert(vitals).values(vitalsEntry).returning();
       
-      console.log(`✅ [AttachmentChartProcessor] Vitals entry saved with ID: ${savedEntry.id}`);
+      console.log(`🔥 [DATABASE WORKFLOW] ============= SAVING VITALS TO DATABASE =============`);
+      console.log(`💾 [VitalsSave] ✅ Vitals entry saved with ID: ${savedEntry.id}`);
+      if (vitalsEntry.systolicBp && vitalsEntry.diastolicBp) {
+        console.log(`💾 [VitalsSave] ✅ Blood Pressure: ${vitalsEntry.systolicBp}/${vitalsEntry.diastolicBp}`);
+      }
+      if (vitalsEntry.heartRate) {
+        console.log(`💾 [VitalsSave] ✅ Heart Rate: ${vitalsEntry.heartRate} bpm`);
+      }
+      if (vitalsEntry.temperature) {
+        console.log(`💾 [VitalsSave] ✅ Temperature: ${vitalsEntry.temperature}°F`);
+      }
+      console.log(`💾 [VitalsSave] ✅ Source Confidence: ${vitalsEntry.sourceConfidence}`);
+      console.log(`💾 [VitalsSave] ✅ Attachment ID: ${attachmentId}`);
+      console.log(`🔥 [DATABASE WORKFLOW] ============= VITALS SAVED SUCCESSFULLY =============`);
 
     } catch (error) {
       console.error(`❌ [AttachmentChartProcessor] Error saving vitals:`, error);

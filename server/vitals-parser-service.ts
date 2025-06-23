@@ -46,10 +46,11 @@ export class VitalsParserService {
       };
     }
 
-    console.log("🤖 [VitalsParser] ============= STARTING GPT-4.1-NANO VITALS PARSING =============");
+    console.log("🔥 [VITALS PARSING] ============= STARTING GPT-4.1-NANO VITALS PARSING =============");
     console.log("🩺 [VitalsParser] Input text length:", vitalsText.length, "characters");
     console.log("🩺 [VitalsParser] Patient context:", patientContext);
-    console.log("🩺 [VitalsParser] Parsing vitals text:", vitalsText.substring(0, 200) + (vitalsText.length > 200 ? '...' : ''));
+    console.log("🩺 [VitalsParser] Parsing vitals text preview:", vitalsText.substring(0, 200) + (vitalsText.length > 200 ? '...' : ''));
+    console.log("🩺 [VitalsParser] Starting AI parsing process...");
 
     try {
       // Enhanced GPT prompt for better vitals extraction
@@ -160,9 +161,34 @@ Input: "${vitalsText}"`;
         parsedData.parsedText = vitalsText;
       }
 
-      console.log(
-        `✅ [VitalsParser] Successfully parsed ${extractedCount} vitals with ${confidence}% confidence`,
-      );
+      console.log(`🔥 [VITALS PARSING] ============= VITALS PARSING COMPLETE =============`);
+      console.log(`✅ [VitalsParser] Successfully parsed ${extractedCount} vitals with ${confidence}% confidence`);
+      console.log(`✅ [VitalsParser] Extracted vitals summary:`);
+      if (parsedData.systolicBp && parsedData.diastolicBp) {
+        console.log(`✅ [VitalsParser] - Blood Pressure: ${parsedData.systolicBp}/${parsedData.diastolicBp} mmHg`);
+      }
+      if (parsedData.heartRate) {
+        console.log(`✅ [VitalsParser] - Heart Rate: ${parsedData.heartRate} bpm`);
+      }
+      if (parsedData.temperature) {
+        console.log(`✅ [VitalsParser] - Temperature: ${parsedData.temperature}°F`);
+      }
+      if (parsedData.weight) {
+        console.log(`✅ [VitalsParser] - Weight: ${parsedData.weight} lbs`);
+      }
+      if (parsedData.height) {
+        console.log(`✅ [VitalsParser] - Height: ${parsedData.height} inches`);
+      }
+      if (parsedData.oxygenSaturation) {
+        console.log(`✅ [VitalsParser] - O2 Saturation: ${parsedData.oxygenSaturation}%`);
+      }
+      if (parsedData.respiratoryRate) {
+        console.log(`✅ [VitalsParser] - Respiratory Rate: ${parsedData.respiratoryRate} breaths/min`);
+      }
+      if (parsedData.painScale !== null && parsedData.painScale !== undefined) {
+        console.log(`✅ [VitalsParser] - Pain Scale: ${parsedData.painScale}/10`);
+      }
+      console.log(`🔥 [VITALS PARSING] ============= PARSING SUCCESS =============`);
 
       return {
         success: true,
