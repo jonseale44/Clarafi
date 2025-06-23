@@ -77,7 +77,7 @@ router.post("/parse-text", async (req, res) => {
             patientId: Number(patientId),
             encounterId: encounterId ? Number(encounterId) : null,
             entryType: "routine" as const,
-            recordedAt: new Date().toISOString(),
+            recordedAt: vitalSet.extractedDate ? new Date(vitalSet.extractedDate + 'T00:00:00.000Z') : new Date(),
             parsedFromText: true,
             originalText: text,
             systolicBp: vitalSet.systolicBp || null,
