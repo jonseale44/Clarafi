@@ -1,6 +1,6 @@
 /**
  * Unified Medical Problems Parser Service
- * 
+ *
  * Processes medical problems from both SOAP notes and attachments with:
  * - GPT-driven intelligent parsing and conflict resolution
  * - Source attribution and confidence scoring
@@ -32,7 +32,12 @@ export interface UnifiedVisitHistoryEntry {
 
 export interface UnifiedProblemChange {
   problem_id?: number; // null if new problem
-  action: "ADD_VISIT" | "UPDATE_ICD" | "NEW_PROBLEM" | "EVOLVE_PROBLEM" | "RESOLVE";
+  action:
+    | "ADD_VISIT"
+    | "UPDATE_ICD"
+    | "NEW_PROBLEM"
+    | "EVOLVE_PROBLEM"
+    | "RESOLVE";
   problem_title?: string;
   visit_notes?: string;
   icd10_change?: { from: string; to: string };
@@ -73,24 +78,35 @@ export class UnifiedMedicalProblemsParser {
     attachmentContent: string | null,
     attachmentId: number | null,
     providerId: number,
-    triggerType: "recording_complete" | "manual_edit" | "attachment_processed" = "recording_complete"
+    triggerType:
+      | "recording_complete"
+      | "manual_edit"
+      | "attachment_processed" = "recording_complete",
   ): Promise<UnifiedProcessingResult> {
     const startTime = Date.now();
-    
+
     console.log(`🔄 [UnifiedMedicalProblems] === UNIFIED PROCESSING START ===`);
-    console.log(`🔄 [UnifiedMedicalProblems] Patient: ${patientId}, Encounter: ${encounterId}, Attachment: ${attachmentId}`);
-    console.log(`🔄 [UnifiedMedicalProblems] SOAP length: ${soapNote?.length || 0}, Attachment length: ${attachmentContent?.length || 0}`);
+    console.log(
+      `🔄 [UnifiedMedicalProblems] Patient: ${patientId}, Encounter: ${encounterId}, Attachment: ${attachmentId}`,
+    );
+    console.log(
+      `🔄 [UnifiedMedicalProblems] SOAP length: ${soapNote?.length || 0}, Attachment length: ${attachmentContent?.length || 0}`,
+    );
     console.log(`🔄 [UnifiedMedicalProblems] Trigger: ${triggerType}`);
 
     try {
       // Get existing context
       const [existingProblems, encounter, patient] = await Promise.all([
         this.getExistingProblems(patientId),
-        encounterId ? this.getEncounterInfo(encounterId) : Promise.resolve(null),
-        this.getPatientInfo(patientId)
+        encounterId
+          ? this.getEncounterInfo(encounterId)
+          : Promise.resolve(null),
+        this.getPatientInfo(patientId),
       ]);
 
-      console.log(`🔄 [UnifiedMedicalProblems] Found ${existingProblems.length} existing problems`);
+      console.log(
+        `🔄 [UnifiedMedicalProblems] Found ${existingProblems.length} existing problems`,
+      );
 
       // Generate unified changes using enhanced GPT prompt
       const changes = await this.generateUnifiedChanges(
@@ -101,34 +117,46 @@ export class UnifiedMedicalProblemsParser {
         patient,
         providerId,
         triggerType,
-        attachmentId
+        attachmentId,
       );
 
-      console.log(`🔄 [UnifiedMedicalProblems] Generated ${changes.length} changes`);
+      console.log(
+        `🔄 [UnifiedMedicalProblems] Generated ${changes.length} changes`,
+      );
 
       // Apply changes with visit history transfer logic
-      await this.applyUnifiedChanges(changes, patientId, encounterId, attachmentId);
+      await this.applyUnifiedChanges(
+        changes,
+        patientId,
+        encounterId,
+        attachmentId,
+      );
 
       const processingTime = Date.now() - startTime;
-      
+
       // Calculate source summary
       const sourceSummary = {
-        encounter_problems: changes.filter(c => c.source_type === "encounter").length,
-        attachment_problems: changes.filter(c => c.source_type === "attachment").length,
-        conflicts_resolved: changes.filter(c => c.action === "EVOLVE_PROBLEM").length
+        encounter_problems: changes.filter((c) => c.source_type === "encounter")
+          .length,
+        attachment_problems: changes.filter(
+          (c) => c.source_type === "attachment",
+        ).length,
+        conflicts_resolved: changes.filter((c) => c.action === "EVOLVE_PROBLEM")
+          .length,
       };
 
       console.log(`✅ [UnifiedMedicalProblems] === PROCESSING COMPLETE ===`);
-      console.log(`✅ [UnifiedMedicalProblems] Time: ${processingTime}ms, Changes: ${changes.length}`);
+      console.log(
+        `✅ [UnifiedMedicalProblems] Time: ${processingTime}ms, Changes: ${changes.length}`,
+      );
       console.log(`✅ [UnifiedMedicalProblems] Source summary:`, sourceSummary);
 
       return {
         changes,
         processing_time_ms: processingTime,
         total_problems_affected: changes.length,
-        source_summary: sourceSummary
+        source_summary: sourceSummary,
       };
-
     } catch (error) {
       console.error(`❌ [UnifiedMedicalProblems] Processing error:`, error);
       throw error;
@@ -146,27 +174,34 @@ export class UnifiedMedicalProblemsParser {
     patient: any,
     providerId: number,
     triggerType: string,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<UnifiedProblemChange[]> {
-    
     const unifiedPrompt = `
 UNIFIED MEDICAL PROBLEMS PROCESSING
 You are an expert medical AI that intelligently consolidates medical problems from multiple sources while avoiding duplication.
 
 EXISTING MEDICAL PROBLEMS:
-${existingProblems.length === 0 
-  ? "NONE - This is a new patient with no existing medical problems" 
-  : JSON.stringify(existingProblems.map(p => ({
-      id: p.id,
-      title: p.problemTitle,
-      current_icd10: p.currentIcd10Code,
-      status: p.problemStatus,
-      visit_history_count: Array.isArray(p.visitHistory) ? p.visitHistory.length : 0
-    })))}
+${
+  existingProblems.length === 0
+    ? "NONE - This is a new patient with no existing medical problems"
+    : JSON.stringify(
+        existingProblems.map((p) => ({
+          id: p.id,
+          title: p.problemTitle,
+          current_icd10: p.currentIcd10Code,
+          status: p.problemStatus,
+          visit_history_count: Array.isArray(p.visitHistory)
+            ? p.visitHistory.length
+            : 0,
+        })),
+      )
+}
 
 DATA SOURCES TO PROCESS:
 
-${soapNote ? `
+${
+  soapNote
+    ? `
 SOAP NOTE CONTENT (Current Encounter - Source: "encounter"):
 ${soapNote}
 
@@ -179,9 +214,13 @@ SOAP NOTE PROCESSING RULES:
 - Should use action "EVOLVE_PROBLEM" when diagnosis significantly changes (e.g., E11.9 → E11.40)
 - Only CREATE new problems when no reasonable match exists in current problem list
 - Apply clinical intelligence to recognize condition variations (HTN/Hypertension, DM/Diabetes, etc.)
-` : "NO SOAP NOTE PROVIDED"}
+`
+    : "NO SOAP NOTE PROVIDED"
+}
 
-${attachmentContent ? `
+${
+  attachmentContent
+    ? `
 ATTACHMENT CONTENT (Historical Document - Source: "attachment"):
 ${attachmentContent}
 
@@ -197,7 +236,9 @@ ATTACHMENT PROCESSING RULES:
 - Look for "Date of Service:", "Date:", "Date/Time:", signature dates, or document headers
 - ALL problems from this single attachment should use the SAME extracted document date
 - If no specific date found, use null (system will default to current date)
-` : "NO ATTACHMENT CONTENT PROVIDED"}
+`
+    : "NO ATTACHMENT CONTENT PROVIDED"
+}
 
 PATIENT CONTEXT:
 - Name: ${patient.firstName} ${patient.lastName}
@@ -293,12 +334,14 @@ ENHANCED EXAMPLES:
 CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition against existing problems using the consolidation rules above. Document your reasoning for each decision in the consolidation_reasoning field. Prioritize consolidation over creation of new problems unless you have strong clinical evidence they are different conditions.
 `;
 
-    console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1-nano`);
-    console.log(`🤖 [UnifiedGPT] Prompt length: ${unifiedPrompt.length} characters`);
+    console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1`);
+    console.log(
+      `🤖 [UnifiedGPT] Prompt length: ${unifiedPrompt.length} characters`,
+    );
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1",
         messages: [{ role: "user", content: unifiedPrompt }],
         temperature: 0.1,
         max_tokens: 3000,
@@ -310,27 +353,36 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
         throw new Error("No response from GPT");
       }
 
-      console.log(`🤖 [UnifiedGPT] Response received: ${content.length} characters`);
+      console.log(
+        `🤖 [UnifiedGPT] Response received: ${content.length} characters`,
+      );
       console.log(`🤖 [UnifiedGPT] Raw response:`, content);
-      
+
       const parsed = JSON.parse(content);
       const changes = parsed.changes || [];
-      
+
       console.log(`🤖 [UnifiedGPT] Parsed ${changes.length} changes`);
       changes.forEach((change: any, index: number) => {
-        console.log(`🤖 [UnifiedGPT] Change ${index + 1}: ${change.action} - ${change.problem_title || 'existing'} (${change.source_type})`);
+        console.log(
+          `🤖 [UnifiedGPT] Change ${index + 1}: ${change.action} - ${change.problem_title || "existing"} (${change.source_type})`,
+        );
         if (change.consolidation_reasoning) {
-          console.log(`🤖 [UnifiedGPT] 🧠 Reasoning: ${change.consolidation_reasoning}`);
+          console.log(
+            `🤖 [UnifiedGPT] 🧠 Reasoning: ${change.consolidation_reasoning}`,
+          );
         }
         if (change.extracted_date) {
-          console.log(`🤖 [UnifiedGPT] ✅ Extracted date: ${change.extracted_date}`);
+          console.log(
+            `🤖 [UnifiedGPT] ✅ Extracted date: ${change.extracted_date}`,
+          );
         } else {
-          console.log(`🤖 [UnifiedGPT] ⚠️ No extracted date found - will use current date`);
+          console.log(
+            `🤖 [UnifiedGPT] ⚠️ No extracted date found - will use current date`,
+          );
         }
       });
 
       return changes;
-
     } catch (error) {
       console.error(`❌ [UnifiedGPT] Error:`, error);
       return [];
@@ -344,14 +396,18 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
     changes: UnifiedProblemChange[],
     patientId: number,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
-    
     for (const change of changes) {
       try {
         switch (change.action) {
           case "NEW_PROBLEM":
-            await this.createUnifiedProblem(change, patientId, encounterId, attachmentId);
+            await this.createUnifiedProblem(
+              change,
+              patientId,
+              encounterId,
+              attachmentId,
+            );
             break;
 
           case "ADD_VISIT":
@@ -360,7 +416,12 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
             break;
 
           case "EVOLVE_PROBLEM":
-            await this.evolveProblemWithHistoryTransfer(change, patientId, encounterId, attachmentId);
+            await this.evolveProblemWithHistoryTransfer(
+              change,
+              patientId,
+              encounterId,
+              attachmentId,
+            );
             break;
 
           case "RESOLVE":
@@ -368,7 +429,10 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
             break;
         }
       } catch (error) {
-        console.error(`❌ [UnifiedMedicalProblems] Error applying change:`, error);
+        console.error(
+          `❌ [UnifiedMedicalProblems] Error applying change:`,
+          error,
+        );
       }
     }
   }
@@ -381,15 +445,18 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
     change: UnifiedProblemChange,
     patientId: number,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
-    
     console.log(`🔄 [HistoryTransfer] Evolving problem with history transfer`);
-    console.log(`🔄 [HistoryTransfer] From problem ID: ${change.transfer_visit_history_from}`);
+    console.log(
+      `🔄 [HistoryTransfer] From problem ID: ${change.transfer_visit_history_from}`,
+    );
     console.log(`🔄 [HistoryTransfer] New title: ${change.problem_title}`);
 
     if (!change.transfer_visit_history_from) {
-      console.warn(`⚠️ [HistoryTransfer] No source problem ID provided for evolution`);
+      console.warn(
+        `⚠️ [HistoryTransfer] No source problem ID provided for evolution`,
+      );
       return;
     }
 
@@ -400,7 +467,9 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       .where(eq(medicalProblems.id, change.transfer_visit_history_from));
 
     if (!oldProblem) {
-      console.error(`❌ [HistoryTransfer] Source problem ${change.transfer_visit_history_from} not found`);
+      console.error(
+        `❌ [HistoryTransfer] Source problem ${change.transfer_visit_history_from} not found`,
+      );
       return;
     }
 
@@ -424,14 +493,16 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
     }
 
     // Transfer existing visit history
-    const transferredHistory = Array.isArray(oldProblem.visitHistory) 
-      ? [...oldProblem.visitHistory as UnifiedVisitHistoryEntry[]]
+    const transferredHistory = Array.isArray(oldProblem.visitHistory)
+      ? [...(oldProblem.visitHistory as UnifiedVisitHistoryEntry[])]
       : [];
 
     // Add new visit entry for this evolution
     const newVisitEntry: UnifiedVisitHistoryEntry = {
       date: visitDate,
-      notes: change.visit_notes || `Diagnosis evolved: ${change.icd10_change?.from} → ${change.icd10_change?.to}`,
+      notes:
+        change.visit_notes ||
+        `Diagnosis evolved: ${change.icd10_change?.from} → ${change.icd10_change?.to}`,
       source: change.source_type === "attachment" ? "attachment" : "encounter",
       encounterId: encounterId || undefined,
       attachmentId: attachmentId || undefined,
@@ -439,7 +510,7 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       changesMade: ["diagnosis_evolution", "visit_history_transferred"],
       confidence: change.confidence,
       isSigned: false,
-      sourceNotes: `Evolved from problem ID ${change.transfer_visit_history_from}`
+      sourceNotes: `Evolved from problem ID ${change.transfer_visit_history_from}`,
     };
 
     transferredHistory.push(newVisitEntry);
@@ -454,14 +525,16 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       firstEncounterId: oldProblem.firstEncounterId,
       lastUpdatedEncounterId: encounterId,
       visitHistory: transferredHistory,
-      changeLog: [{
-        encounter_id: encounterId || 0,
-        timestamp: new Date().toISOString(),
-        change_type: "problem_evolved",
-        old_icd10: change.icd10_change?.from,
-        new_icd10: change.icd10_change?.to,
-        processing_time_ms: 0
-      }]
+      changeLog: [
+        {
+          encounter_id: encounterId || 0,
+          timestamp: new Date().toISOString(),
+          change_type: "problem_evolved",
+          old_icd10: change.icd10_change?.from,
+          new_icd10: change.icd10_change?.to,
+          processing_time_ms: 0,
+        },
+      ],
     });
 
     // Mark old problem as resolved/evolved
@@ -469,12 +542,16 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       .update(medicalProblems)
       .set({
         problemStatus: "resolved",
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(medicalProblems.id, change.transfer_visit_history_from));
 
-    console.log(`✅ [HistoryTransfer] Successfully evolved problem ${change.transfer_visit_history_from} → new problem`);
-    console.log(`✅ [HistoryTransfer] Transferred ${transferredHistory.length - 1} historical visits + 1 new visit`);
+    console.log(
+      `✅ [HistoryTransfer] Successfully evolved problem ${change.transfer_visit_history_from} → new problem`,
+    );
+    console.log(
+      `✅ [HistoryTransfer] Transferred ${transferredHistory.length - 1} historical visits + 1 new visit`,
+    );
   }
 
   /**
@@ -484,9 +561,8 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
     change: UnifiedProblemChange,
     patientId: number,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
-    
     // Determine appropriate date for visit history
     let visitDate: string;
     if (change.extracted_date) {
@@ -516,7 +592,7 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       changesMade: ["initial_diagnosis"],
       confidence: change.confidence,
       isSigned: false,
-      sourceConfidence: change.confidence
+      sourceConfidence: change.confidence,
     };
 
     await db.insert(medicalProblems).values({
@@ -528,16 +604,20 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
       visitHistory: [visitEntry],
-      changeLog: [{
-        encounter_id: encounterId || 0,
-        timestamp: new Date().toISOString(),
-        change_type: "problem_created",
-        new_icd10: change.icd10_change?.to,
-        processing_time_ms: 0
-      }]
+      changeLog: [
+        {
+          encounter_id: encounterId || 0,
+          timestamp: new Date().toISOString(),
+          change_type: "problem_created",
+          new_icd10: change.icd10_change?.to,
+          processing_time_ms: 0,
+        },
+      ],
     });
 
-    console.log(`✅ [UnifiedMedicalProblems] Created problem: ${change.problem_title} (${change.source_type})`);
+    console.log(
+      `✅ [UnifiedMedicalProblems] Created problem: ${change.problem_title} (${change.source_type})`,
+    );
   }
 
   /**
@@ -546,9 +626,8 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
   private async updateUnifiedProblem(
     change: UnifiedProblemChange,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
-    
     if (!change.problem_id) return;
 
     const [existingProblem] = await db
@@ -558,8 +637,8 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
 
     if (!existingProblem) return;
 
-    const visitHistory = Array.isArray(existingProblem.visitHistory) 
-      ? existingProblem.visitHistory as UnifiedVisitHistoryEntry[]
+    const visitHistory = Array.isArray(existingProblem.visitHistory)
+      ? (existingProblem.visitHistory as UnifiedVisitHistoryEntry[])
       : [];
 
     // Determine appropriate date for visit history
@@ -582,7 +661,7 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
     }
 
     // Check for existing visit from this source
-    const existingVisitIndex = visitHistory.findIndex(visit => {
+    const existingVisitIndex = visitHistory.findIndex((visit) => {
       if (change.source_type === "encounter") {
         return visit.encounterId === encounterId;
       } else {
@@ -598,8 +677,10 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
         ...visitHistory[existingVisitIndex],
         date: visitDate,
         notes: change.visit_notes || visitHistory[existingVisitIndex].notes,
-        icd10AtVisit: change.icd10_change?.to || visitHistory[existingVisitIndex].icd10AtVisit,
-        confidence: change.confidence
+        icd10AtVisit:
+          change.icd10_change?.to ||
+          visitHistory[existingVisitIndex].icd10AtVisit,
+        confidence: change.confidence,
       };
 
       updatedVisitHistory = [...visitHistory];
@@ -609,13 +690,17 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       const newVisitEntry: UnifiedVisitHistoryEntry = {
         date: visitDate,
         notes: change.visit_notes || "",
-        source: change.source_type === "attachment" ? "attachment" : "encounter",
+        source:
+          change.source_type === "attachment" ? "attachment" : "encounter",
         encounterId: encounterId || undefined,
         attachmentId: attachmentId || undefined,
-        icd10AtVisit: change.icd10_change?.to || existingProblem.currentIcd10Code || "",
-        changesMade: change.icd10_change ? ["diagnosis_evolution"] : ["routine_follow_up"],
+        icd10AtVisit:
+          change.icd10_change?.to || existingProblem.currentIcd10Code || "",
+        changesMade: change.icd10_change
+          ? ["diagnosis_evolution"]
+          : ["routine_follow_up"],
         confidence: change.confidence,
-        isSigned: false
+        isSigned: false,
       };
 
       updatedVisitHistory = [...visitHistory, newVisitEntry];
@@ -625,14 +710,17 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
     await db
       .update(medicalProblems)
       .set({
-        currentIcd10Code: change.icd10_change?.to || existingProblem.currentIcd10Code,
+        currentIcd10Code:
+          change.icd10_change?.to || existingProblem.currentIcd10Code,
         lastUpdatedEncounterId: encounterId,
         visitHistory: updatedVisitHistory,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(medicalProblems.id, change.problem_id));
 
-    console.log(`✅ [UnifiedMedicalProblems] Updated problem ${change.problem_id} (${change.source_type})`);
+    console.log(
+      `✅ [UnifiedMedicalProblems] Updated problem ${change.problem_id} (${change.source_type})`,
+    );
   }
 
   /**
@@ -645,11 +733,13 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       .update(medicalProblems)
       .set({
         problemStatus: "resolved",
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(medicalProblems.id, change.problem_id));
 
-    console.log(`✅ [UnifiedMedicalProblems] Resolved problem ${change.problem_id}`);
+    console.log(
+      `✅ [UnifiedMedicalProblems] Resolved problem ${change.problem_id}`,
+    );
   }
 
   // Helper methods
@@ -660,8 +750,8 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
       .where(
         and(
           eq(medicalProblems.patientId, patientId),
-          eq(medicalProblems.problemStatus, "active")
-        )
+          eq(medicalProblems.problemStatus, "active"),
+        ),
       );
   }
 
@@ -684,7 +774,9 @@ CRITICAL INSTRUCTION: You must systematically evaluate EVERY medical condition a
   private calculateAge(dateOfBirth: any): number {
     const birthDate = new Date(dateOfBirth);
     const today = new Date();
-    return Math.floor((today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    return Math.floor(
+      (today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
+    );
   }
 }
 
