@@ -42,13 +42,16 @@ function VitalsSection({ patientId, encounterId, mode }: {
     enabled: !!patientId
   });
 
+  // Normalize vitals data - handle both wrapped and direct array responses
+  const vitalsArray = vitalsData?.data || vitalsData || [];
+  const vitalsEntries = Array.isArray(vitalsArray) ? vitalsArray : [];
+  
   // Get latest vitals for compact summary
-  const latestVitals = vitalsData?.data?.[0] || vitalsData?.[0];
+  const latestVitals = vitalsEntries[0];
   
   // Calculate summary stats
-  const vitalsCount = vitalsData?.data?.length || vitalsData?.length || 0;
-  const hasAlerts = vitalsData?.data?.some((v: any) => v.alerts?.length > 0) || 
-                   vitalsData?.some((v: any) => v.alerts?.length > 0);
+  const vitalsCount = vitalsEntries.length;
+  const hasAlerts = vitalsEntries.some((v: any) => v.alerts?.length > 0);
 
   if (isExpanded) {
     return (
