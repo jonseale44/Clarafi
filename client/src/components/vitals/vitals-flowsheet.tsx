@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
+import { useQuery as useUserQuery } from "@tanstack/react-query";
 
 // Utility functions to format dates without timezone conversion
 const formatVitalsDate = (dateString: string) => {
@@ -140,6 +141,13 @@ export function VitalsFlowsheet({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+
+  // Get current user to check if they're a provider
+  const { data: currentUser } = useUserQuery({
+    queryKey: ["/api/user"],
+  });
+
+  const isProvider = currentUser?.role === 'provider' || currentUser?.role === 'admin';
 
   // Navigate to attachment source
   const navigateToAttachment = (attachmentId: number) => {
