@@ -176,12 +176,23 @@ export class DocumentAnalysisService {
         `📄 [DocumentAnalysis] ✅ Starting transition to chart processing workflow`,
       );
 
-      this.triggerChartProcessing(attachmentId).catch((error) => {
+      // Wait for chart processing to complete and handle errors properly
+      try {
+        await this.triggerChartProcessing(attachmentId);
+        console.log(
+          `📄 [DocumentAnalysis] ✅ Chart processing completed successfully for attachment ${attachmentId}`,
+        );
+      } catch (chartError) {
         console.error(
           `📄 [DocumentAnalysis] ❌ Chart processing failed for attachment ${attachmentId}:`,
-          error,
+          chartError,
         );
-      });
+        console.error(
+          `📄 [DocumentAnalysis] ❌ Chart processing error stack:`,
+          chartError.stack,
+        );
+        // Don't throw - document analysis was successful even if chart processing failed
+      }
     } catch (error) {
       console.error(
         `📄 [DocumentAnalysis] Processing failed for attachment ${attachmentId}:`,
@@ -616,15 +627,37 @@ Preserve the original structure and formatting where possible. Be thorough and a
    */
   private async triggerChartProcessing(attachmentId: number): Promise<void> {
     console.log(
-      `📄 [DocumentAnalysis] Triggering chart processing for attachment ${attachmentId}`,
+      `📄 [DocumentAnalysis] 🚀 STARTING CHART PROCESSING TRIGGER for attachment ${attachmentId}`,
+    );
+    console.log(
+      `🔥 [CHART WORKFLOW] ============= STARTING CHART PROCESSING WORKFLOW =============`,
     );
 
     try {
-      // Process in background to avoid blocking document analysis
+      // Process chart data extraction with detailed error handling
+      console.log(`📄 [DocumentAnalysis] 📋 Calling AttachmentChartProcessor.processCompletedAttachment(${attachmentId})`);
       await attachmentChartProcessor.processCompletedAttachment(attachmentId);
+      console.log(`📄 [DocumentAnalysis] ✅ Chart processing completed successfully for attachment ${attachmentId}`);
+      console.log(
+        `🔥 [CHART WORKFLOW] ============= CHART PROCESSING WORKFLOW COMPLETE =============`,
+      );
     } catch (error) {
       console.error(
-        `📄 [DocumentAnalysis] Chart processing error for attachment ${attachmentId}:`,
+        `📄 [DocumentAnalysis] ❌ CRITICAL: Chart processing failed for attachment ${attachmentId}`,
+        error,
+      );
+      console.error(
+        `📄 [DocumentAnalysis] ❌ Error details:`,
+        {
+          message: error.message,
+          stack: error.stack,
+          attachmentId: attachmentId,
+        },
+      );
+      console.log(
+        `🔥 [CHART WORKFLOW] ============= CHART PROCESSING WORKFLOW FAILED =============`,
+      );
+      throw error; // Re-throw to handle in caller}:`,
         error,
       );
       // Don't re-throw - chart processing failures shouldn't break document analysis

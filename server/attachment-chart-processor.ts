@@ -25,32 +25,47 @@ export class AttachmentChartProcessor {
    * Process completed attachment for chart data extraction
    */
   async processCompletedAttachment(attachmentId: number): Promise<void> {
-    console.log(`🔥 [VITALS WORKFLOW] ============= STARTING VITALS EXTRACTION =============`);
-    console.log(`📋 [AttachmentChartProcessor] Processing completed attachment ${attachmentId}`);
+    console.log(`🔥 [CHART WORKFLOW] ============= STARTING CHART PROCESSING =============`);
+    console.log(`📋 [AttachmentChartProcessor] 🚀 Processing completed attachment ${attachmentId}`);
+    console.log(`📋 [AttachmentChartProcessor] 📊 This will extract vitals AND medical problems from document`);
 
     try {
       // Get attachment and extracted content
-      console.log(`📋 [AttachmentChartProcessor] 🔍 Fetching attachment data from database`);
+      console.log(`📋 [AttachmentChartProcessor] 🔍 Step 1: Fetching attachment data from database`);
       const [attachment] = await db.select()
         .from(patientAttachments)
         .where(eq(patientAttachments.id, attachmentId));
 
       if (!attachment) {
-        console.error(`📋 [AttachmentChartProcessor] ❌ Attachment ${attachmentId} not found`);
-        return;
+        console.error(`📋 [AttachmentChartProcessor] ❌ CRITICAL: Attachment ${attachmentId} not found in database`);
+        throw new Error(`Attachment ${attachmentId} not found`);
       }
-      console.log(`📋 [AttachmentChartProcessor] ✅ Found attachment: ${attachment.originalFileName} (Patient: ${attachment.patientId})`);
+      console.log(`📋 [AttachmentChartProcessor] ✅ Step 1 Complete: Found attachment "${attachment.originalFileName}" for Patient ${attachment.patientId}`);
 
-      console.log(`📋 [AttachmentChartProcessor] 🔍 Fetching extracted content from database`);
+      console.log(`📋 [AttachmentChartProcessor] 🔍 Step 2: Fetching extracted content from database`);
       const [extractedContent] = await db.select()
         .from(attachmentExtractedContent)
         .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
-      if (!extractedContent || extractedContent.processingStatus !== 'completed') {
-        console.log(`📋 [AttachmentChartProcessor] ❌ Attachment ${attachmentId} not ready for processing`);
-        return;
+      if (!extractedContent) {
+        console.error(`📋 [AttachmentChartProcessor] ❌ CRITICAL: No extracted content found for attachment ${attachmentId}`);
+        throw new Error(`No extracted content found for attachment ${attachmentId}`);
       }
-      console.log(`📋 [AttachmentChartProcessor] ✅ Extracted content ready: ${extractedContent.extractedText?.length || 0} characters`);
+
+      if (extractedContent.processingStatus !== 'completed') {
+        console.error(`📋 [AttachmentChartProcessor] ❌ CRITICAL: Attachment ${attachmentId} processing status is "${extractedContent.processingStatus}", expected "completed"`);
+        throw new Error(`Attachment ${attachmentId} not ready for processing - status: ${extractedContent.processingStatus}`);
+      }
+      
+      console.log(`📋 [AttachmentChartProcessor] ✅ Step 2 Complete: Extracted content ready`);
+      console.log(`📋 [AttachmentChartProcessor] 📄 Content details: ${extractedContent.extractedText?.length || 0} characters, Document type: ${extractedContent.documentType}`);
+      console.log(`📋 [AttachmentChartProcessor] 📄 Content preview (first 200 chars): "${extractedContent.extractedText?.substring(0, 200)}..."`);
+
+      // Validate extracted text exists and is meaningful
+      if (!extractedContent.extractedText || extractedContent.extractedText.length < 50) {
+        console.error(`📋 [AttachmentChartProcessor] ❌ CRITICAL: Extracted text too short or missing for attachment ${attachmentId}`);
+        throw new Error(`Insufficient extracted text for processing (${extractedContent.extractedText?.length || 0} characters)`);
+      }
 
       console.log(`📋 [AttachmentChartProcessor] 🔄 Processing ${extractedContent.documentType} document for chart data`);
 
@@ -103,8 +118,14 @@ export class AttachmentChartProcessor {
       }
 
     } catch (error) {
-      console.error(`📋 [AttachmentChartProcessor] Error processing attachment ${attachmentId}:`, error);
+      console.error(`📋 [AttachmentChartProcessor] ❌ CRITICAL ERROR: Failed to process attachment ${attachmentId}`, error);
+      console.error(`📋 [AttachmentChartProcessor] ❌ Error stack:`, error.stack);
+      console.log(`🔥 [CHART WORKFLOW] ============= CHART PROCESSING FAILED =============`);
+      throw error; // Re-throw to be handled by DocumentAnalysisService
     }
+    
+    console.log(`📋 [AttachmentChartProcessor] ✅ Successfully completed chart processing for attachment ${attachmentId}`);
+    console.log(`🔥 [CHART WORKFLOW] ============= CHART PROCESSING COMPLETE =============`);
   }
 
   /**
@@ -186,21 +207,25 @@ export class AttachmentChartProcessor {
    */
   private async processDocumentForMedicalProblems(attachment: any, extractedContent: any): Promise<void> {
     console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= STARTING MEDICAL PROBLEMS EXTRACTION =============`);
-    console.log(`🏥 [MedicalProblemsExtraction] Processing attachment ${attachment.id} for patient ${attachment.patientId}`);
-    console.log(`🏥 [MedicalProblemsExtraction] Document type: ${extractedContent.documentType || 'unknown type'}`);
-    console.log(`🏥 [MedicalProblemsExtraction] Document text length: ${extractedContent.extractedText?.length || 0} characters`);
-    console.log(`🏥 [MedicalProblemsExtraction] Original filename: ${attachment.originalFileName}`);
+    console.log(`🏥 [MedicalProblemsExtraction] 🚀 Processing attachment ${attachment.id} for patient ${attachment.patientId}`);
+    console.log(`🏥 [MedicalProblemsExtraction] 📄 Document type: ${extractedContent.documentType || 'unknown type'}`);
+    console.log(`🏥 [MedicalProblemsExtraction] 📄 Document text length: ${extractedContent.extractedText?.length || 0} characters`);
+    console.log(`🏥 [MedicalProblemsExtraction] 📄 Original filename: ${attachment.originalFileName}`);
+    console.log(`🏥 [MedicalProblemsExtraction] 📄 Text preview: "${extractedContent.extractedText?.substring(0, 300)}..."`);
 
+    // Validation checks with detailed error messages
     if (!extractedContent.extractedText) {
-      console.log(`🏥 [MedicalProblemsExtraction] ❌ No extracted text available for medical problems parsing`);
+      const errorMsg = `No extracted text available for medical problems parsing - attachment ${attachment.id}`;
+      console.error(`🏥 [MedicalProblemsExtraction] ❌ CRITICAL: ${errorMsg}`);
       console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= MEDICAL PROBLEMS EXTRACTION FAILED - NO TEXT =============`);
-      return;
+      throw new Error(errorMsg);
     }
 
     if (extractedContent.extractedText.length < 50) {
-      console.log(`🏥 [MedicalProblemsExtraction] ⚠️ Document text too short (${extractedContent.extractedText.length} chars) for meaningful medical problems extraction`);
-      console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= MEDICAL PROBLEMS EXTRACTION SKIPPED - TEXT TOO SHORT =============`);
-      return;
+      const errorMsg = `Document text too short (${extractedContent.extractedText.length} chars) for meaningful medical problems extraction - attachment ${attachment.id}`;
+      console.error(`🏥 [MedicalProblemsExtraction] ❌ CRITICAL: ${errorMsg}`);
+      console.log(`🔥 [MEDICAL PROBLEMS WORKFLOW] ============= MEDICAL PROBLEMS EXTRACTION FAILED - TEXT TOO SHORT =============`);
+      throw new Error(errorMsg);
     }
 
     try {
