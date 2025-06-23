@@ -3,7 +3,7 @@ import {
   familyHistory, medicalHistory, socialHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
-  signedOrders, gptLabReviewNotes,
+  signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
@@ -229,6 +229,28 @@ export class DatabaseStorage implements IStorage {
       // Delete imaging results if they exist
       await db.delete(imagingResults).where(eq(imagingResults.patientId, id));
       console.log(`🗑️ [Storage] Deleted imaging results for patient ${id}`);
+      
+      // Delete attachment-related data before encounters
+      // First get all attachment IDs for this patient
+      const patientAttachmentIds = await db.select({ id: patientAttachments.id })
+        .from(patientAttachments)
+        .where(eq(patientAttachments.patientId, id));
+      
+      // Delete attachment extracted content
+      for (const attachment of patientAttachmentIds) {
+        await db.delete(attachmentExtractedContent).where(eq(attachmentExtractedContent.attachmentId, attachment.id));
+      }
+      console.log(`🗑️ [Storage] Deleted attachment extracted content for patient ${id}`);
+      
+      // Delete document processing queue entries
+      for (const attachment of patientAttachmentIds) {
+        await db.delete(documentProcessingQueue).where(eq(documentProcessingQueue.attachmentId, attachment.id));
+      }
+      console.log(`🗑️ [Storage] Deleted document processing queue for patient ${id}`);
+      
+      // Finally delete patient attachments
+      await db.delete(patientAttachments).where(eq(patientAttachments.patientId, id));
+      console.log(`🗑️ [Storage] Deleted patient attachments for patient ${id}`);
       
       // Delete encounters (main foreign key constraint)
       await db.delete(encounters).where(eq(encounters.patientId, id));
