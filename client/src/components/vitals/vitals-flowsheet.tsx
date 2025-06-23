@@ -145,6 +145,7 @@ export function VitalsFlowsheet({
   const navigateToAttachment = (attachmentId: number) => {
     // Navigate to patient chart attachments section with attachment ID highlighted
     const url = `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`;
+    console.log('🔗 [VitalsNavigation] Navigating to attachment:', { attachmentId, url, patientId });
     setLocation(url);
   };
 

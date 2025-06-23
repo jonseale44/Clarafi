@@ -79,6 +79,14 @@ export function PatientAttachments({
   isReadOnly = false,
   highlightAttachmentId
 }: PatientAttachmentsProps) {
+  console.log('🔗 [PatientAttachments] Component props:', { 
+    patientId, 
+    encounterId, 
+    mode, 
+    isReadOnly, 
+    highlightAttachmentId 
+  });
+  
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -654,11 +662,17 @@ export function PatientAttachments({
             </div>
           )}
           
-          {attachments.map((attachment) => (
-            <Card 
-              key={attachment.id}
-              className={highlightAttachmentId === attachment.id ? "ring-2 ring-blue-500 bg-blue-50" : ""}
-            >
+          {attachments.map((attachment) => {
+            const isHighlighted = highlightAttachmentId === attachment.id;
+            if (isHighlighted) {
+              console.log('🔗 [PatientAttachments] Highlighting attachment:', attachment.id);
+            }
+            
+            return (
+              <Card 
+                key={attachment.id}
+                className={isHighlighted ? "ring-2 ring-blue-500 bg-blue-50" : ""}
+              >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3 flex-1">
@@ -800,8 +814,9 @@ export function PatientAttachments({
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

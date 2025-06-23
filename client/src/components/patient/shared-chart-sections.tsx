@@ -173,6 +173,7 @@ export function SharedChartSections({
         );
 
       case "attachments":
+        console.log('🔗 [SharedChartSections] Rendering attachments with highlight:', highlightAttachmentId);
         return (
           <PatientAttachments 
             patientId={patientId} 

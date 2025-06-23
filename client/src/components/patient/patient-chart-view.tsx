@@ -55,15 +55,28 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
     const section = urlParams.get('section');
     const highlight = urlParams.get('highlight');
     
+    console.log('🔗 [PatientChart] URL parameters:', { 
+      section, 
+      highlight, 
+      currentLocation: window.location.href,
+      availableSections: chartSections.map(s => s.id)
+    });
+    
     if (section && chartSections.some(s => s.id === section)) {
+      console.log('🔗 [PatientChart] Setting active section:', section);
       setActiveSection(section);
       setExpandedSections(prev => new Set([...prev, section]));
     }
     
     if (highlight) {
-      setHighlightAttachmentId(parseInt(highlight));
+      const attachmentId = parseInt(highlight);
+      console.log('🔗 [PatientChart] Setting highlight attachment:', attachmentId);
+      setHighlightAttachmentId(attachmentId);
       // Clear highlight after 5 seconds
-      setTimeout(() => setHighlightAttachmentId(null), 5000);
+      setTimeout(() => {
+        console.log('🔗 [PatientChart] Clearing highlight after 5 seconds');
+        setHighlightAttachmentId(null);
+      }, 5000);
     }
   }, []);
 
