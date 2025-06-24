@@ -125,6 +125,7 @@ export function EncounterDetailView({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">("INACTIVE");
   const [transcription, setTranscription] = useState("");
+  const [mediaRecorderRef, setMediaRecorderRef] = useState<MediaRecorder | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
@@ -1189,17 +1190,41 @@ export function EncounterDetailView({
         // Basic MediaRecorder setup for transcription only
         const mediaRecorder = new MediaRecorder(stream);
         setMediaRecorderRef(mediaRecorder);
+        console.log("🔧 [EncounterView] MediaRecorder created in REST API mode:", mediaRecorder.state);
         
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             console.log("🎵 [EncounterView] Audio data available in REST API mode:", event.data.size, "bytes");
+            console.log("🔍 [TokenMonitor] REST API mode - audio processing without WebSocket suggestions");
             // Note: Audio data would be processed for transcription but not AI suggestions
           }
         };
+
+        mediaRecorder.onerror = (event) => {
+          console.error("❌ [EncounterView] MediaRecorder error in REST API mode:", event);
+        };
+
+        mediaRecorder.onstart = () => {
+          console.log("✅ [EncounterView] MediaRecorder started successfully in REST API mode");
+        };
+
+        mediaRecorder.onstop = () => {
+          console.log("🛑 [EncounterView] MediaRecorder stopped in REST API mode");
+        };
         
-        mediaRecorder.start(100); // Start recording with 100ms chunks
-        console.log("✅ [EncounterView] Recording started in REST API mode - no background AI activity");
-        return;
+        try {
+          mediaRecorder.start(100); // Start recording with 100ms chunks
+          console.log("✅ [EncounterView] Recording started in REST API mode - no background AI activity");
+          console.log("🔍 [TokenMonitor] REST API mode recording active - no WebSocket token consumption");
+          
+          // Store reference globally for stop function
+          (window as any).currentMediaRecorder = mediaRecorder;
+          
+          return;
+        } catch (startError) {
+          console.error("❌ [EncounterView] Failed to start MediaRecorder in REST API mode:", startError);
+          throw startError;
+        }
       }
 
       try {
@@ -2153,10 +2178,15 @@ Please provide medical suggestions based on this complete conversation context.`
       soapNote?.trim() ? "HAS CONTENT" : "EMPTY AFTER TRIM",
     );
 
-    const mediaRecorder = (window as any).currentMediaRecorder;
+    // Stop recording based on current mode
+    const mediaRecorder = (window as any).currentMediaRecorder || mediaRecorderRef;
     if (mediaRecorder && mediaRecorder.state === "recording") {
+      console.log("🛑 [EncounterView] Stopping MediaRecorder, current state:", mediaRecorder.state);
       mediaRecorder.stop();
       console.log("🎤 [EncounterView] MediaRecorder stopped");
+    } else {
+      console.log("⚠️ [EncounterView] No active MediaRecorder found or already stopped");
+      console.log("🔍 [EncounterView] MediaRecorder state:", mediaRecorder?.state || "null");
     }
 
     setIsRecording(false);
