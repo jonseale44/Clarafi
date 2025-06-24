@@ -1169,22 +1169,46 @@ export function EncounterDetailView({
             );
           }
 
-          // 2. Format patient context prioritizing current encounter over historical data
+          // 2. Format patient context with full chart data for direct question responses
           const formatPatientContext = (chart: any, basicData: any): string => {
-            // Always start with basic patient demographics only
             const basicInfo = `Patient: ${basicData.firstName} ${basicData.lastName}
 Age: ${basicData.age || "Unknown"} 
 Gender: ${basicData.gender || "Unknown"}
 MRN: ${basicData.mrn || "Unknown"}
 
-CURRENT ENCOUNTER FOCUS: 
-- This is a NEW encounter starting fresh
-- Focus on the current conversation and transcription
-- Provide suggestions based on what the patient is saying NOW
-- Do not rely heavily on past medical history unless directly relevant to current symptoms
+${
+  chart
+    ? `
+MEDICAL PROBLEMS:
+${chart.medicalProblems?.length > 0 
+  ? chart.medicalProblems.map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`).join("\n")
+  : "- No active medical problems documented"
+}
 
-Critical Allergies: ${chart?.allergies?.length > 0 ? chart.allergies.map((a: any) => a.allergen).join(", ") : "None documented"}
-Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedications.map((m: any) => m.name).join(", ") : "None documented"}`;
+CURRENT MEDICATIONS:
+${chart.currentMedications?.length > 0 
+  ? chart.currentMedications.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
+  : "- No current medications documented"
+}
+
+ALLERGIES:
+${chart.allergies?.length > 0 
+  ? chart.allergies.map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`).join("\n")
+  : "- NKDA (No Known Drug Allergies)"
+}
+
+RECENT VITALS:
+${chart.vitals?.length > 0 
+  ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
+- HR: ${chart.vitals[0].heartRate} bpm
+- Temp: ${chart.vitals[0].temperature}°F
+- RR: ${chart.vitals[0].respiratoryRate || "Not recorded"}
+- O2 Sat: ${chart.vitals[0].oxygenSaturation || "Not recorded"}%`
+  : "- No recent vitals available"
+}
+`
+    : "Limited patient data available - chart context not accessible"
+}`;
 
             return basicInfo;
           };
@@ -1202,7 +1226,16 @@ Current Medications: ${chart?.currentMedications?.length > 0 ? chart.currentMedi
 CURRENT LIVE CONVERSATION:
 ${currentTranscription}
 
-Please provide medical suggestions based on what the patient is saying in this current conversation.`;
+CRITICAL: If the provider is asking direct questions about patient chart information, provide SPECIFIC facts from the chart data above, NOT generic suggestions.
+
+Examples:
+- Question: "Does the patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF"
+- Question: "What medications is the patient on?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
+- Question: "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+
+DO NOT say "Assess" or "Evaluate" - give the actual chart facts directly.
+
+Please provide medical suggestions based on what the provider is saying in this current conversation.`;
 
           const contextMessage = {
             type: "conversation.item.create",
@@ -1228,20 +1261,17 @@ Please provide medical suggestions based on what the patient is saying in this c
             type: "response.create",
             response: {
               modalities: ["text"],
-              instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+              instructions: `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
 
-CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
+CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
 
-Instructions:
+DIRECT QUESTION RESPONSES:
+- When provider asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
+- When provider asks "What medications?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
+- When provider asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+- FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
 
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what the patient is saying RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
-
-Base your suggestions on:
-1. CURRENT symptoms described in the live conversation
-2. CURRENT presentation and patient statements  
-3. Only reference past history if directly relevant to current symptoms
-
-Do NOT suggest treatments for conditions not mentioned in the current encounter.
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time. If multiple insights could be provided, prioritize the most critical or relevant one first.
 
 Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
 Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
@@ -1738,20 +1768,17 @@ Please provide medical suggestions based on this complete conversation context.`
                 type: "response.create",
                 response: {
                   modalities: ["text"],
-                  instructions: `You are a medical AI assistant. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights exclusively for physicians.
+                  instructions: `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
 
-CRITICAL: Focus ONLY on the current conversation and transcription. Do NOT provide suggestions based on past medical history unless the current symptoms directly relate to documented conditions. This is a NEW encounter.
+CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the patient chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
 
-Instructions:
+DIRECT QUESTION RESPONSES:
+- When provider asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
+- When provider asks "What medications?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
+- When provider asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+- FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
 
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what the patient is saying RIGHT NOW in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
-
-Base your suggestions on:
-1. CURRENT symptoms described in the live conversation
-2. CURRENT presentation and patient statements
-3. Only reference past history if directly relevant to current symptoms
-
-Do NOT suggest treatments for conditions not mentioned in the current encounter.
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
 
 Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
 Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.

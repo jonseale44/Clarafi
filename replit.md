@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Provider AI Suggestions Direct Question Enhancement (June 24, 2025)
+- **CRITICAL FIX**: Updated provider AI suggestions to handle direct questions about patient chart information
+- Provider AI now detects direct questions ("Does patient have medical problems?") and provides specific chart facts
+- Eliminated generic responses ("Assess medical problems") in favor of factual answers ("Medical problems: HTN, DM2, CKD stage 3, AFib, CHF")
+- Enhanced provider AI instructions with explicit direct question response protocol matching successful nursing implementation
+- Provider AI now has full access to patient chart data including medical problems, medications, allergies, and vitals
+- Both provider and nursing AI suggestions now use same direct question response patterns for consistency
+
 ### SOAP Note Generation Technical Debt Resolution (June 24, 2025)
 - **CRITICAL FIX**: Fixed generateSOAPNoteDirect function to use PatientChartService instead of directly querying diagnoses table
 - SOAP notes now properly use medicalProblems table for "ACTIVE MEDICAL PROBLEMS" section instead of billing diagnoses
