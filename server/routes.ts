@@ -1539,7 +1539,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Live AI suggestions now handled directly by frontend WebSocket connection to OpenAI
+  // REST API Live AI Suggestions - Cost-optimized alternative to WebSocket
+  app.post("/api/voice/live-suggestions", async (req, res) => {
+    try {
+      const { patientId, userRole, transcription } = req.body;
+
+      if (!patientId || !userRole || !transcription) {
+        return res.status(400).json({ 
+          error: "Missing required fields: patientId, userRole, transcription" 
+        });
+      }
+
+      const patientIdNum = parseInt(patientId);
+      const patient = await storage.getPatient(patientIdNum);
+      if (!patient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+
+      // Get comprehensive patient chart data using same service as WebSocket
+      const patientChart = await PatientChartService.getPatientChartData(patientIdNum);
+
+      // Build patient context identical to WebSocket system
+      const formatPatientContext = (chart: any, basicData: any): string => {
+        return `Patient: ${basicData.firstName} ${basicData.lastName}
+Age: ${basicData.age || "Unknown"} 
+Gender: ${basicData.gender || "Unknown"}
+MRN: ${basicData.mrn || "Unknown"}
+
+MEDICAL PROBLEMS:
+${chart.medicalProblems?.length > 0 
+  ? chart.medicalProblems.map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`).join("\n")
+  : "- No active medical problems documented"
+}
+
+CURRENT MEDICATIONS:
+${chart.currentMedications?.length > 0 
+  ? chart.currentMedications.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
+  : "- No current medications documented"
+}
+
+ALLERGIES:
+${chart.allergies?.length > 0 
+  ? chart.allergies.map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`).join("\n")
+  : "- NKDA (No Known Drug Allergies)"
+}
+
+RECENT VITALS:
+${chart.vitals?.length > 0 
+  ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
+- HR: ${chart.vitals[0].heartRate} bpm
+- Temp: ${chart.vitals[0].temperature}°F
+- RR: ${chart.vitals[0].respiratoryRate || "Not recorded"}
+- O2 Sat: ${chart.vitals[0].oxygenSaturation || "Not recorded"}%`
+  : "- No recent vitals available"
+}`;
+      };
+
+      const patientContext = formatPatientContext(patientChart, patient);
+
+      // Use exact same prompts as working WebSocket system
+      const isProvider = userRole === "provider";
+      const instructions = isProvider ? 
+        `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
+
+CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
+
+DIRECT QUESTION RESPONSES:
+- When provider asks "Does patient have medical problems?" → Answer: "• Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF."
+- When provider asks "What medications?" → Answer: "• Current medications: Lisinopril 10mg daily, Metformin 500mg BID."
+- When provider asks "Any allergies?" → Answer: "• NKDA (No Known Drug Allergies)."
+- FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
+
+Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time. If multiple insights could be provided, prioritize the most critical or relevant one first.
+
+Avoid restating general knowledge or overly simplistic recommendations a physician would already know. Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
+
+DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
+
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
+
+Format each bullet point on its own line with no extra spacing between them.` :
+
+        `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
+
+CRITICAL PRIORITY: When nurses ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic advice when asked direct questions.
+
+DIRECT QUESTION RESPONSES:
+-When nurse asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
+-When nurse asks "What medications?" → Answer: "Current medications: Acetaminophen 500mg once daily by mouth"
+-When nurse asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+-FORBIDDEN responses: "Confirm...", "Assess...", "Obtain details..." when chart data exists
+
+Focus on high-value, evidence-based, nursing assessments and safety considerations based on what the patient is saying in this conversation. Provide only one brief phrase at a time. If multiple insights could be provided, prioritize the most critical or relevant one first.
+
+Avoid restating general knowledge or overly simplistic recommendations a nurse would already know. Prioritize specifics: vital signs monitoring, medication safety, patient comfort measures, and nursing interventions. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
+
+DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
+
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
+
+Format each bullet point on its own line with no extra spacing between them.`;
+
+      // Create GPT message with patient context and current transcription
+      const contextWithTranscription = `${patientContext}
+
+CURRENT LIVE CONVERSATION:
+${transcription}
+
+CRITICAL: If the ${isProvider ? 'provider' : 'nurse'} is asking direct questions about patient chart information, provide SPECIFIC facts from the chart data above, NOT generic suggestions.
+
+Examples:
+- Question: "Does the patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF"
+- Question: "What medications?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
+- Question: "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+
+DO NOT say "Assess" or "Evaluate" - give the actual chart facts directly.
+
+Please provide medical suggestions based on what the ${isProvider ? 'provider' : 'nurse'} is saying in this current conversation.`;
+
+      // Call OpenAI with same model and settings
+      console.log(`🧠 [RestAPI] Making GPT-4.1-mini call for ${userRole} suggestions`);
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [
+          {
+            role: "system",
+            content: instructions
+          },
+          {
+            role: "user", 
+            content: contextWithTranscription
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 500,
+      });
+
+      console.log(`🧠 [RestAPI] GPT response received, usage:`, response.usage);
+
+      const suggestions = response.choices[0].message.content;
+      if (!suggestions) {
+        throw new Error("No suggestions generated from GPT");
+      }
+
+      // Format response to match WebSocket structure
+      const formattedSuggestions = suggestions.split('\n').filter(s => s.trim());
+
+      res.json({
+        aiSuggestions: {
+          realTimePrompts: formattedSuggestions
+        },
+        usage: response.usage,
+        model: "gpt-4.1-mini",
+        costOptimized: true
+      });
+
+    } catch (error: any) {
+      console.error("❌ [RestAPI] Live suggestions error:", error);
+      res.status(500).json({ 
+        error: "Failed to generate AI suggestions",
+        details: error.message 
+      });
+    }
+  });
 
   // ⚠️ LEGACY ROUTE - Enhanced voice processing (PARTIALLY DEPRECATED)
   // This route uses legacy realtime medical context service - Enhanced Realtime Service is primary

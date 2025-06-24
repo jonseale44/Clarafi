@@ -1,0 +1,28 @@
+Smart throttling: BE VERY CAREFUL ABOUT INTERNAL FRONTEND REGEX PATTERNS AND
+FRONTEND LOGIC. GPT is much smarter than any of that could possibly be, so I want to see (literally,
+with my eyes any logic you try to incorporate, and APPROVE IT, before you do so.
+1. Yes, add a Ul toggle to switch between them but I just want to clarify that switching from one to
+another means the other one is NO LONGER ACTIVE, correct? I don't it consuming tokens in the
+background when we're not even using it.
+2. Let's do slow, infrequent updates every 10 seconds, but could we also incorporate the ability to
+manually update sooner, if desired? Now keep in mind there is already a "generate suggestions"
+button which is probably the manual update I'm talking about, but I'm not sure. Obviously it's
+probably current connected to the realtime API but, again, I'm not sure. I just wanted to make sure
+you knew about it so you didn't create a duplicate function unknowingly.
+3. If the rest API fails, it should show an error message. No backups! If it fails, it fails.
+4. Just do the provider view. I'm not entirely convinced we're actually using realtime open Al in the
+nurse view anyway. There is a similar problem with legacy code on the nurses side, I believe. But just
+focus on the provider view for now and we'll see how it goes.
+5. No
+6. This is actually a fairly complex but excellent question and we need to answer this carefully. The
+ultimate end-goal vision for Al suggestions is that it will have (eventually) full chart data access
+including all prior labs, vitals, imaging, etc. This will allow the user to inquire any conceivable
+question about the patient's medical history and get an instantaneous answer without having to
+"search". That suggests another potential benefit of switch to the rest APl which is that it can handle
+a much larger context window. To answer your question, and to be honest, I don't understand much
+about the difference between "input" and "cached input" within these GPT models. I took the liberty
+of including the updated cost comparison between input and cached input between various GPT
+models but I couldn't really find any information about how much capacity (i.e. tokens or context
+window) each model could handle within a cache. But maybe that's not model specific? As you can
+probably tell, my understanding of cache input is fairly limited. Maybe you can explain what it means
+and what your question means and then I can give you a better answer.

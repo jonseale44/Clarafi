@@ -834,18 +834,21 @@ export function EncounterDetailView({
 
   // Function to get real-time suggestions during recording
   const getLiveAISuggestions = async (transcription: string) => {
+    // Skip if using REST API mode - suggestions handled manually
+    if (useRestAPI) return;
+    
     if (transcription.length < 15) return; // Process smaller chunks for faster response
 
     // Debounce suggestions to prevent too many rapid API calls
     const now = Date.now();
-    if (now - lastSuggestionTime < 1000) {
+    if (now - lastSuggestionTime < 10000) { // 10-second throttle for REST API compatibility
       // Clear any existing timeout and set a new one
       if (suggestionDebounceTimer.current) {
         clearTimeout(suggestionDebounceTimer.current);
       }
       suggestionDebounceTimer.current = setTimeout(() => {
         getLiveAISuggestions(transcription);
-      }, 1000);
+      }, 10000);
       return;
     }
 
@@ -2218,6 +2221,64 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       title: "Smart Suggestions Generated",
       description: "GPT analysis complete",
     });
+  }
+
+  // REST API Suggestions - Cost-optimized alternative
+  const generateRestAPISuggestions = async () => {
+    if (!transcription || transcription.length < 15) {
+      toast({
+        title: "Insufficient Content",
+        description: "Need at least 15 characters of transcription for suggestions",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log("🧠 [EncounterView] Generating REST API suggestions for transcription:", transcription.substring(0, 100) + "...");
+      
+      const requestBody = {
+        patientId: patient.id.toString(),
+        userRole: "provider",
+        transcription: transcription
+      };
+
+      const response = await fetch("/api/voice/live-suggestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("🧠 [EncounterView] REST API suggestions received:", data);
+
+        if (data.aiSuggestions?.realTimePrompts?.length > 0) {
+          const suggestionsText = `🩺 REST API CLINICAL INSIGHTS:\n\n${data.aiSuggestions.realTimePrompts.join('\n')}`;
+          setGptSuggestions(suggestionsText);
+          
+          toast({
+            title: "AI Suggestions Generated",
+            description: `Generated ${data.aiSuggestions.realTimePrompts.length} insights using ${data.model}`,
+          });
+        } else {
+          setGptSuggestions("No specific suggestions generated for current content.");
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || "Unknown error");
+      }
+    } catch (error) {
+      console.error("❌ [EncounterView] REST API suggestions failed:", error);
+      setGptSuggestions(`❌ REST API Error: ${(error as any)?.message || 'Unknown error'}`);
+      toast({
+        title: "Suggestion Generation Failed",
+        description: "REST API error - check logs for details",
+        variant: "destructive"
+      });
+    }
   };
 
   // SOAP Note Generation Function
@@ -2676,15 +2737,31 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           {/* AI Suggestions */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">
-                AI Suggestions
-              </h2>
+              <div className="flex items-center space-x-3">
+                <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                  AI Suggestions
+                </h2>
+                <div className="flex items-center space-x-2 text-sm">
+                  <span className="text-gray-500">Mode:</span>
+                  <button
+                    onClick={() => setUseRestAPI(!useRestAPI)}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      useRestAPI 
+                        ? 'bg-green-100 text-green-700 border border-green-200' 
+                        : 'bg-blue-100 text-blue-700 border border-blue-200'
+                    }`}
+                  >
+                    {useRestAPI ? 'REST API' : 'WebSocket'}
+                  </button>
+                </div>
+              </div>
               <Button
-                onClick={generateSmartSuggestions}
+                onClick={useRestAPI ? generateRestAPISuggestions : generateSmartSuggestions}
                 size="sm"
                 variant="outline"
+                disabled={useRestAPI && (!transcription || transcription.length < 15)}
               >
-                Generate Suggestions
+                {useRestAPI ? 'Refresh Suggestions' : 'Generate Suggestions'}
               </Button>
             </div>
             <div className="text-gray-500 text-sm whitespace-pre-line">
