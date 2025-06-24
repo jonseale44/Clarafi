@@ -227,7 +227,7 @@ ${patientChart.surgicalHistory?.length > 0
 }
 `
     : "Limited patient data available - chart context not accessible"
-}`;
+};
 
     // 3. Send patient context to OpenAI for AI suggestions
     const currentTranscription =
