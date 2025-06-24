@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Resolution System Implementation (June 24, 2025)
+- Added manual resolution buttons to medical problems UI for providers
+- Implemented PUT `/api/medical-problems/:problemId/resolve` endpoint for quick problem resolution
+- Enhanced GPT prompt with comprehensive resolution detection rules and examples
+- Added storage methods: `updateMedicalProblemStatus()` and `addMedicalProblemVisitHistory()`
+- Lowered confidence thresholds for problem creation (50%+ for consolidation vs. previous 95%+)
+- Added extensive visit history formatting examples in medical shorthand style
+- GPT now detects resolution language: "resolved", "symptoms resolved", "treatment successful"
+
 ### Medical Problems Consolidation Intelligence Enhancement (June 23, 2025)
 - Enhanced GPT prompts with comprehensive medical synonym matching (HTN=Hypertension, DM=Diabetes, etc.)
 - Added systematic consolidation decision tree with confidence-based matching thresholds
