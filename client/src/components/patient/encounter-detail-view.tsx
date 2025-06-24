@@ -3048,10 +3048,54 @@ Please provide medical suggestions based on this complete conversation context.`
                   size="sm"
                   variant="outline"
                   disabled={
-                    useRestAPI && (!transcription || transcription.length < 15)
+                    (useRestAPI && (!transcription || transcription.length < 15)) ||
+                    isGeneratingRestSuggestions ||
+                    isGeneratingSmartSuggestions
                   }
+                  className={`relative overflow-hidden transition-all duration-200 ${
+                    isGeneratingRestSuggestions ? 'bg-blue-50 border-blue-200' : ''
+                  }`}
+                  style={{
+                    background: isGeneratingRestSuggestions && useRestAPI
+                      ? `linear-gradient(90deg, 
+                          rgba(59, 130, 246, 0.1) 0%, 
+                          rgba(59, 130, 246, 0.1) ${suggestionProgress}%, 
+                          transparent ${suggestionProgress}%, 
+                          transparent 100%)`
+                      : undefined
+                  }}
                 >
-                  {useRestAPI ? "Add Suggestions" : "Generate Suggestions"}
+                  <div className="flex items-center space-x-2">
+                    {isGeneratingRestSuggestions && useRestAPI && (
+                      <div 
+                        className="h-3 w-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"
+                        style={{
+                          animationDuration: '1s'
+                        }}
+                      />
+                    )}
+                    {isGeneratingSmartSuggestions && !useRestAPI && (
+                      <div className="h-3 w-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+                    )}
+                    <span>
+                      {isGeneratingRestSuggestions && useRestAPI
+                        ? `Generating... ${Math.round(suggestionProgress)}%`
+                        : isGeneratingSmartSuggestions && !useRestAPI
+                        ? "Generating..."
+                        : useRestAPI
+                        ? "Add Suggestions"
+                        : "Generate Suggestions"}
+                    </span>
+                  </div>
+                  {/* Precise progress indicator - subtle border animation */}
+                  {isGeneratingRestSuggestions && useRestAPI && (
+                    <div 
+                      className="absolute bottom-0 left-0 h-0.5 bg-blue-500 transition-all duration-100 ease-out"
+                      style={{
+                        width: `${suggestionProgress}%`
+                      }}
+                    />
+                  )}
                 </Button>
                 {useRestAPI && (
                   <Button
@@ -3059,6 +3103,7 @@ Please provide medical suggestions based on this complete conversation context.`
                     size="sm"
                     variant="ghost"
                     className="text-xs"
+                    disabled={isGeneratingRestSuggestions}
                   >
                     Clear
                   </Button>
