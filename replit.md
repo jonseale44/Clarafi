@@ -126,7 +126,9 @@ Preferred communication style: Simple, everyday language.
 - Added UI toggle between REST API and WebSocket modes with visual indicators
 - **ACCUMULATIVE BEHAVIOR**: REST API now matches WebSocket's suggestion accumulation - new insights build upon existing ones
 - Added "Add Suggestions" button for manual refresh in REST API mode with "Clear" option
-- Same AI prompts and patient chart access as WebSocket system for consistency
+- **VERBATIM WEBSOCKET PARITY**: REST API now uses exact same AI instructions and bullet point formatting as WebSocket system
+- Implemented identical bullet point formatting logic (• prefix) for visual consistency
+- Same comprehensive patient chart data access and context building as WebSocket
 - 10-second throttling and proper error handling without automatic fallback
 - REST API mode bypasses automatic suggestions during recording for manual control
 - Cached input benefits provide additional cost savings when patient chart data is reused

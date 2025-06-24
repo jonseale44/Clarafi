@@ -2257,16 +2257,22 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         console.log("🧠 [EncounterView] REST API suggestions received:", data);
 
         if (data.aiSuggestions?.realTimePrompts?.length > 0) {
-          // Implement accumulative behavior like WebSocket system
+          // Implement accumulative behavior with WebSocket formatting
           setGptSuggestions((prevSuggestions) => {
-            const newInsights = data.aiSuggestions.realTimePrompts.join('\n');
+            // Format suggestions exactly like WebSocket with proper bullet points
+            const formattedPrompts = data.aiSuggestions.realTimePrompts.map((prompt: string) => {
+              const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, "").trim();
+              return cleanPrompt ? `• ${cleanPrompt}` : prompt;
+            });
+            
+            const newInsights = formattedPrompts.join('\n');
             
             // Check if this is the first suggestion or we're adding to existing ones
             if (!prevSuggestions || prevSuggestions === "AI analysis will appear here...") {
-              // First suggestion - add header
+              // First suggestion - add header like WebSocket
               return `🩺 REST API CLINICAL INSIGHTS:\n\n${newInsights}`;
             } else {
-              // Accumulate new suggestions with existing ones, add separator
+              // Accumulate new suggestions with existing ones, add separator like WebSocket
               return `${prevSuggestions}\n\n${newInsights}`;
             }
           });

@@ -1684,8 +1684,19 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         throw new Error("No suggestions generated from GPT");
       }
 
-      // Format response to match WebSocket structure
-      const formattedSuggestions = suggestions.split('\n').filter(s => s.trim());
+      // Format response with bullet points like WebSocket system
+      const formattedSuggestions = suggestions
+        .split('\n')
+        .filter(s => s.trim())
+        .map(suggestion => {
+          const trimmed = suggestion.trim();
+          // Ensure bullet point formatting like WebSocket
+          if (trimmed && !trimmed.startsWith('•') && !trimmed.startsWith('-') && !trimmed.match(/^\d+\./)) {
+            return `• ${trimmed}`;
+          }
+          return trimmed;
+        })
+        .filter(s => s.length > 0);
 
       res.json({
         aiSuggestions: {
