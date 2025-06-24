@@ -2141,6 +2141,7 @@ Please provide medical suggestions based on this complete conversation context.`
 
   const stopRecording = async () => {
     console.log("🎤 [EncounterView] === STOP RECORDING CALLED ===");
+    console.log("🎤 [EncounterView] Current AI mode:", useRestAPI ? "REST API" : "WebSocket");
     console.log(
       "🎤 [EncounterView] Current soapNote:",
       soapNote ? soapNote.substring(0, 100) + "..." : "NULL/EMPTY",
@@ -2395,6 +2396,17 @@ Please provide medical suggestions based on this complete conversation context.`
         description: "No SOAP content was generated during recording",
       });
     }
+
+    // Mode-specific cleanup and status reporting
+    if (useRestAPI) {
+      console.log("🚫 [EncounterView] REST API mode - no WebSocket cleanup needed");
+      console.log("🔍 [TokenMonitor] REST API mode - no background token consumption after recording");
+    } else {
+      console.log("🧠 [EncounterView] WebSocket mode - WebSocket remains open for ongoing AI suggestions");
+      console.log("🔍 [TokenMonitor] WebSocket mode - background token consumption may continue");
+    }
+    
+    console.log("✅ [EncounterView] Recording complete. Mode:", useRestAPI ? "REST API (manual suggestions)" : "WebSocket (continuous suggestions)");
   };
 
   const generateSmartSuggestions = () => {
@@ -2409,6 +2421,23 @@ Please provide medical suggestions based on this complete conversation context.`
 
   // REST API Suggestions - Cost-optimized alternative
   const generateRestAPISuggestions = async () => {
+    console.log("🔍 [TokenMonitor] Manual REST API suggestion request initiated");
+    console.log("🔍 [TokenMonitor] This will consume tokens via REST API call");
+    
+    // Throttling check for manual requests
+    const now = Date.now();
+    if (now - lastSuggestionTime < 10000) {
+      console.log("🚫 [RestAPI] Manual request throttled - last request was", Math.round((now - lastSuggestionTime) / 1000), "seconds ago");
+      toast({
+        title: "Request Throttled",
+        description: `Please wait ${Math.ceil((10000 - (now - lastSuggestionTime)) / 1000)} more seconds before requesting suggestions again.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLastSuggestionTime(now);
+
     if (!transcription || transcription.length < 15) {
       toast({
         title: "Insufficient Content",
@@ -2444,6 +2473,8 @@ Please provide medical suggestions based on this complete conversation context.`
         console.log("🧠 [EncounterView] REST API suggestions received:", data);
 
         if (data.aiSuggestions?.realTimePrompts?.length > 0) {
+          console.log("🔍 [TokenMonitor] REST API response received - tokens consumed:", data.usage);
+          
           // Implement accumulative behavior with WebSocket formatting
           setGptSuggestions((prevSuggestions) => {
             // Format suggestions exactly like WebSocket with proper bullet points
@@ -2474,6 +2505,7 @@ Please provide medical suggestions based on this complete conversation context.`
             description: `Added ${data.aiSuggestions.realTimePrompts.length} new insights using ${data.model}`,
           });
         } else {
+          console.log("🔍 [TokenMonitor] REST API response with no suggestions - tokens still consumed");
           setGptSuggestions((prevSuggestions) => {
             if (
               !prevSuggestions ||
@@ -2493,6 +2525,7 @@ Please provide medical suggestions based on this complete conversation context.`
       }
     } catch (error) {
       console.error("❌ [EncounterView] REST API suggestions failed:", error);
+      console.log("🔍 [TokenMonitor] REST API request failed - no tokens consumed");
       setGptSuggestions(
         `❌ REST API Error: ${(error as any)?.message || "Unknown error"}`,
       );
