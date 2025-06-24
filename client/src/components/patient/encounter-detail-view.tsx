@@ -1175,61 +1175,13 @@ export function EncounterDetailView({
       let conversationActive = false; // Track active conversation state
       let sessionId = "";
 
-      // CRITICAL FIX: Skip WebSocket initialization in REST API mode
-      if (useRestAPI) {
-        console.log("🚫 [EncounterView] REST API mode selected - skipping WebSocket initialization to prevent token consumption");
-        console.log("🚫 [EncounterView] WebSocket suggestions disabled to avoid silent background activity");
-        
-        // In REST API mode, only set up basic recording without AI suggestions
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log("🎤 [EncounterView] Audio stream acquired for REST API mode");
-        
-        setIsRecording(true);
-        setRecordingState("ACTIVE");
-        
-        // Basic MediaRecorder setup for transcription only
-        const mediaRecorder = new MediaRecorder(stream);
-        setMediaRecorderRef(mediaRecorder);
-        console.log("🔧 [EncounterView] MediaRecorder created in REST API mode:", mediaRecorder.state);
-        
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            console.log("🎵 [EncounterView] Audio data available in REST API mode:", event.data.size, "bytes");
-            console.log("🔍 [TokenMonitor] REST API mode - audio processing without WebSocket suggestions");
-            // Note: Audio data would be processed for transcription but not AI suggestions
-          }
-        };
-
-        mediaRecorder.onerror = (event) => {
-          console.error("❌ [EncounterView] MediaRecorder error in REST API mode:", event);
-        };
-
-        mediaRecorder.onstart = () => {
-          console.log("✅ [EncounterView] MediaRecorder started successfully in REST API mode");
-        };
-
-        mediaRecorder.onstop = () => {
-          console.log("🛑 [EncounterView] MediaRecorder stopped in REST API mode");
-        };
-        
-        try {
-          mediaRecorder.start(100); // Start recording with 100ms chunks
-          console.log("✅ [EncounterView] Recording started in REST API mode - no background AI activity");
-          console.log("🔍 [TokenMonitor] REST API mode recording active - no WebSocket token consumption");
-          
-          // Store reference globally for stop function
-          (window as any).currentMediaRecorder = mediaRecorder;
-          
-          return;
-        } catch (startError) {
-          console.error("❌ [EncounterView] Failed to start MediaRecorder in REST API mode:", startError);
-          throw startError;
-        }
-      }
-
       try {
+        if (useRestAPI) {
+          console.log("🔍 [EncounterView] REST API mode - WebSocket needed for Whisper transcription, AI suggestions disabled");
+          console.log("🔍 [TokenMonitor] REST API mode - WebSocket will handle transcription only, no AI suggestion tokens");
+        }
         console.log(
-          "🌐 [EncounterView] WebSocket mode - Connecting to OpenAI Realtime API...",
+          "🌐 [EncounterView] Connecting to OpenAI Realtime API for transcription...",
         );
 
         // Get API key from environment
@@ -1624,7 +1576,7 @@ Please provide medical suggestions based on what the provider is saying in this 
             }
 
             // REAL-TIME: Continuously update AI suggestions with live partial transcription
-            // CRITICAL: This should only happen in WebSocket mode
+            // CRITICAL: Only update AI suggestions in WebSocket mode, not REST API mode
             if (
               suggestionsStarted &&
               transcriptionBuffer.length > 20 &&
@@ -1677,7 +1629,8 @@ Please provide medical suggestions based on what the provider is saying in this 
           }
 
           // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
-          else if (message.type === "response.text.delta") {
+          // CRITICAL: Only process AI suggestions in WebSocket mode
+          else if (message.type === "response.text.delta" && !useRestAPI) {
             const deltaText = message.delta || "";
             console.log(
               "🧠 [EncounterView] WebSocket mode - AI suggestions delta received:",
@@ -2430,14 +2383,14 @@ Please provide medical suggestions based on this complete conversation context.`
 
     // Mode-specific cleanup and status reporting
     if (useRestAPI) {
-      console.log("🚫 [EncounterView] REST API mode - no WebSocket cleanup needed");
-      console.log("🔍 [TokenMonitor] REST API mode - no background token consumption after recording");
+      console.log("🔍 [EncounterView] REST API mode - WebSocket stays open for transcription only");
+      console.log("🔍 [TokenMonitor] REST API mode - no AI suggestion token consumption, only Whisper transcription");
     } else {
       console.log("🧠 [EncounterView] WebSocket mode - WebSocket remains open for ongoing AI suggestions");
-      console.log("🔍 [TokenMonitor] WebSocket mode - background token consumption may continue");
+      console.log("🔍 [TokenMonitor] WebSocket mode - background token consumption continues for suggestions");
     }
     
-    console.log("✅ [EncounterView] Recording complete. Mode:", useRestAPI ? "REST API (manual suggestions)" : "WebSocket (continuous suggestions)");
+    console.log("✅ [EncounterView] Recording complete. Mode:", useRestAPI ? "REST API (manual suggestions + WebSocket transcription)" : "WebSocket (continuous suggestions + transcription)");
   };
 
   const generateSmartSuggestions = () => {
