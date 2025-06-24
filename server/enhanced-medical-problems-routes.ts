@@ -392,4 +392,41 @@ router.delete("/medical-problems/:problemId", async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/medical-problems/:problemId/resolve
+ * Manually resolve a medical problem
+ */
+router.put("/medical-problems/:problemId/resolve", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const problemId = parseInt(req.params.problemId);
+    const providerId = req.user!.id;
+    
+    console.log(`🔄 [ResolveProblem] Provider ${providerId} resolving problem ${problemId}`);
+
+    // Update problem status to resolved
+    await storage.updateMedicalProblemStatus(problemId, "resolved");
+    
+    // Add a visit history entry documenting the resolution
+    await storage.addMedicalProblemVisitHistory(problemId, {
+      date: new Date().toISOString().split('T')[0],
+      notes: "Problem marked as resolved by provider",
+      source: "manual",
+      providerId: providerId,
+      providerName: req.user!.firstName + " " + req.user!.lastName,
+      confidence: 1.0
+    });
+
+    console.log(`✅ [ResolveProblem] Problem ${problemId} resolved successfully`);
+    res.json({ success: true, message: "Problem resolved successfully" });
+
+  } catch (error) {
+    console.error("Error resolving medical problem:", error);
+    res.status(500).json({ error: "Failed to resolve medical problem" });
+  }
+});
+
 export default router;

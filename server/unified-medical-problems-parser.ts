@@ -331,6 +331,15 @@ ENHANCED EXAMPLES:
 4. Attachment with completely new condition "Atrial Fibrillation" + no existing cardiac rhythm problems:
    {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib"}
 
+5. SOAP note states "Shortness of breath on exertion resolved per patient report" + existing "Shortness of breath on exertion" problem:
+   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem"}
+
+6. SOAP note mentions "Acute bronchitis resolved, patient feeling better" + existing "Acute bronchitis" problem:
+   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved"}
+
+7. SOAP note documents "UTI treated successfully with antibiotics, symptoms resolved" + existing "Urinary tract infection":
+   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented"}
+
 VISIT HISTORY FORMAT REQUIREMENTS:
 Visit history entries should be concise, clinical, and data-rich. Use medical shorthand and include specific values. Examples:
 
@@ -366,7 +375,16 @@ FORMATTING RULES:
 - Use periods to separate distinct clinical facts
 - Avoid flowery language or patient education content
 
-INSTRUCTION: Systematically evaluate medical conditions against existing problems using consolidation rules. Create new problems when conditions don't reasonably match existing ones. Document reasoning in consolidation_reasoning field.
+RESOLUTION DETECTION RULES:
+Look for explicit resolution language in SOAP notes:
+- "resolved", "resolution", "resolved per patient report"
+- "no longer experiencing", "symptoms resolved", "feeling better"
+- "treatment successful", "completed treatment", "cured"
+- "acute condition resolved", "infection cleared"
+- For acute conditions: automatically consider resolving if patient reports complete symptom resolution
+- For chronic conditions: only resolve if explicitly documented as permanently resolved
+
+INSTRUCTION: Systematically evaluate medical conditions against existing problems using consolidation rules. When SOAP notes document problem resolution, use RESOLVE action. Create new problems when conditions don't reasonably match existing ones. Document reasoning in consolidation_reasoning field.
 `;
 
     console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1`);

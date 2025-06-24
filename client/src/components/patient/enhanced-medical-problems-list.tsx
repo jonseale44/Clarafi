@@ -95,6 +95,31 @@ export function EnhancedMedicalProblemsList({
     }
   };
 
+  // Resolve mutation
+  const resolveMutation = useMutation({
+    mutationFn: async (problemId: number) => {
+      const response = await fetch(`/api/medical-problems/${problemId}/resolve`, {
+        method: "PUT",
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error("Failed to resolve medical problem");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems-enhanced`] });
+      toast({ title: "Success", description: "Medical problem resolved successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleResolve = (problemId: number) => {
+    if (confirm("Are you sure you want to mark this medical problem as resolved?")) {
+      resolveMutation.mutate(problemId);
+    }
+  };
+
   const handleAddNew = () => {
     setEditingProblem(null);
     setIsDialogOpen(true);
@@ -226,11 +251,23 @@ export function EnhancedMedicalProblemsList({
               
               {!isReadOnly && (
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                  {problem.problemStatus !== 'resolved' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResolve(problem.id)}
+                      className="h-8 w-8 p-0 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
+                      title="Mark as resolved"
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleEdit(problem)}
                     className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    title="Edit problem"
                   >
                     <Edit className="h-3 w-3" />
                   </Button>
@@ -239,6 +276,7 @@ export function EnhancedMedicalProblemsList({
                     size="sm"
                     onClick={() => handleDelete(problem.id)}
                     className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                    title="Delete problem"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

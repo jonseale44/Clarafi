@@ -892,6 +892,31 @@ export class DatabaseStorage implements IStorage {
     return (problem?.visitHistory as any[]) || [];
   }
 
+  async updateMedicalProblemStatus(problemId: number, status: string): Promise<void> {
+    await db.update(medicalProblems)
+      .set({ 
+        problemStatus: status,
+        updatedAt: new Date()
+      })
+      .where(eq(medicalProblems.id, problemId));
+  }
+
+  async addMedicalProblemVisitHistory(problemId: number, visitEntry: any): Promise<void> {
+    const [problem] = await db.select({ visitHistory: medicalProblems.visitHistory })
+      .from(medicalProblems)
+      .where(eq(medicalProblems.id, problemId));
+    
+    const existingHistory = (problem?.visitHistory as any[]) || [];
+    const updatedHistory = [...existingHistory, visitEntry];
+    
+    await db.update(medicalProblems)
+      .set({ 
+        visitHistory: updatedHistory,
+        updatedAt: new Date()
+      })
+      .where(eq(medicalProblems.id, problemId));
+  }
+
   // Medication synchronization methods
   async getMedicationsByOrderId(orderId: number): Promise<Medication[]> {
     return await db.select().from(medications).where(eq(medications.sourceOrderId, orderId));
