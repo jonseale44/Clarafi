@@ -109,12 +109,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Database Table Confusion Resolution (June 24, 2025)
+### Database Table Confusion Resolution & AI Direct Question Enhancement (June 24, 2025)
 - **CRITICAL FIX**: Resolved diagnoses/medical problems table confusion in nursing components
 - Nursing Assessment Template: Fixed to use medicalProblems table instead of diagnoses table for PMH section
-- AI Suggestions: Enhanced with comprehensive chart access and direct question response protocol
-- Modified existing generateNursingTemplateDirect function to use patient chart service
-- AI now provides specific answers when nurses ask direct questions about patient history
+- **AI Suggestions Major Enhancement**: Implemented mandatory direct question response protocol
+- AI now detects direct questions ("Does patient have medical problems?") and provides specific chart facts
+- Eliminated generic responses ("Confirm medical problems") in favor of factual answers ("Medical problems: HTN, DM2, CKD stage 3, AFib, CHF")
+- Enhanced realtime AI instructions with explicit examples and forbidden response patterns
 - Both nursing template and AI suggestions now use same patient chart service for consistency
 
 ### Medical Problems Resolution System Implementation (June 24, 2025)
