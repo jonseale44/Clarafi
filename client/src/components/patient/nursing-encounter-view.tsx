@@ -118,6 +118,18 @@ export function NursingEncounterView({
     enabled: !!encounterId,
   });
 
+  // Early return for loading state
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading nursing encounter...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Deduplication tracking for WebSocket messages
   const processedEvents = useRef(new Set<string>());
   const processedContent = useRef(new Set<string>());
@@ -1186,17 +1198,6 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
     // Trigger template-based nursing assessment
     nursingTemplateRef.current?.startTemplateAssessment();
   };
-
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading nursing encounter...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-full">
