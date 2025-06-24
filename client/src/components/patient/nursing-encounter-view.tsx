@@ -103,6 +103,9 @@ export function NursingEncounterView({
 
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // WebSocket state and refs for AI suggestions (matching provider)
+  const realtimeWs = useRef<WebSocket | null>(null);
 
   // Get current user for role-based functionality
   const { data: currentUser } = useQuery<UserType>({
@@ -454,12 +457,8 @@ Format each bullet point on its own line with no extra spacing between them.`,
     };
 
     console.log("🧠 [NursingView] Creating AI suggestions conversation");
-    markResponseActive("suggestions_initial");
     ws.send(JSON.stringify(suggestionsMessage));
-  } else {
-    console.log("🧠 [NursingView] Skipping response creation - active response exists");
-  }
-};
+  };
 
   // Start recording using same OpenAI Realtime API as provider view
   const startRecording = async () => {
@@ -845,6 +844,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
               
               return newBuffer;
             });
+          }
             console.log("🧠 [NursingView] Delta length:", deltaText.length);
             console.log(
               "🧠 [NursingView] Current suggestions buffer length:",
@@ -1115,7 +1115,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           });
         };
 
-        realtimeWs.onclose = (event) => {
+        realtimeWs.current.onclose = (event) => {
           console.log(
             "🔌 [NursingView] WebSocket closed:",
             event.code,
@@ -1143,7 +1143,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
 
         processor.onaudioprocess = async (e) => {
-          if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
+          if (!realtimeWs.current || realtimeWs.current.readyState !== WebSocket.OPEN) return;
 
           const inputData = e.inputBuffer.getChannelData(0);
 
