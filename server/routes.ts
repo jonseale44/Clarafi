@@ -66,31 +66,17 @@ async function generateNursingTemplateDirect(
     `🏥 [NursingTemplate] Generating template for patient ${patientId}`,
   );
 
-  // Get patient context and encounter-specific vitals
-  const [
-    patient,
-    diagnosisList,
-    meds,
-    allergiesList,
-    encounterVitalsList,
-    recentEncounters,
-  ] = await Promise.all([
-    db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
-    db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
-    db.select().from(medications).where(eq(medications.patientId, patientId)),
-    db.select().from(allergies).where(eq(allergies.patientId, patientId)),
-    db
-      .select()
-      .from(vitals)
-      .where(eq(vitals.encounterId, parseInt(encounterId)))
-      .orderBy(desc(vitals.recordedAt)),
-    db
-      .select()
-      .from(encountersTable)
-      .where(eq(encountersTable.patientId, patientId))
-      .orderBy(desc(encountersTable.createdAt))
-      .limit(3),
-  ]);
+  // Use the same patient chart service to avoid diagnoses/medical problems confusion
+  const patientChart = await import('./patient-chart-service.js').then(module => 
+    module.PatientChartService.getPatientChartData(patientId)
+  );
+
+  // Get encounter-specific vitals
+  const encounterVitalsList = await db
+    .select()
+    .from(vitals)
+    .where(eq(vitals.encounterId, parseInt(encounterId)))
+    .orderBy(desc(vitals.recordedAt));
 
   const patientData = patient[0];
   if (!patientData) {
