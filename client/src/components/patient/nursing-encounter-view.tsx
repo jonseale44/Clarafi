@@ -360,8 +360,8 @@ Format each bullet point on its own line with no extra spacing between them.`,
     try {
       console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
 
-        // Get API key from environment
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      // Get API key from environment
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
         console.log("🔑 [NursingView] API key check:", {
           hasApiKey: !!apiKey,
           keyLength: apiKey?.length || 0,
@@ -1105,7 +1105,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         });
 
         setIsRecording(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ [NursingView] Failed to start recording:", error);
       toast({
         variant: "destructive", 
