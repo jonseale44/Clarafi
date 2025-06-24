@@ -120,6 +120,17 @@ Preferred communication style: Simple, everyday language.
 - Note type selection locked during recording to prevent mid-recording switches
 - All 6 note types use same patient context building and post-processing pipeline
 
+### Cost-Optimized REST API Suggestion System Implementation (June 24, 2025)
+- **IMPLEMENTED**: Complete REST API suggestion system as cost-optimized alternative to WebSocket
+- Created `/api/voice/live-suggestions` endpoint using GPT-4.1-mini for 33% cost savings ($1.60 vs $2.40 per 1M output tokens)
+- Added UI toggle between REST API and WebSocket modes with visual indicators
+- **ACCUMULATIVE BEHAVIOR**: REST API now matches WebSocket's suggestion accumulation - new insights build upon existing ones
+- Added "Add Suggestions" button for manual refresh in REST API mode with "Clear" option
+- Same AI prompts and patient chart access as WebSocket system for consistency
+- 10-second throttling and proper error handling without automatic fallback
+- REST API mode bypasses automatic suggestions during recording for manual control
+- Cached input benefits provide additional cost savings when patient chart data is reused
+
 ### Provider AI Suggestions Direct Question Enhancement (June 24, 2025)
 - **CRITICAL FIX**: Updated provider AI suggestions to handle direct questions about patient chart information
 - Provider AI now detects direct questions ("Does patient have medical problems?") and provides specific chart facts

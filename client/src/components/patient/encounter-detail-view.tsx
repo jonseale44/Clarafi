@@ -1003,7 +1003,7 @@ export function EncounterDetailView({
       patient.id,
     );
 
-    // Clear previous suggestions when starting new recording
+    // Clear previous suggestions when starting new recording (both WebSocket and REST API)
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
     setSuggestionsBuffer(""); // Clear suggestions buffer for fresh accumulation
@@ -2257,15 +2257,32 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         console.log("🧠 [EncounterView] REST API suggestions received:", data);
 
         if (data.aiSuggestions?.realTimePrompts?.length > 0) {
-          const suggestionsText = `🩺 REST API CLINICAL INSIGHTS:\n\n${data.aiSuggestions.realTimePrompts.join('\n')}`;
-          setGptSuggestions(suggestionsText);
+          // Implement accumulative behavior like WebSocket system
+          setGptSuggestions((prevSuggestions) => {
+            const newInsights = data.aiSuggestions.realTimePrompts.join('\n');
+            
+            // Check if this is the first suggestion or we're adding to existing ones
+            if (!prevSuggestions || prevSuggestions === "AI analysis will appear here...") {
+              // First suggestion - add header
+              return `🩺 REST API CLINICAL INSIGHTS:\n\n${newInsights}`;
+            } else {
+              // Accumulate new suggestions with existing ones, add separator
+              return `${prevSuggestions}\n\n${newInsights}`;
+            }
+          });
           
           toast({
             title: "AI Suggestions Generated",
-            description: `Generated ${data.aiSuggestions.realTimePrompts.length} insights using ${data.model}`,
+            description: `Added ${data.aiSuggestions.realTimePrompts.length} new insights using ${data.model}`,
           });
         } else {
-          setGptSuggestions("No specific suggestions generated for current content.");
+          setGptSuggestions((prevSuggestions) => {
+            if (!prevSuggestions || prevSuggestions === "AI analysis will appear here...") {
+              return "🩺 REST API CLINICAL INSIGHTS:\n\nNo specific suggestions generated for current content.";
+            } else {
+              return `${prevSuggestions}\n\nNo additional suggestions for current input.`;
+            }
+          });
         }
       } else {
         const errorData = await response.json();
@@ -2756,14 +2773,26 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   </button>
                 </div>
               </div>
-              <Button
-                onClick={useRestAPI ? generateRestAPISuggestions : generateSmartSuggestions}
-                size="sm"
-                variant="outline"
-                disabled={useRestAPI && (!transcription || transcription.length < 15)}
-              >
-                {useRestAPI ? 'Refresh Suggestions' : 'Generate Suggestions'}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={useRestAPI ? generateRestAPISuggestions : generateSmartSuggestions}
+                  size="sm"
+                  variant="outline"
+                  disabled={useRestAPI && (!transcription || transcription.length < 15)}
+                >
+                  {useRestAPI ? 'Add Suggestions' : 'Generate Suggestions'}
+                </Button>
+                {useRestAPI && (
+                  <Button
+                    onClick={() => setGptSuggestions("")}
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="text-gray-500 text-sm whitespace-pre-line">
               {gptSuggestions || "AI analysis will appear here..."}
