@@ -1105,14 +1105,17 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         });
 
         setIsRecording(true);
+      
+      // Add WebSocket to global reference for cleanup
+      (window as any).currentRealtimeWs = realtimeWs.current;
     } catch (error: any) {
       console.error("❌ [NursingView] Failed to start recording:", error);
+      setIsRecording(false);
       toast({
-        variant: "destructive", 
-        title: "Recording Failed",
+        variant: "destructive",
+        title: "Recording Failed", 
         description: "Unable to start voice transcription",
       });
-      setIsRecording(false);
     }
   };
 
