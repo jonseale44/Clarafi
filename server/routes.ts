@@ -378,75 +378,58 @@ async function generateSOAPNoteDirect(
 ): Promise<string> {
   console.log(`🩺 [DirectSOAP] Generating SOAP note for patient ${patientId}`);
 
-  // Get patient context
-  const [
-    patient,
-    diagnosisList,
-    meds,
-    allergiesList,
-    encounterVitalsList,
-    recentEncounters,
-  ] = await Promise.all([
-    db.select().from(patients).where(eq(patients.id, patientId)).limit(1),
-    db.select().from(diagnoses).where(eq(diagnoses.patientId, patientId)),
-    db.select().from(medications).where(eq(medications.patientId, patientId)),
-    db.select().from(allergies).where(eq(allergies.patientId, patientId)),
-    db
-      .select()
-      .from(vitals)
-      .where(and(eq(vitals.patientId, patientId), eq(vitals.encounterId, parseInt(encounterId))))
-      .orderBy(desc(vitals.recordedAt)),
-    db
-      .select()
-      .from(encountersTable)
-      .where(eq(encountersTable.patientId, patientId))
-      .orderBy(desc(encountersTable.createdAt))
-      .limit(3),
-  ]);
+  // Use patient chart service to avoid diagnoses/medical problems confusion
+  const { PatientChartService } = await import('./patient-chart-service.js');
+  const patientChart = await PatientChartService.getPatientChartData(patientId);
 
-  const patientData = patient[0];
-  if (!patientData) {
-    throw new Error(`Patient ${patientId} not found`);
+  // Get encounter-specific vitals
+  const encounterVitalsList = await db
+    .select()
+    .from(vitals)
+    .where(and(eq(vitals.patientId, patientId), eq(vitals.encounterId, parseInt(encounterId))))
+    .orderBy(desc(vitals.recordedAt));
+
+  if (!patientChart.demographics) {
+    throw new Error(`Patient ${patientId} chart data not found`);
   }
 
   const age = Math.floor(
-    (Date.now() - new Date(patientData.dateOfBirth).getTime()) /
+    (Date.now() - new Date(patientChart.demographics.dateOfBirth).getTime()) /
       (365.25 * 24 * 60 * 60 * 1000),
   );
 
-  // Build medical context
-  const currentDiagnoses =
-    diagnosisList.length > 0
-      ? diagnosisList
-          .map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`)
+  // Use medical problems instead of billing diagnoses for SOAP note context
+  const currentMedicalProblems =
+    patientChart.medicalProblems?.length > 0
+      ? patientChart.medicalProblems
+          .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
           .join("\n")
-      : "- No active diagnoses on file";
+      : "- No active medical problems documented";
 
   const currentMedications =
-    meds.length > 0
-      ? meds
+    patientChart.currentMedications?.length > 0
+      ? patientChart.currentMedications
           .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
           .join("\n")
-      : "- No current medications on file";
+      : "- No current medications documented";
 
   const knownAllergies =
-    allergiesList.length > 0
-      ? allergiesList
+    patientChart.allergies?.length > 0
+      ? patientChart.allergies
           .map((a: any) => `- ${a.allergen}: ${a.reaction}`)
           .join("\n")
       : "- NKDA (No Known Drug Allergies)";
 
-
-  // Build comprehensive medical context
+  // Build comprehensive medical context using chart data
   const medicalContext = `
 PATIENT CONTEXT:
-- Name: ${patientData.firstName} ${patientData.lastName}
+- Name: ${patientChart.demographics.firstName} ${patientChart.demographics.lastName}
 - Age: ${age} years old
-- Gender: ${patientData.gender}
-- MRN: ${patientData.mrn}
+- Gender: ${patientChart.demographics.gender}
+- MRN: ${patientChart.demographics.mrn}
 
 ACTIVE MEDICAL PROBLEMS:
-${currentDiagnoses}
+${currentMedicalProblems}
 
 CURRENT MEDICATIONS:
 ${currentMedications}

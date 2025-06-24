@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### SOAP Note Generation Technical Debt Resolution (June 24, 2025)
+- **CRITICAL FIX**: Fixed generateSOAPNoteDirect function to use PatientChartService instead of directly querying diagnoses table
+- SOAP notes now properly use medicalProblems table for "ACTIVE MEDICAL PROBLEMS" section instead of billing diagnoses
+- Eliminated the last remaining component that bypassed the standardized chart service
+- All clinical components (nursing templates, AI suggestions, SOAP generation) now consistently use PatientChartService.getPatientChartData()
+- Resolved interconnectedness issues between medical problems, encounters, and AI suggestions
+- Proper separation maintained between diagnoses table (billing codes) and medicalProblems table (longitudinal conditions)
+
 ### Database Table Confusion Resolution & AI Direct Question Enhancement (June 24, 2025)
 - **CRITICAL FIX**: Resolved diagnoses/medical problems table confusion in nursing components
 - Nursing Assessment Template: Fixed to use medicalProblems table instead of diagnoses table for PMH section
