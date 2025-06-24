@@ -115,6 +115,8 @@ Preferred communication style: Simple, everyday language.
 - Eliminated generic responses ("Assess medical problems") in favor of factual answers ("Medical problems: HTN, DM2, CKD stage 3, AFib, CHF")
 - Enhanced provider AI instructions with explicit direct question response protocol matching successful nursing implementation
 - Provider AI now has full access to patient chart data including medical problems, medications, allergies, and vitals
+- **FIXED BOTH response.create sections**: Updated all AI instruction prompts to remove restrictions on using patient history
+- Removed counterproductive "Focus ONLY on current conversation" and "Only reference past history if directly relevant" instructions
 - Both provider and nursing AI suggestions now use same direct question response patterns for consistency
 
 ### SOAP Note Generation Technical Debt Resolution (June 24, 2025)
