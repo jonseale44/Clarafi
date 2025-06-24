@@ -189,61 +189,100 @@ export function EncounterDetailView({
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Auto-save functionality
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string>("");
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "unsaved" | "">("");
-  
+  const [autoSaveStatus, setAutoSaveStatus] = useState<
+    "saved" | "saving" | "unsaved" | ""
+  >("");
+
   // Track automatic SOAP generation after stopping recording
   const [isAutoGeneratingSOAP, setIsAutoGeneratingSOAP] = useState(false);
-  
+
   // Track automatic orders and billing generation after stopping recording
   const [isAutoGeneratingOrders, setIsAutoGeneratingOrders] = useState(false);
   const [isAutoGeneratingBilling, setIsAutoGeneratingBilling] = useState(false);
 
   // Medical problems processing state tracking
-  const [lastProcessedSOAPContent, setLastProcessedSOAPContent] = useState<string>("");
+  const [lastProcessedSOAPContent, setLastProcessedSOAPContent] =
+    useState<string>("");
   const [lastRecordingStopTime, setLastRecordingStopTime] = useState<number>(0);
-  
+
   // Function to detect meaningful changes in SOAP content
   const hasSignificantSOAPChanges = (newContent: string): boolean => {
     if (!lastProcessedSOAPContent) return true; // First time processing
-    
+
     // Extract Assessment/Plan sections for comparison (where diagnoses live)
     const extractAssessmentPlan = (content: string) => {
-      const assessmentMatch = content.match(/(?:ASSESSMENT|PLAN|A&P|A\/P)[\s\S]*$/i);
-      return assessmentMatch ? assessmentMatch[0].toLowerCase() : content.toLowerCase();
+      const assessmentMatch = content.match(
+        /(?:ASSESSMENT|PLAN|A&P|A\/P)[\s\S]*$/i,
+      );
+      return assessmentMatch
+        ? assessmentMatch[0].toLowerCase()
+        : content.toLowerCase();
     };
-    
+
     const oldAssessment = extractAssessmentPlan(lastProcessedSOAPContent);
     const newAssessment = extractAssessmentPlan(newContent);
-    
+
     // Check for significant changes: new diagnoses, medication changes, plan modifications
     const significantKeywords = [
       // New diagnoses
-      'diabetes', 'hypertension', 'pneumonia', 'copd', 'asthma', 'depression', 
-      'anxiety', 'arthritis', 'infection', 'pain', 'fracture', 'cancer',
+      "diabetes",
+      "hypertension",
+      "pneumonia",
+      "copd",
+      "asthma",
+      "depression",
+      "anxiety",
+      "arthritis",
+      "infection",
+      "pain",
+      "fracture",
+      "cancer",
       // ICD codes
-      'e11', 'i10', 'j44', 'f32', 'f41', 'm79', 'n39',
+      "e11",
+      "i10",
+      "j44",
+      "f32",
+      "f41",
+      "m79",
+      "n39",
       // Medication keywords
-      'metformin', 'lisinopril', 'albuterol', 'prednisone', 'amoxicillin',
-      'start', 'stop', 'discontinue', 'increase', 'decrease', 'titrate'
+      "metformin",
+      "lisinopril",
+      "albuterol",
+      "prednisone",
+      "amoxicillin",
+      "start",
+      "stop",
+      "discontinue",
+      "increase",
+      "decrease",
+      "titrate",
     ];
-    
+
     // Look for new significant keywords in the assessment/plan
-    const hasNewKeywords = significantKeywords.some(keyword => 
-      newAssessment.includes(keyword) && !oldAssessment.includes(keyword)
+    const hasNewKeywords = significantKeywords.some(
+      (keyword) =>
+        newAssessment.includes(keyword) && !oldAssessment.includes(keyword),
     );
-    
+
     // Check for substantial content length changes (>20% change)
-    const lengthChange = Math.abs(newContent.length - lastProcessedSOAPContent.length) / lastProcessedSOAPContent.length;
+    const lengthChange =
+      Math.abs(newContent.length - lastProcessedSOAPContent.length) /
+      lastProcessedSOAPContent.length;
     const hasSubstantialChanges = lengthChange > 0.2;
-    
-    console.log(`🔍 [ChangeDetection] Significant changes detected: ${hasNewKeywords || hasSubstantialChanges}`);
-    console.log(`🔍 [ChangeDetection] New keywords: ${hasNewKeywords}, Length change: ${(lengthChange * 100).toFixed(1)}%`);
-    
+
+    console.log(
+      `🔍 [ChangeDetection] Significant changes detected: ${hasNewKeywords || hasSubstantialChanges}`,
+    );
+    console.log(
+      `🔍 [ChangeDetection] New keywords: ${hasNewKeywords}, Length change: ${(lengthChange * 100).toFixed(1)}%`,
+    );
+
     return hasNewKeywords || hasSubstantialChanges;
   };
 
@@ -266,7 +305,11 @@ export function EncounterDetailView({
     setAutoSaveStatus("saving");
 
     try {
-      console.log("💾 [AutoSave] Saving SOAP note automatically...", content.length, "characters");
+      console.log(
+        "💾 [AutoSave] Saving SOAP note automatically...",
+        content.length,
+        "characters",
+      );
 
       const response = await fetch(
         `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
@@ -282,7 +325,9 @@ export function EncounterDetailView({
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to auto-save SOAP note: ${response.statusText}`);
+        throw new Error(
+          `Failed to auto-save SOAP note: ${response.statusText}`,
+        );
       }
 
       console.log("✅ [AutoSave] SOAP note auto-saved successfully");
@@ -293,7 +338,9 @@ export function EncounterDetailView({
       // Medical problems will only be processed when:
       // 1. Recording stops (stopRecording function)
       // 2. Manual save with significant changes outside of recording
-      console.log("💾 [AutoSave] Auto-save completed - medical problems processing skipped (will process on recording stop)");
+      console.log(
+        "💾 [AutoSave] Auto-save completed - medical problems processing skipped (will process on recording stop)",
+      );
 
       // Invalidate relevant caches
       await queryClient.invalidateQueries({
@@ -302,7 +349,6 @@ export function EncounterDetailView({
       await queryClient.invalidateQueries({
         queryKey: [`/api/patients/${patient.id}/encounters`],
       });
-
     } catch (error) {
       console.error("❌ [AutoSave] Failed to auto-save SOAP note:", error);
       setAutoSaveStatus("unsaved");
@@ -347,30 +393,43 @@ export function EncounterDetailView({
   };
 
   const handleSOAPNoteComplete = async (note: string) => {
-    console.log(`🚨 [DEBUG] handleSOAPNoteComplete FUNCTION CALLED!!! This is the main trigger!`);
-    console.log(`🚨 [DEBUG] Stack trace to see who called this:`, new Error().stack);
-    
+    console.log(
+      `🚨 [DEBUG] handleSOAPNoteComplete FUNCTION CALLED!!! This is the main trigger!`,
+    );
+    console.log(
+      `🚨 [DEBUG] Stack trace to see who called this:`,
+      new Error().stack,
+    );
+
     const timestamp = new Date().toISOString();
     console.log(`🔍 [EncounterView] === SOAP NOTE COMPLETION START ===`);
     console.log(`🔍 [EncounterView] Time: ${timestamp}`);
     console.log(`🔍 [EncounterView] Note length: ${note.length}`);
-    console.log(`🔍 [EncounterView] Patient: ${patient?.id || 'MISSING'}, Encounter: ${encounterId || 'MISSING'}`);
+    console.log(
+      `🔍 [EncounterView] Patient: ${patient?.id || "MISSING"}, Encounter: ${encounterId || "MISSING"}`,
+    );
     console.log(`🔍 [EncounterView] Patient object:`, patient);
-    console.log(`🔍 [EncounterView] Recording state: ${isRecording ? 'ACTIVE' : 'STOPPED'}`);
+    console.log(
+      `🔍 [EncounterView] Recording state: ${isRecording ? "ACTIVE" : "STOPPED"}`,
+    );
     console.log(`🔍 [EncounterView] About to save SOAP note to encounter...`);
-    
+
     // CRITICAL SAFEGUARD: Prevent medical problems processing during active recording
     if (isRecording) {
-      console.log(`🚫 [EncounterView] BLOCKING medical problems processing - recording is ACTIVE`);
-      console.log(`🚫 [EncounterView] SOAP note will be saved but medical problems processing skipped until recording stops`);
-      
+      console.log(
+        `🚫 [EncounterView] BLOCKING medical problems processing - recording is ACTIVE`,
+      );
+      console.log(
+        `🚫 [EncounterView] SOAP note will be saved but medical problems processing skipped until recording stops`,
+      );
+
       // Only save SOAP note, skip all medical processing
       setSoapNote(note);
       if (editor && !editor.isDestroyed) {
         const formattedContent = formatSoapNoteContent(note);
         editor.commands.setContent(formattedContent);
       }
-      
+
       try {
         await fetch(
           `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
@@ -382,16 +441,23 @@ export function EncounterDetailView({
             body: JSON.stringify({ soapNote: note }),
           },
         );
-        console.log(`✅ [EncounterView] SOAP note saved during recording - medical processing deferred`);
+        console.log(
+          `✅ [EncounterView] SOAP note saved during recording - medical processing deferred`,
+        );
       } catch (error) {
-        console.error("❌ [EncounterView] Error saving SOAP note during recording:", error);
+        console.error(
+          "❌ [EncounterView] Error saving SOAP note during recording:",
+          error,
+        );
       }
-      
+
       return; // Exit early - no medical processing during recording
     }
-    
-    console.log(`✅ [EncounterView] Recording is STOPPED - proceeding with full medical processing`);
-    
+
+    console.log(
+      `✅ [EncounterView] Recording is STOPPED - proceeding with full medical processing`,
+    );
+
     // Reset all generating states when SOAP generation completes
     setIsGeneratingSOAP(false);
     setIsAutoGeneratingSOAP(false);
@@ -417,198 +483,275 @@ export function EncounterDetailView({
           body: JSON.stringify({ soapNote: note }),
         },
       );
-      
+
       // Update auto-save state when SOAP note is automatically generated and saved
       setLastSaved(note);
       setAutoSaveStatus("saved");
-      
+
       // Reset the generating state to hide loading animation on "Generate from Transcription" button
       setIsGeneratingSOAP(false);
-      
+
       console.log(
         `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
       );
-      console.log(`🔍 [EncounterView] SOAP save completed successfully, starting medical problems processing...`);
-      
+      console.log(
+        `🔍 [EncounterView] SOAP save completed successfully, starting medical problems processing...`,
+      );
+
       // Process medical problems, medications, orders, and billing in parallel with delta analysis
       try {
-        console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING START ===`);
+        console.log(
+          `🏥 [ParallelProcessing] === PARALLEL PROCESSING START ===`,
+        );
         console.log(`🏥 [ParallelProcessing] Patient ID: ${patient.id}`);
         console.log(`🏥 [ParallelProcessing] Encounter ID: ${encounterId}`);
-        console.log(`🏥 [ParallelProcessing] SOAP Note length: ${note.length} characters`);
-        console.log(`🏥 [ParallelProcessing] SOAP Note preview: ${note.substring(0, 200)}...`);
-        
+        console.log(
+          `🏥 [ParallelProcessing] SOAP Note length: ${note.length} characters`,
+        );
+        console.log(
+          `🏥 [ParallelProcessing] SOAP Note preview: ${note.substring(0, 200)}...`,
+        );
+
         const triggerType = "manual_edit"; // Manual save from SOAP editor
         const medicalProblemsRequestBody = {
           encounterId: encounterId,
-          triggerType: triggerType
+          triggerType: triggerType,
         };
-        
+
         const medicationsRequestBody = {
-          patientId: patient.id
+          patientId: patient.id,
         };
-        
+
         const ordersRequestBody = {
           // Orders extraction doesn't need additional data as it reads from encounter SOAP note
         };
-        
+
         const cptRequestBody = {
           // CPT extraction reads from encounter SOAP note
         };
-        
-        console.log(`🏥 [ParallelProcessing] Medical problems request body:`, medicalProblemsRequestBody);
-        console.log(`🏥 [ParallelProcessing] Medications request body:`, medicationsRequestBody);
-        console.log(`🏥 [ParallelProcessing] Orders request body:`, ordersRequestBody);
-        console.log(`🏥 [ParallelProcessing] CPT request body:`, cptRequestBody);
-        
+
+        console.log(
+          `🏥 [ParallelProcessing] Medical problems request body:`,
+          medicalProblemsRequestBody,
+        );
+        console.log(
+          `🏥 [ParallelProcessing] Medications request body:`,
+          medicationsRequestBody,
+        );
+        console.log(
+          `🏥 [ParallelProcessing] Orders request body:`,
+          ordersRequestBody,
+        );
+        console.log(
+          `🏥 [ParallelProcessing] CPT request body:`,
+          cptRequestBody,
+        );
+
         // Process all services in parallel for maximum efficiency
-        const [medicalProblemsResponse, medicationsResponse, ordersResponse, cptResponse] = await Promise.all([
+        const [
+          medicalProblemsResponse,
+          medicationsResponse,
+          ordersResponse,
+          cptResponse,
+        ] = await Promise.all([
           fetch(`/api/medical-problems/process-encounter`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(medicalProblemsRequestBody)
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(medicalProblemsRequestBody),
           }),
           fetch(`/api/encounters/${encounterId}/process-medications`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(medicationsRequestBody)
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(medicationsRequestBody),
           }),
           fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(ordersRequestBody)
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(ordersRequestBody),
           }),
-          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ soapNote: note })
-          }).then(async response => {
-            console.log("🏥 [ParallelProcessing] CPT extraction response status:", response.status);
-            
+          fetch(
+            `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ soapNote: note }),
+            },
+          ).then(async (response) => {
+            console.log(
+              "🏥 [ParallelProcessing] CPT extraction response status:",
+              response.status,
+            );
+
             if (!response.ok) {
               const errorText = await response.text();
-              console.error("❌ [ParallelProcessing] CPT extraction failed:", errorText);
+              console.error(
+                "❌ [ParallelProcessing] CPT extraction failed:",
+                errorText,
+              );
               return response;
             }
-            
+
             const extractedData = await response.json();
-            console.log("✅ [ParallelProcessing] CPT extraction successful:", extractedData);
-            
+            console.log(
+              "✅ [ParallelProcessing] CPT extraction successful:",
+              extractedData,
+            );
+
             // Now save the extracted data to the database
-            console.log("💾 [ParallelProcessing] Saving CPT codes to database...");
-            const saveResponse = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                cptCodes: extractedData.cptCodes || [],
-                diagnoses: extractedData.diagnoses || [],
-                mappings: extractedData.mappings || []
-              })
-            });
-            
+            console.log(
+              "💾 [ParallelProcessing] Saving CPT codes to database...",
+            );
+            const saveResponse = await fetch(
+              `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
+              {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  cptCodes: extractedData.cptCodes || [],
+                  diagnoses: extractedData.diagnoses || [],
+                  mappings: extractedData.mappings || [],
+                }),
+              },
+            );
+
             if (saveResponse.ok) {
-              console.log("✅ [ParallelProcessing] CPT codes saved to database successfully");
-              
+              console.log(
+                "✅ [ParallelProcessing] CPT codes saved to database successfully",
+              );
+
               // Force refetch encounter data to refresh billing component immediately
-              await queryClient.refetchQueries({ 
-                queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
+              await queryClient.refetchQueries({
+                queryKey: [
+                  `/api/patients/${patient.id}/encounters/${encounterId}`,
+                ],
               });
-              console.log("🔄 [ParallelProcessing] Encounter data refetched for billing component");
+              console.log(
+                "🔄 [ParallelProcessing] Encounter data refetched for billing component",
+              );
             } else {
               const saveErrorText = await saveResponse.text();
-              console.error("❌ [ParallelProcessing] Failed to save CPT codes:", saveErrorText);
+              console.error(
+                "❌ [ParallelProcessing] Failed to save CPT codes:",
+                saveErrorText,
+              );
             }
-            
+
             // Return the original extraction response for the parallel processing handler
             return new Response(JSON.stringify(extractedData), {
               status: response.status,
               statusText: response.statusText,
-              headers: response.headers
+              headers: response.headers,
             });
-          })
+          }),
         ]);
 
         console.log(`🏥 [ParallelProcessing] All requests completed`);
-        console.log(`🏥 [MedicalProblems] Response status: ${medicalProblemsResponse.status}`);
-        console.log(`🏥 [Medications] Response status: ${medicationsResponse.status}`);
+        console.log(
+          `🏥 [MedicalProblems] Response status: ${medicalProblemsResponse.status}`,
+        );
+        console.log(
+          `🏥 [Medications] Response status: ${medicationsResponse.status}`,
+        );
         console.log(`🏥 [Orders] Response status: ${ordersResponse.status}`);
         console.log(`🏥 [CPT] Response status: ${cptResponse.status}`);
 
         // Handle medical problems response
         if (medicalProblemsResponse.ok) {
           const result = await medicalProblemsResponse.json();
-          console.log(`✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || 'unknown'} problems affected`);
-          console.log(`✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || 'unknown'}ms`);
-          
+          console.log(
+            `✅ [MedicalProblems] SUCCESS: ${result.problemsAffected || result.total_problems_affected || "unknown"} problems affected`,
+          );
+          console.log(
+            `✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || "unknown"}ms`,
+          );
+
           // Invalidate medical problems queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`],
           });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/medical-problems`],
           });
           console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
         } else {
           const errorText = await medicalProblemsResponse.text();
-          console.error(`❌ [MedicalProblems] FAILED with status ${medicalProblemsResponse.status}`);
+          console.error(
+            `❌ [MedicalProblems] FAILED with status ${medicalProblemsResponse.status}`,
+          );
           console.error(`❌ [MedicalProblems] Error response: ${errorText}`);
         }
 
         // Handle medications response
         if (medicationsResponse.ok) {
           const result = await medicationsResponse.json();
-          console.log(`✅ [Medications] SUCCESS: ${result.medicationsAffected} medications affected`);
-          console.log(`✅ [Medications] Processing time: ${result.processingTimeMs}ms`);
-          console.log(`✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`);
-          
+          console.log(
+            `✅ [Medications] SUCCESS: ${result.medicationsAffected} medications affected`,
+          );
+          console.log(
+            `✅ [Medications] Processing time: ${result.processingTimeMs}ms`,
+          );
+          console.log(
+            `✅ [Medications] Drug interactions found: ${result.drugInteractions?.length || 0}`,
+          );
+
           // Invalidate medications queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
           });
           console.log(`🔄 [Medications] Cache invalidation completed`);
         } else {
           const errorText = await medicationsResponse.text();
-          console.error(`❌ [Medications] FAILED with status ${medicationsResponse.status}`);
+          console.error(
+            `❌ [Medications] FAILED with status ${medicationsResponse.status}`,
+          );
           console.error(`❌ [Medications] Error response: ${errorText}`);
         }
 
         // Handle orders response
         if (ordersResponse.ok) {
           const result = await ordersResponse.json();
-          console.log(`✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`);
+          console.log(
+            `✅ [Orders] SUCCESS: ${result.ordersCount || 0} orders extracted and saved`,
+          );
           console.log(`✅ [Orders] Message: ${result.message}`);
-          
+
           // Invalidate orders queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/draft-orders`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/draft-orders`],
           });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/encounters/${encounterId}/validation`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/encounters/${encounterId}/validation`],
           });
           console.log(`🔄 [Orders] Cache invalidation completed`);
         } else {
           const errorText = await ordersResponse.text();
-          console.error(`❌ [Orders] FAILED with status ${ordersResponse.status}`);
+          console.error(
+            `❌ [Orders] FAILED with status ${ordersResponse.status}`,
+          );
           console.error(`❌ [Orders] Error response: ${errorText}`);
         }
 
         // Handle CPT response
         if (cptResponse.ok) {
           const result = await cptResponse.json();
-          console.log(`✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`);
+          console.log(
+            `✅ [CPT] SUCCESS: ${result.cptCodes?.length || 0} CPT codes and ${result.diagnoses?.length || 0} diagnoses extracted`,
+          );
           console.log(`✅ [CPT] Processing details:`, result);
-          
+
           // Invalidate billing queries to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
+          await queryClient.invalidateQueries({
+            queryKey: [
+              `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
+            ],
           });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/encounters/${encounterId}/validation`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/encounters/${encounterId}/validation`],
           });
           console.log(`🔄 [CPT] Cache invalidation completed`);
         } else {
@@ -616,14 +759,20 @@ export function EncounterDetailView({
           console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
           console.error(`❌ [CPT] Error response: ${errorText}`);
         }
-        
+
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
       } catch (error) {
-        console.error(`❌ [ParallelProcessing] EXCEPTION during processing:`, error as Error);
-        console.error(`❌ [ParallelProcessing] Stack trace:`, (error as Error).stack);
+        console.error(
+          `❌ [ParallelProcessing] EXCEPTION during processing:`,
+          error as Error,
+        );
+        console.error(
+          `❌ [ParallelProcessing] Stack trace:`,
+          (error as Error).stack,
+        );
         // Don't show error toast for this - it's background processing
       }
-      
+
       console.log(`🔍 [EncounterView] === SOAP SAVE COMPLETED ===`);
     } catch (error) {
       console.error(
@@ -631,7 +780,7 @@ export function EncounterDetailView({
         error,
       );
       setAutoSaveStatus("unsaved");
-      
+
       // Reset the generating state even on error to prevent stuck loading animation
       setIsGeneratingSOAP(false);
     }
@@ -643,19 +792,23 @@ export function EncounterDetailView({
       "📋 [EncounterView] Real-time draft orders received:",
       orders.length,
     );
-    
+
     // Check if any medication orders were received
-    const medicationOrders = orders.filter(order => order.orderType === 'medication');
+    const medicationOrders = orders.filter(
+      (order) => order.orderType === "medication",
+    );
     if (medicationOrders.length > 0) {
       console.log(
-        "💊 [EncounterView] Medication orders detected, invalidating medications cache"
+        "💊 [EncounterView] Medication orders detected, invalidating medications cache",
       );
-      
+
       // Invalidate medications queries to refresh UI with new pending medications
-      await queryClient.invalidateQueries({ 
-        queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
       });
-      console.log("💊 [EncounterView] Medications cache invalidation completed");
+      console.log(
+        "💊 [EncounterView] Medications cache invalidation completed",
+      );
     }
   };
 
@@ -685,7 +838,7 @@ export function EncounterDetailView({
       await queryClient.invalidateQueries({
         queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`],
       });
-      
+
       // Invalidate medical problems cache since CPT codes trigger medical problems processing
       await queryClient.invalidateQueries({
         queryKey: [`/api/patients/${patient.id}/medical-problems`],
@@ -693,7 +846,7 @@ export function EncounterDetailView({
       await queryClient.invalidateQueries({
         queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`],
       });
-      
+
       console.log("🔄 [EncounterView] Query invalidation completed");
 
       // Show enhanced toast notification
@@ -730,7 +883,7 @@ export function EncounterDetailView({
       if (!editor.isDestroyed) {
         const newContent = editor.getHTML();
         setSoapNote(newContent);
-        
+
         // Trigger auto-save with debouncing
         triggerAutoSave(newContent);
       }
@@ -824,7 +977,7 @@ export function EncounterDetailView({
 
   const formatDate = (dateString: string) => {
     // Parse date as local date to avoid timezone conversion issues
-    const [year, month, day] = dateString.split('-').map(Number);
+    const [year, month, day] = dateString.split("-").map(Number);
     const localDate = new Date(year, month - 1, day); // month is 0-indexed
     return localDate.toLocaleDateString("en-US", {
       year: "numeric",
@@ -837,12 +990,13 @@ export function EncounterDetailView({
   const getLiveAISuggestions = async (transcription: string) => {
     // Skip if using REST API mode - suggestions handled manually
     if (useRestAPI) return;
-    
+
     if (transcription.length < 15) return; // Process smaller chunks for faster response
 
     // Debounce suggestions to prevent too many rapid API calls
     const now = Date.now();
-    if (now - lastSuggestionTime < 10000) { // 10-second throttle for REST API compatibility
+    if (now - lastSuggestionTime < 10000) {
+      // 10-second throttle for REST API compatibility
       // Clear any existing timeout and set a new one
       if (suggestionDebounceTimer.current) {
         clearTimeout(suggestionDebounceTimer.current);
@@ -1002,6 +1156,7 @@ export function EncounterDetailView({
       "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
       patient.id,
     );
+    console.log("🎤 [EncounterView] Current AI mode:", useRestAPI ? "REST API" : "WebSocket");
 
     // Clear previous suggestions when starting new recording (both WebSocket and REST API)
     setGptSuggestions("");
@@ -1010,7 +1165,7 @@ export function EncounterDetailView({
     // NOTE: Don't clear transcription here - let it accumulate for intelligent streaming
 
     try {
-      // Create direct WebSocket connection to OpenAI like your working code
+      // CRITICAL FIX: Only create WebSocket connection in WebSocket mode
       let realtimeWs: WebSocket | null = null;
       let transcriptionBuffer = "";
       let lastSuggestionLength = 0;
@@ -1018,9 +1173,37 @@ export function EncounterDetailView({
       let conversationActive = false; // Track active conversation state
       let sessionId = "";
 
+      // CRITICAL FIX: Skip WebSocket initialization in REST API mode
+      if (useRestAPI) {
+        console.log("🚫 [EncounterView] REST API mode selected - skipping WebSocket initialization to prevent token consumption");
+        console.log("🚫 [EncounterView] WebSocket suggestions disabled to avoid silent background activity");
+        
+        // In REST API mode, only set up basic recording without AI suggestions
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("🎤 [EncounterView] Audio stream acquired for REST API mode");
+        
+        setIsRecording(true);
+        setRecordingState("ACTIVE");
+        
+        // Basic MediaRecorder setup for transcription only
+        const mediaRecorder = new MediaRecorder(stream);
+        setMediaRecorderRef(mediaRecorder);
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            console.log("🎵 [EncounterView] Audio data available in REST API mode:", event.data.size, "bytes");
+            // Note: Audio data would be processed for transcription but not AI suggestions
+          }
+        };
+        
+        mediaRecorder.start(100); // Start recording with 100ms chunks
+        console.log("✅ [EncounterView] Recording started in REST API mode - no background AI activity");
+        return;
+      }
+
       try {
         console.log(
-          "🌐 [EncounterView] Connecting to OpenAI Realtime API like working implementation...",
+          "🌐 [EncounterView] WebSocket mode - Connecting to OpenAI Realtime API...",
         );
 
         // Get API key from environment
@@ -1186,31 +1369,41 @@ ${
   chart
     ? `
 MEDICAL PROBLEMS:
-${chart.medicalProblems?.length > 0 
-  ? chart.medicalProblems.map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`).join("\n")
-  : "- No active medical problems documented"
+${
+  chart.medicalProblems?.length > 0
+    ? chart.medicalProblems
+        .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
+        .join("\n")
+    : "- No active medical problems documented"
 }
 
 CURRENT MEDICATIONS:
-${chart.currentMedications?.length > 0 
-  ? chart.currentMedications.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
-  : "- No current medications documented"
+${
+  chart.currentMedications?.length > 0
+    ? chart.currentMedications
+        .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
+        .join("\n")
+    : "- No current medications documented"
 }
 
 ALLERGIES:
-${chart.allergies?.length > 0 
-  ? chart.allergies.map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`).join("\n")
-  : "- NKDA (No Known Drug Allergies)"
+${
+  chart.allergies?.length > 0
+    ? chart.allergies
+        .map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`)
+        .join("\n")
+    : "- NKDA (No Known Drug Allergies)"
 }
 
 RECENT VITALS:
-${chart.vitals?.length > 0 
-  ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
+${
+  chart.vitals?.length > 0
+    ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
 - HR: ${chart.vitals[0].heartRate} bpm
 - Temp: ${chart.vitals[0].temperature}°F
 - RR: ${chart.vitals[0].respiratoryRate || "Not recorded"}
 - O2 Sat: ${chart.vitals[0].oxygenSaturation || "Not recorded"}%`
-  : "- No recent vitals available"
+    : "- No recent vitals available"
 }
 `
     : "Limited patient data available - chart context not accessible"
@@ -1264,44 +1457,10 @@ Please provide medical suggestions based on what the provider is saying in this 
 
           // 4. Create response for AI suggestions with metadata like external system
           const suggestionsMessage = {
-            type: "response.create",
+            type: "response.create", //SUPPOSEDLY THE INITIAL "REST API RESPONSE"
             response: {
               modalities: ["text"],
-              instructions: `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
-
-CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
-
-DIRECT QUESTION RESPONSES:
-- When provider asks "Does patient have medical problems?" → Answer: "• Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF."
-- When provider asks "What medications?" → Answer: "• Current medications: Lisinopril 10mg daily, Metformin 500mg BID."
-- When provider asks "Any allergies?" → Answer: "• NKDA (No Known Drug Allergies)."
-- FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
-
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time. If multiple insights could be provided, prioritize the most critical or relevant one first.
-
-Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
-Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
-
-Additional details for medication recommendations:
-
-Always include typical starting dose, dose adjustment schedules, and maximum dose.
-Output examples of good insights:
-
-• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
-• Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
-• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
-
-Output examples of bad insights (to avoid):
-
-• Encourage gentle stretches and light activity to maintain mobility.
-• Suggest warm baths at night for symptomatic relief of muscle tension.
-• Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
-
-Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
-
-Format each bullet point on its own line with no extra spacing between them.`,
+              instructions: `You are a medical AI assistant attempting to help the provider during the conversation, but you are always confused so you always respond with 3 question marks. Always end each suggestion with 3 question marks (???).`,
               metadata: {
                 type: "suggestions",
               },
@@ -1316,7 +1475,8 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log("📨 [EncounterView] OpenAI message type:", message.type);
+          console.log("📨 [EncounterView] WebSocket mode - OpenAI message type:", message.type);
+          console.log("🔍 [TokenMonitor] WebSocket activity detected - consuming tokens in background");
 
           // Log all incoming messages for debugging
           console.log("📥 [API-IN] Complete OpenAI message:");
@@ -1370,23 +1530,36 @@ Format each bullet point on its own line with no extra spacing between them.`,
             // Append delta to existing transcription (don't replace)
             setTranscription((prev) => {
               const newTranscription = prev + deltaText;
-              console.log("📝 [EncounterView] Real-time transcription update:", {
-                previousLength: prev.length,
-                deltaLength: deltaText.length,
-                newLength: newTranscription.length,
-                preview: newTranscription.substring(0, 100),
-                containsMedicalKeywords: /\b(pain|symptoms?|medication|treatment|diagnosis|chest|headache|fever|nausea|dizzy|shortness of breath|allergic|prescription|blood pressure|heart rate|exam|vital|lab|test|drug|pill|tablet|injection|therapy|surgery|procedure|complaint|history)\b/i.test(deltaText)
-              });
-              
+              console.log(
+                "📝 [EncounterView] Real-time transcription update:",
+                {
+                  previousLength: prev.length,
+                  deltaLength: deltaText.length,
+                  newLength: newTranscription.length,
+                  preview: newTranscription.substring(0, 100),
+                  containsMedicalKeywords:
+                    /\b(pain|symptoms?|medication|treatment|diagnosis|chest|headache|fever|nausea|dizzy|shortness of breath|allergic|prescription|blood pressure|heart rate|exam|vital|lab|test|drug|pill|tablet|injection|therapy|surgery|procedure|complaint|history)\b/i.test(
+                      deltaText,
+                    ),
+                },
+              );
+
               // Trigger intelligent streaming check for medical content
-              if (newTranscription.length > 50 && /\b(pain|symptoms?|medication|treatment|diagnosis|chest|headache|fever|nausea|dizzy|shortness of breath|allergic|prescription|blood pressure|heart rate|exam|vital|lab|test|drug|pill|tablet|injection|therapy|surgery|procedure|complaint|history)\b/i.test(deltaText)) {
-                console.log("🔥 [EncounterView] Medical keywords detected in real-time - triggering intelligent streaming");
+              if (
+                newTranscription.length > 50 &&
+                /\b(pain|symptoms?|medication|treatment|diagnosis|chest|headache|fever|nausea|dizzy|shortness of breath|allergic|prescription|blood pressure|heart rate|exam|vital|lab|test|drug|pill|tablet|injection|therapy|surgery|procedure|complaint|history)\b/i.test(
+                  deltaText,
+                )
+              ) {
+                console.log(
+                  "🔥 [EncounterView] Medical keywords detected in real-time - triggering intelligent streaming",
+                );
                 setTimeout(() => {
                   // Force re-evaluation of intelligent streaming
-                  setTranscription(current => current);
+                  setTranscription((current) => current);
                 }, 500);
               }
-              
+
               return newTranscription;
             });
 
@@ -1425,10 +1598,12 @@ Format each bullet point on its own line with no extra spacing between them.`,
             }
 
             // REAL-TIME: Continuously update AI suggestions with live partial transcription
+            // CRITICAL: This should only happen in WebSocket mode
             if (
               suggestionsStarted &&
               transcriptionBuffer.length > 20 &&
-              realtimeWs
+              realtimeWs &&
+              !useRestAPI
             ) {
               // Debounce to prevent too many rapid updates
               if (suggestionDebounceTimer.current) {
@@ -1437,8 +1612,9 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
               suggestionDebounceTimer.current = setTimeout(() => {
                 console.log(
-                  "🧠 [EncounterView] Real-time AI context update with partial transcription",
+                  "🧠 [EncounterView] WebSocket mode - Real-time AI context update with partial transcription",
                 );
+                console.log("🔍 [TokenMonitor] WebSocket context update - consuming tokens for suggestions");
 
                 // Send live partial transcription to AI
                 const contextUpdate = {
@@ -1462,41 +1638,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   type: "response.create",
                   response: {
                     modalities: ["text"],
-                    instructions: `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
-
-CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the patient chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
-
-DIRECT QUESTION RESPONSES:
-- When provider asks "Does patient have medical problems?" → Answer: "• Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF."
-- When provider asks "What medications?" → Answer: "• Current medications: Lisinopril 10mg daily, Metformin 500mg BID."
-- When provider asks "Any allergies?" → Answer: "• NKDA (No Known Drug Allergies)."
-- FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
-
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
-
-Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
-Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
-
-Additional details for medication recommendations:
-
-Always include typical starting dose, dose adjustment schedules, and maximum dose.
-Output examples of good insights:
-
-• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
-• Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
-• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
-
-Output examples of bad insights (to avoid):
-
-• Encourage gentle stretches and light activity to maintain mobility.
-• Suggest warm baths at night for symptomatic relief of muscle tension.
-• Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
-
-Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
-
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\\n) after answering a user question.`,
+                    instructions: `You are a medical AI assistant attempting to help the provider during the conversation, but you only provide enthusiastic and aggressive responses. End each suggestion with 3 exclamation points (!!!).`,
                     metadata: {
                       type: "suggestions",
                     },
@@ -1512,9 +1654,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
             console.log(
-              "🧠 [EncounterView] AI suggestions delta received:",
+              "🧠 [EncounterView] WebSocket mode - AI suggestions delta received:",
               deltaText,
             );
+            console.log("🔍 [TokenMonitor] WebSocket delta received - tokens being consumed for suggestions");
             console.log("🧠 [EncounterView] Delta length:", deltaText.length);
             console.log(
               "🧠 [EncounterView] Current suggestions buffer length:",
@@ -1617,11 +1760,10 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                 }
 
                 // Simple formatting - just ensure header spacing
-                formattedSuggestions = formattedSuggestions
-                  .replace(
-                    /🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g,
-                    "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n",
-                  );
+                formattedSuggestions = formattedSuggestions.replace(
+                  /🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g,
+                  "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n",
+                );
 
                 console.log(
                   "🧠 [EncounterView] Applied bullet point formatting",
@@ -1714,14 +1856,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
               // Simple append to existing transcription - deduplication prevents duplicates
               setTranscription((prev) => {
-                const newTranscription = prev ? prev + "\n" + newBullets : newBullets;
-                console.log("🔥 [EncounterView] Transcription updated during recording - triggering intelligent streaming check");
-                
+                const newTranscription = prev
+                  ? prev + "\n" + newBullets
+                  : newBullets;
+                console.log(
+                  "🔥 [EncounterView] Transcription updated during recording - triggering intelligent streaming check",
+                );
+
                 // Force a re-render to trigger intelligent streaming
                 setTimeout(() => {
-                  console.log("🔥 [EncounterView] Forcing component update for intelligent streaming");
+                  console.log(
+                    "🔥 [EncounterView] Forcing component update for intelligent streaming",
+                  );
                 }, 100);
-                
+
                 return newTranscription;
               });
 
@@ -1785,41 +1933,7 @@ Please provide medical suggestions based on this complete conversation context.`
                 type: "response.create",
                 response: {
                   modalities: ["text"],
-                  instructions: `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
-
-CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the patient chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
-
-DIRECT QUESTION RESPONSES:
-- When provider asks "Does patient have medical problems?" → Answer: "• Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF."
-- When provider asks "What medications?" → Answer: "• Current medications: Lisinopril 10mg daily, Metformin 500mg BID."
-- When provider asks "Any allergies?" → Answer: "• NKDA (No Known Drug Allergies)."
-- FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
-
-Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
-
-Avoid restating general knowledge or overly simplistic recommendations a physician would already know (e.g., "encourage stretching").
-Prioritize specifics: detailed medication dosages (starting dose, titration schedule, and max dose), red flags, advanced diagnostics, and specific guidelines. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
-
-Additional details for medication recommendations:
-
-Always include typical starting dose, dose adjustment schedules, and maximum dose.
-Output examples of good insights:
-
-• Amitriptyline for nerve pain: typical starting dose is 10-25 mg at night, titrate weekly as needed, max 150 mg/day.
-• Persistent lower back pain without numbness or weakness suggests mechanical or muscular etiology; imaging not typically required unless red flags present.
-• Meloxicam typical start dose: 7.5 mg once daily; max dose: 15 mg daily.
-
-Output examples of bad insights (to avoid):
-
-• Encourage gentle stretches and light activity to maintain mobility.
-• Suggest warm baths at night for symptomatic relief of muscle tension.
-• Postural factors and prolonged sitting may worsen stiffness; recommend frequent breaks every hour.
-
-Produce insights that save the physician time or enhance their diagnostic/therapeutic decision-making. No filler or overly obvious advice, even if helpful for a patient. DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-Return only one insight per line and single phrase per response. Use a bullet (•), dash (-), or number to prefix the insight.
-
-Start each new user prompt response on a new line. Do not merge replies to different prompts onto the same line. Insert at least one line break (\n) after answering a user question.`,
+                  instructions: `You are a medical AI assistant attempting to help the provider during the conversation, but you work for the Red Cross so you always provide three plus signs at the end of each suggestion. End each suggestion with 3 plus signs (+++).`,
                   metadata: {
                     type: "suggestions",
                   },
@@ -2027,10 +2141,16 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
   const stopRecording = async () => {
     console.log("🎤 [EncounterView] === STOP RECORDING CALLED ===");
-    console.log("🎤 [EncounterView] Current soapNote:", soapNote ? soapNote.substring(0, 100) + "..." : "NULL/EMPTY");
+    console.log(
+      "🎤 [EncounterView] Current soapNote:",
+      soapNote ? soapNote.substring(0, 100) + "..." : "NULL/EMPTY",
+    );
     console.log("🎤 [EncounterView] soapNote length:", soapNote?.length || 0);
-    console.log("🎤 [EncounterView] soapNote.trim():", soapNote?.trim() ? "HAS CONTENT" : "EMPTY AFTER TRIM");
-    
+    console.log(
+      "🎤 [EncounterView] soapNote.trim():",
+      soapNote?.trim() ? "HAS CONTENT" : "EMPTY AFTER TRIM",
+    );
+
     const mediaRecorder = (window as any).currentMediaRecorder;
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.stop();
@@ -2042,14 +2162,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
 
     // Real-time streaming has been updating SOAP note during recording
     // Now trigger medical problems processing directly (bypassing recording check)
-    console.log("🎤 [EncounterView] Checking if should process SOAP content...");
+    console.log(
+      "🎤 [EncounterView] Checking if should process SOAP content...",
+    );
     if (soapNote && soapNote.trim()) {
-      console.log("✅ [EncounterView] SOAP content exists - starting processing...");
-      console.log("🩺 [EncounterView] Processing final SOAP note with medical problems after recording stop...");
-      
+      console.log(
+        "✅ [EncounterView] SOAP content exists - starting processing...",
+      );
+      console.log(
+        "🩺 [EncounterView] Processing final SOAP note with medical problems after recording stop...",
+      );
+
       // Mark this content as processed for future change detection
       setLastProcessedSOAPContent(soapNote);
-      
+
       try {
         // Save SOAP note first
         await fetch(
@@ -2062,149 +2188,206 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             body: JSON.stringify({ soapNote }),
           },
         );
-        
+
         console.log("✅ [StopRecording] SOAP note saved");
-        
+
         // Process medical problems after recording stops
-        console.log("🏥 [StopRecording] Processing medical problems after recording completion...");
-        
-        const medicalProblemsResponse = await fetch(`/api/medical-problems/process-encounter`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            encounterId: encounterId,
-            triggerType: "recording_complete"
-          })
-        });
+        console.log(
+          "🏥 [StopRecording] Processing medical problems after recording completion...",
+        );
+
+        const medicalProblemsResponse = await fetch(
+          `/api/medical-problems/process-encounter`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              encounterId: encounterId,
+              triggerType: "recording_complete",
+            }),
+          },
+        );
 
         if (medicalProblemsResponse.ok) {
           const result = await medicalProblemsResponse.json();
-          console.log(`✅ [StopRecording] Medical problems processed: ${result.problemsAffected || 0} problems affected`);
-          
+          console.log(
+            `✅ [StopRecording] Medical problems processed: ${result.problemsAffected || 0} problems affected`,
+          );
+
           // Invalidate medical problems cache to refresh UI
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`],
           });
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/medical-problems`],
           });
         } else {
-          console.error(`❌ [StopRecording] Medical problems processing failed: ${medicalProblemsResponse.status}`);
+          console.error(
+            `❌ [StopRecording] Medical problems processing failed: ${medicalProblemsResponse.status}`,
+          );
         }
-        
+
         // Process other services in parallel
-        console.log("🏥 [StopRecording] Starting parallel processing of medications, orders, and CPT codes...");
-        console.log("🏥 [StopRecording] CPT extraction URL:", `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`);
-        console.log("🏥 [StopRecording] CPT extraction payload:", { soapNote: soapNote.substring(0, 200) + "..." });
-        
-        const [medicationsResponse, ordersResponse, cptResponse] = await Promise.all([
-          fetch(`/api/encounters/${encounterId}/process-medications`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ patientId: patient.id })
-          }),
-          fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({})
-          }),
-          fetch(`/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ soapNote })
-          }).then(async response => {
-            console.log("🏥 [StopRecording] CPT response status:", response.status);
-            console.log("🏥 [StopRecording] CPT response headers:", Object.fromEntries(response.headers.entries()));
-            
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.error("❌ [StopRecording] CPT extraction failed:", errorText);
-              return response;
-            }
-            
-            const extractedData = await response.json();
-            console.log("✅ [StopRecording] CPT extraction successful:", extractedData);
-            
-            // Now save the extracted data to the database
-            console.log("💾 [StopRecording] Saving CPT codes to database...");
-            const saveResponse = await fetch(`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                cptCodes: extractedData.cptCodes || [],
-                diagnoses: extractedData.diagnoses || [],
-                mappings: extractedData.mappings || []
-              })
-            });
-            
-            if (saveResponse.ok) {
-              console.log("✅ [StopRecording] CPT codes saved to database successfully");
-              
-              // Force refetch encounter data to refresh billing component immediately
-              await queryClient.refetchQueries({ 
-                queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`] 
+        console.log(
+          "🏥 [StopRecording] Starting parallel processing of medications, orders, and CPT codes...",
+        );
+        console.log(
+          "🏥 [StopRecording] CPT extraction URL:",
+          `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
+        );
+        console.log("🏥 [StopRecording] CPT extraction payload:", {
+          soapNote: soapNote.substring(0, 200) + "...",
+        });
+
+        const [medicationsResponse, ordersResponse, cptResponse] =
+          await Promise.all([
+            fetch(`/api/encounters/${encounterId}/process-medications`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ patientId: patient.id }),
+            }),
+            fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({}),
+            }),
+            fetch(
+              `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ soapNote }),
+              },
+            ).then(async (response) => {
+              console.log(
+                "🏥 [StopRecording] CPT response status:",
+                response.status,
+              );
+              console.log(
+                "🏥 [StopRecording] CPT response headers:",
+                Object.fromEntries(response.headers.entries()),
+              );
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error(
+                  "❌ [StopRecording] CPT extraction failed:",
+                  errorText,
+                );
+                return response;
+              }
+
+              const extractedData = await response.json();
+              console.log(
+                "✅ [StopRecording] CPT extraction successful:",
+                extractedData,
+              );
+
+              // Now save the extracted data to the database
+              console.log("💾 [StopRecording] Saving CPT codes to database...");
+              const saveResponse = await fetch(
+                `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "include",
+                  body: JSON.stringify({
+                    cptCodes: extractedData.cptCodes || [],
+                    diagnoses: extractedData.diagnoses || [],
+                    mappings: extractedData.mappings || [],
+                  }),
+                },
+              );
+
+              if (saveResponse.ok) {
+                console.log(
+                  "✅ [StopRecording] CPT codes saved to database successfully",
+                );
+
+                // Force refetch encounter data to refresh billing component immediately
+                await queryClient.refetchQueries({
+                  queryKey: [
+                    `/api/patients/${patient.id}/encounters/${encounterId}`,
+                  ],
+                });
+                console.log(
+                  "🔄 [StopRecording] Encounter data refetched for billing component",
+                );
+              } else {
+                const saveErrorText = await saveResponse.text();
+                console.error(
+                  "❌ [StopRecording] Failed to save CPT codes:",
+                  saveErrorText,
+                );
+              }
+
+              // Return the original extraction response for the parallel processing handler
+              return new Response(JSON.stringify(extractedData), {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
               });
-              console.log("🔄 [StopRecording] Encounter data refetched for billing component");
-            } else {
-              const saveErrorText = await saveResponse.text();
-              console.error("❌ [StopRecording] Failed to save CPT codes:", saveErrorText);
-            }
-            
-            // Return the original extraction response for the parallel processing handler
-            return new Response(JSON.stringify(extractedData), {
-              status: response.status,
-              statusText: response.statusText,
-              headers: response.headers
-            });
-          })
-        ]);
+            }),
+          ]);
 
         // Handle other responses and invalidate caches
         if (medicationsResponse.ok) {
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/medications-enhanced`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
           });
         }
-        
+
         if (ordersResponse.ok) {
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/draft-orders`] 
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/patients/${patient.id}/draft-orders`],
           });
         }
-        
+
         if (cptResponse.ok) {
-          console.log("✅ [StopRecording] CPT extraction successful, invalidating CPT cache...");
-          await queryClient.invalidateQueries({ 
-            queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] 
+          console.log(
+            "✅ [StopRecording] CPT extraction successful, invalidating CPT cache...",
+          );
+          await queryClient.invalidateQueries({
+            queryKey: [
+              `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
+            ],
           });
           console.log("✅ [StopRecording] CPT cache invalidated");
         } else {
-          console.error("❌ [StopRecording] CPT extraction failed with status:", cptResponse.status);
+          console.error(
+            "❌ [StopRecording] CPT extraction failed with status:",
+            cptResponse.status,
+          );
           const errorText = await cptResponse.text();
           console.error("❌ [StopRecording] CPT error response:", errorText);
         }
-        
+
         toast({
           title: "Recording Complete",
-          description: "SOAP note saved and medical data processed successfully",
+          description:
+            "SOAP note saved and medical data processed successfully",
         });
-        
       } catch (error) {
-        console.error("❌ [StopRecording] Error processing after recording stop:", error);
+        console.error(
+          "❌ [StopRecording] Error processing after recording stop:",
+          error,
+        );
         toast({
           variant: "destructive",
           title: "Processing Error",
-          description: "SOAP note saved but some processing failed. Please try manual save.",
+          description:
+            "SOAP note saved but some processing failed. Please try manual save.",
         });
       }
     } else {
       console.log("❌ [EncounterView] === NO SOAP CONTENT TO PROCESS ===");
-      console.log("❌ [EncounterView] This explains why automatic processing isn't happening!");
+      console.log(
+        "❌ [EncounterView] This explains why automatic processing isn't happening!",
+      );
       console.log("❌ [EncounterView] soapNote value:", soapNote);
       console.log("❌ [EncounterView] typeof soapNote:", typeof soapNote);
       toast({
@@ -2222,26 +2405,30 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       title: "Smart Suggestions Generated",
       description: "GPT analysis complete",
     });
-  }
+  };
 
   // REST API Suggestions - Cost-optimized alternative
   const generateRestAPISuggestions = async () => {
     if (!transcription || transcription.length < 15) {
       toast({
         title: "Insufficient Content",
-        description: "Need at least 15 characters of transcription for suggestions",
-        variant: "destructive"
+        description:
+          "Need at least 15 characters of transcription for suggestions",
+        variant: "destructive",
       });
       return;
     }
 
     try {
-      console.log("🧠 [EncounterView] Generating REST API suggestions for transcription:", transcription.substring(0, 100) + "...");
-      
+      console.log(
+        "🧠 [EncounterView] Generating REST API suggestions for transcription:",
+        transcription.substring(0, 100) + "...",
+      );
+
       const requestBody = {
         patientId: patient.id.toString(),
         userRole: "provider",
-        transcription: transcription
+        transcription: transcription,
       };
 
       const response = await fetch("/api/voice/live-suggestions", {
@@ -2260,15 +2447,20 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           // Implement accumulative behavior with WebSocket formatting
           setGptSuggestions((prevSuggestions) => {
             // Format suggestions exactly like WebSocket with proper bullet points
-            const formattedPrompts = data.aiSuggestions.realTimePrompts.map((prompt: string) => {
-              const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, "").trim();
-              return cleanPrompt ? `• ${cleanPrompt}` : prompt;
-            });
-            
-            const newInsights = formattedPrompts.join('\n');
-            
+            const formattedPrompts = data.aiSuggestions.realTimePrompts.map(
+              (prompt: string) => {
+                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, "").trim();
+                return cleanPrompt ? `• ${cleanPrompt}` : prompt;
+              },
+            );
+
+            const newInsights = formattedPrompts.join("\n");
+
             // Check if this is the first suggestion or we're adding to existing ones
-            if (!prevSuggestions || prevSuggestions === "AI analysis will appear here...") {
+            if (
+              !prevSuggestions ||
+              prevSuggestions === "AI analysis will appear here..."
+            ) {
               // First suggestion - add header like WebSocket
               return `🩺 REST API CLINICAL INSIGHTS:\n\n${newInsights}`;
             } else {
@@ -2276,14 +2468,17 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               return `${prevSuggestions}\n\n${newInsights}`;
             }
           });
-          
+
           toast({
             title: "AI Suggestions Generated",
             description: `Added ${data.aiSuggestions.realTimePrompts.length} new insights using ${data.model}`,
           });
         } else {
           setGptSuggestions((prevSuggestions) => {
-            if (!prevSuggestions || prevSuggestions === "AI analysis will appear here...") {
+            if (
+              !prevSuggestions ||
+              prevSuggestions === "AI analysis will appear here..."
+            ) {
               return "🩺 REST API CLINICAL INSIGHTS:\n\nNo specific suggestions generated for current content.";
             } else {
               return `${prevSuggestions}\n\nNo additional suggestions for current input.`;
@@ -2292,15 +2487,19 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         }
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.details || errorData.error || "Unknown error");
+        throw new Error(
+          errorData.details || errorData.error || "Unknown error",
+        );
       }
     } catch (error) {
       console.error("❌ [EncounterView] REST API suggestions failed:", error);
-      setGptSuggestions(`❌ REST API Error: ${(error as any)?.message || 'Unknown error'}`);
+      setGptSuggestions(
+        `❌ REST API Error: ${(error as any)?.message || "Unknown error"}`,
+      );
       toast({
         title: "Suggestion Generation Failed",
         description: "REST API error - check logs for details",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -2374,22 +2573,28 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       toast({
         variant: "destructive",
         title: "No Transcription",
-        description: "No transcription available to generate SOAP note from. Please record some audio first.",
+        description:
+          "No transcription available to generate SOAP note from. Please record some audio first.",
       });
       return;
     }
 
-    console.log("🔄 [EncounterView] Manually triggering SOAP note generation from transcription...");
-    
+    console.log(
+      "🔄 [EncounterView] Manually triggering SOAP note generation from transcription...",
+    );
+
     // Use the unified streaming system with force generation
     if (realtimeSOAPRef.current) {
       realtimeSOAPRef.current.generateSOAPNote(true); // Force generation bypasses intelligent streaming checks
     } else {
-      console.error("❌ [EncounterView] RealtimeSOAPIntegration ref not available");
+      console.error(
+        "❌ [EncounterView] RealtimeSOAPIntegration ref not available",
+      );
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description: "Unable to access SOAP generation system. Please try again.",
+        description:
+          "Unable to access SOAP generation system. Please try again.",
       });
     }
   };
@@ -2447,49 +2652,78 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
       // Smart medical problems processing for manual edits
       const timeSinceRecordingStop = Date.now() - lastRecordingStopTime;
       const hasSignificantChanges = hasSignificantSOAPChanges(currentContent);
-      const shouldProcessMedicalProblems = timeSinceRecordingStop > 5000 && hasSignificantChanges; // Only if 5+ seconds after recording stop AND significant changes
-      
-      console.log("🏥 [SmartProcessing] === SMART MEDICAL PROBLEMS PROCESSING ===");
-      console.log("🏥 [SmartProcessing] Time since recording stop:", timeSinceRecordingStop, "ms");
-      console.log("🏥 [SmartProcessing] Has significant changes:", hasSignificantChanges);
-      console.log("🏥 [SmartProcessing] Should process medical problems:", shouldProcessMedicalProblems);
-      
+      const shouldProcessMedicalProblems =
+        timeSinceRecordingStop > 5000 && hasSignificantChanges; // Only if 5+ seconds after recording stop AND significant changes
+
+      console.log(
+        "🏥 [SmartProcessing] === SMART MEDICAL PROBLEMS PROCESSING ===",
+      );
+      console.log(
+        "🏥 [SmartProcessing] Time since recording stop:",
+        timeSinceRecordingStop,
+        "ms",
+      );
+      console.log(
+        "🏥 [SmartProcessing] Has significant changes:",
+        hasSignificantChanges,
+      );
+      console.log(
+        "🏥 [SmartProcessing] Should process medical problems:",
+        shouldProcessMedicalProblems,
+      );
+
       if (shouldProcessMedicalProblems) {
-        console.log("🏥 [SmartProcessing] Processing medical problems for significant manual changes...");
-        
+        console.log(
+          "🏥 [SmartProcessing] Processing medical problems for significant manual changes...",
+        );
+
         try {
-          const medicalProblemsResponse = await fetch(`/api/medical-problems/process-encounter`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              encounterId: encounterId,
-              triggerType: "manual_edit"
-            })
-          });
+          const medicalProblemsResponse = await fetch(
+            `/api/medical-problems/process-encounter`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                encounterId: encounterId,
+                triggerType: "manual_edit",
+              }),
+            },
+          );
 
           if (medicalProblemsResponse.ok) {
             const result = await medicalProblemsResponse.json();
-            console.log(`✅ [SmartProcessing] Medical problems updated: ${result.total_problems_affected || 0} problems affected`);
-            
+            console.log(
+              `✅ [SmartProcessing] Medical problems updated: ${result.total_problems_affected || 0} problems affected`,
+            );
+
             // Update tracking state
             setLastProcessedSOAPContent(currentContent);
-            
+
             // Invalidate medical problems cache
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`] 
+            await queryClient.invalidateQueries({
+              queryKey: [
+                `/api/patients/${patient.id}/medical-problems-enhanced`,
+              ],
             });
-            await queryClient.invalidateQueries({ 
-              queryKey: [`/api/patients/${patient.id}/medical-problems`] 
+            await queryClient.invalidateQueries({
+              queryKey: [`/api/patients/${patient.id}/medical-problems`],
             });
           } else {
-            console.error(`❌ [SmartProcessing] Medical problems processing failed: ${medicalProblemsResponse.status}`);
+            console.error(
+              `❌ [SmartProcessing] Medical problems processing failed: ${medicalProblemsResponse.status}`,
+            );
           }
         } catch (error) {
-          console.error("❌ [SmartProcessing] Error processing medical problems:", error);
+          console.error(
+            "❌ [SmartProcessing] Error processing medical problems:",
+            error,
+          );
         }
       } else {
-        console.log("🏥 [SmartProcessing] Skipping medical problems processing - no significant changes or too soon after recording");
+        console.log(
+          "🏥 [SmartProcessing] Skipping medical problems processing - no significant changes or too soon after recording",
+        );
       }
 
       // Invalidate all relevant caches to ensure changes persist
@@ -2508,7 +2742,6 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         description:
           "Your SOAP note has been saved and medical problems updated.",
       });
-
     } catch (error) {
       console.error("❌ [EncounterView] Error saving SOAP note:", error);
       toast({
@@ -2621,27 +2854,29 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               <CollapsibleContent>
                 <div className="bg-white border-b border-gray-100 p-3">
                   {section.id === "encounters" ? (
-                    <div className="text-xs text-gray-600">Current encounter in progress</div>
+                    <div className="text-xs text-gray-600">
+                      Current encounter in progress
+                    </div>
                   ) : section.id === "vitals" ? (
-                    <SharedChartSections 
-                      patientId={patient.id} 
-                      mode="encounter" 
+                    <SharedChartSections
+                      patientId={patient.id}
+                      mode="encounter"
                       encounterId={encounterId}
                       isReadOnly={false}
                       sectionId="vitals"
                     />
                   ) : section.id === "documents" ? (
-                    <EmbeddedPDFViewer 
-                      patientId={patient.id} 
+                    <EmbeddedPDFViewer
+                      patientId={patient.id}
                       title="Patient Documents"
                       showAllPDFs={false}
                     />
                   ) : section.id === "ai-debug" ? (
                     <AIDebugSection patientId={patient.id} />
                   ) : (
-                    <SharedChartSections 
-                      patientId={patient.id} 
-                      mode="encounter" 
+                    <SharedChartSections
+                      patientId={patient.id}
+                      mode="encounter"
                       encounterId={encounter?.id}
                       isReadOnly={false}
                       sectionId={section.id}
@@ -2672,9 +2907,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Nursing Summary Section */}
-          <NursingSummaryDisplay 
-            encounterId={encounterId} 
-            patientId={patient.id} 
+          <NursingSummaryDisplay
+            encounterId={encounterId}
+            patientId={patient.id}
           />
 
           {/* Voice Recording Section */}
@@ -2717,17 +2952,24 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     variant="outline"
                     size="sm"
                     onClick={async () => {
-                      console.log("🔄 [EncounterView] Manual transcription restart requested...");
+                      console.log(
+                        "🔄 [EncounterView] Manual transcription restart requested...",
+                      );
                       try {
                         await stopRecording();
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        await new Promise((resolve) =>
+                          setTimeout(resolve, 2000),
+                        );
                         await startRecording();
                         toast({
                           title: "Transcription Restarted",
                           description: "Recording session has been refreshed.",
                         });
                       } catch (error) {
-                        console.error("❌ [EncounterView] Manual restart failed:", error);
+                        console.error(
+                          "❌ [EncounterView] Manual restart failed:",
+                          error,
+                        );
                         setIsRecording(false);
                         toast({
                           variant: "destructive",
@@ -2770,23 +3012,29 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   <button
                     onClick={() => setUseRestAPI(!useRestAPI)}
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                      useRestAPI 
-                        ? 'bg-green-100 text-green-700 border border-green-200' 
-                        : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      useRestAPI
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-blue-100 text-blue-700 border border-blue-200"
                     }`}
                   >
-                    {useRestAPI ? 'REST API' : 'WebSocket'}
+                    {useRestAPI ? "REST API" : "WebSocket"}
                   </button>
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button
-                  onClick={useRestAPI ? generateRestAPISuggestions : generateSmartSuggestions}
+                  onClick={
+                    useRestAPI
+                      ? generateRestAPISuggestions
+                      : generateSmartSuggestions
+                  }
                   size="sm"
                   variant="outline"
-                  disabled={useRestAPI && (!transcription || transcription.length < 15)}
+                  disabled={
+                    useRestAPI && (!transcription || transcription.length < 15)
+                  }
                 >
-                  {useRestAPI ? 'Add Suggestions' : 'Generate Suggestions'}
+                  {useRestAPI ? "Add Suggestions" : "Generate Suggestions"}
                 </Button>
                 {useRestAPI && (
                   <Button
@@ -2834,7 +3082,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   )}
                 </div>
               </div>
-              
+
               {/* Note Type Selection */}
               <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
                 <NoteTypeSelector
@@ -2843,10 +3091,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   disabled={isRecording}
                 />
                 <div className="text-xs text-gray-500">
-                  {isRecording ? "Recording in progress - note type locked" : "Select note type before recording"}
+                  {isRecording
+                    ? "Recording in progress - note type locked"
+                    : "Select note type before recording"}
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2 px-4 py-2">
                 {/* Real-time Clinical Note Integration */}
                 <RealtimeSOAPIntegration
@@ -2887,8 +3137,12 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                     disabled={isGeneratingSOAP || !transcription.trim()}
                     className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
                   >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isGeneratingSOAP ? 'animate-spin' : ''}`} />
-                    {isGeneratingSOAP ? "Generating..." : "Generate from Transcription"}
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 ${isGeneratingSOAP ? "animate-spin" : ""}`}
+                    />
+                    {isGeneratingSOAP
+                      ? "Generating..."
+                      : "Generate from Transcription"}
                   </Button>
                 )}
                 <Button
@@ -2896,14 +3150,15 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   variant="outline"
                   onClick={handleSaveSOAP}
                   disabled={
-                    !soapNote.trim() || 
-                    isSavingSOAP || 
+                    !soapNote.trim() ||
+                    isSavingSOAP ||
                     isAutoSaving ||
                     autoSaveStatus === "saved" ||
                     (editor?.getHTML() || soapNote) === lastSaved
                   }
                   className={`${
-                    autoSaveStatus === "saved" || (editor?.getHTML() || soapNote) === lastSaved
+                    autoSaveStatus === "saved" ||
+                    (editor?.getHTML() || soapNote) === lastSaved
                       ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
                       : "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                   }`}
@@ -2913,7 +3168,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                       <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
                       Saving...
                     </>
-                  ) : autoSaveStatus === "saved" || (editor?.getHTML() || soapNote) === lastSaved ? (
+                  ) : autoSaveStatus === "saved" ||
+                    (editor?.getHTML() || soapNote) === lastSaved ? (
                     <>
                       <Save className="h-4 w-4 mr-2" />
                       Saved
@@ -2971,27 +3227,27 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
           />
 
           {/* Draft Orders */}
-          <DraftOrders 
-            patientId={patient.id} 
-            encounterId={encounterId} 
+          <DraftOrders
+            patientId={patient.id}
+            encounterId={encounterId}
             isAutoGenerating={isAutoGeneratingOrders}
           />
 
           {/* CPT Codes & Diagnoses */}
-          <CPTCodesDiagnoses 
-            patientId={patient.id} 
-            encounterId={encounterId} 
+          <CPTCodesDiagnoses
+            patientId={patient.id}
+            encounterId={encounterId}
             isAutoGenerating={isAutoGeneratingBilling}
           />
-
-
 
           {/* Encounter Workflow Controls */}
           <EncounterWorkflowControls
             encounterId={encounterId}
             encounterStatus={encounter?.encounterStatus || "in_progress"}
             onStatusChange={() => {
-              queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
+              queryClient.invalidateQueries({
+                queryKey: [`/api/encounters/${encounterId}`],
+              });
             }}
           />
 
@@ -3006,7 +3262,8 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
               });
               toast({
                 title: "Encounter Signed",
-                description: "The encounter has been successfully signed and completed.",
+                description:
+                  "The encounter has been successfully signed and completed.",
               });
             }}
           />
