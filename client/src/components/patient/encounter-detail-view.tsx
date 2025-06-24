@@ -40,6 +40,7 @@ import {
   RealtimeSOAPIntegration,
   RealtimeSOAPRef,
 } from "@/components/RealtimeSOAPIntegration";
+import { NoteTypeSelector } from "@/components/NoteTypeSelector";
 
 import { NursingSummaryDisplay } from "@/components/nursing-summary-display";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
@@ -155,6 +156,7 @@ export function EncounterDetailView({
   const [soapNote, setSoapNote] = useState("");
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
+  const [selectedNoteType, setSelectedNoteType] = useState<string>("soap");
   const useRealtimeAPI = true; // Real-time API enabled by default in background
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodes, setCptCodes] = useState<any[]>([]);
@@ -2759,6 +2761,9 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   }}
                   onCPTCodesReceived={handleCPTCodesReceived}
                   isRealtimeEnabled={useRealtimeAPI}
+                  autoTrigger={false}
+                  enableIntelligentStreaming={false}
+                  noteType={selectedNoteType}
                 />
 
                 {transcription.trim() && (

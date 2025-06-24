@@ -901,79 +901,7 @@ function formatVitalsForSOAP(vitals: any[]): string {
     .join("\n");
 }
 
-async function generateSOAPNoteDirect(
-  patientId: number,
-  encounterId: string,
-  transcription: string,
-): Promise<string> {
-  console.log(`🩺 [DirectSOAP] Generating SOAP note for patient ${patientId}`);
 
-  // Use patient chart service to avoid diagnoses/medical problems confusion
-  const { PatientChartService } = await import('./patient-chart-service.js');
-  const patientChart = await PatientChartService.getPatientChartData(patientId);
-
-  // Get encounter-specific vitals
-  const encounterVitalsList = await db
-    .select()
-    .from(vitals)
-    .where(and(eq(vitals.patientId, patientId), eq(vitals.encounterId, parseInt(encounterId))))
-    .orderBy(desc(vitals.recordedAt));
-
-  if (!patientChart.demographics) {
-    throw new Error(`Patient ${patientId} chart data not found`);
-  }
-
-  const age = Math.floor(
-    (Date.now() - new Date(patientChart.demographics.dateOfBirth).getTime()) /
-      (365.25 * 24 * 60 * 60 * 1000),
-  );
-
-  // Use medical problems instead of billing diagnoses for SOAP note context
-  const currentMedicalProblems =
-    patientChart.medicalProblems?.length > 0
-      ? patientChart.medicalProblems
-          .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
-          .join("\n")
-      : "- No active medical problems documented";
-
-  const currentMedications =
-    patientChart.currentMedications?.length > 0
-      ? patientChart.currentMedications
-          .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
-          .join("\n")
-      : "- No current medications documented";
-
-  const knownAllergies =
-    patientChart.allergies?.length > 0
-      ? patientChart.allergies
-          .map((a: any) => `- ${a.allergen}: ${a.reaction}`)
-          .join("\n")
-      : "- NKDA (No Known Drug Allergies)";
-
-  // Build comprehensive medical context using chart data
-  const medicalContext = `
-PATIENT CONTEXT:
-- Name: ${patientChart.demographics.firstName} ${patientChart.demographics.lastName}
-- Age: ${age} years old
-- Gender: ${patientChart.demographics.gender}
-- MRN: ${patientChart.demographics.mrn}
-
-ACTIVE MEDICAL PROBLEMS:
-${currentMedicalProblems}
-
-CURRENT MEDICATIONS:
-${currentMedications}
-
-KNOWN ALLERGIES:
-${knownAllergies}
-
-RECENT VITALS:
-${formatVitalsForSOAP(encounterVitalsList)}
-  `.trim();
-
-  // This function now redirects to the unified clinical note generation system
-  return generateClinicalNote('soap', patientId, encounterId, transcription);
-}
 
 // Fast medical routes removed - functionality moved to frontend WebSocket
 
