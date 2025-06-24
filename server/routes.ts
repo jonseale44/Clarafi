@@ -556,7 +556,10 @@ ${formatVitalsForSOAP(encounterVitalsList)}
     note: generatedNote,
   });
 
-  // Continue with existing physical exam learning service
+  // TEMPORARILY DISABLED - Physical Exam Learning Service (high GPT-4.1 usage)
+  // This service was causing high GPT-4.1 token consumption during encounter recording sessions
+  // To re-enable, uncomment the block below
+  /*
   try {
     const { PhysicalExamLearningService } = await import(
       "./physical-exam-learning-service.js"
@@ -575,6 +578,7 @@ ${formatVitalsForSOAP(encounterVitalsList)}
   } catch (error) {
     console.warn("Failed to load physical exam learning service:", error);
   }
+  */
 
   return generatedNote;
 }
