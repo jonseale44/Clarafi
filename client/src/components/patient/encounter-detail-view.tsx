@@ -2416,19 +2416,32 @@ Please provide medical suggestions based on this complete conversation context.`
     console.log("🔍 [TokenMonitor] Manual REST API suggestion request initiated");
     console.log("🔍 [TokenMonitor] This will consume tokens via REST API call");
     
-    // Throttling check for manual requests
+    // Throttling check for manual requests - using lastSuggestionCall for animation state
     const now = Date.now();
-    if (now - lastSuggestionTime < 10000) {
-      console.log("🚫 [RestAPI] Manual request throttled - last request was", Math.round((now - lastSuggestionTime) / 1000), "seconds ago");
+    if (now - lastSuggestionCall < 10000) {
+      console.log("🚫 [RestAPI] Manual request throttled - last request was", Math.round((now - lastSuggestionCall) / 1000), "seconds ago");
       toast({
         title: "Request Throttled",
-        description: `Please wait ${Math.ceil((10000 - (now - lastSuggestionTime)) / 1000)} more seconds before requesting suggestions again.`,
+        description: `Please wait ${Math.ceil((10000 - (now - lastSuggestionCall)) / 1000)} more seconds before requesting suggestions again.`,
         variant: "destructive",
       });
       return;
     }
     
-    setLastSuggestionTime(now);
+    setLastSuggestionCall(now);
+    
+    // Start animation
+    setIsGeneratingRestSuggestions(true);
+    setSuggestionProgress(0);
+    
+    // Progress animation - smooth updates every 50ms
+    const startTime = Date.now();
+    const estimatedDuration = 4000;
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
+      setSuggestionProgress(progress);
+    }, 50);
 
     if (!transcription || transcription.length < 15) {
       toast({
@@ -2463,6 +2476,14 @@ Please provide medical suggestions based on this complete conversation context.`
       if (response.ok) {
         const data = await response.json();
         console.log("🧠 [EncounterView] REST API suggestions received:", data);
+        
+        // Complete animation
+        clearInterval(progressInterval);
+        setSuggestionProgress(100);
+        setTimeout(() => {
+          setIsGeneratingRestSuggestions(false);
+          setSuggestionProgress(0);
+        }, 500);
 
         if (data.aiSuggestions?.realTimePrompts?.length > 0) {
           console.log("🔍 [TokenMonitor] REST API response received - tokens consumed:", data.usage);
@@ -2518,6 +2539,12 @@ Please provide medical suggestions based on this complete conversation context.`
     } catch (error) {
       console.error("❌ [EncounterView] REST API suggestions failed:", error);
       console.log("🔍 [TokenMonitor] REST API request failed - no tokens consumed");
+      
+      // Reset animation on error
+      clearInterval(progressInterval);
+      setIsGeneratingRestSuggestions(false);
+      setSuggestionProgress(0);
+      
       setGptSuggestions(
         `❌ REST API Error: ${(error as any)?.message || "Unknown error"}`,
       );
