@@ -357,20 +357,24 @@ Format each bullet point on its own line with no extra spacing between them.`,
     let realtimeWs: WebSocket | null = null;
     let transcriptionBuffer = "";
 
-    try {
-      console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
+    console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
 
-      // Get API key from environment
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        console.log("🔑 [NursingView] API key check:", {
-          hasApiKey: !!apiKey,
-          keyLength: apiKey?.length || 0,
-          keyPrefix: apiKey?.substring(0, 7) || "none",
-        });
+    // Get API key from environment
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    console.log("🔑 [NursingView] API key check:", {
+      hasApiKey: !!apiKey,
+      keyLength: apiKey?.length || 0,
+      keyPrefix: apiKey?.substring(0, 7) || "none",
+    });
 
-        if (!apiKey) {
-          throw new Error("OpenAI API key not available in environment");
-        }
+    if (!apiKey) {
+      toast({
+        variant: "destructive",
+        title: "Configuration Error",
+        description: "OpenAI API key not available",
+      });
+      return;
+    }
 
         // Step 1: Create session exactly like provider view
         console.log("🔧 [NursingView] Creating OpenAI session...");
@@ -1107,17 +1111,26 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         setIsRecording(true);
       
       // Add WebSocket to global reference for cleanup
-      (window as any).currentRealtimeWs = realtimeWs.current;
-    } catch (error: any) {
-      console.error("Failed to start recording:", error);
-      setIsRecording(false);
-      toast({
-        variant: "destructive",
-        title: "Recording Failed", 
-        description: "Unable to start voice transcription",
-      });
-    }
+      (window as any).currentRealtimeWs = realtimeWs;
   };
+
+  const generateAIAssessment = () => {
+    // Trigger template-based nursing assessment
+    nursingTemplateRef.current?.startTemplateAssessment();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading nursing encounter...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
 
   const stopRecording = async () => {
     console.log("🎤 [NursingView] Stopping recording...");
