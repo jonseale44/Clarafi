@@ -353,13 +353,12 @@ Format each bullet point on its own line with no extra spacing between them.`,
     setTranscriptionBuffer("");
     setLiveTranscriptionContent("");
 
-    try {
-      // Create direct WebSocket connection to OpenAI like provider view
-      let realtimeWs: WebSocket | null = null;
-      let transcriptionBuffer = "";
+    // Create direct WebSocket connection to OpenAI like provider view
+    let realtimeWs: WebSocket | null = null;
+    let transcriptionBuffer = "";
 
-      try {
-        console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
+    try {
+      console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
 
         // Get API key from environment
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -1106,32 +1105,10 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         });
 
         setIsRecording(true);
-      } catch (error) {
-        console.error("❌ [NursingView] DETAILED ERROR in recording:", {
-          error,
-          message: (error as any)?.message,
-          name: (error as any)?.name,
-          stack: (error as any)?.stack,
-          patientId: patient.id,
-        });
-
-        let errorMessage = "Unknown error occurred";
-        if ((error as any)?.message) {
-          errorMessage = (error as any).message;
-        } else if (typeof error === "string") {
-          errorMessage = error;
-        }
-
-        toast({
-          title: "Recording Failed",
-          description: `Transcription error: ${errorMessage}`,
-          variant: "destructive",
-        });
-      }
     } catch (error) {
       console.error("❌ [NursingView] Failed to start recording:", error);
       toast({
-        variant: "destructive",
+        variant: "destructive", 
         title: "Recording Failed",
         description: "Unable to start voice transcription",
       });
