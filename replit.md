@@ -117,7 +117,8 @@ Preferred communication style: Simple, everyday language.
 - Provider AI now has full access to patient chart data including medical problems, medications, allergies, and vitals
 - **FIXED BOTH response.create sections**: Updated all AI instruction prompts to remove restrictions on using patient history
 - Removed counterproductive "Focus ONLY on current conversation" and "Only reference past history if directly relevant" instructions
-- Both provider and nursing AI suggestions now use same direct question response patterns for consistency
+- **FIXED FORMATTING**: Updated direct question response examples to include proper bullet points (•) and periods for consistency
+- Both provider and nursing AI suggestions now use same direct question response patterns and formatting for consistency
 
 ### SOAP Note Generation Technical Debt Resolution (June 24, 2025)
 - **CRITICAL FIX**: Fixed generateSOAPNoteDirect function to use PatientChartService instead of directly querying diagnoses table

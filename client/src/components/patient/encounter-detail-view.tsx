@@ -1266,9 +1266,9 @@ Please provide medical suggestions based on what the provider is saying in this 
 CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
 
 DIRECT QUESTION RESPONSES:
-- When provider asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
-- When provider asks "What medications?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
-- When provider asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+- When provider asks "Does patient have medical problems?" → Answer: "• Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF."
+- When provider asks "What medications?" → Answer: "• Current medications: Lisinopril 10mg daily, Metformin 500mg BID."
+- When provider asks "Any allergies?" → Answer: "• NKDA (No Known Drug Allergies)."
 - FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
 
 Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time. If multiple insights could be provided, prioritize the most critical or relevant one first.
@@ -1461,9 +1461,9 @@ Format each bullet point on its own line with no extra spacing between them.`,
 CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the patient chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
 
 DIRECT QUESTION RESPONSES:
-- When provider asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
-- When provider asks "What medications?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
-- When provider asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+- When provider asks "Does patient have medical problems?" → Answer: "• Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF."
+- When provider asks "What medications?" → Answer: "• Current medications: Lisinopril 10mg daily, Metformin 500mg BID."
+- When provider asks "Any allergies?" → Answer: "• NKDA (No Known Drug Allergies)."
 - FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
 
 Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
@@ -1784,9 +1784,9 @@ Please provide medical suggestions based on this complete conversation context.`
 CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the patient chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
 
 DIRECT QUESTION RESPONSES:
-- When provider asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
-- When provider asks "What medications?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
-- When provider asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+- When provider asks "Does patient have medical problems?" → Answer: "• Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF."
+- When provider asks "What medications?" → Answer: "• Current medications: Lisinopril 10mg daily, Metformin 500mg BID."
+- When provider asks "Any allergies?" → Answer: "• NKDA (No Known Drug Allergies)."
 - FORBIDDEN responses: "Assess...", "Evaluate...", "Consider reviewing..." when chart data exists
 
 Focus on high-value, evidence-based, diagnostic, medication, and clinical decision-making insights based on what is being discussed in this conversation. Provide only one brief phrase at a time in response to each user query. If multiple insights could be provided, prioritize the most critical or relevant one first.
