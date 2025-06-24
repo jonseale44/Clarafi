@@ -55,6 +55,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+import { PatientChartService } from "./patient-chart-service.js";
+
 // Clinical Note Generation System - Multi-Template Support
 // Supports SOAP, APSO, Progress Notes, H&P, Discharge Summaries, Procedure Notes
 
