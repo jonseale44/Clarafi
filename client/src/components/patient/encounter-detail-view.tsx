@@ -2719,8 +2719,21 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
                   )}
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                {/* Real-time SOAP Integration */}
+              
+              {/* Note Type Selection */}
+              <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
+                <NoteTypeSelector
+                  noteType={selectedNoteType}
+                  onNoteTypeChange={setSelectedNoteType}
+                  disabled={isRecording}
+                />
+                <div className="text-xs text-gray-500">
+                  {isRecording ? "Recording in progress - note type locked" : "Select note type before recording"}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2 px-4 py-2">
+                {/* Real-time Clinical Note Integration */}
                 <RealtimeSOAPIntegration
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
@@ -2822,7 +2835,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             </div>
           </Card>
 
-          {/* Unified Real-time SOAP Integration with Intelligent Streaming */}
+          {/* Unified Real-time Clinical Note Integration with Intelligent Streaming */}
           <RealtimeSOAPIntegration
             ref={realtimeSOAPRef}
             patientId={patient.id.toString()}
@@ -2836,6 +2849,7 @@ Start each new user prompt response on a new line. Do not merge replies to diffe
             autoTrigger={true}
             enableIntelligentStreaming={true}
             isRecording={isRecording}
+            noteType={selectedNoteType}
           />
 
           {/* Draft Orders */}

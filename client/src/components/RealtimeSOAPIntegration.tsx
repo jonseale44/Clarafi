@@ -14,6 +14,7 @@ interface RealtimeSOAPIntegrationProps {
   autoTrigger?: boolean;
   enableIntelligentStreaming?: boolean;
   isRecording?: boolean;
+  noteType?: string; // New prop for note type selection
 }
 
 export interface RealtimeSOAPRef {
@@ -31,7 +32,8 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   isRealtimeEnabled,
   autoTrigger = false,
   enableIntelligentStreaming = false,
-  isRecording = false
+  isRecording = false,
+  noteType = 'soap' // Default to SOAP note
 }, ref) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [soapBuffer, setSoapBuffer] = useState("");
@@ -150,17 +152,17 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     }
     
     try {
-      // Send complete transcription to Real-time API for streaming SOAP generation
-      const response = await fetch('/api/realtime-soap/stream', {
+      // Send complete transcription to unified clinical notes API
+      const response = await fetch('/api/clinical-notes/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          noteType,
           patientId,
           encounterId,
           transcription: transcription.trim(), // Complete transcript from entire recording
-          action: 'generate_soap_note'
         })
       });
 
@@ -177,8 +179,8 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
         onSOAPNoteComplete: !!onSOAPNoteComplete
       });
       
-      if (responseData.soapNote) {
-        const completeSoap = responseData.soapNote;
+      if (responseData.note) {
+        const completeSoap = responseData.note;
         setSoapBuffer(completeSoap);
         
         console.log("📝 [RealtimeSOAP] Processing SOAP note from JSON response");

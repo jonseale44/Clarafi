@@ -55,7 +55,537 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Direct SOAP note generation function (replaces realtime-soap-streaming.ts)
+// Clinical Note Generation System - Multi-Template Support
+// Supports SOAP, APSO, Progress Notes, H&P, Discharge Summaries, Procedure Notes
+
+class ClinicalNoteTemplates {
+  static getPrompt(noteType: string, medicalContext: string, transcription: string): string {
+    switch (noteType) {
+      case 'soap':
+        return this.buildSOAPPrompt(medicalContext, transcription);
+      case 'apso':
+        return this.buildAPSOPrompt(medicalContext, transcription);
+      case 'progress':
+        return this.buildProgressPrompt(medicalContext, transcription);
+      case 'hAndP':
+        return this.buildHistoryAndPhysicalPrompt(medicalContext, transcription);
+      case 'discharge':
+        return this.buildDischargeSummaryPrompt(medicalContext, transcription);
+      case 'procedure':
+        return this.buildProcedureNotePrompt(medicalContext, transcription);
+      default:
+        return this.buildSOAPPrompt(medicalContext, transcription); // Default fallback
+    }
+  }
+
+  private static buildSOAPPrompt(medicalContext: string, transcription: string): string {
+    return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional SOAP note with the following sections:
+
+**SUBJECTIVE:**
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
+
+**OBJECTIVE:** Organize this section as follows:
+
+Vitals: List all vital signs in a single line, formatted as:
+
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+- If the physical exam is completely normal, use the following full, pre-defined template verbatim:
+
+Physical Exam:
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
+
+Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded
+
+Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
+
+Use concise, structured phrases. Avoid full sentences and narrative explanations.
+
+Example 1: 
+Transcription: "2 cm actinic keratosis on right forearm."
+
+✅ Good outcome (Objective, No Diagnosis):
+Skin: **Right forearm with a 2 cm rough, scaly, erythematous plaque with adherent keratotic scale**, without ulceration, bleeding, or induration.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis, no bolding):
+Skin: Actinic keratosis right forearm.
+
+Example 2:
+Transcription: "Pneumonia right lung."
+
+✅ Good outcome (Objective, No Diagnosis):
+Lungs: Normal work of breathing. **Diminished breath sounds over the right lung base with scattered rhonchi.** No wheezes, rales.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis, bolding entire organ system):
+**Lungs: Sounds of pneumonia right lung.**
+
+Example 3: 
+Transcription: "Cellulitis left lower leg."
+
+✅ Good outcome (Objective, No Diagnosis):
+Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bullae, ulceration, or fluctuance.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis):
+Skin: Cellulitis on the left lower leg.
+
+**ASSESSMENT/PLAN:**
+
+[Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
+[Plan item 1]
+[Plan item 2]
+[Plan item 3 (if applicable)]
+Example:
+
+Chest Tightness, Suspected Airway Constriction (R06.4):
+
+Trial low-dose inhaler therapy to address potential airway constriction.
+Monitor response to inhaler and reassess in 2 weeks.
+Patient education on environmental triggers (e.g., dust exposure).
+Fatigue, Work-Related Stress (Z73.0):
+
+Counsel patient on stress management and lifestyle modifications.
+Encourage gradual increase in physical activity.
+Family History of Cardiovascular Disease (Z82.49):
+
+Document family history and assess cardiovascular risk factors as part of ongoing care.
+(preceded by FOUR blank lines)**ORDERS:** 
+
+For all orders, follow this highly-structured format:
+
+Medications:
+
+Each medication order must follow this exact template:
+
+Medication: [name, include specific formulation and strength]
+
+Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
+
+Dispense: [quantity, clearly written in terms of formulation (e.g., "1 inhaler (200 metered doses)" or "30 tablets")]
+
+Refills: [number of refills allowed]
+
+Example:
+
+Medication: Albuterol sulfate HFA Inhaler (90 mcg/actuation)
+
+Sig: 2 puffs by mouth every 4-6 hours as needed for shortness of breath or wheezing. May use 2 puffs 15-30 minutes before exercise if needed. Do not exceed 12 puffs in a 24-hour period.
+
+Dispense: 1 inhaler (200 metered doses)
+
+Refills: 1
+
+Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+
+Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+
+Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+
+Patient Education: Summarize key educational topics discussed with the patient.
+
+Follow-up: Provide clear next steps and timeline for follow-up appointments or assessments.
+
+IMPORTANT INSTRUCTIONS:
+- Keep the note concise yet comprehensive.
+- Use professional medical language throughout.
+- Ensure all clinical reasoning is evidence-based and logical.
+- Include pertinent negatives where clinically relevant.
+- Format the note for easy reading and clinical handoff.`;
+  }
+
+  private static buildAPSOPrompt(medicalContext: string, transcription: string): string {
+    return `You are an expert physician creating a comprehensive APSO note (Assessment/Plan, Subjective, Objective) with integrated orders from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional APSO note with the following sections IN THIS ORDER:
+
+**ASSESSMENT/PLAN:**
+
+[Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
+[Plan item 1]
+[Plan item 2]
+[Plan item 3 (if applicable)]
+
+Example:
+
+Chest Tightness, Suspected Airway Constriction (R06.4):
+
+Trial low-dose inhaler therapy to address potential airway constriction.
+Monitor response to inhaler and reassess in 2 weeks.
+Patient education on environmental triggers (e.g., dust exposure).
+
+**SUBJECTIVE:**
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.
+
+**OBJECTIVE:**
+Vitals: List all vital signs in a single line, formatted as:
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+Physical Exam:
+- Use the same physical exam standards as SOAP notes
+- Bold positive findings, keep pertinent negatives in roman typeface
+- Use objective physician-level findings only
+
+**ORDERS:**
+Follow the same structured format as SOAP notes for medications, labs, imaging, referrals, patient education, and follow-up.
+
+IMPORTANT INSTRUCTIONS:
+- Assessment and Plan come FIRST in APSO format
+- Maintain same clinical rigor and formatting standards as SOAP notes
+- Keep the note concise yet comprehensive
+- Use professional medical language throughout`;
+  }
+
+  private static buildProgressPrompt(medicalContext: string, transcription: string): string {
+    return `You are an expert physician creating a hospital progress note from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional progress note with the following sections:
+
+**SUBJECTIVE:**
+- Patient's current complaints and symptoms
+- Response to current treatments
+- Any changes since last assessment
+- Pain levels, functional status
+
+**OBJECTIVE:**
+Vitals: BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+Physical Exam:
+- Focus on relevant systems based on current problems
+- Include pertinent findings related to active issues
+- Bold abnormal findings
+
+Labs/Studies: Include relevant recent results
+
+**ASSESSMENT:**
+- List active problems with current status
+- Clinical impression and progress
+
+**PLAN:**
+- Continuing treatments
+- New interventions
+- Monitoring plans
+- Disposition plans
+
+IMPORTANT INSTRUCTIONS:
+- Focus on hospital-appropriate content
+- Emphasize current status and progress
+- Include disposition planning
+- Maintain professional medical language`;
+  }
+
+  private static buildHistoryAndPhysicalPrompt(medicalContext: string, transcription: string): string {
+    return `You are an expert physician creating a comprehensive History and Physical examination note from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional H&P with the following sections:
+
+**CHIEF COMPLAINT:**
+Brief statement of primary reason for visit
+
+**HISTORY OF PRESENT ILLNESS:**
+- Detailed chronological account of current illness
+- Include all relevant symptoms, timeline, quality, severity
+- Aggravating and alleviating factors
+- Associated symptoms
+
+**PAST MEDICAL HISTORY:**
+- Significant medical conditions
+- Previous hospitalizations
+- Surgical history
+
+**MEDICATIONS:**
+Current medications with dosages
+
+**ALLERGIES:**
+Known drug allergies and reactions
+
+**FAMILY HISTORY:**
+Relevant family medical history
+
+**SOCIAL HISTORY:**
+- Tobacco, alcohol, drug use
+- Occupation, living situation
+- Relevant social factors
+
+**REVIEW OF SYSTEMS:**
+Comprehensive review by systems
+
+**PHYSICAL EXAMINATION:**
+Vitals: BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+Comprehensive physical exam by systems:
+- General appearance
+- HEENT, Cardiovascular, Pulmonary, Abdominal, Neurological, Extremities, Skin
+
+**ASSESSMENT:**
+Clinical impression with differential diagnosis
+
+**PLAN:**
+Diagnostic and therapeutic plan
+
+IMPORTANT INSTRUCTIONS:
+- Comprehensive documentation appropriate for initial evaluation
+- Include complete review of systems
+- Detailed physical examination
+- Professional medical language throughout`;
+  }
+
+  private static buildDischargeSummaryPrompt(medicalContext: string, transcription: string): string {
+    return `You are an expert physician creating a hospital discharge summary from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional discharge summary with the following sections:
+
+**ADMISSION DATE:** [Date]
+**DISCHARGE DATE:** [Date]
+
+**CHIEF COMPLAINT:**
+Primary reason for admission
+
+**HISTORY OF PRESENT ILLNESS:**
+Brief summary of illness leading to admission
+
+**HOSPITAL COURSE:**
+- Summary of hospital stay
+- Treatments provided
+- Response to therapy
+- Complications if any
+- Procedures performed
+
+**DISCHARGE DIAGNOSES:**
+1. Primary diagnosis
+2. Secondary diagnoses
+
+**DISCHARGE MEDICATIONS:**
+List all medications with instructions
+
+**FOLLOW-UP:**
+- Scheduled appointments
+- Instructions for continuing care
+
+**DISCHARGE INSTRUCTIONS:**
+- Activity restrictions
+- Diet modifications
+- When to seek medical care
+- Medication compliance
+
+**DISCHARGE CONDITION:**
+Patient's condition at discharge
+
+IMPORTANT INSTRUCTIONS:
+- Focus on hospital course and outcomes
+- Include clear follow-up instructions
+- Emphasize medication reconciliation
+- Professional discharge planning language`;
+  }
+
+  private static buildProcedureNotePrompt(medicalContext: string, transcription: string): string {
+    return `You are an expert physician creating a procedure note from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional procedure note with the following sections:
+
+**PROCEDURE:** Name of procedure performed
+
+**INDICATION:** Medical reason for procedure
+
+**ANESTHESIA:** Type of anesthesia used
+
+**POSITION:** Patient positioning
+
+**PREPARATION:** Sterile preparation details
+
+**PROCEDURE DESCRIPTION:**
+- Detailed step-by-step account of procedure
+- Instruments used
+- Findings during procedure
+- Technique employed
+
+**COMPLICATIONS:** Any complications encountered (or "None")
+
+**ESTIMATED BLOOD LOSS:** Amount if applicable
+
+**SPECIMENS:** Any specimens obtained
+
+**POST-PROCEDURE CONDITION:** Patient's condition after procedure
+
+**FOLLOW-UP PLAN:**
+- Post-procedure instructions
+- Follow-up appointments
+- Monitoring requirements
+
+IMPORTANT INSTRUCTIONS:
+- Detailed procedural documentation
+- Include all safety measures taken
+- Document informed consent obtained
+- Professional procedural language`;
+  }
+}
+
+// Clinical Note Generator - Unified generation function
+async function generateClinicalNote(
+  noteType: string,
+  patientId: number,
+  encounterId: string,
+  transcription: string,
+): Promise<string> {
+  console.log(`🩺 [ClinicalNote] Generating ${noteType} note for patient ${patientId}`);
+
+  // Use patient chart service for consistent data access
+  const { PatientChartService } = await import('./patient-chart-service.js');
+  const patientChart = await PatientChartService.getPatientChartData(patientId);
+
+  // Get encounter-specific vitals
+  const encounterVitalsList = await db
+    .select()
+    .from(vitals)
+    .where(and(eq(vitals.patientId, patientId), eq(vitals.encounterId, parseInt(encounterId))))
+    .orderBy(desc(vitals.recordedAt));
+
+  if (!patientChart.demographics) {
+    throw new Error(`Patient ${patientId} chart data not found`);
+  }
+
+  const age = Math.floor(
+    (Date.now() - new Date(patientChart.demographics.dateOfBirth).getTime()) /
+      (365.25 * 24 * 60 * 60 * 1000),
+  );
+
+  // Build medical context (reuse existing logic)
+  const currentMedicalProblems =
+    patientChart.medicalProblems?.length > 0
+      ? patientChart.medicalProblems
+          .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
+          .join("\n")
+      : "- No active medical problems documented";
+
+  const currentMedications =
+    patientChart.currentMedications?.length > 0
+      ? patientChart.currentMedications
+          .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
+          .join("\n")
+      : "- No current medications documented";
+
+  const knownAllergies =
+    patientChart.allergies?.length > 0
+      ? patientChart.allergies
+          .map((a: any) => `- ${a.allergen}: ${a.reaction}`)
+          .join("\n")
+      : "- NKDA (No Known Drug Allergies)";
+
+  const medicalContext = `
+PATIENT CONTEXT:
+- Name: ${patientChart.demographics.firstName} ${patientChart.demographics.lastName}
+- Age: ${age} years old
+- Gender: ${patientChart.demographics.gender}
+- MRN: ${patientChart.demographics.mrn}
+
+ACTIVE MEDICAL PROBLEMS:
+${currentMedicalProblems}
+
+CURRENT MEDICATIONS:
+${currentMedications}
+
+KNOWN ALLERGIES:
+${knownAllergies}
+
+RECENT VITALS:
+${formatVitalsForSOAP(encounterVitalsList)}
+  `.trim();
+
+  // Get appropriate prompt for note type
+  const prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+
+  // Generate note using GPT-4.1-mini
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1-mini",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.7,
+    max_tokens: 4000,
+  });
+
+  const generatedNote = completion.choices[0]?.message?.content;
+  if (!generatedNote) {
+    throw new Error(`No ${noteType} note generated from OpenAI`);
+  }
+
+  // Save note to encounter (same as before)
+  await storage.updateEncounter(parseInt(encounterId), {
+    note: generatedNote,
+  });
+
+  // Continue with existing physical exam learning service
+  try {
+    const { PhysicalExamLearningService } = await import(
+      "./physical-exam-learning-service.js"
+    );
+    const physicalExamLearningService = new PhysicalExamLearningService();
+
+    physicalExamLearningService
+      .analyzeSOAPNoteForPersistentFindings(
+        patientId,
+        parseInt(encounterId),
+        generatedNote,
+      )
+      .catch((error) => {
+        console.warn("Physical exam learning service failed:", error);
+      });
+  } catch (error) {
+    console.warn("Failed to load physical exam learning service:", error);
+  }
+
+  return generatedNote;
+}
+
+// Legacy SOAP generation function - now redirects to unified system
+async function generateSOAPNoteDirect(
+  patientId: number,
+  encounterId: string,
+  transcription: string,
+): Promise<string> {
+  return generateClinicalNote('soap', patientId, encounterId, transcription);
+}
+
 // Nursing Template Generation function matching SOAP pattern
 async function generateNursingTemplateDirect(
   patientId: number,
@@ -441,176 +971,8 @@ RECENT VITALS:
 ${formatVitalsForSOAP(encounterVitalsList)}
   `.trim();
 
-  // Create sophisticated SOAP prompt with your finely-tuned specifications
-  const soapPrompt = `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
-
-PATIENT CONTEXT:
-${medicalContext}
-
-ENCOUNTER TRANSCRIPTION:
-${transcription}
-
-Generate a complete, professional SOAP note with the following sections:
-
-**SUBJECTIVE:**
-Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
-
-**OBJECTIVE:** Organize this section as follows:
-
-Vitals: List all vital signs in a single line, formatted as:
-
-BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
-
-- If the physical exam is completely normal, use the following full, pre-defined template verbatim:
-
-Physical Exam:
-Gen: AAO x 3. NAD.
-HEENT: MMM, no lymphadenopathy.
-CV: Normal rate, regular rhythm. No m/c/g/r.
-Lungs: Normal work of breathing. CTAB.
-Abd: Normoactive bowel sounds. Soft, non-tender.
-Ext: No clubbing, cyanosis, or edema.
-Skin: No rashes or lesions.
-
-Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded
-
-Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
-
-Use concise, structured phrases. Avoid full sentences and narrative explanations.
-
-Example 1: 
-Transcription: "2 cm actinic keratosis on right forearm."
-
-✅ Good outcome (Objective, No Diagnosis):
-Skin: **Right forearm with a 2 cm rough, scaly, erythematous plaque with adherent keratotic scale**, without ulceration, bleeding, or induration.
-
-🚫 Bad outcome (Incorrect Use of Diagnosis, no bolding):
-Skin: Actinic keratosis right forearm.
-
-Example 2:
-Transcription: "Pneumonia right lung."
-
-✅ Good outcome (Objective, No Diagnosis):
-Lungs: Normal work of breathing. **Diminished breath sounds over the right lung base with scattered rhonchi.** No wheezes, rales.
-
-🚫 Bad outcome (Incorrect Use of Diagnosis, bolding entire organ system):
-**Lungs: Sounds of pneumonia right lung.**
-
-Example 3: 
-Transcription: "Cellulitis left lower leg."
-
-✅ Good outcome (Objective, No Diagnosis):
-Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bullae, ulceration, or fluctuance.
-
-🚫 Bad outcome (Incorrect Use of Diagnosis):
-Skin: Cellulitis on the left lower leg.
-
-**ASSESSMENT/PLAN:**
-
-[Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
-[Plan item 1]
-[Plan item 2]
-[Plan item 3 (if applicable)]
-Example:
-
-Chest Tightness, Suspected Airway Constriction (R06.4):
-
-Trial low-dose inhaler therapy to address potential airway constriction.
-Monitor response to inhaler and reassess in 2 weeks.
-Patient education on environmental triggers (e.g., dust exposure).
-Fatigue, Work-Related Stress (Z73.0):
-
-Counsel patient on stress management and lifestyle modifications.
-Encourage gradual increase in physical activity.
-Family History of Cardiovascular Disease (Z82.49):
-
-Document family history and assess cardiovascular risk factors as part of ongoing care.
-(preceded by FOUR blank lines)**ORDERS:** 
-
-For all orders, follow this highly-structured format:
-
-Medications:
-
-Each medication order must follow this exact template:
-
-Medication: [name, include specific formulation and strength]
-
-Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
-
-Dispense: [quantity, clearly written in terms of formulation (e.g., "1 inhaler (200 metered doses)" or "30 tablets")]
-
-Refills: [number of refills allowed]
-
-Example:
-
-Medication: Albuterol sulfate HFA Inhaler (90 mcg/actuation)
-
-Sig: 2 puffs by mouth every 4-6 hours as needed for shortness of breath or wheezing. May use 2 puffs 15-30 minutes before exercise if needed. Do not exceed 12 puffs in a 24-hour period.
-
-Dispense: 1 inhaler (200 metered doses)
-
-Refills: 1
-
-Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
-
-Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
-
-Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
-
-Patient Education: Summarize key educational topics discussed with the patient.
-
-Follow-up: Provide clear next steps and timeline for follow-up appointments or assessments.
-
-IMPORTANT INSTRUCTIONS:
-- Keep the note concise yet comprehensive.
-- Use professional medical language throughout.
-- Ensure all clinical reasoning is evidence-based and logical.
-- Include pertinent negatives where clinically relevant.
-- Format the note for easy reading and clinical handoff.`;
-
-  // Generate SOAP note using GPT-4.1-mini for comprehensive clinical documentation
-  // Purpose: Balanced model for creating detailed SOAP notes with proper medical reasoning and differential diagnosis
-  // Uses higher temperature (0.7) for more natural clinical narrative while maintaining accuracy
-  const soapCompletion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    messages: [{ role: "user", content: soapPrompt }],
-    temperature: 0.7,
-    max_tokens: 4000,
-  });
-
-  const soapNote = soapCompletion.choices[0]?.message?.content;
-  if (!soapNote) {
-    throw new Error("No SOAP note generated from OpenAI");
-  }
-
-  // Save SOAP note to encounter
-  await storage.updateEncounter(parseInt(encounterId), {
-    note: soapNote,
-  });
-
-  // Legacy automatic processing removed - now handled by frontend parallel processing
-  // Physical exam learning service still runs for persistent findings analysis
-  try {
-    const { PhysicalExamLearningService } = await import(
-      "./physical-exam-learning-service.js"
-    );
-    const physicalExamLearningService = new PhysicalExamLearningService();
-
-    // Run in background (don't await)
-    physicalExamLearningService
-      .analyzeSOAPNoteForPersistentFindings(
-        patientId,
-        parseInt(encounterId),
-        soapNote,
-      )
-      .catch((error) => {
-        console.warn("Physical exam learning service failed:", error);
-      });
-  } catch (error) {
-    console.warn("Failed to load physical exam learning service:", error);
-  }
-
-  return soapNote;
+  // This function now redirects to the unified clinical note generation system
+  return generateClinicalNote('soap', patientId, encounterId, transcription);
 }
 
 // Fast medical routes removed - functionality moved to frontend WebSocket
@@ -1645,7 +2007,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Real-time SOAP streaming endpoint
+  // Unified Clinical Note Generation endpoint
+  app.post("/api/clinical-notes/generate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const { noteType = 'soap', patientId, encounterId, transcription } = req.body;
+
+      if (!patientId || !encounterId || !transcription) {
+        return res.status(400).json({
+          message: "Missing required fields: patientId, encounterId, transcription",
+        });
+      }
+
+      console.log(
+        `🩺 [ClinicalNotes] Generating ${noteType} note for patient ${patientId}, encounter ${encounterId}`,
+      );
+
+      // Generate clinical note using unified system
+      const clinicalNote = await generateClinicalNote(
+        noteType,
+        parseInt(patientId),
+        encounterId,
+        transcription,
+      );
+
+      // Return the complete note as JSON
+      res.json({
+        note: clinicalNote,
+        noteType,
+        patientId: parseInt(patientId),
+        encounterId,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      console.error(`❌ [ClinicalNotes] Error generating ${req.body.noteType || 'soap'} note:`, error);
+      res.status(500).json({
+        message: `Failed to generate ${req.body.noteType || 'soap'} note`,
+        error: error.message,
+      });
+    }
+  });
+
+  // Legacy SOAP endpoint - redirects to unified system for backward compatibility
   app.post("/api/realtime-soap/stream", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -1654,23 +2058,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!patientId || !encounterId || !transcription) {
         return res.status(400).json({
-          message:
-            "Missing required fields: patientId, encounterId, transcription",
+          message: "Missing required fields: patientId, encounterId, transcription",
         });
       }
 
       console.log(
-        `🩺 [RealtimeSOAP] Starting streaming SOAP generation for patient ${patientId}, encounter ${encounterId}`,
+        `🩺 [LegacySOAP] Redirecting to unified system for patient ${patientId}, encounter ${encounterId}`,
       );
 
-      // Generate SOAP note directly using OpenAI API
-      const soapNote = await generateSOAPNoteDirect(
+      // Generate SOAP note using unified system
+      const soapNote = await generateClinicalNote(
+        'soap',
         parseInt(patientId),
         encounterId,
         transcription,
       );
 
-      // Return the complete SOAP note as JSON
+      // Return the complete SOAP note as JSON (maintain legacy response format)
       res.json({
         soapNote,
         patientId: parseInt(patientId),
@@ -1678,9 +2082,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         generatedAt: new Date().toISOString(),
       });
     } catch (error: any) {
-      console.error("❌ [RealtimeSOAP] Error in streaming endpoint:", error);
+      console.error("❌ [LegacySOAP] Error in legacy endpoint:", error);
       res.status(500).json({
-        message: "Failed to generate streaming SOAP note",
+        message: "Failed to generate SOAP note",
         error: error.message,
       });
     }

@@ -109,6 +109,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Multi-Note Type System Implementation (June 24, 2025)
+- **IMPLEMENTED**: Complete multi-note type system with production-level EMR capabilities
+- Created `ClinicalNoteTemplates` class with 6 note types: SOAP, APSO, Progress, H&P, Discharge, Procedure
+- New unified `/api/clinical-notes/generate` endpoint with `noteType` parameter
+- Legacy `/api/realtime-soap/stream` endpoint maintained for backward compatibility
+- Enhanced `RealtimeSOAPIntegration` component with `noteType` prop support
+- Added `NoteTypeSelector` component with categorized dropdown (Progress Notes, Initial Evaluation, etc.)
+- Preserved all existing functionality: medical problems extraction, orders processing, billing integration
+- Note type selection locked during recording to prevent mid-recording switches
+- All 6 note types use same patient context building and post-processing pipeline
+
 ### Provider AI Suggestions Direct Question Enhancement (June 24, 2025)
 - **CRITICAL FIX**: Updated provider AI suggestions to handle direct questions about patient chart information
 - Provider AI now detects direct questions ("Does patient have medical problems?") and provides specific chart facts
