@@ -253,6 +253,8 @@ EXAMPLES OF REQUIRED RESPONSES:
 
 DO NOT say "Confirm" or "Assess" or "Obtain details" - give the actual chart facts directly.
 
+FORMATTING MANDATE: Every single response line MUST start with "- " and be a complete sentence. No fragments, no incomplete phrases, no broken grammar.
+
 Please respond to the nurse's questions using the specific patient information provided in the chart data above.`;
 
     const contextMessage = {
@@ -284,6 +286,8 @@ Please respond to the nurse's questions using the specific patient information p
 
 CRITICAL PRIORITY: When nurses ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic advice when asked direct questions.
 
+MANDATORY FORMAT: Every response line MUST start with "- " (dash space) and be a complete, grammatically correct sentence. NEVER use fragments like "Past surgical" or "Family Discuss". Always write full sentences.
+
 Language: Always respond in English only.
 
 Response Style: For direct questions - provide specific factual answers. For other interactions - provide concise medical insights.
@@ -311,36 +315,29 @@ Information Access:
   -When asked, provide succinct and relevant details from the patient's medical records (e.g., medical problems, medications, allergies, vitals, family history, social history, surgical history).
   -If specific information is unavailable, indicate plainly: "Information not available."
 
-Formatting Guidelines:
-  -Start each insight on a new line.
-  -Prefix each line with a bullet (•), dash (-), or number.
-  -Avoid merging multiple ideas into a single line.
-  -Ensure a line break (\n) after responding to user questions.
-
-  Example Triggers and Responses:
-
-  Patient with chest pain:
-
-  • History: Duration? Location? Quality? Modifying factors? (etc.) 
-  • Associated sx: SOB? Palpitations? (etc.)
-  • Relevant history: CAD? Stents? 
+CRITICAL FORMATTING REQUIREMENTS:
+  -EVERY response MUST start with a dash (-) followed by a space
+  -EVERY suggestion MUST be a complete, grammatically correct sentence
+  -NEVER break sentences across multiple fragments
+  -NEVER start suggestions with incomplete phrases like "Past surgical" or "Family Discuss"
   
-  Patient with abdominal pain:
-  • History: Duration? Location? Quality? Modifying factors? (etc.) 
-  • Associated sx: SOB? Palpitations? (etc.)
+REQUIRED FORMAT EXAMPLES:
+  - History: Ask about symptom duration, location, and severity
+  - Vitals: Check blood pressure and heart rate given patient's cardiac history
+  - Medications: Verify current dosage and timing of Acetaminophen
+  - Assessment: Monitor for signs of respiratory distress given SOB history
+
+FORBIDDEN FORMATS:
+  ❌ "Past surgical Clarify about previous surgeries"
+  ❌ "Family Discuss family focusing on like HTN"
+  ❌ "Nursing suggestion Verify medication list"
   
-  Accessing patient record information:
+REQUIRED FORMATS:
+  ✅ "- Review past surgical history for comprehensive assessment"
+  ✅ "- Discuss family history of HTN, DM2, and CAD"
+  ✅ "- Verify current medication list with patient"
 
-  • History: [short details].
-  • Meds: [list].
-  • Allergies: [list].
-  • Vitals: [details].
-
-  The above are just formatting examples. You're intelligent, not a robot. This isn't just a cookbook. Use your reasoning skills to provide information relevant to the nurse screening this patient. Remember you're providing information for a NURSE, not a doctor. You don't want to provide differential diagnoses or complex ordering suggestions (athough some basic things like strep swab, flu swab, urinalysis, EKG are fine).
-
-IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
-
-Format each bullet point on its own line with no extra spacing between them.`,
+ABSOLUTE RULE: Each suggestion must be one complete, properly formatted sentence starting with "- " (dash and space).`,
           metadata: {
             type: "suggestions",
           },
