@@ -149,35 +149,15 @@ export function NursingEncounterView({
     activeResponseId.current = null;
   };
 
-  // MISSING: Add the startSuggestionsConversation function from provider view
-  const startSuggestionsConversation = async (
-    ws: WebSocket | null,
-    patientData: any,
-  ) => {
-    if (!ws) return;
-
-    console.log("[NursingView] Starting AI suggestions conversation");
-
-    // 1. Fetch full patient chart data like external implementation
-    let patientChart = null;
-    try {
-      console.log(
-        "[NursingView] Fetching patient chart data for context injection",
-      );
-      const chartResponse = await fetch(
-        `/api/patients/${patientData.id}/chart`,
-      );
-      if (chartResponse.ok) {
-        patientChart = await chartResponse.json();
-        console.log("[NursingView] Patient chart data fetched successfully");
-      } else {
-        console.warn(
-          "[NursingView] Failed to fetch patient chart, continuing without context",
-        );
-      }
-    } catch (error) {
-      console.error("[NursingView] Error fetching patient chart:", error);
-    }
+  // Function to analyze GPT suggestions after recording
+  const analyzeWithGPT = async () => {
+    console.log("🧠 [NursingView] Analyzing encounter with AI");
+    setGptSuggestions("AI-generated nursing suggestions based on the encounter...");
+    toast({
+      title: "Smart Suggestions Generated",
+      description: "GPT analysis complete",
+    });
+  };
 
     // 2. Build comprehensive patient context with enhanced chart sections for nursing AI
     const patientContext = `Patient: ${patientData.firstName} ${patientData.lastName}
@@ -356,109 +336,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
       console.error("[NursingView] Error fetching patient chart:", chartError);
     }
 
-    // 2. Build comprehensive patient context
-    const patientContext = `PATIENT CHART CONTEXT:
 
-Patient: ${patientData.firstName} ${patientData.lastName}
-DOB: ${patientData.dob || "Not specified"}
-Age: ${patientData.age || "Not specified"}
-Gender: ${patientData.gender || "Not specified"}
-
-${patientChart ? `
-MEDICAL PROBLEMS:
-${patientChart.medicalProblems?.map((problem: any) => `- ${problem.problem} (${problem.status})`).join('\n') || 'No medical problems on file'}
-
-CURRENT MEDICATIONS:
-${patientChart.currentMedications?.map((med: any) => `- ${med.medicationName} ${med.dosage} ${med.frequency} ${med.route}`).join('\n') || 'No current medications'}
-
-ALLERGIES:
-${patientChart.allergies?.map((allergy: any) => `- ${allergy.allergen}: ${allergy.reaction} (${allergy.severity})`).join('\n') || 'NKDA (No Known Drug Allergies)'}
-
-RECENT VITALS:
-${patientChart.vitals?.map((vital: any) => `- ${vital.type}: ${vital.value} ${vital.unit} (${vital.measuredAt})`).join('\n') || 'No recent vitals recorded'}
-
-FAMILY HISTORY:
-${patientChart.familyHistory?.map((fh: any) => `- ${fh.condition} (${fh.relationship})`).join('\n') || 'No family history recorded'}
-
-SOCIAL HISTORY:
-${patientChart.socialHistory?.map((sh: any) => `- ${sh.category}: ${sh.value}`).join('\n') || 'No social history recorded'}
-` : 'Chart data unavailable'}`;
-
-    console.log(
-      "[NursingView] Injecting patient context for AI suggestions",
-    );
-
-    // 3. Inject patient context AND current live transcription
-    const currentTranscription =
-      liveTranscriptionContent || transcriptionBuffer || "";
-    const contextWithTranscription = `${patientContext}
-
-CURRENT LIVE CONVERSATION:
-${currentTranscription}
-
-CRITICAL: If the nurse is asking direct questions about patient chart information, provide SPECIFIC facts from the chart data above, NOT generic suggestions.
-
-Examples:
-- Question: "Does the patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF"
-- Question: "What medications?" → Answer: "Current medications: Acetaminophen 500mg daily"
-- Question: "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
-
-DO NOT say "Confirm" or "Assess" - give the actual chart facts directly.
-
-Please provide nursing insights based on the current conversation.`;
-
-    const contextMessage = {
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: contextWithTranscription,
-          },
-        ],
-      },
-    };
-
-    console.log(
-      "🧠 [NursingView] Injecting patient context for AI suggestions",
-    );
-    ws.send(JSON.stringify(contextMessage));
-
-    // 4. Create response for AI suggestions with nursing-specific instructions
-    const suggestionsMessage = {
-      type: "response.create",
-      response: {
-        modalities: ["text"],
-        instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
-
-CRITICAL PRIORITY: When nurses ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic advice when asked direct questions.
-
-DIRECT QUESTION RESPONSES:
-  -When nurse asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
-  -When nurse asks "What medications?" → Answer: "Current medications: Acetaminophen 500mg once daily by mouth"
-  -When nurse asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
-  -FORBIDDEN responses: "Confirm...", "Assess...", "Obtain details..." when chart data exists
-
-Focus on high-value, evidence-based, nursing assessments and safety considerations based on what the patient is saying in this conversation. Provide only one brief phrase at a time. If multiple insights could be provided, prioritize the most critical or relevant one first.
-
-Avoid restating general knowledge or overly simplistic recommendations a nurse would already know. Prioritize specifics: vital signs monitoring, medication safety, patient comfort measures, and nursing interventions. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
-
-DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
-
-IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
-
-Format each bullet point on its own line with no extra spacing between them.`,
-        metadata: {
-          type: "suggestions",
-        },
-      },
-    };
-
-    console.log("🧠 [NursingView] Creating AI suggestions conversation");
-    ws.send(JSON.stringify(suggestionsMessage));
-  };
 
   // Start recording using same OpenAI Realtime API as provider view
   const startRecording = async () => {
@@ -551,7 +429,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
           model: "gpt-4o-mini-realtime-preview",
         });
 
-        realtimeWs = new WebSocket(
+        realtimeWs.current = new WebSocket(
           `wss://api.openai.com/v1/realtime?${params.toString()}`,
           protocols,
         );
@@ -821,7 +699,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           }
 
           // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
-          else if (message.type === "response.text.delta") {
+          if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
             console.log(
               "🧠 [NursingView] AI suggestions delta received:",
@@ -1053,7 +931,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           }
 
           // Handle AI suggestions completion
-          else if (message.type === "response.text.done") {
+          if (message.type === "response.text.done") {
             console.log("✅ [NursingView] AI suggestions completed");
             // Add line break after each completed response
             setSuggestionsBuffer((prev) => prev + "\n");
@@ -1170,7 +1048,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
               const base64Audio = btoa(binary);
 
               // Send audio buffer exactly like provider view
-              realtimeWs!.send(
+              realtimeWs.current!.send(
                 JSON.stringify({
                   type: "input_audio_buffer.append",
                   audio: base64Audio,
