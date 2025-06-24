@@ -938,7 +938,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           }
 
           // Handle complete response completion
-          else if (message.type === "response.done") {
+          if (message.type === "response.done") {
             console.log("✅ [NursingView] Response completely finished - marking as complete");
             markResponseComplete();
           }
@@ -1104,6 +1104,8 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           title: "Recording Started",
           description: "Nursing transcription active",
         });
+
+        setIsRecording(true);
       } catch (error) {
         console.error("❌ [NursingView] DETAILED ERROR in recording:", {
           error,
