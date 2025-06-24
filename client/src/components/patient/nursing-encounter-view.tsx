@@ -323,164 +323,143 @@ Format each bullet point on its own line with no extra spacing between them.`,
     });
   };
 
-  // Function to get real-time suggestions during recording - EXACT COPY from provider view
-  const getLiveAISuggestions = async (transcription: string) => {
-    if (transcription.length < 15) return; // Process smaller chunks for faster response
+  // AI Suggestions WebSocket system - copied from provider's working implementation
+  const startSuggestionsConversation = async (
+    ws: WebSocket | null,
+    patientData: any,
+  ) => {
+    if (!ws) return;
 
-    // Debounce suggestions to prevent too many rapid API calls
-    const now = Date.now();
-    if (now - lastSuggestionTime < 1000) {
-      // Clear any existing timeout and set a new one
-      if (suggestionDebounceTimer.current) {
-        clearTimeout(suggestionDebounceTimer.current);
-      }
-      suggestionDebounceTimer.current = setTimeout(() => {
-        getLiveAISuggestions(transcription);
-      }, 1000);
-      return;
-    }
+    console.log("[NursingView] Starting AI suggestions conversation");
 
-    setLastSuggestionTime(now);
-
+    // 1. Fetch full patient chart data for context injection
+    let patientChart = null;
     try {
       console.log(
-        "🧠 [NursingView] Getting live AI suggestions for transcription:",
-        transcription.substring(0, 100) + "...",
+        "[NursingView] Fetching patient chart data for context injection",
       );
-
-      const requestBody = {
-        patientId: patient.id.toString(),
-        userRole: "nurse",
-        isLiveChunk: "true",
-        transcription: transcription,
-      };
-
-      console.log(
-        "🧠 [NursingView] Sending live suggestions request to /api/voice/live-suggestions",
+      const chartResponse = await fetch(
+        `/api/patients/${patientData.id}/chart`,
       );
-      console.log("🧠 [NursingView] Request body:", requestBody);
-
-      const response = await fetch("/api/voice/live-suggestions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log(
-        "🧠 [NursingView] Live suggestions response status:",
-        response.status,
-      );
-      console.log(
-        "🧠 [NursingView] Live suggestions response headers:",
-        Object.fromEntries(response.headers.entries()),
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("🧠 [NursingView] Live AI suggestions received:", data);
-
-        if (data.aiSuggestions) {
-          console.log(
-            "🔧 [NursingView] Processing live suggestions, existing:",
-            liveSuggestions?.length || 0,
-            "chars",
-          );
-          console.log(
-            "🔧 [NursingView] New suggestions count:",
-            data.aiSuggestions.realTimePrompts?.length || 0,
-          );
-
-          // Get existing live suggestions to append to them (like transcription buffer)
-          const existingLiveSuggestions = liveSuggestions || "";
-          let suggestionsText = existingLiveSuggestions;
-
-          // If this is the first suggestion, add the header
-          if (
-            !existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
-          ) {
-            suggestionsText = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n";
-            console.log("🔧 [NursingView] First suggestion - added header");
-          }
-
-          // Only append new suggestions if they exist and aren't empty
-          if (data.aiSuggestions.realTimePrompts?.length > 0) {
-            // Filter out empty suggestions and ones already in the buffer
-            const newSuggestions = data.aiSuggestions.realTimePrompts.filter(
-              (prompt: string) => {
-                if (
-                  !prompt ||
-                  !prompt.trim() ||
-                  prompt.trim() === "Continue recording for more context..."
-                ) {
-                  return false;
-                }
-                // Check if this suggestion is already in our accumulated text
-                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, "").trim();
-                return !existingLiveSuggestions.includes(cleanPrompt);
-              },
-            );
-
-            if (newSuggestions.length > 0) {
-              console.log(
-                "🔧 [NursingView] Adding",
-                newSuggestions.length,
-                "new suggestions to existing",
-                existingLiveSuggestions.length,
-                "chars",
-              );
-
-              // Append each new suggestion (like transcription delta accumulation)
-              newSuggestions.forEach((prompt: string) => {
-                const formattedPrompt =
-                  prompt.startsWith("•") ||
-                  prompt.startsWith("-") ||
-                  prompt.startsWith("*")
-                    ? prompt
-                    : `• ${prompt}`;
-                suggestionsText += `${formattedPrompt}\n`;
-                console.log(
-                  "🔧 [NursingView] Accumulated suggestion:",
-                  formattedPrompt.substring(0, 50) + "...",
-                );
-              });
-            } else {
-              console.log("🔧 [NursingView] No new suggestions to accumulate");
-            }
-          }
-
-          console.log(
-            "🔧 [NursingView] Final live suggestions length:",
-            suggestionsText.length,
-          );
-          setLiveSuggestions(suggestionsText);
-          setGptSuggestions(suggestionsText); // Also update the display
-          console.log(
-            "🔧 [NursingView] Live suggestions updated, length:",
-            suggestionsText.length,
-          );
-        }
+      if (chartResponse.ok) {
+        patientChart = await chartResponse.json();
+        console.log(
+          "[NursingView] Patient chart data fetched successfully",
+        );
       } else {
-        const errorText = await response.text();
-        console.error(
-          "❌ [NursingView] Live suggestions HTTP error:",
-          response.status,
-        );
-        console.error("❌ [NursingView] Full HTML response:", errorText);
-        throw new Error(
-          `HTTP ${response.status}: ${errorText.substring(0, 200)}`,
-        );
+        console.error("[NursingView] Failed to fetch patient chart data");
       }
-    } catch (error) {
-      console.error("❌ [NursingView] Live suggestions failed:", error);
-      console.error("❌ [NursingView] Error details:", {
-        message: (error as any)?.message,
-        name: (error as any)?.name,
-        stack: (error as any)?.stack,
-      });
+    } catch (chartError) {
+      console.error("[NursingView] Error fetching patient chart:", chartError);
     }
-  };
+
+    // 2. Build comprehensive patient context
+    const patientContext = `PATIENT CHART CONTEXT:
+
+Patient: ${patientData.firstName} ${patientData.lastName}
+DOB: ${patientData.dob || "Not specified"}
+Age: ${patientData.age || "Not specified"}
+Gender: ${patientData.gender || "Not specified"}
+
+${patientChart ? `
+MEDICAL PROBLEMS:
+${patientChart.medicalProblems?.map((problem: any) => `- ${problem.problem} (${problem.status})`).join('\n') || 'No medical problems on file'}
+
+CURRENT MEDICATIONS:
+${patientChart.currentMedications?.map((med: any) => `- ${med.medicationName} ${med.dosage} ${med.frequency} ${med.route}`).join('\n') || 'No current medications'}
+
+ALLERGIES:
+${patientChart.allergies?.map((allergy: any) => `- ${allergy.allergen}: ${allergy.reaction} (${allergy.severity})`).join('\n') || 'NKDA (No Known Drug Allergies)'}
+
+RECENT VITALS:
+${patientChart.vitals?.map((vital: any) => `- ${vital.type}: ${vital.value} ${vital.unit} (${vital.measuredAt})`).join('\n') || 'No recent vitals recorded'}
+
+FAMILY HISTORY:
+${patientChart.familyHistory?.map((fh: any) => `- ${fh.condition} (${fh.relationship})`).join('\n') || 'No family history recorded'}
+
+SOCIAL HISTORY:
+${patientChart.socialHistory?.map((sh: any) => `- ${sh.category}: ${sh.value}`).join('\n') || 'No social history recorded'}
+` : 'Chart data unavailable'}`;
+
+    console.log(
+      "[NursingView] Injecting patient context for AI suggestions",
+    );
+
+    // 3. Inject patient context AND current live transcription
+    const currentTranscription =
+      liveTranscriptionContent || transcriptionBuffer || "";
+    const contextWithTranscription = `${patientContext}
+
+CURRENT LIVE CONVERSATION:
+${currentTranscription}
+
+CRITICAL: If the nurse is asking direct questions about patient chart information, provide SPECIFIC facts from the chart data above, NOT generic suggestions.
+
+Examples:
+- Question: "Does the patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF"
+- Question: "What medications?" → Answer: "Current medications: Acetaminophen 500mg daily"
+- Question: "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+
+DO NOT say "Confirm" or "Assess" - give the actual chart facts directly.
+
+Please provide nursing insights based on the current conversation.`;
+
+    const contextMessage = {
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: contextWithTranscription,
+          },
+        ],
+      },
+    };
+
+    console.log(
+      "🧠 [NursingView] Injecting patient context for AI suggestions",
+    );
+    ws.send(JSON.stringify(contextMessage));
+
+    // 4. Create response for AI suggestions with nursing-specific instructions
+    const suggestionsMessage = {
+      type: "response.create",
+      response: {
+        modalities: ["text"],
+        instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
+
+CRITICAL PRIORITY: When nurses ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic advice when asked direct questions.
+
+DIRECT QUESTION RESPONSES:
+  -When nurse asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF"
+  -When nurse asks "What medications?" → Answer: "Current medications: Acetaminophen 500mg once daily by mouth"
+  -When nurse asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
+  -FORBIDDEN responses: "Confirm...", "Assess...", "Obtain details..." when chart data exists
+
+Focus on high-value, evidence-based, nursing assessments and safety considerations based on what the patient is saying in this conversation. Provide only one brief phrase at a time. If multiple insights could be provided, prioritize the most critical or relevant one first.
+
+Avoid restating general knowledge or overly simplistic recommendations a nurse would already know. Prioritize specifics: vital signs monitoring, medication safety, patient comfort measures, and nursing interventions. Avoid explanations or pleasantries. Stay brief and actionable. Limit to one insight per response.
+
+DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
+
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
+
+Format each bullet point on its own line with no extra spacing between them.`,
+        metadata: {
+          type: "suggestions",
+        },
+      },
+    };
+
+    console.log("🧠 [NursingView] Creating AI suggestions conversation");
+    markResponseActive("suggestions_initial");
+    ws.send(JSON.stringify(suggestionsMessage));
+  } else {
+    console.log("🧠 [NursingView] Skipping response creation - active response exists");
+  }
+};
 
   // Start recording using same OpenAI Realtime API as provider view
   const startRecording = async () => {
@@ -578,7 +557,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
           protocols,
         );
 
-        realtimeWs.onopen = () => {
+        realtimeWs.current.onopen = () => {
           console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API");
 
           // Session configuration: Focus on transcription with medical abbreviations for nursing
@@ -639,14 +618,14 @@ FOCUS AREAS:
             },
           };
 
-          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
+          realtimeWs.current!.send(JSON.stringify(sessionUpdateMessage));
         };
 
         // Add conversation state management like provider view
         let conversationActive = false;
         let suggestionsStarted = false;
 
-        realtimeWs.onmessage = (event) => {
+        realtimeWs.current.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [NursingView] OpenAI message type:", message.type);
 
@@ -711,7 +690,7 @@ FOCUS AREAS:
               transcriptionBuffer.length > 20 &&
               !suggestionsStarted &&
               !conversationActive &&
-              realtimeWs
+              realtimeWs.current
             ) {
               suggestionsStarted = true;
               conversationActive = true;
@@ -725,7 +704,7 @@ FOCUS AREAS:
                 "Conversation active:",
                 conversationActive,
               );
-              startSuggestionsConversation(realtimeWs, patient);
+              startSuggestionsConversation(realtimeWs.current, patient);
             }
 
             // REAL-TIME: Continuously update AI suggestions with live partial transcription
@@ -849,6 +828,23 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
               "🧠 [NursingView] AI suggestions delta received:",
               deltaText,
             );
+
+            // Accumulate suggestions with proper formatting
+            setSuggestionsBuffer((prev) => {
+              const newBuffer = prev + deltaText;
+              
+              // Update display with formatted suggestions
+              const formattedSuggestions = newBuffer
+                .split('\n')
+                .filter(line => line.trim())
+                .map(line => line.startsWith('•') || line.startsWith('-') ? line : `• ${line}`)
+                .join('\n');
+
+              setGptSuggestions(`🩺 REAL-TIME NURSING INSIGHTS:\n\n${formattedSuggestions}`);
+              setLiveSuggestions(`🩺 REAL-TIME NURSING INSIGHTS:\n\n${formattedSuggestions}`);
+              
+              return newBuffer;
+            });
             console.log("🧠 [NursingView] Delta length:", deltaText.length);
             console.log(
               "🧠 [NursingView] Current suggestions buffer length:",
@@ -1110,7 +1106,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           }
         };
 
-        realtimeWs.onerror = (error) => {
+        realtimeWs.current.onerror = (error) => {
           console.error("❌ [NursingView] WebSocket error:", error);
           toast({
             variant: "destructive",

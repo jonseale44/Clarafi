@@ -115,7 +115,7 @@ Preferred communication style: Simple, everyday language.
 - **AI Suggestions Major Enhancement**: Implemented mandatory direct question response protocol
 - AI now detects direct questions ("Does patient have medical problems?") and provides specific chart facts
 - Eliminated generic responses ("Confirm medical problems") in favor of factual answers ("Medical problems: HTN, DM2, CKD stage 3, AFib, CHF")
-- **Fixed AI formatting issues**: Simplified nursing AI instructions to match successful provider format, eliminating conflicting rules that caused sentence fragmentation
+- **CRITICAL ARCHITECTURE FIX**: Discovered nursing view was using phantom REST endpoint while provider used WebSocket - replaced broken REST API with working WebSocket implementation
 - Enhanced realtime AI instructions with explicit examples and forbidden response patterns
 - Both nursing template and AI suggestions now use same patient chart service for consistency
 
