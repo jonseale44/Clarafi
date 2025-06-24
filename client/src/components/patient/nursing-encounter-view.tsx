@@ -103,9 +103,6 @@ export function NursingEncounterView({
 
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-  
-  // WebSocket state and refs for AI suggestions (matching provider)
-  const realtimeWs = useRef<WebSocket | null>(null);
 
   // Get current user for role-based functionality
   const { data: currentUser } = useQuery<UserType>({
@@ -117,18 +114,6 @@ export function NursingEncounterView({
     queryKey: [`/api/encounters/${encounterId}`],
     enabled: !!encounterId,
   });
-
-  // Early return for loading state
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading nursing encounter...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Deduplication tracking for WebSocket messages
   const processedEvents = useRef(new Set<string>());
@@ -161,15 +146,35 @@ export function NursingEncounterView({
     activeResponseId.current = null;
   };
 
-  // Function to analyze GPT suggestions after recording
-  const analyzeWithGPT = async () => {
-    console.log("🧠 [NursingView] Analyzing encounter with AI");
-    setGptSuggestions("AI-generated nursing suggestions based on the encounter...");
-    toast({
-      title: "Smart Suggestions Generated",
-      description: "GPT analysis complete",
-    });
-  };
+  // MISSING: Add the startSuggestionsConversation function from provider view
+  const startSuggestionsConversation = async (
+    ws: WebSocket | null,
+    patientData: any,
+  ) => {
+    if (!ws) return;
+
+    console.log("[NursingView] Starting AI suggestions conversation");
+
+    // 1. Fetch full patient chart data like external implementation
+    let patientChart = null;
+    try {
+      console.log(
+        "[NursingView] Fetching patient chart data for context injection",
+      );
+      const chartResponse = await fetch(
+        `/api/patients/${patientData.id}/chart`,
+      );
+      if (chartResponse.ok) {
+        patientChart = await chartResponse.json();
+        console.log("[NursingView] Patient chart data fetched successfully");
+      } else {
+        console.warn(
+          "[NursingView] Failed to fetch patient chart, continuing without context",
+        );
+      }
+    } catch (error) {
+      console.error("[NursingView] Error fetching patient chart:", error);
+    }
 
     // 2. Build comprehensive patient context with enhanced chart sections for nursing AI
     const patientContext = `Patient: ${patientData.firstName} ${patientData.lastName}
@@ -227,7 +232,7 @@ ${patientChart.surgicalHistory?.length > 0
 }
 `
     : "Limited patient data available - chart context not accessible"
-};
+}`;
 
     // 3. Send patient context to OpenAI for AI suggestions
     const currentTranscription =
@@ -318,37 +323,164 @@ Format each bullet point on its own line with no extra spacing between them.`,
     });
   };
 
-  // AI Suggestions WebSocket system - copied from provider's working implementation
-  const startSuggestionsConversation = async (
-    ws: WebSocket | null,
-    patientData: any,
-  ) => {
-    if (!ws) return;
+  // Function to get real-time suggestions during recording - EXACT COPY from provider view
+  const getLiveAISuggestions = async (transcription: string) => {
+    if (transcription.length < 15) return; // Process smaller chunks for faster response
 
-    console.log("[NursingView] Starting AI suggestions conversation");
-
-    // 1. Fetch full patient chart data for context injection
-    let patientChart = null;
-    try {
-      console.log(
-        "[NursingView] Fetching patient chart data for context injection",
-      );
-      const chartResponse = await fetch(
-        `/api/patients/${patientData.id}/chart`,
-      );
-      if (chartResponse.ok) {
-        patientChart = await chartResponse.json();
-        console.log(
-          "[NursingView] Patient chart data fetched successfully",
-        );
-      } else {
-        console.error("[NursingView] Failed to fetch patient chart data");
+    // Debounce suggestions to prevent too many rapid API calls
+    const now = Date.now();
+    if (now - lastSuggestionTime < 1000) {
+      // Clear any existing timeout and set a new one
+      if (suggestionDebounceTimer.current) {
+        clearTimeout(suggestionDebounceTimer.current);
       }
-    } catch (chartError) {
-      console.error("[NursingView] Error fetching patient chart:", chartError);
+      suggestionDebounceTimer.current = setTimeout(() => {
+        getLiveAISuggestions(transcription);
+      }, 1000);
+      return;
     }
 
+    setLastSuggestionTime(now);
 
+    try {
+      console.log(
+        "🧠 [NursingView] Getting live AI suggestions for transcription:",
+        transcription.substring(0, 100) + "...",
+      );
+
+      const requestBody = {
+        patientId: patient.id.toString(),
+        userRole: "nurse",
+        isLiveChunk: "true",
+        transcription: transcription,
+      };
+
+      console.log(
+        "🧠 [NursingView] Sending live suggestions request to /api/voice/live-suggestions",
+      );
+      console.log("🧠 [NursingView] Request body:", requestBody);
+
+      const response = await fetch("/api/voice/live-suggestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log(
+        "🧠 [NursingView] Live suggestions response status:",
+        response.status,
+      );
+      console.log(
+        "🧠 [NursingView] Live suggestions response headers:",
+        Object.fromEntries(response.headers.entries()),
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("🧠 [NursingView] Live AI suggestions received:", data);
+
+        if (data.aiSuggestions) {
+          console.log(
+            "🔧 [NursingView] Processing live suggestions, existing:",
+            liveSuggestions?.length || 0,
+            "chars",
+          );
+          console.log(
+            "🔧 [NursingView] New suggestions count:",
+            data.aiSuggestions.realTimePrompts?.length || 0,
+          );
+
+          // Get existing live suggestions to append to them (like transcription buffer)
+          const existingLiveSuggestions = liveSuggestions || "";
+          let suggestionsText = existingLiveSuggestions;
+
+          // If this is the first suggestion, add the header
+          if (
+            !existingLiveSuggestions.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")
+          ) {
+            suggestionsText = "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n";
+            console.log("🔧 [NursingView] First suggestion - added header");
+          }
+
+          // Only append new suggestions if they exist and aren't empty
+          if (data.aiSuggestions.realTimePrompts?.length > 0) {
+            // Filter out empty suggestions and ones already in the buffer
+            const newSuggestions = data.aiSuggestions.realTimePrompts.filter(
+              (prompt: string) => {
+                if (
+                  !prompt ||
+                  !prompt.trim() ||
+                  prompt.trim() === "Continue recording for more context..."
+                ) {
+                  return false;
+                }
+                // Check if this suggestion is already in our accumulated text
+                const cleanPrompt = prompt.replace(/^[•\-\*]\s*/, "").trim();
+                return !existingLiveSuggestions.includes(cleanPrompt);
+              },
+            );
+
+            if (newSuggestions.length > 0) {
+              console.log(
+                "🔧 [NursingView] Adding",
+                newSuggestions.length,
+                "new suggestions to existing",
+                existingLiveSuggestions.length,
+                "chars",
+              );
+
+              // Append each new suggestion (like transcription delta accumulation)
+              newSuggestions.forEach((prompt: string) => {
+                const formattedPrompt =
+                  prompt.startsWith("•") ||
+                  prompt.startsWith("-") ||
+                  prompt.startsWith("*")
+                    ? prompt
+                    : `• ${prompt}`;
+                suggestionsText += `${formattedPrompt}\n`;
+                console.log(
+                  "🔧 [NursingView] Accumulated suggestion:",
+                  formattedPrompt.substring(0, 50) + "...",
+                );
+              });
+            } else {
+              console.log("🔧 [NursingView] No new suggestions to accumulate");
+            }
+          }
+
+          console.log(
+            "🔧 [NursingView] Final live suggestions length:",
+            suggestionsText.length,
+          );
+          setLiveSuggestions(suggestionsText);
+          setGptSuggestions(suggestionsText); // Also update the display
+          console.log(
+            "🔧 [NursingView] Live suggestions updated, length:",
+            suggestionsText.length,
+          );
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(
+          "❌ [NursingView] Live suggestions HTTP error:",
+          response.status,
+        );
+        console.error("❌ [NursingView] Full HTML response:", errorText);
+        throw new Error(
+          `HTTP ${response.status}: ${errorText.substring(0, 200)}`,
+        );
+      }
+    } catch (error) {
+      console.error("❌ [NursingView] Live suggestions failed:", error);
+      console.error("❌ [NursingView] Error details:", {
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        stack: (error as any)?.stack,
+      });
+    }
+  };
 
   // Start recording using same OpenAI Realtime API as provider view
   const startRecording = async () => {
@@ -365,28 +497,25 @@ Format each bullet point on its own line with no extra spacing between them.`,
     setTranscriptionBuffer("");
     setLiveTranscriptionContent("");
 
-    // Create direct WebSocket connection to OpenAI like provider view
-    let realtimeWs: WebSocket | null = null;
-    let transcriptionBuffer = "";
+    try {
+      // Create direct WebSocket connection to OpenAI like provider view
+      let realtimeWs: WebSocket | null = null;
+      let transcriptionBuffer = "";
 
-    console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
+      try {
+        console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
 
-    // Get API key from environment
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    console.log("🔑 [NursingView] API key check:", {
-      hasApiKey: !!apiKey,
-      keyLength: apiKey?.length || 0,
-      keyPrefix: apiKey?.substring(0, 7) || "none",
-    });
+        // Get API key from environment
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        console.log("🔑 [NursingView] API key check:", {
+          hasApiKey: !!apiKey,
+          keyLength: apiKey?.length || 0,
+          keyPrefix: apiKey?.substring(0, 7) || "none",
+        });
 
-    if (!apiKey) {
-      toast({
-        variant: "destructive",
-        title: "Configuration Error",
-        description: "OpenAI API key not available",
-      });
-      return;
-    }
+        if (!apiKey) {
+          throw new Error("OpenAI API key not available in environment");
+        }
 
         // Step 1: Create session exactly like provider view
         console.log("🔧 [NursingView] Creating OpenAI session...");
@@ -444,12 +573,12 @@ Format each bullet point on its own line with no extra spacing between them.`,
           model: "gpt-4o-mini-realtime-preview",
         });
 
-        realtimeWs.current = new WebSocket(
+        realtimeWs = new WebSocket(
           `wss://api.openai.com/v1/realtime?${params.toString()}`,
           protocols,
         );
 
-        realtimeWs.current.onopen = () => {
+        realtimeWs.onopen = () => {
           console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API");
 
           // Session configuration: Focus on transcription with medical abbreviations for nursing
@@ -510,14 +639,14 @@ FOCUS AREAS:
             },
           };
 
-          realtimeWs.current!.send(JSON.stringify(sessionUpdateMessage));
+          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
         };
 
         // Add conversation state management like provider view
         let conversationActive = false;
         let suggestionsStarted = false;
 
-        realtimeWs.current.onmessage = (event) => {
+        realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [NursingView] OpenAI message type:", message.type);
 
@@ -582,7 +711,7 @@ FOCUS AREAS:
               transcriptionBuffer.length > 20 &&
               !suggestionsStarted &&
               !conversationActive &&
-              realtimeWs.current
+              realtimeWs
             ) {
               suggestionsStarted = true;
               conversationActive = true;
@@ -596,7 +725,7 @@ FOCUS AREAS:
                 "Conversation active:",
                 conversationActive,
               );
-              startSuggestionsConversation(realtimeWs.current, patient);
+              startSuggestionsConversation(realtimeWs, patient);
             }
 
             // REAL-TIME: Continuously update AI suggestions with live partial transcription
@@ -714,30 +843,12 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           }
 
           // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
-          if (message.type === "response.text.delta") {
+          else if (message.type === "response.text.delta") {
             const deltaText = message.delta || "";
             console.log(
               "🧠 [NursingView] AI suggestions delta received:",
               deltaText,
             );
-
-            // Accumulate suggestions with proper formatting
-            setSuggestionsBuffer((prev) => {
-              const newBuffer = prev + deltaText;
-              
-              // Update display with formatted suggestions
-              const formattedSuggestions = newBuffer
-                .split('\n')
-                .filter(line => line.trim())
-                .map(line => line.startsWith('•') || line.startsWith('-') ? line : `• ${line}`)
-                .join('\n');
-
-              setGptSuggestions(`🩺 REAL-TIME NURSING INSIGHTS:\n\n${formattedSuggestions}`);
-              setLiveSuggestions(`🩺 REAL-TIME NURSING INSIGHTS:\n\n${formattedSuggestions}`);
-              
-              return newBuffer;
-            });
-          }
             console.log("🧠 [NursingView] Delta length:", deltaText.length);
             console.log(
               "🧠 [NursingView] Current suggestions buffer length:",
@@ -946,14 +1057,14 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           }
 
           // Handle AI suggestions completion
-          if (message.type === "response.text.done") {
+          else if (message.type === "response.text.done") {
             console.log("✅ [NursingView] AI suggestions completed");
             // Add line break after each completed response
             setSuggestionsBuffer((prev) => prev + "\n");
           }
 
           // Handle complete response completion
-          if (message.type === "response.done") {
+          else if (message.type === "response.done") {
             console.log("✅ [NursingView] Response completely finished - marking as complete");
             markResponseComplete();
           }
@@ -999,7 +1110,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           }
         };
 
-        realtimeWs.current.onerror = (error) => {
+        realtimeWs.onerror = (error) => {
           console.error("❌ [NursingView] WebSocket error:", error);
           toast({
             variant: "destructive",
@@ -1008,7 +1119,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           });
         };
 
-        realtimeWs.current.onclose = (event) => {
+        realtimeWs.onclose = (event) => {
           console.log(
             "🔌 [NursingView] WebSocket closed:",
             event.code,
@@ -1036,7 +1147,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
 
         processor.onaudioprocess = async (e) => {
-          if (!realtimeWs.current || realtimeWs.current.readyState !== WebSocket.OPEN) return;
+          if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
 
           const inputData = e.inputBuffer.getChannelData(0);
 
@@ -1063,7 +1174,7 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
               const base64Audio = btoa(binary);
 
               // Send audio buffer exactly like provider view
-              realtimeWs.current!.send(
+              realtimeWs!.send(
                 JSON.stringify({
                   type: "input_audio_buffer.append",
                   audio: base64Audio,
@@ -1119,11 +1230,37 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
           title: "Recording Started",
           description: "Nursing transcription active",
         });
+      } catch (error) {
+        console.error("❌ [NursingView] DETAILED ERROR in recording:", {
+          error,
+          message: (error as any)?.message,
+          name: (error as any)?.name,
+          stack: (error as any)?.stack,
+          patientId: patient.id,
+        });
 
-        setIsRecording(true);
-      
-      // Add WebSocket to global reference for cleanup
-      (window as any).currentRealtimeWs = realtimeWs;
+        let errorMessage = "Unknown error occurred";
+        if ((error as any)?.message) {
+          errorMessage = (error as any).message;
+        } else if (typeof error === "string") {
+          errorMessage = error;
+        }
+
+        toast({
+          title: "Recording Failed",
+          description: `Transcription error: ${errorMessage}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("❌ [NursingView] Failed to start recording:", error);
+      toast({
+        variant: "destructive",
+        title: "Recording Failed",
+        description: "Unable to start voice transcription",
+      });
+      setIsRecording(false);
+    }
   };
 
   const stopRecording = async () => {
@@ -1198,6 +1335,17 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
     // Trigger template-based nursing assessment
     nursingTemplateRef.current?.startTemplateAssessment();
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading nursing encounter...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full">
