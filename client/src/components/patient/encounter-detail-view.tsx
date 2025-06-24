@@ -123,6 +123,7 @@ export function EncounterDetailView({
   onBackToChart,
 }: EncounterDetailViewProps) {
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">("INACTIVE");
   const [transcription, setTranscription] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
