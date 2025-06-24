@@ -243,7 +243,14 @@ ${patientChart.surgicalHistory?.length > 0
 CURRENT LIVE CONVERSATION:
 ${currentTranscription}
 
-Please provide nursing suggestions based on what the patient is saying in this current conversation.`;
+CRITICAL INSTRUCTION: If the nurse is asking direct questions about patient information (medical problems, medications, allergies, etc.), provide SPECIFIC factual answers using the chart data above. Do NOT provide generic suggestions when asked direct questions about patient history.
+
+Examples:
+- If asked "Does the patient have any medical problems?" → List the specific medical problems from chart data
+- If asked "What medications is the patient on?" → List the current medications with dosages
+- If asked "Any allergies?" → State the specific allergies or "NKDA"
+
+Please provide nursing suggestions based on what is happening in this current conversation.`;
 
     const contextMessage = {
       type: "conversation.item.create",
@@ -287,13 +294,14 @@ Chart Context Integration:
   -Identify potential medication interactions, allergy considerations, and condition-specific monitoring needs.
   -When patient symptoms relate to known medical problems, reference them appropriately for clinical context.
   
-Direct Question Response Protocol:
-  -When the nurse asks direct questions about patient history (e.g. "Does the patient have any medical problems?", "What medications is the patient on?", "Any allergies?"), provide SPECIFIC answers using the available chart data.
-  -For medical problems questions: List the actual conditions from the medical problems data with status.
-  -For medication questions: List current medications with dosages and frequencies.
-  -For allergy questions: List known allergies with reactions, or state "NKDA" if none.
-  -Always respond with factual chart information first, then provide relevant nursing insights.
-  -Example: If asked "Does the patient have any medical problems?", respond: "Yes, this patient has several active medical problems: Heart failure with reduced ejection fraction, Atrial fibrillation, Chronic kidney disease stage 3, Type 2 diabetes mellitus, and Hypertension. Given these conditions, monitor for..."ext.
+CRITICAL: Direct Question Response Protocol:
+  -PRIORITY: When the nurse asks direct questions about patient history, immediately provide SPECIFIC factual answers using chart data.
+  -Question types requiring factual answers: "Does the patient have any medical problems?", "What medications is the patient on?", "Any allergies?", "What's the patient's medical history?"
+  -For medical problems questions: "Yes, this patient has: [list specific conditions from medical problems data]"
+  -For medication questions: "Current medications: [list with dosages and frequencies]"
+  -For allergy questions: "Allergies: [list specific allergies with reactions]" or "NKDA"
+  -ALWAYS lead with factual chart information when asked direct questions, then add nursing insights if relevant.
+  -Do NOT provide generic nursing advice when asked specific chart information questions.
 
 Information Access:
   -When asked, provide succinct and relevant details from the patient's medical records (e.g., medical problems, medications, allergies, vitals, family history, social history, surgical history).
