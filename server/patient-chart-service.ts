@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { patients, encounters, medications, diagnoses, allergies, medicalHistory } from "../shared/schema.js";
+import { patients, encounters, medications, diagnoses, allergies, medicalHistory, medicalProblems, vitals, familyHistory, socialHistory } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
 
 /**
@@ -18,6 +18,10 @@ export class PatientChartService {
     recentDiagnoses: any[];
     allergies: any[];
     demographics: any;
+    medicalProblems: any[];
+    vitals: any[];
+    familyHistory: any[];
+    socialHistory: any[];
   }> {
     try {
       console.log(`[Chart Service] Fetching chart data for patient ${patientId}`);
@@ -57,6 +61,31 @@ export class PatientChartService {
         .from(allergies)
         .where(eq(allergies.patientId, patientId));
 
+      // Get medical problems
+      const medicalProblemsRecords = await db.select()
+        .from(medicalProblems)
+        .where(eq(medicalProblems.patientId, patientId))
+        .orderBy(desc(medicalProblems.updatedAt));
+
+      // Get recent vitals (last 5 readings)
+      const vitalsRecords = await db.select()
+        .from(vitals)
+        .where(eq(vitals.patientId, patientId))
+        .orderBy(desc(vitals.recordedAt))
+        .limit(5);
+
+      // Get family history
+      const familyHistoryRecords = await db.select()
+        .from(familyHistory)
+        .where(eq(familyHistory.patientId, patientId))
+        .orderBy(desc(familyHistory.updatedAt));
+
+      // Get social history
+      const socialHistoryRecords = await db.select()
+        .from(socialHistory)
+        .where(eq(socialHistory.patientId, patientId))
+        .orderBy(desc(socialHistory.updatedAt));
+
       const chartData = {
         activeProblems: activeProblems,
         medicalHistory: medicalHistoryRecords.map(h => ({
@@ -86,7 +115,42 @@ export class PatientChartService {
         demographics: {
           age: patient[0] ? this.calculateAge(patient[0].dateOfBirth) : null,
           gender: patient[0]?.gender
-        }
+        },
+        medicalProblems: medicalProblemsRecords.map(mp => ({
+          id: mp.id,
+          problemTitle: mp.problemTitle,
+          currentIcd10Code: mp.currentIcd10Code,
+          problemStatus: mp.problemStatus,
+          firstDiagnosedDate: mp.firstDiagnosedDate,
+          visitHistory: mp.visitHistory
+        })),
+        vitals: vitalsRecords.map(v => ({
+          id: v.id,
+          recordedAt: v.recordedAt,
+          systolic: v.systolicBp,
+          diastolic: v.diastolicBp,
+          heartRate: v.heartRate,
+          temperature: v.temperature,
+          respiratoryRate: v.respiratoryRate,
+          oxygenSaturation: v.oxygenSaturation,
+          weight: v.weight,
+          height: v.height,
+          bmi: v.bmi,
+          painScale: v.painScale
+        })),
+        familyHistory: familyHistoryRecords.map(fh => ({
+          id: fh.id,
+          relationship: fh.familyMember,
+          condition: fh.medicalHistory,
+          sourceType: fh.sourceType
+        })),
+        socialHistory: socialHistoryRecords.map(sh => ({
+          id: sh.id,
+          category: sh.category,
+          details: sh.currentStatus,
+          notes: sh.historyNotes,
+          sourceType: sh.sourceType
+        }))
       };
 
       console.log(`[Chart Service] Retrieved chart data:`, {
@@ -94,7 +158,11 @@ export class PatientChartService {
         medicalHistory: chartData.medicalHistory.length,
         currentMedications: chartData.currentMedications.length,
         recentDiagnoses: chartData.recentDiagnoses.length,
-        allergies: chartData.allergies.length
+        allergies: chartData.allergies.length,
+        medicalProblems: chartData.medicalProblems.length,
+        vitals: chartData.vitals.length,
+        familyHistory: chartData.familyHistory.length,
+        socialHistory: chartData.socialHistory.length
       });
 
       return chartData;
@@ -106,7 +174,11 @@ export class PatientChartService {
         currentMedications: [],
         recentDiagnoses: [],
         allergies: [],
-        demographics: {}
+        demographics: {},
+        medicalProblems: [],
+        vitals: [],
+        familyHistory: [],
+        socialHistory: []
       };
     }
   }

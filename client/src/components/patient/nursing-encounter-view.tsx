@@ -176,7 +176,7 @@ export function NursingEncounterView({
       console.error("[NursingView] Error fetching patient chart:", error);
     }
 
-    // 2. Build comprehensive patient context
+    // 2. Build comprehensive patient context with enhanced chart sections for nursing AI
     const patientContext = `Patient: ${patientData.firstName} ${patientData.lastName}
 Age: ${patientData.dateOfBirth ? new Date().getFullYear() - new Date(patientData.dateOfBirth).getFullYear() : "Unknown"}
 Gender: ${patientData.gender || "Unknown"}
@@ -185,12 +185,53 @@ MRN: ${patientData.mrn || "Unknown"}
 ${
   patientChart
     ? `
-Active Problems: ${patientChart.activeProblems?.map((p: any) => p.title).join(", ") || "None documented"}
-Current Medications: ${patientChart.medications?.map((m: any) => `${m.name} ${m.dosage}`).join(", ") || "None documented"}
-Allergies: ${patientChart.allergies?.map((a: any) => a.allergen).join(", ") || "NKDA"}
-Recent Vitals: ${patientChart.vitals?.length > 0 ? `BP: ${patientChart.vitals[0].systolic}/${patientChart.vitals[0].diastolic}, HR: ${patientChart.vitals[0].heartRate}, Temp: ${patientChart.vitals[0].temperature}°F` : "Not available"}
+MEDICAL PROBLEMS:
+${patientChart.medicalProblems?.length > 0 
+  ? patientChart.medicalProblems.map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`).join("\n")
+  : "- No active medical problems documented"
+}
+
+CURRENT MEDICATIONS:
+${patientChart.currentMedications?.length > 0 
+  ? patientChart.currentMedications.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
+  : "- No current medications documented"
+}
+
+ALLERGIES:
+${patientChart.allergies?.length > 0 
+  ? patientChart.allergies.map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`).join("\n")
+  : "- NKDA (No Known Drug Allergies)"
+}
+
+RECENT VITALS:
+${patientChart.vitals?.length > 0 
+  ? `- BP: ${patientChart.vitals[0].systolic}/${patientChart.vitals[0].diastolic} mmHg
+- HR: ${patientChart.vitals[0].heartRate} bpm
+- Temp: ${patientChart.vitals[0].temperature}°F
+- RR: ${patientChart.vitals[0].respiratoryRate || "Not recorded"}
+- O2 Sat: ${patientChart.vitals[0].oxygenSaturation || "Not recorded"}%`
+  : "- No recent vitals available"
+}
+
+FAMILY HISTORY:
+${patientChart.familyHistory?.length > 0
+  ? patientChart.familyHistory.map((fh: any) => `- ${fh.relationship}: ${fh.condition}`).join("\n")
+  : "- No significant family history documented"
+}
+
+SOCIAL HISTORY:
+${patientChart.socialHistory?.length > 0
+  ? patientChart.socialHistory.map((sh: any) => `- ${sh.category}: ${sh.details}`).join("\n")
+  : "- Social history not documented"
+}
+
+SURGICAL HISTORY:
+${patientChart.surgicalHistory?.length > 0
+  ? patientChart.surgicalHistory.map((sh: any) => `- ${sh.procedure} (${sh.date})`).join("\n")
+  : "- No surgical history documented"
+}
 `
-    : "Limited patient data available"
+    : "Limited patient data available - chart context not accessible"
 }`;
 
     // 3. Send patient context to OpenAI for AI suggestions
@@ -240,9 +281,15 @@ Patient Evaluation Focus:
   -Respond again only at the conclusion of a logical line of questioning unless explicitly asked for more information.
   -These prompts are designed to help the nurse gather valuable information for the doctor. Recognize that the nurse may still be referring to the original suggestions while questioning the patient. Therefore, providing further responses during this time may be distracting. Wait until the current line of questioning is complete, the conversation has moved on, or you are explicitly asked to provide additional insights.
 
+Chart Context Integration:
+  -You have access to comprehensive patient chart information including: medical problems, current medications, allergies, recent vitals, family history, social history, and surgical history.
+  -Use this information to provide contextually relevant nursing assessments and safety considerations.
+  -Identify potential medication interactions, allergy considerations, and condition-specific monitoring needs.
+  -When patient symptoms relate to known medical problems, reference them appropriately for clinical context.
+
 Information Access:
-  -When asked, provide succinct and relevant details from the patient's medical records (e.g., past medical history, medications, allergies, vitals).
-  -If information is unavailable, indicate plainly: "Information not available."
+  -When asked, provide succinct and relevant details from the patient's medical records (e.g., medical problems, medications, allergies, vitals, family history, social history, surgical history).
+  -If specific information is unavailable, indicate plainly: "Information not available."
 
 Formatting Guidelines:
   -Start each insight on a new line.
