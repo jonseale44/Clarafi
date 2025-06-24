@@ -247,7 +247,7 @@ URGENT PRIORITY: The nurse is asking direct questions about patient chart inform
 
 EXAMPLES OF REQUIRED RESPONSES:
 - Question: "Does the patient have medical problems?" → Answer: "Yes: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF, headache with dizziness, SOB on exertion, HLD"
-- Question: "What medications?" → Answer: "Current medications: Acetaminophen 500mg once daily by mouth"  
+- Question: "What medications?" or "Did they take any medications?" → Answer: "Current medications: Acetaminophen 500mg once daily by mouth"  
 - Question: "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
 - Question: "Any surgeries?" → Answer: Use surgical history from chart data above
 
@@ -301,7 +301,7 @@ Chart Context Integration:
   
 ABSOLUTE REQUIREMENT - DIRECT QUESTION RESPONSES:
   -When nurse asks "Does patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF with reduced EF, headache with dizziness, SOB on exertion, HLD"
-  -When nurse asks "What medications?" → Answer: "Current medications: Acetaminophen 500mg once daily by mouth"
+  -When nurse asks "What medications?" or "Did they take any medications?" → Answer: "Current medications: Acetaminophen 500mg once daily by mouth"
   -When nurse asks "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"  
   -When nurse asks "Any surgeries?" → Answer with surgical history from chart data
   -FORBIDDEN responses: "Confirm...", "Assess...", "Obtain details...", "Information not available" when chart data exists
