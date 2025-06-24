@@ -78,49 +78,41 @@ async function generateNursingTemplateDirect(
     .where(eq(vitals.encounterId, parseInt(encounterId)))
     .orderBy(desc(vitals.recordedAt));
 
-  const patientData = patient[0];
-  if (!patientData) {
-    throw new Error(`Patient ${patientId} not found`);
+  if (!patientChart.demographics) {
+    throw new Error(`Patient ${patientId} chart data not found`);
   }
 
-  const age = Math.floor(
-    (Date.now() - new Date(patientData.dateOfBirth).getTime()) /
-      (365.25 * 24 * 60 * 60 * 1000),
-  );
-
-  // Build medical context
-  const currentDiagnoses =
-    diagnosisList.length > 0
-      ? diagnosisList
-          .map((d: any) => `- ${d.diagnosis} (${d.icd10Code || "unspecified"})`)
+  // Use medical problems instead of billing diagnoses for nursing template
+  const currentMedicalProblems =
+    patientChart.medicalProblems?.length > 0
+      ? patientChart.medicalProblems
+          .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
           .join("\n")
-      : "- No active diagnoses on file";
+      : "- No active medical problems documented";
 
   const currentMedications =
-    meds.length > 0
-      ? meds
+    patientChart.currentMedications?.length > 0
+      ? patientChart.currentMedications
           .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
           .join("\n")
-      : "- No current medications on file";
+      : "- No current medications documented";
 
   const knownAllergies =
-    allergiesList.length > 0
-      ? allergiesList
+    patientChart.allergies?.length > 0
+      ? patientChart.allergies
           .map((a: any) => `- ${a.allergen}: ${a.reaction}`)
           .join("\n")
       : "- NKDA (No Known Drug Allergies)";
 
 
-  // Build comprehensive medical context
+  // Build comprehensive medical context using chart data
   const medicalContext = `
 PATIENT CONTEXT:
-- Name: ${patientData.firstName} ${patientData.lastName}
-- Age: ${age} years old
-- Gender: ${patientData.gender}
-- MRN: ${patientData.mrn}
+- Age: ${patientChart.demographics.age} years old
+- Gender: ${patientChart.demographics.gender}
 
 ACTIVE MEDICAL PROBLEMS:
-${currentDiagnoses}
+${currentMedicalProblems}
 
 CURRENT MEDICATIONS:
 ${currentMedications}
@@ -130,6 +122,18 @@ ${knownAllergies}
 
 RECENT VITALS:
 ${formatVitalsForSOAP(encounterVitalsList)}
+
+FAMILY HISTORY:
+${patientChart.familyHistory?.length > 0 
+  ? patientChart.familyHistory.map((fh: any) => `- ${fh.relationship}: ${fh.condition}`).join("\n")
+  : "- No family history documented"
+}
+
+SOCIAL HISTORY:
+${patientChart.socialHistory?.length > 0 
+  ? patientChart.socialHistory.map((sh: any) => `- ${sh.category}: ${sh.details}`).join("\n")
+  : "- No social history documented"
+}
   `.trim();
 
   // Create nursing template prompt with current state for intelligent merging
