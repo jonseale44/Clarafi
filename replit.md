@@ -113,7 +113,7 @@ Preferred communication style: Simple, everyday language.
 - **CRITICAL FIX**: Resolved diagnoses/medical problems table confusion in nursing components
 - Nursing Assessment Template: Fixed to use medicalProblems table instead of diagnoses table for PMH section
 - AI Suggestions: Enhanced with comprehensive chart access and direct question response protocol
-- Created nursing-template-service.ts to separate fixed nursing template generation from legacy routes
+- Modified existing generateNursingTemplateDirect function to use patient chart service
 - AI now provides specific answers when nurses ask direct questions about patient history
 - Both nursing template and AI suggestions now use same patient chart service for consistency
 

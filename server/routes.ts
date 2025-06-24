@@ -48,7 +48,7 @@ import {
   labOrders,
   labResults,
 } from "../shared/schema.js";
-import { generateNursingTemplateFixed } from "./nursing-template-service.js";
+
 import { eq, desc, and } from "drizzle-orm";
 
 const openai = new OpenAI({
@@ -67,10 +67,9 @@ async function generateNursingTemplateDirect(
     `🏥 [NursingTemplate] Generating template for patient ${patientId}`,
   );
 
-  // Use the same patient chart service to avoid diagnoses/medical problems confusion
-  const patientChart = await import('./patient-chart-service.js').then(module => 
-    module.PatientChartService.getPatientChartData(patientId)
-  );
+  // Use patient chart service to avoid diagnoses/medical problems confusion
+  const { PatientChartService } = await import('./patient-chart-service.js');
+  const patientChart = await PatientChartService.getPatientChartData(patientId);
 
   // Get encounter-specific vitals
   const encounterVitalsList = await db
@@ -334,8 +333,7 @@ Example output format:
   return templateData;
 }
 
-// Legacy generateNursingTemplateDirect function - replaced by generateNursingTemplateFixed
-// This function had the diagnoses/medical problems table confusion issue
+
 
 // Helper function to format vitals consistently
 function formatVitalsForSOAP(vitals: any[]): string {
@@ -1633,8 +1631,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Generate nursing template using fixed approach that uses medicalProblems instead of diagnoses
-      const templateData = await generateNursingTemplateFixed(
+      // Generate nursing template using same approach as SOAP generation
+      const templateData = await generateNursingTemplateDirect(
         parseInt(patientId),
         encounterId,
         transcription,
