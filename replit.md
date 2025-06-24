@@ -109,13 +109,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Pre-Nursing AI Enhancement Rollback Point (June 24, 2025)
-- **ROLLBACK CHECKPOINT**: Before enhancing nursing AI suggestions with chart access
-- Current state: Nursing AI has NO access to chart sections (medical problems, medications, vitals, etc.)
-- Nursing AI currently only uses live transcription content with no historical context
-- About to enhance nursing AI with access to: medical problems, medications, vitals, family history, social history, surgical history
-- Will NOT provide access to: diagnoses table (billing codes only) or labs
-- Production-level EMR requirements confirmed: separate diagnosis/medical problems tables required
+### Database Table Confusion Resolution (June 24, 2025)
+- **CRITICAL FIX**: Resolved diagnoses/medical problems table confusion in nursing components
+- Nursing Assessment Template: Fixed to use medicalProblems table instead of diagnoses table for PMH section
+- AI Suggestions: Enhanced with comprehensive chart access and direct question response protocol
+- Created nursing-template-service.ts to separate fixed nursing template generation from legacy routes
+- AI now provides specific answers when nurses ask direct questions about patient history
+- Both nursing template and AI suggestions now use same patient chart service for consistency
 
 ### Medical Problems Resolution System Implementation (June 24, 2025)
 - Added manual resolution buttons to medical problems UI for providers
