@@ -165,7 +165,7 @@ export function EncounterDetailView({
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
   const [liveTranscriptionContent, setLiveTranscriptionContent] = useState(""); // Unified content for AI
-  const [useRestAPI, setUseRestAPI] = useState<boolean>(false);
+  const [useRestAPI, setUseRestAPI] = useState<boolean>(true);
 
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {

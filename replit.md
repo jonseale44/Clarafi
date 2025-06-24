@@ -130,6 +130,7 @@ Preferred communication style: Simple, everyday language.
 - 10-second throttling and proper error handling without automatic fallback
 - REST API mode bypasses automatic suggestions during recording for manual control
 - Cached input benefits provide additional cost savings when patient chart data is reused
+- **DEFAULT MODE**: REST API set as default for cost optimization (33% savings over WebSocket)
 
 ### Provider AI Suggestions Direct Question Enhancement (June 24, 2025)
 - **CRITICAL FIX**: Updated provider AI suggestions to handle direct questions about patient chart information
