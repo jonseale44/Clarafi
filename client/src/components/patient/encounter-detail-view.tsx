@@ -168,6 +168,10 @@ export function EncounterDetailView({
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
   const [liveTranscriptionContent, setLiveTranscriptionContent] = useState(""); // Unified content for AI
   const [useRestAPI, setUseRestAPI] = useState<boolean>(true);
+  const [isGeneratingRestSuggestions, setIsGeneratingRestSuggestions] = useState(false);
+  const [suggestionProgress, setSuggestionProgress] = useState(0);
+  const [isGeneratingSmartSuggestions, setIsGeneratingSmartSuggestions] = useState(false);
+  const [lastSuggestionCall, setLastSuggestionCall] = useState<number>(0);
 
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
@@ -2394,13 +2398,17 @@ Please provide medical suggestions based on this complete conversation context.`
   };
 
   const generateSmartSuggestions = () => {
-    setGptSuggestions(
-      "AI-generated clinical suggestions based on the encounter...",
-    );
-    toast({
-      title: "Smart Suggestions Generated",
-      description: "GPT analysis complete",
-    });
+    setIsGeneratingSmartSuggestions(true);
+    setTimeout(() => {
+      setGptSuggestions(
+        "AI-generated clinical suggestions based on the encounter...",
+      );
+      setIsGeneratingSmartSuggestions(false);
+      toast({
+        title: "Smart Suggestions Generated", 
+        description: "GPT analysis complete",
+      });
+    }, 1000);
   };
 
   // REST API Suggestions - Cost-optimized alternative
