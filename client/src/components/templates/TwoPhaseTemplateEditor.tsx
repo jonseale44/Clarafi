@@ -334,8 +334,7 @@ export function TwoPhaseTemplateEditor({
                 <div className="relative">
                   <div 
                     ref={overlayRef}
-                    className="absolute inset-0 z-20 cursor-pointer"
-                    onClick={handleOverlayClick}
+                    className="absolute inset-0 z-10 pointer-events-none"
                   >
                     {getCommentIndicators()}
                   </div>
@@ -343,9 +342,9 @@ export function TwoPhaseTemplateEditor({
                   <Textarea
                     value={noteText}
                     readOnly
-                    className="min-h-[300px] font-mono bg-gray-50 relative z-10"
+                    className="min-h-[300px] font-mono bg-gray-50 relative z-20 cursor-text"
                     onMouseUp={handleTextSelection}
-                    style={{ pointerEvents: 'none' }}
+                    onClick={handleOverlayClick}
                   />
                 </div>
 
