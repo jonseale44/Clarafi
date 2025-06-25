@@ -51,8 +51,11 @@ export const userNoteTemplates = pgTable("user_note_templates", {
   createdBy: integer("created_by").notNull().references(() => users.id),
   sharedBy: integer("shared_by").references(() => users.id), // If adopted from another user
   
-  // Example-based template (what physician sees and edits)
-  exampleNote: text("example_note").notNull(), // Complete sample note in preferred style
+  // Two-phase template system
+  exampleNote: text("example_note").notNull(), // Complete sample note in preferred style (Phase 1)
+  baseNoteText: text("base_note_text"), // Clean note text without comments (Phase 1 saved state)
+  inlineComments: jsonb("inline_comments"), // Array of comment objects with position data (Phase 2)
+  hasComments: boolean("has_comments").default(false), // Whether Phase 2 has been used
   
   // System-generated GPT prompt (hidden from user)
   generatedPrompt: text("generated_prompt").notNull(),

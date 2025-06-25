@@ -15,7 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Star, Eye, Share, Copy } from "lucide-react";
+import { Plus, Edit, Trash2, Star, Eye, Share, Copy, MessageSquare } from "lucide-react";
+import { TwoPhaseTemplateEditor } from './TwoPhaseTemplateEditor';
 
 interface Template {
   id: number | string;
@@ -44,6 +45,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showTwoPhaseEditor, setShowTwoPhaseEditor] = useState(false);
+  const [twoPhaseMode, setTwoPhaseMode] = useState<'create' | 'edit'>('create');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateDisplayName, setNewTemplateDisplayName] = useState("");
