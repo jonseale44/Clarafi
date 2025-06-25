@@ -71,6 +71,7 @@ Return ONLY the GPT prompt, no additional commentary.`;
       }
 
       console.log(`✅ [TemplatePrompt] Generated prompt for ${templateName}`);
+      console.log(`📋 [TemplatePrompt] GENERATED PROMPT:\n${generatedPrompt}\n--- END PROMPT ---`);
       return generatedPrompt;
     } catch (error) {
       console.error("❌ [TemplatePrompt] Error generating prompt:", error);
