@@ -15,6 +15,7 @@ import { PatientLabResults } from "@/pages/patient-lab-results";
 import { LabSimulator } from "@/pages/lab-simulator";
 
 import { VitalsFlowsheetPage } from "@/pages/vitals-flowsheet-page";
+import AdminPromptManager from "@/pages/AdminPromptManager";
 
 import NotFound from "@/pages/not-found";
 
@@ -33,6 +34,7 @@ function Router() {
 
       <ProtectedRoute path="/encounters/:encounterId/vitals" component={VitalsFlowsheetPage} />
       <ProtectedRoute path="/vitals-flowsheet/:encounterId" component={VitalsFlowsheetPage} />
+      <ProtectedRoute path="/admin/prompts" component={AdminPromptManager} />
 
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />

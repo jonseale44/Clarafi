@@ -338,6 +338,11 @@ export default function Dashboard() {
               >
                 Imaging
               </button>
+              <Link href="/admin/prompts">
+                <button className="px-3 py-2 rounded-md text-sm font-medium text-orange-600 hover:text-orange-900 hover:bg-orange-50 border border-orange-200">
+                  Admin Prompts
+                </button>
+              </Link>
               
 
             </nav>
