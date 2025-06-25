@@ -176,7 +176,7 @@ IMPORTANT INSTRUCTIONS:
         hasChart: !!patientChart,
         hasDemographics: !!patientChart?.demographics,
         medicalProblemsCount: patientChart?.medicalProblems?.length || 0,
-        medicationsCount: patientChart?.medications?.length || 0,
+        medicationsCount: patientChart?.currentMedications?.length || 0,
         allergiesCount: patientChart?.allergies?.length || 0,
         vitalsCount: patientChart?.vitals?.length || 0,
       });

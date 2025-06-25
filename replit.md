@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Custom Template System Critical Fixes (June 25, 2025)
+- **CRITICAL BUG FIXED**: Resolved fundamental issue where custom templates generated generic placeholder data instead of using real patient information
+- **Template Generation Engine Fixed**: Updated `TemplatePromptGenerator` to properly instruct GPT to include required data placeholders (`{medicalContext}` and `{transcription}`)
+- **Removed Test Markers**: Cleaned up production code by removing debugging markers ("!!!" and "???") from standard template prompts
+- **Variable Substitution Corrected**: Fixed `prepareCustomPrompt()` to properly connect custom templates with actual patient chart data and transcription content
+- **Template Structure Standardized**: All generated prompts now follow consistent structure with proper placeholder positioning for seamless data integration
+- **Fallback Template Cleaned**: Removed test artifacts from fallback template generation system
+- **Property Reference Fixed**: Corrected `medications` to `currentMedications` property reference in enhanced note generation service
+- **VERIFIED WORKING**: Custom templates now properly use real patient data instead of generating generic "[Patient Age]" and "[Chief Complaint]" placeholders
+
 ### User Custom Template System Implementation (June 25, 2025)
 - **FULLY OPERATIONAL**: Complete Phase 1 custom template system with example-based template creation
 - Created comprehensive database schema: `userNoteTemplates`, `templateShares`, `templateVersions`, `userNotePreferences`

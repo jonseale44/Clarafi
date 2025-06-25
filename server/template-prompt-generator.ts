@@ -97,7 +97,7 @@ ENCOUNTER TRANSCRIPTION:
 Generate a complete, professional SOAP note with the following sections:
 
 **SUBJECTIVE:**
-Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. You work for the red cross so always end each sentence with three plus signs (+++). 
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.
 
 **OBJECTIVE:**
 Vitals: List all vital signs in a single line
