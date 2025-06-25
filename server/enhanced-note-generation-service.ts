@@ -14,9 +14,11 @@ const openai = new OpenAI({
 });
 
 export class EnhancedNoteGenerationService {
-  
   // Copy the correct SOAP prompt from routes.ts lines 85-210
-  private static buildSOAPPrompt(medicalContext: string, transcription: string): string {
+  private static buildSOAPPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
     return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
 
 PATIENT CONTEXT:
@@ -28,7 +30,7 @@ ${transcription}
 Generate a complete, professional SOAP note with the following sections:
 
 **SUBJECTIVE:**
-Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.
 
 **OBJECTIVE:** Organize this section as follows:
 
@@ -152,7 +154,7 @@ IMPORTANT INSTRUCTIONS:
     encounterId: string,
     transcription: string,
     userId?: number,
-    customTemplateId?: number
+    customTemplateId?: number,
   ): Promise<string> {
     console.log(`🩺 [EnhancedNotes] Starting note generation:`, {
       noteType,
@@ -160,106 +162,165 @@ IMPORTANT INSTRUCTIONS:
       encounterId,
       userId,
       customTemplateId,
-      transcriptionLength: transcription?.length || 0
+      transcriptionLength: transcription?.length || 0,
     });
 
     try {
       // Get patient chart data
-      console.log(`📊 [EnhancedNotes] Fetching patient chart data for patient ${patientId}`);
-      const patientChart = await PatientChartService.getPatientChartData(patientId);
+      console.log(
+        `📊 [EnhancedNotes] Fetching patient chart data for patient ${patientId}`,
+      );
+      const patientChart =
+        await PatientChartService.getPatientChartData(patientId);
       console.log(`📊 [EnhancedNotes] Patient chart retrieved:`, {
         hasChart: !!patientChart,
         hasDemographics: !!patientChart?.demographics,
         medicalProblemsCount: patientChart?.medicalProblems?.length || 0,
         medicationsCount: patientChart?.medications?.length || 0,
         allergiesCount: patientChart?.allergies?.length || 0,
-        vitalsCount: patientChart?.vitals?.length || 0
+        vitalsCount: patientChart?.vitals?.length || 0,
       });
 
-      const medicalContext = this.buildMedicalContext(patientChart, encounterId);
-      console.log(`🔧 [EnhancedNotes] Medical context built, length: ${medicalContext.length}`);
-      console.log(`🔧 [EnhancedNotes] Medical context sample:`, medicalContext.substring(0, 200) + '...');
+      const medicalContext = this.buildMedicalContext(
+        patientChart,
+        encounterId,
+      );
+      console.log(
+        `🔧 [EnhancedNotes] Medical context built, length: ${medicalContext.length}`,
+      );
+      console.log(
+        `🔧 [EnhancedNotes] Medical context sample:`,
+        medicalContext.substring(0, 200) + "...",
+      );
 
-    let prompt: string;
-    let templateUsed: string = noteType;
+      let prompt: string;
+      let templateUsed: string = noteType;
 
       // Determine which template/prompt to use
       console.log(`🎯 [EnhancedNotes] Template selection logic:`, {
         hasCustomTemplateId: !!customTemplateId,
-        hasUserId: !!userId
+        hasUserId: !!userId,
       });
 
       if (customTemplateId && userId) {
-        console.log(`🔍 [EnhancedNotes] Attempting to use custom template ${customTemplateId}`);
+        console.log(
+          `🔍 [EnhancedNotes] Attempting to use custom template ${customTemplateId}`,
+        );
         // Use custom template
-        const customTemplate = await storage.getUserNoteTemplate(customTemplateId);
+        const customTemplate =
+          await storage.getUserNoteTemplate(customTemplateId);
         console.log(`🔍 [EnhancedNotes] Custom template query result:`, {
           found: !!customTemplate,
           templateUserId: customTemplate?.userId,
           requestUserId: userId,
-          authorized: customTemplate?.userId === userId
+          authorized: customTemplate?.userId === userId,
         });
-        
+
         if (customTemplate && customTemplate.userId === userId) {
-          prompt = this.prepareCustomPrompt(customTemplate.generatedPrompt, medicalContext, transcription);
+          prompt = this.prepareCustomPrompt(
+            customTemplate.generatedPrompt,
+            medicalContext,
+            transcription,
+          );
           templateUsed = customTemplate.templateName;
-          
+
           // Increment usage count
           await storage.incrementTemplateUsage(customTemplateId);
-          
-          console.log(`📋 [EnhancedNotes] Using custom template: ${customTemplate.templateName}`);
+
+          console.log(
+            `📋 [EnhancedNotes] Using custom template: ${customTemplate.templateName}`,
+          );
         } else {
-          console.warn(`⚠️ [EnhancedNotes] Custom template ${customTemplateId} not found or unauthorized, falling back to base template`);
+          console.warn(
+            `⚠️ [EnhancedNotes] Custom template ${customTemplateId} not found or unauthorized, falling back to base template`,
+          );
           // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-          if (noteType === 'soap') {
-            prompt = EnhancedNoteGenerationService.buildSOAPPrompt(medicalContext, transcription);
+          if (noteType === "soap") {
+            prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
+              medicalContext,
+              transcription,
+            );
           } else {
-            prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+            prompt = ClinicalNoteTemplates.getPrompt(
+              noteType,
+              medicalContext,
+              transcription,
+            );
           }
         }
       } else if (userId) {
-        console.log(`🔍 [EnhancedNotes] Checking for user's default template for ${noteType}`);
-        console.log(`🔍 [EnhancedNotes] User ID: ${userId}, Note Type: ${noteType}`);
-        
+        console.log(
+          `🔍 [EnhancedNotes] Checking for user's default template for ${noteType}`,
+        );
+        console.log(
+          `🔍 [EnhancedNotes] User ID: ${userId}, Note Type: ${noteType}`,
+        );
+
         try {
           // Check for user's default template for this note type
-          const userTemplates = await storage.getUserTemplatesByType(userId, noteType);
-          console.log(`🔍 [EnhancedNotes] User templates found: ${userTemplates.length}`);
-          
+          const userTemplates = await storage.getUserTemplatesByType(
+            userId,
+            noteType,
+          );
+          console.log(
+            `🔍 [EnhancedNotes] User templates found: ${userTemplates.length}`,
+          );
+
           if (userTemplates.length > 0) {
-            console.log(`🔍 [EnhancedNotes] Available templates:`, userTemplates.map(t => ({
-              id: t.id,
-              name: t.templateName,
-              isDefault: t.isDefault,
-              active: t.active
-            })));
+            console.log(
+              `🔍 [EnhancedNotes] Available templates:`,
+              userTemplates.map((t) => ({
+                id: t.id,
+                name: t.templateName,
+                isDefault: t.isDefault,
+                active: t.active,
+              })),
+            );
           }
-          
-          const defaultTemplate = userTemplates.find(t => t.isDefault);
-          console.log(`🔍 [EnhancedNotes] Default template found:`, !!defaultTemplate);
-          
+
+          const defaultTemplate = userTemplates.find((t) => t.isDefault);
+          console.log(
+            `🔍 [EnhancedNotes] Default template found:`,
+            !!defaultTemplate,
+          );
+
           if (defaultTemplate) {
             console.log(`🔍 [EnhancedNotes] Using default template:`, {
               id: defaultTemplate.id,
               name: defaultTemplate.templateName,
-              promptLength: defaultTemplate.generatedPrompt?.length || 0
+              promptLength: defaultTemplate.generatedPrompt?.length || 0,
             });
-            
-            prompt = this.prepareCustomPrompt(defaultTemplate.generatedPrompt, medicalContext, transcription);
+
+            prompt = this.prepareCustomPrompt(
+              defaultTemplate.generatedPrompt,
+              medicalContext,
+              transcription,
+            );
             templateUsed = defaultTemplate.templateName;
-            
+
             // Increment usage count
             await storage.incrementTemplateUsage(defaultTemplate.id);
-            
-            console.log(`⭐ [EnhancedNotes] Using user's default template: ${defaultTemplate.templateName}`);
+
+            console.log(
+              `⭐ [EnhancedNotes] Using user's default template: ${defaultTemplate.templateName}`,
+            );
           } else {
             // No default set, use base template
-            console.log(`📋 [EnhancedNotes] No default template found, using base template`);
+            console.log(
+              `📋 [EnhancedNotes] No default template found, using base template`,
+            );
             // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-            if (noteType === 'soap') {
-              prompt = EnhancedNoteGenerationService.buildSOAPPrompt(medicalContext, transcription);
+            if (noteType === "soap") {
+              prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
+                medicalContext,
+                transcription,
+              );
             } else {
-              prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+              prompt = ClinicalNoteTemplates.getPrompt(
+                noteType,
+                medicalContext,
+                transcription,
+              );
             }
           }
         } catch (templateError: any) {
@@ -267,30 +328,49 @@ IMPORTANT INSTRUCTIONS:
             error: templateError.message,
             stack: templateError.stack,
             userId,
-            noteType
+            noteType,
           });
           // Fallback to base template if template system fails
           // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-          if (noteType === 'soap') {
-            prompt = EnhancedNoteGenerationService.buildSOAPPrompt(medicalContext, transcription);
+          if (noteType === "soap") {
+            prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
+              medicalContext,
+              transcription,
+            );
           } else {
-            prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+            prompt = ClinicalNoteTemplates.getPrompt(
+              noteType,
+              medicalContext,
+              transcription,
+            );
           }
         }
       } else {
         // No user context, use base template
         console.log(`📋 [EnhancedNotes] No user context, using base template`);
         // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-        if (noteType === 'soap') {
-          prompt = EnhancedNoteGenerationService.buildSOAPPrompt(medicalContext, transcription);
+        if (noteType === "soap") {
+          prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
+            medicalContext,
+            transcription,
+          );
         } else {
-          prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+          prompt = ClinicalNoteTemplates.getPrompt(
+            noteType,
+            medicalContext,
+            transcription,
+          );
         }
       }
 
-      console.log(`🤖 [EnhancedNotes] Prompt prepared, length: ${prompt.length}`);
+      console.log(
+        `🤖 [EnhancedNotes] Prompt prepared, length: ${prompt.length}`,
+      );
       console.log(`🤖 [EnhancedNotes] Template used: ${templateUsed}`);
-      console.log(`🤖 [EnhancedNotes] Prompt preview:`, prompt.substring(0, 300) + '...');
+      console.log(
+        `🤖 [EnhancedNotes] Prompt preview:`,
+        prompt.substring(0, 300) + "...",
+      );
 
       // Generate note using GPT
       console.log(`🚀 [EnhancedNotes] Calling OpenAI API...`);
@@ -305,12 +385,15 @@ IMPORTANT INSTRUCTIONS:
         choices: completion.choices.length,
         hasContent: !!completion.choices[0]?.message?.content,
         contentLength: completion.choices[0]?.message?.content?.length || 0,
-        usage: completion.usage
+        usage: completion.usage,
       });
 
       const generatedNote = completion.choices[0]?.message?.content;
       if (!generatedNote) {
-        console.error(`❌ [EnhancedNotes] No content in OpenAI response:`, completion);
+        console.error(
+          `❌ [EnhancedNotes] No content in OpenAI response:`,
+          completion,
+        );
         throw new Error(`No ${noteType} note generated from OpenAI`);
       }
 
@@ -320,7 +403,9 @@ IMPORTANT INSTRUCTIONS:
         note: generatedNote,
       });
 
-      console.log(`✅ [EnhancedNotes] Generated ${noteType} note using template: ${templateUsed}, length: ${generatedNote.length}`);
+      console.log(
+        `✅ [EnhancedNotes] Generated ${noteType} note using template: ${templateUsed}, length: ${generatedNote.length}`,
+      );
       return generatedNote;
     } catch (error: any) {
       console.error(`❌ [EnhancedNotes] Error in note generation:`, {
@@ -330,7 +415,7 @@ IMPORTANT INSTRUCTIONS:
         patientId,
         encounterId,
         userId,
-        customTemplateId
+        customTemplateId,
       });
       throw error;
     }
@@ -339,44 +424,80 @@ IMPORTANT INSTRUCTIONS:
   /**
    * Prepares a custom template prompt by inserting patient context and transcription
    */
-  private static prepareCustomPrompt(templatePrompt: string, medicalContext: string, transcription: string): string {
-    return templatePrompt
-      .replace(/\{medicalContext\}/g, medicalContext)
-      .replace(/\{transcription\}/g, transcription)
-      // Also support the old format for backward compatibility
-      .replace(/PATIENT CONTEXT:\s*\$\{medicalContext\}/g, `PATIENT CONTEXT:\n${medicalContext}`)
-      .replace(/ENCOUNTER TRANSCRIPTION:\s*\$\{transcription\}/g, `ENCOUNTER TRANSCRIPTION:\n${transcription}`);
+  private static prepareCustomPrompt(
+    templatePrompt: string,
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    return (
+      templatePrompt
+        .replace(/\{medicalContext\}/g, medicalContext)
+        .replace(/\{transcription\}/g, transcription)
+        // Also support the old format for backward compatibility
+        .replace(
+          /PATIENT CONTEXT:\s*\$\{medicalContext\}/g,
+          `PATIENT CONTEXT:\n${medicalContext}`,
+        )
+        .replace(
+          /ENCOUNTER TRANSCRIPTION:\s*\$\{transcription\}/g,
+          `ENCOUNTER TRANSCRIPTION:\n${transcription}`,
+        )
+    );
   }
 
   /**
    * Builds medical context string for templates
    */
-  private static buildMedicalContext(patientChart: any, encounterId: string): string {
+  private static buildMedicalContext(
+    patientChart: any,
+    encounterId: string,
+  ): string {
     try {
       const demographics = patientChart.demographics || {};
       const age = demographics.age || "Unknown";
-      
-      console.log(`🔧 [EnhancedNotes] Building medical context with chart data:`, {
-        hasDemographics: !!demographics,
-        firstName: demographics.firstName,
-        lastName: demographics.lastName,
-        medicalProblemsCount: patientChart.medicalProblems?.length || 0,
-        medicationsCount: patientChart.medications?.length || 0,
-        allergiesCount: patientChart.allergies?.length || 0,
-        vitalsCount: patientChart.vitals?.length || 0
-      });
 
-      const currentMedicalProblems = patientChart.medicalProblems?.length > 0
-        ? patientChart.medicalProblems.map((problem: any) => `- ${problem.problemDescription || 'Unspecified condition'}`).join('\n')
-        : "- No active medical problems documented";
+      console.log(
+        `🔧 [EnhancedNotes] Building medical context with chart data:`,
+        {
+          hasDemographics: !!demographics,
+          firstName: demographics.firstName,
+          lastName: demographics.lastName,
+          medicalProblemsCount: patientChart.medicalProblems?.length || 0,
+          medicationsCount: patientChart.medications?.length || 0,
+          allergiesCount: patientChart.allergies?.length || 0,
+          vitalsCount: patientChart.vitals?.length || 0,
+        },
+      );
 
-      const currentMedications = patientChart.medications?.length > 0
-        ? patientChart.medications.map((med: any) => `- ${med.medicationName || 'Unknown medication'} ${med.dosage || ''}`).join('\n')
-        : "- No current medications documented";
+      const currentMedicalProblems =
+        patientChart.medicalProblems?.length > 0
+          ? patientChart.medicalProblems
+              .map(
+                (problem: any) =>
+                  `- ${problem.problemDescription || "Unspecified condition"}`,
+              )
+              .join("\n")
+          : "- No active medical problems documented";
 
-      const knownAllergies = patientChart.allergies?.length > 0
-        ? patientChart.allergies.map((allergy: any) => `- ${allergy.allergen || 'Unknown allergen'} (${allergy.reaction || 'Unknown reaction'})`).join('\n')
-        : "- No Known Drug Allergies";
+      const currentMedications =
+        patientChart.medications?.length > 0
+          ? patientChart.medications
+              .map(
+                (med: any) =>
+                  `- ${med.medicationName || "Unknown medication"} ${med.dosage || ""}`,
+              )
+              .join("\n")
+          : "- No current medications documented";
+
+      const knownAllergies =
+        patientChart.allergies?.length > 0
+          ? patientChart.allergies
+              .map(
+                (allergy: any) =>
+                  `- ${allergy.allergen || "Unknown allergen"} (${allergy.reaction || "Unknown reaction"})`,
+              )
+              .join("\n")
+          : "- No Known Drug Allergies";
 
       // Format vitals for clinical context
       const formatVitalsForContext = (vitalsList: any[]) => {
@@ -386,24 +507,35 @@ IMPORTANT INSTRUCTIONS:
 
         const latestVitals = vitalsList[0];
         const vitalParts = [];
-        
-        if (latestVitals.bloodPressureSystolic && latestVitals.bloodPressureDiastolic) {
-          vitalParts.push(`BP: ${latestVitals.bloodPressureSystolic}/${latestVitals.bloodPressureDiastolic} mmHg`);
-        }
-        if (latestVitals.heartRate) vitalParts.push(`HR: ${latestVitals.heartRate} bpm`);
-        if (latestVitals.temperature) vitalParts.push(`Temp: ${latestVitals.temperature}°F`);
-        if (latestVitals.respiratoryRate) vitalParts.push(`RR: ${latestVitals.respiratoryRate}/min`);
-        if (latestVitals.oxygenSaturation) vitalParts.push(`SpO2: ${latestVitals.oxygenSaturation}%`);
 
-        return vitalParts.length > 0 ? `- ${vitalParts.join(' | ')}` : "- Vitals documented but incomplete";
+        if (
+          latestVitals.bloodPressureSystolic &&
+          latestVitals.bloodPressureDiastolic
+        ) {
+          vitalParts.push(
+            `BP: ${latestVitals.bloodPressureSystolic}/${latestVitals.bloodPressureDiastolic} mmHg`,
+          );
+        }
+        if (latestVitals.heartRate)
+          vitalParts.push(`HR: ${latestVitals.heartRate} bpm`);
+        if (latestVitals.temperature)
+          vitalParts.push(`Temp: ${latestVitals.temperature}°F`);
+        if (latestVitals.respiratoryRate)
+          vitalParts.push(`RR: ${latestVitals.respiratoryRate}/min`);
+        if (latestVitals.oxygenSaturation)
+          vitalParts.push(`SpO2: ${latestVitals.oxygenSaturation}%`);
+
+        return vitalParts.length > 0
+          ? `- ${vitalParts.join(" | ")}`
+          : "- Vitals documented but incomplete";
       };
 
       const context = `
 PATIENT CONTEXT:
-- Name: ${demographics.firstName || 'Unknown'} ${demographics.lastName || 'Unknown'}
+- Name: ${demographics.firstName || "Unknown"} ${demographics.lastName || "Unknown"}
 - Age: ${age} years old
-- Gender: ${demographics.gender || 'Unknown'}
-- MRN: ${demographics.mrn || 'Unknown'}
+- Gender: ${demographics.gender || "Unknown"}
+- MRN: ${demographics.mrn || "Unknown"}
 
 ACTIVE MEDICAL PROBLEMS:
 ${currentMedicalProblems}
@@ -418,15 +550,17 @@ RECENT VITALS:
 ${formatVitalsForContext(patientChart.vitals || [])}
       `.trim();
 
-      console.log(`✅ [EnhancedNotes] Medical context built successfully, length: ${context.length}`);
+      console.log(
+        `✅ [EnhancedNotes] Medical context built successfully, length: ${context.length}`,
+      );
       return context;
     } catch (error: any) {
       console.error(`❌ [EnhancedNotes] Error building medical context:`, {
         error: error.message,
         stack: error.stack,
-        patientChart: !!patientChart
+        patientChart: !!patientChart,
       });
-      
+
       // Return minimal fallback context
       return `
 PATIENT CONTEXT:
@@ -454,8 +588,11 @@ RECENT VITALS:
    * Gets available templates for a user and note type
    */
   static async getAvailableTemplates(userId: number, noteType: string) {
-    const customTemplates = await storage.getUserTemplatesByType(userId, noteType);
-    
+    const customTemplates = await storage.getUserTemplatesByType(
+      userId,
+      noteType,
+    );
+
     // Add base template option
     const baseTemplate = {
       id: `base-${noteType}`,
@@ -464,7 +601,7 @@ RECENT VITALS:
       baseNoteType: noteType,
       isPersonal: false,
       isDefault: false,
-      isBaseTemplate: true
+      isBaseTemplate: true,
     };
 
     return [baseTemplate, ...customTemplates];
@@ -478,17 +615,21 @@ RECENT VITALS:
     templateId: number,
     originalNote: string,
     editedNote: string,
-    noteType: string
+    noteType: string,
   ): Promise<void> {
     // This will be implemented in Phase 2
     // For now, we just log the edit for future analysis
-    console.log(`📝 [EnhancedNotes] Note edit tracked for user ${userId}, template ${templateId} (${noteType})`);
-    console.log(`📝 [EnhancedNotes] Original length: ${originalNote.length}, Edited length: ${editedNote.length}`);
-    
+    console.log(
+      `📝 [EnhancedNotes] Note edit tracked for user ${userId}, template ${templateId} (${noteType})`,
+    );
+    console.log(
+      `📝 [EnhancedNotes] Original length: ${originalNote.length}, Edited length: ${editedNote.length}`,
+    );
+
     // TODO Phase 2: Analyze edits and update template prompts automatically
     // This could involve:
     // 1. Detecting formatting preference changes
-    // 2. Identifying content style modifications  
+    // 2. Identifying content style modifications
     // 3. Learning section organization preferences
     // 4. Updating the template's generated prompt via TemplatePromptGenerator.updatePromptFromEdits()
   }

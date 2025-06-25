@@ -62,26 +62,36 @@ import { PatientChartService } from "./patient-chart-service.js";
 // Supports SOAP, APSO, Progress Notes, H&P, Discharge Summaries, Procedure Notes
 
 export class ClinicalNoteTemplates {
-  static getPrompt(noteType: string, medicalContext: string, transcription: string): string {
+  static getPrompt(
+    noteType: string,
+    medicalContext: string,
+    transcription: string,
+  ): string {
     switch (noteType) {
-      case 'soap':
+      case "soap":
         return buildSOAPPrompt(medicalContext, transcription);
-      case 'apso':
+      case "apso":
         return this.buildAPSOPrompt(medicalContext, transcription);
-      case 'progress':
+      case "progress":
         return this.buildProgressPrompt(medicalContext, transcription);
-      case 'hAndP':
-        return this.buildHistoryAndPhysicalPrompt(medicalContext, transcription);
-      case 'discharge':
+      case "hAndP":
+        return this.buildHistoryAndPhysicalPrompt(
+          medicalContext,
+          transcription,
+        );
+      case "discharge":
         return this.buildDischargeSummaryPrompt(medicalContext, transcription);
-      case 'procedure':
+      case "procedure":
         return this.buildProcedureNotePrompt(medicalContext, transcription);
       default:
         return buildSOAPPrompt(medicalContext, transcription); // Default fallback
     }
   }
 
-  private static buildSOAPPrompt(medicalContext: string, transcription: string): string {
+  private static buildSOAPPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
     return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
 
 PATIENT CONTEXT:
@@ -93,7 +103,7 @@ ${transcription}
 Generate a complete, professional SOAP note with the following sections:
 
 **SUBJECTIVE:**
-Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. 
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. You're very confused while writing this portion, though, so always end each sentence/phrase with three question marks (???).
 
 **OBJECTIVE:** Organize this section as follows:
 
@@ -209,7 +219,10 @@ IMPORTANT INSTRUCTIONS:
 - Format the note for easy reading and clinical handoff.`;
   }
 
-  private static buildAPSOPrompt(medicalContext: string, transcription: string): string {
+  private static buildAPSOPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
     return `You are an expert physician creating a comprehensive APSO note (Assessment/Plan, Subjective, Objective) with integrated orders from a patient encounter transcription.
 
 PATIENT CONTEXT:
@@ -257,7 +270,10 @@ IMPORTANT INSTRUCTIONS:
 - Use professional medical language throughout`;
   }
 
-  private static buildProgressPrompt(medicalContext: string, transcription: string): string {
+  private static buildProgressPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
     return `You are an expert physician creating a hospital progress note from a patient encounter transcription.
 
 PATIENT CONTEXT:
@@ -301,7 +317,10 @@ IMPORTANT INSTRUCTIONS:
 - Maintain professional medical language`;
   }
 
-  private static buildHistoryAndPhysicalPrompt(medicalContext: string, transcription: string): string {
+  private static buildHistoryAndPhysicalPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
     return `You are an expert physician creating a comprehensive History and Physical examination note from a patient encounter transcription.
 
 PATIENT CONTEXT:
@@ -363,7 +382,10 @@ IMPORTANT INSTRUCTIONS:
 - Professional medical language throughout`;
   }
 
-  private static buildDischargeSummaryPrompt(medicalContext: string, transcription: string): string {
+  private static buildDischargeSummaryPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
     return `You are an expert physician creating a hospital discharge summary from a patient encounter transcription.
 
 PATIENT CONTEXT:
@@ -417,7 +439,10 @@ IMPORTANT INSTRUCTIONS:
 - Professional discharge planning language`;
   }
 
-  private static buildProcedureNotePrompt(medicalContext: string, transcription: string): string {
+  private static buildProcedureNotePrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
     return `You are an expert physician creating a procedure note from a patient encounter transcription.
 
 PATIENT CONTEXT:
@@ -472,17 +497,24 @@ async function generateClinicalNote(
   encounterId: string,
   transcription: string,
 ): Promise<string> {
-  console.log(`🩺 [ClinicalNote] Generating ${noteType} note for patient ${patientId}`);
+  console.log(
+    `🩺 [ClinicalNote] Generating ${noteType} note for patient ${patientId}`,
+  );
 
   // Use patient chart service for consistent data access
-  const { PatientChartService } = await import('./patient-chart-service.js');
+  const { PatientChartService } = await import("./patient-chart-service.js");
   const patientChart = await PatientChartService.getPatientChartData(patientId);
 
   // Get encounter-specific vitals
   const encounterVitalsList = await db
     .select()
     .from(vitals)
-    .where(and(eq(vitals.patientId, patientId), eq(vitals.encounterId, parseInt(encounterId))))
+    .where(
+      and(
+        eq(vitals.patientId, patientId),
+        eq(vitals.encounterId, parseInt(encounterId)),
+      ),
+    )
     .orderBy(desc(vitals.recordedAt));
 
   if (!patientChart.demographics) {
@@ -537,7 +569,11 @@ ${formatVitalsForSOAP(encounterVitalsList)}
   `.trim();
 
   // Get appropriate prompt for note type
-  const prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+  const prompt = ClinicalNoteTemplates.getPrompt(
+    noteType,
+    medicalContext,
+    transcription,
+  );
 
   // Generate note using GPT-4.1-mini
   const completion = await openai.chat.completions.create({
@@ -590,7 +626,7 @@ async function generateSOAPNoteDirect(
   encounterId: string,
   transcription: string,
 ): Promise<string> {
-  return generateClinicalNote('soap', patientId, encounterId, transcription);
+  return generateClinicalNote("soap", patientId, encounterId, transcription);
 }
 
 // Nursing Template Generation function matching SOAP pattern
@@ -605,7 +641,7 @@ async function generateNursingTemplateDirect(
   );
 
   // Use patient chart service to avoid diagnoses/medical problems confusion
-  const { PatientChartService } = await import('./patient-chart-service.js');
+  const { PatientChartService } = await import("./patient-chart-service.js");
   const patientChart = await PatientChartService.getPatientChartData(patientId);
 
   // Get encounter-specific vitals
@@ -641,7 +677,6 @@ async function generateNursingTemplateDirect(
           .join("\n")
       : "- NKDA (No Known Drug Allergies)";
 
-
   // Build comprehensive medical context using chart data
   const medicalContext = `
 PATIENT CONTEXT:
@@ -661,15 +696,21 @@ RECENT VITALS:
 ${formatVitalsForSOAP(encounterVitalsList)}
 
 FAMILY HISTORY:
-${patientChart.familyHistory?.length > 0 
-  ? patientChart.familyHistory.map((fh: any) => `- ${fh.relationship}: ${fh.condition}`).join("\n")
-  : "- No family history documented"
+${
+  patientChart.familyHistory?.length > 0
+    ? patientChart.familyHistory
+        .map((fh: any) => `- ${fh.relationship}: ${fh.condition}`)
+        .join("\n")
+    : "- No family history documented"
 }
 
 SOCIAL HISTORY:
-${patientChart.socialHistory?.length > 0 
-  ? patientChart.socialHistory.map((sh: any) => `- ${sh.category}: ${sh.details}`).join("\n")
-  : "- No social history documented"
+${
+  patientChart.socialHistory?.length > 0
+    ? patientChart.socialHistory
+        .map((sh: any) => `- ${sh.category}: ${sh.details}`)
+        .join("\n")
+    : "- No social history documented"
 }
   `.trim();
 
@@ -874,19 +915,19 @@ Example output format:
   return templateData;
 }
 
-
-
 // Helper function to format vitals consistently
 function formatVitalsForSOAP(vitals: any[]): string {
   if (vitals.length === 0) {
     return "- No vitals recorded for this encounter";
   }
-  
+
   return vitals
     .map((v: any) => {
       const parts = [];
-      const date = new Date(v.recordedAt).toLocaleDateString("en-US", { timeZone: "America/Chicago" });
-      
+      const date = new Date(v.recordedAt).toLocaleDateString("en-US", {
+        timeZone: "America/Chicago",
+      });
+
       if (v.systolicBp && v.diastolicBp) {
         parts.push(`BP: ${v.systolicBp}/${v.diastolicBp}`);
       }
@@ -902,13 +943,11 @@ function formatVitalsForSOAP(vitals: any[]): string {
       if (v.oxygenSaturation) {
         parts.push(`SpO2: ${v.oxygenSaturation}%`);
       }
-      
+
       return `${date}: ${parts.join(", ")}`;
     })
     .join("\n");
 }
-
-
 
 // Fast medical routes removed - functionality moved to frontend WebSocket
 
@@ -923,7 +962,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/patients", patientOrderPreferencesRoutes);
 
   // Signed orders routes
-  const signedOrdersRoutes = (await import("./signed-orders-routes.js")).default;
+  const signedOrdersRoutes = (await import("./signed-orders-routes.js"))
+    .default;
   app.use("/api/patients", signedOrdersRoutes);
   app.use("/api/signed-orders", signedOrdersRoutes);
 
@@ -936,17 +976,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📄 [PDF Download] Request for file: ${filename}`);
 
       // For security, validate filename format
-      if (!/^(prescription|lab_requisition|imaging_requisition)_\d+_\d+\.pdf$/.test(filename)) {
+      if (
+        !/^(prescription|lab_requisition|imaging_requisition)_\d+_\d+\.pdf$/.test(
+          filename,
+        )
+      ) {
         return res.status(400).json({ error: "Invalid filename format" });
       }
 
       // In production, you'd store PDFs and serve them from file system or cloud storage
       // For now, we'll regenerate the PDF on demand based on the filename pattern
-      res.status(501).json({ 
-        error: "PDF download not yet implemented - PDFs are generated inline during signing",
-        message: "PDFs are currently generated and displayed directly when orders are signed"
+      res.status(501).json({
+        error:
+          "PDF download not yet implemented - PDFs are generated inline during signing",
+        message:
+          "PDFs are currently generated and displayed directly when orders are signed",
       });
-
     } catch (error: any) {
       console.error("❌ [PDF Download] Error:", error);
       res.status(500).json({ error: "Failed to download PDF" });
@@ -980,7 +1025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Unified vitals processing (handles both immediate parsing and attachment extraction)
   const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;
   app.use("/api/vitals", unifiedVitalsAPI);
-  
+
   // Parse-only endpoint for Quick Parse form population (returns data without saving)
   app.post("/api/vitals/parse-only", async (req, res) => {
     try {
@@ -989,7 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { text, patientId } = req.body;
-      if (!text || typeof text !== 'string') {
+      if (!text || typeof text !== "string") {
         return res.status(400).json({ error: "Text is required" });
       }
 
@@ -1000,21 +1045,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { db } = await import("./db.js");
           const { patients } = await import("../shared/schema.js");
           const { eq } = await import("drizzle-orm");
-          
+
           const [patient] = await db
             .select()
             .from(patients)
             .where(eq(patients.id, patientId))
             .limit(1);
-            
+
           if (patient) {
             const birthDate = new Date(patient.dateOfBirth);
             const today = new Date();
-            const age = Math.floor((today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-            
+            const age = Math.floor(
+              (today.getTime() - birthDate.getTime()) /
+                (365.25 * 24 * 60 * 60 * 1000),
+            );
+
             patientContext = {
               age: age,
-              gender: patient.gender
+              gender: patient.gender,
             };
           }
         } catch (error) {
@@ -1022,15 +1070,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const { VitalsParserService } = await import("./vitals-parser-service.js");
+      const { VitalsParserService } = await import(
+        "./vitals-parser-service.js"
+      );
       const vitalsParser = new VitalsParserService();
-      
-      const parseResult = await vitalsParser.parseVitalsText(text, patientContext);
+
+      const parseResult = await vitalsParser.parseVitalsText(
+        text,
+        patientContext,
+      );
 
       if (!parseResult.success) {
         return res.status(400).json({
           success: false,
-          errors: parseResult.errors || ["Failed to parse vitals"]
+          errors: parseResult.errors || ["Failed to parse vitals"],
         });
       }
 
@@ -1039,7 +1092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!firstVitalsSet) {
         return res.status(400).json({
           success: false,
-          errors: ["No vitals data extracted"]
+          errors: ["No vitals data extracted"],
         });
       }
 
@@ -1047,24 +1100,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         vitals: firstVitalsSet,
         confidence: parseResult.confidence,
-        totalSetsFound: parseResult.data?.length || 0
+        totalSetsFound: parseResult.data?.length || 0,
       });
-
     } catch (error: any) {
       console.error("Parse-only vitals error:", error);
       res.status(500).json({ error: "Failed to parse vitals" });
     }
   });
-  
+
   // Debug endpoint for testing multiple vitals extraction
   app.post("/api/debug/test-vitals", async (req, res) => {
     try {
       const { text } = req.body;
       if (!text) return res.status(400).json({ error: "Text required" });
-      
-      const { VitalsParserService } = await import("./vitals-parser-service.js");
+
+      const { VitalsParserService } = await import(
+        "./vitals-parser-service.js"
+      );
       const parser = new VitalsParserService();
-      
+
       const result = await parser.parseVitalsText(text);
       res.json(result);
     } catch (error: any) {
@@ -1074,35 +1128,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Debug endpoint to manually trigger chart processing
-  app.post("/api/debug/trigger-chart-processing/:attachmentId", async (req, res) => {
-    try {
-      const attachmentId = parseInt(req.params.attachmentId);
-      if (!attachmentId) return res.status(400).json({ error: "Invalid attachment ID" });
-      
-      const { attachmentChartProcessor } = await import("./attachment-chart-processor.js");
-      await attachmentChartProcessor.processCompletedAttachment(attachmentId);
-      
-      res.json({ success: true, message: `Chart processing triggered for attachment ${attachmentId}` });
-    } catch (error: any) {
-      console.error("Debug chart processing error:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-  
+  app.post(
+    "/api/debug/trigger-chart-processing/:attachmentId",
+    async (req, res) => {
+      try {
+        const attachmentId = parseInt(req.params.attachmentId);
+        if (!attachmentId)
+          return res.status(400).json({ error: "Invalid attachment ID" });
+
+        const { attachmentChartProcessor } = await import(
+          "./attachment-chart-processor.js"
+        );
+        await attachmentChartProcessor.processCompletedAttachment(attachmentId);
+
+        res.json({
+          success: true,
+          message: `Chart processing triggered for attachment ${attachmentId}`,
+        });
+      } catch (error: any) {
+        console.error("Debug chart processing error:", error);
+        res.status(500).json({ error: error.message });
+      }
+    },
+  );
+
   // Vitals flowsheet routes (enhanced vitals management)
   app.use("/api/vitals", vitalsFlowsheetRoutes);
-  
+
   // Template management routes (custom user templates)
   setupTemplateRoutes(app);
-  
+
   // Patient attachments routes
   app.use("/api/patients", patientAttachmentsRoutes);
 
   // Nursing summary routes
   app.use("/api/encounters", nursingSummaryRoutes);
-  
-  // Lab management routes
 
+  // Lab management routes
 
   // Removed duplicate - using main lab results endpoint below
 
@@ -1196,7 +1258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Removed duplicate - using main lab results endpoint
 
-  // Lab orders endpoint for compatibility  
+  // Lab orders endpoint for compatibility
   // REMOVED DUPLICATE - main lab-orders endpoint below
 
   // Encounter routes
@@ -1470,7 +1532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const patientId = parseInt(req.params.patientId);
-      
+
       // Get lab orders directly from lab_orders table for proper status tracking
       const labOrdersData = await db
         .select({
@@ -1481,28 +1543,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderedAt: labOrders.orderedAt,
           acknowledgedAt: labOrders.acknowledgedAt,
           externalOrderId: labOrders.externalOrderId,
-          requisitionNumber: labOrders.requisitionNumber
+          requisitionNumber: labOrders.requisitionNumber,
         })
         .from(labOrders)
         .where(eq(labOrders.patientId, patientId))
         .orderBy(desc(labOrders.orderedAt));
-      
+
       // Check for results and format response
       const ordersWithStatus = labOrdersData.map((order: any) => ({
         id: order.id,
         testName: order.testName,
-        orderStatus: order.orderStatus === 'transmitted' ? 'pending' : order.orderStatus,
-        priority: order.priority || 'Routine',
+        orderStatus:
+          order.orderStatus === "transmitted" ? "pending" : order.orderStatus,
+        priority: order.priority || "Routine",
         orderedAt: order.orderedAt,
         orderDate: order.orderedAt,
         collectionDate: order.acknowledgedAt,
         externalOrderId: order.externalOrderId,
-        requisitionNumber: order.requisitionNumber
+        requisitionNumber: order.requisitionNumber,
       }));
-      
+
       res.json(ordersWithStatus);
     } catch (error: any) {
-      console.error('Lab orders API error:', error);
+      console.error("Lab orders API error:", error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -1513,14 +1576,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const patientId = parseInt(req.params.patientId);
-      console.log(`🧪 [LabResults] Fetching lab results for patient ${patientId}`);
-      
+      console.log(
+        `🧪 [LabResults] Fetching lab results for patient ${patientId}`,
+      );
+
       const labResults = await storage.getPatientLabResults(patientId);
       console.log(`🧪 [LabResults] Found ${labResults.length} lab results`);
-      
+
       res.json(labResults);
     } catch (error: any) {
-      console.error('❌ [LabResults] Error:', error);
+      console.error("❌ [LabResults] Error:", error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -1555,8 +1620,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { patientId, userRole, transcription } = req.body;
 
       if (!patientId || !userRole || !transcription) {
-        return res.status(400).json({ 
-          error: "Missing required fields: patientId, userRole, transcription" 
+        return res.status(400).json({
+          error: "Missing required fields: patientId, userRole, transcription",
         });
       }
 
@@ -1567,7 +1632,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get comprehensive patient chart data using same service as WebSocket
-      const patientChart = await PatientChartService.getPatientChartData(patientIdNum);
+      const patientChart =
+        await PatientChartService.getPatientChartData(patientIdNum);
 
       // Build patient context identical to WebSocket system
       const formatPatientContext = (chart: any, basicData: any): string => {
@@ -1577,31 +1643,41 @@ Gender: ${basicData.gender || "Unknown"}
 MRN: ${basicData.mrn || "Unknown"}
 
 MEDICAL PROBLEMS:
-${chart.medicalProblems?.length > 0 
-  ? chart.medicalProblems.map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`).join("\n")
-  : "- No active medical problems documented"
+${
+  chart.medicalProblems?.length > 0
+    ? chart.medicalProblems
+        .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
+        .join("\n")
+    : "- No active medical problems documented"
 }
 
 CURRENT MEDICATIONS:
-${chart.currentMedications?.length > 0 
-  ? chart.currentMedications.map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`).join("\n")
-  : "- No current medications documented"
+${
+  chart.currentMedications?.length > 0
+    ? chart.currentMedications
+        .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
+        .join("\n")
+    : "- No current medications documented"
 }
 
 ALLERGIES:
-${chart.allergies?.length > 0 
-  ? chart.allergies.map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`).join("\n")
-  : "- NKDA (No Known Drug Allergies)"
+${
+  chart.allergies?.length > 0
+    ? chart.allergies
+        .map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`)
+        .join("\n")
+    : "- NKDA (No Known Drug Allergies)"
 }
 
 RECENT VITALS:
-${chart.vitals?.length > 0 
-  ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
+${
+  chart.vitals?.length > 0
+    ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
 - HR: ${chart.vitals[0].heartRate} bpm
 - Temp: ${chart.vitals[0].temperature}°F
 - RR: ${chart.vitals[0].respiratoryRate || "Not recorded"}
 - O2 Sat: ${chart.vitals[0].oxygenSaturation || "Not recorded"}%`
-  : "- No recent vitals available"
+    : "- No recent vitals available"
 }`;
       };
 
@@ -1609,8 +1685,8 @@ ${chart.vitals?.length > 0
 
       // Use exact same prompts as working WebSocket system
       const isProvider = userRole === "provider";
-      const instructions = isProvider ? 
-        `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
+      const instructions = isProvider
+        ? `You are a medical AI assistant for physicians. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for physicians.
 
 CRITICAL PRIORITY: When providers ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic suggestions when asked direct questions.
 
@@ -1628,9 +1704,8 @@ DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
 
 IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
 
-Format each bullet point on its own line with no extra spacing between them.` :
-
-        `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
+Format each bullet point on its own line with no extra spacing between them.`
+        : `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
 
 CRITICAL PRIORITY: When nurses ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic advice when asked direct questions.
 
@@ -1656,7 +1731,7 @@ Format each bullet point on its own line with no extra spacing between them.`;
 CURRENT LIVE CONVERSATION:
 ${transcription}
 
-CRITICAL: If the ${isProvider ? 'provider' : 'nurse'} is asking direct questions about patient chart information, provide SPECIFIC facts from the chart data above, NOT generic suggestions.
+CRITICAL: If the ${isProvider ? "provider" : "nurse"} is asking direct questions about patient chart information, provide SPECIFIC facts from the chart data above, NOT generic suggestions.
 
 Examples:
 - Question: "Does the patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF"
@@ -1665,21 +1740,23 @@ Examples:
 
 DO NOT say "Assess" or "Evaluate" - give the actual chart facts directly.
 
-Please provide medical suggestions based on what the ${isProvider ? 'provider' : 'nurse'} is saying in this current conversation.`;
+Please provide medical suggestions based on what the ${isProvider ? "provider" : "nurse"} is saying in this current conversation.`;
 
       // Call OpenAI with same model and settings
-      console.log(`🧠 [RestAPI] Making GPT-4.1-mini call for ${userRole} suggestions`);
+      console.log(
+        `🧠 [RestAPI] Making GPT-4.1-mini call for ${userRole} suggestions`,
+      );
       const response = await openai.chat.completions.create({
         model: "gpt-4.1-mini",
         messages: [
           {
             role: "system",
-            content: instructions
+            content: instructions,
           },
           {
-            role: "user", 
-            content: contextWithTranscription
-          }
+            role: "user",
+            content: contextWithTranscription,
+          },
         ],
         temperature: 0.3,
         max_tokens: 500,
@@ -1694,32 +1771,36 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
 
       // Format response with bullet points like WebSocket system
       const formattedSuggestions = suggestions
-        .split('\n')
-        .filter(s => s.trim())
-        .map(suggestion => {
+        .split("\n")
+        .filter((s) => s.trim())
+        .map((suggestion) => {
           const trimmed = suggestion.trim();
           // Ensure bullet point formatting like WebSocket
-          if (trimmed && !trimmed.startsWith('•') && !trimmed.startsWith('-') && !trimmed.match(/^\d+\./)) {
+          if (
+            trimmed &&
+            !trimmed.startsWith("•") &&
+            !trimmed.startsWith("-") &&
+            !trimmed.match(/^\d+\./)
+          ) {
             return `• ${trimmed}`;
           }
           return trimmed;
         })
-        .filter(s => s.length > 0);
+        .filter((s) => s.length > 0);
 
       res.json({
         aiSuggestions: {
-          realTimePrompts: formattedSuggestions
+          realTimePrompts: formattedSuggestions,
         },
         usage: response.usage,
         model: "gpt-4.1-mini",
-        costOptimized: true
+        costOptimized: true,
       });
-
     } catch (error: any) {
       console.error("❌ [RestAPI] Live suggestions error:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to generate AI suggestions",
-        details: error.message 
+        details: error.message,
       });
     }
   });
@@ -2051,7 +2132,13 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         return res.sendStatus(401);
       }
 
-      const { noteType = 'soap', patientId, encounterId, transcription, templateId } = req.body;
+      const {
+        noteType = "soap",
+        patientId,
+        encounterId,
+        transcription,
+        templateId,
+      } = req.body;
       const userId = (req as any).user.id;
 
       console.log(`🎯 [ClinicalNotes] Request received:`, {
@@ -2062,17 +2149,18 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         templateId,
         transcriptionLength: transcription?.length || 0,
         hasTranscription: !!transcription,
-        requestTimestamp: new Date().toISOString()
+        requestTimestamp: new Date().toISOString(),
       });
 
       if (!patientId || !encounterId || !transcription) {
         console.error(`❌ [ClinicalNotes] Missing required fields:`, {
           hasPatientId: !!patientId,
           hasEncounterId: !!encounterId,
-          hasTranscription: !!transcription
+          hasTranscription: !!transcription,
         });
         return res.status(400).json({
-          message: "Missing required fields: patientId, encounterId, transcription",
+          message:
+            "Missing required fields: patientId, encounterId, transcription",
         });
       }
 
@@ -2081,18 +2169,22 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
       );
 
       // Use enhanced note generation service
-      const { EnhancedNoteGenerationService } = await import("./enhanced-note-generation-service.js");
+      const { EnhancedNoteGenerationService } = await import(
+        "./enhanced-note-generation-service.js"
+      );
       const clinicalNote = await EnhancedNoteGenerationService.generateNote(
         noteType,
         parseInt(patientId),
         encounterId,
         transcription,
         userId,
-        templateId ? parseInt(templateId) : undefined
+        templateId ? parseInt(templateId) : undefined,
       );
 
       const requestDuration = Date.now() - requestStart;
-      console.log(`✅ [ClinicalNotes] Request completed successfully in ${requestDuration}ms`);
+      console.log(
+        `✅ [ClinicalNotes] Request completed successfully in ${requestDuration}ms`,
+      );
 
       // Return the complete note as JSON
       res.json({
@@ -2102,20 +2194,23 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         encounterId,
         templateId,
         generatedAt: new Date().toISOString(),
-        processingTimeMs: requestDuration
+        processingTimeMs: requestDuration,
       });
     } catch (error: any) {
       const requestDuration = Date.now() - requestStart;
-      console.error(`❌ [ClinicalNotes] Error generating ${req.body.noteType || 'soap'} note after ${requestDuration}ms:`, {
-        error: error.message,
-        stack: error.stack,
-        requestBody: req.body,
-        userId: (req as any).user?.id
-      });
+      console.error(
+        `❌ [ClinicalNotes] Error generating ${req.body.noteType || "soap"} note after ${requestDuration}ms:`,
+        {
+          error: error.message,
+          stack: error.stack,
+          requestBody: req.body,
+          userId: (req as any).user?.id,
+        },
+      );
       res.status(500).json({
-        message: `Failed to generate ${req.body.noteType || 'soap'} note`,
+        message: `Failed to generate ${req.body.noteType || "soap"} note`,
         error: error.message,
-        processingTimeMs: requestDuration
+        processingTimeMs: requestDuration,
       });
     }
   });
@@ -2129,7 +2224,8 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
 
       if (!patientId || !encounterId || !transcription) {
         return res.status(400).json({
-          message: "Missing required fields: patientId, encounterId, transcription",
+          message:
+            "Missing required fields: patientId, encounterId, transcription",
         });
       }
 
@@ -2139,7 +2235,7 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
 
       // Generate SOAP note using unified system
       const soapNote = await generateClinicalNote(
-        'soap',
+        "soap",
         parseInt(patientId),
         encounterId,
         transcription,
@@ -2207,16 +2303,26 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         );
 
         // Clear existing draft orders since GPT has determined the final reconciled set
-        console.log(`📋 [ExtractOrders] Clearing existing draft orders - GPT reconciled to ${deduplicatedOrders.length} final orders`);
-        const existingDraftOrders = await storage.getDraftOrdersByEncounter(encounterId);
-        console.log(`📋 [ExtractOrders] Found ${existingDraftOrders.length} existing orders to delete`);
-        
+        console.log(
+          `📋 [ExtractOrders] Clearing existing draft orders - GPT reconciled to ${deduplicatedOrders.length} final orders`,
+        );
+        const existingDraftOrders =
+          await storage.getDraftOrdersByEncounter(encounterId);
+        console.log(
+          `📋 [ExtractOrders] Found ${existingDraftOrders.length} existing orders to delete`,
+        );
+
         for (const existingOrder of existingDraftOrders) {
           try {
             await storage.deleteOrder(existingOrder.id);
-            console.log(`📋 [ExtractOrders] Successfully deleted order ${existingOrder.id}`);
+            console.log(
+              `📋 [ExtractOrders] Successfully deleted order ${existingOrder.id}`,
+            );
           } catch (error) {
-            console.error(`📋 [ExtractOrders] Error deleting order ${existingOrder.id}:`, error);
+            console.error(
+              `📋 [ExtractOrders] Error deleting order ${existingOrder.id}:`,
+              error,
+            );
             // Continue with other orders even if one fails
           }
         }
@@ -3475,24 +3581,32 @@ Return only valid JSON without markdown formatting.`;
 
       // MOVED: Production system processing now happens after delivery preference check
       // This ensures lab orders only get processed through lab system when delivery method requires it
-      
+
       // Check delivery preferences and generate PDF only if needed
       console.log(`📋 [IndividualSign] ===== DELIVERY PREFERENCE CHECK =====`);
-      console.log(`📋 [IndividualSign] Order details: ID=${orderId}, Type=${order.orderType}, Patient=${order.patientId}`);
-      
+      console.log(
+        `📋 [IndividualSign] Order details: ID=${orderId}, Type=${order.orderType}, Patient=${order.patientId}`,
+      );
+
       let shouldGeneratePDF = false;
-      let deliveryMethod = 'mock_service';
-      let deliveryEndpoint = 'Mock Lab Service';
-      
-      console.log(`📋 [IndividualSign] Initial values: shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`);
-      
+      let deliveryMethod = "mock_service";
+      let deliveryEndpoint = "Mock Lab Service";
+
+      console.log(
+        `📋 [IndividualSign] Initial values: shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`,
+      );
+
       try {
         // Get patient delivery preferences
-        console.log(`📋 [IndividualSign] About to import schema and drizzle-orm`);
+        console.log(
+          `📋 [IndividualSign] About to import schema and drizzle-orm`,
+        );
         const { patientOrderPreferences } = await import("../shared/schema.js");
         const { eq } = await import("drizzle-orm");
-        
-        console.log(`📋 [IndividualSign] Querying preferences for patient ${order.patientId}`);
+
+        console.log(
+          `📋 [IndividualSign] Querying preferences for patient ${order.patientId}`,
+        );
         const preferences = await db
           .select()
           .from(patientOrderPreferences)
@@ -3500,53 +3614,86 @@ Return only valid JSON without markdown formatting.`;
           .limit(1);
 
         const prefs = preferences[0];
-        console.log(`📋 [IndividualSign] Raw preferences query result:`, JSON.stringify(preferences));
-        console.log(`📋 [IndividualSign] Selected preferences:`, JSON.stringify(prefs));
-        
+        console.log(
+          `📋 [IndividualSign] Raw preferences query result:`,
+          JSON.stringify(preferences),
+        );
+        console.log(
+          `📋 [IndividualSign] Selected preferences:`,
+          JSON.stringify(prefs),
+        );
+
         // Determine delivery method based on order type and preferences
-        console.log(`📋 [IndividualSign] Processing order type: ${order.orderType}`);
-        
+        console.log(
+          `📋 [IndividualSign] Processing order type: ${order.orderType}`,
+        );
+
         switch (order.orderType) {
-          case 'lab':
-            console.log(`📋 [IndividualSign] LAB ORDER - Raw pref: ${prefs?.labDeliveryMethod}`);
+          case "lab":
+            console.log(
+              `📋 [IndividualSign] LAB ORDER - Raw pref: ${prefs?.labDeliveryMethod}`,
+            );
             deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
             shouldGeneratePDF = deliveryMethod === "print_pdf";
-            deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
-                              deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
-                              "PDF Generation";
-            console.log(`📋 [IndividualSign] LAB ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`);
+            deliveryEndpoint =
+              deliveryMethod === "mock_service"
+                ? "Mock Lab Service"
+                : deliveryMethod === "real_service"
+                  ? prefs?.labServiceProvider || "External Lab Service"
+                  : "PDF Generation";
+            console.log(
+              `📋 [IndividualSign] LAB ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`,
+            );
             break;
-            
-          case 'imaging':
-            console.log(`📋 [IndividualSign] IMAGING ORDER - Raw pref: ${prefs?.imagingDeliveryMethod}`);
+
+          case "imaging":
+            console.log(
+              `📋 [IndividualSign] IMAGING ORDER - Raw pref: ${prefs?.imagingDeliveryMethod}`,
+            );
             deliveryMethod = prefs?.imagingDeliveryMethod || "mock_service";
             shouldGeneratePDF = deliveryMethod === "print_pdf";
-            deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
-                              deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
-                              "PDF Generation";
-            console.log(`📋 [IndividualSign] IMAGING ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`);
+            deliveryEndpoint =
+              deliveryMethod === "mock_service"
+                ? "Mock Imaging Service"
+                : deliveryMethod === "real_service"
+                  ? prefs?.imagingServiceProvider || "External Imaging Service"
+                  : "PDF Generation";
+            console.log(
+              `📋 [IndividualSign] IMAGING ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`,
+            );
             break;
-            
-          case 'medication':
-            console.log(`📋 [IndividualSign] MEDICATION ORDER - Raw pref: ${prefs?.medicationDeliveryMethod}`);
-            deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
+
+          case "medication":
+            console.log(
+              `📋 [IndividualSign] MEDICATION ORDER - Raw pref: ${prefs?.medicationDeliveryMethod}`,
+            );
+            deliveryMethod =
+              prefs?.medicationDeliveryMethod || "preferred_pharmacy";
             shouldGeneratePDF = deliveryMethod === "print_pdf";
-            deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
-                              "PDF Generation";
-            console.log(`📋 [IndividualSign] MEDICATION ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`);
+            deliveryEndpoint =
+              deliveryMethod === "preferred_pharmacy"
+                ? prefs?.preferredPharmacy || "Preferred Pharmacy"
+                : "PDF Generation";
+            console.log(
+              `📋 [IndividualSign] MEDICATION ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`,
+            );
             break;
-            
+
           default:
-            console.log(`📋 [IndividualSign] UNKNOWN ORDER TYPE - Defaulting to PDF`);
+            console.log(
+              `📋 [IndividualSign] UNKNOWN ORDER TYPE - Defaulting to PDF`,
+            );
             shouldGeneratePDF = true;
         }
 
         console.log(`📋 [IndividualSign] ===== FINAL DECISION =====`);
-        console.log(`📋 [IndividualSign] Order ${orderId}: Type=${order.orderType}, Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
-        
+        console.log(
+          `📋 [IndividualSign] Order ${orderId}: Type=${order.orderType}, Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`,
+        );
+
         // Record signed order with delivery details
         const { signedOrders } = await import("../shared/schema.js");
-        
+
         const signedOrderData = {
           orderId: order.id,
           patientId: order.patientId,
@@ -3554,7 +3701,7 @@ Return only valid JSON without markdown formatting.`;
           orderType: order.orderType,
           deliveryMethod: deliveryMethod,
           deliveryEndpoint: deliveryEndpoint,
-          deliveryStatus: 'pending' as const,
+          deliveryStatus: "pending" as const,
           signedAt: new Date(),
           signedBy: userId,
           canChangeDelivery: true,
@@ -3562,85 +3709,151 @@ Return only valid JSON without markdown formatting.`;
           deliveryChanges: [],
           deliveryMetadata: {
             preferences: prefs,
-            shouldGeneratePDF: shouldGeneratePDF
-          }
+            shouldGeneratePDF: shouldGeneratePDF,
+          },
         };
 
         await db.insert(signedOrders).values(signedOrderData);
-        console.log(`📋 [IndividualSign] ✅ Recorded delivery preferences for order ${orderId}`);
-        
+        console.log(
+          `📋 [IndividualSign] ✅ Recorded delivery preferences for order ${orderId}`,
+        );
+
         // Process ALL orders through production systems for proper pending status
-        console.log(`🔄 [IndividualSign] Processing ${order.orderType} order ${orderId} through production systems`);
+        console.log(
+          `🔄 [IndividualSign] Processing ${order.orderType} order ${orderId} through production systems`,
+        );
         try {
           if (order.orderType === "lab") {
-            console.log(`🧪 [IndividualSign] Processing lab order through lab system (delivery method: ${deliveryMethod})`);
-            const { LabOrderProcessor } = await import("./lab-order-processor.js");
-            await LabOrderProcessor.processSignedLabOrders(order.patientId, order.encounterId, deliveryMethod);
-            console.log(`✅ [IndividualSign] Successfully processed lab order ${orderId} - will appear as pending`);
+            console.log(
+              `🧪 [IndividualSign] Processing lab order through lab system (delivery method: ${deliveryMethod})`,
+            );
+            const { LabOrderProcessor } = await import(
+              "./lab-order-processor.js"
+            );
+            await LabOrderProcessor.processSignedLabOrders(
+              order.patientId,
+              order.encounterId,
+              deliveryMethod,
+            );
+            console.log(
+              `✅ [IndividualSign] Successfully processed lab order ${orderId} - will appear as pending`,
+            );
           } else if (order.orderType === "imaging") {
-            const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
-            await ImagingOrderProcessor.processSignedImagingOrders(order.patientId, order.encounterId);
-            console.log(`🩻 [IndividualSign] Processed imaging order ${orderId} through production system`);
+            const { ImagingOrderProcessor } = await import(
+              "./imaging-order-processor.js"
+            );
+            await ImagingOrderProcessor.processSignedImagingOrders(
+              order.patientId,
+              order.encounterId,
+            );
+            console.log(
+              `🩻 [IndividualSign] Processed imaging order ${orderId} through production system`,
+            );
           } else if (order.orderType === "referral") {
-            const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
-            await ReferralOrderProcessor.processSignedReferralOrders(order.patientId, order.encounterId);
-            console.log(`👨‍⚕️ [IndividualSign] Processed referral order ${orderId} through production system`);
+            const { ReferralOrderProcessor } = await import(
+              "./referral-order-processor.js"
+            );
+            await ReferralOrderProcessor.processSignedReferralOrders(
+              order.patientId,
+              order.encounterId,
+            );
+            console.log(
+              `👨‍⚕️ [IndividualSign] Processed referral order ${orderId} through production system`,
+            );
           }
         } catch (error) {
-          console.error(`❌ [IndividualSign] Failed to process ${order.orderType} order ${orderId} through production systems:`, error);
+          console.error(
+            `❌ [IndividualSign] Failed to process ${order.orderType} order ${orderId} through production systems:`,
+            error,
+          );
           console.error(`❌ [IndividualSign] Error stack:`, error.stack);
         }
-        
       } catch (deliveryError) {
-        console.error('❌ [IndividualSign] Error checking delivery preferences:', deliveryError);
-        console.error('❌ [IndividualSign] Error stack:', (deliveryError as Error).stack);
+        console.error(
+          "❌ [IndividualSign] Error checking delivery preferences:",
+          deliveryError,
+        );
+        console.error(
+          "❌ [IndividualSign] Error stack:",
+          (deliveryError as Error).stack,
+        );
         // Fallback to mock service for labs, PDF for others
-        if (order.orderType === 'lab') {
+        if (order.orderType === "lab") {
           shouldGeneratePDF = false;
-          deliveryMethod = 'mock_service';
-          deliveryEndpoint = 'Mock Lab Service (Fallback)';
+          deliveryMethod = "mock_service";
+          deliveryEndpoint = "Mock Lab Service (Fallback)";
         } else {
           shouldGeneratePDF = true;
-          deliveryMethod = 'print_pdf';
-          deliveryEndpoint = 'PDF Generation (Fallback)';
+          deliveryMethod = "print_pdf";
+          deliveryEndpoint = "PDF Generation (Fallback)";
         }
       }
 
       // Generate PDF only if delivery method requires it
       console.log(`📋 [IndividualSign] ===== PDF GENERATION DECISION =====`);
-      console.log(`📋 [IndividualSign] shouldGeneratePDF = ${shouldGeneratePDF}`);
-      
+      console.log(
+        `📋 [IndividualSign] shouldGeneratePDF = ${shouldGeneratePDF}`,
+      );
+
       if (shouldGeneratePDF) {
         console.log(`📄 [IndividualSign] ===== PDF GENERATION STARTING =====`);
-        console.log(`📄 [IndividualSign] Order type: ${order.orderType}, Patient: ${order.patientId}`);
-        
+        console.log(
+          `📄 [IndividualSign] Order type: ${order.orderType}, Patient: ${order.patientId}`,
+        );
+
         try {
           const { pdfService } = await import("./pdf-service.js");
-          
+
           let pdfBuffer: Buffer | null = null;
-          
-          if (order.orderType === 'medication') {
-            console.log(`📄 [IndividualSign] Generating medication PDF for order ${orderId}`);
-            pdfBuffer = await pdfService.generateMedicationPDF([updatedOrder], order.patientId, userId);
-          } else if (order.orderType === 'lab') {
-            console.log(`📄 [IndividualSign] Generating lab PDF for order ${orderId}`);
-            pdfBuffer = await pdfService.generateLabPDF([updatedOrder], order.patientId, userId);
-          } else if (order.orderType === 'imaging') {
-            console.log(`📄 [IndividualSign] Generating imaging PDF for order ${orderId}`);
-            pdfBuffer = await pdfService.generateImagingPDF([updatedOrder], order.patientId, userId);
+
+          if (order.orderType === "medication") {
+            console.log(
+              `📄 [IndividualSign] Generating medication PDF for order ${orderId}`,
+            );
+            pdfBuffer = await pdfService.generateMedicationPDF(
+              [updatedOrder],
+              order.patientId,
+              userId,
+            );
+          } else if (order.orderType === "lab") {
+            console.log(
+              `📄 [IndividualSign] Generating lab PDF for order ${orderId}`,
+            );
+            pdfBuffer = await pdfService.generateLabPDF(
+              [updatedOrder],
+              order.patientId,
+              userId,
+            );
+          } else if (order.orderType === "imaging") {
+            console.log(
+              `📄 [IndividualSign] Generating imaging PDF for order ${orderId}`,
+            );
+            pdfBuffer = await pdfService.generateImagingPDF(
+              [updatedOrder],
+              order.patientId,
+              userId,
+            );
           } else {
-            console.log(`📄 [IndividualSign] Unknown order type: ${order.orderType}, skipping PDF generation`);
+            console.log(
+              `📄 [IndividualSign] Unknown order type: ${order.orderType}, skipping PDF generation`,
+            );
           }
-          
+
           if (pdfBuffer) {
-            console.log(`📄 [IndividualSign] Generated ${order.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`);
+            console.log(
+              `📄 [IndividualSign] Generated ${order.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`,
+            );
           }
-          
         } catch (pdfError) {
-          console.error(`📄 [IndividualSign] PDF generation failed for order ${orderId}:`, pdfError);
+          console.error(
+            `📄 [IndividualSign] PDF generation failed for order ${orderId}:`,
+            pdfError,
+          );
         }
       } else {
-        console.log(`📋 [IndividualSign] PDF generation skipped - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
+        console.log(
+          `📋 [IndividualSign] PDF generation skipped - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`,
+        );
       }
 
       // DUPLICATE REMOVED - production processing already handled above
@@ -3780,14 +3993,18 @@ Return only valid JSON without markdown formatting.`;
       }
 
       // Process delivery based on patient preferences
-      console.log(`📋 [RouteBulkSign] ===== DELIVERY PROCESSING STARTING =====`);
-      console.log(`📋 [RouteBulkSign] Total signed orders: ${signedOrders.length}`);
-      
+      console.log(
+        `📋 [RouteBulkSign] ===== DELIVERY PROCESSING STARTING =====`,
+      );
+      console.log(
+        `📋 [RouteBulkSign] Total signed orders: ${signedOrders.length}`,
+      );
+
       try {
         const { pdfService } = await import("./pdf-service.js");
         const { patientOrderPreferences } = await import("../shared/schema.js");
         const { eq } = await import("drizzle-orm");
-        
+
         // Group orders by patient to get delivery preferences
         const ordersByPatient = signedOrders.reduce((acc: any, order: any) => {
           if (!acc[order.patientId]) {
@@ -3797,11 +4014,17 @@ Return only valid JSON without markdown formatting.`;
           return acc;
         }, {});
 
-        console.log(`📋 [RouteBulkSign] Processing orders for ${Object.keys(ordersByPatient).length} patients`);
+        console.log(
+          `📋 [RouteBulkSign] Processing orders for ${Object.keys(ordersByPatient).length} patients`,
+        );
 
-        for (const [patientId, patientOrders] of Object.entries(ordersByPatient)) {
-          console.log(`📋 [RouteBulkSign] Processing ${(patientOrders as any).length} orders for patient ${patientId}`);
-          
+        for (const [patientId, patientOrders] of Object.entries(
+          ordersByPatient,
+        )) {
+          console.log(
+            `📋 [RouteBulkSign] Processing ${(patientOrders as any).length} orders for patient ${patientId}`,
+          );
+
           // Get patient delivery preferences
           const preferences = await db
             .select()
@@ -3810,67 +4033,105 @@ Return only valid JSON without markdown formatting.`;
             .limit(1);
 
           const prefs = preferences[0];
-          
+
           // Group orders by type for this patient
-          const ordersByType = (patientOrders as any).reduce((acc: any, order: any) => {
-            if (!acc[order.orderType]) {
-              acc[order.orderType] = [];
-            }
-            acc[order.orderType].push(order);
-            return acc;
-          }, {});
+          const ordersByType = (patientOrders as any).reduce(
+            (acc: any, order: any) => {
+              if (!acc[order.orderType]) {
+                acc[order.orderType] = [];
+              }
+              acc[order.orderType].push(order);
+              return acc;
+            },
+            {},
+          );
 
           // Process each order type for this patient
           for (const [orderType, orders] of Object.entries(ordersByType)) {
             let shouldGeneratePDF = false;
-            let deliveryMethod = orderType === 'lab' ? 'mock_service' : 'print_pdf';
-            let deliveryEndpoint = orderType === 'lab' ? 'Mock Lab Service' : 'PDF Generation';
-            
+            let deliveryMethod =
+              orderType === "lab" ? "mock_service" : "print_pdf";
+            let deliveryEndpoint =
+              orderType === "lab" ? "Mock Lab Service" : "PDF Generation";
+
             // Determine delivery method based on order type and preferences
-            console.log(`📋 [RouteBulkSign] Processing ${orderType} orders for patient ${patientId}`);
-            console.log(`📋 [RouteBulkSign] Raw preferences:`, JSON.stringify(prefs));
-            
+            console.log(
+              `📋 [RouteBulkSign] Processing ${orderType} orders for patient ${patientId}`,
+            );
+            console.log(
+              `📋 [RouteBulkSign] Raw preferences:`,
+              JSON.stringify(prefs),
+            );
+
             switch (orderType) {
-              case 'lab':
-                console.log(`📋 [RouteBulkSign] LAB ORDER - Raw pref: ${prefs?.labDeliveryMethod}`);
+              case "lab":
+                console.log(
+                  `📋 [RouteBulkSign] LAB ORDER - Raw pref: ${prefs?.labDeliveryMethod}`,
+                );
                 deliveryMethod = prefs?.labDeliveryMethod || "mock_service";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
-                deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Lab Service" : 
-                                  deliveryMethod === "real_service" ? (prefs?.labServiceProvider || "External Lab Service") : 
-                                  "PDF Generation";
-                console.log(`📋 [RouteBulkSign] LAB ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
+                deliveryEndpoint =
+                  deliveryMethod === "mock_service"
+                    ? "Mock Lab Service"
+                    : deliveryMethod === "real_service"
+                      ? prefs?.labServiceProvider || "External Lab Service"
+                      : "PDF Generation";
+                console.log(
+                  `📋 [RouteBulkSign] LAB ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`,
+                );
                 break;
-                
-              case 'imaging':
-                console.log(`📋 [RouteBulkSign] IMAGING ORDER - Raw pref: ${prefs?.imagingDeliveryMethod}`);
+
+              case "imaging":
+                console.log(
+                  `📋 [RouteBulkSign] IMAGING ORDER - Raw pref: ${prefs?.imagingDeliveryMethod}`,
+                );
                 deliveryMethod = prefs?.imagingDeliveryMethod || "print_pdf";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
-                deliveryEndpoint = deliveryMethod === "mock_service" ? "Mock Imaging Service" : 
-                                  deliveryMethod === "real_service" ? (prefs?.imagingServiceProvider || "External Imaging Service") : 
-                                  "PDF Generation";
-                console.log(`📋 [RouteBulkSign] IMAGING ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
+                deliveryEndpoint =
+                  deliveryMethod === "mock_service"
+                    ? "Mock Imaging Service"
+                    : deliveryMethod === "real_service"
+                      ? prefs?.imagingServiceProvider ||
+                        "External Imaging Service"
+                      : "PDF Generation";
+                console.log(
+                  `📋 [RouteBulkSign] IMAGING ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`,
+                );
                 break;
-                
-              case 'medication':
-                console.log(`📋 [RouteBulkSign] MEDICATION ORDER - Raw pref: ${prefs?.medicationDeliveryMethod}`);
-                deliveryMethod = prefs?.medicationDeliveryMethod || "preferred_pharmacy";
+
+              case "medication":
+                console.log(
+                  `📋 [RouteBulkSign] MEDICATION ORDER - Raw pref: ${prefs?.medicationDeliveryMethod}`,
+                );
+                deliveryMethod =
+                  prefs?.medicationDeliveryMethod || "preferred_pharmacy";
                 shouldGeneratePDF = deliveryMethod === "print_pdf";
-                deliveryEndpoint = deliveryMethod === "preferred_pharmacy" ? (prefs?.preferredPharmacy || "Preferred Pharmacy") : 
-                                  "PDF Generation";
-                console.log(`📋 [RouteBulkSign] MEDICATION ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`);
+                deliveryEndpoint =
+                  deliveryMethod === "preferred_pharmacy"
+                    ? prefs?.preferredPharmacy || "Preferred Pharmacy"
+                    : "PDF Generation";
+                console.log(
+                  `📋 [RouteBulkSign] MEDICATION ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}`,
+                );
                 break;
-                
+
               default:
-                console.log(`📋 [RouteBulkSign] UNKNOWN ORDER TYPE - Defaulting to PDF`);
+                console.log(
+                  `📋 [RouteBulkSign] UNKNOWN ORDER TYPE - Defaulting to PDF`,
+                );
                 shouldGeneratePDF = true;
             }
 
-            console.log(`📋 [RouteBulkSign] Patient ${patientId}, ${orderType} orders: Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`);
-            
+            console.log(
+              `📋 [RouteBulkSign] Patient ${patientId}, ${orderType} orders: Method=${deliveryMethod}, Endpoint=${deliveryEndpoint}, Generate PDF=${shouldGeneratePDF}`,
+            );
+
             // Record signed orders with delivery details
-            const { signedOrders: signedOrdersTable } = await import("../shared/schema.js");
-            
-            for (const order of (orders as any)) {
+            const { signedOrders: signedOrdersTable } = await import(
+              "../shared/schema.js"
+            );
+
+            for (const order of orders as any) {
               const signedOrderData = {
                 orderId: order.id,
                 patientId: order.patientId,
@@ -3878,7 +4139,7 @@ Return only valid JSON without markdown formatting.`;
                 orderType: order.orderType,
                 deliveryMethod: deliveryMethod,
                 deliveryEndpoint: deliveryEndpoint,
-                deliveryStatus: 'pending' as const,
+                deliveryStatus: "pending" as const,
                 originalDeliveryMethod: deliveryMethod,
                 signedAt: new Date(),
                 signedBy: userId,
@@ -3887,75 +4148,140 @@ Return only valid JSON without markdown formatting.`;
                 deliveryChanges: [],
                 deliveryMetadata: {
                   preferences: prefs,
-                  shouldGeneratePDF: shouldGeneratePDF
-                }
+                  shouldGeneratePDF: shouldGeneratePDF,
+                },
               };
 
               await db.insert(signedOrdersTable).values(signedOrderData);
             }
 
             // Generate PDF only if delivery method requires it
-            console.log(`📄 [RouteBulkSign] ===== PDF GENERATION DECISION =====`);
-            console.log(`📄 [RouteBulkSign] Patient ${patientId}, orderType=${orderType}, shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`);
-            
+            console.log(
+              `📄 [RouteBulkSign] ===== PDF GENERATION DECISION =====`,
+            );
+            console.log(
+              `📄 [RouteBulkSign] Patient ${patientId}, orderType=${orderType}, shouldGeneratePDF=${shouldGeneratePDF}, deliveryMethod=${deliveryMethod}`,
+            );
+
             if (shouldGeneratePDF) {
-              console.log(`📄 [RouteBulkSign] Generating ${orderType} PDF for patient ${patientId}`);
-              
+              console.log(
+                `📄 [RouteBulkSign] Generating ${orderType} PDF for patient ${patientId}`,
+              );
+
               try {
                 let pdfBuffer: Buffer | null = null;
-                
-                if (orderType === 'medication') {
-                  console.log(`📄 [RouteBulkSign] Calling generateMedicationPDF with ${orders.length} orders`);
-                  pdfBuffer = await pdfService.generateMedicationPDF(orders, parseInt(patientId), userId);
-                } else if (orderType === 'lab') {
-                  console.log(`📄 [RouteBulkSign] Calling generateLabPDF with ${orders.length} orders`);
-                  pdfBuffer = await pdfService.generateLabPDF(orders, parseInt(patientId), userId);
-                } else if (orderType === 'imaging') {
-                  console.log(`📄 [RouteBulkSign] Calling generateImagingPDF with ${orders.length} orders`);
-                  pdfBuffer = await pdfService.generateImagingPDF(orders, parseInt(patientId), userId);
+
+                if (orderType === "medication") {
+                  console.log(
+                    `📄 [RouteBulkSign] Calling generateMedicationPDF with ${orders.length} orders`,
+                  );
+                  pdfBuffer = await pdfService.generateMedicationPDF(
+                    orders,
+                    parseInt(patientId),
+                    userId,
+                  );
+                } else if (orderType === "lab") {
+                  console.log(
+                    `📄 [RouteBulkSign] Calling generateLabPDF with ${orders.length} orders`,
+                  );
+                  pdfBuffer = await pdfService.generateLabPDF(
+                    orders,
+                    parseInt(patientId),
+                    userId,
+                  );
+                } else if (orderType === "imaging") {
+                  console.log(
+                    `📄 [RouteBulkSign] Calling generateImagingPDF with ${orders.length} orders`,
+                  );
+                  pdfBuffer = await pdfService.generateImagingPDF(
+                    orders,
+                    parseInt(patientId),
+                    userId,
+                  );
                 }
-                
+
                 if (pdfBuffer) {
-                  console.log(`📄 [RouteBulkSign] ✅ Generated ${orderType} PDF for patient ${patientId} (${pdfBuffer.length} bytes)`);
+                  console.log(
+                    `📄 [RouteBulkSign] ✅ Generated ${orderType} PDF for patient ${patientId} (${pdfBuffer.length} bytes)`,
+                  );
                 } else {
-                  console.log(`📄 [RouteBulkSign] ⚠️ PDF generation returned null for ${orderType} orders`);
+                  console.log(
+                    `📄 [RouteBulkSign] ⚠️ PDF generation returned null for ${orderType} orders`,
+                  );
                 }
-                
               } catch (pdfError) {
-                console.error(`📄 [RouteBulkSign] ❌ Failed to generate ${orderType} PDF for patient ${patientId}:`, pdfError);
+                console.error(
+                  `📄 [RouteBulkSign] ❌ Failed to generate ${orderType} PDF for patient ${patientId}:`,
+                  pdfError,
+                );
               }
             } else {
-              console.log(`📋 [RouteBulkSign] ✅ PDF generation skipped for patient ${patientId} ${orderType} orders - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`);
+              console.log(
+                `📋 [RouteBulkSign] ✅ PDF generation skipped for patient ${patientId} ${orderType} orders - delivery method is ${deliveryMethod} to ${deliveryEndpoint}`,
+              );
             }
-            
+
             // Process ALL orders through production systems for proper pending status
-            console.log(`🔄 [RouteBulkSign] Processing ${orderType} orders through production systems (patient ${patientId})`);
+            console.log(
+              `🔄 [RouteBulkSign] Processing ${orderType} orders through production systems (patient ${patientId})`,
+            );
             try {
               if (orderType === "lab") {
-                console.log(`🧪 [RouteBulkSign] Processing lab orders through lab system (delivery method: ${deliveryMethod})`);
-                const { LabOrderProcessor } = await import("./lab-order-processor.js");
-                await LabOrderProcessor.processSignedLabOrders(parseInt(patientId), (orders as any)[0].encounterId, deliveryMethod);
-                console.log(`✅ [RouteBulkSign] Successfully processed ${(orders as any).length} lab orders - will appear as pending`);
+                console.log(
+                  `🧪 [RouteBulkSign] Processing lab orders through lab system (delivery method: ${deliveryMethod})`,
+                );
+                const { LabOrderProcessor } = await import(
+                  "./lab-order-processor.js"
+                );
+                await LabOrderProcessor.processSignedLabOrders(
+                  parseInt(patientId),
+                  (orders as any)[0].encounterId,
+                  deliveryMethod,
+                );
+                console.log(
+                  `✅ [RouteBulkSign] Successfully processed ${(orders as any).length} lab orders - will appear as pending`,
+                );
               } else if (orderType === "imaging") {
-                const { ImagingOrderProcessor } = await import("./imaging-order-processor.js");
-                await ImagingOrderProcessor.processSignedImagingOrders(parseInt(patientId), (orders as any)[0].encounterId);
-                console.log(`🩻 [RouteBulkSign] Processed ${(orders as any).length} imaging orders through production system`);
+                const { ImagingOrderProcessor } = await import(
+                  "./imaging-order-processor.js"
+                );
+                await ImagingOrderProcessor.processSignedImagingOrders(
+                  parseInt(patientId),
+                  (orders as any)[0].encounterId,
+                );
+                console.log(
+                  `🩻 [RouteBulkSign] Processed ${(orders as any).length} imaging orders through production system`,
+                );
               } else if (orderType === "referral") {
-                const { ReferralOrderProcessor } = await import("./referral-order-processor.js");
-                await ReferralOrderProcessor.processSignedReferralOrders(parseInt(patientId), (orders as any)[0].encounterId);
-                console.log(`👨‍⚕️ [RouteBulkSign] Processed ${(orders as any).length} referral orders through production system`);
+                const { ReferralOrderProcessor } = await import(
+                  "./referral-order-processor.js"
+                );
+                await ReferralOrderProcessor.processSignedReferralOrders(
+                  parseInt(patientId),
+                  (orders as any)[0].encounterId,
+                );
+                console.log(
+                  `👨‍⚕️ [RouteBulkSign] Processed ${(orders as any).length} referral orders through production system`,
+                );
               }
             } catch (error) {
-              console.error(`❌ [RouteBulkSign] Failed to process ${orderType} orders through production systems:`, error);
+              console.error(
+                `❌ [RouteBulkSign] Failed to process ${orderType} orders through production systems:`,
+                error,
+              );
               console.error(`❌ [RouteBulkSign] Error stack:`, error.stack);
             }
           }
         }
-        
-        console.log(`📋 [RouteBulkSign] ===== DELIVERY PROCESSING COMPLETED =====`);
-        
+
+        console.log(
+          `📋 [RouteBulkSign] ===== DELIVERY PROCESSING COMPLETED =====`,
+        );
       } catch (error) {
-        console.error(`📋 [RouteBulkSign] ❌ Delivery processing error:`, error);
+        console.error(
+          `📋 [RouteBulkSign] ❌ Delivery processing error:`,
+          error,
+        );
       }
 
       res.json({
@@ -4028,7 +4354,7 @@ Return only valid JSON without markdown formatting.`;
 
   // Register patient parser routes
   app.use("/api", parseRoutes);
-  
+
   // Register lab routes
   app.use("/api/lab", labRoutes);
   app.use("/api/lab-entry", labEntryRoutes);
@@ -4039,12 +4365,10 @@ Return only valid JSON without markdown formatting.`;
   app.use("/api/lab-simulator", labSimulatorRoutes);
   app.use("/api/lab-status", labStatusDashboardRoutes);
 
-
-  
   // PDF download routes (for accessing generated PDFs)
   const pdfDownloadRoutes = await import("./pdf-download-routes.js");
   app.use("/api", pdfDownloadRoutes.default);
-  
+
   // PDF viewer routes (for embedded viewing)
   const pdfViewerRoutes = await import("./pdf-viewer-routes.js");
   app.use("/api", pdfViewerRoutes.default);
