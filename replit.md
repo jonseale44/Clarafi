@@ -141,6 +141,9 @@ Preferred communication style: Simple, everyday language.
 - **PHASE 2**: Interactive AI instruction addition via intuitive clicking and text selection
 - **AUTOMATIC FORMATTING**: Comments converted to {{double curly braces}} instructions behind the scenes
 - **FIXED TEXT SELECTION**: Resolved pointer events and z-index layering for proper text interaction
+- **DATABASE SCHEMA UPDATED**: Added base_note_text, inline_comments, and has_comments columns to support two-phase templates
+- **TEXTAREA REF CONNECTED**: Fixed missing ref that prevented text selection and clicking functionality
+- **COMPREHENSIVE LOGGING**: Added detailed console logging throughout comment system for debugging
 
 ### User Custom Template System Implementation (June 25, 2025)
 - **FULLY OPERATIONAL**: Complete Phase 1 custom template system with example-based template creation
