@@ -62,10 +62,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   // Get example note for new template creation
   const generateExampleMutation = useMutation({
     mutationFn: async (noteType: string) => {
-      return apiRequest(`/api/templates/generate-example`, {
-        method: 'POST',
-        body: { noteType }
-      });
+      const response = await apiRequest('POST', `/api/templates/generate-example`, { noteType });
+      return await response.json();
     }
   });
 
@@ -75,10 +73,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
       console.log('📋 [TemplateManager] Creating template with data:', data);
       
       try {
-        const result = await apiRequest('/api/templates/create-from-example', {
-          method: 'POST',
-          body: data
-        });
+        const response = await apiRequest('POST', '/api/templates/create-from-example', data);
+        const result = await response.json();
         console.log('✅ [TemplateManager] Template created successfully:', result);
         return result;
       } catch (error) {
@@ -110,10 +106,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   // Update template
   const updateTemplateMutation = useMutation({
     mutationFn: async ({ templateId, data }: { templateId: number; data: any }) => {
-      return apiRequest(`/api/templates/${templateId}`, {
-        method: 'PUT',
-        body: data
-      });
+      const response = await apiRequest('PUT', `/api/templates/${templateId}`, data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/templates/user'] });
@@ -130,9 +124,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   // Set default template
   const setDefaultMutation = useMutation({
     mutationFn: async (templateId: number) => {
-      return apiRequest(`/api/templates/${templateId}/set-default`, {
-        method: 'POST'
-      });
+      const response = await apiRequest('POST', `/api/templates/${templateId}/set-default`, {});
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/templates/by-type'] });
