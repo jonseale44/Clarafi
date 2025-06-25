@@ -159,8 +159,8 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
         patientId,
         encounterId,
         transcriptionLength: transcription.trim().length,
-        selectedTemplate: props.selectedTemplate?.id,
-        isBaseTemplate: props.selectedTemplate?.isBaseTemplate
+        selectedTemplate: selectedTemplate?.id,
+        isBaseTemplate: selectedTemplate?.isBaseTemplate
       });
 
       // Send complete transcription to enhanced clinical notes API
@@ -195,7 +195,13 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`❌ [RealtimeSOAP] HTTP Error:`, {
+          status: response.status,
+          statusText: response.statusText,
+          errorBody: errorText
+        });
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
       // Handle JSON response instead of streaming
