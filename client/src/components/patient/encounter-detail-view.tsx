@@ -173,6 +173,7 @@ export function EncounterDetailView({
   const [suggestionProgress, setSuggestionProgress] = useState(0);
   const [isGeneratingSmartSuggestions, setIsGeneratingSmartSuggestions] = useState(false);
   const [lastSuggestionCall, setLastSuggestionCall] = useState<number>(0);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
@@ -470,6 +471,12 @@ export function EncounterDetailView({
     setIsAutoGeneratingSOAP(false);
     setIsAutoGeneratingOrders(false);
     setIsAutoGeneratingBilling(false);
+    
+    // Complete the progress animation
+    setGenerationProgress(100);
+    setTimeout(() => {
+      setGenerationProgress(0);
+    }, 500);
 
     setSoapNote(note);
     if (editor && !editor.isDestroyed) {
@@ -2636,18 +2643,55 @@ Please provide medical suggestions based on this complete conversation context.`
       "🔄 [EncounterView] Manually triggering SOAP note generation from transcription...",
     );
 
-    // Use the unified streaming system with force generation
-    if (realtimeSOAPRef.current) {
-      realtimeSOAPRef.current.generateSOAPNote(true); // Force generation bypasses intelligent streaming checks
-    } else {
-      console.error(
-        "❌ [EncounterView] RealtimeSOAPIntegration ref not available",
-      );
+    // Start animation
+    setGenerationProgress(0);
+    
+    // Progress animation - smooth updates every 50ms
+    const startTime = Date.now();
+    const estimatedDuration = 6000; // Note generation typically takes longer than suggestions
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
+      setGenerationProgress(progress);
+    }, 50);
+
+    try {
+      // Use the unified streaming system with force generation
+      if (realtimeSOAPRef.current) {
+        realtimeSOAPRef.current.generateSOAPNote(true); // Force generation bypasses intelligent streaming checks
+        
+        // Complete the progress animation when generation is done
+        // Note: The actual completion will be handled by onSOAPNoteComplete callback
+        // but we set up a fallback cleanup
+        setTimeout(() => {
+          clearInterval(progressInterval);
+          setGenerationProgress(100);
+          setTimeout(() => {
+            setGenerationProgress(0);
+          }, 500);
+        }, estimatedDuration);
+        
+      } else {
+        clearInterval(progressInterval);
+        setGenerationProgress(0);
+        console.error(
+          "❌ [EncounterView] RealtimeSOAPIntegration ref not available",
+        );
+        toast({
+          variant: "destructive",
+          title: "Generation Failed",
+          description:
+            "Unable to access SOAP generation system. Please try again.",
+        });
+      }
+    } catch (error) {
+      clearInterval(progressInterval);
+      setGenerationProgress(0);
+      console.error("❌ [EncounterView] Error during generation:", error);
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description:
-          "Unable to access SOAP generation system. Please try again.",
+        description: "An error occurred during note generation. Please try again.",
       });
     }
   };
@@ -3213,6 +3257,13 @@ Please provide medical suggestions based on this complete conversation context.`
                   onSOAPNoteComplete={(note) => {
                     setSoapNote(note);
                     setIsGeneratingSOAP(false);
+                    
+                    // Complete the progress animation
+                    setGenerationProgress(100);
+                    setTimeout(() => {
+                      setGenerationProgress(0);
+                    }, 500);
+                    
                     if (editor && !editor.isDestroyed) {
                       const formattedContent = formatSoapNoteContent(note);
                       editor.commands.setContent(formattedContent);
@@ -3236,14 +3287,43 @@ Please provide medical suggestions based on this complete conversation context.`
                     variant="outline"
                     onClick={handleGenerateFromTranscription}
                     disabled={isGeneratingSOAP || !transcription.trim()}
-                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    className={`relative overflow-hidden transition-all duration-200 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 ${
+                      isGeneratingSOAP ? 'bg-green-100 border-green-300' : ''
+                    }`}
+                    style={{
+                      background: isGeneratingSOAP
+                        ? `linear-gradient(90deg, 
+                            rgba(34, 197, 94, 0.1) 0%, 
+                            rgba(34, 197, 94, 0.1) ${generationProgress || 0}%, 
+                            transparent ${generationProgress || 0}%, 
+                            transparent 100%)`
+                        : undefined
+                    }}
                   >
-                    <RefreshCw
-                      className={`h-4 w-4 mr-2 ${isGeneratingSOAP ? "animate-spin" : ""}`}
-                    />
-                    {isGeneratingSOAP
-                      ? "Generating..."
-                      : "Generate from Transcription"}
+                    <div className="flex items-center space-x-2">
+                      {isGeneratingSOAP && (
+                        <div 
+                          className="h-3 w-3 rounded-full border-2 border-green-600 border-t-transparent animate-spin"
+                          style={{
+                            animationDuration: '1s'
+                          }}
+                        />
+                      )}
+                      <span>
+                        {isGeneratingSOAP
+                          ? `Generating... ${Math.round(generationProgress || 0)}%`
+                          : "Generate from Transcription"}
+                      </span>
+                    </div>
+                    {/* Precise progress indicator - subtle border animation */}
+                    {isGeneratingSOAP && (
+                      <div 
+                        className="absolute bottom-0 left-0 h-0.5 bg-green-500 transition-all duration-100 ease-out"
+                        style={{
+                          width: `${generationProgress || 0}%`
+                        }}
+                      />
+                    )}
                   </Button>
                 )}
                 <Button
