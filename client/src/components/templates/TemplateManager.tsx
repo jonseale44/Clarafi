@@ -72,10 +72,19 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   // Create new template
   const createTemplateMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/templates/create-from-example', {
-        method: 'POST',
-        body: data
-      });
+      console.log('📋 [TemplateManager] Creating template with data:', data);
+      
+      try {
+        const result = await apiRequest('/api/templates/create-from-example', {
+          method: 'POST',
+          body: data
+        });
+        console.log('✅ [TemplateManager] Template created successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ [TemplateManager] Template creation failed:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/templates/user'] });

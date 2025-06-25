@@ -13,10 +13,19 @@ export default function setupTemplateRoutes(app: Express) {
   
   // Get user's custom templates
   app.get("/api/templates/user", async (req: Request, res: Response) => {
+    console.log(`📋 [Templates] GET /api/templates/user received`);
+    console.log(`📋 [Templates] User authenticated:`, req.isAuthenticated());
+    console.log(`📋 [Templates] Session:`, req.session);
+    
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      if (!req.isAuthenticated()) {
+        console.log(`❌ [Templates] Unauthorized request for user templates`);
+        return res.sendStatus(401);
+      }
       
       const userId = (req as any).user.id;
+      console.log(`📋 [Templates] Fetching templates for user ${userId}`);
+      
       const templates = await storage.getUserNoteTemplates(userId);
       
       console.log(`📋 [Templates] Retrieved ${templates.length} templates for user ${userId}`);
@@ -61,24 +70,49 @@ export default function setupTemplateRoutes(app: Express) {
 
   // Create new custom template from example
   app.post("/api/templates/create-from-example", async (req: Request, res: Response) => {
+    console.log(`📋 [Templates] POST /api/templates/create-from-example received`);
+    console.log(`📋 [Templates] Request headers:`, req.headers);
+    console.log(`📋 [Templates] Request body:`, req.body);
+    console.log(`📋 [Templates] Session:`, req.session);
+    console.log(`📋 [Templates] User authenticated:`, req.isAuthenticated());
+    
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      if (!req.isAuthenticated()) {
+        console.log(`❌ [Templates] Unauthorized request - user not authenticated`);
+        return res.sendStatus(401);
+      }
       
       const userId = (req as any).user.id;
       const { templateName, displayName, baseNoteType, exampleNote } = req.body;
       
+      console.log(`📋 [Templates] Request data:`, {
+        userId,
+        templateName,
+        displayName,
+        baseNoteType,
+        exampleNoteLength: exampleNote?.length || 0
+      });
+      
       if (!templateName || !displayName || !baseNoteType || !exampleNote) {
+        console.log(`❌ [Templates] Missing required fields:`, {
+          hasTemplateName: !!templateName,
+          hasDisplayName: !!displayName,
+          hasBaseNoteType: !!baseNoteType,
+          hasExampleNote: !!exampleNote
+        });
         return res.status(400).json({ error: "Missing required fields" });
       }
       
       console.log(`🏗️ [Templates] Creating template "${templateName}" for user ${userId}`);
       
       // Generate GPT prompt from example
+      console.log(`🧠 [Templates] Generating prompt from example for ${templateName}`);
       const generatedPrompt = await TemplatePromptGenerator.generatePromptFromExample(
         baseNoteType,
         exampleNote,
         templateName
       );
+      console.log(`✅ [Templates] Generated prompt (${generatedPrompt.length} chars)`);
       
       // Create template
       const templateData = {
@@ -92,8 +126,17 @@ export default function setupTemplateRoutes(app: Express) {
         exampleNote,
         generatedPrompt,
         enableAiLearning: true,
-        learningConfidence: "0.75"
+        learningConfidence: "0.75",
+        active: true,
+        version: 1
       };
+      
+      console.log(`💾 [Templates] Saving template to database:`, {
+        userId: templateData.userId,
+        templateName: templateData.templateName,
+        baseNoteType: templateData.baseNoteType,
+        displayName: templateData.displayName
+      });
       
       const created = await storage.createUserNoteTemplate(templateData);
       
@@ -101,7 +144,16 @@ export default function setupTemplateRoutes(app: Express) {
       res.json(created);
     } catch (error: any) {
       console.error("❌ [Templates] Error creating template:", error);
-      res.status(500).json({ error: "Failed to create template" });
+      console.error("❌ [Templates] Error stack:", error.stack);
+      console.error("❌ [Templates] Error details:", {
+        name: error.name,
+        message: error.message,
+        code: error.code
+      });
+      res.status(500).json({ 
+        error: "Failed to create template",
+        details: error.message 
+      });
     }
   });
 
