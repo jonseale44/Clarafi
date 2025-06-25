@@ -348,6 +348,60 @@ RECENT VITALS:
     }
   });
 
+  // Update existing template
+  app.put("/api/templates/:templateId", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = (req as any).user.id;
+      const { templateId } = req.params;
+      const { templateName, displayName, baseNoteType, baseNoteText, inlineComments } = req.body;
+      
+      // Verify template ownership or admin access
+      const template = await storage.getUserNoteTemplate(parseInt(templateId));
+      const isAdmin = (req as any).user.role === 'admin';
+      
+      if (!template || (template.userId !== userId && !isAdmin)) {
+        return res.status(403).json({ error: "Template not found or access denied" });
+      }
+      
+      // If admin is editing, generate new prompt from updated template
+      let generatedPrompt = template.generatedPrompt; // Keep existing by default
+      
+      if (baseNoteText && inlineComments) {
+        try {
+          const promptGenerator = new TemplatePromptGenerator();
+          generatedPrompt = await promptGenerator.generatePromptFromTemplate(
+            baseNoteText,
+            inlineComments,
+            baseNoteType
+          );
+          console.log(`🤖 [Templates] Generated new prompt for updated template (${generatedPrompt.length} chars)`);
+        } catch (promptError) {
+          console.error("⚠️ [Templates] Failed to generate new prompt, keeping existing:", promptError);
+        }
+      }
+      
+      const updateData = {
+        templateName,
+        displayName,
+        baseNoteType,
+        baseNoteText,
+        inlineComments: JSON.stringify(inlineComments || []),
+        generatedPrompt,
+        updatedAt: new Date()
+      };
+      
+      const updated = await storage.updateUserNoteTemplate(parseInt(templateId), updateData);
+      
+      console.log(`✅ [Templates] Updated template ${templateId} by ${isAdmin ? 'admin' : 'user'}`);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("❌ [Templates] Error updating template:", error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
   // Share template with another user
   app.post("/api/templates/:templateId/share", async (req: Request, res: Response) => {
     try {
