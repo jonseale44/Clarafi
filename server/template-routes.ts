@@ -153,7 +153,7 @@ RECENT VITALS:
       const basePrompt = ClinicalNoteTemplates.getPrompt(noteType, samplePatientContext, sampleTranscript);
       
       // Generate example note (simplified for example generation)
-      const exampleNote = await this.generateExampleNote(basePrompt);
+      const exampleNote = await generateExampleNote(basePrompt);
       
       res.json({ exampleNote, sampleContext: samplePatientContext, sampleTranscript });
     } catch (error: any) {
@@ -343,8 +343,10 @@ RECENT VITALS:
     }
   });
 
-  // Helper method for generating example notes
-  async generateExampleNote(prompt: string): Promise<string> {
+}
+
+// Helper function for generating example notes
+async function generateExampleNote(prompt: string): Promise<string> {
     // Simplified example generation - in production, use your existing OpenAI integration
     const commonExamples = {
       soap: `**SUBJECTIVE:**
@@ -395,5 +397,4 @@ Vitals stable. Afebrile. Surgical site clean, dry, intact with no signs of infec
     } else {
       return commonExamples.soap; // Default fallback
     }
-  }
 }

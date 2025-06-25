@@ -109,6 +109,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### User Custom Template System Implementation (June 25, 2025)
+- **IMPLEMENTED**: Complete Phase 1 custom template system with example-based template creation
+- Created comprehensive database schema: `userNoteTemplates`, `templateShares`, `templateVersions`, `userNotePreferences`
+- New `TemplateManager` component with create, edit, share, and default setting capabilities
+- Enhanced `NoteTypeSelector` component with custom template dropdown and management interface
+- `TemplatePromptGenerator` service converts example notes to GPT prompts automatically
+- `EnhancedNoteGenerationService` integrates custom templates with existing clinical note generation
+- Updated `/api/clinical-notes/generate` to support custom template selection via `templateId` parameter
+- Template sharing system with accept/decline workflow and automatic template adoption
+- User preference storage for default templates per note type
+- Version control and audit trail for template changes (compliance ready)
+- **PRESERVED**: All existing base templates (SOAP, APSO, Progress, H&P, Discharge, Procedure) remain fully intact and editable
+- **PHASE 2 READY**: Infrastructure prepared for AI learning from user edits with `trackNoteEdit()` foundation
+- Users can now create templates like "SOAP-DrSmith" while maintaining access to standard "SOAP" template
+- Example-based workflow: users edit sample notes rather than writing GPT prompts directly
+
 ### Multi-Note Type System Implementation (June 24, 2025)
 - **IMPLEMENTED**: Complete multi-note type system with production-level EMR capabilities
 - Created `ClinicalNoteTemplates` class with 6 note types: SOAP, APSO, Progress, H&P, Discharge, Procedure

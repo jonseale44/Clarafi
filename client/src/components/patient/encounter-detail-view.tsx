@@ -3228,6 +3228,7 @@ Please provide medical suggestions based on this complete conversation context.`
                   autoTrigger={false}
                   enableIntelligentStreaming={false}
                   noteType={selectedNoteType}
+                  selectedTemplate={selectedTemplate}
                 />
 
                 {transcription.trim() && (
@@ -3325,6 +3326,7 @@ Please provide medical suggestions based on this complete conversation context.`
             enableIntelligentStreaming={true}
             isRecording={isRecording}
             noteType={selectedNoteType}
+            selectedTemplate={selectedTemplate}
           />
 
           {/* Draft Orders */}

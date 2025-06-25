@@ -2118,12 +2118,13 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
     }
   });
 
-  // Unified Clinical Note Generation endpoint
+  // Enhanced Clinical Note Generation endpoint (supports custom templates)
   app.post("/api/clinical-notes/generate", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const { noteType = 'soap', patientId, encounterId, transcription } = req.body;
+      const { noteType = 'soap', patientId, encounterId, transcription, templateId } = req.body;
+      const userId = (req as any).user.id;
 
       if (!patientId || !encounterId || !transcription) {
         return res.status(400).json({
@@ -2135,12 +2136,15 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         `🩺 [ClinicalNotes] Generating ${noteType} note for patient ${patientId}, encounter ${encounterId}`,
       );
 
-      // Generate clinical note using unified system
-      const clinicalNote = await generateClinicalNote(
+      // Use enhanced note generation service
+      const { EnhancedNoteGenerationService } = await import("./enhanced-note-generation-service.js");
+      const clinicalNote = await EnhancedNoteGenerationService.generateNote(
         noteType,
         parseInt(patientId),
         encounterId,
         transcription,
+        userId,
+        templateId ? parseInt(templateId) : undefined
       );
 
       // Return the complete note as JSON
@@ -2149,6 +2153,7 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         noteType,
         patientId: parseInt(patientId),
         encounterId,
+        templateId,
         generatedAt: new Date().toISOString(),
       });
     } catch (error: any) {

@@ -15,6 +15,7 @@ interface RealtimeSOAPIntegrationProps {
   enableIntelligentStreaming?: boolean;
   isRecording?: boolean;
   noteType?: string; // New prop for note type selection
+  selectedTemplate?: any; // New prop for custom template selection
 }
 
 export interface RealtimeSOAPRef {
@@ -33,7 +34,8 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   autoTrigger = false,
   enableIntelligentStreaming = false,
   isRecording = false,
-  noteType = 'soap' // Default to SOAP note
+  noteType = 'soap', // Default to SOAP note
+  selectedTemplate
 }, ref) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [soapBuffer, setSoapBuffer] = useState("");
@@ -152,18 +154,25 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     }
     
     try {
-      // Send complete transcription to unified clinical notes API
+      // Send complete transcription to enhanced clinical notes API
+      const requestBody: any = {
+        noteType,
+        patientId,
+        encounterId,
+        transcription: transcription.trim(), // Complete transcript from entire recording
+      };
+
+      // Add template ID if custom template is being used
+      if (props.selectedTemplate && !props.selectedTemplate.isBaseTemplate) {
+        requestBody.templateId = props.selectedTemplate.id;
+      }
+
       const response = await fetch('/api/clinical-notes/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          noteType,
-          patientId,
-          encounterId,
-          transcription: transcription.trim(), // Complete transcript from entire recording
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
