@@ -128,9 +128,12 @@ Preferred communication style: Simple, everyday language.
 - **LOGGING COMPLETE**: Comprehensive logging throughout template selection and note generation pipeline
 - **TESTED SUCCESSFUL**: Generated 3,099 character SOAP note using custom "SOAP-DrSeale" template with proper downstream processing
 - **API ENDPOINTS OPERATIONAL**: Template management routes for creation, retrieval, and type-specific filtering working correctly
-- **CRITICAL FIX**: Removed legacy `/api/user/soap-templates` endpoints causing separate S/O/A/P format without ORDERS section
-- **TEMPLATE ROUTING CORRECTED**: Fixed `ClinicalNoteTemplates.getPrompt()` to use correct `buildSOAPPrompt()` function (lines 85-210) with integrated Assessment/Plan and ORDERS sections
-- **MYSTERY SOLVED**: Custom "SOAP-DrSeale" template had generic prompt causing GPT to default to "S: Subjective" format - disabled as default to restore correct template usage
+- **CRITICAL FIXES APPLIED**: 
+  - Fixed template routes registration (`setupTemplateRoutes` import/call mismatch)
+  - Corrected apiRequest function calls from object format to parameter format
+  - Added proper response.json() parsing for all template mutations
+- **TEMPLATE CREATION SUCCESSFUL**: User successfully created "Quick" template with ID 3 using procedure note example
+- **FIELD PURPOSES CLARIFIED**: Template Name (internal ID), Display Name (user-friendly), Example Note (style reference for AI)
 
 ### Multi-Note Type System Implementation (June 24, 2025)
 - **IMPLEMENTED**: Complete multi-note type system with production-level EMR capabilities
