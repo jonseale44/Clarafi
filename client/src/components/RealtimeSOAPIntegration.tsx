@@ -154,6 +154,15 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     }
     
     try {
+      console.log(`🚀 [RealtimeSOAP] Starting note generation:`, {
+        noteType,
+        patientId,
+        encounterId,
+        transcriptionLength: transcription.trim().length,
+        selectedTemplate: props.selectedTemplate?.id,
+        isBaseTemplate: props.selectedTemplate?.isBaseTemplate
+      });
+
       // Send complete transcription to enhanced clinical notes API
       const requestBody: any = {
         noteType,
@@ -163,16 +172,26 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       };
 
       // Add template ID if custom template is being used
-      if (props.selectedTemplate && !props.selectedTemplate.isBaseTemplate) {
-        requestBody.templateId = props.selectedTemplate.id;
+      if (selectedTemplate && !selectedTemplate.isBaseTemplate) {
+        requestBody.templateId = selectedTemplate.id;
+        console.log(`📋 [RealtimeSOAP] Using custom template: ${selectedTemplate.id}`);
+      } else {
+        console.log(`📋 [RealtimeSOAP] Using base template for ${noteType}`);
       }
 
+      console.log(`📤 [RealtimeSOAP] Sending request to /api/clinical-notes/generate`);
       const response = await fetch('/api/clinical-notes/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody)
+      });
+
+      console.log(`📥 [RealtimeSOAP] Response received:`, {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
 
       if (!response.ok) {

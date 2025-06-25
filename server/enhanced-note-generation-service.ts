@@ -25,74 +25,137 @@ export class EnhancedNoteGenerationService {
     userId?: number,
     customTemplateId?: number
   ): Promise<string> {
-    console.log(`🩺 [EnhancedNotes] Generating ${noteType} note for patient ${patientId}`);
+    console.log(`🩺 [EnhancedNotes] Starting note generation:`, {
+      noteType,
+      patientId,
+      encounterId,
+      userId,
+      customTemplateId,
+      transcriptionLength: transcription?.length || 0
+    });
 
-    // Get patient chart data
-    const patientChart = await PatientChartService.getPatientChartData(patientId);
-    const medicalContext = this.buildMedicalContext(patientChart, encounterId);
+    try {
+      // Get patient chart data
+      console.log(`📊 [EnhancedNotes] Fetching patient chart data for patient ${patientId}`);
+      const patientChart = await PatientChartService.getPatientChartData(patientId);
+      console.log(`📊 [EnhancedNotes] Patient chart retrieved:`, {
+        hasChart: !!patientChart,
+        hasDemographics: !!patientChart?.demographics,
+        medicalProblemsCount: patientChart?.medicalProblems?.length || 0,
+        medicationsCount: patientChart?.medications?.length || 0,
+        allergiesCount: patientChart?.allergies?.length || 0,
+        vitalsCount: patientChart?.vitals?.length || 0
+      });
+
+      const medicalContext = this.buildMedicalContext(patientChart, encounterId);
+      console.log(`🔧 [EnhancedNotes] Medical context built, length: ${medicalContext.length}`);
+      console.log(`🔧 [EnhancedNotes] Medical context sample:`, medicalContext.substring(0, 200) + '...');
 
     let prompt: string;
     let templateUsed: string = noteType;
 
-    // Determine which template/prompt to use
-    if (customTemplateId && userId) {
-      // Use custom template
-      const customTemplate = await storage.getUserNoteTemplate(customTemplateId);
-      
-      if (customTemplate && customTemplate.userId === userId) {
-        prompt = this.prepareCustomPrompt(customTemplate.generatedPrompt, medicalContext, transcription);
-        templateUsed = customTemplate.templateName;
+      // Determine which template/prompt to use
+      console.log(`🎯 [EnhancedNotes] Template selection logic:`, {
+        hasCustomTemplateId: !!customTemplateId,
+        hasUserId: !!userId
+      });
+
+      if (customTemplateId && userId) {
+        console.log(`🔍 [EnhancedNotes] Attempting to use custom template ${customTemplateId}`);
+        // Use custom template
+        const customTemplate = await storage.getUserNoteTemplate(customTemplateId);
+        console.log(`🔍 [EnhancedNotes] Custom template query result:`, {
+          found: !!customTemplate,
+          templateUserId: customTemplate?.userId,
+          requestUserId: userId,
+          authorized: customTemplate?.userId === userId
+        });
         
-        // Increment usage count
-        await storage.incrementTemplateUsage(customTemplateId);
+        if (customTemplate && customTemplate.userId === userId) {
+          prompt = this.prepareCustomPrompt(customTemplate.generatedPrompt, medicalContext, transcription);
+          templateUsed = customTemplate.templateName;
+          
+          // Increment usage count
+          await storage.incrementTemplateUsage(customTemplateId);
+          
+          console.log(`📋 [EnhancedNotes] Using custom template: ${customTemplate.templateName}`);
+        } else {
+          console.warn(`⚠️ [EnhancedNotes] Custom template ${customTemplateId} not found or unauthorized, falling back to base template`);
+          prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+        }
+      } else if (userId) {
+        console.log(`🔍 [EnhancedNotes] Checking for user's default template for ${noteType}`);
+        // Check for user's default template for this note type
+        const userTemplates = await storage.getUserTemplatesByType(userId, noteType);
+        console.log(`🔍 [EnhancedNotes] User templates found: ${userTemplates.length}`);
+        const defaultTemplate = userTemplates.find(t => t.isDefault);
+        console.log(`🔍 [EnhancedNotes] Default template found:`, !!defaultTemplate);
         
-        console.log(`📋 [EnhancedNotes] Using custom template: ${customTemplate.templateName}`);
+        if (defaultTemplate) {
+          prompt = this.prepareCustomPrompt(defaultTemplate.generatedPrompt, medicalContext, transcription);
+          templateUsed = defaultTemplate.templateName;
+          
+          // Increment usage count
+          await storage.incrementTemplateUsage(defaultTemplate.id);
+          
+          console.log(`⭐ [EnhancedNotes] Using user's default template: ${defaultTemplate.templateName}`);
+        } else {
+          // No default set, use base template
+          console.log(`📋 [EnhancedNotes] No default template found, using base template`);
+          prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+        }
       } else {
-        console.warn(`⚠️ [EnhancedNotes] Custom template ${customTemplateId} not found or unauthorized, falling back to base template`);
+        // No user context, use base template
+        console.log(`📋 [EnhancedNotes] No user context, using base template`);
         prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
       }
-    } else if (userId) {
-      // Check for user's default template for this note type
-      const userTemplates = await storage.getUserTemplatesByType(userId, noteType);
-      const defaultTemplate = userTemplates.find(t => t.isDefault);
-      
-      if (defaultTemplate) {
-        prompt = this.prepareCustomPrompt(defaultTemplate.generatedPrompt, medicalContext, transcription);
-        templateUsed = defaultTemplate.templateName;
-        
-        // Increment usage count
-        await storage.incrementTemplateUsage(defaultTemplate.id);
-        
-        console.log(`⭐ [EnhancedNotes] Using user's default template: ${defaultTemplate.templateName}`);
-      } else {
-        // No default set, use base template
-        prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+
+      console.log(`🤖 [EnhancedNotes] Prompt prepared, length: ${prompt.length}`);
+      console.log(`🤖 [EnhancedNotes] Template used: ${templateUsed}`);
+      console.log(`🤖 [EnhancedNotes] Prompt preview:`, prompt.substring(0, 300) + '...');
+
+      // Generate note using GPT
+      console.log(`🚀 [EnhancedNotes] Calling OpenAI API...`);
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 4000,
+      });
+
+      console.log(`📥 [EnhancedNotes] OpenAI response received:`, {
+        choices: completion.choices.length,
+        hasContent: !!completion.choices[0]?.message?.content,
+        contentLength: completion.choices[0]?.message?.content?.length || 0,
+        usage: completion.usage
+      });
+
+      const generatedNote = completion.choices[0]?.message?.content;
+      if (!generatedNote) {
+        console.error(`❌ [EnhancedNotes] No content in OpenAI response:`, completion);
+        throw new Error(`No ${noteType} note generated from OpenAI`);
       }
-    } else {
-      // No user context, use base template
-      prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+
+      console.log(`💾 [EnhancedNotes] Saving note to encounter ${encounterId}`);
+      // Save note to encounter
+      await storage.updateEncounter(parseInt(encounterId), {
+        note: generatedNote,
+      });
+
+      console.log(`✅ [EnhancedNotes] Generated ${noteType} note using template: ${templateUsed}, length: ${generatedNote.length}`);
+      return generatedNote;
+    } catch (error: any) {
+      console.error(`❌ [EnhancedNotes] Error in note generation:`, {
+        error: error.message,
+        stack: error.stack,
+        noteType,
+        patientId,
+        encounterId,
+        userId,
+        customTemplateId
+      });
+      throw error;
     }
-
-    // Generate note using GPT
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_tokens: 4000,
-    });
-
-    const generatedNote = completion.choices[0]?.message?.content;
-    if (!generatedNote) {
-      throw new Error(`No ${noteType} note generated from OpenAI`);
-    }
-
-    // Save note to encounter
-    await storage.updateEncounter(parseInt(encounterId), {
-      note: generatedNote,
-    });
-
-    console.log(`✅ [EnhancedNotes] Generated ${noteType} note using template: ${templateUsed}`);
-    return generatedNote;
   }
 
   /**

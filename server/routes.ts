@@ -2120,13 +2120,33 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
 
   // Enhanced Clinical Note Generation endpoint (supports custom templates)
   app.post("/api/clinical-notes/generate", async (req, res) => {
+    const requestStart = Date.now();
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      if (!req.isAuthenticated()) {
+        console.log(`🔒 [ClinicalNotes] Unauthorized request`);
+        return res.sendStatus(401);
+      }
 
       const { noteType = 'soap', patientId, encounterId, transcription, templateId } = req.body;
       const userId = (req as any).user.id;
 
+      console.log(`🎯 [ClinicalNotes] Request received:`, {
+        noteType,
+        patientId,
+        encounterId,
+        userId,
+        templateId,
+        transcriptionLength: transcription?.length || 0,
+        hasTranscription: !!transcription,
+        requestTimestamp: new Date().toISOString()
+      });
+
       if (!patientId || !encounterId || !transcription) {
+        console.error(`❌ [ClinicalNotes] Missing required fields:`, {
+          hasPatientId: !!patientId,
+          hasEncounterId: !!encounterId,
+          hasTranscription: !!transcription
+        });
         return res.status(400).json({
           message: "Missing required fields: patientId, encounterId, transcription",
         });
@@ -2147,6 +2167,9 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         templateId ? parseInt(templateId) : undefined
       );
 
+      const requestDuration = Date.now() - requestStart;
+      console.log(`✅ [ClinicalNotes] Request completed successfully in ${requestDuration}ms`);
+
       // Return the complete note as JSON
       res.json({
         note: clinicalNote,
@@ -2155,12 +2178,20 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
         encounterId,
         templateId,
         generatedAt: new Date().toISOString(),
+        processingTimeMs: requestDuration
       });
     } catch (error: any) {
-      console.error(`❌ [ClinicalNotes] Error generating ${req.body.noteType || 'soap'} note:`, error);
+      const requestDuration = Date.now() - requestStart;
+      console.error(`❌ [ClinicalNotes] Error generating ${req.body.noteType || 'soap'} note after ${requestDuration}ms:`, {
+        error: error.message,
+        stack: error.stack,
+        requestBody: req.body,
+        userId: (req as any).user?.id
+      });
       res.status(500).json({
         message: `Failed to generate ${req.body.noteType || 'soap'} note`,
         error: error.message,
+        processingTimeMs: requestDuration
       });
     }
   });
