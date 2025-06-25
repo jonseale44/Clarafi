@@ -942,14 +942,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserTemplatesByType(userId: number, noteType: string): Promise<SelectUserNoteTemplate[]> {
-    return await db.select()
-      .from(userNoteTemplates)
-      .where(and(
-        eq(userNoteTemplates.userId, userId),
-        eq(userNoteTemplates.baseNoteType, noteType),
-        eq(userNoteTemplates.active, true)
-      ))
-      .orderBy(userNoteTemplates.templateName);
+    console.log(`🔍 [Storage] Getting user templates for userId: ${userId}, noteType: ${noteType}`);
+    try {
+      const templates = await db.select()
+        .from(userNoteTemplates)
+        .where(and(
+          eq(userNoteTemplates.userId, userId),
+          eq(userNoteTemplates.baseNoteType, noteType),
+          eq(userNoteTemplates.active, true)
+        ))
+        .orderBy(userNoteTemplates.templateName);
+      
+      console.log(`✅ [Storage] Found ${templates.length} templates for user ${userId} and note type ${noteType}`);
+      return templates;
+    } catch (error: any) {
+      console.error(`❌ [Storage] Error getting user templates:`, {
+        error: error.message,
+        userId,
+        noteType,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 
   async createUserNoteTemplate(template: InsertUserNoteTemplate): Promise<SelectUserNoteTemplate> {

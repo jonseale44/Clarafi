@@ -84,26 +84,9 @@ export class EnhancedNoteGenerationService {
           prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
         }
       } else if (userId) {
-        console.log(`🔍 [EnhancedNotes] Checking for user's default template for ${noteType}`);
-        // Check for user's default template for this note type
-        const userTemplates = await storage.getUserTemplatesByType(userId, noteType);
-        console.log(`🔍 [EnhancedNotes] User templates found: ${userTemplates.length}`);
-        const defaultTemplate = userTemplates.find(t => t.isDefault);
-        console.log(`🔍 [EnhancedNotes] Default template found:`, !!defaultTemplate);
-        
-        if (defaultTemplate) {
-          prompt = this.prepareCustomPrompt(defaultTemplate.generatedPrompt, medicalContext, transcription);
-          templateUsed = defaultTemplate.templateName;
-          
-          // Increment usage count
-          await storage.incrementTemplateUsage(defaultTemplate.id);
-          
-          console.log(`⭐ [EnhancedNotes] Using user's default template: ${defaultTemplate.templateName}`);
-        } else {
-          // No default set, use base template
-          console.log(`📋 [EnhancedNotes] No default template found, using base template`);
-          prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
-        }
+        // For now, skip custom template system and use base template to restore functionality
+        console.log(`📋 [EnhancedNotes] Temporarily bypassing custom template system - using base template`);
+        prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
       } else {
         // No user context, use base template
         console.log(`📋 [EnhancedNotes] No user context, using base template`);
@@ -174,47 +157,58 @@ export class EnhancedNoteGenerationService {
    * Builds medical context string for templates
    */
   private static buildMedicalContext(patientChart: any, encounterId: string): string {
-    const demographics = patientChart.demographics;
-    const age = demographics.age || "Unknown";
-    
-    const currentMedicalProblems = patientChart.medicalProblems?.length > 0
-      ? patientChart.medicalProblems.map((problem: any) => `- ${problem.problemDescription}`).join('\n')
-      : "- No active medical problems documented";
-
-    const currentMedications = patientChart.medications?.length > 0
-      ? patientChart.medications.map((med: any) => `- ${med.medicationName} ${med.dosage}`).join('\n')
-      : "- No current medications documented";
-
-    const knownAllergies = patientChart.allergies?.length > 0
-      ? patientChart.allergies.map((allergy: any) => `- ${allergy.allergen} (${allergy.reaction})`).join('\n')
-      : "- No Known Drug Allergies";
-
-    // Format vitals for clinical context
-    const formatVitalsForContext = (vitalsList: any[]) => {
-      if (!vitalsList || vitalsList.length === 0) {
-        return "- No recent vitals recorded";
-      }
-
-      const latestVitals = vitalsList[0];
-      const vitalParts = [];
+    try {
+      const demographics = patientChart.demographics || {};
+      const age = demographics.age || "Unknown";
       
-      if (latestVitals.bloodPressureSystolic && latestVitals.bloodPressureDiastolic) {
-        vitalParts.push(`BP: ${latestVitals.bloodPressureSystolic}/${latestVitals.bloodPressureDiastolic} mmHg`);
-      }
-      if (latestVitals.heartRate) vitalParts.push(`HR: ${latestVitals.heartRate} bpm`);
-      if (latestVitals.temperature) vitalParts.push(`Temp: ${latestVitals.temperature}°F`);
-      if (latestVitals.respiratoryRate) vitalParts.push(`RR: ${latestVitals.respiratoryRate}/min`);
-      if (latestVitals.oxygenSaturation) vitalParts.push(`SpO2: ${latestVitals.oxygenSaturation}%`);
+      console.log(`🔧 [EnhancedNotes] Building medical context with chart data:`, {
+        hasDemographics: !!demographics,
+        firstName: demographics.firstName,
+        lastName: demographics.lastName,
+        medicalProblemsCount: patientChart.medicalProblems?.length || 0,
+        medicationsCount: patientChart.medications?.length || 0,
+        allergiesCount: patientChart.allergies?.length || 0,
+        vitalsCount: patientChart.vitals?.length || 0
+      });
 
-      return vitalParts.length > 0 ? `- ${vitalParts.join(' | ')}` : "- Vitals documented but incomplete";
-    };
+      const currentMedicalProblems = patientChart.medicalProblems?.length > 0
+        ? patientChart.medicalProblems.map((problem: any) => `- ${problem.problemDescription || 'Unspecified condition'}`).join('\n')
+        : "- No active medical problems documented";
 
-    return `
+      const currentMedications = patientChart.medications?.length > 0
+        ? patientChart.medications.map((med: any) => `- ${med.medicationName || 'Unknown medication'} ${med.dosage || ''}`).join('\n')
+        : "- No current medications documented";
+
+      const knownAllergies = patientChart.allergies?.length > 0
+        ? patientChart.allergies.map((allergy: any) => `- ${allergy.allergen || 'Unknown allergen'} (${allergy.reaction || 'Unknown reaction'})`).join('\n')
+        : "- No Known Drug Allergies";
+
+      // Format vitals for clinical context
+      const formatVitalsForContext = (vitalsList: any[]) => {
+        if (!vitalsList || vitalsList.length === 0) {
+          return "- No recent vitals recorded";
+        }
+
+        const latestVitals = vitalsList[0];
+        const vitalParts = [];
+        
+        if (latestVitals.bloodPressureSystolic && latestVitals.bloodPressureDiastolic) {
+          vitalParts.push(`BP: ${latestVitals.bloodPressureSystolic}/${latestVitals.bloodPressureDiastolic} mmHg`);
+        }
+        if (latestVitals.heartRate) vitalParts.push(`HR: ${latestVitals.heartRate} bpm`);
+        if (latestVitals.temperature) vitalParts.push(`Temp: ${latestVitals.temperature}°F`);
+        if (latestVitals.respiratoryRate) vitalParts.push(`RR: ${latestVitals.respiratoryRate}/min`);
+        if (latestVitals.oxygenSaturation) vitalParts.push(`SpO2: ${latestVitals.oxygenSaturation}%`);
+
+        return vitalParts.length > 0 ? `- ${vitalParts.join(' | ')}` : "- Vitals documented but incomplete";
+      };
+
+      const context = `
 PATIENT CONTEXT:
-- Name: ${demographics.firstName} ${demographics.lastName}
+- Name: ${demographics.firstName || 'Unknown'} ${demographics.lastName || 'Unknown'}
 - Age: ${age} years old
-- Gender: ${demographics.gender}
-- MRN: ${demographics.mrn}
+- Gender: ${demographics.gender || 'Unknown'}
+- MRN: ${demographics.mrn || 'Unknown'}
 
 ACTIVE MEDICAL PROBLEMS:
 ${currentMedicalProblems}
@@ -227,7 +221,38 @@ ${knownAllergies}
 
 RECENT VITALS:
 ${formatVitalsForContext(patientChart.vitals || [])}
-    `.trim();
+      `.trim();
+
+      console.log(`✅ [EnhancedNotes] Medical context built successfully, length: ${context.length}`);
+      return context;
+    } catch (error: any) {
+      console.error(`❌ [EnhancedNotes] Error building medical context:`, {
+        error: error.message,
+        stack: error.stack,
+        patientChart: !!patientChart
+      });
+      
+      // Return minimal fallback context
+      return `
+PATIENT CONTEXT:
+- Name: Unknown Patient
+- Age: Unknown
+- Gender: Unknown
+- MRN: Unknown
+
+ACTIVE MEDICAL PROBLEMS:
+- Unable to retrieve medical problems
+
+CURRENT MEDICATIONS:
+- Unable to retrieve current medications
+
+KNOWN ALLERGIES:
+- Unable to retrieve allergies
+
+RECENT VITALS:
+- Unable to retrieve recent vitals
+      `.trim();
+    }
   }
 
   /**
