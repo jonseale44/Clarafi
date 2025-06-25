@@ -130,6 +130,7 @@ Preferred communication style: Simple, everyday language.
 - **API ENDPOINTS OPERATIONAL**: Template management routes for creation, retrieval, and type-specific filtering working correctly
 - **CRITICAL FIX**: Removed legacy `/api/user/soap-templates` endpoints causing separate S/O/A/P format without ORDERS section
 - **TEMPLATE ROUTING CORRECTED**: Fixed `ClinicalNoteTemplates.getPrompt()` to use correct `buildSOAPPrompt()` function (lines 85-210) with integrated Assessment/Plan and ORDERS sections
+- **MYSTERY SOLVED**: Custom "SOAP-DrSeale" template had generic prompt causing GPT to default to "S: Subjective" format - disabled as default to restore correct template usage
 
 ### Multi-Note Type System Implementation (June 24, 2025)
 - **IMPLEMENTED**: Complete multi-note type system with production-level EMR capabilities
