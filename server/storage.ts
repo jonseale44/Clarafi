@@ -1025,6 +1025,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userNoteTemplates.id, id));
   }
 
+  async getUserNoteTemplate(id: number): Promise<SelectUserNoteTemplate | null> {
+    const results = await db.select()
+      .from(userNoteTemplates)
+      .where(and(
+        eq(userNoteTemplates.id, id),
+        eq(userNoteTemplates.active, true)
+      ));
+    return results[0] || null;
+  }
+
   async setDefaultTemplate(userId: number, templateId: number, noteType: string): Promise<void> {
     // First, unset any existing defaults for this note type
     await db.update(userNoteTemplates)

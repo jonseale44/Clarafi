@@ -161,7 +161,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   });
 
   const handleCreateTemplate = async () => {
-    if (!newTemplateName || !newTemplateDisplayName || !exampleNote) {
+    if (!newTemplateName || !newTemplateDisplayName || !newTemplateNoteType || !exampleNote) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -173,14 +173,24 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
     createTemplateMutation.mutate({
       templateName: newTemplateName,
       displayName: newTemplateDisplayName,
-      baseNoteType: selectedNoteType,
+      baseNoteType: newTemplateNoteType,
       exampleNote
     });
   };
 
   const handleGenerateExample = async () => {
+    const noteTypeToUse = newTemplateNoteType || selectedNoteType;
+    if (!noteTypeToUse) {
+      toast({
+        title: "Selection required",
+        description: "Please select a base note type first",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      const result = await generateExampleMutation.mutateAsync(selectedNoteType);
+      const result = await generateExampleMutation.mutateAsync(noteTypeToUse);
       setExampleNote(result.exampleNote);
     } catch (error: any) {
       toast({
@@ -230,7 +240,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
               <DialogTitle>Create Custom Template</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="template-name">Template Name</Label>
                   <Input
@@ -248,6 +258,22 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                     value={newTemplateDisplayName}
                     onChange={(e) => setNewTemplateDisplayName(e.target.value)}
                   />
+                </div>
+                <div>
+                  <Label htmlFor="base-note-type">Base Note Type</Label>
+                  <Select value={newTemplateNoteType} onValueChange={setNewTemplateNoteType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select note type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="soap">SOAP Note</SelectItem>
+                      <SelectItem value="progress">Progress Note</SelectItem>
+                      <SelectItem value="hAndP">History & Physical</SelectItem>
+                      <SelectItem value="apso">APSO Note</SelectItem>
+                      <SelectItem value="discharge">Discharge Summary</SelectItem>
+                      <SelectItem value="procedure">Procedure Note</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
