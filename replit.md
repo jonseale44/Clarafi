@@ -111,14 +111,16 @@ Preferred communication style: Simple, everyday language.
 
 ### Admin Prompt Management System Implementation (June 25, 2025)
 - **COMPLETE ADMIN INTERFACE**: Built comprehensive admin system for viewing and editing GPT-generated prompts from all users
+- **THREE-PANE VIEW**: Admin interface shows original user template, GPT-generated prompt, and admin-edited version side by side
 - **Database Schema**: Added `adminPromptReviews` table with full CRUD operations for prompt review workflow
 - **Admin Routes**: Created `/api/admin/prompt-reviews/*` endpoints for managing prompt reviews and approvals
 - **Automated Prompt Capture**: All GPT-generated prompts are automatically saved for admin review when templates are created
-- **Side-by-Side Editor**: Admin interface shows original GPT prompt vs. admin-edited version with diff capability
+- **Single Generation Rule**: GPT prompts generated ONCE per template creation/edit, not repeatedly
 - **Activation System**: Admins can review, edit, and activate improved prompts to override GPT-generated versions
 - **Template Overview**: Dashboard showing all user templates and their active prompt status
 - **Professional Workflow**: Pending → Reviewed → Approved status progression with admin notes and version control
 - **HUMAN-AI COLLABORATION**: Enables admin prompt engineering expertise to enhance GPT's automated template generation
+- **CONTEXT CLARITY**: Admin sees user's original intent (template) alongside AI interpretation (prompt) for informed editing
 
 ### Custom Template System Critical Fixes (June 25, 2025)
 - **CRITICAL BUG FIXED**: Resolved fundamental issue where custom templates generated generic placeholder data instead of using real patient information

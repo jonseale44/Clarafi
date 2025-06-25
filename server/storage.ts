@@ -1264,6 +1264,9 @@ export class DatabaseStorage implements IStorage {
           templateName: userNoteTemplates.templateName,
           baseNoteType: userNoteTemplates.baseNoteType,
           displayName: userNoteTemplates.displayName,
+          exampleNote: userNoteTemplates.exampleNote, // Original user template
+          isDefault: userNoteTemplates.isDefault,
+          createdAt: userNoteTemplates.createdAt,
         },
         user: {
           id: users.id,

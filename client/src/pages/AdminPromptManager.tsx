@@ -298,24 +298,46 @@ export default function AdminPromptManager() {
             <DialogTitle>Edit Prompt: {selectedReview?.template.displayName}</DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-2 gap-6 mt-4">
+          <div className="space-y-6">
+            {/* Original User Template */}
             <div>
-              <Label className="text-sm font-medium">Original GPT-Generated Prompt</Label>
+              <Label className="text-sm font-medium">Original User Template</Label>
+              <div className="text-xs text-gray-500 mb-2">
+                This is what the user submitted as their example note
+              </div>
               <Textarea
-                value={selectedReview?.originalPrompt || ""}
+                value={selectedReview?.template?.exampleNote || "No original template available"}
                 readOnly
-                className="mt-2 h-96 font-mono text-xs"
+                className="mt-2 h-48 font-mono text-xs bg-gray-50"
               />
             </div>
-            
-            <div>
-              <Label className="text-sm font-medium">Your Edited Version</Label>
-              <Textarea
-                value={editedPrompt}
-                onChange={(e) => setEditedPrompt(e.target.value)}
-                className="mt-2 h-96 font-mono text-xs"
-                placeholder="Edit the prompt to improve clinical note generation..."
-              />
+
+            {/* Side by side GPT vs Edited */}
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <Label className="text-sm font-medium">GPT-Generated Prompt</Label>
+                <div className="text-xs text-gray-500 mb-2">
+                  What AI automatically created from the user's template
+                </div>
+                <Textarea
+                  value={selectedReview?.originalPrompt || ""}
+                  readOnly
+                  className="mt-2 h-96 font-mono text-xs"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Your Improved Version</Label>
+                <div className="text-xs text-gray-500 mb-2">
+                  Edit the prompt with your clinical expertise
+                </div>
+                <Textarea
+                  value={editedPrompt}
+                  onChange={(e) => setEditedPrompt(e.target.value)}
+                  className="mt-2 h-96 font-mono text-xs"
+                  placeholder="Edit the prompt to improve clinical note generation..."
+                />
+              </div>
             </div>
           </div>
           
