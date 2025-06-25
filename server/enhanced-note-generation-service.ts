@@ -84,9 +84,55 @@ export class EnhancedNoteGenerationService {
           prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
         }
       } else if (userId) {
-        // For now, skip custom template system and use base template to restore functionality
-        console.log(`📋 [EnhancedNotes] Temporarily bypassing custom template system - using base template`);
-        prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+        console.log(`🔍 [EnhancedNotes] Checking for user's default template for ${noteType}`);
+        console.log(`🔍 [EnhancedNotes] User ID: ${userId}, Note Type: ${noteType}`);
+        
+        try {
+          // Check for user's default template for this note type
+          const userTemplates = await storage.getUserTemplatesByType(userId, noteType);
+          console.log(`🔍 [EnhancedNotes] User templates found: ${userTemplates.length}`);
+          
+          if (userTemplates.length > 0) {
+            console.log(`🔍 [EnhancedNotes] Available templates:`, userTemplates.map(t => ({
+              id: t.id,
+              name: t.templateName,
+              isDefault: t.isDefault,
+              active: t.active
+            })));
+          }
+          
+          const defaultTemplate = userTemplates.find(t => t.isDefault);
+          console.log(`🔍 [EnhancedNotes] Default template found:`, !!defaultTemplate);
+          
+          if (defaultTemplate) {
+            console.log(`🔍 [EnhancedNotes] Using default template:`, {
+              id: defaultTemplate.id,
+              name: defaultTemplate.templateName,
+              promptLength: defaultTemplate.generatedPrompt?.length || 0
+            });
+            
+            prompt = this.prepareCustomPrompt(defaultTemplate.generatedPrompt, medicalContext, transcription);
+            templateUsed = defaultTemplate.templateName;
+            
+            // Increment usage count
+            await storage.incrementTemplateUsage(defaultTemplate.id);
+            
+            console.log(`⭐ [EnhancedNotes] Using user's default template: ${defaultTemplate.templateName}`);
+          } else {
+            // No default set, use base template
+            console.log(`📋 [EnhancedNotes] No default template found, using base template`);
+            prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+          }
+        } catch (templateError: any) {
+          console.error(`❌ [EnhancedNotes] Error checking user templates:`, {
+            error: templateError.message,
+            stack: templateError.stack,
+            userId,
+            noteType
+          });
+          // Fallback to base template if template system fails
+          prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+        }
       } else {
         // No user context, use base template
         console.log(`📋 [EnhancedNotes] No user context, using base template`);

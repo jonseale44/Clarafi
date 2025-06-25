@@ -943,7 +943,34 @@ export class DatabaseStorage implements IStorage {
 
   async getUserTemplatesByType(userId: number, noteType: string): Promise<SelectUserNoteTemplate[]> {
     console.log(`🔍 [Storage] Getting user templates for userId: ${userId}, noteType: ${noteType}`);
+    console.log(`🔍 [Storage] Query details:`, {
+      table: 'user_note_templates',
+      conditions: {
+        userId,
+        baseNoteType: noteType,
+        active: true
+      }
+    });
+    
     try {
+      // First check if any templates exist for this user at all
+      const allUserTemplates = await db.select()
+        .from(userNoteTemplates)  
+        .where(eq(userNoteTemplates.userId, userId));
+      
+      console.log(`🔍 [Storage] Total templates for user ${userId}: ${allUserTemplates.length}`);
+      
+      if (allUserTemplates.length > 0) {
+        console.log(`🔍 [Storage] User's templates:`, allUserTemplates.map(t => ({
+          id: t.id,
+          name: t.templateName,
+          baseType: t.baseNoteType,
+          active: t.active,
+          isDefault: t.isDefault
+        })));
+      }
+      
+      // Now get templates for specific note type
       const templates = await db.select()
         .from(userNoteTemplates)
         .where(and(
@@ -954,10 +981,21 @@ export class DatabaseStorage implements IStorage {
         .orderBy(userNoteTemplates.templateName);
       
       console.log(`✅ [Storage] Found ${templates.length} templates for user ${userId} and note type ${noteType}`);
+      
+      if (templates.length > 0) {
+        console.log(`✅ [Storage] Matching templates:`, templates.map(t => ({
+          id: t.id,
+          name: t.templateName,
+          isDefault: t.isDefault,
+          promptLength: t.generatedPrompt?.length || 0
+        })));
+      }
+      
       return templates;
     } catch (error: any) {
       console.error(`❌ [Storage] Error getting user templates:`, {
         error: error.message,
+        code: error.code,
         userId,
         noteType,
         stack: error.stack
