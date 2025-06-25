@@ -1125,6 +1125,36 @@ export const labReferenceRanges = pgTable("lab_reference_ranges", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Zod schemas for template system
+export const insertUserNoteTemplateSchema = createInsertSchema(userNoteTemplates).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  usageCount: true,
+  lastUsed: true,
+  version: true,
+  promptVersion: true
+});
+
+export const insertTemplateShareSchema = createInsertSchema(templateShares).omit({ 
+  id: true, 
+  sharedAt: true,
+  respondedAt: true
+});
+
+export const insertUserNotePreferencesSchema = createInsertSchema(userNotePreferences).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type InsertUserNoteTemplate = z.infer<typeof insertUserNoteTemplateSchema>;
+export type SelectUserNoteTemplate = typeof userNoteTemplates.$inferSelect;
+export type InsertTemplateShare = z.infer<typeof insertTemplateShareSchema>;
+export type SelectTemplateShare = typeof templateShares.$inferSelect;
+export type InsertUserNotePreferences = z.infer<typeof insertUserNotePreferencesSchema>;
+export type SelectUserNotePreferences = typeof userNotePreferences.$inferSelect;
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   encounters: many(encounters),
@@ -1471,19 +1501,8 @@ export const insertPatientPhysicalFindingSchema = createInsertSchema(patientPhys
   clinicalContext: true,
 });
 
-// User preference schemas
-export const insertUserSoapTemplateSchema = createInsertSchema(userSoapTemplates).pick({
-  userId: true,
-  templateName: true,
-  isDefault: true,
-  subjectiveTemplate: true,
-  objectiveTemplate: true,
-  assessmentTemplate: true,
-  planTemplate: true,
-  formatPreferences: true,
-  enableAiLearning: true,
-  learningConfidence: true,
-});
+// Legacy schema - replaced by userNoteTemplates
+// export const insertUserSoapTemplateSchema = createInsertSchema(userSoapTemplates);
 
 export const insertUserEditPatternSchema = createInsertSchema(userEditPatterns).omit({
   id: true,
@@ -1500,8 +1519,9 @@ export const insertUserAssistantThreadSchema = createInsertSchema(userAssistantT
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type InsertUserSoapTemplate = z.infer<typeof insertUserSoapTemplateSchema>;
-export type UserSoapTemplate = typeof userSoapTemplates.$inferSelect;
+// Legacy types - replaced by userNoteTemplates
+// export type InsertUserSoapTemplate = z.infer<typeof insertUserSoapTemplateSchema>;
+// export type UserSoapTemplate = typeof userSoapTemplates.$inferSelect;
 export type InsertUserEditPattern = z.infer<typeof insertUserEditPatternSchema>;
 export type UserEditPattern = typeof userEditPatterns.$inferSelect;
 export type InsertUserAssistantThread = z.infer<typeof insertUserAssistantThreadSchema>;
