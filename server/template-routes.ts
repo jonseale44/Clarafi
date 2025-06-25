@@ -233,6 +233,60 @@ RECENT VITALS:
     }
   });
 
+  // Duplicate template
+  app.post("/api/templates/:templateId/duplicate", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = (req as any).user.id;
+      const { templateId } = req.params;
+      
+      // Verify ownership
+      const existing = await storage.getUserNoteTemplate(parseInt(templateId));
+      if (!existing || existing.userId !== userId) {
+        return res.status(403).json({ error: "Template not found or access denied" });
+      }
+      
+      // Generate unique name with (1), (2), etc.
+      const baseName = existing.templateName;
+      let newName = `${baseName} (1)`;
+      let counter = 1;
+      
+      // Check if name exists and increment counter
+      while (await storage.templateNameExists(userId, newName)) {
+        counter++;
+        newName = `${baseName} (${counter})`;
+      }
+      
+      // Create duplicate with new name
+      const duplicateData = {
+        userId: userId,
+        templateName: newName,
+        displayName: `${existing.displayName} (${counter})`,
+        baseNoteType: existing.baseNoteType,
+        exampleNote: existing.exampleNote || "",
+        generatedPrompt: existing.generatedPrompt || "",
+        enableAiLearning: existing.enableAiLearning ?? true,
+        learningConfidence: existing.learningConfidence || "0.75",
+        isPersonal: true,
+        isDefault: false,
+        createdBy: userId,
+        parentTemplateId: existing.id,
+        active: true,
+        version: 1,
+        usageCount: 0
+      };
+      
+      const duplicate = await storage.createUserNoteTemplate(duplicateData);
+      
+      console.log(`✅ [Templates] Duplicated template ${templateId} as "${newName}"`);
+      res.json(duplicate);
+    } catch (error: any) {
+      console.error("❌ [Templates] Error duplicating template:", error);
+      res.status(500).json({ error: "Failed to duplicate template" });
+    }
+  });
+
   // Delete template
   app.delete("/api/templates/:templateId", async (req: Request, res: Response) => {
     try {
