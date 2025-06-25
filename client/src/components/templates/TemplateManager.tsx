@@ -47,6 +47,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateDisplayName, setNewTemplateDisplayName] = useState("");
+  const [newTemplateNoteType, setNewTemplateNoteType] = useState("");
   const [exampleNote, setExampleNote] = useState("");
 
   // Get user's templates
@@ -64,6 +65,28 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
     mutationFn: async (noteType: string) => {
       const response = await apiRequest('POST', `/api/templates/generate-example`, { noteType });
       return await response.json();
+    }
+  });
+
+  // Delete template mutation
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      const response = await apiRequest('DELETE', `/api/templates/${templateId}`, {});
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/templates/by-type', selectedNoteType] });
+      toast({
+        title: "Template deleted",
+        description: "Template has been deleted successfully."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete template",
+        variant: "destructive"
+      });
     }
   });
 
@@ -88,6 +111,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
       setIsCreateDialogOpen(false);
       setNewTemplateName("");
       setNewTemplateDisplayName("");
+      setNewTemplateNoteType("");
       setExampleNote("");
       toast({
         title: "Template Created",
@@ -331,6 +355,15 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                         onClick={() => handleEditTemplate(template)}
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteTemplateMutation.mutate(template.id as number)}
+                        disabled={deleteTemplateMutation.isPending || template.isBaseTemplate}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </>
                   )}

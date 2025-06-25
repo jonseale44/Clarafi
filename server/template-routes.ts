@@ -369,6 +369,39 @@ RECENT VITALS:
     }
   });
 
+  // Delete template
+  app.delete("/api/templates/:templateId", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.sendStatus(401);
+      }
+      
+      const userId = (req as any).user.id;
+      const templateId = parseInt(req.params.templateId);
+      
+      if (!templateId) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      
+      // Check if template belongs to user
+      const template = await storage.getUserNoteTemplate(templateId);
+      if (!template || template.userId !== userId) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      await storage.deleteUserNoteTemplate(templateId);
+      
+      console.log(`✅ [Templates] Deleted template "${template.templateName}" (ID: ${templateId})`);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("❌ [Templates] Error deleting template:", error);
+      res.status(500).json({ 
+        error: "Failed to delete template",
+        details: error.message 
+      });
+    }
+  });
+
 }
 
 // Helper function for generating example notes
