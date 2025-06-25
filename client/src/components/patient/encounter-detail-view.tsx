@@ -3189,7 +3189,6 @@ Please provide medical suggestions based on this complete conversation context.`
                   selectedTemplate={selectedTemplate}
                   onTemplateChange={setSelectedTemplate}
                   disabled={isRecording}
-                  showTemplateManager={true}
                 />
                 <div className="text-xs text-gray-500">
                   {isRecording

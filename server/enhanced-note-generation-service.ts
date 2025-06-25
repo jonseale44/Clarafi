@@ -255,7 +255,12 @@ IMPORTANT INSTRUCTIONS:
           } else {
             // No default set, use base template
             console.log(`📋 [EnhancedNotes] No default template found, using base template`);
-            prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+            // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
+            if (noteType === 'soap') {
+              prompt = EnhancedNoteGenerationService.buildSOAPPrompt(medicalContext, transcription);
+            } else {
+              prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+            }
           }
         } catch (templateError: any) {
           console.error(`❌ [EnhancedNotes] Error checking user templates:`, {
@@ -265,12 +270,22 @@ IMPORTANT INSTRUCTIONS:
             noteType
           });
           // Fallback to base template if template system fails
-          prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+          // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
+          if (noteType === 'soap') {
+            prompt = EnhancedNoteGenerationService.buildSOAPPrompt(medicalContext, transcription);
+          } else {
+            prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+          }
         }
       } else {
         // No user context, use base template
         console.log(`📋 [EnhancedNotes] No user context, using base template`);
-        prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+        // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
+        if (noteType === 'soap') {
+          prompt = EnhancedNoteGenerationService.buildSOAPPrompt(medicalContext, transcription);
+        } else {
+          prompt = ClinicalNoteTemplates.getPrompt(noteType, medicalContext, transcription);
+        }
       }
 
       console.log(`🤖 [EnhancedNotes] Prompt prepared, length: ${prompt.length}`);
