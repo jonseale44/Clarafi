@@ -245,6 +245,41 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
     setIsEditDialogOpen(true);
   };
 
+  // Two-phase template editor handlers
+  const handleCreateWithTwoPhase = () => {
+    setTwoPhaseMode('create');
+    setShowTwoPhaseEditor(true);
+    setIsCreateDialogOpen(false);
+  };
+
+  const handleEditWithTwoPhase = (template: Template) => {
+    setSelectedTemplate(template);
+    setTwoPhaseMode('edit');
+    setShowTwoPhaseEditor(true);
+    setIsEditDialogOpen(false);
+  };
+
+  const handleTwoPhaseSave = async (templateData: any) => {
+    try {
+      if (twoPhaseMode === 'create') {
+        await createTemplateMutation.mutateAsync(templateData);
+      } else if (selectedTemplate) {
+        await updateTemplateMutation.mutateAsync({
+          id: selectedTemplate.id,
+          updates: templateData
+        });
+      }
+      setShowTwoPhaseEditor(false);
+      setSelectedTemplate(null);
+    } catch (error: any) {
+      toast({
+        title: "Save failed",
+        description: error.message || "Failed to save template",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleUpdateTemplate = () => {
     if (!selectedTemplate) return;
     
@@ -266,23 +301,33 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Template Manager</h3>
-        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-          setIsCreateDialogOpen(open);
-          if (open) {
-            // Reset form and set default note type to current context
-            setNewTemplateName("");
-            setNewTemplateDisplayName("");
-            setNewTemplateNoteType(selectedNoteType);
-            setExampleNote("");
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              New Template
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={handleCreateWithTwoPhase}
+            className="flex items-center gap-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Advanced Template
+          </Button>
+          
+          <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+            setIsCreateDialogOpen(open);
+            if (open) {
+              // Reset form and set default note type to current context
+              setNewTemplateName("");
+              setNewTemplateDisplayName("");
+              setNewTemplateNoteType(selectedNoteType);
+              setExampleNote("");
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-1" />
+                Basic Template
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Custom Template</DialogTitle>
             </DialogHeader>
@@ -432,9 +477,17 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleEditTemplate(template)}
-                        title="Edit template"
+                        title="Edit template (basic)"
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditWithTwoPhase(template)}
+                        title="Advanced editor with AI instructions"
+                      >
+                        <MessageSquare className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
@@ -499,8 +552,24 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+      {/* Two-Phase Template Editor */}
+      <TwoPhaseTemplateEditor
+        isOpen={showTwoPhaseEditor}
+        onClose={() => setShowTwoPhaseEditor(false)}
+        mode={twoPhaseMode}
+        initialData={selectedTemplate ? {
+          templateName: selectedTemplate.templateName,
+          displayName: selectedTemplate.displayName,
+          baseNoteType: selectedTemplate.baseNoteType,
+          baseNoteText: selectedTemplate.exampleNote,
+          inlineComments: selectedTemplate.inlineComments || []
+        } : undefined}
+        onSave={handleTwoPhaseSave}
+      />
     </div>
   );
 };
