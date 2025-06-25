@@ -179,6 +179,22 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
     }
   });
 
+  // Duplicate template
+  const duplicateTemplateMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      const response = await apiRequest('POST', `/api/templates/${templateId}/duplicate`, {});
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/templates/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/templates/by-type'] });
+      toast({
+        title: "Template Duplicated",
+        description: "Template has been duplicated successfully."
+      });
+    }
+  });
+
   const handleCreateTemplate = async () => {
     if (!newTemplateName || !newTemplateDisplayName || !newTemplateNoteType || !exampleNote) {
       toast({
@@ -416,6 +432,15 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                         title="Edit template"
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => duplicateTemplateMutation.mutate(template.id as number)}
+                        disabled={duplicateTemplateMutation.isPending}
+                        title="Duplicate template"
+                      >
+                        <Copy className="h-4 w-4" />
                       </Button>
                       {!template.isBaseTemplate && (
                         <Button
