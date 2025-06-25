@@ -63,6 +63,9 @@ export function TwoPhaseTemplateEditor({
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [newCommentContent, setNewCommentContent] = useState('');
   const [newCommentType, setNewCommentType] = useState<'insertion' | 'selection'>('insertion');
+  const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState('');
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -168,6 +171,83 @@ export function TwoPhaseTemplateEditor({
   const removeComment = (commentId: string) => {
     setComments(prev => prev.filter(c => c.id !== commentId));
     console.log('🗑️ Removed comment:', commentId);
+  };
+
+  const startEditingComment = (comment: Comment) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentContent(comment.content);
+  };
+
+  const saveEditedComment = () => {
+    if (!editingCommentId || !editingCommentContent.trim()) return;
+    
+    setComments(prev => prev.map(comment => 
+      comment.id === editingCommentId 
+        ? { ...comment, content: editingCommentContent.trim() }
+        : comment
+    ));
+    setEditingCommentId(null);
+    setEditingCommentContent('');
+  };
+
+  const cancelEditingComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentContent('');
+  };
+
+  const renderHighlightedText = () => {
+    if (!noteText) return null;
+    
+    let processedText = noteText;
+    let textSegments: React.ReactNode[] = [];
+    let lastIndex = 0;
+    
+    // Sort comments by position to process them in order
+    const sortedComments = [...comments].sort((a, b) => a.position - b.position);
+    
+    sortedComments.forEach(comment => {
+      if (comment.selectedText) {
+        // Find the selected text in the note
+        const textIndex = processedText.indexOf(comment.selectedText, lastIndex);
+        if (textIndex !== -1) {
+          // Add text before the highlight
+          if (textIndex > lastIndex) {
+            textSegments.push(processedText.slice(lastIndex, textIndex));
+          }
+          
+          // Add highlighted text with hover effects
+          textSegments.push(
+            <span
+              key={comment.id}
+              className={`inline-block px-1 py-0.5 rounded cursor-pointer transition-all duration-200 ${
+                hoveredCommentId === comment.id 
+                  ? 'bg-yellow-300 shadow-md' 
+                  : 'bg-blue-200 hover:bg-blue-300'
+              }`}
+              onMouseEnter={() => setHoveredCommentId(comment.id)}
+              onMouseLeave={() => setHoveredCommentId(null)}
+              onClick={() => startEditingComment(comment)}
+              title={`AI Instruction: ${comment.content} (Click to edit)`}
+            >
+              {comment.selectedText}
+            </span>
+          );
+          
+          lastIndex = textIndex + comment.selectedText.length;
+        }
+      }
+    });
+    
+    // Add remaining text
+    if (lastIndex < processedText.length) {
+      textSegments.push(processedText.slice(lastIndex));
+    }
+    
+    return (
+      <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
+        {textSegments}
+      </div>
+    );
   };
 
   const getCommentIndicators = () => {
@@ -353,34 +433,50 @@ export function TwoPhaseTemplateEditor({
                 </div>
 
                 <div className="relative">
-                  <div 
-                    ref={overlayRef}
-                    className="absolute inset-0 z-10 pointer-events-none"
-                  >
-                    {getCommentIndicators()}
+                  <div className="min-h-[300px] p-3 bg-gray-50 border rounded-md relative cursor-text">
+                    {/* Hidden textarea for text selection functionality */}
+                    <Textarea
+                      ref={textareaRef}
+                      value={noteText}
+                      readOnly
+                      className="absolute inset-0 opacity-0 pointer-events-auto"
+                      onMouseUp={handleTextSelection}
+                      onClick={handleOverlayClick}
+                    />
+                    
+                    {/* Visible highlighted text */}
+                    <div className="relative z-10 pointer-events-none">
+                      {renderHighlightedText()}
+                    </div>
+                    
+                    {/* Blue dot indicators for insertion comments */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {getCommentIndicators()}
+                    </div>
                   </div>
-                  
-                  <Textarea
-                    ref={textareaRef}
-                    value={noteText}
-                    readOnly
-                    className="min-h-[300px] font-mono bg-gray-50 relative z-20 cursor-text"
-                    onMouseUp={handleTextSelection}
-                    onClick={handleOverlayClick}
-                  />
                 </div>
 
                 {/* Comments List */}
                 {comments.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Current AI Instructions:</Label>
+                  <div className="space-y-3">
+                    <Label>AI Instructions ({comments.length}):</Label>
                     {comments.map(comment => (
-                      <div key={comment.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+                      <div 
+                        key={comment.id} 
+                        className={`flex items-start gap-3 p-3 rounded border transition-all duration-200 cursor-pointer ${
+                          hoveredCommentId === comment.id 
+                            ? 'bg-yellow-50 border-yellow-300 shadow-md' 
+                            : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                        }`}
+                        onMouseEnter={() => setHoveredCommentId(comment.id)}
+                        onMouseLeave={() => setHoveredCommentId(null)}
+                        onClick={() => startEditingComment(comment)}
+                      >
                         <div className="flex-1">
                           {comment.selectedText ? (
                             <div className="mb-2">
                               <Badge variant="default" className="text-xs bg-blue-600 mb-1">
-                                For selected text
+                                📝 Text-specific instruction
                               </Badge>
                               <div className="text-sm font-medium text-blue-800 bg-blue-100 px-2 py-1 rounded mb-1">
                                 "{comment.selectedText}"
@@ -388,21 +484,48 @@ export function TwoPhaseTemplateEditor({
                             </div>
                           ) : (
                             <Badge variant="outline" className="text-xs mb-2 border-blue-300">
-                              General instruction
+                              📍 Position-based instruction
                             </Badge>
                           )}
-                          <div className="text-sm text-gray-800">
-                            <span className="font-medium">AI Instruction:</span> {comment.content}
-                          </div>
+                          
+                          {editingCommentId === comment.id ? (
+                            <div className="space-y-2">
+                              <Textarea
+                                value={editingCommentContent}
+                                onChange={(e) => setEditingCommentContent(e.target.value)}
+                                className="min-h-[60px] text-sm"
+                                placeholder="Edit your AI instruction..."
+                              />
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={saveEditedComment}>
+                                  Save
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={cancelEditingComment}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-800">
+                              <span className="font-medium">AI Instruction:</span> {comment.content}
+                              <div className="text-xs text-gray-500 mt-1">Click to edit</div>
+                            </div>
+                          )}
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeComment(comment.id)}
-                          className="text-gray-400 hover:text-red-500"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        
+                        {editingCommentId !== comment.id && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeComment(comment.id);
+                            }}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
