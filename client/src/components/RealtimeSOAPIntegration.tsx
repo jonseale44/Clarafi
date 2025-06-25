@@ -204,62 +204,44 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
         throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
-      // Handle JSON response instead of streaming
-      const responseData = await response.json();
-      console.log("🔍 [RealtimeSOAP] Received JSON response:", responseData);
-      console.log("🔍 [RealtimeSOAP] Response has soapNote:", !!responseData.soapNote);
-      console.log("🔍 [RealtimeSOAP] Callback functions available:", {
-        onSOAPNoteUpdate: !!onSOAPNoteUpdate,
-        onSOAPNoteComplete: !!onSOAPNoteComplete
+      const data = await response.json();
+      console.log(`📥 [RealtimeSOAP] API Response data:`, {
+        hasNote: !!data.note,
+        noteLength: data.note?.length || 0,
+        noteType: data.noteType,
+        processingTime: data.processingTimeMs
       });
       
-      if (responseData.note) {
-        const completeSoap = responseData.note;
-        setSoapBuffer(completeSoap);
+      if (data.note) {
+        console.log(`📝 [RealtimeSOAP] Successfully generated ${noteType.toUpperCase()} note (${data.note.length} chars)`);
+        onSOAPNoteComplete(data.note);
         
-        console.log("📝 [RealtimeSOAP] Processing SOAP note from JSON response");
-        console.log("📝 [RealtimeSOAP] SOAP note length:", completeSoap.length);
-        
-        // Apply intelligent change detection for UI updates
-        if (enableIntelligentStreaming && shouldTriggerUpdate(lastSOAPContent, completeSoap)) {
-          console.log("📝 [IntelligentStreaming] Meaningful change detected - updating UI");
-          setLastSOAPContent(completeSoap);
-          onSOAPNoteUpdate(completeSoap);
-        } else if (!enableIntelligentStreaming) {
-          // Traditional behavior - always update
-          console.log("📝 [RealtimeSOAP] Traditional update - no change detection");
-          onSOAPNoteUpdate(completeSoap);
-        } else {
-          console.log("📝 [IntelligentStreaming] No meaningful change - but updating UI anyway for automatic generation");
-          // For automatic generation, always update UI even if minimal change
-          onSOAPNoteUpdate(completeSoap);
-        }
-        
-        console.log("🎯 [RealtimeSOAP] About to call onSOAPNoteComplete - THIS SHOULD TRIGGER MEDICAL PROBLEMS");
-        console.log("🎯 [RealtimeSOAP] Patient ID:", patientId, "Encounter ID:", encounterId);
-        console.log("🎯 [RealtimeSOAP] SOAP note preview:", completeSoap.substring(0, 200));
-        onSOAPNoteComplete(completeSoap);
-        
-        console.log("✅ [RealtimeSOAP] SOAP note generation completed - onSOAPNoteComplete called");
-        
-        // Only show success toast for manual generation or significant changes
-        if (forceGeneration || (!enableIntelligentStreaming)) {
+        if (forceGeneration) {
           toast({
-            title: "SOAP Note Generated",
-            description: "Clinical documentation completed successfully",
+            title: "Note Generated",
+            description: `${noteType.toUpperCase()} note generated successfully`,
           });
         }
       } else {
-        throw new Error("No SOAP note received in response");
+        console.error(`❌ [RealtimeSOAP] No note in response:`, data);
+        throw new Error('No note returned from API');
       }
       
-    } catch (error) {
-      console.error("❌ [RealtimeSOAP] Error generating SOAP note:", error);
-      
+    } catch (error: any) {
+      console.error(`❌ [RealtimeSOAP] Error generating ${noteType.toUpperCase()} note:`, {
+        error: error.message,
+        stack: error.stack,
+        requestDetails: {
+          noteType,
+          patientId,
+          encounterId,
+          transcriptionLength: transcription.trim().length
+        }
+      });
       toast({
-        variant: "destructive",
         title: "Generation Failed",
-        description: "Failed to generate SOAP note. Please try again.",
+        description: `Failed to generate ${noteType.toUpperCase()} note. Please try again.`,
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
