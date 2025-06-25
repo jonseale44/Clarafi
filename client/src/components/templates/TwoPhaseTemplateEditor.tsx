@@ -66,6 +66,8 @@ export function TwoPhaseTemplateEditor({
   const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -275,20 +277,44 @@ export function TwoPhaseTemplateEditor({
     });
   };
 
-  const handleFinalSave = () => {
-    const templateData = {
-      templateName,
-      displayName,
-      baseNoteType,
-      baseNoteText: noteText,
-      inlineComments: comments,
-      hasComments: comments.length > 0,
-      // The exampleNote will be the processed version with {{}} comments
-      exampleNote: generateFinalTemplate()
-    };
+  const handleFinalSave = async () => {
+    setIsSaving(true);
+    setSaveProgress(0);
     
-    onSave(templateData);
-    console.log('🎉 Final template saved with', comments.length, 'comments');
+    try {
+      // Simulate progress steps for sophisticated animation
+      setSaveProgress(25);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const templateData = {
+        templateName,
+        displayName,
+        baseNoteType,
+        baseNoteText: noteText,
+        inlineComments: comments,
+        hasComments: comments.length > 0,
+        // The exampleNote will be the processed version with {{}} comments
+        exampleNote: generateFinalTemplate()
+      };
+      
+      setSaveProgress(50);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      setSaveProgress(75);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      await onSave(templateData);
+      
+      setSaveProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      console.log('🎉 Final template saved with', comments.length, 'comments');
+    } catch (error) {
+      console.error('Error saving template:', error);
+    } finally {
+      setIsSaving(false);
+      setSaveProgress(0);
+    }
   };
 
   const generateFinalTemplate = () => {
@@ -535,9 +561,47 @@ export function TwoPhaseTemplateEditor({
                   <Button onClick={() => setCurrentPhase(1)} variant="outline">
                     Back to Phase 1
                   </Button>
-                  <Button onClick={handleFinalSave} className="flex items-center gap-2">
-                    <Save className="w-4 h-4" />
-                    Save Complete Template
+                  <Button 
+                    onClick={handleFinalSave} 
+                    disabled={isSaving}
+                    className={`relative overflow-hidden transition-all duration-200 ${
+                      isSaving ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                    style={{
+                      background: isSaving
+                        ? `linear-gradient(90deg, 
+                            rgba(59, 130, 246, 0.1) 0%, 
+                            rgba(59, 130, 246, 0.1) ${saveProgress}%, 
+                            transparent ${saveProgress}%, 
+                            transparent 100%)`
+                        : undefined
+                    }}
+                  >
+                    <div className="flex items-center space-x-2">
+                      {isSaving && (
+                        <div 
+                          className="h-3 w-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"
+                          style={{
+                            animationDuration: '1s'
+                          }}
+                        />
+                      )}
+                      {!isSaving && <Save className="w-4 h-4" />}
+                      <span>
+                        {isSaving
+                          ? `Saving... ${Math.round(saveProgress)}%`
+                          : "Save Complete Template"}
+                      </span>
+                    </div>
+                    {/* Precise progress indicator - subtle border animation */}
+                    {isSaving && (
+                      <div 
+                        className="absolute bottom-0 left-0 h-0.5 bg-blue-500 transition-all duration-100 ease-out"
+                        style={{
+                          width: `${saveProgress}%`
+                        }}
+                      />
+                    )}
                   </Button>
                 </div>
               </CardContent>
