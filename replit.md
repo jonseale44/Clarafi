@@ -134,6 +134,11 @@ Preferred communication style: Simple, everyday language.
   - Added proper response.json() parsing for all template mutations
 - **TEMPLATE CREATION SUCCESSFUL**: User successfully created "Quick" template with ID 3 using procedure note example
 - **FIELD PURPOSES CLARIFIED**: Template Name (internal ID), Display Name (user-friendly), Example Note (style reference for AI)
+- **UI IMPROVEMENTS COMPLETED**: 
+  - Added Base Note Type dropdown with all 6 note types (SOAP, Progress, H&P, APSO, Discharge, Procedure)
+  - Added delete functionality with trash icon for custom templates
+  - Form automatically defaults to current note type context for better UX
+  - Enhanced validation requiring all fields including base note type selection
 
 ### Multi-Note Type System Implementation (June 24, 2025)
 - **IMPLEMENTED**: Complete multi-note type system with production-level EMR capabilities

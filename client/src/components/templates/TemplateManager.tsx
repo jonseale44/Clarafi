@@ -47,7 +47,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateDisplayName, setNewTemplateDisplayName] = useState("");
-  const [newTemplateNoteType, setNewTemplateNoteType] = useState("");
+  const [newTemplateNoteType, setNewTemplateNoteType] = useState(selectedNoteType);
   const [exampleNote, setExampleNote] = useState("");
 
   // Get user's templates
@@ -111,7 +111,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
       setIsCreateDialogOpen(false);
       setNewTemplateName("");
       setNewTemplateDisplayName("");
-      setNewTemplateNoteType("");
+      setNewTemplateNoteType(selectedNoteType);
       setExampleNote("");
       toast({
         title: "Template Created",
@@ -228,7 +228,16 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Template Manager</h3>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (open) {
+            // Reset form and set default note type to current context
+            setNewTemplateName("");
+            setNewTemplateDisplayName("");
+            setNewTemplateNoteType(selectedNoteType);
+            setExampleNote("");
+          }
+        }}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-1" />
@@ -263,7 +272,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                   <Label htmlFor="base-note-type">Base Note Type</Label>
                   <Select value={newTemplateNoteType} onValueChange={setNewTemplateNoteType}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select note type" />
+                      <SelectValue placeholder={`Default: ${selectedNoteType.toUpperCase()} Note`} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="soap">SOAP Note</SelectItem>
