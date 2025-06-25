@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -72,6 +72,56 @@ export function TwoPhaseTemplateEditor({
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [indicatorPositions, setIndicatorPositions] = useState<Array<{id: string, left: number, top: number}>>([]);
+
+  // Update indicator positions when comments or noteText change
+  useEffect(() => {
+    if (!textareaRef.current || !phase1Saved || comments.length === 0) {
+      setIndicatorPositions([]);
+      return;
+    }
+
+    const updatePositions = () => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const computedStyle = window.getComputedStyle(textarea);
+      const fontSize = parseFloat(computedStyle.fontSize);
+      const lineHeight = parseFloat(computedStyle.lineHeight) || fontSize * 1.2;
+      const paddingTop = parseFloat(computedStyle.paddingTop);
+      const paddingLeft = parseFloat(computedStyle.paddingLeft);
+      
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      
+      context.font = `${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+      
+      const newPositions = comments.map(comment => {
+        const textBeforePosition = noteText.substring(0, comment.position);
+        const lines = textBeforePosition.split('\n');
+        const lineNumber = lines.length - 1;
+        const charPositionInLine = lines[lineNumber].length;
+        
+        const lineText = lines[lineNumber];
+        const textWidth = context.measureText(lineText.substring(0, charPositionInLine)).width;
+        
+        const top = paddingTop + (lineNumber * lineHeight) + 4;
+        const left = paddingLeft + textWidth + 4;
+        
+        return { id: comment.id, left, top };
+      });
+      
+      setIndicatorPositions(newPositions);
+    };
+
+    // Use requestAnimationFrame to ensure DOM is updated
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(updatePositions);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [comments, noteText, phase1Saved]);
 
   const handlePhase1Save = () => {
     if (!templateName || !displayName || !baseNoteType || !noteText) {
@@ -131,27 +181,88 @@ export function TwoPhaseTemplateEditor({
     
     console.log('🔍 [TwoPhaseEditor] Click position:', { x, y });
     
-    // Convert click position to text position (approximation)
-    const lineHeight = 20; // Approximate line height
-    const charWidth = 8; // Approximate character width
-    const line = Math.floor(y / lineHeight);
-    const char = Math.floor(x / charWidth);
+    // Use accurate position calculation by temporarily setting focus and using browser APIs
+    textarea.focus();
     
-    const lines = noteText.split('\n');
-    let position = 0;
-    for (let i = 0; i < line && i < lines.length; i++) {
-      position += lines[i].length + 1; // +1 for newline
+    // Get computed styles for accurate measurements
+    const computedStyle = window.getComputedStyle(textarea);
+    const fontSize = parseFloat(computedStyle.fontSize);
+    const lineHeight = parseFloat(computedStyle.lineHeight) || fontSize * 1.2;
+    const paddingTop = parseFloat(computedStyle.paddingTop);
+    const paddingLeft = parseFloat(computedStyle.paddingLeft);
+    
+    // Adjust for padding
+    const adjustedX = Math.max(0, x - paddingLeft);
+    const adjustedY = Math.max(0, y - paddingTop);
+    
+    // Calculate line number
+    const lineNumber = Math.floor(adjustedY / lineHeight);
+    
+    // Create a temporary canvas to measure text width accurately
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.font = `${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+      
+      const lines = noteText.split('\n');
+      let position = 0;
+      
+      // Add character positions for lines before the clicked line
+      for (let i = 0; i < lineNumber && i < lines.length; i++) {
+        position += lines[i].length + 1; // +1 for newline
+      }
+      
+      // For the clicked line, find the character position
+      if (lineNumber < lines.length) {
+        const lineText = lines[lineNumber];
+        let charPosition = 0;
+        let currentWidth = 0;
+        
+        // Measure character by character to find closest position to click
+        for (let i = 0; i < lineText.length; i++) {
+          const charWidth = context.measureText(lineText[i]).width;
+          if (currentWidth + charWidth / 2 > adjustedX) {
+            break;
+          }
+          currentWidth += charWidth;
+          charPosition++;
+        }
+        
+        position += Math.min(charPosition, lineText.length);
+      }
+      
+      console.log('🔍 [TwoPhaseEditor] Accurate position calculation:', {
+        lineNumber,
+        position,
+        adjustedX,
+        adjustedY,
+        lineHeight,
+        fontSize
+      });
+      
+      setSelectionStart(position);
+      setSelectionEnd(position);
+      setSelectedText('');
+      setNewCommentType('insertion');
+      setShowCommentDialog(true);
+    } else {
+      // Fallback to old method if canvas not available
+      const lines = noteText.split('\n');
+      let position = 0;
+      for (let i = 0; i < lineNumber && i < lines.length; i++) {
+        position += lines[i].length + 1;
+      }
+      if (lineNumber < lines.length) {
+        const estimatedChar = Math.floor(adjustedX / (fontSize * 0.6)); // Rough character width
+        position += Math.min(estimatedChar, lines[lineNumber].length);
+      }
+      
+      setSelectionStart(position);
+      setSelectionEnd(position);
+      setSelectedText('');
+      setNewCommentType('insertion');
+      setShowCommentDialog(true);
     }
-    position += Math.min(char, lines[line]?.length || 0);
-    
-    console.log('🔍 [TwoPhaseEditor] Calculated position:', position, 'at line:', line, 'char:', char);
-    console.log('✅ [TwoPhaseEditor] Opening comment dialog for position click');
-    
-    setSelectionStart(position);
-    setSelectionEnd(position);
-    setSelectedText('');
-    setNewCommentType('insertion');
-    setShowCommentDialog(true);
   }, [noteText, phase1Saved]);
 
   const addComment = () => {
@@ -254,28 +365,26 @@ export function TwoPhaseTemplateEditor({
   };
 
   const getCommentIndicators = () => {
-    return comments.map(comment => {
-      // Calculate approximate pixel position for comment indicator
-      const lines = noteText.substring(0, comment.position).split('\n');
-      const line = lines.length - 1;
-      const char = lines[line].length;
+    return indicatorPositions.map(position => {
+      const comment = comments.find(c => c.id === position.id);
+      if (!comment) return null;
       
       return (
         <div
           key={comment.id}
-          className="absolute w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-md cursor-pointer hover:bg-blue-600 z-10"
+          className="absolute w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-md cursor-pointer hover:bg-blue-600 z-10 transition-all duration-200"
           style={{
-            left: `${char * 8 + 8}px`,
-            top: `${line * 20 + 8}px`
+            left: `${position.left}px`,
+            top: `${position.top}px`
           }}
-          title={`Comment: ${comment.content}`}
+          title={`AI Instruction: ${comment.content} (Click to edit)`}
           onClick={(e) => {
             e.stopPropagation();
-            // Could show comment details here
+            startEditingComment(comment);
           }}
         />
       );
-    });
+    }).filter(Boolean);
   };
 
   const handleFinalSave = async () => {
@@ -320,21 +429,40 @@ export function TwoPhaseTemplateEditor({
 
   const generateFinalTemplate = () => {
     // Process the base note text and inject {{}} comments
-    let processedText = noteText;
+    // Sort comments by position in descending order to avoid position shifts
     const sortedComments = [...comments].sort((a, b) => b.position - a.position);
+    
+    let processedText = noteText;
     
     for (const comment of sortedComments) {
       if (comment.type === 'insertion') {
-        processedText = 
-          processedText.slice(0, comment.position) +
-          `{{${comment.content}}} ` +
-          processedText.slice(comment.position);
+        // Insert AI instruction at the exact position
+        const beforeText = processedText.slice(0, comment.position);
+        const afterText = processedText.slice(comment.position);
+        processedText = `${beforeText}{{${comment.content}}} ${afterText}`;
       } else if (comment.type === 'selection' && comment.selectedText) {
-        const commentedText = `${comment.selectedText} {{${comment.content}}}`;
-        processedText = processedText.replace(comment.selectedText, commentedText);
+        // Find the selected text and replace it with the commented version
+        // Use the position to be more precise about where to replace
+        const beforePosition = processedText.slice(0, comment.position);
+        const selectionStart = comment.position;
+        const selectionEnd = comment.position + comment.selectedText.length;
+        
+        // Verify the selected text matches what's at that position
+        const actualSelectedText = processedText.slice(selectionStart, selectionEnd);
+        if (actualSelectedText === comment.selectedText) {
+          const beforeText = processedText.slice(0, selectionStart);
+          const afterText = processedText.slice(selectionEnd);
+          processedText = `${beforeText}${comment.selectedText} {{${comment.content}}}${afterText}`;
+        } else {
+          // Fallback to string replacement if position doesn't match
+          console.warn('Position mismatch for selected text, using fallback replacement');
+          const commentedText = `${comment.selectedText} {{${comment.content}}}`;
+          processedText = processedText.replace(comment.selectedText, commentedText);
+        }
       }
     }
     
+    console.log('📝 Generated final template with', comments.length, 'AI instructions');
     return processedText;
   };
 
