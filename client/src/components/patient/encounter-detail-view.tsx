@@ -2643,7 +2643,8 @@ Please provide medical suggestions based on this complete conversation context.`
       "🔄 [EncounterView] Manually triggering SOAP note generation from transcription...",
     );
 
-    // Start animation
+    // Start animation - Set generating state first
+    setIsGeneratingSOAP(true);
     setGenerationProgress(0);
     
     // Progress animation - smooth updates every 50ms
@@ -2674,6 +2675,7 @@ Please provide medical suggestions based on this complete conversation context.`
       } else {
         clearInterval(progressInterval);
         setGenerationProgress(0);
+        setIsGeneratingSOAP(false);
         console.error(
           "❌ [EncounterView] RealtimeSOAPIntegration ref not available",
         );
@@ -2687,6 +2689,7 @@ Please provide medical suggestions based on this complete conversation context.`
     } catch (error) {
       clearInterval(progressInterval);
       setGenerationProgress(0);
+      setIsGeneratingSOAP(false);
       console.error("❌ [EncounterView] Error during generation:", error);
       toast({
         variant: "destructive",
