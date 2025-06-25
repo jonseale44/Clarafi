@@ -27,6 +27,9 @@ interface Template {
   isPersonal: boolean;
   isBaseTemplate?: boolean;
   exampleNote?: string;
+  baseNoteText?: string;
+  inlineComments?: any[];
+  hasComments?: boolean;
   usageCount?: number;
   lastUsed?: string;
 }
@@ -552,24 +555,24 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
               </Button>
             </div>
           </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-      {/* Two-Phase Template Editor */}
-      <TwoPhaseTemplateEditor
-        isOpen={showTwoPhaseEditor}
-        onClose={() => setShowTwoPhaseEditor(false)}
-        mode={twoPhaseMode}
-        initialData={selectedTemplate ? {
-          templateName: selectedTemplate.templateName,
-          displayName: selectedTemplate.displayName,
-          baseNoteType: selectedTemplate.baseNoteType,
-          baseNoteText: selectedTemplate.exampleNote,
-          inlineComments: selectedTemplate.inlineComments || []
-        } : undefined}
-        onSave={handleTwoPhaseSave}
-      />
+        </DialogContent>
+      </Dialog>
     </div>
+
+    {/* Two-Phase Template Editor */}
+    <TwoPhaseTemplateEditor
+      isOpen={showTwoPhaseEditor}
+      onClose={() => setShowTwoPhaseEditor(false)}
+      mode={twoPhaseMode}
+      initialData={selectedTemplate ? {
+        templateName: selectedTemplate.templateName,
+        displayName: selectedTemplate.displayName,
+        baseNoteType: selectedTemplate.baseNoteType,
+        baseNoteText: selectedTemplate.exampleNote,
+        inlineComments: (selectedTemplate as any).inlineComments || []
+      } : undefined}
+      onSave={handleTwoPhaseSave}
+    />
+  </div>
   );
 };
