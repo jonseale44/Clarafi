@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Edit, CheckCircle, Clock, Users, FileText } from "lucide-react";
+import { Eye, Edit, CheckCircle, Clock, Users, FileText, Settings } from "lucide-react";
+import { TwoPhaseTemplateEditor } from "@/components/templates/TwoPhaseTemplateEditor";
 
 interface AdminPromptReview {
   id: number;
@@ -49,6 +50,7 @@ export default function AdminPromptManager() {
   const [selectedReview, setSelectedReview] = useState<AdminPromptReview | null>(null);
   const [editedPrompt, setEditedPrompt] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
+  const [editingTemplate, setEditingTemplate] = useState<TemplateWithPrompt | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -126,6 +128,34 @@ export default function AdminPromptManager() {
 
   const handleActivatePrompt = (reviewId: number) => {
     activatePromptMutation.mutate(reviewId);
+  };
+
+  const handleTemplateEdit = async (templateData: any) => {
+    // Update template via API
+    try {
+      const response = await fetch(`/api/templates/${editingTemplate?.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateData)
+      });
+      
+      if (!response.ok) throw new Error('Failed to update template');
+      
+      // Refresh data and close editor
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
+      setEditingTemplate(null);
+      
+      toast({ 
+        title: "Template updated", 
+        description: "The template has been successfully updated." 
+      });
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update template.", 
+        variant: "destructive" 
+      });
+    }
   };
 
   if (loadingReviews || loadingTemplates) {
@@ -282,6 +312,15 @@ export default function AdminPromptManager() {
                           ({template.activePromptLength} chars)
                         </span>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingTemplate(template)}
+                        className="ml-2"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Edit Template
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -365,6 +404,23 @@ export default function AdminPromptManager() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Template Editor Dialog */}
+      {editingTemplate && (
+        <TwoPhaseTemplateEditor
+          isOpen={!!editingTemplate}
+          onClose={() => setEditingTemplate(null)}
+          mode="edit"
+          initialData={{
+            templateName: editingTemplate.templateName,
+            displayName: editingTemplate.displayName,
+            baseNoteType: editingTemplate.baseNoteType,
+            baseNoteText: "", // Will need to fetch this from API
+            inlineComments: []
+          }}
+          onSave={handleTemplateEdit}
+        />
+      )}
     </div>
   );
 }

@@ -1289,6 +1289,7 @@ export class DatabaseStorage implements IStorage {
       .from(adminPromptReviews)
       .leftJoin(userNoteTemplates, eq(adminPromptReviews.templateId, userNoteTemplates.id))
       .leftJoin(users, eq(userNoteTemplates.userId, users.id))
+      .where(eq(adminPromptReviews.reviewStatus, "pending"))
       .orderBy(desc(adminPromptReviews.createdAt));
     
     return reviews;

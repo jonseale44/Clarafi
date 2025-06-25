@@ -119,6 +119,19 @@ export default function setupTemplateRoutes(app: Express) {
       
       const created = await storage.createUserNoteTemplate(templateData);
       
+      // Automatically create admin prompt review for the generated prompt
+      try {
+        await storage.createAdminPromptReview({
+          templateId: created.id,
+          originalPrompt: generatedPrompt,
+          reviewStatus: "pending"
+        });
+        console.log(`📋 [Templates] Created admin prompt review for template ${created.id}`);
+      } catch (reviewError) {
+        console.error("⚠️ [Templates] Failed to create admin prompt review:", reviewError);
+        // Continue execution - don't fail template creation if review creation fails
+      }
+      
       console.log(`✅ [Templates] Created template "${templateName}" with ID ${created.id}`);
       res.json(created);
     } catch (error: any) {
