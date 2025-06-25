@@ -144,6 +144,7 @@ Preferred communication style: Simple, everyday language.
 - **DATABASE SCHEMA UPDATED**: Added base_note_text, inline_comments, and has_comments columns to support two-phase templates
 - **TEXTAREA REF CONNECTED**: Fixed missing ref that prevented text selection and clicking functionality
 - **COMPREHENSIVE LOGGING**: Added detailed console logging throughout comment system for debugging
+- **ACCURATE POSITIONING FIXED**: Resolved critical issue where AI editor comments appeared in wrong locations by implementing precise browser-based text measurement using canvas API and computed styles instead of hardcoded approximations
 
 ### User Custom Template System Implementation (June 25, 2025)
 - **FULLY OPERATIONAL**: Complete Phase 1 custom template system with example-based template creation
