@@ -1,0 +1,53 @@
+SUBJECTIVE:
+{{always bold}} 
+Jane is a 28-year-old woman who presents today with a 3-day history of abdominal pain, nausea, and decreased appetite. She describes the pain as constant, dull, and primarily located in the right lower quadrant. She rates the pain as a 5 out of 10 in severity. Jane reports associated mild nausea and denies vomiting, diarrhea, or constipation. She has not noticed any blood in her stool or urine. She also complains of low-grade fever and fatigue. Jane has no significant medical history and is not currently taking any medications. She denies recent travel, changes in diet, or sick contacts at home or work.
+
+OBJECTIVE:
+
+Vitals: BP: 112/68 | HR: 94 | Temp: 100.8°F | RR: 16 | SpO2: 98%
+
+Physical Exam:
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: {{Always in italics }} Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
+
+ASSESSMENT/PLAN:
+
+Acute Abdominal Pain, Rule out Appendicitis (R10.31):
+
+Ordered abdominal ultrasound and laboratory studies (CBC, CMP, urinalysis) to help rule out appendicitis and other causes of abdominal pain.
+Advised patient regarding warning signs (increasing pain, intractable vomiting, fever, or peritoneal signs), and instructed to present to the emergency department if these occur.
+Low-Grade Fever (R50.9):
+
+Monitor temperature and symptoms closely.
+Supportive care with fluids, acetaminophen for fever/discomfort as needed.
+ORDERS:
+{{Never bold}} 
+Medications:
+
+Acetaminophen 500 mg oral tablet
+Sig: Take 1 tablet by mouth every 6 hours as needed for pain or fever.
+Dispense: 30 tablets
+Refills: 0
+Labs:
+
+CBC
+CMP
+Urinalysis
+Imaging:
+
+Abdominal ultrasound
+Referrals:
+
+None at this time; will consider surgical consultation if imaging or labs suggest appendicitis.
+Patient Education:
+
+Discussed importance of hydration, medication use, and strict return precautions.
+Reviewed potential complications and when to seek urgent medical care.
+Follow-up:
+
+Follow up by phone within 24-48 hours to review imaging/lab results, or sooner if symptoms worsen.
