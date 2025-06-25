@@ -34,7 +34,10 @@ export default function setupTemplateRoutes(app: Express) {
   // Get templates by note type (includes base templates + custom)
   app.get("/api/templates/by-type/:noteType", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      if (!req.isAuthenticated()) {
+        console.log("❌ [Templates] Unauthorized request to by-type endpoint");
+        return res.sendStatus(401);
+      }
       
       const userId = (req as any).user.id;
       const { noteType } = req.params;
@@ -57,6 +60,7 @@ export default function setupTemplateRoutes(app: Express) {
       const allTemplates = [baseTemplateOption, ...customTemplates];
       
       console.log(`📋 [Templates] Retrieved ${allTemplates.length} templates for ${noteType} (user ${userId})`);
+      console.log(`📋 [Templates] Custom templates found:`, customTemplates.map(t => ({ id: t.id, name: t.displayName, type: t.baseNoteType })));
       res.json(allTemplates);
     } catch (error: any) {
       console.error("❌ [Templates] Error fetching templates by type:", error);
