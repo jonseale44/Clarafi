@@ -21,7 +21,7 @@ import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
-import templateRoutes from "./template-routes";
+import setupTemplateRoutes from "./template-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -1093,7 +1093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/vitals", vitalsFlowsheetRoutes);
   
   // Template management routes (custom user templates)
-  templateRoutes(app);
+  setupTemplateRoutes(app);
   
   // Patient attachments routes
   app.use("/api/patients", patientAttachmentsRoutes);
