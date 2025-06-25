@@ -375,24 +375,33 @@ export function TwoPhaseTemplateEditor({
                   <div className="space-y-2">
                     <Label>Current AI Instructions:</Label>
                     {comments.map(comment => (
-                      <div key={comment.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
-                        <Badge variant={comment.type === 'selection' ? 'default' : 'secondary'}>
-                          {comment.type === 'selection' ? 'Text' : 'Position'}
-                        </Badge>
+                      <div key={comment.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex-1">
-                          {comment.selectedText && (
-                            <div className="text-xs text-gray-600 italic">
-                              "{comment.selectedText}"
+                          {comment.selectedText ? (
+                            <div className="mb-2">
+                              <Badge variant="default" className="text-xs bg-blue-600 mb-1">
+                                For selected text
+                              </Badge>
+                              <div className="text-sm font-medium text-blue-800 bg-blue-100 px-2 py-1 rounded mb-1">
+                                "{comment.selectedText}"
+                              </div>
                             </div>
+                          ) : (
+                            <Badge variant="outline" className="text-xs mb-2 border-blue-300">
+                              General instruction
+                            </Badge>
                           )}
-                          <div className="text-sm">{comment.content}</div>
+                          <div className="text-sm text-gray-800">
+                            <span className="font-medium">AI Instruction:</span> {comment.content}
+                          </div>
                         </div>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => removeComment(comment.id)}
+                          className="text-gray-400 hover:text-red-500"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
