@@ -1816,3 +1816,32 @@ export type InsertAllergy = z.infer<typeof insertAllergySchema>;
 export type InsertFamilyHistory = z.infer<typeof insertFamilyHistorySchema>;
 export type InsertMedicalHistory = z.infer<typeof insertMedicalHistorySchema>;
 export type InsertSocialHistory = z.infer<typeof insertSocialHistorySchema>;
+
+// Admin prompt management table for viewing/editing generated prompts
+export const adminPromptReviews = pgTable("admin_prompt_reviews", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").references(() => userNoteTemplates.id).notNull(),
+  originalPrompt: text("original_prompt").notNull(), // GPT-generated prompt
+  reviewedPrompt: text("reviewed_prompt"), // Admin-edited version
+  adminUserId: integer("admin_user_id").references(() => users.id), // Who reviewed it
+  reviewStatus: text("review_status").default("pending"), // 'pending', 'reviewed', 'approved'
+  reviewNotes: text("review_notes"), // Admin comments
+  isActive: boolean("is_active").default(false), // Whether to use reviewed version
+  performanceMetrics: jsonb("performance_metrics"), // Usage stats, success rates
+  createdAt: timestamp("created_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+});
+
+export const insertAdminPromptReviewSchema = createInsertSchema(adminPromptReviews).pick({
+  templateId: true,
+  originalPrompt: true,
+  reviewedPrompt: true,
+  adminUserId: true,
+  reviewStatus: true,
+  reviewNotes: true,
+  isActive: true,
+  performanceMetrics: true,
+});
+
+export type AdminPromptReview = typeof adminPromptReviews.$inferSelect;
+export type InsertAdminPromptReview = z.infer<typeof insertAdminPromptReviewSchema>;

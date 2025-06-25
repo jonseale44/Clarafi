@@ -72,6 +72,20 @@ Return ONLY the GPT prompt, no additional commentary.`;
 
       console.log(`✅ [TemplatePrompt] Generated prompt for ${templateName}`);
       console.log(`📋 [TemplatePrompt] GENERATED PROMPT:\n${generatedPrompt}\n--- END PROMPT ---`);
+      
+      // Save generated prompt for admin review
+      try {
+        const { storage } = await import("./storage");
+        await storage.createAdminPromptReview({
+          templateId: templateId!,
+          originalPrompt: generatedPrompt,
+          reviewStatus: "pending"
+        });
+        console.log(`📝 [TemplatePrompt] Saved prompt for admin review - template ${templateId}`);
+      } catch (error) {
+        console.error("❌ [TemplatePrompt] Failed to save prompt for admin review:", error);
+      }
+      
       return generatedPrompt;
     } catch (error) {
       console.error("❌ [TemplatePrompt] Error generating prompt:", error);

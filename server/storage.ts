@@ -1159,6 +1159,102 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
+
+  // Admin Prompt Review Implementation
+  async createAdminPromptReview(review: InsertAdminPromptReview): Promise<AdminPromptReview> {
+    const [created] = await db.insert(adminPromptReviews)
+      .values(review)
+      .returning();
+    
+    if (!created) {
+      throw new Error("Failed to create admin prompt review");
+    }
+    
+    return created;
+  }
+
+  async getAllPendingPromptReviews(): Promise<(AdminPromptReview & { template: UserNoteTemplate, user: User })[]> {
+    const reviews = await db.select({
+      review: adminPromptReviews,
+      template: userNoteTemplates,
+      user: users
+    })
+      .from(adminPromptReviews)
+      .leftJoin(userNoteTemplates, eq(adminPromptReviews.templateId, userNoteTemplates.id))
+      .leftJoin(users, eq(userNoteTemplates.userId, users.id))
+      .where(eq(adminPromptReviews.reviewStatus, "pending"))
+      .orderBy(desc(adminPromptReviews.createdAt));
+
+    return reviews.map(r => ({ ...r.review, template: r.template!, user: r.user! }));
+  }
+
+  async getAdminPromptReview(reviewId: number): Promise<(AdminPromptReview & { template: UserNoteTemplate, user: User }) | undefined> {
+    const [review] = await db.select({
+      review: adminPromptReviews,
+      template: userNoteTemplates,
+      user: users
+    })
+      .from(adminPromptReviews)
+      .leftJoin(userNoteTemplates, eq(adminPromptReviews.templateId, userNoteTemplates.id))
+      .leftJoin(users, eq(userNoteTemplates.userId, users.id))
+      .where(eq(adminPromptReviews.id, reviewId));
+
+    return review ? { ...review.review, template: review.template!, user: review.user! } : undefined;
+  }
+
+  async updateAdminPromptReview(reviewId: number, updates: Partial<InsertAdminPromptReview>): Promise<AdminPromptReview> {
+    const [updated] = await db.update(adminPromptReviews)
+      .set({ ...updates, reviewedAt: new Date() })
+      .where(eq(adminPromptReviews.id, reviewId))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Failed to update admin prompt review");
+    }
+    
+    return updated;
+  }
+
+  async activateReviewedPrompt(reviewId: number, adminUserId: number): Promise<void> {
+    await db.transaction(async (tx) => {
+      // Deactivate any existing active reviews for this template
+      const [review] = await tx.select()
+        .from(adminPromptReviews)
+        .where(eq(adminPromptReviews.id, reviewId));
+      
+      if (!review) {
+        throw new Error("Review not found");
+      }
+
+      await tx.update(adminPromptReviews)
+        .set({ isActive: false })
+        .where(and(
+          eq(adminPromptReviews.templateId, review.templateId),
+          eq(adminPromptReviews.isActive, true)
+        ));
+
+      // Activate this review
+      await tx.update(adminPromptReviews)
+        .set({ 
+          isActive: true, 
+          reviewStatus: "approved",
+          adminUserId: adminUserId,
+          reviewedAt: new Date() 
+        })
+        .where(eq(adminPromptReviews.id, reviewId));
+    });
+  }
+
+  async getActivePromptForTemplate(templateId: number): Promise<string | null> {
+    const [activeReview] = await db.select()
+      .from(adminPromptReviews)
+      .where(and(
+        eq(adminPromptReviews.templateId, templateId),
+        eq(adminPromptReviews.isActive, true)
+      ));
+
+    return activeReview?.reviewedPrompt || null;
+  }
 }
 
 export const storage = new DatabaseStorage();
