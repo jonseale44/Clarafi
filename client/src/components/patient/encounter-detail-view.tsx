@@ -159,6 +159,7 @@ export function EncounterDetailView({
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
   const [isSavingSOAP, setIsSavingSOAP] = useState(false);
   const [selectedNoteType, setSelectedNoteType] = useState<string>("soap");
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const useRealtimeAPI = true; // Real-time API enabled by default in background
   const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodes, setCptCodes] = useState<any[]>([]);
@@ -3185,12 +3186,15 @@ Please provide medical suggestions based on this complete conversation context.`
                 <NoteTypeSelector
                   noteType={selectedNoteType}
                   onNoteTypeChange={setSelectedNoteType}
+                  selectedTemplate={selectedTemplate}
+                  onTemplateChange={setSelectedTemplate}
                   disabled={isRecording}
+                  showTemplateManager={true}
                 />
                 <div className="text-xs text-gray-500">
                   {isRecording
-                    ? "Recording in progress - note type locked"
-                    : "Select note type before recording"}
+                    ? "Recording in progress - template locked"
+                    : "Select template before recording"}
                 </div>
               </div>
 

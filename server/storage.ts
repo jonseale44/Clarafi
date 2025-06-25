@@ -925,6 +925,178 @@ export class DatabaseStorage implements IStorage {
   async getMedicationsByOrderId(orderId: number): Promise<Medication[]> {
     return await db.select().from(medications).where(eq(medications.sourceOrderId, orderId));
   }
+
+  // User Note Templates Implementation
+  async getUserNoteTemplates(userId: number): Promise<SelectUserNoteTemplate[]> {
+    return await db.select()
+      .from(userNoteTemplates)
+      .where(and(eq(userNoteTemplates.userId, userId), eq(userNoteTemplates.active, true)))
+      .orderBy(userNoteTemplates.templateName);
+  }
+
+  async getUserNoteTemplate(id: number): Promise<SelectUserNoteTemplate | undefined> {
+    const [template] = await db.select()
+      .from(userNoteTemplates)
+      .where(eq(userNoteTemplates.id, id));
+    return template || undefined;
+  }
+
+  async getUserTemplatesByType(userId: number, noteType: string): Promise<SelectUserNoteTemplate[]> {
+    return await db.select()
+      .from(userNoteTemplates)
+      .where(and(
+        eq(userNoteTemplates.userId, userId),
+        eq(userNoteTemplates.baseNoteType, noteType),
+        eq(userNoteTemplates.active, true)
+      ))
+      .orderBy(userNoteTemplates.templateName);
+  }
+
+  async createUserNoteTemplate(template: InsertUserNoteTemplate): Promise<SelectUserNoteTemplate> {
+    const [created] = await db.insert(userNoteTemplates)
+      .values(template)
+      .returning();
+    return created;
+  }
+
+  async updateUserNoteTemplate(id: number, updates: Partial<SelectUserNoteTemplate>): Promise<SelectUserNoteTemplate> {
+    const [updated] = await db.update(userNoteTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userNoteTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUserNoteTemplate(id: number): Promise<void> {
+    await db.update(userNoteTemplates)
+      .set({ active: false, updatedAt: new Date() })
+      .where(eq(userNoteTemplates.id, id));
+  }
+
+  async setDefaultTemplate(userId: number, templateId: number, noteType: string): Promise<void> {
+    // First, unset any existing defaults for this note type
+    await db.update(userNoteTemplates)
+      .set({ isDefault: false, updatedAt: new Date() })
+      .where(and(
+        eq(userNoteTemplates.userId, userId),
+        eq(userNoteTemplates.baseNoteType, noteType)
+      ));
+
+    // Then set the new default
+    await db.update(userNoteTemplates)
+      .set({ isDefault: true, updatedAt: new Date() })
+      .where(eq(userNoteTemplates.id, templateId));
+  }
+
+  async incrementTemplateUsage(templateId: number): Promise<void> {
+    await db.update(userNoteTemplates)
+      .set({ 
+        usageCount: sql`${userNoteTemplates.usageCount} + 1`,
+        lastUsed: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(userNoteTemplates.id, templateId));
+  }
+
+  // Template Sharing Implementation
+  async getTemplateShares(userId: number): Promise<SelectTemplateShare[]> {
+    return await db.select()
+      .from(templateShares)
+      .where(eq(templateShares.sharedBy, userId))
+      .orderBy(templateShares.sharedAt);
+  }
+
+  async getPendingTemplateShares(userId: number): Promise<SelectTemplateShare[]> {
+    return await db.select()
+      .from(templateShares)
+      .where(and(
+        eq(templateShares.sharedWith, userId),
+        eq(templateShares.status, "pending")
+      ))
+      .orderBy(templateShares.sharedAt);
+  }
+
+  async createTemplateShare(share: InsertTemplateShare): Promise<SelectTemplateShare> {
+    const [created] = await db.insert(templateShares)
+      .values(share)
+      .returning();
+    return created;
+  }
+
+  async updateTemplateShareStatus(shareId: number, status: string): Promise<SelectTemplateShare> {
+    const [updated] = await db.update(templateShares)
+      .set({ status, respondedAt: new Date() })
+      .where(eq(templateShares.id, shareId))
+      .returning();
+    return updated;
+  }
+
+  async adoptSharedTemplate(userId: number, shareId: number): Promise<SelectUserNoteTemplate> {
+    // Get the share details
+    const [share] = await db.select()
+      .from(templateShares)
+      .where(eq(templateShares.id, shareId));
+    
+    if (!share || share.sharedWith !== userId) {
+      throw new Error("Share not found or not authorized");
+    }
+
+    // Get the original template
+    const [originalTemplate] = await db.select()
+      .from(userNoteTemplates)
+      .where(eq(userNoteTemplates.id, share.templateId));
+    
+    if (!originalTemplate) {
+      throw new Error("Original template not found");
+    }
+
+    // Create a new template for the user
+    const [adoptedTemplate] = await db.insert(userNoteTemplates)
+      .values({
+        userId: userId,
+        templateName: `${originalTemplate.templateName}-Copy`,
+        baseNoteType: originalTemplate.baseNoteType,
+        displayName: `${originalTemplate.displayName} (Shared)`,
+        isPersonal: true,
+        isDefault: false,
+        createdBy: userId,
+        sharedBy: originalTemplate.createdBy,
+        exampleNote: originalTemplate.exampleNote,
+        generatedPrompt: originalTemplate.generatedPrompt,
+        enableAiLearning: originalTemplate.enableAiLearning,
+        learningConfidence: originalTemplate.learningConfidence,
+        parentTemplateId: originalTemplate.id
+      })
+      .returning();
+
+    // Update share status
+    await this.updateTemplateShareStatus(shareId, "accepted");
+
+    return adoptedTemplate;
+  }
+
+  // User Note Preferences Implementation
+  async getUserNotePreferences(userId: number): Promise<SelectUserNotePreferences | undefined> {
+    const [preferences] = await db.select()
+      .from(userNotePreferences)
+      .where(eq(userNotePreferences.userId, userId));
+    return preferences || undefined;
+  }
+
+  async createUserNotePreferences(preferences: InsertUserNotePreferences): Promise<SelectUserNotePreferences> {
+    const [created] = await db.insert(userNotePreferences)
+      .values(preferences)
+      .returning();
+    return created;
+  }
+
+  async updateUserNotePreferences(userId: number, updates: Partial<SelectUserNotePreferences>): Promise<SelectUserNotePreferences> {
+    const [updated] = await db.update(userNotePreferences)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userNotePreferences.userId, userId))
+      .returning();
+    return updated;
+  }
 }
 
 export const storage = new DatabaseStorage();
