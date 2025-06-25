@@ -1,0 +1,51 @@
+SOAP Note
+Patient Name: John Doe 
+Date: October 10, 2023 
+Time: 10:30 AM 
+Provider: Dr. Seale 
+Medical Record Number: 123456 
+---
+S: Subjective 
+Mr. Doe is a 45-year-old male who presents to the clinic for evaluation of persistent fatigue and intermittent chest discomfort over the past month. He reports that the fatigue worsens with exertion and is accompanied by occasional shortness of breath. The chest discomfort is described as a pressure sensation, occurring primarily after physical activity and resolving with rest. Denies palpitations, syncope, or edema. 
+- Review of systems: Positive for fatigue, negative for fever, cough, or changes in appetite. 
+- Past medical history: Hypertension, well-controlled on lisinopril. 
+- Social history: Non-smoker, occasional alcohol use. Works as an accountant. 
+- Family history: Father had coronary artery disease at age 60.
+---
+O: Objective 
+Vital Signs: 
+- Blood Pressure: 130/85 mmHg 
+- Heart Rate: 78 bpm, regular 
+- Respiratory Rate: 16 breaths/min 
+- Temperature: 98.6°F 
+- Oxygen Saturation: 98% on room air 
+Physical Exam: 
+- General: Alert, in no acute distress 
+- Cardiovascular: 2/6 systolic ejection murmur, no JVD or peripheral edema 
+- Respiratory: Clear to auscultation bilaterally 
+- Abdomen: Soft, non-tender, no organomegaly 
+- Neurological: Alert and oriented, no focal deficits 
+Laboratory Data: 
+- CBC: WNL 
+- CMP: WNL 
+- Lipid Panel: Total cholesterol 210 mg/dL, LDL 130 mg/dL, HDL 50 mg/dL, Triglycerides 150 mg/dL 
+- ECG: Normal sinus rhythm, no acute ischemic changes 
+---
+A: Assessment 
+1. Fatigue and intermittent chest discomfort - likely secondary to possible cardiac etiology, given risk factors and symptoms. Differential includes stable angina, anxiety-related symptoms, or musculoskeletal pain. 
+2. Hypertension - well-controlled on current regimen. 
+3. Dyslipidemia - total cholesterol borderline elevated; LDL elevated, indicating need for lifestyle modification and potential medication review.
+---
+P: Plan 
+1. Cardiology referral: Schedule an echocardiogram and stress test to evaluate for potential ischemic heart disease.
+2. Lifestyle modifications: 
+- Dietary counseling for heart-healthy diet, emphasizing fruits, vegetables, whole grains, and lean proteins.
+- Recommend increasing physical activity to at least 150 minutes of moderate exercise per week, as tolerated.
+3. Medication review: Discuss potential addition of a statin therapy (e.g., atorvastatin 10 mg daily) to manage elevated LDL cholesterol.
+4. Follow-up: Schedule follow-up appointment in 4 weeks to reassess symptoms and review diagnostic results.
+5. Patient education: Educate Mr. Doe on recognizing signs of worsening symptoms and when to seek immediate medical attention. Provide written materials on lifestyle changes and cardiovascular health.
+---
+Signature: 
+Dr. Seale, MD 
+[Provider's Contact Information] 
+[Clinic Name]

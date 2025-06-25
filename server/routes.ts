@@ -65,7 +65,7 @@ export class ClinicalNoteTemplates {
   static getPrompt(noteType: string, medicalContext: string, transcription: string): string {
     switch (noteType) {
       case 'soap':
-        return this.buildSOAPPrompt(medicalContext, transcription);
+        return buildSOAPPrompt(medicalContext, transcription);
       case 'apso':
         return this.buildAPSOPrompt(medicalContext, transcription);
       case 'progress':
@@ -77,7 +77,7 @@ export class ClinicalNoteTemplates {
       case 'procedure':
         return this.buildProcedureNotePrompt(medicalContext, transcription);
       default:
-        return this.buildSOAPPrompt(medicalContext, transcription); // Default fallback
+        return buildSOAPPrompt(medicalContext, transcription); // Default fallback
     }
   }
 
@@ -1918,83 +1918,7 @@ Please provide medical suggestions based on what the ${isProvider ? 'provider' :
     }
   });
 
-  // User SOAP Template endpoints
-  app.get("/api/user/soap-templates", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const userId = req.user.id;
-
-      // For now, return a default template since database isn't fully set up
-      const defaultTemplate = {
-        id: 1,
-        userId,
-        templateName: "Standard Clinical Template",
-        isDefault: true,
-        subjectiveTemplate:
-          "Patient presents with [chief complaint].\n\n[History of present illness including onset, duration, character, precipitating factors, alleviating factors, and associated symptoms]\n\n[Review of systems as relevant]",
-        objectiveTemplate:
-          "Vitals: BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]\n\nPhysical Exam:\nGen: [general appearance]\nHEENT: [head, eyes, ears, nose, throat]\nCV: [cardiovascular]\nLungs: [pulmonary]\nAbd: [abdominal]\nExt: [extremities]\nSkin: [skin]\nNeuro: [neurological if relevant]\n\nLabs: [laboratory results if available]",
-        assessmentTemplate:
-          "1. [Primary diagnosis] - [clinical reasoning]\n2. [Secondary diagnosis] - [clinical reasoning]\n3. [Additional diagnoses as applicable]",
-        planTemplate:
-          "1. [Primary diagnosis management]\n   - [Medications with dosing]\n   - [Procedures/interventions]\n   - [Monitoring]\n\n2. [Secondary diagnosis management]\n   - [Specific treatments]\n\n3. Follow-up:\n   - [Timeline and instructions]\n   - [Patient education]\n   - [Return precautions]",
-        formatPreferences: {
-          useBulletPoints: true,
-          boldDiagnoses: true,
-          separateAssessmentPlan: true,
-          vitalSignsFormat: "inline",
-          physicalExamFormat: "structured",
-          abbreviationStyle: "standard",
-          sectionSpacing: 4,
-        },
-        enableAiLearning: true,
-        learningConfidence: 0.75,
-        active: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      res.json([defaultTemplate]);
-    } catch (error: any) {
-      console.error("Error fetching user templates:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to fetch templates", error: error.message });
-    }
-  });
-
-  app.post("/api/user/soap-templates", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const userId = req.user.id;
-      const templateData = req.body;
-
-      console.log(
-        `[UserTemplates] Saving template for user ${userId}:`,
-        templateData.templateName,
-      );
-
-      // For now, return the template with an ID since database isn't fully set up
-      const savedTemplate = {
-        id: Date.now(),
-        userId,
-        ...templateData,
-        active: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      console.log(`✅ [UserTemplates] Template saved successfully`);
-      res.json(savedTemplate);
-    } catch (error: any) {
-      console.error("Error saving user template:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to save template", error: error.message });
-    }
-  });
+  // Legacy endpoints removed - now using new custom template system
 
   // Enhanced SOAP generation with user preferences
   app.post(
