@@ -1,0 +1,37 @@
+1. Shareable within roles. But for a user to share a template successfully, the other user must "accept
+it" in some form. I don't want a user to get bombarded with a bunch of templates they didn't ask for.
+User-dependent customization is very important to me.
+2. Versioning sounds like a good idea but I'm not sure. I figured production-level EMRs probably do
+employ some type of versioning. Since we need to meet or exceed those standards, we probably
+should, too. What are your thoughts on this? Are there a lot of downsides to this?
+3. No. There should be absolutely no validation. These users are physicians. If they want their
+customized "SOAP note" to only include their name and astrology sign, that's up to them. You bring
+up a good point about the malformed GPT prompts. This highlights the concern I have which is that I
+may not fully understand what a "template" should look like. Physicians are not generally great at
+prompting GPT. I'm certain they could write a good SOAP note or H&P just the way they like it, but
+I'm not sure they could tell GPT how to do that. Can you show me an example of what a template
+might look like from a user's standpoint? Is it a blank slate with instructions? Does it start with an
+example? I don't like the idea of giving them our current SOAP prompt and tell them to "make it their
+own"; that seems to difficult for most physicians. Let's brainstorm this further. This might be a
+fundamental flaw with this approach.
+4. Template management should probably be in a separate interface be quickly/easily accessible from
+the SOAP note. I don't think we have really built out a user's preference section much yet, but this
+would be a good place to start doing so. I like the idea of quick access plus full management but not
+sure what that would really look like.
+5. Defaults should be user-dependent. In other words, users should be able to choose their defaults. If
+they want to default to the regular SOAP note, they should be able to designate that or if they want
+to default to their custom one, also should be able to choose.
+6. I don't really have any restrictions for this. I think more freedom for users is best, in general.
+7. Don't worry about existing encounters at all. They are erasable. Any past data is irrelevant. Don't
+even think about it.
+8. We definitely should design the template structure to accommodate future Al instructions, if it would
+neither interfere with phase 1 nor phase 2. For now, the priority is phase 1. But if this is crucial for
+phase 2 later development, I could be agreeable. What do you think?
+9. I'm not sure about this. Maybe I"m not really sure what you mean by cache compiled templates. I
+don't like having any limits for users though. Nor for GPT length.
+10. If template auditing is a normal EMR standard, then yes. I generally prefer limiting restrictions
+wherever possible, and giving users more leeway and levity, but I don't want to fall out of compliance
+standards. In general (if I had to err to one way), I prefer giving users the ability to make their own
+mistakes. These are physicians, we don't necessarily need to baby sit them.
+Feel free to ask additional questions before beginning work. This is a lot of information and I want to get
+it right.

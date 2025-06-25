@@ -35,37 +35,109 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// User SOAP Templates and Preferences
-export const userSoapTemplates = pgTable("user_soap_templates", {
+// User Clinical Note Templates - Example-Based Customization System
+export const userNoteTemplates = pgTable("user_note_templates", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  templateName: text("template_name").notNull(),
-  isDefault: boolean("is_default").default(false),
   
-  // Template Structure
-  subjectiveTemplate: text("subjective_template").notNull(),
-  objectiveTemplate: text("objective_template").notNull(),
-  assessmentTemplate: text("assessment_template").notNull(),
-  planTemplate: text("plan_template").notNull(),
+  // Template identification
+  templateName: text("template_name").notNull(), // e.g., "SOAP-DrSmith", "H&P-Cardiology"
+  baseNoteType: text("base_note_type").notNull(), // 'soap', 'apso', 'progress', 'hAndP', 'discharge', 'procedure'
+  displayName: text("display_name").notNull(), // User-friendly name for dropdown
   
-  // Formatting Preferences
-  formatPreferences: jsonb("format_preferences").$type<{
-    useBulletPoints: boolean;
-    boldDiagnoses: boolean;
-    separateAssessmentPlan: boolean;
-    vitalSignsFormat: 'inline' | 'list' | 'table';
-    physicalExamFormat: 'paragraph' | 'bullets' | 'structured';
-    abbreviationStyle: 'minimal' | 'standard' | 'extensive';
-    sectionSpacing: number;
-    customSectionOrder?: string[];
-  }>(),
+  // Template ownership and sharing
+  isPersonal: boolean("is_personal").default(true), // true = personal, false = shared
+  isDefault: boolean("is_default").default(false), // User's default for this note type
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  sharedBy: integer("shared_by").references(() => users.id), // If adopted from another user
   
-  // AI Learning Settings
+  // Example-based template (what physician sees and edits)
+  exampleNote: text("example_note").notNull(), // Complete sample note in preferred style
+  
+  // System-generated GPT prompt (hidden from user)
+  generatedPrompt: text("generated_prompt").notNull(),
+  promptVersion: integer("prompt_version").default(1), // For tracking prompt updates
+  
+  // AI Learning settings (Phase 2 preparation)
   enableAiLearning: boolean("enable_ai_learning").default(true),
   learningConfidence: decimal("learning_confidence", { precision: 3, scale: 2 }).default("0.75"),
   lastLearningUpdate: timestamp("last_learning_update"),
   
+  // Usage statistics
+  usageCount: integer("usage_count").default(0),
+  lastUsed: timestamp("last_used"),
+  
+  // Version control
+  version: integer("version").default(1),
+  parentTemplateId: integer("parent_template_id").references(() => userNoteTemplates.id), // For template copies
+  
   active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Template Sharing System
+export const templateShares = pgTable("template_shares", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => userNoteTemplates.id, { onDelete: "cascade" }),
+  sharedBy: integer("shared_by").notNull().references(() => users.id),
+  sharedWith: integer("shared_with").notNull().references(() => users.id),
+  
+  // Sharing status
+  status: text("status").default("pending"), // 'pending', 'accepted', 'declined', 'revoked'
+  sharedAt: timestamp("shared_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+  
+  // Optional message
+  shareMessage: text("share_message"),
+  
+  // Access control
+  canModify: boolean("can_modify").default(false), // Future feature for collaborative templates
+  
+  active: boolean("active").default(true),
+});
+
+// Template Version History (for compliance and rollback)
+export const templateVersions = pgTable("template_versions", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => userNoteTemplates.id, { onDelete: "cascade" }),
+  
+  // Version details
+  versionNumber: integer("version_number").notNull(),
+  changeDescription: text("change_description"),
+  changedBy: integer("changed_by").notNull().references(() => users.id),
+  
+  // Snapshot of template at this version
+  exampleNoteSnapshot: text("example_note_snapshot").notNull(),
+  generatedPromptSnapshot: text("generated_prompt_snapshot").notNull(),
+  
+  // Metadata
+  changeType: text("change_type").default("manual"), // 'manual', 'ai_learning', 'system_update'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Preferences for Note Templates
+export const userNotePreferences = pgTable("user_note_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  
+  // Default templates for each note type
+  defaultSoapTemplate: integer("default_soap_template").references(() => userNoteTemplates.id),
+  defaultApsoTemplate: integer("default_apso_template").references(() => userNoteTemplates.id),
+  defaultProgressTemplate: integer("default_progress_template").references(() => userNoteTemplates.id),
+  defaultHAndPTemplate: integer("default_h_and_p_template").references(() => userNoteTemplates.id),
+  defaultDischargeTemplate: integer("default_discharge_template").references(() => userNoteTemplates.id),
+  defaultProcedureTemplate: integer("default_procedure_template").references(() => userNoteTemplates.id),
+  
+  // Global AI learning preferences
+  globalAiLearning: boolean("global_ai_learning").default(true),
+  learningAggressiveness: text("learning_aggressiveness").default("moderate"), // 'conservative', 'moderate', 'aggressive'
+  
+  // UI preferences
+  rememberLastTemplate: boolean("remember_last_template").default(true),
+  showTemplatePreview: boolean("show_template_preview").default(true),
+  autoSaveChanges: boolean("auto_save_changes").default(true),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
