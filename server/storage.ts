@@ -1246,6 +1246,104 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  // Admin methods for the routes
+  async getPendingPromptReviews() {
+    const reviews = await db
+      .select({
+        id: adminPromptReviews.id,
+        templateId: adminPromptReviews.templateId,
+        originalPrompt: adminPromptReviews.originalPrompt,
+        reviewedPrompt: adminPromptReviews.reviewedPrompt,
+        reviewStatus: adminPromptReviews.reviewStatus,
+        reviewNotes: adminPromptReviews.reviewNotes,
+        isActive: adminPromptReviews.isActive,
+        createdAt: adminPromptReviews.createdAt,
+        reviewedAt: adminPromptReviews.reviewedAt,
+        template: {
+          id: userNoteTemplates.id,
+          templateName: userNoteTemplates.templateName,
+          baseNoteType: userNoteTemplates.baseNoteType,
+          displayName: userNoteTemplates.displayName,
+        },
+        user: {
+          id: users.id,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        },
+      })
+      .from(adminPromptReviews)
+      .leftJoin(userNoteTemplates, eq(adminPromptReviews.templateId, userNoteTemplates.id))
+      .leftJoin(users, eq(userNoteTemplates.userId, users.id))
+      .orderBy(desc(adminPromptReviews.createdAt));
+    
+    return reviews;
+  }
+
+  async getAllUserTemplatesForAdmin() {
+    const templates = await db
+      .select({
+        id: userNoteTemplates.id,
+        templateName: userNoteTemplates.templateName,
+        baseNoteType: userNoteTemplates.baseNoteType,
+        displayName: userNoteTemplates.displayName,
+        userId: userNoteTemplates.userId,
+        hasActivePrompt: sql<boolean>`CASE WHEN active_reviews.id IS NOT NULL THEN true ELSE false END`,
+        activePromptLength: sql<number>`COALESCE(LENGTH(active_reviews.reviewed_prompt), 0)`,
+      })
+      .from(userNoteTemplates)
+      .leftJoin(
+        alias(adminPromptReviews, 'active_reviews'),
+        and(
+          eq(userNoteTemplates.id, sql`active_reviews.template_id`),
+          eq(sql`active_reviews.is_active`, true)
+        )
+      )
+      .orderBy(desc(userNoteTemplates.createdAt));
+    
+    return templates;
+  }
+
+  async updatePromptReview(reviewId: number, data: {
+    reviewedPrompt?: string;
+    reviewNotes?: string;
+    reviewStatus?: "pending" | "reviewed" | "approved";
+    reviewedAt?: Date;
+  }) {
+    const [review] = await db
+      .update(adminPromptReviews)
+      .set(data)
+      .where(eq(adminPromptReviews.id, reviewId))
+      .returning();
+    return review;
+  }
+
+  async activatePromptReview(reviewId: number) {
+    // First, get the review to find the template
+    const [review] = await db
+      .select({ templateId: adminPromptReviews.templateId })
+      .from(adminPromptReviews)
+      .where(eq(adminPromptReviews.id, reviewId));
+    
+    if (review) {
+      // Deactivate existing active prompts for this template
+      await db
+        .update(adminPromptReviews)
+        .set({ isActive: false })
+        .where(eq(adminPromptReviews.templateId, review.templateId));
+      
+      // Activate the selected review
+      await db
+        .update(adminPromptReviews)
+        .set({ 
+          isActive: true, 
+          reviewStatus: "approved",
+          reviewedAt: new Date()
+        })
+        .where(eq(adminPromptReviews.id, reviewId));
+    }
+  }
+
   async getActivePromptForTemplate(templateId: number): Promise<string | null> {
     const [activeReview] = await db.select()
       .from(adminPromptReviews)

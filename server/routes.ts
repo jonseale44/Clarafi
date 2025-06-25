@@ -4382,5 +4382,65 @@ Return only valid JSON without markdown formatting.`;
 
   // Enhanced Real-time service removed - AI suggestions now use direct client WebSocket connection
 
+  // Admin routes for prompt management
+  app.get("/api/admin/prompt-reviews/pending", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const reviews = await storage.getPendingPromptReviews();
+      res.json(reviews);
+    } catch (error: any) {
+      console.error("❌ [Admin] Error fetching pending reviews:", error);
+      res.status(500).json({ message: "Failed to fetch pending reviews" });
+    }
+  });
+
+  app.get("/api/admin/templates", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const templates = await storage.getAllUserTemplatesForAdmin();
+      res.json(templates);
+    } catch (error: any) {
+      console.error("❌ [Admin] Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  app.put("/api/admin/prompt-reviews/:reviewId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const reviewId = parseInt(req.params.reviewId);
+      const { reviewedPrompt, reviewNotes, reviewStatus } = req.body;
+      
+      await storage.updatePromptReview(reviewId, {
+        reviewedPrompt,
+        reviewNotes,
+        reviewStatus,
+        reviewedAt: new Date()
+      });
+      
+      res.json({ message: "Review updated successfully" });
+    } catch (error: any) {
+      console.error("❌ [Admin] Error updating review:", error);
+      res.status(500).json({ message: "Failed to update review" });
+    }
+  });
+
+  app.post("/api/admin/prompt-reviews/:reviewId/activate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const reviewId = parseInt(req.params.reviewId);
+      await storage.activatePromptReview(reviewId);
+      
+      res.json({ message: "Prompt activated successfully" });
+    } catch (error: any) {
+      console.error("❌ [Admin] Error activating prompt:", error);
+      res.status(500).json({ message: "Failed to activate prompt" });
+    }
+  });
+
   return httpServer;
 }
