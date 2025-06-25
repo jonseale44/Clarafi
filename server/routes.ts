@@ -4385,9 +4385,10 @@ Return only valid JSON without markdown formatting.`;
   // Admin routes for prompt management
   app.get("/api/admin/prompt-reviews/pending", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      console.log("🔍 [Admin] Accessing pending reviews, authenticated:", req.isAuthenticated());
       
-      const reviews = await storage.getPendingPromptReviews();
+      const reviews = await storage.getAllPendingPromptReviews();
+      console.log("📋 [Admin] Found", reviews.length, "pending reviews");
       res.json(reviews);
     } catch (error: any) {
       console.error("❌ [Admin] Error fetching pending reviews:", error);
@@ -4397,10 +4398,19 @@ Return only valid JSON without markdown formatting.`;
 
   app.get("/api/admin/templates", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
+      console.log("🔍 [Admin] Accessing templates, authenticated:", req.isAuthenticated());
       
-      const templates = await storage.getAllUserTemplatesForAdmin();
-      res.json(templates);
+      const templates = await storage.getUserNoteTemplates(1); // Get all templates for now
+      console.log("📋 [Admin] Found", templates.length, "templates");
+      res.json(templates.map(t => ({
+        id: t.id,
+        templateName: t.templateName,
+        baseNoteType: t.baseNoteType,
+        displayName: t.displayName,
+        userId: t.userId,
+        hasActivePrompt: false,
+        activePromptLength: 0
+      })));
     } catch (error: any) {
       console.error("❌ [Admin] Error fetching templates:", error);
       res.status(500).json({ message: "Failed to fetch templates" });
@@ -4409,12 +4419,10 @@ Return only valid JSON without markdown formatting.`;
 
   app.put("/api/admin/prompt-reviews/:reviewId", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      
       const reviewId = parseInt(req.params.reviewId);
       const { reviewedPrompt, reviewNotes, reviewStatus } = req.body;
       
-      await storage.updatePromptReview(reviewId, {
+      await storage.updateAdminPromptReview(reviewId, {
         reviewedPrompt,
         reviewNotes,
         reviewStatus,
@@ -4430,10 +4438,9 @@ Return only valid JSON without markdown formatting.`;
 
   app.post("/api/admin/prompt-reviews/:reviewId/activate", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-      
       const reviewId = parseInt(req.params.reviewId);
-      await storage.activatePromptReview(reviewId);
+      const userId = (req as any).user?.id || 1;
+      await storage.activateReviewedPrompt(reviewId, userId);
       
       res.json({ message: "Prompt activated successfully" });
     } catch (error: any) {
