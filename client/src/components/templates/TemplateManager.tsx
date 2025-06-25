@@ -90,6 +90,22 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
     }
   });
 
+  const handleDeleteTemplate = (template: Template) => {
+    if (template.isBaseTemplate) {
+      toast({
+        title: "Cannot Delete",
+        description: "System templates cannot be deleted.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Show confirmation dialog
+    if (window.confirm(`Delete "${template.displayName}"?\n\nThis action cannot be undone.`)) {
+      deleteTemplateMutation.mutate(template.id as number);
+    }
+  };
+
   // Create new template
   const createTemplateMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -333,6 +349,9 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
           <CardTitle className="text-base">
             Templates for {selectedNoteType.toUpperCase()}
           </CardTitle>
+          <p className="text-sm text-gray-600">
+            Custom templates can be edited or deleted. System templates are read-only.
+          </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -352,7 +371,10 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                         </Badge>
                       )}
                       {template.isBaseTemplate && (
-                        <Badge variant="secondary">Base Template</Badge>
+                        <Badge variant="secondary">System Template</Badge>
+                      )}
+                      {!template.isBaseTemplate && (
+                        <Badge variant="outline" className="text-blue-600 border-blue-200">Custom</Badge>
                       )}
                     </div>
                     {template.usageCount && (
@@ -388,18 +410,23 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleEditTemplate(template)}
+                        title="Edit template"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deleteTemplateMutation.mutate(template.id as number)}
-                        disabled={deleteTemplateMutation.isPending || template.isBaseTemplate}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {!template.isBaseTemplate && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteTemplate(template)}
+                          disabled={deleteTemplateMutation.isPending}
+                          title="Delete custom template"
+                          className="ml-1"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          {deleteTemplateMutation.isPending ? "Deleting..." : "Delete"}
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
