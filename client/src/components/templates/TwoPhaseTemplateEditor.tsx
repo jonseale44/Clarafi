@@ -83,29 +83,47 @@ export function TwoPhaseTemplateEditor({
   };
 
   const handleTextSelection = useCallback(() => {
-    if (!textareaRef.current) return;
+    console.log('🔍 [TwoPhaseEditor] Text selection triggered');
+    if (!textareaRef.current) {
+      console.log('❌ [TwoPhaseEditor] No textarea ref available');
+      return;
+    }
     
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value.substring(start, end);
     
+    console.log('🔍 [TwoPhaseEditor] Selection details:', { start, end, text, length: text.length });
+    
     if (text.length > 0) {
+      console.log('✅ [TwoPhaseEditor] Valid text selection found, opening dialog');
       setSelectedText(text);
       setSelectionStart(start);
       setSelectionEnd(end);
       setNewCommentType('selection');
       setShowCommentDialog(true);
+    } else {
+      console.log('❌ [TwoPhaseEditor] No text selected or empty selection');
     }
   }, []);
 
   const handleOverlayClick = useCallback((event: React.MouseEvent) => {
-    if (!textareaRef.current || !phase1Saved) return;
+    console.log('🔍 [TwoPhaseEditor] Overlay click triggered');
+    console.log('🔍 [TwoPhaseEditor] Phase1Saved:', phase1Saved);
+    console.log('🔍 [TwoPhaseEditor] TextareaRef available:', !!textareaRef.current);
+    
+    if (!textareaRef.current || !phase1Saved) {
+      console.log('❌ [TwoPhaseEditor] Click blocked - textarea unavailable or phase 1 not saved');
+      return;
+    }
 
     const textarea = textareaRef.current;
     const rect = textarea.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
+    
+    console.log('🔍 [TwoPhaseEditor] Click position:', { x, y });
     
     // Convert click position to text position (approximation)
     const lineHeight = 20; // Approximate line height
@@ -119,6 +137,9 @@ export function TwoPhaseTemplateEditor({
       position += lines[i].length + 1; // +1 for newline
     }
     position += Math.min(char, lines[line]?.length || 0);
+    
+    console.log('🔍 [TwoPhaseEditor] Calculated position:', position, 'at line:', line, 'char:', char);
+    console.log('✅ [TwoPhaseEditor] Opening comment dialog for position click');
     
     setSelectionStart(position);
     setSelectionEnd(position);
@@ -340,6 +361,7 @@ export function TwoPhaseTemplateEditor({
                   </div>
                   
                   <Textarea
+                    ref={textareaRef}
                     value={noteText}
                     readOnly
                     className="min-h-[300px] font-mono bg-gray-50 relative z-20 cursor-text"
