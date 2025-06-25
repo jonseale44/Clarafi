@@ -43,10 +43,11 @@ export default function setupTemplateRoutes(app: Express) {
       const customTemplates = await storage.getUserTemplatesByType(userId, noteType);
       
       // Add base template option
+      const displayName = noteType === 'hAndP' ? 'H&P' : noteType.toUpperCase();
       const baseTemplateOption = {
         id: `base-${noteType}`,
-        templateName: noteType.toUpperCase(),
-        displayName: `${noteType.toUpperCase()} (Standard)`,
+        templateName: displayName,
+        displayName: `${displayName} (Standard)`,
         baseNoteType: noteType,
         isPersonal: false,
         isDefault: false,

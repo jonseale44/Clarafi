@@ -288,12 +288,12 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                   <Label htmlFor="base-note-type">Base Note Type</Label>
                   <Select value={newTemplateNoteType} onValueChange={setNewTemplateNoteType}>
                     <SelectTrigger>
-                      <SelectValue placeholder={`Default: ${selectedNoteType.toUpperCase()} Note`} />
+                      <SelectValue placeholder={`Default: ${selectedNoteType === 'hAndP' ? 'H&P' : selectedNoteType.toUpperCase()} Note`} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="soap">SOAP Note</SelectItem>
                       <SelectItem value="progress">Progress Note</SelectItem>
-                      <SelectItem value="hAndP">History & Physical</SelectItem>
+                      <SelectItem value="hAndP">H&P (History & Physical)</SelectItem>
                       <SelectItem value="apso">APSO Note</SelectItem>
                       <SelectItem value="discharge">Discharge Summary</SelectItem>
                       <SelectItem value="procedure">Procedure Note</SelectItem>
@@ -347,7 +347,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Templates for {selectedNoteType.toUpperCase()}
+            Templates for {selectedNoteType === 'hAndP' ? 'H&P' : selectedNoteType.toUpperCase()}
           </CardTitle>
           <p className="text-sm text-gray-600">
             Custom templates can be edited or deleted. System templates are read-only.
