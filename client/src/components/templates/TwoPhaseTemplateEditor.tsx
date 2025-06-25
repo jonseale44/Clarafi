@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Edit3, Save, X, Plus } from 'lucide-react';
+import { MessageSquare, Edit3, Save, X, Plus, ChevronDown, ChevronUp, Maximize2, Minimize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Comment {
@@ -68,6 +68,7 @@ export function TwoPhaseTemplateEditor({
   const [editingCommentContent, setEditingCommentContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
+  const [isTextareaExpanded, setIsTextareaExpanded] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -458,29 +459,82 @@ export function TwoPhaseTemplateEditor({
                   </ul>
                 </div>
 
-                <div className="relative">
-                  <div className="min-h-[300px] p-3 bg-gray-50 border rounded-md relative cursor-text">
-                    {/* Hidden textarea for text selection functionality */}
-                    <Textarea
-                      ref={textareaRef}
-                      value={noteText}
-                      readOnly
-                      className="absolute inset-0 opacity-0 pointer-events-auto"
-                      onMouseUp={handleTextSelection}
-                      onClick={handleOverlayClick}
-                    />
-                    
-                    {/* Visible highlighted text */}
-                    <div className="relative z-10 pointer-events-none">
-                      {renderHighlightedText()}
+                {/* Collapsible Note Text Area */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Edit3 className="w-4 h-4" />
+                        Note Text - Click to Add AI Instructions
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsTextareaExpanded(!isTextareaExpanded)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {isTextareaExpanded ? (
+                          <Minimize2 className="w-4 h-4" />
+                        ) : (
+                          <Maximize2 className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
-                    
-                    {/* Blue dot indicators for insertion comments */}
-                    <div className="absolute inset-0 pointer-events-none">
-                      {getCommentIndicators()}
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="relative">
+                      <div 
+                        className={`${
+                          isTextareaExpanded ? 'min-h-[400px] max-h-[600px]' : 'min-h-[150px] max-h-[200px]'
+                        } overflow-y-auto p-3 bg-gray-50 border rounded-md relative cursor-text transition-all duration-200`}
+                      >
+                        {/* Hidden textarea for text selection functionality */}
+                        <Textarea
+                          ref={textareaRef}
+                          value={noteText}
+                          readOnly
+                          className="absolute inset-0 opacity-0 pointer-events-auto resize-none"
+                          onMouseUp={handleTextSelection}
+                          onClick={handleOverlayClick}
+                        />
+                        
+                        {/* Visible highlighted text */}
+                        <div className="relative z-10 pointer-events-none">
+                          {renderHighlightedText()}
+                        </div>
+                        
+                        {/* Blue dot indicators for insertion comments */}
+                        <div className="absolute inset-0 pointer-events-none">
+                          {getCommentIndicators()}
+                        </div>
+                      </div>
+                      
+                      {/* Instructions for users */}
+                      <div className="mt-2 text-xs text-gray-500 flex items-center gap-4">
+                        <span>• Select text to add AI instruction for that specific content</span>
+                        <span>• Click anywhere to add general instruction at that position</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsTextareaExpanded(!isTextareaExpanded)}
+                          className="ml-auto text-xs"
+                        >
+                          {isTextareaExpanded ? (
+                            <>
+                              <ChevronUp className="w-3 h-3 mr-1" />
+                              Collapse
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-3 h-3 mr-1" />
+                              Expand
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* Comments List */}
                 {comments.length > 0 && (
