@@ -60,6 +60,9 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
     queryKey: ['/api/templates/by-type', selectedNoteType],
   });
 
+  console.log('🔍 [TemplateManager] Selected note type:', selectedNoteType);
+  console.log('🔍 [TemplateManager] Fetched templates:', noteTypeTemplates);
+
   // Get example note for new template creation
   const generateExampleMutation = useMutation({
     mutationFn: async (noteType: string) => {
