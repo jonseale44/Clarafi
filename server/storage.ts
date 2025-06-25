@@ -4,14 +4,15 @@ import {
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
   signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
-  userNoteTemplates, templateShares, templateVersions, userNotePreferences,
+  userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
   type Medication, type InsertMedication, type PatientOrderPreferences, type InsertPatientOrderPreferences,
   type SelectUserNoteTemplate, type InsertUserNoteTemplate, 
   type SelectTemplateShare, type InsertTemplateShare,
-  type SelectUserNotePreferences, type InsertUserNotePreferences
+  type SelectUserNotePreferences, type InsertUserNotePreferences,
+  type AdminPromptReview, type InsertAdminPromptReview
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
