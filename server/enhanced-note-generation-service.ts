@@ -16,6 +16,7 @@ export class EnhancedNoteGenerationService {
   // CONSOLIDATED NOTE TYPE PROMPTS - All note types now use full patient context
 
   private static buildSOAPPrompt(
+    //////// SOAP ////////////
     medicalContext: string,
     transcription: string,
   ): string {
@@ -146,10 +147,12 @@ IMPORTANT INSTRUCTIONS:
 - Use professional medical language throughout.
 - Ensure all clinical reasoning is evidence-based and logical.
 - Include pertinent negatives where clinically relevant.
-- Format the note for easy reading and clinical handoff.`;
+- Format the note for easy reading and clinical handoff.
+- Instructions for Assessment/Plan: Always add 2 empty line spaces between conditions.`;
   }
 
   private static buildAPSOPrompt(
+    //////// APSO ////////////
     medicalContext: string,
     transcription: string,
   ): string {
@@ -163,35 +166,129 @@ ${transcription}
 
 Generate a complete, professional APSO note with the following sections:
 
-**ASSESSMENT:**
-Primary and secondary diagnoses with clinical reasoning
+**ASSESSMENT/PLAN:** <!--all capitalized headers in bold-->
 
-**PLAN:**
-Detailed management plan including medications, procedures, follow-up
+[Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
+[Plan item 1]
+[Plan item 2]
+[Plan item 3 (if applicable)]
+Example:
+
+Chest Tightness, Suspected Airway Constriction (R06.4):
+
+Trial low-dose inhaler therapy to address potential airway constriction.
+Monitor response to inhaler and reassess in 2 weeks.
+Patient education on environmental triggers (e.g., dust exposure).
+<!--Single empty line space between conditions-->
+Fatigue, Work-Related Stress (Z73.0):
+
+Counsel patient on stress management and lifestyle modifications.
+Encourage gradual increase in physical activity.
+<!--Single empty line space between conditions-->
+Family History of Cardiovascular Disease (Z82.49):
+
+Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **SUBJECTIVE:**
-Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.  
 
-**OBJECTIVE:**
-Vitals: List all vital signs in a single line, formatted as:
+**OBJECTIVE:** Organize this section as follows:
+
+Vitals: <!--List all vital signs in a single line, formatted as:-->
+
 BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
 
-Physical Exam:
-- Use the same physical exam standards as SOAP notes
-- Bold positive findings, keep pertinent negatives in roman typeface
-- Use objective physician-level findings only
+<!--If the physical exam is completely normal, use the following full, pre-defined template verbatim:-->
 
-**ORDERS:**
-Follow the same structured format as SOAP notes for medications, labs, imaging, referrals, patient education, and follow-up.
+Physical Exam:
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
+
+<!-- Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded 
+
+<!--Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.-->
+
+<!--Use concise, structured phrases. Avoid full sentences and narrative explanations.-->
+
+Example 1: 
+Transcription: "2 cm actinic keratosis on right forearm."
+
+ce� Good outcome (Objective, No Diagnosis):
+Skin: **Right forearm with a 2 cm rough, scaly, erythematous plaque with adherent keratotic scale**, without ulceration, bleeding, or induration.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis, no bolding):
+Skin: Actinic keratosis right forearm.
+
+Example 2:
+Transcription: "Pneumonia right lung."
+
+✅ Good outcome (Objective, No Diagnosis):
+Lungs: Normal work of breathing. **Diminished breath sounds over the right lung base with scattered rhonchi.** No wheezes, rales.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis, bolding entire organ system):
+**Lungs: Sounds of pneumonia right lung.**
+
+Example 3: 
+Transcription: "Cellulitis left lower leg."
+
+✅ Good outcome (Objective, No Diagnosis):
+Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bullae, ulceration, or fluctuance.
+
+🚫 Bad outcome (Incorrect Use of Diagnosis):
+Skin: Cellulitis on the left lower leg.
+<!--insert FOUR blank lines)-->
+**ORDERS:** 
+
+For all orders, follow this highly-structured format:
+
+Medications:
+
+Each medication order must follow this exact template:
+
+Medication: [name, include specific formulation and strength]
+
+Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
+
+Dispense: [quantity, clearly written in terms of formulation (e.g., "1 inhaler (200 metered doses)" or "30 tablets")]
+
+Refills: [number of refills allowed]
+
+Example:
+
+Medication: Albuterol sulfate HFA Inhaler (90 mcg/actuation)
+
+Sig: 2 puffs by mouth every 4-6 hours as needed for shortness of breath or wheezing. May use 2 puffs 15-30 minutes before exercise if needed. Do not exceed 12 puffs in a 24-hour period.
+
+Dispense: 1 inhaler (200 metered doses)
+
+Refills: 1
+
+Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+
+Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+
+Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+
+Patient Education: Summarize key educational topics discussed with the patient.
+
+Follow-up: Provide clear next steps and timeline for follow-up appointments or assessments.
 
 IMPORTANT INSTRUCTIONS:
-- Assessment and Plan come FIRST in APSO format
-- Maintain same clinical rigor and formatting standards as SOAP notes
-- Keep the note concise yet comprehensive
-- Use professional medical language throughout`;
+- Keep the note concise yet comprehensive.
+- Use professional medical language throughout.
+- Ensure all clinical reasoning is evidence-based and logical.
+- Include pertinent negatives where clinically relevant.
+- Format the note for easy reading and clinical handoff.
+- Instructions for Assessment/Plan: Always add an empty line space between conditions. `;
   }
 
   private static buildProgressPrompt(
+    //////// Progress Note ////////////
     medicalContext: string,
     transcription: string,
   ): string {
@@ -239,6 +336,7 @@ IMPORTANT INSTRUCTIONS:
   }
 
   private static buildHistoryAndPhysicalPrompt(
+    //////// H&P ////////////
     medicalContext: string,
     transcription: string,
   ): string {
@@ -304,6 +402,7 @@ IMPORTANT INSTRUCTIONS:
   }
 
   private static buildDischargeSummaryPrompt(
+    //////// DC Summary ////////////
     medicalContext: string,
     transcription: string,
   ): string {
@@ -361,6 +460,7 @@ IMPORTANT INSTRUCTIONS:
   }
 
   private static buildProcedureNotePrompt(
+    //////// Procedure Note ////////////
     medicalContext: string,
     transcription: string,
   ): string {
