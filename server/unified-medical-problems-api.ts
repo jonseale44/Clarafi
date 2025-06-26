@@ -8,8 +8,65 @@ import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.
 import { db } from "./db.js";
 import { medicalProblems } from "../shared/schema.js";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { storage } from "./storage.js";
 
 const router = Router();
+
+/**
+ * GET /api/medical-problems/:patientId
+ * Get medical problems for a patient with ranking information
+ */
+router.get("/medical-problems/:patientId", async (req, res) => {
+  try {
+    console.log(`🔍 [MedicalProblemsAPI] GET request for patient ${req.params.patientId}`);
+    
+    if (!req.isAuthenticated()) {
+      console.log(`❌ [MedicalProblemsAPI] Authentication failed`);
+      return res.sendStatus(401);
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    console.log(`🔍 [MedicalProblemsAPI] Fetching problems for patient ID: ${patientId}`);
+    
+    if (isNaN(patientId)) {
+      console.log(`❌ [MedicalProblemsAPI] Invalid patient ID: ${req.params.patientId}`);
+      return res.status(400).json({ error: "Invalid patient ID" });
+    }
+
+    // Get medical problems using storage service
+    const problems = await storage.getPatientMedicalProblems(patientId);
+    console.log(`🔍 [MedicalProblemsAPI] Found ${problems.length} problems for patient ${patientId}`);
+
+    // Format for frontend display with ranking information
+    const formattedProblems = problems.map(problem => ({
+      id: problem.id,
+      problemTitle: problem.problemTitle,
+      currentIcd10Code: problem.currentIcd10Code,
+      problemStatus: problem.problemStatus,
+      firstDiagnosedDate: problem.firstDiagnosedDate,
+      visitHistory: problem.visitHistory || [],
+      changeLog: problem.changeLog || [],
+      lastUpdated: problem.updatedAt,
+      // Include ranking information
+      rankScore: problem.rankScore ? parseFloat(problem.rankScore.toString()) : undefined,
+      lastRankedEncounterId: problem.lastRankedEncounterId,
+      rankingReason: problem.rankingReason
+    }));
+
+    console.log(`✅ [MedicalProblemsAPI] Returning ${formattedProblems.length} formatted problems`);
+    console.log(`🔍 [MedicalProblemsAPI] Problems with ranking:`, formattedProblems.map(p => ({ 
+      id: p.id, 
+      title: p.problemTitle, 
+      rank: p.rankScore,
+      status: p.problemStatus
+    })));
+
+    res.json(formattedProblems);
+  } catch (error) {
+    console.error(`❌ [MedicalProblemsAPI] Error fetching medical problems for patient ${req.params.patientId}:`, error);
+    res.status(500).json({ error: "Failed to fetch medical problems" });
+  }
+});
 
 /**
  * POST /api/medical-problems/process-unified
