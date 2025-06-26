@@ -85,11 +85,61 @@ async function generateClinicalNote(
     .from(vitals)
     .where(
       and(
-  ): string {
-    return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
+        eq(vitals.patientId, patientId),
+        eq(vitals.encounterId, parseInt(encounterId)),
+      ),
+    )
+    .orderBy(desc(vitals.recordedAt));
 
-PATIENT CONTEXT:
-${medicalContext}
+  if (!patientChart.demographics) {
+    throw new Error(`Patient ${patientId} chart data not found`);
+  }
+
+  const age = Math.floor(
+    (Date.now() - new Date(patientChart.demographics.dateOfBirth).getTime()) /
+      (365.25 * 24 * 60 * 60 * 1000),
+  );
+
+  // Build medical context (reuse existing logic)
+  const currentMedicalProblems =
+    patientChart.medicalProblems?.length > 0
+      ? patientChart.medicalProblems
+          .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
+          .join("\n")
+      : "None documented";
+
+  const currentMedications =
+    patientChart.currentMedications?.length > 0
+      ? patientChart.currentMedications
+          .map((m: any) => `- ${m.medicationName} ${m.dosage || ""}`)
+          .join("\n")
+      : "None documented";
+
+  const knownAllergies =
+    patientChart.allergies?.length > 0
+      ? patientChart.allergies
+          .map((a: any) => `- ${a.allergen}: ${a.reaction}`)
+          .join("\n")
+      : "NKDA";
+
+  const medicalContext = `
+PATIENT DEMOGRAPHICS:
+Name: ${patientChart.demographics.firstName} ${patientChart.demographics.lastName}
+Age: ${age} years
+Gender: ${patientChart.demographics.gender}
+
+ACTIVE MEDICAL PROBLEMS:
+${currentMedicalProblems}
+
+CURRENT MEDICATIONS:
+${currentMedications}
+
+KNOWN ALLERGIES:
+${knownAllergies}
+
+RECENT VITALS:
+${formatVitalsForSOAP(encounterVitalsList)}
+  `.trim();
 
 ENCOUNTER TRANSCRIPTION:
 ${transcription}
@@ -562,30 +612,15 @@ RECENT VITALS:
 ${formatVitalsForSOAP(encounterVitalsList)}
   `.trim();
 
-  // Get appropriate prompt for note type
-  const prompt = ClinicalNoteTemplates.getPrompt(
+  // Use EnhancedNoteGenerationService for all note types with full patient context
+  const { EnhancedNoteGenerationService } = await import("./enhanced-note-generation-service.js");
+  
+  const generatedNote = await EnhancedNoteGenerationService.generateNote(
     noteType,
-    medicalContext,
-    transcription,
+    patientId,
+    encounterId,
+    transcription
   );
-
-  // Generate note using GPT-4.1-mini
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    messages: [{ role: "user", content: prompt }],
-    temperature: 0.7,
-    max_tokens: 4000,
-  });
-
-  const generatedNote = completion.choices[0]?.message?.content;
-  if (!generatedNote) {
-    throw new Error(`No ${noteType} note generated from OpenAI`);
-  }
-
-  // Save note to encounter (same as before)
-  await storage.updateEncounter(parseInt(encounterId), {
-    note: generatedNote,
-  });
 
   // TEMPORARILY DISABLED - Physical Exam Learning Service (high GPT-4.1 usage)
   // This service was causing high GPT-4.1 token consumption during encounter recording sessions
