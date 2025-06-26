@@ -14,7 +14,8 @@ const openai = new OpenAI({
 });
 
 export class EnhancedNoteGenerationService {
-  // Copy the correct SOAP prompt from routes.ts lines 85-210
+  // CONSOLIDATED NOTE TYPE PROMPTS - All note types now use full patient context
+  
   private static buildSOAPPrompt(
     medicalContext: string,
     transcription: string,
@@ -30,7 +31,7 @@ ${transcription}
 Generate a complete, professional SOAP note with the following sections:
 
 **SUBJECTIVE:**
-Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. You're a very enthusiatic assistant so always end each sentence or phrase with three exclamation marks (!!!). 
 
 **OBJECTIVE:** Organize this section as follows:
 
@@ -145,6 +146,268 @@ IMPORTANT INSTRUCTIONS:
 - Include pertinent negatives where clinically relevant.
 - Format the note for easy reading and clinical handoff.`;
   }
+
+  private static buildAPSOPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    return `You are an expert physician creating a comprehensive APSO note (Assessment, Plan, Subjective, Objective) with integrated orders from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional APSO note with the following sections:
+
+**ASSESSMENT:**
+Primary and secondary diagnoses with clinical reasoning
+
+**PLAN:**
+Detailed management plan including medications, procedures, follow-up
+
+**SUBJECTIVE:**
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.
+
+**OBJECTIVE:**
+Vitals: List all vital signs in a single line, formatted as:
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+Physical Exam:
+- Use the same physical exam standards as SOAP notes
+- Bold positive findings, keep pertinent negatives in roman typeface
+- Use objective physician-level findings only
+
+**ORDERS:**
+Follow the same structured format as SOAP notes for medications, labs, imaging, referrals, patient education, and follow-up.
+
+IMPORTANT INSTRUCTIONS:
+- Assessment and Plan come FIRST in APSO format
+- Maintain same clinical rigor and formatting standards as SOAP notes
+- Keep the note concise yet comprehensive
+- Use professional medical language throughout`;
+  }
+
+  private static buildProgressPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    return `You are an expert physician creating a hospital progress note from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional progress note with the following sections:
+
+**SUBJECTIVE:**
+- Patient's current complaints and symptoms
+- Response to current treatments
+- Any changes since last assessment
+- Pain levels, functional status
+
+**OBJECTIVE:**
+Vitals: BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+Physical Exam:
+- Focus on relevant systems based on current problems
+- Include pertinent findings related to active issues
+- Bold abnormal findings
+
+Labs/Studies: Include relevant recent results
+
+**ASSESSMENT:**
+- List active problems with current status
+- Clinical impression and progress
+
+**PLAN:**
+- Continuing treatments
+- New interventions
+- Monitoring plans
+- Disposition plans
+
+IMPORTANT INSTRUCTIONS:
+- Focus on hospital-appropriate content
+- Emphasize current status and progress
+- Include disposition planning
+- Maintain professional medical language`;
+  }
+
+  private static buildHistoryAndPhysicalPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    return `You are an expert physician creating a comprehensive History and Physical examination note from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional H&P with the following sections:
+
+**CHIEF COMPLAINT:**
+Brief statement of primary reason for visit
+
+**HISTORY OF PRESENT ILLNESS:**
+- Detailed chronological account of current illness
+- Include all relevant symptoms, timeline, quality, severity
+- Aggravating and alleviating factors
+- Associated symptoms
+
+**PAST MEDICAL HISTORY:**
+- Significant medical conditions
+- Previous hospitalizations
+- Surgical history
+
+**MEDICATIONS:**
+Current medications with dosages
+
+**ALLERGIES:**
+Known drug allergies and reactions
+
+**FAMILY HISTORY:**
+Relevant family medical history
+
+**SOCIAL HISTORY:**
+- Tobacco, alcohol, drug use
+- Occupation, living situation
+- Relevant social factors
+
+**REVIEW OF SYSTEMS:**
+Comprehensive review by systems
+
+**PHYSICAL EXAMINATION:**
+Vitals: BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+
+Comprehensive physical exam by systems:
+- General appearance
+- HEENT, Cardiovascular, Pulmonary, Abdominal, Neurological, Extremities, Skin
+
+**ASSESSMENT:**
+Clinical impression with differential diagnosis
+
+**PLAN:**
+Diagnostic and therapeutic plan
+
+IMPORTANT INSTRUCTIONS:
+- Comprehensive documentation appropriate for initial evaluation
+- Include complete review of systems
+- Detailed physical examination
+- Professional medical language throughout`;
+  }
+
+  private static buildDischargeSummaryPrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    return `You are an expert physician creating a hospital discharge summary from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional discharge summary with the following sections:
+
+**ADMISSION DATE:** [Date]
+**DISCHARGE DATE:** [Date]
+
+**CHIEF COMPLAINT:**
+Primary reason for admission
+
+**HISTORY OF PRESENT ILLNESS:**
+Brief summary of illness leading to admission
+
+**HOSPITAL COURSE:**
+- Summary of hospital stay
+- Treatments provided
+- Response to therapy
+- Complications if any
+- Procedures performed
+
+**DISCHARGE DIAGNOSES:**
+1. Primary diagnosis
+2. Secondary diagnoses
+
+**DISCHARGE MEDICATIONS:**
+List all medications with instructions
+
+**FOLLOW-UP:**
+- Scheduled appointments
+- Instructions for continuing care
+
+**DISCHARGE INSTRUCTIONS:**
+- Activity restrictions
+- Diet modifications
+- When to seek medical care
+- Medication compliance
+
+**DISCHARGE CONDITION:**
+Patient's condition at discharge
+
+IMPORTANT INSTRUCTIONS:
+- Focus on hospital course and outcomes
+- Include clear follow-up instructions
+- Emphasize medication reconciliation
+- Professional discharge planning language`;
+  }
+
+  private static buildProcedureNotePrompt(
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    return `You are an expert physician creating a procedure note from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional procedure note with the following sections:
+
+**PROCEDURE:** Name of procedure performed
+
+**INDICATION:** Medical reason for procedure
+
+**ANESTHESIA:** Type of anesthesia used
+
+**POSITION:** Patient positioning
+
+**PREPARATION:** Sterile preparation details
+
+**PROCEDURE DESCRIPTION:**
+- Detailed step-by-step account of procedure
+- Instruments used
+- Findings during procedure
+- Technique employed
+
+**COMPLICATIONS:** Any complications encountered (or "None")
+
+**ESTIMATED BLOOD LOSS:** Amount if applicable
+
+**SPECIMENS:** Any specimens obtained
+
+**POST-PROCEDURE CONDITION:** Patient's condition after procedure
+
+**FOLLOW-UP PLAN:**
+- Post-procedure instructions
+- Follow-up appointments
+- Monitoring requirements
+
+IMPORTANT INSTRUCTIONS:
+- Detailed procedural documentation
+- Include all safety measures taken
+- Document informed consent obtained
+- Professional procedural language`;
+  }
+
   /**
    * Generates a clinical note using either base templates or custom user templates
    */
