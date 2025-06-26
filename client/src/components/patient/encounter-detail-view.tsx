@@ -212,6 +212,12 @@ export function EncounterDetailView({
   // Track automatic orders and billing generation after stopping recording
   const [isAutoGeneratingOrders, setIsAutoGeneratingOrders] = useState(false);
   const [isAutoGeneratingBilling, setIsAutoGeneratingBilling] = useState(false);
+  
+  // Enhanced progress tracking for orders and billing animations
+  const [ordersProgress, setOrdersProgress] = useState(0);
+  const [billingProgress, setBillingProgress] = useState(0);
+  const ordersProgressInterval = useRef<NodeJS.Timeout | null>(null);
+  const billingProgressInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Medical problems processing state tracking
   const [lastProcessedSOAPContent, setLastProcessedSOAPContent] =
@@ -390,6 +396,77 @@ export function EncounterDetailView({
       autoSaveSOAPNote(content);
     }, 3000);
   };
+
+  // Animation helper functions for orders and billing progress
+  const startOrdersAnimation = () => {
+    console.log("🎬 [OrdersAnimation] Starting orders animation");
+    setIsAutoGeneratingOrders(true);
+    setOrdersProgress(0);
+    
+    const startTime = Date.now();
+    const estimatedDuration = 4000; // Orders typically take 4 seconds
+    
+    ordersProgressInterval.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
+      setOrdersProgress(progress);
+    }, 50);
+  };
+
+  const completeOrdersAnimation = () => {
+    console.log("✅ [OrdersAnimation] Completing orders animation");
+    if (ordersProgressInterval.current) {
+      clearInterval(ordersProgressInterval.current);
+      ordersProgressInterval.current = null;
+    }
+    
+    setOrdersProgress(100);
+    setTimeout(() => {
+      setIsAutoGeneratingOrders(false);
+      setOrdersProgress(0);
+    }, 500);
+  };
+
+  const startBillingAnimation = () => {
+    console.log("🎬 [BillingAnimation] Starting billing animation");
+    setIsAutoGeneratingBilling(true);
+    setBillingProgress(0);
+    
+    const startTime = Date.now();
+    const estimatedDuration = 3500; // Billing typically takes 3.5 seconds
+    
+    billingProgressInterval.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
+      setBillingProgress(progress);
+    }, 50);
+  };
+
+  const completeBillingAnimation = () => {
+    console.log("✅ [BillingAnimation] Completing billing animation");
+    if (billingProgressInterval.current) {
+      clearInterval(billingProgressInterval.current);
+      billingProgressInterval.current = null;
+    }
+    
+    setBillingProgress(100);
+    setTimeout(() => {
+      setIsAutoGeneratingBilling(false);
+      setBillingProgress(0);
+    }, 500);
+  };
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (ordersProgressInterval.current) {
+        clearInterval(ordersProgressInterval.current);
+      }
+      if (billingProgressInterval.current) {
+        clearInterval(billingProgressInterval.current);
+      }
+    };
+  }, []);
 
   // Handlers for Real-time SOAP Integration
   const handleSOAPNoteUpdate = (note: string) => {
@@ -2237,6 +2314,10 @@ Please provide medical suggestions based on this complete conversation context.`
           soapNote: soapNote.substring(0, 200) + "...",
         });
 
+        // Start animations for orders and billing processing
+        startOrdersAnimation();
+        startBillingAnimation();
+
         const [medicationsResponse, ordersResponse, cptResponse] =
           await Promise.all([
             fetch(`/api/encounters/${encounterId}/process-medications`, {
@@ -2342,6 +2423,11 @@ Please provide medical suggestions based on this complete conversation context.`
           await queryClient.invalidateQueries({
             queryKey: [`/api/patients/${patient.id}/draft-orders`],
           });
+          // Complete orders animation
+          completeOrdersAnimation();
+        } else {
+          // Complete orders animation even if failed
+          completeOrdersAnimation();
         }
 
         if (cptResponse.ok) {
@@ -2354,6 +2440,8 @@ Please provide medical suggestions based on this complete conversation context.`
             ],
           });
           console.log("✅ [StopRecording] CPT cache invalidated");
+          // Complete billing animation
+          completeBillingAnimation();
         } else {
           console.error(
             "❌ [StopRecording] CPT extraction failed with status:",
@@ -2361,6 +2449,8 @@ Please provide medical suggestions based on this complete conversation context.`
           );
           const errorText = await cptResponse.text();
           console.error("❌ [StopRecording] CPT error response:", errorText);
+          // Complete billing animation even if failed
+          completeBillingAnimation();
         }
 
         toast({
