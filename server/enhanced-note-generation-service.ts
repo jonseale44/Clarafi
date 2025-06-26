@@ -14,7 +14,7 @@ const openai = new OpenAI({
 
 export class EnhancedNoteGenerationService {
   // CONSOLIDATED NOTE TYPE PROMPTS - All note types now use full patient context
-  
+
   private static buildSOAPPrompt(
     medicalContext: string,
     transcription: string,
@@ -30,7 +30,7 @@ ${transcription}
 Generate a complete, professional SOAP note with the following sections:
 
 **SUBJECTIVE:**
-Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity. You're a very enthusiatic assistant so always end each sentence or phrase with three exclamation marks (!!!). 
+Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.  
 
 **OBJECTIVE:** Organize this section as follows:
 
@@ -49,11 +49,11 @@ Abd: Normoactive bowel sounds. Soft, non-tender.
 Ext: No clubbing, cyanosis, or edema.
 Skin: No rashes or lesions.
 
-Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded
+<!-- Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded 
 
-Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.
+<!--Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.-->
 
-Use concise, structured phrases. Avoid full sentences and narrative explanations.
+Use concise, structured phrases. Avoid full sentences and narrative explanations.-->
 
 Example 1: 
 Transcription: "2 cm actinic keratosis on right forearm."
@@ -95,14 +95,17 @@ Chest Tightness, Suspected Airway Constriction (R06.4):
 Trial low-dose inhaler therapy to address potential airway constriction.
 Monitor response to inhaler and reassess in 2 weeks.
 Patient education on environmental triggers (e.g., dust exposure).
+<!--Single empty line space between conditions-->
 Fatigue, Work-Related Stress (Z73.0):
 
 Counsel patient on stress management and lifestyle modifications.
 Encourage gradual increase in physical activity.
+<!--Single empty line space between conditions-->
 Family History of Cardiovascular Disease (Z82.49):
 
 Document family history and assess cardiovascular risk factors as part of ongoing care.
-(preceded by FOUR blank lines)**ORDERS:** 
+<!--insert FOUR blank lines)-->
+**ORDERS:** 
 
 For all orders, follow this highly-structured format:
 
@@ -423,13 +426,18 @@ IMPORTANT INSTRUCTIONS:
       case "progress":
         return this.buildProgressPrompt(medicalContext, transcription);
       case "hAndP":
-        return this.buildHistoryAndPhysicalPrompt(medicalContext, transcription);
+        return this.buildHistoryAndPhysicalPrompt(
+          medicalContext,
+          transcription,
+        );
       case "discharge":
         return this.buildDischargeSummaryPrompt(medicalContext, transcription);
       case "procedure":
         return this.buildProcedureNotePrompt(medicalContext, transcription);
       default:
-        console.warn(`⚠️ [EnhancedNotes] Unknown note type: ${noteType}, defaulting to SOAP`);
+        console.warn(
+          `⚠️ [EnhancedNotes] Unknown note type: ${noteType}, defaulting to SOAP`,
+        );
         return this.buildSOAPPrompt(medicalContext, transcription);
     }
   }
@@ -524,7 +532,11 @@ IMPORTANT INSTRUCTIONS:
             `⚠️ [EnhancedNotes] Custom template ${customTemplateId} not found or unauthorized, falling back to base template`,
           );
           // Use enhanced service prompts with full patient context for ALL note types
-          prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
+          prompt = this.getPromptForNoteType(
+            noteType,
+            medicalContext,
+            transcription,
+          );
         }
       } else if (userId) {
         console.log(
@@ -588,7 +600,11 @@ IMPORTANT INSTRUCTIONS:
               `📋 [EnhancedNotes] No default template found, using base template`,
             );
             // Use enhanced service prompts with full patient context for ALL note types
-            prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
+            prompt = this.getPromptForNoteType(
+              noteType,
+              medicalContext,
+              transcription,
+            );
           }
         } catch (templateError: any) {
           console.error(`❌ [EnhancedNotes] Error checking user templates:`, {
@@ -599,13 +615,21 @@ IMPORTANT INSTRUCTIONS:
           });
           // Fallback to base template if template system fails
           // Use enhanced service prompts with full patient context for ALL note types
-          prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
+          prompt = this.getPromptForNoteType(
+            noteType,
+            medicalContext,
+            transcription,
+          );
         }
       } else {
         // No user context, use base template
         console.log(`📋 [EnhancedNotes] No user context, using base template`);
         // Use enhanced service prompts with full patient context for ALL note types
-        prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
+        prompt = this.getPromptForNoteType(
+          noteType,
+          medicalContext,
+          transcription,
+        );
       }
 
       console.log(
