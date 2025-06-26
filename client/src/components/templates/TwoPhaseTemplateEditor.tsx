@@ -468,10 +468,35 @@ export function TwoPhaseTemplateEditor({
           // Calculate which line this indicator is on
           const visualLineNumber = Math.floor((indicator.top - paddingTop) / lineHeight);
           
-          // Calculate character position within that line
+          // Calculate character position within that line using more precise measurements
           const paddingLeft = 12;
-          const charWidth = 8; // Approximate monospace character width
-          const charPositionInLine = Math.max(0, Math.floor((indicator.left - paddingLeft) / charWidth));
+          
+          // Use canvas to get accurate character width for this specific font
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          let charPositionInLine = 0;
+          
+          if (context && visualLineNumber < lines.length) {
+            const computedStyle = getComputedStyle(document.body);
+            context.font = `${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+            
+            const lineText = lines[visualLineNumber] || '';
+            let currentWidth = 0;
+            
+            // Measure character by character to find the position closest to the click
+            for (let i = 0; i < lineText.length; i++) {
+              const charWidth = context.measureText(lineText[i]).width;
+              if (currentWidth + paddingLeft > indicator.left - charWidth / 2) {
+                break;
+              }
+              currentWidth += charWidth;
+              charPositionInLine++;
+            }
+          } else {
+            // Fallback to approximate calculation
+            const charWidth = 8;
+            charPositionInLine = Math.max(0, Math.floor((indicator.left - paddingLeft) / charWidth));
+          }
           
           // Convert to absolute text position
           let textPosition = 0;
