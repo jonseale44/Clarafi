@@ -3644,7 +3644,7 @@ Please provide medical suggestions based on this complete conversation context.`
             </div>
 
             <div className="w-full min-h-[500px] pb-8 font-sans text-base leading-relaxed">
-              <div className="w-full h-full min-h-[500px] border rounded-lg bg-white">
+              <div className="relative w-full h-full min-h-[500px] border rounded-lg bg-white">
                 {editor && soapNote && soapNote.length > 0 ? (
                   <EditorContent
                     editor={editor}
@@ -3661,6 +3661,49 @@ Please provide medical suggestions based on this complete conversation context.`
                     <div className="text-sm">No SOAP note generated yet</div>
                     <div className="text-xs mt-1">
                       Complete a recording to automatically generate a SOAP note
+                    </div>
+                  </div>
+                )}
+                
+                {/* Vulnerable Window Protection Overlay */}
+                {editorVulnerableWindow && (
+                  <div className="absolute inset-0 bg-blue-50/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
+                    <div className="bg-white/95 border border-blue-200 rounded-lg p-6 shadow-lg max-w-md mx-4">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                        <h3 className="text-lg font-medium text-blue-900">
+                          Processing AI Updates
+                        </h3>
+                      </div>
+                      
+                      <div className="space-y-3 text-sm text-blue-800">
+                        <div className="flex items-center justify-between">
+                          <span>Pipeline Status:</span>
+                          <span className="font-medium">Active</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span>Edit Protection:</span>
+                          <span className="font-medium text-green-600">Enabled</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span>User Lock Status:</span>
+                          <span className="font-medium">{userEditingLock ? "Active" : "Inactive"}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span>Content Length:</span>
+                          <span className="font-medium">{soapNote?.length || 0} chars</span>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-blue-200">
+                          <p className="text-xs text-blue-600 leading-relaxed">
+                            Editor temporarily locked to prevent loss of your work from delayed API responses. 
+                            The editor will automatically unlock when the vulnerable window passes.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
