@@ -47,49 +47,19 @@ interface EnhancedMedicalProblemsListProps {
 
 // Utility function for rank-based visual styling
 const getRankStyles = (rankScore?: number) => {
-  if (!rankScore) return { 
-    bgColor: "bg-gray-50 dark:bg-gray-800", 
-    borderColor: "border-gray-200 dark:border-gray-700", 
-    textColor: "text-gray-600 dark:text-gray-400",
-    priority: "Unranked"
-  };
+  if (!rankScore) return { bgColor: "bg-gray-50", borderColor: "border-gray-200", textColor: "text-gray-600" };
   
   // 1.00 = Highest Priority (Red), 99.99 = Lowest Priority (Blue)
   if (rankScore <= 10) {
-    return { 
-      bgColor: "bg-red-50 dark:bg-red-900/20", 
-      borderColor: "border-red-300 dark:border-red-800", 
-      textColor: "text-red-700 dark:text-red-300", 
-      priority: "Critical" 
-    };
+    return { bgColor: "bg-red-50", borderColor: "border-red-300", textColor: "text-red-700", priority: "Critical" };
   } else if (rankScore <= 20) {
-    return { 
-      bgColor: "bg-orange-50 dark:bg-orange-900/20", 
-      borderColor: "border-orange-300 dark:border-orange-800", 
-      textColor: "text-orange-700 dark:text-orange-300", 
-      priority: "High" 
-    };
+    return { bgColor: "bg-orange-50", borderColor: "border-orange-300", textColor: "text-orange-700", priority: "High" };
   } else if (rankScore <= 40) {
-    return { 
-      bgColor: "bg-yellow-50 dark:bg-yellow-900/20", 
-      borderColor: "border-yellow-300 dark:border-yellow-800", 
-      textColor: "text-yellow-700 dark:text-yellow-300", 
-      priority: "Medium" 
-    };
+    return { bgColor: "bg-yellow-50", borderColor: "border-yellow-300", textColor: "text-yellow-700", priority: "Medium" };
   } else if (rankScore <= 60) {
-    return { 
-      bgColor: "bg-green-50 dark:bg-green-900/20", 
-      borderColor: "border-green-300 dark:border-green-800", 
-      textColor: "text-green-700 dark:text-green-300", 
-      priority: "Low" 
-    };
+    return { bgColor: "bg-green-50", borderColor: "border-green-300", textColor: "text-green-700", priority: "Low" };
   } else {
-    return { 
-      bgColor: "bg-blue-50 dark:bg-blue-900/20", 
-      borderColor: "border-blue-300 dark:border-blue-800", 
-      textColor: "text-blue-700 dark:text-blue-300", 
-      priority: "Routine" 
-    };
+    return { bgColor: "bg-blue-50", borderColor: "border-blue-300", textColor: "text-blue-700", priority: "Routine" };
   }
 };
 
@@ -106,30 +76,29 @@ export function EnhancedMedicalProblemsList({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Load medical problems data
+  // Fetch enhanced medical problems
   const { data: medicalProblems = [], isLoading, error } = useQuery<MedicalProblem[]>({
-    queryKey: ['/api/medical-problems', patientId],
+    queryKey: [`/api/patients/${patientId}/medical-problems-enhanced`],
     enabled: !!patientId,
   });
 
+  // Fetch encounters for dropdown
   const { data: encounters = [] } = useQuery<any[]>({
-    queryKey: ['/api/encounters', patientId],
+    queryKey: [`/api/patients/${patientId}/encounters`],
     enabled: !!patientId,
   });
 
+  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (problemId: number) => {
       const response = await fetch(`/api/medical-problems/${problemId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: "DELETE",
       });
-      if (!response.ok) throw new Error('Failed to delete problem');
+      if (!response.ok) throw new Error("Failed to delete medical problem");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems-enhanced`] });
       toast({ title: "Success", description: "Medical problem deleted successfully" });
     },
     onError: (error: Error) => {
@@ -143,25 +112,24 @@ export function EnhancedMedicalProblemsList({
   };
 
   const handleDelete = (problemId: number) => {
-    if (confirm('Are you sure you want to delete this medical problem?')) {
+    if (confirm("Are you sure you want to delete this medical problem?")) {
       deleteMutation.mutate(problemId);
     }
   };
 
+  // Resolve mutation
   const resolveMutation = useMutation({
     mutationFn: async (problemId: number) => {
       const response = await fetch(`/api/medical-problems/${problemId}/resolve`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: "PUT",
+        credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to resolve problem');
+      if (!response.ok) throw new Error("Failed to resolve medical problem");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
-      toast({ title: "Success", description: "Medical problem marked as resolved" });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems-enhanced`] });
+      toast({ title: "Success", description: "Medical problem resolved successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -169,7 +137,7 @@ export function EnhancedMedicalProblemsList({
   });
 
   const handleResolve = (problemId: number) => {
-    if (confirm('Mark this medical problem as resolved?')) {
+    if (confirm("Are you sure you want to mark this medical problem as resolved?")) {
       resolveMutation.mutate(problemId);
     }
   };
@@ -189,10 +157,13 @@ export function EnhancedMedicalProblemsList({
     setExpandedProblems(newExpanded);
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not specified';
+    // Parse date as local date to avoid timezone conversion issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day); // month is 0-indexed
+    return localDate.toLocaleDateString('en-US', {
+      month: 'numeric',
       day: 'numeric',
       year: '2-digit'
     });
@@ -216,7 +187,7 @@ export function EnhancedMedicalProblemsList({
       case 'active': return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
       case 'chronic': return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800';
       case 'resolved': return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-700';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800';
     }
   };
 
@@ -269,10 +240,7 @@ export function EnhancedMedicalProblemsList({
     const rankStyles = getRankStyles(problem.rankScore);
     
     return (
-      <Card 
-        key={problem.id} 
-        className={`relative border-l-4 ${rankStyles.borderColor} ${rankStyles.bgColor} hover:shadow-md transition-all duration-200`}
-      >
+      <Card key={problem.id} className={`relative border-l-4 ${rankStyles.borderColor} ${rankStyles.bgColor} hover:shadow-md transition-all duration-200`}>
         <Collapsible
           open={expandedProblems.has(problem.id)}
           onOpenChange={() => toggleProblemExpansion(problem.id)}
@@ -308,94 +276,100 @@ export function EnhancedMedicalProblemsList({
                     
                     {/* Ranking reason display */}
                     {problem.rankingReason && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 italic">
+                      <div className="text-xs text-gray-600 mt-1 italic">
                         {problem.rankingReason}
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-3 mt-2">
-                      {problem.firstDiagnosedDate && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Since {formatDate(problem.firstDiagnosedDate)}
-                        </span>
-                      )}
-                      {problem.visitHistory?.length > 0 && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {problem.visitHistory.length} visit{problem.visitHistory.length === 1 ? '' : 's'}
-                        </span>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-3 mt-2">
+                    {problem.firstDiagnosedDate && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Since {formatDate(problem.firstDiagnosedDate)}
+                      </span>
+                    )}
+                    {problem.visitHistory?.length > 0 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {problem.visitHistory.length} visit{problem.visitHistory.length === 1 ? '' : 's'}
+                      </span>
+                    )}
                   </div>
                 </div>
-                
-                {!isReadOnly && (
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    {problem.problemStatus !== 'resolved' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleResolve(problem.id)}
-                        className="h-8 w-8 p-0 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
-                        title="Mark as resolved"
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(problem)}
-                      className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      title="Edit problem"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(problem.id)}
-                      className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-                      title="Delete problem"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
               </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              <div className="space-y-4">
-                {problem.visitHistory && problem.visitHistory.length > 0 ? (
-                  <div className="space-y-3">
-                    {problem.visitHistory.map((visit, index) => (
-                      <div key={index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
-                          {getSourceBadge(visit.source)}
-                          {visit.providerName && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">by {visit.providerName}</span>
-                          )}
-                          {visit.encounterId && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Encounter #{visit.encounterId}</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
+              
+              {!isReadOnly && (
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                  {problem.problemStatus !== 'resolved' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResolve(problem.id)}
+                      className="h-8 w-8 p-0 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
+                      title="Mark as resolved"
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(problem)}
+                    className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    title="Edit problem"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(problem.id)}
+                    className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                    title="Delete problem"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Calendar className="h-4 w-4" />
+                Visit History
+              </h4>
+              
+              {problem.visitHistory && problem.visitHistory.length > 0 ? (
+                <div className="space-y-3">
+                  {problem.visitHistory
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((visit, index) => (
+                    <div key={index} className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
+                        {getSourceBadge(visit.source)}
+                        {visit.providerName && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">by {visit.providerName}</span>
+                        )}
+                        {visit.encounterId && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Encounter #{visit.encounterId}</span>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">No visit history recorded</p>
-                )}
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </Card>
-    );
-  };
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">No visit history recorded</p>
+              )}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
 
   const resolvedCount = resolvedProblems.length;
   const currentProblemsCount = activeProblems.length + chronicProblems.length;
@@ -429,18 +403,16 @@ export function EnhancedMedicalProblemsList({
         </div>
       )}
 
-      {/* Empty state */}
+      {/* No current problems */}
       {currentProblemsCount === 0 && (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No active medical problems recorded</p>
-          {!isReadOnly && (
-            <Button variant="outline" size="sm" onClick={handleAddNew} className="mt-3">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Medical Problem
-            </Button>
-          )}
-        </div>
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No active medical problems</p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
@@ -452,44 +424,51 @@ export function EnhancedMedicalProblemsList({
           {resolvedProblems.map(renderProblemCard)}
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No resolved medical problems</p>
-        </div>
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No resolved problems</p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      {!isReadOnly && (
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h3>
-          <Button onClick={handleAddNew} size="sm" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Problem
-          </Button>
+    <div className="space-y-4">
+      {mode !== "encounter" && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h2>
+          {!isReadOnly && (
+            <Button onClick={handleAddNew} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Problem
+            </Button>
+          )}
         </div>
       )}
 
-      {(currentProblemsCount > 0 || resolvedCount > 0) && (
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'current' | 'resolved')}>
+      {medicalProblems.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No medical problems recorded</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'current' | 'resolved')} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="current" className="relative">
-              Current Problems
-              {currentProblemsCount > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {currentProblemsCount}
-                </Badge>
-              )}
+            <TabsTrigger value="current" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Current ({currentProblemsCount})
             </TabsTrigger>
-            <TabsTrigger value="resolved" className="relative">
-              Resolved
-              {resolvedCount > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {resolvedCount}
-                </Badge>
-              )}
+            <TabsTrigger value="resolved" className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Resolved ({resolvedCount})
             </TabsTrigger>
           </TabsList>
           
