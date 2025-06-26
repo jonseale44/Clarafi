@@ -237,7 +237,10 @@ export function TwoPhaseTemplateEditor({
         adjustedX,
         adjustedY,
         lineHeight,
-        fontSize
+        fontSize,
+        clickedLine: lines[lineNumber],
+        textAtPosition: noteText.substring(position - 10, position + 10),
+        charAtPosition: noteText[position] || 'END'
       });
       
       setSelectionStart(position);
@@ -436,14 +439,29 @@ export function TwoPhaseTemplateEditor({
     
     for (const comment of sortedComments) {
       if (comment.type === 'insertion') {
-        // Insert AI instruction at the exact position
+        // Insert AI instruction at the exact position with smart spacing
         const beforeText = processedText.slice(0, comment.position);
         const afterText = processedText.slice(comment.position);
-        processedText = `${beforeText}{{${comment.content}}} ${afterText}`;
+        
+        console.log('🔧 [GenerateFinalTemplate] Inserting comment:', {
+          commentContent: comment.content,
+          position: comment.position,
+          beforeText: beforeText.slice(-20),
+          afterText: afterText.slice(0, 20),
+          charAtPosition: processedText[comment.position] || 'END'
+        });
+        
+        // Check if we need to add proper spacing around the instruction
+        const needsSpaceBefore = beforeText.length > 0 && !beforeText.endsWith(' ') && !beforeText.endsWith('\n');
+        const needsSpaceAfter = afterText.length > 0 && !afterText.startsWith(' ') && !afterText.startsWith('\n');
+        
+        const spaceBefore = needsSpaceBefore ? ' ' : '';
+        const spaceAfter = needsSpaceAfter ? ' ' : '';
+        
+        processedText = `${beforeText}${spaceBefore}{{${comment.content}}}${spaceAfter}${afterText}`;
       } else if (comment.type === 'selection' && comment.selectedText) {
         // Find the selected text and replace it with the commented version
         // Use the position to be more precise about where to replace
-        const beforePosition = processedText.slice(0, comment.position);
         const selectionStart = comment.position;
         const selectionEnd = comment.position + comment.selectedText.length;
         
@@ -463,6 +481,7 @@ export function TwoPhaseTemplateEditor({
     }
     
     console.log('📝 Generated final template with', comments.length, 'AI instructions');
+    console.log('📝 Final processed text:', processedText.substring(0, 200) + '...');
     return processedText;
   };
 
