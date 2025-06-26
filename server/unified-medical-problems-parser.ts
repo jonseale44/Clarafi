@@ -46,6 +46,10 @@ export interface UnifiedProblemChange {
   transfer_visit_history_from?: number; // problem_id to transfer history from
   extracted_date?: string; // ISO date string extracted from attachment content
   consolidation_reasoning?: string; // GPT's reasoning for consolidation decisions
+  
+  // GPT-powered intelligent ranking
+  rank_score?: number; // 1.00 (highest priority) to 99.99 (lowest priority)
+  ranking_reason?: string; // GPT's reasoning for rank assignment
 }
 
 export interface UnifiedProcessingResult {
@@ -312,33 +316,35 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "source_type": "encounter" | "attachment",
       "transfer_visit_history_from": number | null,
       "extracted_date": "2011-10-07" | null,
-      "consolidation_reasoning": "Why this was matched/not matched with existing problems"
+      "consolidation_reasoning": "Why this was matched/not matched with existing problems",
+      "rank_score": 25.75,
+      "ranking_reason": "Clinical reasoning for rank assignment based on severity, complexity, and current relevance"
     }
   ]
 }
 
-ENHANCED EXAMPLES:
+ENHANCED EXAMPLES WITH RANKING:
 
 1. SOAP has "Type 2 DM with neuropathy" + existing "Type 2 Diabetes" (E11.9):
-   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40"}
+   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "rank_score": 15.25, "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring"}
 
 2. Attachment with "HTN" + existing "Hypertension" (I10):
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context"}
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "rank_score": 42.50, "ranking_reason": "Stable chronic hypertension with routine management requirements"}
 
 3. Attachment with "High Blood Pressure" + existing "Essential Hypertension":
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence"}
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence", "rank_score": 44.80, "ranking_reason": "Well-documented stable hypertension with good historical context"}
 
 4. Attachment with completely new condition "Atrial Fibrillation" + no existing cardiac rhythm problems:
-   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib"}
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib", "rank_score": 18.75, "ranking_reason": "Significant cardiac arrhythmia requiring anticoagulation management and stroke prevention"}
 
 5. SOAP note states "Shortness of breath on exertion resolved per patient report" + existing "Shortness of breath on exertion" problem:
-   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem"}
+   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem", "rank_score": 95.00, "ranking_reason": "Resolved condition with no ongoing clinical significance"}
 
 6. SOAP note mentions "Acute bronchitis resolved, patient feeling better" + existing "Acute bronchitis" problem:
-   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved"}
+   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved", "rank_score": 92.50, "ranking_reason": "Acute respiratory infection fully resolved with no sequelae"}
 
 7. SOAP note documents "UTI treated successfully with antibiotics, symptoms resolved" + existing "Urinary tract infection":
-   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented"}
+   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented", "rank_score": 90.25, "ranking_reason": "Successfully treated acute infection with complete symptom resolution"}
 
 VISIT HISTORY FORMAT REQUIREMENTS:
 Visit history entries should be concise, clinical, and data-rich. Use medical shorthand and include specific values. Examples:
@@ -384,7 +390,52 @@ Look for explicit resolution language in SOAP notes:
 - For acute conditions: automatically consider resolving if patient reports complete symptom resolution
 - For chronic conditions: only resolve if explicitly documented as permanently resolved
 
-INSTRUCTION: Systematically evaluate medical conditions against existing problems using consolidation rules. When SOAP notes document problem resolution, use RESOLVE action. Create new problems when conditions don't reasonably match existing ones. Document reasoning in consolidation_reasoning field.
+GPT-POWERED INTELLIGENT RANKING SYSTEM:
+For EVERY medical problem (new, updated, or existing), you must provide intelligent ranking based on clinical priority:
+
+RANKING CRITERIA (1.00 = Highest Priority, 99.99 = Lowest Priority):
+1. CLINICAL SEVERITY & IMMEDIACY:
+   - Life-threatening conditions: 1.00-10.00 (MI, stroke, acute renal failure, sepsis)
+   - Urgent conditions requiring monitoring: 10.01-20.00 (uncontrolled diabetes, severe HTN, heart failure)
+   - Chronic conditions requiring active management: 20.01-40.00 (controlled diabetes, stable CAD, CKD stages 3-4)
+   - Stable chronic conditions: 40.01-60.00 (well-controlled HTN, stable thyroid disease)
+   - Historical/resolved conditions: 60.01-80.00 (past surgeries, resolved pneumonia)
+   - Minor/routine conditions: 80.01-99.99 (seasonal allergies, minor skin conditions)
+
+2. TREATMENT COMPLEXITY & FOLLOW-UP NEEDS:
+   - Multiple medications with interactions: Lower rank (higher priority)
+   - Requires specialist management: Lower rank (higher priority)
+   - Simple medication management: Higher rank (lower priority)
+   - Self-limiting conditions: Higher rank (lower priority)
+
+3. PATIENT-SPECIFIC FREQUENCY & IMPACT:
+   - Recently mentioned/updated conditions: Lower rank (higher priority)
+   - Conditions mentioned across multiple encounters: Lower rank (higher priority)
+   - Long-term stable conditions: Higher rank (lower priority)
+   - Conditions not mentioned recently: Higher rank (lower priority)
+
+4. CURRENT CLINICAL RELEVANCE:
+   - Conditions actively being treated today: 1.00-20.00
+   - Conditions requiring medication adjustments: 10.00-30.00
+   - Conditions for routine monitoring: 30.00-50.00
+   - Stable baseline conditions: 50.00-70.00
+   - Historical reference only: 70.00-99.99
+
+RANKING EXAMPLES:
+- "Acute myocardial infarction" → rank_score: 1.50, ranking_reason: "Life-threatening acute cardiac event requiring immediate intensive management"
+- "Type 2 diabetes mellitus with neuropathy" → rank_score: 15.25, ranking_reason: "Complex diabetes with complications requiring active medication management and monitoring"
+- "Essential hypertension, well controlled" → rank_score: 45.80, ranking_reason: "Stable chronic condition with good control on current regimen"
+- "History of appendectomy" → rank_score: 85.00, ranking_reason: "Historical surgical condition with no ongoing clinical significance"
+
+RANKING INSTRUCTIONS:
+- NEVER assign identical rank scores - use decimal precision to prevent ties
+- Consider the ENTIRE patient context when ranking
+- Rank relative to OTHER conditions this patient has
+- For NEW problems: Rank based on clinical severity and immediacy
+- For EXISTING problems: Consider recent changes, stability, and current relevance
+- Use ranking_reason to explain your clinical reasoning for the assigned rank
+
+INSTRUCTION: Systematically evaluate medical conditions against existing problems using consolidation rules. When SOAP notes document problem resolution, use RESOLVE action. Create new problems when conditions don't reasonably match existing ones. For ALL problems (new/updated/existing), provide intelligent ranking with clinical reasoning. Document consolidation reasoning and ranking reasoning in respective fields.
 `;
 
     console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1`);
@@ -588,6 +639,10 @@ INSTRUCTION: Systematically evaluate medical conditions against existing problem
           processing_time_ms: 0,
         },
       ],
+      // GPT-powered intelligent ranking
+      rankScore: change.rank_score?.toString() || "99.99",
+      lastRankedEncounterId: encounterId,
+      rankingReason: change.ranking_reason || "Automatically ranked by GPT analysis during evolution",
     });
 
     // Mark old problem as resolved/evolved
@@ -666,6 +721,10 @@ INSTRUCTION: Systematically evaluate medical conditions against existing problem
           processing_time_ms: 0,
         },
       ],
+      // GPT-powered intelligent ranking
+      rankScore: change.rank_score?.toString() || "99.99",
+      lastRankedEncounterId: encounterId,
+      rankingReason: change.ranking_reason || "Automatically ranked by GPT analysis",
     });
 
     console.log(
@@ -759,7 +818,7 @@ INSTRUCTION: Systematically evaluate medical conditions against existing problem
       updatedVisitHistory = [...visitHistory, newVisitEntry];
     }
 
-    // Update the problem
+    // Update the problem with ranking
     await db
       .update(medicalProblems)
       .set({
@@ -768,6 +827,12 @@ INSTRUCTION: Systematically evaluate medical conditions against existing problem
         lastUpdatedEncounterId: encounterId,
         visitHistory: updatedVisitHistory,
         updatedAt: new Date(),
+        // Update ranking if provided
+        ...(change.rank_score && {
+          rankScore: change.rank_score.toString(),
+          lastRankedEncounterId: encounterId,
+          rankingReason: change.ranking_reason || "Updated ranking based on current clinical context",
+        }),
       })
       .where(eq(medicalProblems.id, change.problem_id));
 
