@@ -18,14 +18,22 @@ const router = Router();
  */
 router.get("/medical-problems/:patientId", async (req, res) => {
   try {
+    console.log(`🚀🚀🚀 [MedicalProblemsAPI] UNIFIED ROUTE HIT - ENDPOINT CALLED FOR PATIENT ${req.params.patientId} 🚀🚀🚀`);
+    console.log(`🔍 [MedicalProblemsAPI] Full request URL: ${req.originalUrl}`);
+    console.log(`🔍 [MedicalProblemsAPI] Request method: ${req.method}`);
     console.log(`🔍 [MedicalProblemsAPI] GET request for patient ${req.params.patientId}`);
     
     if (!req.isAuthenticated()) {
       console.log(`❌ [MedicalProblemsAPI] Authentication failed`);
-      return res.sendStatus(401);
+      console.log(`❌ [MedicalProblemsAPI] User object:`, req.user || 'NO USER OBJECT');
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
+    console.log(`✅ [MedicalProblemsAPI] User authenticated:`, req.user ? `User ID ${req.user.id}` : 'AUTH SUCCESS BUT NO USER OBJECT');
+
     const patientId = parseInt(req.params.patientId);
+    console.log(`🔍 [MedicalProblemsAPI] Raw patientId param: "${req.params.patientId}"`);
+    console.log(`🔍 [MedicalProblemsAPI] Parsed patientId: ${patientId}`);
     console.log(`🔍 [MedicalProblemsAPI] Fetching problems for patient ID: ${patientId}`);
     
     if (isNaN(patientId)) {
@@ -34,8 +42,9 @@ router.get("/medical-problems/:patientId", async (req, res) => {
     }
 
     // Get medical problems using storage service
+    console.log(`🔍 [MedicalProblemsAPI] About to call storage.getPatientMedicalProblems(${patientId})`);
     const problems = await storage.getPatientMedicalProblems(patientId);
-    console.log(`🔍 [MedicalProblemsAPI] Found ${problems.length} problems for patient ${patientId}`);
+    console.log(`🔍 [MedicalProblemsAPI] storage.getPatientMedicalProblems() returned ${problems.length} problems for patient ${patientId}`);
 
     // Format for frontend display with ranking information
     const formattedProblems = problems.map(problem => ({
