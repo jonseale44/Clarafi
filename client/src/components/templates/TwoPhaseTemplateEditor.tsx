@@ -231,16 +231,22 @@ export function TwoPhaseTemplateEditor({
         position += Math.min(charPosition, lineText.length);
       }
       
-      console.log('🔍 [TwoPhaseEditor] Accurate position calculation:', {
+      console.log('🔍 [TwoPhaseEditor] Click position calculation:', {
         lineNumber,
-        position,
+        calculatedPosition: position,
         adjustedX,
         adjustedY,
-        lineHeight,
-        fontSize,
-        clickedLine: lines[lineNumber],
-        textAtPosition: noteText.substring(position - 10, position + 10),
-        charAtPosition: noteText[position] || 'END'
+        clickedLine: lines[lineNumber] || 'NO_LINE',
+        totalLines: lines.length,
+        noteTextLength: noteText.length,
+        textAtPosition: noteText.substring(Math.max(0, position - 10), position + 10),
+        charAtPosition: noteText[position] || 'END',
+        firstFewLines: lines.slice(0, 3),
+        positionDebugCheck: {
+          char_at_0: noteText[0],
+          char_at_10: noteText[10],
+          char_at_50: noteText[50]
+        }
       });
       
       setSelectionStart(position);
@@ -279,10 +285,19 @@ export function TwoPhaseTemplateEditor({
       type: newCommentType
     };
     
+    console.log('💬 [AddComment] Creating comment with details:', {
+      content: newComment.content,
+      storedPosition: newComment.position,
+      selectionStart,
+      selectionEnd,
+      textAtPosition: noteText.substring(newComment.position - 5, newComment.position + 5),
+      charAtPosition: noteText[newComment.position] || 'END',
+      noteTextLength: noteText.length
+    });
+    
     setComments(prev => [...prev, newComment]);
     setShowCommentDialog(false);
     setNewCommentContent('');
-    console.log(`💬 Added ${newCommentType} comment:`, newComment.content);
   };
 
   const removeComment = (commentId: string) => {
@@ -431,79 +446,96 @@ export function TwoPhaseTemplateEditor({
   };
 
   const generateFinalTemplate = () => {
-    // Process the base note text and inject {{}} comments
-    // Sort comments by position in descending order to avoid position shifts
-    const sortedComments = [...comments].sort((a, b) => b.position - a.position);
+    // COMPLETELY REWRITTEN APPROACH: Use visual indicator positions as the source of truth
+    // The visual indicators are positioned correctly, so we'll reverse-engineer positions from them
+    
+    console.log('🔧 [GenerateFinalTemplate] Starting with', comments.length, 'comments');
+    console.log('🔧 [GenerateFinalTemplate] Indicator positions:', indicatorPositions);
+    
+    // Create a mapping of visual positions to text positions
+    const commentInsertions = [];
+    
+    for (const comment of comments) {
+      if (comment.type === 'insertion') {
+        // Find the corresponding visual indicator
+        const indicator = indicatorPositions.find(pos => pos.id === comment.id);
+        if (indicator) {
+          // Reverse calculate the text position from the visual position
+          const lines = noteText.split('\n');
+          const lineHeight = 24; // Match the CSS line height
+          const paddingTop = 12;
+          
+          // Calculate which line this indicator is on
+          const visualLineNumber = Math.floor((indicator.top - paddingTop) / lineHeight);
+          
+          // Calculate character position within that line
+          const paddingLeft = 12;
+          const charWidth = 8; // Approximate monospace character width
+          const charPositionInLine = Math.max(0, Math.floor((indicator.left - paddingLeft) / charWidth));
+          
+          // Convert to absolute text position
+          let textPosition = 0;
+          for (let i = 0; i < visualLineNumber && i < lines.length; i++) {
+            textPosition += lines[i].length + 1; // +1 for newline
+          }
+          if (visualLineNumber < lines.length) {
+            textPosition += Math.min(charPositionInLine, lines[visualLineNumber].length);
+          }
+          
+          commentInsertions.push({
+            position: textPosition,
+            content: comment.content,
+            id: comment.id
+          });
+          
+          console.log('🔧 [GenerateFinalTemplate] Recalculated position for', comment.content, ':', {
+            visualLine: visualLineNumber,
+            charInLine: charPositionInLine,
+            finalPosition: textPosition,
+            indicatorTop: indicator.top,
+            indicatorLeft: indicator.left
+          });
+        }
+      } else if (comment.type === 'selection' && comment.selectedText) {
+        // Handle selection-based comments
+        commentInsertions.push({
+          position: comment.position,
+          content: comment.content,
+          selectedText: comment.selectedText,
+          type: 'selection'
+        });
+      }
+    }
+    
+    // Sort by position in descending order to avoid position shifts during insertion
+    commentInsertions.sort((a, b) => b.position - a.position);
     
     let processedText = noteText;
     
-    for (const comment of sortedComments) {
-      if (comment.type === 'insertion') {
-        // Smart positioning: avoid breaking words and handle spacing properly
-        let insertPosition = comment.position;
+    for (const insertion of commentInsertions) {
+      if (insertion.type === 'selection') {
+        // Handle selection-based insertions
+        const commentedText = `${insertion.selectedText} {{${insertion.content}}}`;
+        processedText = processedText.replace(insertion.selectedText, commentedText);
+      } else {
+        // Handle position-based insertions
+        const beforeText = processedText.slice(0, insertion.position);
+        const afterText = processedText.slice(insertion.position);
         
-        console.log('🔧 [GenerateFinalTemplate] Inserting comment:', {
-          commentContent: comment.content,
-          storedPosition: comment.position,
-          actualPosition: insertPosition,
-          textLength: processedText.length,
-          beforeText: processedText.slice(Math.max(0, comment.position - 20), comment.position),
-          afterText: processedText.slice(comment.position, comment.position + 20),
-          charAtStoredPosition: processedText[comment.position] || 'END'
-        });
-        
-        // If we're in the middle of a word, move to the end of the word
-        if (insertPosition > 0 && insertPosition < processedText.length) {
-          const charBefore = processedText[insertPosition - 1];
-          const charAfter = processedText[insertPosition];
-          
-          // If we're between letters (no space/newline on either side), move to word boundary
-          if (charBefore && charAfter && 
-              charBefore.match(/[a-zA-Z]/) && charAfter.match(/[a-zA-Z]/)) {
-            // Find the end of the current word
-            while (insertPosition < processedText.length && 
-                   processedText[insertPosition].match(/[a-zA-Z]/)) {
-              insertPosition++;
-            }
-            console.log('📝 [GenerateFinalTemplate] Moved to word boundary:', insertPosition);
-          }
-        }
-        
-        // Now slice with the final position
-        const beforeText = processedText.slice(0, insertPosition);
-        const afterText = processedText.slice(insertPosition);
-        
-        // Check if we need to add proper spacing around the instruction
+        // Add appropriate spacing
         const needsSpaceBefore = beforeText.length > 0 && !beforeText.endsWith(' ') && !beforeText.endsWith('\n');
         const needsSpaceAfter = afterText.length > 0 && !afterText.startsWith(' ') && !afterText.startsWith('\n');
         
         const spaceBefore = needsSpaceBefore ? ' ' : '';
         const spaceAfter = needsSpaceAfter ? ' ' : '';
         
-        processedText = `${beforeText}${spaceBefore}{{${comment.content}}}${spaceAfter}${afterText}`;
-      } else if (comment.type === 'selection' && comment.selectedText) {
-        // Find the selected text and replace it with the commented version
-        // Use the position to be more precise about where to replace
-        const selectionStart = comment.position;
-        const selectionEnd = comment.position + comment.selectedText.length;
+        processedText = `${beforeText}${spaceBefore}{{${insertion.content}}}${spaceAfter}${afterText}`;
         
-        // Verify the selected text matches what's at that position
-        const actualSelectedText = processedText.slice(selectionStart, selectionEnd);
-        if (actualSelectedText === comment.selectedText) {
-          const beforeText = processedText.slice(0, selectionStart);
-          const afterText = processedText.slice(selectionEnd);
-          processedText = `${beforeText}${comment.selectedText} {{${comment.content}}}${afterText}`;
-        } else {
-          // Fallback to string replacement if position doesn't match
-          console.warn('Position mismatch for selected text, using fallback replacement');
-          const commentedText = `${comment.selectedText} {{${comment.content}}}`;
-          processedText = processedText.replace(comment.selectedText, commentedText);
-        }
+        console.log('🔧 [GenerateFinalTemplate] Inserted', insertion.content, 'at position', insertion.position);
       }
     }
     
-    console.log('📝 Generated final template with', comments.length, 'AI instructions');
-    console.log('📝 Final processed text:', processedText.substring(0, 200) + '...');
+    console.log('📝 Generated final template with', commentInsertions.length, 'AI instructions');
     return processedText;
   };
 
