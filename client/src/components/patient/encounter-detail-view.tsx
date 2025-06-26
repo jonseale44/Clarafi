@@ -2203,6 +2203,12 @@ Please provide medical suggestions based on this complete conversation context.`
 
       mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
       setIsRecording(true);
+      
+      // Clear all edit locks when starting new recording
+      setUserEditingLock(false);
+      setRecordingCooldown(false);
+      setLastUserEditTime(null);
+      console.log("🔓 [UserEditLock] All edit locks cleared - starting new recording session");
 
       (window as any).currentMediaRecorder = mediaRecorder;
 
@@ -3377,6 +3383,8 @@ Please provide medical suggestions based on this complete conversation context.`
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
                   transcription={transcription}
+                  userEditingLock={userEditingLock}
+                  recordingCooldown={recordingCooldown}
                   onSOAPNoteUpdate={(note) => {
                     setSoapNote(note);
                     if (editor && !editor.isDestroyed) {

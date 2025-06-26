@@ -16,6 +16,8 @@ interface RealtimeSOAPIntegrationProps {
   isRecording?: boolean;
   noteType?: string; // New prop for note type selection
   selectedTemplate?: any; // New prop for custom template selection
+  userEditingLock?: boolean; // New prop to prevent AI overwrites during user editing
+  recordingCooldown?: boolean; // New prop to prevent AI overwrites during transcription completion
 }
 
 export interface RealtimeSOAPRef {
@@ -35,7 +37,9 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   enableIntelligentStreaming = false,
   isRecording = false,
   noteType = 'soap', // Default to SOAP note
-  selectedTemplate
+  selectedTemplate,
+  userEditingLock = false,
+  recordingCooldown = false
 }, ref) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [soapBuffer, setSoapBuffer] = useState("");
@@ -265,6 +269,16 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
 
     if (!enableIntelligentStreaming) {
       console.log("🔍 [IntelligentStreaming] Intelligent streaming disabled, using traditional auto-trigger");
+      
+      // Check user edit lock first
+      if (userEditingLock || recordingCooldown) {
+        console.log("🔒 [UserEditLock] Skipping SOAP generation - user editing or recording cooldown active:", {
+          userEditingLock,
+          recordingCooldown
+        });
+        return;
+      }
+      
       // Traditional auto-trigger behavior - but only when recording
       if (autoTrigger && transcription?.trim() && !isGenerating && isRecording) {
         console.log("🔄 [RealtimeSOAP] Auto-triggering SOAP generation (traditional mode)");
@@ -290,6 +304,15 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     if (streamingTimeoutRef.current) {
       console.log("🔍 [IntelligentStreaming] Clearing existing streaming timeout");
       clearTimeout(streamingTimeoutRef.current);
+    }
+
+    // Check user edit lock first for intelligent streaming too
+    if (userEditingLock || recordingCooldown) {
+      console.log("🔒 [UserEditLock] Skipping intelligent streaming - user editing or recording cooldown active:", {
+        userEditingLock,
+        recordingCooldown
+      });
+      return;
     }
 
     if (!transcription?.trim() || isGenerating || !isRecording) {
