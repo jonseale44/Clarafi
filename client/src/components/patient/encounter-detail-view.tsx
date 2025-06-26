@@ -39,7 +39,6 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { SharedChartSections } from "./shared-chart-sections";
 import Placeholder from "@tiptap/extension-placeholder";
-import HardBreak from "@tiptap/extension-hard-break";
 import { Extension } from "@tiptap/core";
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
@@ -1006,10 +1005,12 @@ export function EncounterDetailView({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable paragraph creation since we want only hard breaks
-        paragraph: false,
+        // Configure HardBreak in StarterKit instead of adding separate extension
+        hardBreak: {
+          keepMarks: false,
+          HTMLAttributes: {},
+        },
       }),
-      HardBreak,
       ForceHardBreak,
       Placeholder.configure({
         placeholder: "Generated SOAP note will appear here...",
