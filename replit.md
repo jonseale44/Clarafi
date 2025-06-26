@@ -109,6 +109,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### SOAP Note Generation System Consolidation Completed (June 26, 2025)
+- **CRITICAL CONSOLIDATION SUCCESS**: Successfully completed consolidation of duplicate SOAP note generation systems
+- **UNIFIED ARCHITECTURE**: All 6 note types (SOAP, APSO, H&P, Progress, Discharge, Procedure) now use EnhancedNoteGenerationService with full patient context
+- **DEPRECATED SYSTEM REMOVED**: Completely removed broken ClinicalNoteTemplates class that had empty context and was causing poor AI generation quality
+- **MODEL STANDARDIZATION**: Updated all note generation to use gpt-4.1-mini for cost optimization and better performance
+- **SERVER STABILITY RESTORED**: Fixed critical server crashes caused by orphaned ClinicalNoteTemplates class fragments
+- **TEMPLATE ROUTES UPDATED**: Fixed template-routes.ts to work with new consolidated system
+- **LEGACY COMPATIBILITY**: generateSOAPNoteDirect function now redirects to unified generateClinicalNote function
+- **FULL PATIENT CONTEXT**: All note types now receive complete patient chart data (demographics, medical problems, medications, allergies, vitals)
+- **DOWNSTREAM PROCESSING PRESERVED**: All existing workflows (medical problems extraction, order processing, CPT codes) remain intact
+- **BACKUP FILES CREATED**: Preserved BACKUP_enhanced_note_service_before_consolidation.ts and BACKUP_routes_before_cleanup.ts for safety
+
+## Recent Changes
+
 ### Admin Prompt Management System Implementation (June 25, 2025)
 - **COMPLETE ADMIN INTERFACE**: Built comprehensive admin system for viewing and editing GPT-generated prompts from all users
 - **THREE-PANE VIEW**: Admin interface shows original user template, GPT-generated prompt, and admin-edited version side by side

@@ -7,7 +7,7 @@ import type { Express, Request, Response } from "express";
 import { storage } from "./storage";
 import { insertUserNoteTemplateSchema, insertTemplateShareSchema, insertUserNotePreferencesSchema } from "@shared/schema";
 import { TemplatePromptGenerator } from "./template-prompt-generator";
-import { ClinicalNoteTemplates } from "./routes"; // Import your existing templates
+// ClinicalNoteTemplates removed - now using EnhancedNoteGenerationService
 
 export default function setupTemplateRoutes(app: Express) {
   
