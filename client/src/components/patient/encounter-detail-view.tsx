@@ -976,18 +976,64 @@ export function EncounterDetailView({
       setUserEditingLock(true);
       setLastUserEditTime(Date.now());
       console.log("🔒 [UserEditLock] User started editing - persistent lock activated");
+      
+      // Activate vulnerable window protection
+      if (!editorVulnerableWindow) {
+        setEditorVulnerableWindow(true);
+        console.log("🛡️ [VulnerableWindow] Editor locked - protecting against delayed API responses");
+        
+        // Clear any existing timeout
+        if (vulnerableWindowTimeout) {
+          clearTimeout(vulnerableWindowTimeout);
+        }
+        
+        // Set timeout to clear vulnerable window after 4 seconds
+        const timeout = setTimeout(() => {
+          setEditorVulnerableWindow(false);
+          console.log("🛡️ [VulnerableWindow] Editor unlocked - vulnerable window passed");
+        }, 4000);
+        
+        setVulnerableWindowTimeout(timeout);
+      }
     }
   };
 
   const clearEditLock = () => {
     setUserEditingLock(false);
     setLastUserEditTime(null);
+    setEditorVulnerableWindow(false);
+    if (vulnerableWindowTimeout) {
+      clearTimeout(vulnerableWindowTimeout);
+      setVulnerableWindowTimeout(null);
+    }
     console.log("🔓 [UserEditLock] Edit lock cleared - AI updates allowed");
   };
+
+  // Cleanup timeout on unmount  
+  useEffect(() => {
+    return () => {
+      if (vulnerableWindowTimeout) {
+        clearTimeout(vulnerableWindowTimeout);
+      }
+    };
+  }, []);
 
   // Modal warning state for recording conflicts
   const [showRecordingConflictModal, setShowRecordingConflictModal] = useState(false);
   const [pendingRecordingStart, setPendingRecordingStart] = useState<(() => void) | null>(null);
+
+  // Vulnerable window protection - editor loading during API pipeline risk
+  const [editorVulnerableWindow, setEditorVulnerableWindow] = useState(false);
+  const [vulnerableWindowTimeout, setVulnerableWindowTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount  
+  useEffect(() => {
+    return () => {
+      if (vulnerableWindowTimeout) {
+        clearTimeout(vulnerableWindowTimeout);
+      }
+    };
+  }, []);
 
   // Custom extension to force Enter key to create hard breaks instead of paragraphs
   const ForceHardBreak = Extension.create({
@@ -1016,6 +1062,7 @@ export function EncounterDetailView({
         placeholder: "Generated SOAP note will appear here...",
       }),
     ],
+    editable: !editorVulnerableWindow, // Disable editing during vulnerable window
     editorProps: {
       attributes: {
         class:
