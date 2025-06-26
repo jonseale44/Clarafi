@@ -991,17 +991,7 @@ export function EncounterDetailView({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        // Disable paragraph extension to prevent <p> tag creation
-        paragraph: false,
-        // Disable the default hardBreak from StarterKit to use custom one
-        hardBreak: false,
-      }),
-      // Add custom HardBreak extension for consistent <br/> behavior
-      HardBreak.configure({
-        keepMarks: false,
-        HTMLAttributes: {},
-      }),
+      StarterKit,
       Placeholder.configure({
         placeholder: "Generated SOAP note will appear here...",
       }),

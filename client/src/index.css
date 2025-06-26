@@ -105,10 +105,10 @@
     color: #374151;
   }
 
-  /* Remove default paragraph margins since we're using <br/> for consistent spacing */
+  /* Make paragraphs behave like single line breaks to match AI content */
   .soap-editor p {
-    margin: 0;
-    display: inline;
+    margin: 0 0 0.5rem 0;
+    display: block;
   }
 
   /* Ensure line breaks have consistent spacing matching AI-generated content */
@@ -133,9 +133,15 @@
     white-space: pre-wrap;
   }
 
-  /* Remove extra spacing from TipTap's default elements */
-  .soap-editor .ProseMirror > * {
+  /* Handle empty paragraphs to prevent double spacing */
+  .soap-editor .ProseMirror p:empty {
     margin: 0;
+    height: 0.5rem;
+  }
+
+  /* Last paragraph shouldn't have bottom margin */
+  .soap-editor .ProseMirror p:last-child {
+    margin-bottom: 0;
   }
 
   /* All legacy .soap-note styles completely removed - using .soap-editor instead */
