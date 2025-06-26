@@ -211,10 +211,6 @@ export function EncounterDetailView({
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-  
-  // Cursor position preservation for better UX
-  const [savedCursorPosition, setSavedCursorPosition] = useState<{ from: number; to: number } | null>(null);
-  const cursorRestoreTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-save functionality
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -327,7 +323,7 @@ export function EncounterDetailView({
   // Real-time SOAP generation ref
   const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
 
-  // Auto-save function with debouncing and content normalization
+  // Auto-save function with debouncing
   const autoSaveSOAPNote = async (content: string) => {
     if (!content.trim() || content === lastSaved) {
       return; // Don't save empty content or unchanged content
@@ -337,13 +333,10 @@ export function EncounterDetailView({
     setAutoSaveStatus("saving");
 
     try {
-      // Normalize content to ensure consistent spacing before saving
-      const normalizedContent = formatSoapNoteContent(content);
-      
       console.log(
         "💾 [AutoSave] Saving SOAP note automatically...",
-        normalizedContent.length,
-        "characters (normalized)",
+        content.length,
+        "characters",
       );
 
       const response = await fetch(
@@ -354,7 +347,7 @@ export function EncounterDetailView({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            soapNote: normalizedContent,
+            soapNote: content,
           }),
         },
       );
@@ -366,14 +359,8 @@ export function EncounterDetailView({
       }
 
       console.log("✅ [AutoSave] SOAP note auto-saved successfully");
-      setLastSaved(normalizedContent);
+      setLastSaved(content);
       setAutoSaveStatus("saved");
-      
-      // Update editor with normalized content to ensure consistent display
-      if (editor && !editor.isDestroyed && !userEditingLock) {
-        console.log("📝 [AutoSave] Updating editor with normalized content for consistent spacing");
-        editor.commands.setContent(normalizedContent);
-      }
 
       // NOTE: Medical problems processing removed from auto-save
       // Medical problems will only be processed when:
@@ -500,38 +487,7 @@ export function EncounterDetailView({
     setSoapNote(note);
     if (editor && !editor.isDestroyed) {
       const formattedContent = formatSoapNoteContent(note);
-      
-      // Check if we need to preserve cursor position during active editing
-      if (userEditingLock && savedCursorPosition) {
-        console.log("🎯 [CursorPreservation] Preserving cursor position during content update:", savedCursorPosition);
-        
-        // Update content and restore cursor position
-        editor.commands.setContent(formattedContent);
-        
-        // Restore cursor position after a brief delay to allow content settling
-        if (cursorRestoreTimeout.current) {
-          clearTimeout(cursorRestoreTimeout.current);
-        }
-        
-        cursorRestoreTimeout.current = setTimeout(() => {
-          try {
-            const { from, to } = savedCursorPosition;
-            const docLength = editor.state.doc.content.size;
-            
-            // Ensure cursor position is within document bounds
-            const safeFrom = Math.min(from, docLength);
-            const safeTo = Math.min(to, docLength);
-            
-            editor.commands.setTextSelection({ from: safeFrom, to: safeTo });
-            console.log("✅ [CursorPreservation] Cursor position restored:", { from: safeFrom, to: safeTo });
-          } catch (error) {
-            console.warn("⚠️ [CursorPreservation] Failed to restore cursor position:", error);
-          }
-        }, 50);
-      } else {
-        // Normal content update without cursor preservation
-        editor.commands.setContent(formattedContent);
-      }
+      editor.commands.setContent(formattedContent);
     }
   };
 
@@ -1049,17 +1005,11 @@ export function EncounterDetailView({
     onUpdate: ({ editor }) => {
       // Update React state when user types
       if (!editor.isDestroyed) {
-        // Save cursor position immediately for restoration during first 2 seconds of editing
-        const selection = editor.state.selection;
-        setSavedCursorPosition({ from: selection.from, to: selection.to });
-        
         const newContent = editor.getHTML();
         setSoapNote(newContent);
 
         // Detect user editing and activate persistent lock
         handleUserStartsEditing();
-
-        // Content normalization will happen during auto-save to maintain consistent spacing
 
         // Trigger auto-save with debouncing
         triggerAutoSave(newContent);
@@ -1069,16 +1019,9 @@ export function EncounterDetailView({
       // User clicked into editor - activate lock
       handleUserStartsEditing();
     },
-    onSelectionUpdate: ({ editor }) => {
-      // Track cursor position during editing for better restoration
-      if (!editor.isDestroyed && userEditingLock) {
-        const selection = editor.state.selection;
-        setSavedCursorPosition({ from: selection.from, to: selection.to });
-      }
-    },
   });
 
-  // Function to format SOAP note content with consistent spacing matching AI generation
+  // Function to format SOAP note content with proper headers and spacing
   const formatSoapNoteContent = (content: string) => {
     if (!content) return "";
 
@@ -1086,31 +1029,26 @@ export function EncounterDetailView({
       content
         // Convert markdown bold to HTML
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        // Convert TipTap paragraph tags to consistent line breaks
-        .replace(/<p><\/p>/g, "<br/>") // Empty paragraphs become single breaks
-        .replace(/<p>(.*?)<\/p>/g, "$1<br/>") // Content paragraphs become content + break
-        // Normalize all line breaks - convert multiple \n to single <br/>
-        .replace(/\n{2,}/g, "\n") // First reduce multiple newlines to single
-        .replace(/\n/g, "<br/>") // Then convert all to HTML breaks
-        // Clean up multiple consecutive HTML breaks to maintain consistent spacing
+        // Convert single line breaks to HTML breaks
+        .replace(/\n/g, "<br/>")
+        // Aggressively clean up multiple consecutive breaks (2 or more)
         .replace(/(<br\/>){2,}/g, "<br/>")
-        // Ensure SOAP headers have consistent single break before them
-        .replace(/(<br\/>)*(<strong>(?:SUBJECTIVE|OBJECTIVE|ASSESSMENT|PLAN|ORDERS).*?:<\/strong>)/g, "<br/>$2")
+        // Ensure SOAP headers have proper spacing before them but not excessive spacing after
+        .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>OBJECTIVE:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>ASSESSMENT.*?:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>PLAN:<\/strong>)/g, "<br/>$1")
+        .replace(/(<strong>ORDERS:<\/strong>)/g, "<br/>$1")
         // Remove leading breaks
         .replace(/^(<br\/>)+/, "")
-        // Ensure consistent spacing after headers (single break)
-        .replace(/(<strong>(?:SUBJECTIVE|OBJECTIVE|ASSESSMENT|PLAN|ORDERS).*?:<\/strong>)(<br\/>)*/g, "$1<br/>")
     );
   };
 
-  // Cleanup auto-save timer and cursor restoration timeout on unmount
+  // Cleanup auto-save timer on unmount
   useEffect(() => {
     return () => {
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current);
-      }
-      if (cursorRestoreTimeout.current) {
-        clearTimeout(cursorRestoreTimeout.current);
       }
     };
   }, []);
@@ -1128,26 +1066,9 @@ export function EncounterDetailView({
         setLastSaved(existingNote); // Set initial saved state
         setAutoSaveStatus("saved");
 
-        // Format the existing note for proper display with cursor preservation
+        // Format the existing note for proper display
         const formattedContent = formatSoapNoteContent(existingNote);
-        
-        // Use cursor preservation if user is actively editing
-        if (userEditingLock && savedCursorPosition) {
-          editor.commands.setContent(formattedContent);
-          setTimeout(() => {
-            try {
-              const { from, to } = savedCursorPosition;
-              const docLength = editor.state.doc.content.size;
-              const safeFrom = Math.min(from, docLength);
-              const safeTo = Math.min(to, docLength);
-              editor.commands.setTextSelection({ from: safeFrom, to: safeTo });
-            } catch (error) {
-              console.warn("⚠️ [CursorPreservation] Failed to restore cursor in existing note load:", error);
-            }
-          }, 50);
-        } else {
-          editor.commands.setContent(formattedContent);
-        }
+        editor.commands.setContent(formattedContent);
         console.log(
           "📄 [EncounterView] Loaded existing SOAP note from encounter data",
         );
