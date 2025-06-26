@@ -327,7 +327,7 @@ export function EncounterDetailView({
   // Real-time SOAP generation ref
   const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
 
-  // Auto-save function with debouncing
+  // Auto-save function with debouncing and content normalization
   const autoSaveSOAPNote = async (content: string) => {
     if (!content.trim() || content === lastSaved) {
       return; // Don't save empty content or unchanged content
@@ -337,10 +337,13 @@ export function EncounterDetailView({
     setAutoSaveStatus("saving");
 
     try {
+      // Normalize content to ensure consistent spacing before saving
+      const normalizedContent = formatSoapNoteContent(content);
+      
       console.log(
         "💾 [AutoSave] Saving SOAP note automatically...",
-        content.length,
-        "characters",
+        normalizedContent.length,
+        "characters (normalized)",
       );
 
       const response = await fetch(
@@ -351,7 +354,7 @@ export function EncounterDetailView({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            soapNote: content,
+            soapNote: normalizedContent,
           }),
         },
       );
@@ -363,8 +366,14 @@ export function EncounterDetailView({
       }
 
       console.log("✅ [AutoSave] SOAP note auto-saved successfully");
-      setLastSaved(content);
+      setLastSaved(normalizedContent);
       setAutoSaveStatus("saved");
+      
+      // Update editor with normalized content to ensure consistent display
+      if (editor && !editor.isDestroyed && !userEditingLock) {
+        console.log("📝 [AutoSave] Updating editor with normalized content for consistent spacing");
+        editor.commands.setContent(normalizedContent);
+      }
 
       // NOTE: Medical problems processing removed from auto-save
       // Medical problems will only be processed when:
@@ -1050,6 +1059,34 @@ export function EncounterDetailView({
         // Detect user editing and activate persistent lock
         handleUserStartsEditing();
 
+        // Gentle spacing normalization after typing (1 second delay)
+        if (contentNormalizationTimeout.current) {
+          clearTimeout(contentNormalizationTimeout.current);
+        }
+        
+        contentNormalizationTimeout.current = setTimeout(() => {
+          if (!userEditingLock || !savedCursorPosition) return; // Only normalize during active editing
+          
+          const normalizedContent = formatSoapNoteContent(newContent);
+          if (normalizedContent !== newContent) {
+            console.log("🔧 [ContentNormalization] Applying gentle spacing normalization");
+            const { from, to } = savedCursorPosition;
+            editor.commands.setContent(normalizedContent);
+            
+            // Restore cursor position after normalization
+            setTimeout(() => {
+              try {
+                const docLength = editor.state.doc.content.size;
+                const safeFrom = Math.min(from, docLength);
+                const safeTo = Math.min(to, docLength);
+                editor.commands.setTextSelection({ from: safeFrom, to: safeTo });
+              } catch (error) {
+                console.warn("⚠️ [ContentNormalization] Cursor restoration failed:", error);
+              }
+            }, 50);
+          }
+        }, 1000);
+
         // Trigger auto-save with debouncing
         triggerAutoSave(newContent);
       }
@@ -1075,10 +1112,13 @@ export function EncounterDetailView({
       content
         // Convert markdown bold to HTML
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        // Convert TipTap paragraph tags to consistent line breaks
+        .replace(/<p><\/p>/g, "<br/>") // Empty paragraphs become single breaks
+        .replace(/<p>(.*?)<\/p>/g, "$1<br/>") // Content paragraphs become content + break
         // Normalize all line breaks - convert multiple \n to single <br/>
         .replace(/\n{2,}/g, "\n") // First reduce multiple newlines to single
         .replace(/\n/g, "<br/>") // Then convert all to HTML breaks
-        // Clean up multiple consecutive HTML breaks
+        // Clean up multiple consecutive HTML breaks to maintain consistent spacing
         .replace(/(<br\/>){2,}/g, "<br/>")
         // Ensure SOAP headers have consistent single break before them
         .replace(/(<br\/>)*(<strong>(?:SUBJECTIVE|OBJECTIVE|ASSESSMENT|PLAN|ORDERS).*?:<\/strong>)/g, "<br/>$2")
