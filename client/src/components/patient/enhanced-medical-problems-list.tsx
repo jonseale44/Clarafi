@@ -32,6 +32,10 @@ interface MedicalProblem {
     timestamp: string;
   }>;
   lastUpdated?: string;
+  // GPT-powered intelligent ranking
+  rankScore?: number; // 1.00 (highest priority) to 99.99 (lowest priority)
+  lastRankedEncounterId?: number;
+  rankingReason?: string; // GPT's reasoning for rank assignment
 }
 
 interface EnhancedMedicalProblemsListProps {
@@ -40,6 +44,24 @@ interface EnhancedMedicalProblemsListProps {
   mode?: "patient-chart" | "encounter";
   isReadOnly?: boolean;
 }
+
+// Utility function for rank-based visual styling
+const getRankStyles = (rankScore?: number) => {
+  if (!rankScore) return { bgColor: "bg-gray-50", borderColor: "border-gray-200", textColor: "text-gray-600" };
+  
+  // 1.00 = Highest Priority (Red), 99.99 = Lowest Priority (Blue)
+  if (rankScore <= 10) {
+    return { bgColor: "bg-red-50", borderColor: "border-red-300", textColor: "text-red-700", priority: "Critical" };
+  } else if (rankScore <= 20) {
+    return { bgColor: "bg-orange-50", borderColor: "border-orange-300", textColor: "text-orange-700", priority: "High" };
+  } else if (rankScore <= 40) {
+    return { bgColor: "bg-yellow-50", borderColor: "border-yellow-300", textColor: "text-yellow-700", priority: "Medium" };
+  } else if (rankScore <= 60) {
+    return { bgColor: "bg-green-50", borderColor: "border-green-300", textColor: "text-green-700", priority: "Low" };
+  } else {
+    return { bgColor: "bg-blue-50", borderColor: "border-blue-300", textColor: "text-blue-700", priority: "Routine" };
+  }
+};
 
 export function EnhancedMedicalProblemsList({ 
   patientId, 
@@ -147,10 +169,18 @@ export function EnhancedMedicalProblemsList({
     });
   };
 
-  // Separate problems by status for better organization
-  const activeProblems = medicalProblems.filter(p => p.problemStatus === 'active');
-  const chronicProblems = medicalProblems.filter(p => p.problemStatus === 'chronic');
-  const resolvedProblems = medicalProblems.filter(p => p.problemStatus === 'resolved');
+  // Separate and intelligently sort problems by rank score (1.00 = highest priority)
+  const activeProblems = medicalProblems
+    .filter(p => p.problemStatus === 'active')
+    .sort((a, b) => (a.rankScore || 99.99) - (b.rankScore || 99.99));
+  
+  const chronicProblems = medicalProblems
+    .filter(p => p.problemStatus === 'chronic')
+    .sort((a, b) => (a.rankScore || 99.99) - (b.rankScore || 99.99));
+  
+  const resolvedProblems = medicalProblems
+    .filter(p => p.problemStatus === 'resolved')
+    .sort((a, b) => (a.rankScore || 99.99) - (b.rankScore || 99.99));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -206,35 +236,52 @@ export function EnhancedMedicalProblemsList({
     );
   }
 
-  const renderProblemCard = (problem: MedicalProblem) => (
-    <Card key={problem.id} className="relative border-l-4 border-l-transparent hover:border-l-blue-400 transition-all duration-200 hover:shadow-md">
-      <Collapsible
-        open={expandedProblems.has(problem.id)}
-        onOpenChange={() => toggleProblemExpansion(problem.id)}
-      >
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-900/50 pb-3 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {expandedProblems.has(problem.id) ? (
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                )}
-                <div className="flex-1">
-                  <CardTitle className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-                    {problem.problemTitle}
-                    {problem.currentIcd10Code && (
-                      <span className="ml-2 text-sm font-mono text-gray-500 dark:text-gray-400">
-                        {problem.currentIcd10Code}
-                      </span>
+  const renderProblemCard = (problem: MedicalProblem) => {
+    const rankStyles = getRankStyles(problem.rankScore);
+    
+    return (
+      <Card key={problem.id} className={`relative border-l-4 ${rankStyles.borderColor} ${rankStyles.bgColor} hover:shadow-md transition-all duration-200`}>
+        <Collapsible
+          open={expandedProblems.has(problem.id)}
+          onOpenChange={() => toggleProblemExpansion(problem.id)}
+        >
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-opacity-80 pb-3 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {expandedProblems.has(problem.id) ? (
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      {problem.rankScore && (
+                        <Badge variant="outline" className={`text-xs font-medium ${rankStyles.textColor}`}>
+                          {rankStyles.priority} (#{problem.rankScore.toFixed(1)})
+                        </Badge>
+                      )}
+                      <Badge className={getStatusColor(problem.problemStatus)}>
+                        {problem.problemStatus}
+                      </Badge>
+                    </div>
+                    <CardTitle className={`text-base font-semibold ${rankStyles.textColor} leading-tight`}>
+                      {problem.problemTitle}
+                      {problem.currentIcd10Code && (
+                        <span className="ml-2 text-sm font-mono text-gray-500 dark:text-gray-400">
+                          {problem.currentIcd10Code}
+                        </span>
+                      )}
+                    </CardTitle>
+                    
+                    {/* Ranking reason display */}
+                    {problem.rankingReason && (
+                      <div className="text-xs text-gray-600 mt-1 italic">
+                        {problem.rankingReason}
+                      </div>
                     )}
-                  </CardTitle>
+                    
                   <div className="flex items-center gap-3 mt-2">
-                    <Badge className={`${getStatusColor(problem.problemStatus)} flex items-center gap-1 text-xs font-medium px-2 py-1`}>
-                      {getStatusIcon(problem.problemStatus)}
-                      {problem.problemStatus.charAt(0).toUpperCase() + problem.problemStatus.slice(1)}
-                    </Badge>
                     {problem.firstDiagnosedDate && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Since {formatDate(problem.firstDiagnosedDate)}
