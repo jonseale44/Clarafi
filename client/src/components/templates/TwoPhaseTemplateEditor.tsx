@@ -444,8 +444,12 @@ export function TwoPhaseTemplateEditor({
         
         console.log('🔧 [GenerateFinalTemplate] Inserting comment:', {
           commentContent: comment.content,
-          position: comment.position,
-          charAtPosition: processedText[comment.position] || 'END'
+          storedPosition: comment.position,
+          actualPosition: insertPosition,
+          textLength: processedText.length,
+          beforeText: processedText.slice(Math.max(0, comment.position - 20), comment.position),
+          afterText: processedText.slice(comment.position, comment.position + 20),
+          charAtStoredPosition: processedText[comment.position] || 'END'
         });
         
         // If we're in the middle of a word, move to the end of the word
