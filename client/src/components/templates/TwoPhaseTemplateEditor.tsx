@@ -176,10 +176,22 @@ export function TwoPhaseTemplateEditor({
 
     const textarea = textareaRef.current;
     const rect = textarea.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
     
-    console.log('🔍 [TwoPhaseEditor] Click position:', { x, y });
+    // Account for scroll position within the textarea
+    const scrollTop = textarea.scrollTop;
+    const scrollLeft = textarea.scrollLeft;
+    
+    // Calculate coordinates relative to the textarea content, not just the viewport
+    const x = event.clientX - rect.left + scrollLeft;
+    const y = event.clientY - rect.top + scrollTop;
+    
+    console.log('🔍 [TwoPhaseEditor] Click position calculation:', { 
+      screenCoords: { clientX: event.clientX, clientY: event.clientY },
+      textareaRect: rect,
+      scrollPosition: { scrollTop, scrollLeft },
+      viewportRelative: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+      contentRelative: { x, y }
+    });
     
     // Use accurate position calculation by temporarily setting focus and using browser APIs
     textarea.focus();
