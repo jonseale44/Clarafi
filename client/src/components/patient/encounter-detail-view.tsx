@@ -69,10 +69,10 @@ interface VulnerableWindowLoadingScreenProps {
   contentLength: number;
 }
 
-const VulnerableWindowLoadingScreen: React.FC<VulnerableWindowLoadingScreenProps> = ({
+const VulnerableWindowLoadingScreen = ({
   userEditingLock,
   contentLength,
-}) => {
+}: VulnerableWindowLoadingScreenProps) => {
   const [progress, setProgress] = useState(0);
   
   useEffect(() => {
