@@ -175,6 +175,11 @@ export function EncounterDetailView({
   const [lastSuggestionCall, setLastSuggestionCall] = useState<number>(0);
   const [generationProgress, setGenerationProgress] = useState(0);
 
+  // User edit lock system to prevent AI overwrites
+  const [userEditingLock, setUserEditingLock] = useState(false);
+  const [recordingCooldown, setRecordingCooldown] = useState(false);
+  const [lastUserEditTime, setLastUserEditTime] = useState<number | null>(null);
+
   // Better sentence detection and formatting function for conversational exchanges
   const formatTranscriptionWithBullets = (text: string) => {
     if (!text) return text;
@@ -955,6 +960,21 @@ export function EncounterDetailView({
     }
   };
 
+  // User edit detection handlers
+  const handleUserStartsEditing = () => {
+    if (!userEditingLock) {
+      setUserEditingLock(true);
+      setLastUserEditTime(Date.now());
+      console.log("🔒 [UserEditLock] User started editing - locking SOAP updates");
+    }
+  };
+
+  const clearEditLock = () => {
+    setUserEditingLock(false);
+    setLastUserEditTime(null);
+    console.log("🔓 [UserEditLock] Edit lock cleared - AI updates allowed");
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -975,9 +995,16 @@ export function EncounterDetailView({
         const newContent = editor.getHTML();
         setSoapNote(newContent);
 
+        // Detect user editing and activate lock
+        handleUserStartsEditing();
+
         // Trigger auto-save with debouncing
         triggerAutoSave(newContent);
       }
+    },
+    onFocus: () => {
+      // User clicked into editor - activate lock
+      handleUserStartsEditing();
     },
   });
 
@@ -2233,6 +2260,16 @@ Please provide medical suggestions based on this complete conversation context.`
 
     setIsRecording(false);
     setLastRecordingStopTime(Date.now());
+    
+    // Activate recording cooldown to prevent AI overwrites during transcription completion
+    setRecordingCooldown(true);
+    console.log("⏱️ [UserEditLock] Recording cooldown activated - preventing AI updates for 5 seconds");
+    
+    // Clear cooldown after transcription typically finishes
+    setTimeout(() => {
+      setRecordingCooldown(false);
+      console.log("⏱️ [UserEditLock] Recording cooldown cleared");
+    }, 5000);
 
     // Real-time streaming has been updating SOAP note during recording
     // Now trigger medical problems processing directly (bypassing recording check)
