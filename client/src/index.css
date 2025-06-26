@@ -98,20 +98,14 @@
     @apply bg-muted;
   }
 
-  /* SOAP Note Editor Styling - Consistent line spacing */
+  /* SOAP Note Editor Styling - Consistent line spacing using br tags only */
   .soap-editor {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.6;
     color: #374151;
   }
 
-  /* Make paragraphs behave like single line breaks to match AI content */
-  .soap-editor p {
-    margin: 0 0 0.5rem 0;
-    display: block;
-  }
-
-  /* Ensure line breaks have consistent spacing matching AI-generated content */
+  /* Consistent line break spacing for both AI and user content */
   .soap-editor br {
     content: "";
     display: block;
@@ -125,23 +119,12 @@
     font-size: 1.1em;
   }
 
-  /* Ensure the editor div itself has proper line height */
+  /* Editor styling */
   .soap-editor .ProseMirror {
     line-height: 1.6;
     padding: 1rem;
     outline: none;
     white-space: pre-wrap;
-  }
-
-  /* Handle empty paragraphs to prevent double spacing */
-  .soap-editor .ProseMirror p:empty {
-    margin: 0;
-    height: 0.5rem;
-  }
-
-  /* Last paragraph shouldn't have bottom margin */
-  .soap-editor .ProseMirror p:last-child {
-    margin-bottom: 0;
   }
 
   /* All legacy .soap-note styles completely removed - using .soap-editor instead */

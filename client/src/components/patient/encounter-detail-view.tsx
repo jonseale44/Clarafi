@@ -40,6 +40,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { SharedChartSections } from "./shared-chart-sections";
 import Placeholder from "@tiptap/extension-placeholder";
 import HardBreak from "@tiptap/extension-hard-break";
+import { Extension } from "@tiptap/core";
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
 import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
@@ -989,9 +990,27 @@ export function EncounterDetailView({
   const [showRecordingConflictModal, setShowRecordingConflictModal] = useState(false);
   const [pendingRecordingStart, setPendingRecordingStart] = useState<(() => void) | null>(null);
 
+  // Custom extension to force Enter key to create hard breaks instead of paragraphs
+  const ForceHardBreak = Extension.create({
+    name: 'forceHardBreak',
+    
+    addKeyboardShortcuts() {
+      return {
+        'Enter': () => {
+          return this.editor.commands.setHardBreak()
+        },
+      }
+    },
+  })
+
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable paragraph creation since we want only hard breaks
+        paragraph: false,
+      }),
+      HardBreak,
+      ForceHardBreak,
       Placeholder.configure({
         placeholder: "Generated SOAP note will appear here...",
       }),
