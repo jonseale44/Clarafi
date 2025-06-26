@@ -4013,5 +4013,69 @@ Return only valid JSON without markdown formatting.`;
     }
   });
 
+  // Medical Problems API endpoint with ranking support
+  app.get("/api/medical-problems/:patientId", async (req, res) => {
+    try {
+      console.log(`🔍 [MedicalProblems] Starting API request for patient ${req.params.patientId}`);
+      
+      if (!req.isAuthenticated()) {
+        console.log(`❌ [MedicalProblems] Unauthorized request for patient ${req.params.patientId}`);
+        return res.sendStatus(401);
+      }
+
+      const patientId = parseInt(req.params.patientId);
+      console.log(`🔍 [MedicalProblems] Parsed patientId: ${patientId}`);
+      
+      if (!patientId || isNaN(patientId)) {
+        console.log(`❌ [MedicalProblems] Invalid patient ID: ${req.params.patientId}`);
+        return res.status(400).json({ error: "Invalid patient ID" });
+      }
+
+      // Check if patient exists
+      console.log(`🔍 [MedicalProblems] Checking if patient ${patientId} exists...`);
+      const patient = await storage.getPatient(patientId);
+      if (!patient) {
+        console.log(`❌ [MedicalProblems] Patient ${patientId} not found`);
+        return res.status(404).json({ error: "Patient not found" });
+      }
+
+      console.log(`✅ [MedicalProblems] Patient ${patientId} found: ${patient.first_name} ${patient.last_name}`);
+
+      // Get medical problems with ranking information
+      console.log(`🔍 [MedicalProblems] Fetching medical problems for patient ${patientId}...`);
+      
+      const problems = await storage.db
+        .select({
+          id: storage.medicalProblems.id,
+          problem_title: storage.medicalProblems.problem_title,
+          problem_description: storage.medicalProblems.problem_description,
+          problem_status: storage.medicalProblems.problem_status,
+          problem_type: storage.medicalProblems.problem_type,
+          icd10_code: storage.medicalProblems.icd10_code,
+          onset_date: storage.medicalProblems.onset_date,
+          resolved_date: storage.medicalProblems.resolved_date,
+          rank_score: storage.medicalProblems.rank_score,
+          ranking_reason: storage.medicalProblems.ranking_reason,
+          created_at: storage.medicalProblems.created_at,
+          updated_at: storage.medicalProblems.updated_at,
+        })
+        .from(storage.medicalProblems)
+        .where(storage.eq(storage.medicalProblems.patient_id, patientId))
+        .orderBy(storage.desc(storage.medicalProblems.rank_score), storage.desc(storage.medicalProblems.created_at));
+
+      console.log(`✅ [MedicalProblems] Found ${problems.length} medical problems for patient ${patientId}`);
+      
+      // Log each problem with its ranking information
+      problems.forEach((problem, index) => {
+        console.log(`📋 [MedicalProblems] Problem ${index + 1}: "${problem.problem_title}" - Rank: ${problem.rank_score || 'N/A'} - Status: ${problem.problem_status}`);
+      });
+
+      res.json(problems);
+    } catch (error: any) {
+      console.error(`❌ [MedicalProblems] Error fetching medical problems for patient ${req.params.patientId}:`, error);
+      res.status(500).json({ error: "Medical problem not found" });
+    }
+  });
+
   return httpServer;
 }
