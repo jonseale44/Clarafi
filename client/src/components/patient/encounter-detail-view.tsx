@@ -63,6 +63,84 @@ interface EncounterDetailViewProps {
   onBackToChart: () => void;
 }
 
+// Vulnerable Window Loading Screen Component
+interface VulnerableWindowLoadingScreenProps {
+  userEditingLock: boolean;
+  contentLength: number;
+}
+
+const VulnerableWindowLoadingScreen: React.FC<VulnerableWindowLoadingScreenProps> = ({
+  userEditingLock,
+  contentLength,
+}) => {
+  const [progress, setProgress] = useState(0);
+  
+  useEffect(() => {
+    // 4-second progress animation (matches vulnerable window duration)
+    const startTime = Date.now();
+    const duration = 4000; // 4 seconds
+    
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min((elapsed / duration) * 100, 100);
+      setProgress(newProgress);
+      
+      if (newProgress >= 100) {
+        clearInterval(interval);
+      }
+    }, 50); // Update every 50ms for smooth progression
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 bg-white/95 rounded-lg flex items-center justify-center z-50">
+      <div className="text-center space-y-4 p-8">
+        <div className="mx-auto w-12 h-12 relative">
+          <div className="absolute inset-0 rounded-full border-4 border-blue-100"></div>
+          <div 
+            className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"
+            style={{
+              borderTopColor: 'transparent',
+              borderRightColor: '#2563eb',
+              borderBottomColor: '#2563eb',
+              borderLeftColor: '#2563eb',
+            }}
+          ></div>
+        </div>
+        
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Protecting Your Edits
+          </h3>
+          <p className="text-sm text-gray-600">
+            Editor locked to prevent API overwrites
+          </p>
+        </div>
+        
+        <div className="w-64 bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-100 ease-out"
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+        
+        <div className="text-xs text-gray-500 space-y-1">
+          <div>{Math.round(progress)}% complete</div>
+          <div className="flex justify-between text-xs">
+            <span>Lock: {userEditingLock ? "Active" : "Inactive"}</span>
+            <span>Content: {contentLength} chars</span>
+          </div>
+        </div>
+        
+        <div className="text-xs text-blue-600 max-w-xs">
+          This prevents delayed AI responses from overwriting your manual edits.
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const chartSections = [
   { id: "encounters", label: "Patient Encounters" },
   { id: "problems", label: "Medical Problems" },
@@ -3665,47 +3743,12 @@ Please provide medical suggestions based on this complete conversation context.`
                   </div>
                 )}
                 
-                {/* Vulnerable Window Protection Overlay */}
+                {/* Vulnerable Window Protection Loading Screen */}
                 {editorVulnerableWindow && (
-                  <div className="absolute inset-0 bg-blue-50/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
-                    <div className="bg-white/95 border border-blue-200 rounded-lg p-6 shadow-lg max-w-md mx-4">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                        <h3 className="text-lg font-medium text-blue-900">
-                          Processing AI Updates
-                        </h3>
-                      </div>
-                      
-                      <div className="space-y-3 text-sm text-blue-800">
-                        <div className="flex items-center justify-between">
-                          <span>Pipeline Status:</span>
-                          <span className="font-medium">Active</span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <span>Edit Protection:</span>
-                          <span className="font-medium text-green-600">Enabled</span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <span>User Lock Status:</span>
-                          <span className="font-medium">{userEditingLock ? "Active" : "Inactive"}</span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <span>Content Length:</span>
-                          <span className="font-medium">{soapNote?.length || 0} chars</span>
-                        </div>
-                        
-                        <div className="pt-2 border-t border-blue-200">
-                          <p className="text-xs text-blue-600 leading-relaxed">
-                            Editor temporarily locked to prevent loss of your work from delayed API responses. 
-                            The editor will automatically unlock when the vulnerable window passes.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <VulnerableWindowLoadingScreen 
+                    userEditingLock={userEditingLock}
+                    contentLength={soapNote?.length || 0}
+                  />
                 )}
               </div>
             </div>
