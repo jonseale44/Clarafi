@@ -117,6 +117,8 @@ Preferred communication style: Simple, everyday language.
 - **AUTO-SAVE PROTECTION**: System automatically saves user edits before allowing AI regeneration to prevent data loss
 - **FROZEN RECORDING INDICATOR**: Visual amber indicator shows when recording is active but frozen due to manual edits
 - **STREAMING PIPELINE PROTECTION**: Fixed critical issue where delayed AI updates from WebSocket/streaming bypassed edit locks by adding protection in RealtimeSOAPIntegration update handlers
+- **CURSOR POSITION PRESERVATION**: Implemented TipTap cursor tracking and restoration to prevent cursor jumps during the first 1-2 seconds of editing when AI pipeline updates occur
+- **LINE SPACING NORMALIZATION**: Enhanced formatSoapNoteContent function to ensure consistent spacing between manual edits and AI-generated content, eliminating gap differences when users press Enter
 - **UNIVERSAL NOTE TYPE COVERAGE**: Edit lock system protects SOAP, H&P, APSO, Progress, Discharge, Procedure notes, and custom user templates
 - **DUAL PROTECTION MECHANISM**: Added both userEditingLock (immediate edit detection) and recordingCooldown (5-second buffer after recording stops)
 - **FORCE GENERATION BYPASS**: Manual "Regenerate from AI" button properly bypasses edit lock protection for intentional AI regeneration

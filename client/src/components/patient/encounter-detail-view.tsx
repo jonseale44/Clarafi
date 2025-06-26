@@ -1089,11 +1089,14 @@ export function EncounterDetailView({
     );
   };
 
-  // Cleanup auto-save timer on unmount
+  // Cleanup auto-save timer and cursor restoration timeout on unmount
   useEffect(() => {
     return () => {
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current);
+      }
+      if (cursorRestoreTimeout.current) {
+        clearTimeout(cursorRestoreTimeout.current);
       }
     };
   }, []);
@@ -1111,9 +1114,26 @@ export function EncounterDetailView({
         setLastSaved(existingNote); // Set initial saved state
         setAutoSaveStatus("saved");
 
-        // Format the existing note for proper display
+        // Format the existing note for proper display with cursor preservation
         const formattedContent = formatSoapNoteContent(existingNote);
-        editor.commands.setContent(formattedContent);
+        
+        // Use cursor preservation if user is actively editing
+        if (userEditingLock && savedCursorPosition) {
+          editor.commands.setContent(formattedContent);
+          setTimeout(() => {
+            try {
+              const { from, to } = savedCursorPosition;
+              const docLength = editor.state.doc.content.size;
+              const safeFrom = Math.min(from, docLength);
+              const safeTo = Math.min(to, docLength);
+              editor.commands.setTextSelection({ from: safeFrom, to: safeTo });
+            } catch (error) {
+              console.warn("⚠️ [CursorPreservation] Failed to restore cursor in existing note load:", error);
+            }
+          }, 50);
+        } else {
+          editor.commands.setContent(formattedContent);
+        }
         console.log(
           "📄 [EncounterView] Loaded existing SOAP note from encounter data",
         );
