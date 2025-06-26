@@ -98,15 +98,24 @@
     @apply bg-muted;
   }
 
-  /* SOAP Note Editor Styling */
+  /* SOAP Note Editor Styling - Consistent line spacing */
   .soap-editor {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.6;
     color: #374151;
   }
 
+  /* Remove default paragraph margins since we're using <br/> for consistent spacing */
   .soap-editor p {
-    margin-bottom: 0.75rem;
+    margin: 0;
+    display: inline;
+  }
+
+  /* Ensure line breaks have consistent spacing matching AI-generated content */
+  .soap-editor br {
+    content: "";
+    display: block;
+    margin-bottom: 0.5rem;
   }
 
   .soap-editor strong {
@@ -116,9 +125,17 @@
     font-size: 1.1em;
   }
 
-  /* Proper line spacing for SOAP content */
-  .soap-editor br {
-    line-height: 1.8;
+  /* Ensure the editor div itself has proper line height */
+  .soap-editor .ProseMirror {
+    line-height: 1.6;
+    padding: 1rem;
+    outline: none;
+    white-space: pre-wrap;
+  }
+
+  /* Remove extra spacing from TipTap's default elements */
+  .soap-editor .ProseMirror > * {
+    margin: 0;
   }
 
   /* All legacy .soap-note styles completely removed - using .soap-editor instead */
