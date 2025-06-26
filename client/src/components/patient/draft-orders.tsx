@@ -401,10 +401,36 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
               size="sm"
               onClick={() => updateFromSOAPMutation.mutate()}
               disabled={updateFromSOAPMutation.isPending || isAutoGenerating}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+              className={`relative overflow-hidden transition-all duration-300 ${
+                isAutoGenerating 
+                  ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed' 
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300'
+              }`}
+              title={isAutoGenerating ? `Processing orders... ${Math.round(ordersProgress)}% complete` : "Generate draft orders from SOAP note content"}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${(updateFromSOAPMutation.isPending || isAutoGenerating) ? 'animate-spin' : ''}`} />
-              {(updateFromSOAPMutation.isPending || isAutoGenerating) ? "Generating..." : "Update from SOAP"}
+              {/* Progress bar background */}
+              {isAutoGenerating && (
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-blue-200 to-blue-300 transition-all duration-100 ease-linear"
+                  style={{ 
+                    width: `${ordersProgress}%`,
+                    opacity: 0.3
+                  }}
+                />
+              )}
+              
+              <RefreshCw className={`h-4 w-4 mr-2 relative z-10 ${
+                (updateFromSOAPMutation.isPending || isAutoGenerating) ? 'animate-spin' : ''
+              }`} />
+              
+              <span className="relative z-10">
+                {isAutoGenerating 
+                  ? `Processing... ${Math.round(ordersProgress)}%`
+                  : updateFromSOAPMutation.isPending 
+                  ? "Generating..." 
+                  : "Update from SOAP"
+                }
+              </span>
             </Button>
           )}
           {orders.some((order: Order) => order.orderStatus === 'draft') && (

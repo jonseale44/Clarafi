@@ -580,18 +580,36 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
               variant="outline"
               onClick={generateCPTCodes}
               disabled={isGenerating || isAutoGenerating}
+              className={`relative overflow-hidden transition-all duration-300 ${
+                isAutoGenerating 
+                  ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed' 
+                  : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300'
+              }`}
+              title={isAutoGenerating ? `Processing billing... ${Math.round(billingProgress)}% complete` : "Generate CPT codes and diagnoses from SOAP note content"}
             >
-              {(isGenerating || isAutoGenerating) ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Generate from SOAP
-                </>
+              {/* Progress bar background */}
+              {isAutoGenerating && (
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-green-200 to-green-300 transition-all duration-100 ease-linear"
+                  style={{ 
+                    width: `${billingProgress}%`,
+                    opacity: 0.3
+                  }}
+                />
               )}
+              
+              <RefreshCw className={`h-4 w-4 mr-2 relative z-10 ${
+                (isGenerating || isAutoGenerating) ? 'animate-spin' : ''
+              }`} />
+              
+              <span className="relative z-10">
+                {isAutoGenerating 
+                  ? `Processing... ${Math.round(billingProgress)}%`
+                  : isGenerating 
+                  ? "Generating..." 
+                  : "Generate from SOAP"
+                }
+              </span>
             </Button>
             <Button
               size="sm"
