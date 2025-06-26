@@ -3209,6 +3209,16 @@ Please provide medical suggestions based on this complete conversation context.`
                   {isRecording ? "Stop Recording" : "Start Recording"}
                 </Button>
 
+                {/* Frozen Recording Mode Indicator */}
+                {isRecording && userEditingLock && (
+                  <div className="flex items-center space-x-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-amber-700 font-medium">
+                      Recording Frozen - Manual edits protected
+                    </span>
+                  </div>
+                )}
+
                 {isRecording && (
                   <Button
                     variant="outline"
@@ -3655,6 +3665,52 @@ Please provide medical suggestions based on this complete conversation context.`
           />
         </div>
       </div>
+
+      {/* Recording Conflict Modal */}
+      <Dialog open={showRecordingConflictModal} onOpenChange={setShowRecordingConflictModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <span>Warning: Manual Edits Will Be Lost</span>
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              You have made manual edits to the note. Starting live recording or regenerating from AI will replace your changes with AI-generated content.
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <div className="text-sm text-amber-800">
+                  <strong>Your edits will be automatically saved before proceeding.</strong>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRecordingConflictModal(false);
+                setPendingRecordingStart(null);
+                console.log("🔒 [UserEditLock] User chose to keep note frozen");
+              }}
+              className="w-full sm:w-auto"
+            >
+              Keep Note Frozen
+            </Button>
+            <Button
+              onClick={() => {
+                console.log("🔄 [UserEditLock] User confirmed override with AI");
+                setShowRecordingConflictModal(false);
+                if (pendingRecordingStart) {
+                  pendingRecordingStart();
+                  setPendingRecordingStart(null);
+                }
+              }}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+            >
+              Replace My Edits with AI
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
