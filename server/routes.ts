@@ -58,39 +58,33 @@ const openai = new OpenAI({
 
 import { PatientChartService } from "./patient-chart-service.js";
 
-// Clinical Note Generation System - Multi-Template Support
-// Supports SOAP, APSO, Progress Notes, H&P, Discharge Summaries, Procedure Notes
+// OLD ClinicalNoteTemplates class REMOVED - All note types now consolidated in EnhancedNoteGenerationService
+// This provides full patient context (demographics, medical problems, medications, allergies, vitals) 
+// for ALL note types instead of empty context that was causing poor AI generation quality
 
-export class ClinicalNoteTemplates {
-  static getPrompt(
-    noteType: string,
-    medicalContext: string,
-    transcription: string,
-  ): string {
-    switch (noteType) {
-      case "soap":
-        return buildSOAPPrompt(medicalContext, transcription);
-      case "apso":
-        return this.buildAPSOPrompt(medicalContext, transcription);
-      case "progress":
-        return this.buildProgressPrompt(medicalContext, transcription);
-      case "hAndP":
-        return this.buildHistoryAndPhysicalPrompt(
-          medicalContext,
-          transcription,
-        );
-      case "discharge":
-        return this.buildDischargeSummaryPrompt(medicalContext, transcription);
-      case "procedure":
-        return this.buildProcedureNotePrompt(medicalContext, transcription);
-      default:
-        return buildSOAPPrompt(medicalContext, transcription); // Default fallback
-    }
-  }
+// DEPRECATED CLASS REMOVED - All note types now use EnhancedNoteGenerationService with full patient context
 
-  private static buildSOAPPrompt(
-    medicalContext: string,
-    transcription: string,
+// Clinical Note Generator - Unified generation function
+async function generateClinicalNote(
+  noteType: string,
+  patientId: number,
+  encounterId: string,
+  transcription: string,
+): Promise<string> {
+  console.log(
+    `🩺 [ClinicalNote] Generating ${noteType} note for patient ${patientId}`,
+  );
+
+  // Use patient chart service for consistent data access
+  const { PatientChartService } = await import("./patient-chart-service.js");
+  const patientChart = await PatientChartService.getPatientChartData(patientId);
+
+  // Get encounter-specific vitals
+  const encounterVitalsList = await db
+    .select()
+    .from(vitals)
+    .where(
+      and(
   ): string {
     return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
 
