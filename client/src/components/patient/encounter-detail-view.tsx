@@ -3464,6 +3464,27 @@ Please provide medical suggestions based on this complete conversation context.`
                     )}
                   </Button>
                 )}
+                {/* Manual AI Regeneration Button - Only show when user has editing lock active */}
+                {userEditingLock && transcription && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      console.log("🔄 [UserEditLock] Manual AI regeneration requested");
+                      // Temporarily disable user editing lock for this regeneration
+                      setUserEditingLock(false);
+                      // Trigger AI regeneration via the ref
+                      if (realtimeSOAPRef.current) {
+                        realtimeSOAPRef.current.generateSOAPNote(true);
+                      }
+                    }}
+                    disabled={isGeneratingSOAP}
+                    className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+                  >
+                    <Bot className="h-4 w-4 mr-2" />
+                    Regenerate from AI
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
@@ -3534,6 +3555,8 @@ Please provide medical suggestions based on this complete conversation context.`
             patientId={patient.id.toString()}
             encounterId={encounterId.toString()}
             transcription={transcription}
+            userEditingLock={userEditingLock}
+            recordingCooldown={recordingCooldown}
             onSOAPNoteUpdate={handleSOAPNoteUpdate}
             onSOAPNoteComplete={handleSOAPNoteComplete}
             onDraftOrdersReceived={handleDraftOrdersReceived}

@@ -109,6 +109,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### User Edit Lock System Implementation Completed (June 26, 2025)
+- **CRITICAL USER EXPERIENCE IMPROVEMENT**: Successfully implemented comprehensive user edit lock system to prevent AI overwrites during clinical note editing
+- **DUAL PROTECTION MECHANISM**: Added both userEditingLock (immediate edit detection) and recordingCooldown (5-second buffer after recording stops) to handle all scenarios
+- **REALTIME SOAP INTEGRATION ENHANCED**: Updated RealtimeSOAPIntegration component with userEditingLock and recordingCooldown props to respect user editing state
+- **SMART LOCK ACTIVATION**: User edit detection automatically activates lock when users modify note content, preventing unwanted AI updates
+- **RECORDING COOLDOWN BUFFER**: 5-second cooldown after recording stops prevents AI overwrites during delayed transcription chunk processing
+- **MANUAL REGENERATION CONTROL**: Added "Regenerate from AI" button that appears when user edit lock is active, providing opt-in AI regeneration
+- **COMPREHENSIVE LOGGING**: Added detailed console logging throughout lock system for debugging and monitoring
+- **BOTH STREAMING MODES PROTECTED**: Applied user edit lock logic to both traditional auto-trigger and intelligent streaming modes
+- **ENCOUNTER VIEW INTEGRATION**: Updated encounter-detail-view.tsx to pass lock states to both instances of RealtimeSOAPIntegration component
+- **PURPLE BUTTON STYLING**: "Regenerate from AI" button uses distinctive purple styling to indicate AI functionality with Bot icon
+- **TEMPORARY LOCK RELEASE**: Manual regeneration temporarily disables user edit lock to allow AI update, then user can resume editing
+- **PRODUCTION READY**: Complete implementation with proper state management, error handling, and user feedback mechanisms
+
 ### SOAP Note Generation System Consolidation Completed (June 26, 2025)
 - **CRITICAL CONSOLIDATION SUCCESS**: Successfully completed consolidation of duplicate SOAP note generation systems
 - **UNIFIED ARCHITECTURE**: All 6 note types (SOAP, APSO, H&P, Progress, Discharge, Procedure) now use EnhancedNoteGenerationService with full patient context
