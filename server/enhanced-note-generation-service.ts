@@ -85,27 +85,29 @@ Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
 
+CRITICAL FORMATTING RULE: Leave one blank line between each condition.
+
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
 [Plan item 1]
 [Plan item 2]
 [Plan item 3 (if applicable)]
-Example:
+
+Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
 
-Trial low-dose inhaler therapy to address potential airway constriction.
-Monitor response to inhaler and reassess in 2 weeks.
-Patient education on environmental triggers (e.g., dust exposure).
-<!--Single empty line space between conditions-->
+- Trial low-dose inhaler therapy to address potential airway constriction.
+- Monitor response to inhaler and reassess in 2 weeks.
+- Patient education on environmental triggers (e.g., dust exposure).
+
 Fatigue, Work-Related Stress (Z73.0):
 
-Counsel patient on stress management and lifestyle modifications.
-Encourage gradual increase in physical activity.
-<!--Single empty line space between conditions-->
+- Counsel patient on stress management and lifestyle modifications.
+- Encourage gradual increase in physical activity.
+
 Family History of Cardiovascular Disease (Z82.49):
 
-Document family history and assess cardiovascular risk factors as part of ongoing care.
-<!--insert FOUR blank lines)-->
+- Document family history and assess cardiovascular risk factors as part of ongoing care.
 **ORDERS:** 
 
 For all orders, follow this highly-structured format:
@@ -147,8 +149,7 @@ IMPORTANT INSTRUCTIONS:
 - Use professional medical language throughout.
 - Ensure all clinical reasoning is evidence-based and logical.
 - Include pertinent negatives where clinically relevant.
-- Format the note for easy reading and clinical handoff.
-- Instructions for Assessment/Plan: Always add 2 empty line spaces between conditions.`;
+- Format the note for easy reading and clinical handoff.`;
   }
 
   private static buildAPSOPrompt(
@@ -166,28 +167,31 @@ ${transcription}
 
 Generate a complete, professional APSO note with the following sections:
 
-**ASSESSMENT/PLAN:** <!--all capitalized headers in bold-->
+**ASSESSMENT/PLAN:**
+
+CRITICAL FORMATTING RULE: Leave one blank line between each condition.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
 [Plan item 1]
 [Plan item 2]
 [Plan item 3 (if applicable)]
-Example:
+
+Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
 
-Trial low-dose inhaler therapy to address potential airway constriction.
-Monitor response to inhaler and reassess in 2 weeks.
-Patient education on environmental triggers (e.g., dust exposure).
-<!--Single empty line space between conditions-->
+- Trial low-dose inhaler therapy to address potential airway constriction.
+- Monitor response to inhaler and reassess in 2 weeks.
+- Patient education on environmental triggers (e.g., dust exposure).
+
 Fatigue, Work-Related Stress (Z73.0):
 
-Counsel patient on stress management and lifestyle modifications.
-Encourage gradual increase in physical activity.
-<!--Single empty line space between conditions-->
+- Counsel patient on stress management and lifestyle modifications.
+- Encourage gradual increase in physical activity.
+
 Family History of Cardiovascular Disease (Z82.49):
 
-Document family history and assess cardiovascular risk factors as part of ongoing care.
+- Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **SUBJECTIVE:**
 Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.  
@@ -283,8 +287,7 @@ IMPORTANT INSTRUCTIONS:
 - Use professional medical language throughout.
 - Ensure all clinical reasoning is evidence-based and logical.
 - Include pertinent negatives where clinically relevant.
-- Format the note for easy reading and clinical handoff.
-- Instructions for Assessment/Plan: Always add an empty line space between conditions. `;
+- Format the note for easy reading and clinical handoff.`;
   }
 
   private static buildProgressPrompt(
