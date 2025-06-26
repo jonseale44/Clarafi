@@ -218,6 +218,18 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       
       if (data.note) {
         console.log(`📝 [RealtimeSOAP] Successfully generated ${noteType.toUpperCase()} note (${data.note.length} chars)`);
+        
+        // Check edit lock before applying any AI updates
+        if (userEditingLock && !forceGeneration) {
+          console.log("🔒 [UserEditLock] Blocking AI update - user has active edits. Use 'Regenerate from AI' to override.");
+          return;
+        }
+        
+        if (recordingCooldown && !forceGeneration) {
+          console.log("🔒 [RecordingCooldown] Blocking AI update - recording cooldown active");
+          return;
+        }
+        
         onSOAPNoteComplete(data.note);
         
         if (forceGeneration) {

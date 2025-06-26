@@ -110,17 +110,17 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### User Edit Lock System Implementation Completed (June 26, 2025)
-- **CRITICAL USER EXPERIENCE IMPROVEMENT**: Successfully implemented comprehensive user edit lock system to prevent AI overwrites during clinical note editing
-- **DUAL PROTECTION MECHANISM**: Added both userEditingLock (immediate edit detection) and recordingCooldown (5-second buffer after recording stops) to handle all scenarios
-- **REALTIME SOAP INTEGRATION ENHANCED**: Updated RealtimeSOAPIntegration component with userEditingLock and recordingCooldown props to respect user editing state
-- **SMART LOCK ACTIVATION**: User edit detection automatically activates lock when users modify note content, preventing unwanted AI updates
-- **RECORDING COOLDOWN BUFFER**: 5-second cooldown after recording stops prevents AI overwrites during delayed transcription chunk processing
-- **MANUAL REGENERATION CONTROL**: Added "Regenerate from AI" button that appears when user edit lock is active, providing opt-in AI regeneration
-- **COMPREHENSIVE LOGGING**: Added detailed console logging throughout lock system for debugging and monitoring
-- **BOTH STREAMING MODES PROTECTED**: Applied user edit lock logic to both traditional auto-trigger and intelligent streaming modes
-- **ENCOUNTER VIEW INTEGRATION**: Updated encounter-detail-view.tsx to pass lock states to both instances of RealtimeSOAPIntegration component
-- **PURPLE BUTTON STYLING**: "Regenerate from AI" button uses distinctive purple styling to indicate AI functionality with Bot icon
-- **TEMPORARY LOCK RELEASE**: Manual regeneration temporarily disables user edit lock to allow AI update, then user can resume editing
+- **CRITICAL USER EXPERIENCE IMPROVEMENT**: Successfully implemented comprehensive user edit lock system to prevent AI overwrites during clinical note editing across ALL note types
+- **PERSISTENT EDIT LOCK**: Lock remains active even when users click away from editor, providing complete protection against dangerous AI overwrites
+- **CONTEXT-AWARE BUTTON CONSOLIDATION**: Single intelligent button changes from green "Generate from Transcription" to purple "Regenerate from AI" based on edit state, eliminating user confusion
+- **MODAL WARNING SYSTEM**: Clear warning dialog when users try to record or regenerate with active edits: "Replace My Edits with AI" vs "Keep Note Frozen"
+- **AUTO-SAVE PROTECTION**: System automatically saves user edits before allowing AI regeneration to prevent data loss
+- **FROZEN RECORDING INDICATOR**: Visual amber indicator shows when recording is active but frozen due to manual edits
+- **STREAMING PIPELINE PROTECTION**: Fixed critical issue where delayed AI updates from WebSocket/streaming bypassed edit locks by adding protection in RealtimeSOAPIntegration update handlers
+- **UNIVERSAL NOTE TYPE COVERAGE**: Edit lock system protects SOAP, H&P, APSO, Progress, Discharge, Procedure notes, and custom user templates
+- **DUAL PROTECTION MECHANISM**: Added both userEditingLock (immediate edit detection) and recordingCooldown (5-second buffer after recording stops)
+- **FORCE GENERATION BYPASS**: Manual "Regenerate from AI" button properly bypasses edit lock protection for intentional AI regeneration
+- **COMPREHENSIVE LOGGING**: Detailed console logging throughout lock system for debugging and monitoring pipeline behavior
 - **PRODUCTION READY**: Complete implementation with proper state management, error handling, and user feedback mechanisms
 
 ### SOAP Note Generation System Consolidation Completed (June 26, 2025)
