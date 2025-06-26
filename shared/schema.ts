@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, decimal, jsonb, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, decimal, numeric, jsonb, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -504,6 +504,11 @@ export const medicalProblems = pgTable("medical_problems", {
   // Enhanced JSONB fields for performance
   visitHistory: jsonb("visit_history").default([]), // Chronological visit notes
   changeLog: jsonb("change_log").default([]), // Audit trail of changes
+  
+  // GPT-powered intelligent ranking system
+  rankScore: numeric("rank_score", { precision: 5, scale: 2 }).default("99.99"), // 1.00 = highest priority, 99.99 = lowest
+  lastRankedEncounterId: integer("last_ranked_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
+  rankingReason: text("ranking_reason"), // GPT's reasoning for rank assignment
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1480,6 +1485,9 @@ export const insertMedicalProblemSchema = createInsertSchema(medicalProblems).pi
   lastUpdatedEncounterId: true,
   visitHistory: true,
   changeLog: true,
+  rankScore: true,
+  lastRankedEncounterId: true,
+  rankingReason: true,
 });
 
 export const insertDiagnosisSchema = createInsertSchema(diagnoses).pick({
@@ -1848,3 +1856,39 @@ export const insertAdminPromptReviewSchema = createInsertSchema(adminPromptRevie
 
 export type AdminPromptReview = typeof adminPromptReviews.$inferSelect;
 export type InsertAdminPromptReview = z.infer<typeof insertAdminPromptReviewSchema>;
+
+// User-specific problem ranking preferences (collaborative system)
+export const problemRankOverrides = pgTable("problem_rank_overrides", {
+  id: serial("id").primaryKey(),
+  problemId: integer("problem_id").references(() => medicalProblems.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  preferenceWeight: text("preference_weight").notNull(), // 'low', 'medium', 'high'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User display preferences for problem list view
+export const userProblemListPreferences = pgTable("user_problem_list_preferences", {
+  userId: integer("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  maxProblemsDisplayed: integer("max_problems_displayed").default(10),
+  showResolvedProblems: boolean("show_resolved_problems").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProblemRankOverrideSchema = createInsertSchema(problemRankOverrides).pick({
+  problemId: true,
+  userId: true,
+  preferenceWeight: true,
+});
+
+export const insertUserProblemListPreferencesSchema = createInsertSchema(userProblemListPreferences).pick({
+  userId: true,
+  maxProblemsDisplayed: true,
+  showResolvedProblems: true,
+});
+
+export type ProblemRankOverride = typeof problemRankOverrides.$inferSelect;
+export type InsertProblemRankOverride = z.infer<typeof insertProblemRankOverrideSchema>;
+export type UserProblemListPreferences = typeof userProblemListPreferences.$inferSelect;
+export type InsertUserProblemListPreferences = z.infer<typeof insertUserProblemListPreferencesSchema>;
