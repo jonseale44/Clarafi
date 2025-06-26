@@ -410,7 +410,7 @@ IMPORTANT INSTRUCTIONS:
   /**
    * Get the appropriate prompt for any note type with full patient context
    */
-  private static getPromptForNoteType(
+  static getPromptForNoteType(
     noteType: string,
     medicalContext: string,
     transcription: string,

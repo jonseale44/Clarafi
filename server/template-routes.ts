@@ -193,8 +193,9 @@ RECENT VITALS:
       
       const sampleTranscript = sampleTranscription || `Patient presents for routine follow-up. Reports feeling well overall. Blood pressure well controlled on current medications. Blood sugar levels have been stable. No new symptoms or concerns. Taking medications as prescribed. Exercise tolerance good. No chest pain or shortness of breath.`;
       
-      // Get base template prompt
-      const basePrompt = ClinicalNoteTemplates.getPrompt(noteType, samplePatientContext, sampleTranscript);
+      // Use EnhancedNoteGenerationService for consistent prompt generation
+      const { EnhancedNoteGenerationService } = await import("./enhanced-note-generation-service");
+      const basePrompt = EnhancedNoteGenerationService.getPromptForNoteType(noteType, samplePatientContext, sampleTranscript);
       
       // Generate example note (simplified for example generation)
       const exampleNote = await generateExampleNote(basePrompt);
