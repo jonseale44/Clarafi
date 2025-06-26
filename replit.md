@@ -109,6 +109,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Gatekeeper Removal Completed (June 26, 2025)
+- **CRITICAL ARCHITECTURAL FIX**: Removed `hasSignificantSOAPChanges` gatekeeper that was blocking legitimate medical problem processing
+- **ROOT CAUSE IDENTIFIED**: Function operated on intra-encounter timescale (minutes) while medical intelligence needs inter-encounter scope (months/years)
+- **WRONG GATEKEEPING MECHANISM**: "Apples and oranges" problem - frontend trigger looked at editing changes within current encounter, not diagnosis evolution across patient visits
+- **GPT UNIFIED PARSER EMPOWERED**: GPT now has full control over both intra-encounter and inter-encounter medical problem processing decisions
+- **SCOPE-AGNOSTIC PROCESSING**: `getExistingProblems` retrieves ALL patient problems regardless of creation time, allowing GPT to handle both same-visit updates and cross-visit evolution
+- **INTELLIGENT CONTEXT DISTINCTION**: GPT can distinguish "same visit, more details" vs "new visit, condition evolved" using trigger type and existing problem history
+- **REASONABLE GATEKEEPERS PRESERVED**: SOAP hash check (prevents duplicate processing) and 5-second recording cooldown remain for efficiency
+- **INTER-ENCOUNTER SCENARIOS ENABLED**: Now supports CKD1 → CKD2 progression detection, medication changes across visits, and problem resolution tracking
+- **SIMPLIFIED PROCESSING LOGIC**: Removed complex keyword matching and percentage change calculations, trusting GPT medical intelligence
+- **MEDICAL CONTINUITY RESTORED**: System can now properly track patient condition evolution over time instead of being limited to single encounter changes
+
 ### User Edit Lock System Implementation Completed (June 26, 2025)
 - **CRITICAL USER EXPERIENCE IMPROVEMENT**: Successfully implemented comprehensive user edit lock system to prevent AI overwrites during clinical note editing across ALL note types
 - **PERSISTENT EDIT LOCK**: Lock remains active even when users click away from editor, providing complete protection against dangerous AI overwrites

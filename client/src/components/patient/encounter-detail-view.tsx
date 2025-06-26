@@ -317,81 +317,7 @@ export function EncounterDetailView({
     useState<string>("");
   const [lastRecordingStopTime, setLastRecordingStopTime] = useState<number>(0);
 
-  // Function to detect meaningful changes in SOAP content
-  const hasSignificantSOAPChanges = (newContent: string): boolean => {
-    if (!lastProcessedSOAPContent) return true; // First time processing
-
-    // Extract Assessment/Plan sections for comparison (where diagnoses live)
-    const extractAssessmentPlan = (content: string) => {
-      const assessmentMatch = content.match(
-        /(?:ASSESSMENT|PLAN|A&P|A\/P)[\s\S]*$/i,
-      );
-      return assessmentMatch
-        ? assessmentMatch[0].toLowerCase()
-        : content.toLowerCase();
-    };
-
-    const oldAssessment = extractAssessmentPlan(lastProcessedSOAPContent);
-    const newAssessment = extractAssessmentPlan(newContent);
-
-    // Check for significant changes: new diagnoses, medication changes, plan modifications
-    const significantKeywords = [
-      // New diagnoses
-      "diabetes",
-      "hypertension",
-      "pneumonia",
-      "copd",
-      "asthma",
-      "depression",
-      "anxiety",
-      "arthritis",
-      "infection",
-      "pain",
-      "fracture",
-      "cancer",
-      // ICD codes
-      "e11",
-      "i10",
-      "j44",
-      "f32",
-      "f41",
-      "m79",
-      "n39",
-      // Medication keywords
-      "metformin",
-      "lisinopril",
-      "albuterol",
-      "prednisone",
-      "amoxicillin",
-      "start",
-      "stop",
-      "discontinue",
-      "increase",
-      "decrease",
-      "titrate",
-    ];
-
-    // Look for new significant keywords in the assessment/plan
-    const hasNewKeywords = significantKeywords.some(
-      (keyword) =>
-        newAssessment.includes(keyword) && !oldAssessment.includes(keyword),
-    );
-
-    // Check for substantial content length changes (>20% change)
-    const lengthChange =
-      Math.abs(newContent.length - lastProcessedSOAPContent.length) /
-      lastProcessedSOAPContent.length;
-    const hasSubstantialChanges = lengthChange > 0.2;
-
-    console.log(
-      `🔍 [ChangeDetection] Significant changes detected: ${hasNewKeywords || hasSubstantialChanges}`,
-    );
-    console.log(
-      `🔍 [ChangeDetection] New keywords: ${hasNewKeywords}, Length change: ${(lengthChange * 100).toFixed(1)}%`,
-    );
-
-    return hasNewKeywords || hasSubstantialChanges;
-  };
+  // Function removed - GPT unified parser now handles all medical problem processing decisions
 
   // Get OpenAI API key from environment
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -3057,23 +2983,17 @@ Please provide medical suggestions based on this complete conversation context.`
         autoSaveTimer.current = null;
       }
 
-      // Smart medical problems processing for manual edits
+      // Process medical problems - let GPT unified parser handle all processing decisions
       const timeSinceRecordingStop = Date.now() - lastRecordingStopTime;
-      const hasSignificantChanges = hasSignificantSOAPChanges(currentContent);
-      const shouldProcessMedicalProblems =
-        timeSinceRecordingStop > 5000 && hasSignificantChanges; // Only if 5+ seconds after recording stop AND significant changes
+      const shouldProcessMedicalProblems = timeSinceRecordingStop > 5000; // Only wait 5 seconds after recording stop
 
       console.log(
-        "🏥 [SmartProcessing] === SMART MEDICAL PROBLEMS PROCESSING ===",
+        "🏥 [SmartProcessing] === MEDICAL PROBLEMS PROCESSING ===",
       );
       console.log(
         "🏥 [SmartProcessing] Time since recording stop:",
         timeSinceRecordingStop,
         "ms",
-      );
-      console.log(
-        "🏥 [SmartProcessing] Has significant changes:",
-        hasSignificantChanges,
       );
       console.log(
         "🏥 [SmartProcessing] Should process medical problems:",
@@ -3130,7 +3050,7 @@ Please provide medical suggestions based on this complete conversation context.`
         }
       } else {
         console.log(
-          "🏥 [SmartProcessing] Skipping medical problems processing - no significant changes or too soon after recording",
+          "🏥 [SmartProcessing] Skipping medical problems processing - too soon after recording (waiting 5 seconds)",
         );
       }
 
