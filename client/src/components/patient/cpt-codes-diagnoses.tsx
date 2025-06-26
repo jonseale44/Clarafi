@@ -58,9 +58,10 @@ interface CPTCodesProps {
   patientId: number;
   encounterId: number;
   isAutoGenerating?: boolean;
+  billingProgress?: number;
 }
 
-export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = false }: CPTCodesProps) {
+export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = false, billingProgress = 0 }: CPTCodesProps) {
   const [cptCodes, setCPTCodes] = useState<CPTCode[]>([]);
   const [diagnoses, setDiagnoses] = useState<DiagnosisCode[]>([]);
   const [mappings, setMappings] = useState<CPTDiagnosisMapping[]>([]);

@@ -3506,6 +3506,7 @@ Please provide medical suggestions based on this complete conversation context.`
             patientId={patient.id}
             encounterId={encounterId}
             isAutoGenerating={isAutoGeneratingOrders}
+            ordersProgress={ordersProgress}
           />
 
           {/* CPT Codes & Diagnoses */}
@@ -3513,6 +3514,7 @@ Please provide medical suggestions based on this complete conversation context.`
             patientId={patient.id}
             encounterId={encounterId}
             isAutoGenerating={isAutoGeneratingBilling}
+            billingProgress={billingProgress}
           />
 
           {/* Encounter Workflow Controls */}

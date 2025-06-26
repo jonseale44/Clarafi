@@ -67,9 +67,10 @@ interface DraftOrdersProps {
   patientId: number;
   encounterId?: number;
   isAutoGenerating?: boolean;
+  ordersProgress?: number;
 }
 
-export function DraftOrders({ patientId, encounterId, isAutoGenerating = false }: DraftOrdersProps) {
+export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, ordersProgress = 0 }: DraftOrdersProps) {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [newOrderType, setNewOrderType] = useState<string>("medication");
