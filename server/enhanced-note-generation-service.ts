@@ -4,7 +4,6 @@
  */
 
 import { storage } from "./storage";
-import { ClinicalNoteTemplates } from "./routes";
 import { PatientChartService } from "./patient-chart-service";
 import { TemplatePromptGenerator } from "./template-prompt-generator";
 import OpenAI from "openai";
@@ -409,6 +408,33 @@ IMPORTANT INSTRUCTIONS:
   }
 
   /**
+   * Get the appropriate prompt for any note type with full patient context
+   */
+  private static getPromptForNoteType(
+    noteType: string,
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    switch (noteType) {
+      case "soap":
+        return this.buildSOAPPrompt(medicalContext, transcription);
+      case "apso":
+        return this.buildAPSOPrompt(medicalContext, transcription);
+      case "progress":
+        return this.buildProgressPrompt(medicalContext, transcription);
+      case "hAndP":
+        return this.buildHistoryAndPhysicalPrompt(medicalContext, transcription);
+      case "discharge":
+        return this.buildDischargeSummaryPrompt(medicalContext, transcription);
+      case "procedure":
+        return this.buildProcedureNotePrompt(medicalContext, transcription);
+      default:
+        console.warn(`⚠️ [EnhancedNotes] Unknown note type: ${noteType}, defaulting to SOAP`);
+        return this.buildSOAPPrompt(medicalContext, transcription);
+    }
+  }
+
+  /**
    * Generates a clinical note using either base templates or custom user templates
    */
   static async generateNote(
@@ -497,19 +523,8 @@ IMPORTANT INSTRUCTIONS:
           console.warn(
             `⚠️ [EnhancedNotes] Custom template ${customTemplateId} not found or unauthorized, falling back to base template`,
           );
-          // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-          if (noteType === "soap") {
-            prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
-              medicalContext,
-              transcription,
-            );
-          } else {
-            prompt = ClinicalNoteTemplates.getPrompt(
-              noteType,
-              medicalContext,
-              transcription,
-            );
-          }
+          // Use enhanced service prompts with full patient context for ALL note types
+          prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
         }
       } else if (userId) {
         console.log(
@@ -572,19 +587,8 @@ IMPORTANT INSTRUCTIONS:
             console.log(
               `📋 [EnhancedNotes] No default template found, using base template`,
             );
-            // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-            if (noteType === "soap") {
-              prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
-                medicalContext,
-                transcription,
-              );
-            } else {
-              prompt = ClinicalNoteTemplates.getPrompt(
-                noteType,
-                medicalContext,
-                transcription,
-              );
-            }
+            // Use enhanced service prompts with full patient context for ALL note types
+            prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
           }
         } catch (templateError: any) {
           console.error(`❌ [EnhancedNotes] Error checking user templates:`, {
@@ -594,36 +598,14 @@ IMPORTANT INSTRUCTIONS:
             noteType,
           });
           // Fallback to base template if template system fails
-          // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-          if (noteType === "soap") {
-            prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
-              medicalContext,
-              transcription,
-            );
-          } else {
-            prompt = ClinicalNoteTemplates.getPrompt(
-              noteType,
-              medicalContext,
-              transcription,
-            );
-          }
+          // Use enhanced service prompts with full patient context for ALL note types
+          prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
         }
       } else {
         // No user context, use base template
         console.log(`📋 [EnhancedNotes] No user context, using base template`);
-        // Use the correct base template from routes.ts buildSOAPPrompt for SOAP notes
-        if (noteType === "soap") {
-          prompt = EnhancedNoteGenerationService.buildSOAPPrompt(
-            medicalContext,
-            transcription,
-          );
-        } else {
-          prompt = ClinicalNoteTemplates.getPrompt(
-            noteType,
-            medicalContext,
-            transcription,
-          );
-        }
+        // Use enhanced service prompts with full patient context for ALL note types
+        prompt = this.getPromptForNoteType(noteType, medicalContext, transcription);
       }
 
       console.log(
