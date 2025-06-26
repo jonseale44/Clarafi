@@ -211,6 +211,10 @@ export function EncounterDetailView({
   // Track the last generated content to avoid re-formatting user edits
   const lastGeneratedContent = useRef<string>("");
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cursor position preservation for better UX
+  const [savedCursorPosition, setSavedCursorPosition] = useState<{ from: number; to: number } | null>(null);
+  const cursorRestoreTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-save functionality
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -487,7 +491,38 @@ export function EncounterDetailView({
     setSoapNote(note);
     if (editor && !editor.isDestroyed) {
       const formattedContent = formatSoapNoteContent(note);
-      editor.commands.setContent(formattedContent);
+      
+      // Check if we need to preserve cursor position during active editing
+      if (userEditingLock && savedCursorPosition) {
+        console.log("🎯 [CursorPreservation] Preserving cursor position during content update:", savedCursorPosition);
+        
+        // Update content and restore cursor position
+        editor.commands.setContent(formattedContent);
+        
+        // Restore cursor position after a brief delay to allow content settling
+        if (cursorRestoreTimeout.current) {
+          clearTimeout(cursorRestoreTimeout.current);
+        }
+        
+        cursorRestoreTimeout.current = setTimeout(() => {
+          try {
+            const { from, to } = savedCursorPosition;
+            const docLength = editor.state.doc.content.size;
+            
+            // Ensure cursor position is within document bounds
+            const safeFrom = Math.min(from, docLength);
+            const safeTo = Math.min(to, docLength);
+            
+            editor.commands.setTextSelection({ from: safeFrom, to: safeTo });
+            console.log("✅ [CursorPreservation] Cursor position restored:", { from: safeFrom, to: safeTo });
+          } catch (error) {
+            console.warn("⚠️ [CursorPreservation] Failed to restore cursor position:", error);
+          }
+        }, 50);
+      } else {
+        // Normal content update without cursor preservation
+        editor.commands.setContent(formattedContent);
+      }
     }
   };
 
@@ -1005,6 +1040,10 @@ export function EncounterDetailView({
     onUpdate: ({ editor }) => {
       // Update React state when user types
       if (!editor.isDestroyed) {
+        // Save cursor position immediately for restoration during first 2 seconds of editing
+        const selection = editor.state.selection;
+        setSavedCursorPosition({ from: selection.from, to: selection.to });
+        
         const newContent = editor.getHTML();
         setSoapNote(newContent);
 
@@ -1019,9 +1058,16 @@ export function EncounterDetailView({
       // User clicked into editor - activate lock
       handleUserStartsEditing();
     },
+    onSelectionUpdate: ({ editor }) => {
+      // Track cursor position during editing for better restoration
+      if (!editor.isDestroyed && userEditingLock) {
+        const selection = editor.state.selection;
+        setSavedCursorPosition({ from: selection.from, to: selection.to });
+      }
+    },
   });
 
-  // Function to format SOAP note content with proper headers and spacing
+  // Function to format SOAP note content with consistent spacing matching AI generation
   const formatSoapNoteContent = (content: string) => {
     if (!content) return "";
 
@@ -1029,18 +1075,17 @@ export function EncounterDetailView({
       content
         // Convert markdown bold to HTML
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        // Convert single line breaks to HTML breaks
-        .replace(/\n/g, "<br/>")
-        // Aggressively clean up multiple consecutive breaks (2 or more)
+        // Normalize all line breaks - convert multiple \n to single <br/>
+        .replace(/\n{2,}/g, "\n") // First reduce multiple newlines to single
+        .replace(/\n/g, "<br/>") // Then convert all to HTML breaks
+        // Clean up multiple consecutive HTML breaks
         .replace(/(<br\/>){2,}/g, "<br/>")
-        // Ensure SOAP headers have proper spacing before them but not excessive spacing after
-        .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, "<br/>$1")
-        .replace(/(<strong>OBJECTIVE:<\/strong>)/g, "<br/>$1")
-        .replace(/(<strong>ASSESSMENT.*?:<\/strong>)/g, "<br/>$1")
-        .replace(/(<strong>PLAN:<\/strong>)/g, "<br/>$1")
-        .replace(/(<strong>ORDERS:<\/strong>)/g, "<br/>$1")
+        // Ensure SOAP headers have consistent single break before them
+        .replace(/(<br\/>)*(<strong>(?:SUBJECTIVE|OBJECTIVE|ASSESSMENT|PLAN|ORDERS).*?:<\/strong>)/g, "<br/>$2")
         // Remove leading breaks
         .replace(/^(<br\/>)+/, "")
+        // Ensure consistent spacing after headers (single break)
+        .replace(/(<strong>(?:SUBJECTIVE|OBJECTIVE|ASSESSMENT|PLAN|ORDERS).*?:<\/strong>)(<br\/>)*/g, "$1<br/>")
     );
   };
 
