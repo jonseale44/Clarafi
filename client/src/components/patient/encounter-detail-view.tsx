@@ -10,6 +10,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ChevronDown,
   ChevronRight,
   Plus,
@@ -21,6 +29,7 @@ import {
   Bot,
   RefreshCw,
   Save,
+  AlertTriangle,
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -960,12 +969,12 @@ export function EncounterDetailView({
     }
   };
 
-  // User edit detection handlers
+  // User edit detection handlers with persistent lock
   const handleUserStartsEditing = () => {
     if (!userEditingLock) {
       setUserEditingLock(true);
       setLastUserEditTime(Date.now());
-      console.log("🔒 [UserEditLock] User started editing - locking SOAP updates");
+      console.log("🔒 [UserEditLock] User started editing - persistent lock activated");
     }
   };
 
@@ -974,6 +983,10 @@ export function EncounterDetailView({
     setLastUserEditTime(null);
     console.log("🔓 [UserEditLock] Edit lock cleared - AI updates allowed");
   };
+
+  // Modal warning state for recording conflicts
+  const [showRecordingConflictModal, setShowRecordingConflictModal] = useState(false);
+  const [pendingRecordingStart, setPendingRecordingStart] = useState<(() => void) | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -995,7 +1008,7 @@ export function EncounterDetailView({
         const newContent = editor.getHTML();
         setSoapNote(newContent);
 
-        // Detect user editing and activate lock
+        // Detect user editing and activate persistent lock
         handleUserStartsEditing();
 
         // Trigger auto-save with debouncing
@@ -1269,12 +1282,28 @@ export function EncounterDetailView({
     }
   };
 
+  // Enhanced start recording with edit lock conflict detection
   const startRecording = async () => {
     console.log(
       "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
       patient.id,
     );
     console.log("🎤 [EncounterView] Current AI mode:", useRestAPI ? "REST API" : "WebSocket");
+
+    // Check for edit lock conflict and show modal if needed
+    if (userEditingLock) {
+      console.log("🔒 [UserEditLock] Edit lock active - showing conflict modal");
+      setPendingRecordingStart(() => () => proceedWithRecording());
+      setShowRecordingConflictModal(true);
+      return;
+    }
+
+    // Proceed with normal recording
+    await proceedWithRecording();
+  };
+
+  // Actual recording implementation (extracted from original startRecording)
+  const proceedWithRecording = async () => {
 
     // Clear previous suggestions when starting new recording (both WebSocket and REST API)
     setGptSuggestions("");
@@ -3419,20 +3448,46 @@ Please provide medical suggestions based on this complete conversation context.`
                   selectedTemplate={selectedTemplate}
                 />
 
+                {/* Context-Aware AI Generation Button */}
                 {transcription.trim() && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={handleGenerateFromTranscription}
+                    onClick={() => {
+                      if (userEditingLock) {
+                        // Show modal for user with edits
+                        console.log("🔒 [UserEditLock] Manual AI regeneration requested with edit lock active");
+                        setShowRecordingConflictModal(true);
+                        setPendingRecordingStart(() => () => {
+                          // Auto-save current edits first
+                          if (editor && soapNote.trim()) {
+                            console.log("💾 [UserEditLock] Auto-saving edits before regeneration");
+                            handleSaveSOAP();
+                          }
+                          // Clear edit lock and regenerate
+                          setUserEditingLock(false);
+                          if (realtimeSOAPRef.current) {
+                            realtimeSOAPRef.current.generateSOAPNote(true);
+                          }
+                        });
+                      } else {
+                        // Direct generation for users without edits
+                        handleGenerateFromTranscription();
+                      }
+                    }}
                     disabled={isGeneratingSOAP || !transcription.trim()}
-                    className={`relative overflow-hidden transition-all duration-200 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 ${
-                      isGeneratingSOAP ? 'bg-green-100 border-green-300' : ''
-                    }`}
+                    className={`relative overflow-hidden transition-all duration-200 ${
+                      userEditingLock 
+                        ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200' 
+                        : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200'
+                    } ${isGeneratingSOAP ? (userEditingLock ? 'bg-purple-100 border-purple-300' : 'bg-green-100 border-green-300') : ''}`}
                     style={{
                       background: isGeneratingSOAP
                         ? `linear-gradient(90deg, 
-                            rgba(34, 197, 94, 0.1) 0%, 
-                            rgba(34, 197, 94, 0.1) ${generationProgress || 0}%, 
+                            ${userEditingLock 
+                              ? 'rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0.1)' 
+                              : 'rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.1)'
+                            } ${generationProgress || 0}%, 
                             transparent ${generationProgress || 0}%, 
                             transparent 100%)`
                         : undefined
@@ -3441,48 +3496,34 @@ Please provide medical suggestions based on this complete conversation context.`
                     <div className="flex items-center space-x-2">
                       {isGeneratingSOAP && (
                         <div 
-                          className="h-3 w-3 rounded-full border-2 border-green-600 border-t-transparent animate-spin"
+                          className={`h-3 w-3 rounded-full border-2 ${
+                            userEditingLock ? 'border-purple-600' : 'border-green-600'
+                          } border-t-transparent animate-spin`}
                           style={{
                             animationDuration: '1s'
                           }}
                         />
                       )}
+                      {userEditingLock && <Bot className="h-4 w-4" />}
                       <span>
                         {isGeneratingSOAP
                           ? `Generating... ${Math.round(generationProgress || 0)}%`
+                          : userEditingLock
+                          ? "Regenerate from AI"
                           : "Generate from Transcription"}
                       </span>
                     </div>
                     {/* Precise progress indicator - subtle border animation */}
                     {isGeneratingSOAP && (
                       <div 
-                        className="absolute bottom-0 left-0 h-0.5 bg-green-500 transition-all duration-100 ease-out"
+                        className={`absolute bottom-0 left-0 h-0.5 ${
+                          userEditingLock ? 'bg-purple-500' : 'bg-green-500'
+                        } transition-all duration-100 ease-out`}
                         style={{
                           width: `${generationProgress || 0}%`
                         }}
                       />
                     )}
-                  </Button>
-                )}
-                {/* Manual AI Regeneration Button - Only show when user has editing lock active */}
-                {userEditingLock && transcription && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      console.log("🔄 [UserEditLock] Manual AI regeneration requested");
-                      // Temporarily disable user editing lock for this regeneration
-                      setUserEditingLock(false);
-                      // Trigger AI regeneration via the ref
-                      if (realtimeSOAPRef.current) {
-                        realtimeSOAPRef.current.generateSOAPNote(true);
-                      }
-                    }}
-                    disabled={isGeneratingSOAP}
-                    className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
-                  >
-                    <Bot className="h-4 w-4 mr-2" />
-                    Regenerate from AI
                   </Button>
                 )}
                 <Button
