@@ -439,17 +439,35 @@ export function TwoPhaseTemplateEditor({
     
     for (const comment of sortedComments) {
       if (comment.type === 'insertion') {
-        // Insert AI instruction at the exact position with smart spacing
-        const beforeText = processedText.slice(0, comment.position);
-        const afterText = processedText.slice(comment.position);
+        // Smart positioning: avoid breaking words and handle spacing properly
+        let insertPosition = comment.position;
         
         console.log('🔧 [GenerateFinalTemplate] Inserting comment:', {
           commentContent: comment.content,
           position: comment.position,
-          beforeText: beforeText.slice(-20),
-          afterText: afterText.slice(0, 20),
           charAtPosition: processedText[comment.position] || 'END'
         });
+        
+        // If we're in the middle of a word, move to the end of the word
+        if (insertPosition > 0 && insertPosition < processedText.length) {
+          const charBefore = processedText[insertPosition - 1];
+          const charAfter = processedText[insertPosition];
+          
+          // If we're between letters (no space/newline on either side), move to word boundary
+          if (charBefore && charAfter && 
+              charBefore.match(/[a-zA-Z]/) && charAfter.match(/[a-zA-Z]/)) {
+            // Find the end of the current word
+            while (insertPosition < processedText.length && 
+                   processedText[insertPosition].match(/[a-zA-Z]/)) {
+              insertPosition++;
+            }
+            console.log('📝 [GenerateFinalTemplate] Moved to word boundary:', insertPosition);
+          }
+        }
+        
+        // Now slice with the final position
+        const beforeText = processedText.slice(0, insertPosition);
+        const afterText = processedText.slice(insertPosition);
         
         // Check if we need to add proper spacing around the instruction
         const needsSpaceBefore = beforeText.length > 0 && !beforeText.endsWith(' ') && !beforeText.endsWith('\n');
