@@ -491,4 +491,4 @@ export function EnhancedMedicalProblemsList({
       />
     </div>
   );
-}
+};
