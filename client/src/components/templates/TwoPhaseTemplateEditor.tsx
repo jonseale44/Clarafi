@@ -446,109 +446,29 @@ export function TwoPhaseTemplateEditor({
   };
 
   const generateFinalTemplate = () => {
-    // COMPLETELY REWRITTEN APPROACH: Use visual indicator positions as the source of truth
-    // The visual indicators are positioned correctly, so we'll reverse-engineer positions from them
+    // SIMPLE APPROACH: Use the original stored positions which were calculated correctly
+    console.log('🔧 [GenerateFinalTemplate] Using original stored positions');
     
-    console.log('🔧 [GenerateFinalTemplate] Starting with', comments.length, 'comments');
-    console.log('🔧 [GenerateFinalTemplate] Indicator positions:', indicatorPositions);
-    
-    // Create a mapping of visual positions to text positions
-    const commentInsertions = [];
-    
-    for (const comment of comments) {
-      if (comment.type === 'insertion') {
-        // Find the corresponding visual indicator
-        const indicator = indicatorPositions.find(pos => pos.id === comment.id);
-        if (indicator) {
-          // Reverse calculate the text position from the visual position
-          const lines = noteText.split('\n');
-          const lineHeight = 24; // Match the CSS line height
-          const paddingTop = 12;
-          
-          // Calculate which line this indicator is on
-          const visualLineNumber = Math.floor((indicator.top - paddingTop) / lineHeight);
-          
-          // Calculate character position within that line using more precise measurements
-          const paddingLeft = 12;
-          
-          // Use canvas to get accurate character width for this specific font
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          let charPositionInLine = 0;
-          
-          if (context && visualLineNumber < lines.length) {
-            const computedStyle = getComputedStyle(document.body);
-            context.font = `${computedStyle.fontSize} ${computedStyle.fontFamily}`;
-            
-            const lineText = lines[visualLineNumber] || '';
-            let currentWidth = 0;
-            
-            // Measure character by character to find the position closest to the click
-            for (let i = 0; i < lineText.length; i++) {
-              const charWidth = context.measureText(lineText[i]).width;
-              if (currentWidth + paddingLeft > indicator.left - charWidth / 2) {
-                break;
-              }
-              currentWidth += charWidth;
-              charPositionInLine++;
-            }
-          } else {
-            // Fallback to approximate calculation
-            const charWidth = 8;
-            charPositionInLine = Math.max(0, Math.floor((indicator.left - paddingLeft) / charWidth));
-          }
-          
-          // Convert to absolute text position
-          let textPosition = 0;
-          for (let i = 0; i < visualLineNumber && i < lines.length; i++) {
-            textPosition += lines[i].length + 1; // +1 for newline
-          }
-          if (visualLineNumber < lines.length) {
-            textPosition += Math.min(charPositionInLine, lines[visualLineNumber].length);
-          }
-          
-          commentInsertions.push({
-            position: textPosition,
-            content: comment.content,
-            id: comment.id
-          });
-          
-          console.log('🔧 [GenerateFinalTemplate] Recalculated position for', comment.content, ':', {
-            visualLine: visualLineNumber,
-            charInLine: charPositionInLine,
-            finalPosition: textPosition,
-            indicatorTop: indicator.top,
-            indicatorLeft: indicator.left,
-            lineText: lines[visualLineNumber] || 'NO_LINE',
-            textAtCalculatedPosition: noteText.substring(textPosition - 5, textPosition + 15),
-            originalStoredPosition: comment.position
-          });
-        }
-      } else if (comment.type === 'selection' && comment.selectedText) {
-        // Handle selection-based comments
-        commentInsertions.push({
-          position: comment.position,
-          content: comment.content,
-          selectedText: comment.selectedText,
-          type: 'selection'
-        });
-      }
-    }
-    
-    // Sort by position in descending order to avoid position shifts during insertion
-    commentInsertions.sort((a, b) => b.position - a.position);
+    // Sort comments by position in descending order to avoid position shifts
+    const sortedComments = [...comments].sort((a, b) => b.position - a.position);
     
     let processedText = noteText;
     
-    for (const insertion of commentInsertions) {
-      if (insertion.type === 'selection') {
-        // Handle selection-based insertions
-        const commentedText = `${insertion.selectedText} {{${insertion.content}}}`;
-        processedText = processedText.replace(insertion.selectedText, commentedText);
-      } else {
-        // Handle position-based insertions
-        const beforeText = processedText.slice(0, insertion.position);
-        const afterText = processedText.slice(insertion.position);
+    console.log('🔧 [GenerateFinalTemplate] Processing', sortedComments.length, 'comments');
+    console.log('🔧 [GenerateFinalTemplate] Original text length:', noteText.length);
+    
+    for (const comment of sortedComments) {
+      if (comment.type === 'insertion') {
+        console.log('🔧 [GenerateFinalTemplate] Processing comment:', {
+          content: comment.content,
+          storedPosition: comment.position,
+          textAtPosition: processedText.substring(comment.position - 5, comment.position + 5),
+          charAtPosition: processedText[comment.position] || 'END'
+        });
+        
+        // Use the exact stored position
+        const beforeText = processedText.slice(0, comment.position);
+        const afterText = processedText.slice(comment.position);
         
         // Add appropriate spacing
         const needsSpaceBefore = beforeText.length > 0 && !beforeText.endsWith(' ') && !beforeText.endsWith('\n');
@@ -557,13 +477,17 @@ export function TwoPhaseTemplateEditor({
         const spaceBefore = needsSpaceBefore ? ' ' : '';
         const spaceAfter = needsSpaceAfter ? ' ' : '';
         
-        processedText = `${beforeText}${spaceBefore}{{${insertion.content}}}${spaceAfter}${afterText}`;
+        processedText = `${beforeText}${spaceBefore}{{${comment.content}}}${spaceAfter}${afterText}`;
         
-        console.log('🔧 [GenerateFinalTemplate] Inserted', insertion.content, 'at position', insertion.position);
+        console.log('🔧 [GenerateFinalTemplate] Inserted', comment.content, 'at original position', comment.position);
+      } else if (comment.type === 'selection' && comment.selectedText) {
+        // Handle selection-based comments
+        const commentedText = `${comment.selectedText} {{${comment.content}}}`;
+        processedText = processedText.replace(comment.selectedText, commentedText);
       }
     }
     
-    console.log('📝 Generated final template with', commentInsertions.length, 'AI instructions');
+    console.log('📝 Final template generated');
     return processedText;
   };
 
