@@ -1059,33 +1059,7 @@ export function EncounterDetailView({
         // Detect user editing and activate persistent lock
         handleUserStartsEditing();
 
-        // Gentle spacing normalization after typing (1 second delay)
-        if (contentNormalizationTimeout.current) {
-          clearTimeout(contentNormalizationTimeout.current);
-        }
-        
-        contentNormalizationTimeout.current = setTimeout(() => {
-          if (!userEditingLock || !savedCursorPosition) return; // Only normalize during active editing
-          
-          const normalizedContent = formatSoapNoteContent(newContent);
-          if (normalizedContent !== newContent) {
-            console.log("🔧 [ContentNormalization] Applying gentle spacing normalization");
-            const { from, to } = savedCursorPosition;
-            editor.commands.setContent(normalizedContent);
-            
-            // Restore cursor position after normalization
-            setTimeout(() => {
-              try {
-                const docLength = editor.state.doc.content.size;
-                const safeFrom = Math.min(from, docLength);
-                const safeTo = Math.min(to, docLength);
-                editor.commands.setTextSelection({ from: safeFrom, to: safeTo });
-              } catch (error) {
-                console.warn("⚠️ [ContentNormalization] Cursor restoration failed:", error);
-              }
-            }, 50);
-          }
-        }, 1000);
+        // Content normalization will happen during auto-save to maintain consistent spacing
 
         // Trigger auto-save with debouncing
         triggerAutoSave(newContent);
