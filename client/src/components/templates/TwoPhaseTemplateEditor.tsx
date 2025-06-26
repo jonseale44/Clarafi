@@ -518,7 +518,10 @@ export function TwoPhaseTemplateEditor({
             charInLine: charPositionInLine,
             finalPosition: textPosition,
             indicatorTop: indicator.top,
-            indicatorLeft: indicator.left
+            indicatorLeft: indicator.left,
+            lineText: lines[visualLineNumber] || 'NO_LINE',
+            textAtCalculatedPosition: noteText.substring(textPosition - 5, textPosition + 15),
+            originalStoredPosition: comment.position
           });
         }
       } else if (comment.type === 'selection' && comment.selectedText) {
