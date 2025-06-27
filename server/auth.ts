@@ -59,20 +59,79 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
+    try {
+      console.log("🔐 [Registration] Starting registration process for:", req.body.username);
+      
+      // Check for existing username
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        console.log("❌ [Registration] Username already exists:", req.body.username);
+        return res.status(400).json({ 
+          message: "Username already exists",
+          field: "username"
+        });
+      }
+
+      // Check for existing email if provided
+      if (req.body.email) {
+        const existingEmailUser = await storage.getUserByEmail(req.body.email);
+        if (existingEmailUser) {
+          console.log("❌ [Registration] Email already exists:", req.body.email);
+          return res.status(400).json({ 
+            message: "Email address is already registered",
+            field: "email"
+          });
+        }
+      }
+
+      // Clean up empty NPI to prevent unique constraint violations
+      const userData = {
+        ...req.body,
+        password: await hashPassword(req.body.password),
+        npi: req.body.npi && req.body.npi.trim() ? req.body.npi.trim() : null,
+      };
+
+      console.log("✅ [Registration] Creating new user:", userData.username);
+      const user = await storage.createUser(userData);
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error("❌ [Registration] Login error after creation:", err);
+          return next(err);
+        }
+        console.log("✅ [Registration] User created and logged in successfully:", user.username);
+        res.status(201).json(user);
+      });
+
+    } catch (error: any) {
+      console.error("❌ [Registration] Registration failed:", error);
+      
+      // Handle database constraint violations
+      if (error.code === '23505') { // PostgreSQL unique constraint violation
+        if (error.constraint === 'users_email_unique') {
+          return res.status(400).json({ 
+            message: "Email address is already registered",
+            field: "email"
+          });
+        } else if (error.constraint === 'users_npi_unique') {
+          return res.status(400).json({ 
+            message: "NPI number is already registered",
+            field: "npi"
+          });
+        } else if (error.constraint === 'users_username_unique') {
+          return res.status(400).json({ 
+            message: "Username already exists",
+            field: "username"
+          });
+        }
+      }
+      
+      // Generic error for other issues
+      return res.status(500).json({ 
+        message: "Registration failed. Please try again.",
+        field: null
+      });
     }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
