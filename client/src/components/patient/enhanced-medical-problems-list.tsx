@@ -119,7 +119,7 @@ export function EnhancedMedicalProblemsList({
   });
 
   // User preferences query
-  const { data: userPreferences } = useQuery({
+  const { data: userPreferences } = useQuery<{ medicalProblemsDisplayThreshold?: number }>({
     queryKey: ["/api/user/preferences"],
     staleTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
@@ -476,14 +476,14 @@ export function EnhancedMedicalProblemsList({
   const renderCurrentProblems = () => (
     <div className="space-y-6">
       {/* Active Problems */}
-      {activeProblems.length > 0 && (
+      {filteredActiveProblems.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
             <Activity className="h-4 w-4" />
-            Active Problems ({activeProblems.length})
+            Active Problems ({filteredActiveProblems.length}{activeProblems.length !== filteredActiveProblems.length ? ` of ${activeProblems.length}` : ''})
           </div>
           <div className="space-y-3 group">
-            {activeProblems.map(renderProblemCard)}
+            {filteredActiveProblems.map(renderProblemCard)}
           </div>
         </div>
       )}
@@ -543,6 +543,46 @@ export function EnhancedMedicalProblemsList({
             Add Problem
           </Button>
         </div>
+      )}
+
+      {/* Priority Filter Slider */}
+      {activeProblems.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Priority Filter
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <DualHandleSlider
+              min={1}
+              max={100}
+              largeHandleValue={largeHandleValue}
+              smallHandleValue={smallHandleValue}
+              onLargeHandleChange={handleLargeHandleChange}
+              onSmallHandleChange={handleSmallHandleChange}
+              label="Medical Problems Display"
+              formatValue={(value) => `${value}% (${Math.max(1, Math.ceil((value / 100) * activeProblems.length))} of ${activeProblems.length} problems)`}
+              className="mb-2"
+            />
+            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <div className="flex justify-between">
+                <span>• Large handle: Permanent user preference</span>
+                <span className="font-mono">{largeHandleValue}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span>• Small handle: Session filter for this patient</span>
+                <span className="font-mono">{smallHandleValue}%</span>
+              </div>
+              <div className="pt-1 border-t border-blue-200 dark:border-blue-800">
+                <span>Showing {filteredActiveProblems.length} of {activeProblems.length} problems based on priority ranking</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {(currentProblemsCount > 0 || resolvedCount > 0) && (
