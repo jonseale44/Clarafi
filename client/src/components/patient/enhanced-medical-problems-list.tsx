@@ -42,10 +42,43 @@ interface MedicalProblem {
   }>;
   lastUpdated?: string;
   // GPT-powered intelligent ranking
-  rankScore?: number; // 1.00 (highest priority) to 99.99 (lowest priority)
+  rankScore?: number; // 1.00 (highest priority) to 99.99 (lowest priority) - LEGACY, use calculated rank
   lastRankedEncounterId?: number;
   rankingReason?: string; // GPT's reasoning for rank assignment
+  // Enhanced ranking with factor breakdown for user weighting
+  rankingFactors?: {
+    clinical_severity: number;      // Raw factor score (0-40 range)
+    treatment_complexity: number;   // Raw factor score (0-30 range)
+    patient_frequency: number;      // Raw factor score (0-20 range)
+    clinical_relevance: number;     // Raw factor score (0-10 range)
+  };
 }
+
+interface RankingWeights {
+  clinical_severity: number;
+  treatment_complexity: number;
+  patient_frequency: number;
+  clinical_relevance: number;
+}
+
+// Calculate real-time ranking based on user weight preferences
+const calculateRealTimeRanking = (problem: MedicalProblem, userWeights: RankingWeights): number => {
+  // Use factor breakdown if available, otherwise fall back to legacy rank
+  if (!problem.rankingFactors) {
+    return problem.rankScore || 99.99; // Default to lowest priority if no data
+  }
+  
+  const factors = problem.rankingFactors;
+  
+  // Apply user weight preferences to GPT factor breakdown
+  const weightedScore = 
+    (factors.clinical_severity * userWeights.clinical_severity / 100) +
+    (factors.treatment_complexity * userWeights.treatment_complexity / 100) +
+    (factors.patient_frequency * userWeights.patient_frequency / 100) +
+    (factors.clinical_relevance * userWeights.clinical_relevance / 100);
+  
+  return Math.round(weightedScore * 100) / 100; // Round to 2 decimal places
+};
 
 interface EnhancedMedicalProblemsListProps {
   patientId: number;
@@ -131,11 +164,22 @@ export function EnhancedMedicalProblemsList({
     enabled: !!patientId,
   });
 
-  // User preferences query
-  const { data: userPreferences } = useQuery<{ medicalProblemsDisplayThreshold?: number }>({
+  // User preferences query including ranking weights
+  const { data: userPreferences } = useQuery<{ 
+    medicalProblemsDisplayThreshold?: number;
+    rankingWeights?: RankingWeights;
+  }>({
     queryKey: ["/api/user/preferences"],
     staleTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
+
+  // Default ranking weights if none set
+  const currentRankingWeights: RankingWeights = userPreferences?.rankingWeights || {
+    clinical_severity: 40,
+    treatment_complexity: 30,
+    patient_frequency: 20,
+    clinical_relevance: 10
+  };
 
   // Slider state management
   const [largeHandleValue, setLargeHandleValue] = useState(100); // Permanent user preference
@@ -175,17 +219,31 @@ export function EnhancedMedicalProblemsList({
     // Small handle changes are temporary and not saved
   };
 
+  // Transform problems with real-time ranking calculations
+  const getProblemsWithRealTimeRanking = (problems: MedicalProblem[]): (MedicalProblem & { calculatedRank: number })[] => {
+    return problems.map(problem => ({
+      ...problem,
+      calculatedRank: calculateRealTimeRanking(problem, currentRankingWeights)
+    }));
+  };
+
   // Calculate filtered problems based on small handle value
   const getFilteredProblems = (problems: MedicalProblem[]) => {
     if (!problems.length) return problems;
     
-    // Calculate how many problems to show based on percentage
-    const totalProblems = problems.length;
+    // Step 1: Apply real-time ranking calculations
+    const problemsWithCalculatedRanks = getProblemsWithRealTimeRanking(problems);
+    
+    // Step 2: Sort by calculated rankings (lower rank = higher priority)
+    const sortedProblems = problemsWithCalculatedRanks.sort((a, b) => a.calculatedRank - b.calculatedRank);
+    
+    // Step 3: Calculate how many problems to show based on percentage
+    const totalProblems = sortedProblems.length;
     const percentageToShow = smallHandleValue;
     const problemsToShow = Math.max(1, Math.ceil((percentageToShow / 100) * totalProblems));
     
-    // Return top ranked problems (already sorted by rank score)
-    return problems.slice(0, problemsToShow);
+    // Step 4: Return top ranked problems with calculated rankings
+    return sortedProblems.slice(0, problemsToShow);
   };
 
   const deleteMutation = useMutation({
