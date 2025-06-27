@@ -141,6 +141,9 @@ export const userNotePreferences = pgTable("user_note_preferences", {
   showTemplatePreview: boolean("show_template_preview").default(true),
   autoSaveChanges: boolean("auto_save_changes").default(true),
   
+  // Medical Problems Display preferences
+  medicalProblemsDisplayThreshold: integer("medical_problems_display_threshold").default(100), // Percentage (1-100)
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

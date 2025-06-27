@@ -11,6 +11,48 @@ import { TemplatePromptGenerator } from "./template-prompt-generator";
 
 export default function setupTemplateRoutes(app: Express) {
   
+  // Get user preferences including medical problems display threshold
+  app.get("/api/user/preferences", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.sendStatus(401);
+      }
+      
+      const userId = (req as any).user.id;
+      console.log(`⚙️ [UserPreferences] Fetching preferences for user ${userId}`);
+      
+      const preferences = await storage.getUserNotePreferences(userId);
+      
+      console.log(`⚙️ [UserPreferences] Retrieved preferences for user ${userId}`);
+      res.json(preferences);
+    } catch (error: any) {
+      console.error("❌ [UserPreferences] Error fetching user preferences:", error);
+      res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  });
+
+  // Update user preferences including medical problems display threshold
+  app.put("/api/user/preferences", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.sendStatus(401);
+      }
+      
+      const userId = (req as any).user.id;
+      const updates = req.body;
+      
+      console.log(`⚙️ [UserPreferences] Updating preferences for user ${userId}:`, updates);
+      
+      const updatedPreferences = await storage.updateUserNotePreferences(userId, updates);
+      
+      console.log(`⚙️ [UserPreferences] Updated preferences for user ${userId}`);
+      res.json(updatedPreferences);
+    } catch (error: any) {
+      console.error("❌ [UserPreferences] Error updating user preferences:", error);
+      res.status(500).json({ error: "Failed to update preferences" });
+    }
+  });
+  
   // Get user's custom templates
   app.get("/api/templates/user", async (req: Request, res: Response) => {
     try {

@@ -9,7 +9,7 @@ import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, E
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
-import { Slider } from "@/components/ui/slider";
+import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
 
 interface VisitNote {
   date: string;
@@ -117,6 +117,30 @@ export function EnhancedMedicalProblemsList({
     queryKey: ['/api/encounters', patientId],
     enabled: !!patientId,
   });
+
+  // User preferences query
+  const { data: userPreferences } = useQuery({
+    queryKey: ["/api/user/preferences"],
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
+  });
+
+  // Slider state management
+  const [largeHandleValue, setLargeHandleValue] = useState(100); // Permanent user preference
+  const [smallHandleValue, setSmallHandleValue] = useState(100); // Temporary session filter
+  
+  // Initialize slider values from user preferences
+  useEffect(() => {
+    if (userPreferences?.medicalProblemsDisplayThreshold) {
+      const threshold = userPreferences.medicalProblemsDisplayThreshold;
+      setLargeHandleValue(threshold);
+      setSmallHandleValue(threshold);
+    }
+  }, [userPreferences]);
+
+  // Reset small handle when leaving encounter (simulated by patientId change)
+  useEffect(() => {
+    setSmallHandleValue(largeHandleValue);
+  }, [patientId, largeHandleValue]);
 
   const deleteMutation = useMutation({
     mutationFn: async (problemId: number) => {
