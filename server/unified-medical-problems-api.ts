@@ -327,4 +327,86 @@ router.put("/medical-problems/:problemId/resolve", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/medical-problems/refresh-rankings/:patientId
+ * Refresh medical problem rankings for a patient using current user weights
+ */
+router.post("/medical-problems/refresh-rankings/:patientId", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    console.log(`🔄 [RankingRefresh] Refresh rankings request for patient ${patientId}`);
+    
+    if (isNaN(patientId)) {
+      return res.status(400).json({ error: "Invalid patient ID" });
+    }
+
+    // Get current user preferences for ranking weights
+    const userId = req.user.id;
+    const userPreferences = await storage.getUserNotePreferences(userId);
+    
+    // Extract ranking weights (use defaults if not set)
+    const rankingWeights = userPreferences?.rankingWeights || {
+      clinical_severity: 40,
+      treatment_complexity: 30,
+      patient_frequency: 20,
+      clinical_relevance: 10
+    };
+
+    console.log(`🔄 [RankingRefresh] Using ranking weights:`, rankingWeights);
+
+    // Get all medical problems for the patient
+    const problems = await storage.getPatientMedicalProblems(patientId);
+    console.log(`🔄 [RankingRefresh] Found ${problems.length} problems to refresh rankings`);
+
+    let refreshedCount = 0;
+
+    // Recalculate rankings for each problem
+    for (const problem of problems) {
+      if (problem.rankingFactors) {
+        try {
+          const factors = JSON.parse(problem.rankingFactors);
+          
+          // Calculate new weighted score
+          const newRankScore = 
+            (factors.clinical_severity * rankingWeights.clinical_severity / 100) +
+            (factors.treatment_complexity * rankingWeights.treatment_complexity / 100) +
+            (factors.patient_frequency * rankingWeights.patient_frequency / 100) +
+            (factors.clinical_relevance * rankingWeights.clinical_relevance / 100);
+
+          // Update the problem with new ranking
+          await db
+            .update(medicalProblems)
+            .set({ 
+              rankScore: newRankScore,
+              lastUpdated: new Date().toISOString()
+            })
+            .where(eq(medicalProblems.id, problem.id));
+
+          refreshedCount++;
+          console.log(`✅ [RankingRefresh] Updated problem ${problem.id}: ${problem.problemTitle} -> rank ${newRankScore.toFixed(2)}`);
+        } catch (parseError) {
+          console.warn(`⚠️ [RankingRefresh] Could not parse ranking factors for problem ${problem.id}:`, parseError);
+        }
+      }
+    }
+
+    console.log(`✅ [RankingRefresh] Successfully refreshed rankings for ${refreshedCount} problems`);
+    res.json({ 
+      success: true, 
+      message: `Rankings refreshed for ${refreshedCount} medical problems`,
+      refreshedCount,
+      totalProblems: problems.length,
+      rankingWeights
+    });
+
+  } catch (error) {
+    console.error(`❌ [RankingRefresh] Error refreshing rankings for patient ${req.params.patientId}:`, error);
+    res.status(500).json({ error: "Failed to refresh medical problem rankings" });
+  }
+});
+
 export default router;
