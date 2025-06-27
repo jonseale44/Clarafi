@@ -144,6 +144,19 @@ export const userNotePreferences = pgTable("user_note_preferences", {
   // Medical Problems Display preferences
   medicalProblemsDisplayThreshold: integer("medical_problems_display_threshold").default(100), // Percentage (1-100)
   
+  // Medical Problems Ranking Weight preferences (percentages that sum to 100)
+  rankingWeights: jsonb("ranking_weights").default({
+    "clinical_severity": 40,      // Clinical severity & immediacy weight
+    "treatment_complexity": 30,   // Treatment complexity & follow-up needs weight
+    "patient_frequency": 20,      // Patient-specific frequency & impact weight
+    "clinical_relevance": 10      // Current clinical relevance weight
+  }).$type<{
+    clinical_severity: number;
+    treatment_complexity: number;
+    patient_frequency: number;
+    clinical_relevance: number;
+  }>(),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -512,6 +525,14 @@ export const medicalProblems = pgTable("medical_problems", {
   rankScore: numeric("rank_score", { precision: 5, scale: 2 }).default("99.99"), // 1.00 = highest priority, 99.99 = lowest
   lastRankedEncounterId: integer("last_ranked_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
   rankingReason: text("ranking_reason"), // GPT's reasoning for rank assignment
+  
+  // Enhanced ranking with factor breakdown for user weighting
+  rankingFactors: jsonb("ranking_factors").$type<{
+    clinical_severity: number;      // Raw factor score (0-40 range)
+    treatment_complexity: number;   // Raw factor score (0-30 range)
+    patient_frequency: number;      // Raw factor score (0-20 range)
+    clinical_relevance: number;     // Raw factor score (0-10 range)
+  }>(), // GPT-generated factor breakdown for user weight customization
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
