@@ -318,7 +318,13 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "extracted_date": "2011-10-07" | null,
       "consolidation_reasoning": "Why this was matched/not matched with existing problems",
       "rank_score": 25.75,
-      "ranking_reason": "Clinical reasoning for rank assignment based on severity, complexity, and current relevance"
+      "ranking_reason": "Clinical reasoning for rank assignment based on severity, complexity, and current relevance",
+      "ranking_factors": {
+        "clinical_severity": 28,      // Raw factor score (0-40 range based on severity & acuity)
+        "treatment_complexity": 22,   // Raw factor score (0-30 range based on management complexity)
+        "patient_frequency": 16,      // Raw factor score (0-20 range based on recent mentions/updates)
+        "clinical_relevance": 8       // Raw factor score (0-10 range based on current clinical activity)
+      }
     }
   ]
 }
@@ -326,7 +332,7 @@ RESPONSE FORMAT - Return ONLY valid JSON:
 ENHANCED EXAMPLES WITH RANKING:
 
 1. SOAP has "Type 2 DM with neuropathy" + existing "Type 2 Diabetes" (E11.9):
-   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "rank_score": 15.25, "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring"}
+   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "rank_score": 15.25, "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring", "ranking_factors": {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}}
 
 2. Attachment with "HTN" + existing "Hypertension" (I10):
    {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "rank_score": 42.50, "ranking_reason": "Stable chronic hypertension with routine management requirements"}
