@@ -1165,10 +1165,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserNotePreferences(userId: number, updates: Partial<SelectUserNotePreferences>): Promise<SelectUserNotePreferences> {
+    // First try to update existing preferences
     const [updated] = await db.update(userNotePreferences)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(userNotePreferences.userId, userId))
       .returning();
+    
+    // If no record was updated (user has no preferences yet), create new ones
+    if (!updated) {
+      const [created] = await db.insert(userNotePreferences)
+        .values({ 
+          userId, 
+          ...updates,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      return created;
+    }
+    
     return updated;
   }
 
