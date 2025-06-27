@@ -124,15 +124,24 @@ export function PatientAttachments({
       console.log('📎 [Frontend] File entry type:', typeof fileEntry);
       console.log('📎 [Frontend] File entry:', fileEntry);
       console.log('📎 [Frontend] File constructor available:', typeof File !== 'undefined');
+      console.log('📎 [Frontend] Global window.File:', typeof window.File !== 'undefined');
       
       let fileName = 'Unknown file';
       try {
-        if (fileEntry && typeof fileEntry === 'object' && 'name' in fileEntry) {
-          fileName = (fileEntry as File).name;
+        // Use a safer type check that doesn't rely on instanceof
+        if (fileEntry && typeof fileEntry === 'object' && fileEntry !== null && 'name' in fileEntry && 'size' in fileEntry) {
+          fileName = (fileEntry as any).name || 'Unknown file';
           console.log('📎 [Frontend] Extracted fileName:', fileName);
+        } else {
+          console.log('📎 [Frontend] File entry is not a valid File object');
         }
       } catch (error) {
         console.error('📎 [Frontend] Error extracting file name:', error);
+        console.error('📎 [Frontend] Error details:', {
+          name: (error as any)?.name,
+          message: (error as any)?.message,
+          stack: (error as any)?.stack?.split('\n').slice(0, 3).join('\n')
+        });
       }
       
       console.log('📎 [Frontend] Starting upload tracking for patient:', patientId, 'file:', fileName);

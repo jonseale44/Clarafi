@@ -167,9 +167,9 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
   } catch (error) {
     console.error('📎 [AttachmentUpload] ❌ File upload error:', error);
     console.error('📎 [AttachmentUpload] ❌ Error type:', typeof error);
-    console.error('📎 [AttachmentUpload] ❌ Error name:', error?.name);
-    console.error('📎 [AttachmentUpload] ❌ Error message:', error?.message);
-    console.error('📎 [AttachmentUpload] ❌ Error stack:', error?.stack);
+    console.error('📎 [AttachmentUpload] ❌ Error name:', (error as any)?.name);
+    console.error('📎 [AttachmentUpload] ❌ Error message:', (error as any)?.message);
+    console.error('📎 [AttachmentUpload] ❌ Error stack:', (error as any)?.stack);
     
     // More detailed error information
     if (error instanceof Error) {
