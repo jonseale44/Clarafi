@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical API Endpoint Fix - Stop Recording Error Resolution (June 27, 2025)
+- **CRITICAL BUG FIXED**: Resolved "instanceof is not callable" error that prevented stop recording functionality from working
+- **ROOT CAUSE IDENTIFIED**: Code was calling non-existent `/api/medical-problems/process-encounter` endpoint, which returned HTML 404 error instead of JSON
+- **CORRECTED ENDPOINT CALLS**: Updated both stop recording and manual processing to use correct `/api/medical-problems/process-unified` endpoint
+- **ENHANCED ERROR HANDLING**: Added comprehensive logging to prevent "body stream already read" errors by avoiding duplicate response text reads
+- **IMPROVED DEBUGGING**: Implemented detailed logging throughout stop recording pipeline to isolate API failures
+- **RESPONSE FORMAT ALIGNED**: Updated response handling to use `problemsAffected` instead of `total_problems_affected` to match unified endpoint format
+- **PRODUCTION STABILITY**: Stop recording functionality now works correctly without throwing JavaScript errors
+- **COMPREHENSIVE LOGGING**: Enhanced error tracking shows exact API response status, headers, and error content for future debugging
+
 ### Medical Problems Gatekeeper Removal Completed (June 26, 2025)
 - **CRITICAL ARCHITECTURAL FIX**: Removed `hasSignificantSOAPChanges` gatekeeper that was blocking legitimate medical problem processing
 - **ROOT CAUSE IDENTIFIED**: Function operated on intra-encounter timescale (minutes) while medical intelligence needs inter-encounter scope (months/years)

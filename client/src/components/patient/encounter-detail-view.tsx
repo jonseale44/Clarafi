@@ -2423,13 +2423,15 @@ Please provide medical suggestions based on this complete conversation context.`
         );
 
         const medicalProblemsResponse = await fetch(
-          `/api/medical-problems/process-encounter`,
+          `/api/medical-problems/process-unified`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({
+              patientId: patient.id,
               encounterId: encounterId,
+              soapNote: soapNote,
               triggerType: "recording_complete",
             }),
           },
@@ -2454,17 +2456,21 @@ Please provide medical suggestions based on this complete conversation context.`
             });
           } catch (jsonError) {
             console.error("❌ [StopRecording] Error parsing medical problems JSON:", jsonError);
-            const responseText = await medicalProblemsResponse.text();
-            console.error("❌ [StopRecording] Medical problems response text:", responseText.substring(0, 500));
-            throw jsonError;
+            // Don't try to read response text again - the stream is already consumed
+            console.error("❌ [StopRecording] Medical problems returned non-JSON content (likely HTML error page)");
+            // Don't throw here - continue with other processing
           }
         } else {
-          const errorText = await medicalProblemsResponse.text();
-          console.error(
-            `❌ [StopRecording] Medical problems processing failed: ${medicalProblemsResponse.status}`,
-          );
-          console.error("❌ [StopRecording] Medical problems error text:", errorText.substring(0, 500));
-          throw new Error(`Medical problems processing failed: ${medicalProblemsResponse.status}`);
+          try {
+            const errorText = await medicalProblemsResponse.text();
+            console.error(
+              `❌ [StopRecording] Medical problems processing failed: ${medicalProblemsResponse.status}`,
+            );
+            console.error("❌ [StopRecording] Medical problems error text:", errorText.substring(0, 500));
+          } catch (textError) {
+            console.error("❌ [StopRecording] Error reading medical problems error text:", textError);
+          }
+          // Don't throw here - continue with other processing
         }
 
         // Process other services in parallel
@@ -3069,13 +3075,15 @@ Please provide medical suggestions based on this complete conversation context.`
 
         try {
           const medicalProblemsResponse = await fetch(
-            `/api/medical-problems/process-encounter`,
+            `/api/medical-problems/process-unified`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
               body: JSON.stringify({
+                patientId: patient.id,
                 encounterId: encounterId,
+                soapNote: currentContent,
                 triggerType: "manual_edit",
               }),
             },
@@ -3084,7 +3092,7 @@ Please provide medical suggestions based on this complete conversation context.`
           if (medicalProblemsResponse.ok) {
             const result = await medicalProblemsResponse.json();
             console.log(
-              `✅ [SmartProcessing] Medical problems updated: ${result.total_problems_affected || 0} problems affected`,
+              `✅ [SmartProcessing] Medical problems updated: ${result.problemsAffected || 0} problems affected`,
             );
 
             // Update tracking state
