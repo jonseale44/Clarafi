@@ -5,19 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, Filter, Activity, Clock, CheckCircle2 } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, Filter, Activity, Clock, CheckCircle2, FileText } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
 import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
+import { useLocation } from "wouter";
 
 interface VisitNote {
   date: string;
   notes: string;
-  source: "encounter" | "manual" | "imported_record";
+  source: "encounter" | "attachment" | "manual" | "imported_record";
   encounterId?: number;
+  attachmentId?: number;
   providerId?: number;
   providerName?: string;
+  confidence?: number;
+  sourceConfidence?: number;
 }
 
 interface MedicalProblem {
@@ -106,6 +110,7 @@ export function EnhancedMedicalProblemsList({
   const [activeTab, setActiveTab] = useState<'current' | 'resolved'>('current');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Load medical problems data using unified API
   const { data: medicalProblems = [], isLoading, error } = useQuery<MedicalProblem[]>({
@@ -306,10 +311,31 @@ export function EnhancedMedicalProblemsList({
     }
   };
 
-  const getSourceBadge = (source: string) => {
+  const getSourceBadge = (visit: VisitNote) => {
+    const { source, attachmentId, confidence } = visit;
+    
     switch (source) {
       case "encounter":
         return <Badge variant="default" className="text-xs">Encounter</Badge>;
+      case "attachment":
+        // Document Extract badge with confidence score and click navigation
+        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+        const handleClick = () => {
+          if (attachmentId) {
+            setLocation(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`);
+          }
+        };
+        return (
+          <Badge 
+            variant="secondary" 
+            className="text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+            onClick={handleClick}
+            title={`Click to view source document (Attachment #${attachmentId})`}
+          >
+            <FileText className="h-3 w-3 mr-1" />
+            Doc Extract {confidencePercent}%
+          </Badge>
+        );
       case "manual":
         return <Badge variant="secondary" className="text-xs">Manual</Badge>;
       case "imported_record":
@@ -444,7 +470,7 @@ export function EnhancedMedicalProblemsList({
                       <div key={index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
-                          {getSourceBadge(visit.source)}
+                          {getSourceBadge(visit)}
                           {visit.providerName && (
                             <span className="text-xs text-gray-500 dark:text-gray-400">by {visit.providerName}</span>
                           )}
