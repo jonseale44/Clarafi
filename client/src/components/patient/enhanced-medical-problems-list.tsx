@@ -262,7 +262,7 @@ export function EnhancedMedicalProblemsList({
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
+      month: 'numeric',
       day: 'numeric',
       year: '2-digit'
     });
@@ -378,13 +378,6 @@ export function EnhancedMedicalProblemsList({
                         </span>
                       )}
                     </CardTitle>
-                    
-                    {/* Ranking reason display */}
-                    {problem.rankingReason && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 italic">
-                        {problem.rankingReason}
-                      </div>
-                    )}
                     
                     <div className="flex items-center gap-3 mt-2">
                       {problem.firstDiagnosedDate && (
