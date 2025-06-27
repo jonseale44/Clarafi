@@ -7,32 +7,45 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Plus, Clock, User } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Clock, User, FileText, ExternalLink } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface VisitHistoryEntry {
-  encounter_id: number;
+  encounter_id?: number;
   date: string;
   notes: string;
-  icd10_at_visit: string;
-  provider: string;
-  changes_made: string[];
+  icd10_at_visit?: string;
+  provider?: string;
+  changes_made?: string[];
   confidence: number;
-  is_signed: boolean;
+  is_signed?: boolean;
   signed_by?: number;
   signed_at?: string;
+  source: "encounter" | "attachment" | "manual" | "imported_record";
+  attachmentId?: number;
+  sourceConfidence?: number;
+  sourceNotes?: string;
 }
 
 interface MedicalProblem {
   id: number;
   problemTitle: string;
-  currentIcd10Code: string;
-  problemStatus: string;
-  firstDiagnosedDate: string;
+  currentIcd10Code?: string;
+  problemStatus: "active" | "resolved" | "chronic";
+  firstDiagnosedDate?: string;
   visitHistory: VisitHistoryEntry[];
-  changeLog: any[];
-  lastUpdated: string;
+  changeLog?: Array<{
+    action: string;
+    details: string;
+    timestamp: string;
+  }>;
+  lastUpdated?: string;
+  // GPT-powered intelligent ranking
+  rankScore?: number;
+  lastRankedEncounterId?: number;
+  rankingReason?: string;
 }
 
 interface EnhancedMedicalProblemsProps {
@@ -44,8 +57,9 @@ export function EnhancedMedicalProblems({ patientId, encounterId }: EnhancedMedi
   const [expandedProblems, setExpandedProblems] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location, setLocation] = useLocation();
 
-  const { data: problems = [], isLoading } = useQuery({
+  const { data: problems = [], isLoading } = useQuery<MedicalProblem[]>({
     queryKey: [`/api/patients/${patientId}/medical-problems-enhanced`],
     enabled: !!patientId,
   });
@@ -75,6 +89,69 @@ export function EnhancedMedicalProblems({ patientId, encounterId }: EnhancedMedi
       case 'resolved': return 'bg-gray-100 text-gray-800';
       case 'chronic': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  // Navigate to attachment source (similar to vitals flowsheet)
+  const navigateToAttachment = (attachmentId: number) => {
+    const url = `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`;
+    console.log('🔗 [MedicalProblems] Navigating to attachment:', { attachmentId, url, patientId });
+    setLocation(url);
+  };
+
+  // Get source badge for visit history entry
+  const getSourceBadge = (visit: VisitHistoryEntry) => {
+    switch (visit.source) {
+      case 'encounter':
+        return (
+          <Badge className="text-xs bg-green-100 text-green-800">
+            <User className="h-3 w-3 mr-1" />
+            Encounter
+          </Badge>
+        );
+      case 'attachment':
+        if (visit.attachmentId) {
+          return (
+            <Badge 
+              variant="outline" 
+              className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
+              onClick={() => navigateToAttachment(visit.attachmentId!)}
+              title="Click to view source document"
+            >
+              <FileText className="h-3 w-3 mr-1" />
+              Doc Extract
+              {visit.sourceConfidence && ` ${Math.round(visit.sourceConfidence * 100)}%`}
+              <ExternalLink className="h-2 w-2 ml-1" />
+            </Badge>
+          );
+        } else {
+          return (
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+              <FileText className="h-3 w-3 mr-1" />
+              Document
+            </Badge>
+          );
+        }
+      case 'manual':
+        return (
+          <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">
+            <User className="h-3 w-3 mr-1" />
+            Manual Entry
+          </Badge>
+        );
+      case 'imported_record':
+        return (
+          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+            <FileText className="h-3 w-3 mr-1" />
+            Record Import
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="text-xs">
+            {visit.source}
+          </Badge>
+        );
     }
   };
 
@@ -190,15 +267,16 @@ export function EnhancedMedicalProblems({ patientId, encounterId }: EnhancedMedi
                               .map((visit, index) => (
                                 <div key={index} className="bg-white p-3 rounded border">
                                   <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                       <span className="font-medium text-sm">
-                                        -{formatDate(visit.date)}:
+                                        {formatDate(visit.date)}:
                                       </span>
                                       {visit.icd10_at_visit && (
                                         <Badge variant="outline" className="text-xs">
                                           {visit.icd10_at_visit}
                                         </Badge>
                                       )}
+                                      {getSourceBadge(visit)}
                                       {visit.is_signed ? (
                                         <Badge className="text-xs bg-green-100 text-green-800">
                                           Signed
@@ -211,7 +289,7 @@ export function EnhancedMedicalProblems({ patientId, encounterId }: EnhancedMedi
                                     </div>
                                     <div className="flex items-center gap-1 text-xs text-gray-500">
                                       <User className="h-3 w-3" />
-                                      {visit.provider}
+                                      {visit.provider || 'System'}
                                     </div>
                                   </div>
                                   
