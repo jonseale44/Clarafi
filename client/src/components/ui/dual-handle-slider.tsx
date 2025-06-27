@@ -74,11 +74,10 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
     const newValue = positionToValue(event.clientX - dragOffset);
     
     if (isDragging === 'large') {
-      // Large handle movement always moves both handles
-      const clampedValue = Math.max(min, Math.min(max, newValue));
+      // Large handle can move independently but can't go below small handle
+      const minAllowed = smallHandleValue;
+      const clampedValue = Math.max(minAllowed, Math.min(max, newValue));
       onLargeHandleChange(clampedValue);
-      // Small handle follows large handle
-      onSmallHandleChange(clampedValue);
     } else if (isDragging === 'small') {
       // Small handle can only move up to large handle position
       const maxAllowed = largeHandleValue;
@@ -117,10 +116,10 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
     const distanceToSmall = Math.abs(newValue - smallHandleValue);
     
     if (distanceToLarge <= distanceToSmall) {
-      // Move large handle (and small handle follows)
-      const clampedValue = Math.max(min, Math.min(max, newValue));
+      // Move large handle (independent movement)
+      const minAllowed = smallHandleValue;
+      const clampedValue = Math.max(minAllowed, Math.min(max, newValue));
       onLargeHandleChange(clampedValue);
-      onSmallHandleChange(clampedValue);
     } else {
       // Move small handle (constrained by large handle)
       const maxAllowed = largeHandleValue;
