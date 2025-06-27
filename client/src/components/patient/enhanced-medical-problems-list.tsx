@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +142,35 @@ export function EnhancedMedicalProblemsList({
     setSmallHandleValue(largeHandleValue);
   }, [patientId, largeHandleValue]);
 
+  // Slider event handlers
+  const handleLargeHandleChange = (value: number) => {
+    setLargeHandleValue(value);
+    setSmallHandleValue(value); // Small handle follows large handle
+    
+    // Save to user preferences
+    updatePreferencesMutation.mutate({
+      medicalProblemsDisplayThreshold: value
+    });
+  };
+
+  const handleSmallHandleChange = (value: number) => {
+    setSmallHandleValue(value);
+    // Small handle changes are temporary and not saved
+  };
+
+  // Calculate filtered problems based on small handle value
+  const getFilteredProblems = (problems: MedicalProblem[]) => {
+    if (!problems.length) return problems;
+    
+    // Calculate how many problems to show based on percentage
+    const totalProblems = problems.length;
+    const percentageToShow = smallHandleValue;
+    const problemsToShow = Math.max(1, Math.ceil((percentageToShow / 100) * totalProblems));
+    
+    // Return top ranked problems (already sorted by rank score)
+    return problems.slice(0, problemsToShow);
+  };
+
   const deleteMutation = useMutation({
     mutationFn: async (problemId: number) => {
       const response = await fetch(`/api/medical-problems/${problemId}`, {
@@ -193,6 +222,22 @@ export function EnhancedMedicalProblemsList({
     },
   });
 
+  // User preferences update mutation
+  const updatePreferencesMutation = useMutation({
+    mutationFn: async (updates: { medicalProblemsDisplayThreshold: number }) => {
+      const response = await fetch('/api/user/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error('Failed to update preferences');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user/preferences'] });
+    },
+  });
+
   const handleResolve = (problemId: number) => {
     if (confirm('Mark this medical problem as resolved?')) {
       resolveMutation.mutate(problemId);
@@ -227,6 +272,9 @@ export function EnhancedMedicalProblemsList({
   const activeProblems = medicalProblems
     .filter(p => p.problemStatus === 'active')
     .sort((a, b) => (a.rankScore || 99.99) - (b.rankScore || 99.99));
+
+  // Apply filtering based on slider values
+  const filteredActiveProblems = getFilteredProblems(activeProblems);
   
   const chronicProblems = medicalProblems
     .filter(p => p.problemStatus === 'chronic')
