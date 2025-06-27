@@ -13,6 +13,7 @@ import { useUpload } from "@/contexts/UploadContext";
 import { UploadLoadingOverlay } from "@/components/ui/upload-loading-overlay";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
 import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
+import { RankingWeightControls } from "./ranking-weight-controls";
 import { useLocation } from "wouter";
 
 interface VisitNote {
@@ -688,6 +689,17 @@ export function EnhancedMedicalProblemsList({
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Ranking Weight Controls */}
+        {activeProblems.length > 0 && (
+          <RankingWeightControls 
+            patientId={patientId}
+            onWeightsChange={(weights) => {
+              // Trigger a refresh of medical problems with new weights
+              queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
+            }}
+          />
         )}
 
         {(currentProblemsCount > 0 || resolvedCount > 0) && (

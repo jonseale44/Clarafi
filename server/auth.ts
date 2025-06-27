@@ -149,4 +149,34 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+
+  // User preferences endpoints
+  app.get("/api/user/preferences", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      const preferences = await storage.getUserNotePreferences(userId);
+      res.json(preferences || {});
+    } catch (error: any) {
+      console.error("Error fetching user preferences:", error);
+      res.status(500).json({ error: "Failed to fetch user preferences" });
+    }
+  });
+
+  app.put("/api/user/preferences", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      const updates = req.body;
+      
+      // Update or create user preferences
+      const preferences = await storage.updateUserNotePreferences(userId, updates);
+      res.json(preferences);
+    } catch (error: any) {
+      console.error("Error updating user preferences:", error);
+      res.status(500).json({ error: "Failed to update user preferences" });
+    }
+  });
 }
