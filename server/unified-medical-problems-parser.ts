@@ -335,22 +335,22 @@ ENHANCED EXAMPLES WITH RANKING:
    {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "rank_score": 15.25, "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring", "ranking_factors": {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}}
 
 2. Attachment with "HTN" + existing "Hypertension" (I10):
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "rank_score": 42.50, "ranking_reason": "Stable chronic hypertension with routine management requirements"}
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "rank_score": 42.50, "ranking_reason": "Stable chronic hypertension with routine management requirements", "ranking_factors": {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}}
 
 3. Attachment with "High Blood Pressure" + existing "Essential Hypertension":
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence", "rank_score": 44.80, "ranking_reason": "Well-documented stable hypertension with good historical context"}
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence", "rank_score": 44.80, "ranking_reason": "Well-documented stable hypertension with good historical context", "ranking_factors": {"clinical_severity": 17, "treatment_complexity": 11, "patient_frequency": 9, "clinical_relevance": 4}}
 
 4. Attachment with completely new condition "Atrial Fibrillation" + no existing cardiac rhythm problems:
-   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib", "rank_score": 18.75, "ranking_reason": "Significant cardiac arrhythmia requiring anticoagulation management and stroke prevention"}
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib", "rank_score": 18.75, "ranking_reason": "Significant cardiac arrhythmia requiring anticoagulation management and stroke prevention", "ranking_factors": {"clinical_severity": 30, "treatment_complexity": 24, "patient_frequency": 14, "clinical_relevance": 7}}
 
 5. SOAP note states "Shortness of breath on exertion resolved per patient report" + existing "Shortness of breath on exertion" problem:
-   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem", "rank_score": 95.00, "ranking_reason": "Resolved condition with no ongoing clinical significance"}
+   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem", "rank_score": 95.00, "ranking_reason": "Resolved condition with no ongoing clinical significance", "ranking_factors": {"clinical_severity": 5, "treatment_complexity": 2, "patient_frequency": 1, "clinical_relevance": 1}}
 
 6. SOAP note mentions "Acute bronchitis resolved, patient feeling better" + existing "Acute bronchitis" problem:
-   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved", "rank_score": 92.50, "ranking_reason": "Acute respiratory infection fully resolved with no sequelae"}
+   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved", "rank_score": 92.50, "ranking_reason": "Acute respiratory infection fully resolved with no sequelae", "ranking_factors": {"clinical_severity": 6, "treatment_complexity": 3, "patient_frequency": 2, "clinical_relevance": 1}}
 
 7. SOAP note documents "UTI treated successfully with antibiotics, symptoms resolved" + existing "Urinary tract infection":
-   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented", "rank_score": 90.25, "ranking_reason": "Successfully treated acute infection with complete symptom resolution"}
+   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented", "rank_score": 90.25, "ranking_reason": "Successfully treated acute infection with complete symptom resolution", "ranking_factors": {"clinical_severity": 7, "treatment_complexity": 4, "patient_frequency": 3, "clinical_relevance": 1}}
 
 VISIT HISTORY FORMAT REQUIREMENTS:
 Visit history entries should be concise, clinical, and data-rich. Use medical shorthand and include specific values. Examples:
@@ -427,11 +427,39 @@ RANKING CRITERIA (1.00 = Highest Priority, 99.99 = Lowest Priority):
    - Stable baseline conditions: 50.00-70.00
    - Historical reference only: 70.00-99.99
 
-RANKING EXAMPLES:
-- "Acute myocardial infarction" → rank_score: 1.50, ranking_reason: "Life-threatening acute cardiac event requiring immediate intensive management"
-- "Type 2 diabetes mellitus with neuropathy" → rank_score: 15.25, ranking_reason: "Complex diabetes with complications requiring active medication management and monitoring"
-- "Essential hypertension, well controlled" → rank_score: 45.80, ranking_reason: "Stable chronic condition with good control on current regimen"
-- "History of appendectomy" → rank_score: 85.00, ranking_reason: "Historical surgical condition with no ongoing clinical significance"
+ENHANCED FACTOR SCORING SYSTEM:
+For EVERY medical problem, you MUST provide detailed factor breakdown in addition to overall ranking:
+
+FACTOR 1 - CLINICAL SEVERITY (0-40 points):
+- Life-threatening/urgent (35-40): MI, stroke, sepsis, acute renal failure
+- High severity (25-34): Uncontrolled diabetes, severe HTN, heart failure  
+- Moderate severity (15-24): Controlled diabetes, stable CAD, CKD stages 3-4
+- Low severity (5-14): Well-controlled HTN, stable thyroid disease
+- Minimal severity (0-4): Historical conditions, minor symptoms
+
+FACTOR 2 - TREATMENT COMPLEXITY (0-30 points):
+- Very complex (25-30): Multiple medications, specialist management, frequent monitoring
+- Moderately complex (15-24): Standard multi-drug therapy, regular follow-ups
+- Simple management (5-14): Single medication, routine monitoring
+- Minimal management (0-4): Self-limiting, historical conditions
+
+FACTOR 3 - PATIENT FREQUENCY (0-20 points):
+- Very frequent (15-20): Mentioned in multiple recent encounters, actively evolving
+- Moderately frequent (10-14): Mentioned across several encounters
+- Occasional (5-9): Mentioned periodically, stable
+- Rare (0-4): Long-term stable, infrequently mentioned
+
+FACTOR 4 - CLINICAL RELEVANCE (0-10 points):
+- Highly relevant (8-10): Actively being treated today, medication changes
+- Moderately relevant (5-7): Routine monitoring, stable management
+- Low relevance (2-4): Background condition, minimal current impact
+- Minimal relevance (0-1): Historical reference only
+
+RANKING EXAMPLES WITH FACTOR BREAKDOWN:
+- "Acute myocardial infarction" → rank_score: 1.50, ranking_factors: {"clinical_severity": 40, "treatment_complexity": 30, "patient_frequency": 18, "clinical_relevance": 10}, ranking_reason: "Life-threatening acute cardiac event requiring immediate intensive management"
+- "Type 2 diabetes mellitus with neuropathy" → rank_score: 15.25, ranking_factors: {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}, ranking_reason: "Complex diabetes with complications requiring active medication management and monitoring"
+- "Essential hypertension, well controlled" → rank_score: 45.80, ranking_factors: {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}, ranking_reason: "Stable chronic condition with good control on current regimen"
+- "History of appendectomy" → rank_score: 85.00, ranking_factors: {"clinical_severity": 5, "treatment_complexity": 2, "patient_frequency": 1, "clinical_relevance": 1}, ranking_reason: "Historical surgical condition with no ongoing clinical significance"
 
 RANKING INSTRUCTIONS:
 - NEVER assign identical rank scores - use decimal precision to prevent ties
@@ -440,6 +468,7 @@ RANKING INSTRUCTIONS:
 - For NEW problems: Rank based on clinical severity and immediacy
 - For EXISTING problems: Consider recent changes, stability, and current relevance
 - Use ranking_reason to explain your clinical reasoning for the assigned rank
+- MANDATORY: Provide ranking_factors breakdown for EVERY medical problem using the 4-factor scoring system above
 
 INSTRUCTION: Systematically evaluate medical conditions against existing problems using consolidation rules. When SOAP notes document problem resolution, use RESOLVE action. Create new problems when conditions don't reasonably match existing ones. For ALL problems (new/updated/existing), provide intelligent ranking with clinical reasoning. Document consolidation reasoning and ranking reasoning in respective fields.
 `;
