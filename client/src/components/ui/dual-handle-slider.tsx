@@ -74,14 +74,12 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
     const newValue = positionToValue(event.clientX - dragOffset);
     
     if (isDragging === 'large') {
-      // Large handle can move independently but can't go below small handle
-      const minAllowed = smallHandleValue;
-      const clampedValue = Math.max(minAllowed, Math.min(max, newValue));
-      onLargeHandleChange(clampedValue);
+      // Rule 1: Large handle moves freely and always moves small handle to same position
+      const clampedValue = Math.max(min, Math.min(max, newValue));
+      onLargeHandleChange(clampedValue); // This will trigger both handles to move to same position
     } else if (isDragging === 'small') {
-      // Small handle can only move up to large handle position
-      const maxAllowed = largeHandleValue;
-      const clampedValue = Math.max(min, Math.min(maxAllowed, newValue));
+      // Rule 2: Small handle moves independently, never moves large handle
+      const clampedValue = Math.max(min, Math.min(max, newValue));
       onSmallHandleChange(clampedValue);
     }
   }, [isDragging, disabled, positionToValue, dragOffset, min, max, largeHandleValue, onLargeHandleChange, onSmallHandleChange]);
@@ -116,14 +114,12 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
     const distanceToSmall = Math.abs(newValue - smallHandleValue);
     
     if (distanceToLarge <= distanceToSmall) {
-      // Move large handle (independent movement)
-      const minAllowed = smallHandleValue;
-      const clampedValue = Math.max(minAllowed, Math.min(max, newValue));
+      // Move large handle (Rule 1: will move small handle to same position)
+      const clampedValue = Math.max(min, Math.min(max, newValue));
       onLargeHandleChange(clampedValue);
     } else {
-      // Move small handle (constrained by large handle)
-      const maxAllowed = largeHandleValue;
-      const clampedValue = Math.max(min, Math.min(maxAllowed, newValue));
+      // Move small handle (Rule 2: moves independently)
+      const clampedValue = Math.max(min, Math.min(max, newValue));
       onSmallHandleChange(clampedValue);
     }
   }, [disabled, isDragging, positionToValue, largeHandleValue, smallHandleValue, min, max, onLargeHandleChange, onSmallHandleChange]);

@@ -126,27 +126,26 @@ export function EnhancedMedicalProblemsList({
 
   // Slider state management
   const [largeHandleValue, setLargeHandleValue] = useState(100); // Permanent user preference
-  const [smallHandleValue, setSmallHandleValue] = useState(70); // Temporary session filter (start lower to show both handles)
+  const [smallHandleValue, setSmallHandleValue] = useState(100); // Temporary session filter
   
   // Initialize slider values from user preferences
   useEffect(() => {
     if (userPreferences?.medicalProblemsDisplayThreshold) {
       const threshold = userPreferences.medicalProblemsDisplayThreshold;
       setLargeHandleValue(threshold);
-      // Don't automatically set small handle to same value - let user control it independently
-      // setSmallHandleValue(threshold);
+      setSmallHandleValue(threshold); // Small handle starts at large handle position
     }
   }, [userPreferences]);
 
-  // Reset small handle when leaving encounter (simulated by patientId change)
+  // Reset small handle to large handle position when leaving encounter (simulated by patientId change)
   useEffect(() => {
-    setSmallHandleValue(70); // Reset to default session filter position
-  }, [patientId]);
+    setSmallHandleValue(largeHandleValue); // Reset to large handle position, not 100%
+  }, [patientId, largeHandleValue]);
 
   // Slider event handlers
   const handleLargeHandleChange = (value: number) => {
     setLargeHandleValue(value);
-    // Don't automatically move small handle - let it be independent
+    setSmallHandleValue(value); // Rule 1: Large handle ALWAYS moves small handle to same position
     
     // Save to user preferences
     updatePreferencesMutation.mutate({
