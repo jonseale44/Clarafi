@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, Filter, Activity, Clock, CheckCircle2, FileText } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useUpload } from "@/contexts/UploadContext";
+import { UploadLoadingOverlay } from "@/components/ui/upload-loading-overlay";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
 import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
 import { useLocation } from "wouter";
@@ -111,6 +113,10 @@ export function EnhancedMedicalProblemsList({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { uploadState } = useUpload();
+  
+  // Check if upload is for current patient to show loading overlay
+  const isUploadingForThisPatient = uploadState.isUploading && uploadState.patientId === patientId;
 
   // Load medical problems data using unified API
   const { data: medicalProblems = [], isLoading, error } = useQuery<MedicalProblem[]>({
@@ -572,94 +578,104 @@ export function EnhancedMedicalProblemsList({
   );
 
   return (
-    <div className="space-y-6">
-      {!isReadOnly && (
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h3>
-          <Button onClick={handleAddNew} size="sm" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Problem
-          </Button>
-        </div>
-      )}
+    <div className="relative">
+      <div className="space-y-6">
+        {!isReadOnly && (
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h3>
+            <Button onClick={handleAddNew} size="sm" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Problem
+            </Button>
+          </div>
+        )}
 
-      {/* Priority Filter Slider */}
-      {activeProblems.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Priority Filter
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <DualHandleSlider
-              min={1}
-              max={100}
-              largeHandleValue={largeHandleValue}
-              smallHandleValue={smallHandleValue}
-              onLargeHandleChange={handleLargeHandleChange}
-              onSmallHandleChange={handleSmallHandleChange}
-              label="Medical Problems Display"
-              formatValue={(value) => `${value}% (${Math.max(1, Math.ceil((value / 100) * activeProblems.length))} of ${activeProblems.length} problems)`}
-              className="mb-2"
-            />
-            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-              <div className="flex justify-between">
-                <span>• Large handle: Permanent user preference</span>
-                <span className="font-mono">{largeHandleValue}%</span>
+        {/* Priority Filter Slider */}
+        {activeProblems.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Priority Filter
+                </CardTitle>
               </div>
-              <div className="flex justify-between">
-                <span>• Small handle: Session filter for this patient</span>
-                <span className="font-mono">{smallHandleValue}%</span>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <DualHandleSlider
+                min={1}
+                max={100}
+                largeHandleValue={largeHandleValue}
+                smallHandleValue={smallHandleValue}
+                onLargeHandleChange={handleLargeHandleChange}
+                onSmallHandleChange={handleSmallHandleChange}
+                label="Medical Problems Display"
+                formatValue={(value) => `${value}% (${Math.max(1, Math.ceil((value / 100) * activeProblems.length))} of ${activeProblems.length} problems)`}
+                className="mb-2"
+              />
+              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <div className="flex justify-between">
+                  <span>• Large handle: Permanent user preference</span>
+                  <span className="font-mono">{largeHandleValue}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Small handle: Session filter for this patient</span>
+                  <span className="font-mono">{smallHandleValue}%</span>
+                </div>
+                <div className="pt-1 border-t border-blue-200 dark:border-blue-800">
+                  <span>Showing {filteredActiveProblems.length} of {activeProblems.length} problems based on priority ranking</span>
+                </div>
               </div>
-              <div className="pt-1 border-t border-blue-200 dark:border-blue-800">
-                <span>Showing {filteredActiveProblems.length} of {activeProblems.length} problems based on priority ranking</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      {(currentProblemsCount > 0 || resolvedCount > 0) && (
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'current' | 'resolved')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="current" className="relative">
-              Current Problems
-              {currentProblemsCount > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {currentProblemsCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="resolved" className="relative">
-              Resolved
-              {resolvedCount > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {resolvedCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="current" className="mt-6">
-            {renderCurrentProblems()}
-          </TabsContent>
-          
-          <TabsContent value="resolved" className="mt-6">
-            {renderResolvedProblems()}
-          </TabsContent>
-        </Tabs>
-      )}
+        {(currentProblemsCount > 0 || resolvedCount > 0) && (
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'current' | 'resolved')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="current" className="relative">
+                Current Problems
+                {currentProblemsCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {currentProblemsCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="resolved" className="relative">
+                Resolved
+                {resolvedCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {resolvedCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="current" className="mt-6">
+              {renderCurrentProblems()}
+            </TabsContent>
+            
+            <TabsContent value="resolved" className="mt-6">
+              {renderResolvedProblems()}
+            </TabsContent>
+          </Tabs>
+        )}
 
-      <EnhancedMedicalProblemsDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        patientId={patientId}
-        problem={editingProblem || undefined}
-        encounters={encounters}
+        <EnhancedMedicalProblemsDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          patientId={patientId}
+          problem={editingProblem || undefined}
+          encounters={encounters}
+        />
+      </div>
+      
+      {/* Upload Loading Overlay */}
+      <UploadLoadingOverlay
+        isVisible={isUploadingForThisPatient}
+        progress={uploadState.progress}
+        fileName={uploadState.fileName}
+        stage={uploadState.stage}
       />
     </div>
   );
