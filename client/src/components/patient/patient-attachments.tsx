@@ -100,6 +100,7 @@ export function PatientAttachments({
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { startUpload, updateProgress, completeUpload, cancelUpload } = useUpload();
 
   // Get attachments - always show all patient attachments, regardless of mode
   const { data: attachments = [], isLoading } = useQuery({
@@ -118,6 +119,11 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Starting single upload for patient:', patientId);
       console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
       
+      // Start upload tracking
+      const fileEntry = formData.get('file');
+      const fileName = (fileEntry instanceof File) ? fileEntry.name : 'Unknown file';
+      startUpload(patientId, fileName);
+      
       const response = await fetch(`/api/patients/${patientId}/attachments`, {
         method: 'POST',
         body: formData,
@@ -130,22 +136,31 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Raw response text:', responseText);
       
       if (!response.ok) {
+        cancelUpload();
         throw new Error(`Upload failed: ${response.status} - ${responseText}`);
       }
       
+      // Update progress to processing stage
+      updateProgress(80, 'processing');
+      
       try {
-        return JSON.parse(responseText);
+        const result = JSON.parse(responseText);
+        updateProgress(90, 'analyzing');
+        return result;
       } catch (parseError) {
         console.error('📎 [Frontend] JSON parse error:', parseError);
+        cancelUpload();
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
       }
     },
     onSuccess: () => {
+      completeUpload();
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
       toast({ title: "Upload successful", description: "File has been uploaded successfully." });
       resetUploadForm();
     },
     onError: (error: Error) => {
+      cancelUpload();
       toast({ 
         title: "Upload failed", 
         description: error.message,
@@ -160,6 +175,11 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Starting bulk upload for patient:', patientId);
       console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
       
+      // Start upload tracking with file count
+      const files = formData.getAll('files');
+      const fileName = `${files.length} files`;
+      startUpload(patientId, fileName);
+      
       const response = await fetch(`/api/patients/${patientId}/attachments/bulk`, {
         method: 'POST',
         body: formData,
@@ -169,17 +189,25 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Bulk upload response:', responseText);
       
       if (!response.ok) {
+        cancelUpload();
         throw new Error(`Bulk upload failed: ${response.status} - ${responseText}`);
       }
       
+      // Update progress to processing stage
+      updateProgress(80, 'processing');
+      
       try {
-        return JSON.parse(responseText);
+        const result = JSON.parse(responseText);
+        updateProgress(90, 'analyzing');
+        return result;
       } catch (parseError) {
         console.error('📎 [Frontend] JSON parse error:', parseError);
+        cancelUpload();
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
       }
     },
     onSuccess: (data) => {
+      completeUpload();
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
       toast({ 
         title: "Bulk upload successful", 
@@ -188,6 +216,7 @@ export function PatientAttachments({
       resetUploadForm();
     },
     onError: (error: Error) => {
+      cancelUpload();
       toast({ 
         title: "Bulk upload failed", 
         description: error.message,
