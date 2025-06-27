@@ -53,7 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ message: "Registration failed" }));
-        throw new Error(errorData.message || "Registration failed");
+        const error = new Error(errorData.message || "Registration failed");
+        // Attach field information for form-specific error handling
+        (error as any).field = errorData.field;
+        throw error;
       }
       return await res.json();
     },
