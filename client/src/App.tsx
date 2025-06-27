@@ -29,6 +29,7 @@ function Router() {
       <ProtectedRoute path="/patients/:id/chart" component={PatientView} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />
       <ProtectedRoute path="/patients/:patientId/labs" component={PatientLabResults} />
+      <ProtectedRoute path="/patients/:patientId/encounters/:id" component={EncounterView} />
       <ProtectedRoute path="/lab-simulator" component={LabSimulator} />
       <ProtectedRoute path="/encounters/:id" component={EncounterView} />
       <ProtectedRoute path="/settings" component={UserSettingsPage} />
