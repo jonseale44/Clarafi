@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, Filter, Activity, Clock, CheckCircle2, FileText } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -276,7 +277,10 @@ export function EnhancedMedicalProblemsList({
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // Parse date as local date to avoid timezone conversion issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day); // month is 0-indexed
+    return localDate.toLocaleDateString('en-US', {
       month: 'numeric',
       day: 'numeric',
       year: '2-digit'
@@ -339,23 +343,50 @@ export function EnhancedMedicalProblemsList({
           </Badge>
         );
       case "attachment":
-        // Document Extract badge with confidence score and click navigation
+        // Document Extract badge with confidence score, tooltip, and click navigation
         const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleDocumentClick = () => {
           if (attachmentId) {
             setLocation(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`);
           }
         };
+        
+        const getConfidenceTooltip = (confidencePercent: number) => {
+          if (confidencePercent >= 90) {
+            return "High Confidence: Document contains specific medical data (exact values, medications, dosages) with clear diagnostic terminology.";
+          } else if (confidencePercent >= 70) {
+            return "Good Confidence: Document has moderate clinical specificity with some specific medical details.";
+          } else if (confidencePercent >= 40) {
+            return "Medium Confidence: Document contains general medical information but lacks specific clinical details.";
+          } else if (confidencePercent >= 10) {
+            return "Low Confidence: Document has vague or minimal medical information with limited clinical specificity.";
+          } else {
+            return "Very Low Confidence: Document contains minimal or very general medical information without specific clinical details.";
+          }
+        };
+        
         return (
-          <Badge 
-            variant="secondary" 
-            className="text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-            onClick={handleDocumentClick}
-            title={`Click to view source document (Attachment #${attachmentId})`}
-          >
-            <FileText className="h-3 w-3 mr-1" />
-            Doc Extract {confidencePercent}%
-          </Badge>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Badge 
+                    variant="secondary" 
+                    className="text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                    onClick={handleDocumentClick}
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    Doc Extract {confidencePercent}%
+                  </Badge>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-sm font-medium mb-1">Confidence: {confidencePercent}%</p>
+                <p className="text-xs">{getConfidenceTooltip(confidencePercent)}</p>
+                <p className="text-xs mt-2 opacity-75">Click to view source document</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       case "manual":
         return <Badge variant="secondary" className="text-xs">Manual</Badge>;
@@ -487,7 +518,9 @@ export function EnhancedMedicalProblemsList({
               <div className="space-y-4">
                 {problem.visitHistory && problem.visitHistory.length > 0 ? (
                   <div className="space-y-3">
-                    {problem.visitHistory.map((visit, index) => (
+                    {problem.visitHistory
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((visit, index) => (
                       <div key={index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>

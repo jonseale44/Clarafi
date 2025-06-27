@@ -20,10 +20,13 @@ interface VisitNote {
   id?: string;
   date: string;  // DP - Date Picker field (authoritative medical event date)
   notes: string;
-  source: "encounter" | "manual" | "imported_record";
+  source: "encounter" | "attachment" | "manual" | "imported_record";
   encounterId?: number;
+  attachmentId?: number;
   providerId?: number;
   providerName?: string;
+  confidence?: number;
+  sourceConfidence?: number;
 }
 
 interface MedicalProblemData {
@@ -312,6 +315,8 @@ export function EnhancedMedicalProblemsDialog({
     switch (source) {
       case "encounter":
         return <Badge variant="default" className="text-xs">Encounter</Badge>;
+      case "attachment":
+        return <Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 mr-1" />Doc Extract</Badge>;
       case "manual":
         return <Badge variant="secondary" className="text-xs">Manual</Badge>;
       case "imported_record":
