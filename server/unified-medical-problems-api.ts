@@ -59,7 +59,9 @@ router.get("/medical-problems/:patientId", async (req, res) => {
       // Include ranking information
       rankScore: problem.rankScore ? parseFloat(problem.rankScore.toString()) : undefined,
       lastRankedEncounterId: problem.lastRankedEncounterId,
-      rankingReason: problem.rankingReason
+      rankingReason: problem.rankingReason,
+      // Include ranking factors for frontend real-time calculation
+      rankingFactors: problem.rankingFactors ? (typeof problem.rankingFactors === 'string' ? JSON.parse(problem.rankingFactors) : problem.rankingFactors) : null
     }));
 
     console.log(`✅ [MedicalProblemsAPI] Returning ${formattedProblems.length} formatted problems`);

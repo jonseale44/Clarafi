@@ -227,23 +227,16 @@ export function EnhancedMedicalProblemsList({
     }));
   };
 
-  // Calculate filtered problems based on small handle value
-  const getFilteredProblems = (problems: MedicalProblem[]) => {
+  // Calculate filtered problems based on small handle value (for already-enhanced problems)
+  const getFilteredProblems = (problems: (MedicalProblem & { calculatedRank: number })[]) => {
     if (!problems.length) return problems;
     
-    // Step 1: Apply real-time ranking calculations
-    const problemsWithCalculatedRanks = getProblemsWithRealTimeRanking(problems);
-    
-    // Step 2: Sort by calculated rankings (lower rank = higher priority)
-    const sortedProblems = problemsWithCalculatedRanks.sort((a, b) => a.calculatedRank - b.calculatedRank);
-    
-    // Step 3: Calculate how many problems to show based on percentage
-    const totalProblems = sortedProblems.length;
+    // Problems are already enhanced and sorted, just apply percentage filter
+    const totalProblems = problems.length;
     const percentageToShow = smallHandleValue;
     const problemsToShow = Math.max(1, Math.ceil((percentageToShow / 100) * totalProblems));
     
-    // Step 4: Return top ranked problems with calculated rankings
-    return sortedProblems.slice(0, problemsToShow);
+    return problems.slice(0, problemsToShow);
   };
 
   const deleteMutation = useMutation({
@@ -346,21 +339,24 @@ export function EnhancedMedicalProblemsList({
     });
   };
 
-  // Separate and intelligently sort problems by rank score (1.00 = highest priority)
-  const activeProblems = medicalProblems
-    .filter(p => p.problemStatus === 'active')
-    .sort((a, b) => (a.rankScore || 99.99) - (b.rankScore || 99.99));
+  // Transform all problems with real-time ranking calculations first
+  const enhancedProblems = getProblemsWithRealTimeRanking(medicalProblems);
 
-  // Apply filtering based on slider values
+  // Separate and intelligently sort problems by calculated rank (1.00 = highest priority)
+  const activeProblems = enhancedProblems
+    .filter(p => p.problemStatus === 'active')
+    .sort((a, b) => a.calculatedRank - b.calculatedRank);
+
+  // Apply filtering based on slider values to active problems only
   const filteredActiveProblems = getFilteredProblems(activeProblems);
   
-  const chronicProblems = medicalProblems
+  const chronicProblems = enhancedProblems
     .filter(p => p.problemStatus === 'chronic')
-    .sort((a, b) => (a.rankScore || 99.99) - (b.rankScore || 99.99));
+    .sort((a, b) => a.calculatedRank - b.calculatedRank);
   
-  const resolvedProblems = medicalProblems
+  const resolvedProblems = enhancedProblems
     .filter(p => p.problemStatus === 'resolved')
-    .sort((a, b) => (a.rankScore || 99.99) - (b.rankScore || 99.99));
+    .sort((a, b) => a.calculatedRank - b.calculatedRank);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -479,8 +475,8 @@ export function EnhancedMedicalProblemsList({
     );
   }
 
-  const renderProblemCard = (problem: MedicalProblem) => {
-    const rankStyles = getRankStyles(problem.rankScore);
+  const renderProblemCard = (problem: MedicalProblem & { calculatedRank: number }) => {
+    const rankStyles = getRankStyles(problem.calculatedRank);
     
     return (
       <Card 
@@ -502,19 +498,19 @@ export function EnhancedMedicalProblemsList({
                   )}
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      {problem.rankScore && (
+                      {problem.calculatedRank && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div>
                                 <Badge variant="outline" className={`text-xs font-medium ${rankStyles.textColor} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
-                                  {rankStyles.priority} (#{problem.rankScore.toFixed(1)})
+                                  {rankStyles.priority} (#{problem.calculatedRank.toFixed(2)})
                                 </Badge>
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-sm">
                               <div className="space-y-2">
-                                <p className="text-sm font-medium">Clinical Priority Ranking: #{problem.rankScore.toFixed(1)}</p>
+                                <p className="text-sm font-medium">Clinical Priority Ranking: #{problem.calculatedRank.toFixed(2)}</p>
                                 <div className="text-xs space-y-1">
                                   <p><strong>GPT-4 Intelligent Ranking System</strong></p>
                                   <p>Based on multiple clinical factors:</p>
