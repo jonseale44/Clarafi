@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Ranking System Enhancement Completed (June 27, 2025)
+- **INTELLIGENT RANKING TOOLTIP**: Added comprehensive hover tooltip to medical problems rank display explaining GPT-4 ranking system
+- **RANKING CRITERIA DOCUMENTED**: Tooltip explains the four key factors: clinical severity & immediacy, treatment complexity & follow-up needs, patient-specific frequency & impact, and current clinical relevance
+- **SCALE EXPLANATION**: Users now understand that 1.00 = highest priority (life-threatening) to 99.99 = lowest priority (routine conditions)
+- **RANKING EXAMPLES PROVIDED**: Tooltip includes scale context - acute MI (1.50), complex diabetes with neuropathy (15.25), stable hypertension (45.80), historical conditions (85.00+)
+- **DECIMAL PRECISION LOGIC**: Explained that GPT-4 uses decimal precision to prevent ranking ties and ensure unique priority ordering
+- **COMPREHENSIVE SYSTEM ARCHITECTURE**: Documented complete ranking methodology based on unified medical problems parser using GPT-4.1 with sophisticated clinical intelligence
+- **PATIENT-SPECIFIC CONTEXT**: Ranking considers entire patient context and relative prioritization across all conditions for that specific patient
+- **TOOLTIP CONSISTENCY**: Maintained same design pattern as confidence tooltips for consistent user experience
+
 ### Critical API Endpoint Fix - Stop Recording Error Resolution (June 27, 2025)
 - **CRITICAL BUG FIXED**: Resolved "instanceof is not callable" error that prevented stop recording functionality from working
 - **ROOT CAUSE IDENTIFIED**: Code was calling non-existent `/api/medical-problems/process-encounter` endpoint, which returned HTML 404 error instead of JSON

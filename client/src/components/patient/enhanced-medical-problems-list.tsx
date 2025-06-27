@@ -444,9 +444,36 @@ export function EnhancedMedicalProblemsList({
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       {problem.rankScore && (
-                        <Badge variant="outline" className={`text-xs font-medium ${rankStyles.textColor}`}>
-                          {rankStyles.priority} (#{problem.rankScore.toFixed(1)})
-                        </Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div>
+                                <Badge variant="outline" className={`text-xs font-medium ${rankStyles.textColor} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
+                                  {rankStyles.priority} (#{problem.rankScore.toFixed(1)})
+                                </Badge>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-sm">
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium">Clinical Priority Ranking: #{problem.rankScore.toFixed(1)}</p>
+                                <div className="text-xs space-y-1">
+                                  <p><strong>GPT-4 Intelligent Ranking System</strong></p>
+                                  <p>Based on multiple clinical factors:</p>
+                                  <ul className="list-disc list-inside space-y-0.5 ml-2">
+                                    <li>Clinical severity & immediacy</li>
+                                    <li>Treatment complexity & follow-up needs</li>
+                                    <li>Patient-specific frequency & impact</li>
+                                    <li>Current clinical relevance</li>
+                                  </ul>
+                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                                    <p><strong>Scale:</strong> 1.00 (highest priority) → 99.99 (lowest priority)</p>
+                                    <p className="opacity-75">Lower numbers = higher clinical priority</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                       <Badge className={getStatusColor(problem.problemStatus)}>
                         {problem.problemStatus}
