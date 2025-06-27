@@ -312,15 +312,30 @@ export function EnhancedMedicalProblemsList({
   };
 
   const getSourceBadge = (visit: VisitNote) => {
-    const { source, attachmentId, confidence } = visit;
+    const { source, attachmentId, confidence, encounterId } = visit;
     
     switch (source) {
       case "encounter":
-        return <Badge variant="default" className="text-xs">Encounter</Badge>;
+        // Clickable encounter badge that navigates to encounter detail
+        const handleEncounterClick = () => {
+          if (encounterId) {
+            setLocation(`/patients/${patientId}/encounters/${encounterId}`);
+          }
+        };
+        return (
+          <Badge 
+            variant="default" 
+            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors"
+            onClick={handleEncounterClick}
+            title={`Click to view encounter details (Encounter #${encounterId})`}
+          >
+            Encounter
+          </Badge>
+        );
       case "attachment":
         // Document Extract badge with confidence score and click navigation
         const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
-        const handleClick = () => {
+        const handleDocumentClick = () => {
           if (attachmentId) {
             setLocation(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`);
           }
@@ -329,7 +344,7 @@ export function EnhancedMedicalProblemsList({
           <Badge 
             variant="secondary" 
             className="text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-            onClick={handleClick}
+            onClick={handleDocumentClick}
             title={`Click to view source document (Attachment #${attachmentId})`}
           >
             <FileText className="h-3 w-3 mr-1" />
