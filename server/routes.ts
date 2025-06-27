@@ -12,7 +12,7 @@ import {
 // Legacy import removed - using enhanced realtime service only
 import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
-import enhancedMedicalProblemsRoutes from "./enhanced-medical-problems-routes";
+// Removed orphaned enhanced-medical-problems-routes - functionality moved to unified API
 import unifiedMedicalProblemsRoutes from "./unified-medical-problems-api";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
@@ -566,9 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NOTE: Must be registered BEFORE enhanced routes to avoid route conflicts
   app.use("/api", unifiedMedicalProblemsRoutes);
 
-  // Enhanced medical problems routes (JSONB visit history)
-  // NOTE: Individual problem operations that don't conflict with unified routes
-  app.use("/api", enhancedMedicalProblemsRoutes);
+  // Removed orphaned enhanced medical problems routes - functionality consolidated into unified API
 
   // Enhanced medications routes (GPT-powered standardization and grouping)
   app.use("/api", enhancedMedicationRoutes);
