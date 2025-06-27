@@ -143,7 +143,7 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
       <div
         ref={sliderRef}
         className={cn(
-          "relative h-6 cursor-pointer select-none",
+          "relative h-8 cursor-pointer select-none", // Increased height to accommodate offset small handle
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onClick={handleTrackClick}
@@ -165,29 +165,38 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
           />
         </div>
 
-        {/* Small Handle (Temporary) */}
+        {/* Small Handle (Temporary) - Positioned above track to always be grabbable */}
         <div
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-blue-500 dark:bg-blue-400 border-2 border-white dark:border-gray-800 rounded-full cursor-grab transition-all duration-150 hover:scale-110 shadow-md",
+            "absolute -translate-x-1/2 w-5 h-5 bg-green-500 dark:bg-green-400 border-2 border-white dark:border-gray-800 rounded-full cursor-grab transition-all duration-150 hover:scale-110 shadow-md z-20",
             isDragging === 'small' && "cursor-grabbing scale-110 shadow-lg",
             disabled && "cursor-not-allowed"
           )}
-          style={{ left: `${smallHandlePercent}%` }}
+          style={{ 
+            left: `${smallHandlePercent}%`,
+            top: '15%' // Positioned above the track so it's always visible and grabbable
+          }}
           onMouseDown={(e) => handleMouseDown('small', e)}
           title={`Temporary filter: ${formatValue(smallHandleValue)}`}
-        />
+        >
+          {/* Inner dot for visual distinction */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-green-300 dark:bg-green-200 rounded-full"></div>
+        </div>
 
-        {/* Large Handle (Permanent Preference) */}
+        {/* Large Handle (Permanent Preference) - Stays on track, larger and distinctive */}
         <div
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-blue-600 dark:bg-blue-500 border-2 border-white dark:border-gray-800 rounded-full cursor-grab transition-all duration-150 hover:scale-110 shadow-lg",
+            "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 bg-blue-600 dark:bg-blue-500 border-3 border-white dark:border-gray-800 rounded-full cursor-grab transition-all duration-150 hover:scale-110 shadow-lg z-10",
             isDragging === 'large' && "cursor-grabbing scale-110 shadow-xl",
             disabled && "cursor-not-allowed"
           )}
           style={{ left: `${largeHandlePercent}%` }}
           onMouseDown={(e) => handleMouseDown('large', e)}
           title={`Permanent preference: ${formatValue(largeHandleValue)}`}
-        />
+        >
+          {/* Inner circle for visual distinction */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-blue-400 dark:bg-blue-300 rounded-full"></div>
+        </div>
       </div>
       
       {/* Legend */}
