@@ -27,6 +27,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
   });
 
   const startUpload = useCallback((patientId: number, fileName: string) => {
+    console.log('🔄 [UploadContext] Starting upload for patient:', patientId, 'file:', fileName);
     setUploadState({
       isUploading: true,
       progress: 0,
@@ -37,6 +38,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateProgress = useCallback((progress: number, stage?: UploadState['stage']) => {
+    console.log('🔄 [UploadContext] Updating progress:', progress, 'stage:', stage);
     setUploadState(prev => ({
       ...prev,
       progress,
@@ -45,6 +47,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const completeUpload = useCallback(() => {
+    console.log('✅ [UploadContext] Upload completed');
     setUploadState(prev => ({
       ...prev,
       progress: 100,
@@ -53,6 +56,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
     
     // Reset after a brief delay
     setTimeout(() => {
+      console.log('🔄 [UploadContext] Resetting upload state after completion');
       setUploadState({
         isUploading: false,
         progress: 0,
@@ -63,6 +67,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cancelUpload = useCallback(() => {
+    console.log('❌ [UploadContext] Upload cancelled');
     setUploadState({
       isUploading: false,
       progress: 0,

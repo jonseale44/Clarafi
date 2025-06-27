@@ -119,9 +119,23 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Starting single upload for patient:', patientId);
       console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
       
-      // Start upload tracking
+      // Start upload tracking with detailed logging
       const fileEntry = formData.get('file');
-      const fileName = (fileEntry instanceof File) ? fileEntry.name : 'Unknown file';
+      console.log('📎 [Frontend] File entry type:', typeof fileEntry);
+      console.log('📎 [Frontend] File entry:', fileEntry);
+      console.log('📎 [Frontend] File constructor available:', typeof File !== 'undefined');
+      
+      let fileName = 'Unknown file';
+      try {
+        if (fileEntry && typeof fileEntry === 'object' && 'name' in fileEntry) {
+          fileName = (fileEntry as File).name;
+          console.log('📎 [Frontend] Extracted fileName:', fileName);
+        }
+      } catch (error) {
+        console.error('📎 [Frontend] Error extracting file name:', error);
+      }
+      
+      console.log('📎 [Frontend] Starting upload tracking for patient:', patientId, 'file:', fileName);
       startUpload(patientId, fileName);
       
       const response = await fetch(`/api/patients/${patientId}/attachments`, {
@@ -175,9 +189,12 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Starting bulk upload for patient:', patientId);
       console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
       
-      // Start upload tracking with file count
+      // Start upload tracking with file count and detailed logging
       const files = formData.getAll('files');
+      console.log('📎 [Frontend] Bulk upload files:', files);
+      console.log('📎 [Frontend] Files length:', files.length);
       const fileName = `${files.length} files`;
+      console.log('📎 [Frontend] Starting bulk upload tracking for patient:', patientId, 'files:', fileName);
       startUpload(patientId, fileName);
       
       const response = await fetch(`/api/patients/${patientId}/attachments/bulk`, {

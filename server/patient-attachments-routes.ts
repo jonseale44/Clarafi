@@ -165,18 +165,39 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     
     res.status(201).json(attachment);
   } catch (error) {
-    console.error('File upload error:', error);
+    console.error('📎 [AttachmentUpload] ❌ File upload error:', error);
+    console.error('📎 [AttachmentUpload] ❌ Error type:', typeof error);
+    console.error('📎 [AttachmentUpload] ❌ Error name:', error?.name);
+    console.error('📎 [AttachmentUpload] ❌ Error message:', error?.message);
+    console.error('📎 [AttachmentUpload] ❌ Error stack:', error?.stack);
+    
+    // More detailed error information
+    if (error instanceof Error) {
+      console.error('📎 [AttachmentUpload] ❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n') // First 5 lines of stack
+      });
+    }
     
     // Clean up file if database insertion fails
     if (req.file) {
       try {
+        console.log('📎 [AttachmentUpload] 🗑️ Cleaning up uploaded file:', req.file.path);
         await fs.unlink(req.file.path);
+        console.log('📎 [AttachmentUpload] ✅ File cleanup successful');
       } catch (unlinkError) {
-        console.error('Failed to clean up file:', unlinkError);
+        console.error('📎 [AttachmentUpload] ❌ Failed to clean up file:', unlinkError);
       }
     }
     
-    res.status(500).json({ error: 'File upload failed' });
+    // Send detailed error response
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ 
+      error: 'File upload failed',
+      details: errorMessage,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
