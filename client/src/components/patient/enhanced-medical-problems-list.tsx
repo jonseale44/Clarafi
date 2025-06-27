@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, AlertCircle, E
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
+import { Slider } from "@/components/ui/slider";
 
 interface VisitNote {
   date: string;
