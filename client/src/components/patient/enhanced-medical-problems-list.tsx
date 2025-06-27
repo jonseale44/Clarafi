@@ -750,8 +750,9 @@ export function EnhancedMedicalProblemsList({
           <RankingWeightControls 
             patientId={patientId}
             onWeightsChange={(weights) => {
-              // Trigger a refresh of medical problems with new weights
-              queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
+              // Real-time recalculation happens automatically via the currentRankingWeights dependency
+              // No API call needed - just update user preferences cache
+              console.log('🔄 [MedicalProblems] Weight preferences updated:', weights);
             }}
           />
         )}

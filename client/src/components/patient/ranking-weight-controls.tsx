@@ -134,7 +134,12 @@ export function RankingWeightControls({ patientId, onWeightsChange }: RankingWei
     const newValue = value[0];
     const normalized = normalizeWeights({ [field]: newValue }, field);
     setWeights(normalized);
+    
+    // Trigger immediate frontend recalculation via callback
     onWeightsChange?.(normalized);
+    
+    // Invalidate user preferences cache to trigger re-fetch with new weights
+    queryClient.invalidateQueries({ queryKey: ['/api/user/preferences'] });
   };
 
   const resetToDefaults = () => {
