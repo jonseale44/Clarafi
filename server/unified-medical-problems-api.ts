@@ -261,4 +261,70 @@ router.get("/medical-problems/processing-status/:patientId", async (req, res) =>
   }
 });
 
+/**
+ * DELETE /api/medical-problems/:problemId
+ * Delete a specific medical problem
+ */
+router.delete("/medical-problems/:problemId", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const problemId = parseInt(req.params.problemId);
+    console.log(`🗑️ [UnifiedMedicalProblemsAPI] Delete request for problem ${problemId}`);
+    
+    if (isNaN(problemId)) {
+      return res.status(400).json({ error: "Invalid problem ID" });
+    }
+
+    // Delete the medical problem using storage service
+    const success = await storage.deleteMedicalProblem(problemId);
+    
+    if (!success) {
+      return res.status(404).json({ error: "Medical problem not found" });
+    }
+
+    console.log(`✅ [UnifiedMedicalProblemsAPI] Problem ${problemId} deleted successfully`);
+    res.json({ success: true, message: "Medical problem deleted successfully" });
+
+  } catch (error) {
+    console.error(`❌ [UnifiedMedicalProblemsAPI] Error deleting problem ${req.params.problemId}:`, error);
+    res.status(500).json({ error: "Failed to delete medical problem" });
+  }
+});
+
+/**
+ * PUT /api/medical-problems/:problemId/resolve
+ * Mark a medical problem as resolved
+ */
+router.put("/medical-problems/:problemId/resolve", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const problemId = parseInt(req.params.problemId);
+    console.log(`🔄 [UnifiedMedicalProblemsAPI] Resolve request for problem ${problemId}`);
+    
+    if (isNaN(problemId)) {
+      return res.status(400).json({ error: "Invalid problem ID" });
+    }
+
+    // Update the problem status to resolved
+    const success = await storage.updateMedicalProblemStatus(problemId, "resolved");
+    
+    if (!success) {
+      return res.status(404).json({ error: "Medical problem not found" });
+    }
+
+    console.log(`✅ [UnifiedMedicalProblemsAPI] Problem ${problemId} marked as resolved`);
+    res.json({ success: true, message: "Medical problem marked as resolved" });
+
+  } catch (error) {
+    console.error(`❌ [UnifiedMedicalProblemsAPI] Error resolving problem ${req.params.problemId}:`, error);
+    res.status(500).json({ error: "Failed to resolve medical problem" });
+  }
+});
+
 export default router;

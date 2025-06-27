@@ -562,11 +562,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced medical problems routes (JSONB visit history)
-  app.use("/api", enhancedMedicalProblemsRoutes);
-
   // Unified medical problems routes (handles both SOAP and attachment processing)
+  // NOTE: Must be registered BEFORE enhanced routes to avoid route conflicts
   app.use("/api", unifiedMedicalProblemsRoutes);
+
+  // Enhanced medical problems routes (JSONB visit history)
+  // NOTE: Individual problem operations that don't conflict with unified routes
+  app.use("/api", enhancedMedicalProblemsRoutes);
 
   // Enhanced medications routes (GPT-powered standardization and grouping)
   app.use("/api", enhancedMedicationRoutes);

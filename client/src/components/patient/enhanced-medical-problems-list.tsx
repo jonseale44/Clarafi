@@ -106,7 +106,7 @@ export function EnhancedMedicalProblemsList({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Load medical problems data
+  // Load medical problems data using unified API
   const { data: medicalProblems = [], isLoading, error } = useQuery<MedicalProblem[]>({
     queryKey: ['/api/medical-problems', patientId],
     enabled: !!patientId,
