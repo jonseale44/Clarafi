@@ -92,8 +92,7 @@ export class PatientChartService {
           dosage: m.dosage,
           frequency: m.frequency,
           startDate: m.startDate,
-          status: m.status,
-          instructions: m.instructions
+          status: m.status
         })),
 
         allergies: allergyRecords.map(a => ({

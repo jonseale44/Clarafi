@@ -12,6 +12,7 @@ import OpenAI from "openai";
 import { db } from "./db.js";
 import { medicalProblems, encounters, patients } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
+import { PatientChartService } from "./patient-chart-service.js";
 
 export interface UnifiedVisitHistoryEntry {
   date: string; // DP - authoritative medical event date
@@ -105,26 +106,31 @@ export class UnifiedMedicalProblemsParser {
     console.log(`🔄 [UnifiedMedicalProblems] Trigger: ${triggerType}`);
 
     try {
-      // Get existing context
-      const [existingProblems, encounter, patient] = await Promise.all([
+      // Get existing context and comprehensive patient chart data
+      const [existingProblems, encounter, patient, patientChart] = await Promise.all([
         this.getExistingProblems(patientId),
         encounterId
           ? this.getEncounterInfo(encounterId)
           : Promise.resolve(null),
         this.getPatientInfo(patientId),
+        PatientChartService.getPatientChartData(patientId),
       ]);
 
       console.log(
         `🔄 [UnifiedMedicalProblems] Found ${existingProblems.length} existing problems`,
       );
+      console.log(
+        `🔄 [UnifiedMedicalProblems] Patient chart data: ${patientChart.medicalProblems?.length || 0} problems, ${patientChart.currentMedications?.length || 0} medications, ${patientChart.vitals?.length || 0} vitals`,
+      );
 
-      // Generate unified changes using enhanced GPT prompt
+      // Generate unified changes using enhanced GPT prompt with comprehensive patient data
       const changes = await this.generateUnifiedChanges(
         existingProblems,
         soapNote,
         attachmentContent,
         encounter,
         patient,
+        patientChart,
         providerId,
         triggerType,
         attachmentId,
@@ -182,6 +188,7 @@ export class UnifiedMedicalProblemsParser {
     attachmentContent: string | null,
     encounter: any,
     patient: any,
+    patientChart: any,
     providerId: number,
     triggerType: string,
     attachmentId: number | null,
