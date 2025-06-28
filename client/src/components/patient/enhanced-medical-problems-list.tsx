@@ -868,10 +868,37 @@ export function EnhancedMedicalProblemsList({
         {!isReadOnly && (
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h3>
-            <Button onClick={handleAddNew} size="sm" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Problem
-            </Button>
+            <div className="flex gap-2">
+              {/* Auto-generation progress indicator */}
+              {isAutoGeneratingMedicalProblems && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  disabled={true}
+                  className="relative overflow-hidden bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
+                  title={`Processing medical problems... ${Math.round(medicalProblemsProgress)}% complete`}
+                >
+                  {/* Progress bar background */}
+                  <div 
+                    className="absolute inset-0 bg-gradient-to-r from-green-200 to-green-300 transition-all duration-100 ease-linear"
+                    style={{ 
+                      width: `${medicalProblemsProgress}%`,
+                      opacity: 0.3
+                    }}
+                  />
+                  
+                  <Activity className="h-4 w-4 mr-2 relative z-10 animate-pulse" />
+                  
+                  <span className="relative z-10">
+                    Processing... {Math.round(medicalProblemsProgress)}%
+                  </span>
+                </Button>
+              )}
+              <Button onClick={handleAddNew} size="sm" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Problem
+              </Button>
+            </div>
           </div>
         )}
 

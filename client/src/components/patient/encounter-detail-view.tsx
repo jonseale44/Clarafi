@@ -3315,6 +3315,8 @@ Please provide medical suggestions based on this complete conversation context.`
                       encounterId={encounter?.id}
                       isReadOnly={false}
                       sectionId={section.id}
+                      isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
+                      medicalProblemsProgress={medicalProblemsProgress}
                     />
                   )}
                 </div>
