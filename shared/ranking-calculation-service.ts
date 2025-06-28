@@ -4,20 +4,20 @@
  * Single source of truth for all ranking calculations across the system.
  * Consolidates algorithm logic and eliminates technical debt from dual ranking systems.
  * 
- * ALGORITHM: GPT-4.1 generated factor scores + user weight preferences = final ranking
- * - Factor scores are raw clinical values in specific ranges (not percentages)
- * - User weights adjust the relative importance of each factor
- * - Final rank = 100 - totalWeightedScore (lower number = higher priority)
+ * ALGORITHM: GPT-4.1 generated relative percentages + user weight preferences = final ranking
+ * - Factor scores are relative percentages (0-100) comparing conditions within same patient
+ * - User weights adjust the relative importance of each factor category
+ * - Final rank = totalWeightedScore (higher percentage = higher priority)
  */
 
 // Configuration constants - centralized to eliminate hardcoded values
 export const RANKING_CONFIG = {
-  // GPT factor score ranges (as defined in unified-medical-problems-parser.ts)
+  // GPT factor score ranges - now relative percentages (as defined in unified-medical-problems-parser.ts)
   FACTOR_RANGES: {
-    clinical_severity: { min: 0, max: 40 },
-    treatment_complexity: { min: 0, max: 30 },
-    patient_frequency: { min: 0, max: 20 },
-    clinical_relevance: { min: 0, max: 10 }
+    clinical_severity: { min: 0, max: 100 },
+    treatment_complexity: { min: 0, max: 100 },
+    patient_frequency: { min: 0, max: 100 },
+    clinical_relevance: { min: 0, max: 100 }
   },
   
   // Default user weight preferences
@@ -124,10 +124,11 @@ export function calculateMedicalProblemRanking(
     weightedScores.patient_frequency +
     weightedScores.clinical_relevance;
 
-  // Convert to final ranking (100 - total = higher factors = lower rank number = higher priority)
+  // Convert to final ranking (higher total = higher priority, so use total directly)
+  // Clamp between 1.00-99.99 range for consistency with existing UI
   const finalRank = Math.max(
     RANKING_CONFIG.SCALE.highest_priority,
-    Math.min(RANKING_CONFIG.SCALE.lowest_priority, 100 - totalWeightedScore)
+    Math.min(RANKING_CONFIG.SCALE.lowest_priority, totalWeightedScore)
   );
 
   // Determine priority level for UI styling
@@ -148,7 +149,8 @@ export function calculateMedicalProblemRanking(
 /**
  * WEIGHT ADJUSTMENT ALGORITHM
  * 
- * Adjusts factor score based on user weight preference while maintaining clinical validity
+ * For relative percentage system: user weights directly multiply the percentage scores
+ * This preserves the relative relationships while adjusting emphasis
  */
 function applyWeightAdjustment(
   factorScore: number,
@@ -156,14 +158,12 @@ function applyWeightAdjustment(
   defaultWeight: number,
   maxFactorRange: number
 ): number {
-  // Calculate weight multiplier (how much user deviates from default)
-  const weightMultiplier = userWeight / defaultWeight;
+  // For percentage-based system, directly apply the user weight percentage
+  // Factor score is already a percentage (0-100), user weight is percentage (e.g., 40 for 40%)
+  const weightedScore = (factorScore * userWeight) / 100;
   
-  // Apply multiplier while ensuring we don't exceed factor range
-  const adjustedScore = factorScore * weightMultiplier;
-  
-  // Clamp to valid range for this factor
-  return Math.max(0, Math.min(maxFactorRange, adjustedScore));
+  // Clamp to valid range (should stay within 0-100 bounds)
+  return Math.max(0, Math.min(maxFactorRange, weightedScore));
 }
 
 /**

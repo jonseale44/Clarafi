@@ -433,39 +433,48 @@ RANKING CRITERIA (1.00 = Highest Priority, 99.99 = Lowest Priority):
    - Stable baseline conditions: 50.00-70.00
    - Historical reference only: 70.00-99.99
 
-ENHANCED FACTOR SCORING SYSTEM:
-For EVERY medical problem, you MUST provide detailed factor breakdown in addition to overall ranking:
+ENHANCED RELATIVE FACTOR SCORING SYSTEM:
+For EVERY medical problem, you MUST provide detailed factor breakdown using RELATIVE PERCENTAGES.
 
-FACTOR 1 - CLINICAL SEVERITY (0-40 points):
-- Life-threatening/urgent (35-40): MI, stroke, sepsis, acute renal failure
-- High severity (25-34): Uncontrolled diabetes, severe HTN, heart failure  
-- Moderate severity (15-24): Controlled diabetes, stable CAD, CKD stages 3-4
-- Low severity (5-14): Well-controlled HTN, stable thyroid disease
-- Minimal severity (0-4): Historical conditions, minor symptoms
+CRITICAL INSTRUCTION: Each factor must be distributed as percentages across ALL of this patient's medical problems, where each factor category sums to exactly 100%.
 
-FACTOR 2 - TREATMENT COMPLEXITY (0-30 points):
-- Very complex (25-30): Multiple medications, specialist management, frequent monitoring
-- Moderately complex (15-24): Standard multi-drug therapy, regular follow-ups
-- Simple management (5-14): Single medication, routine monitoring
-- Minimal management (0-4): Self-limiting, historical conditions
+FACTOR 1 - CLINICAL SEVERITY (0-100%):
+Compare the clinical severity of THIS patient's conditions against each other:
+- Most severe condition for this patient gets highest percentage
+- Least severe condition for this patient gets lowest percentage
+- All clinical severity percentages across all problems must sum to 100%
 
-FACTOR 3 - PATIENT FREQUENCY (0-20 points):
-- Very frequent (15-20): Mentioned in multiple recent encounters, actively evolving
-- Moderately frequent (10-14): Mentioned across several encounters
-- Occasional (5-9): Mentioned periodically, stable
-- Rare (0-4): Long-term stable, infrequently mentioned
+FACTOR 2 - TREATMENT COMPLEXITY (0-100%):
+Compare the treatment complexity of THIS patient's conditions against each other:
+- Most complex treatment regimen for this patient gets highest percentage
+- Simplest treatment for this patient gets lowest percentage
+- All treatment complexity percentages across all problems must sum to 100%
 
-FACTOR 4 - CLINICAL RELEVANCE (0-10 points):
-- Highly relevant (8-10): Actively being treated today, medication changes
-- Moderately relevant (5-7): Routine monitoring, stable management
-- Low relevance (2-4): Background condition, minimal current impact
-- Minimal relevance (0-1): Historical reference only
+FACTOR 3 - PATIENT FREQUENCY (0-100%):
+Compare how frequently THIS patient's conditions are mentioned/updated:
+- Most frequently mentioned condition gets highest percentage
+- Least frequently mentioned condition gets lowest percentage
+- All patient frequency percentages across all problems must sum to 100%
 
-RANKING EXAMPLES WITH FACTOR BREAKDOWN:
-- "Acute myocardial infarction" → rank_score: 1.50, ranking_factors: {"clinical_severity": 40, "treatment_complexity": 30, "patient_frequency": 18, "clinical_relevance": 10}, ranking_reason: "Life-threatening acute cardiac event requiring immediate intensive management"
-- "Type 2 diabetes mellitus with neuropathy" → rank_score: 15.25, ranking_factors: {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}, ranking_reason: "Complex diabetes with complications requiring active medication management and monitoring"
-- "Essential hypertension, well controlled" → rank_score: 45.80, ranking_factors: {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}, ranking_reason: "Stable chronic condition with good control on current regimen"
-- "History of appendectomy" → rank_score: 85.00, ranking_factors: {"clinical_severity": 5, "treatment_complexity": 2, "patient_frequency": 1, "clinical_relevance": 1}, ranking_reason: "Historical surgical condition with no ongoing clinical significance"
+FACTOR 4 - CLINICAL RELEVANCE (0-100%):
+Compare the current clinical relevance of THIS patient's conditions:
+- Most currently relevant condition gets highest percentage
+- Least currently relevant condition gets lowest percentage
+- All clinical relevance percentages across all problems must sum to 100%
+
+RANKING EXAMPLES WITH RELATIVE FACTOR BREAKDOWN:
+For a patient with 4 conditions (Type 2 diabetes, CKD Stage 5, Acute sinusitis, Hip osteoarthritis):
+
+- "Type 2 diabetes mellitus with neuropathy" → ranking_factors: {"clinical_severity": 40, "treatment_complexity": 50, "patient_frequency": 50, "clinical_relevance": 40}, ranking_reason: "Most complex treatment regimen and frequently managed condition for this patient"
+- "CKD Stage 5" → ranking_factors: {"clinical_severity": 10, "treatment_complexity": 20, "patient_frequency": 30, "clinical_relevance": 30}, ranking_reason: "Severe but stable condition requiring specialist management"
+- "Acute sinusitis" → ranking_factors: {"clinical_severity": 30, "treatment_complexity": 10, "patient_frequency": 10, "clinical_relevance": 20}, ranking_reason: "Acute condition but simple treatment compared to chronic conditions"  
+- "Hip osteoarthritis" → ranking_factors: {"clinical_severity": 20, "treatment_complexity": 20, "patient_frequency": 10, "clinical_relevance": 10}, ranking_reason: "Chronic stable condition with routine management"
+
+MATHEMATICAL VERIFICATION: Each factor sums to 100% across all problems:
+- Clinical severity: 40 + 10 + 30 + 20 = 100%
+- Treatment complexity: 50 + 20 + 10 + 20 = 100%
+- Patient frequency: 50 + 30 + 10 + 10 = 100%
+- Clinical relevance: 40 + 30 + 20 + 10 = 100%
 
 RANKING INSTRUCTIONS:
 - NEVER assign identical rank scores - use decimal precision to prevent ties
@@ -494,10 +503,10 @@ REQUIRED JSON RESPONSE FORMAT:
       "rank_score": number (1.00-99.99),
       "ranking_reason": "string",
       "ranking_factors": {
-        "clinical_severity": number (0-40),
-        "treatment_complexity": number (0-30),
-        "patient_frequency": number (0-20),
-        "clinical_relevance": number (0-10)
+        "clinical_severity": number (0-100, percentage relative to other patient problems),
+        "treatment_complexity": number (0-100, percentage relative to other patient problems),
+        "patient_frequency": number (0-100, percentage relative to other patient problems),
+        "clinical_relevance": number (0-100, percentage relative to other patient problems)
       }
     }
   ]
