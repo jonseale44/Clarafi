@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { patients, encounters, medications, diagnoses, allergies, medicalHistory, medicalProblems, vitals, familyHistory, socialHistory } from "../shared/schema.js";
+import { patients, encounters, medications, allergies, medicalHistory, medicalProblems, vitals, familyHistory, socialHistory } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
 
 /**
@@ -48,12 +48,7 @@ export class PatientChartService {
         .orderBy(desc(medications.createdAt))
         .limit(10);
 
-      // Get recent diagnoses (last 6 months)
-      const recentDiagnoses = await db.select()
-        .from(diagnoses)
-        .where(eq(diagnoses.patientId, patientId))
-        .orderBy(desc(diagnoses.createdAt))
-        .limit(10);
+
 
       // Get allergies
       const allergyRecords = await db.select()
@@ -98,14 +93,9 @@ export class PatientChartService {
           frequency: m.frequency,
           startDate: m.startDate,
           status: m.status,
-          medicalProblem: m.medicalProblem
+          instructions: m.instructions
         })),
-        recentDiagnoses: recentDiagnoses.map(d => ({
-          diagnosis: d.diagnosis,
-          icd10Code: d.icd10Code,
-          diagnosisDate: d.diagnosisDate,
-          status: d.status
-        })),
+
         allergies: allergyRecords.map(a => ({
           allergen: a.allergen,
           reaction: a.reaction,
@@ -156,7 +146,7 @@ export class PatientChartService {
         activeProblems: Array.isArray(chartData.activeProblems) ? chartData.activeProblems.length : 0,
         medicalHistory: chartData.medicalHistory.length,
         currentMedications: chartData.currentMedications.length,
-        recentDiagnoses: chartData.recentDiagnoses.length,
+
         allergies: chartData.allergies.length,
         medicalProblems: chartData.medicalProblems.length,
         vitals: chartData.vitals.length,
@@ -171,7 +161,6 @@ export class PatientChartService {
         activeProblems: [],
         medicalHistory: [],
         currentMedications: [],
-        recentDiagnoses: [],
         allergies: [],
         demographics: {},
         medicalProblems: [],
