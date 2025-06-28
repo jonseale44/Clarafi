@@ -117,8 +117,9 @@ Preferred communication style: Simple, everyday language.
 - **VISIT HISTORY ENHANCEMENT**: GPT can now incorporate lab values (A1c for diabetes), vital signs (BP for hypertension), and medication data into medical problem visit histories
 - **LOGGING IMPROVEMENTS**: Added comprehensive patient chart data logging to track medications, vitals, and problems count during processing
 - **CLINICAL INTELLIGENCE UPGRADE**: Medical problems parser now has access to complete patient clinical picture for enhanced decision-making
-- **EMPTY VISIT HISTORY PREVENTION**: Fixed efficiency issue where empty/generic visit histories were created for every encounter by implementing GPT prompt refinement and backend filtering
-- **TOKEN USAGE OPTIMIZATION**: Prevented accumulation of meaningless visit entries that consume tokens on every subsequent processing cycle
+- **EMPTY VISIT HISTORY PREVENTION**: Fixed efficiency issue where empty visit histories were created for every encounter by enhancing GPT prompt instructions to only create visit entries when problems are actually discussed
+- **GPT CLINICAL AUTHORITY PRESERVED**: Backend only filters truly empty entries (when GPT returns nothing) while respecting all GPT clinical decisions including concise entries like "A1c 5" or "routine follow-up"
+- **TOKEN USAGE OPTIMIZATION**: Prevented accumulation of unnecessary empty visit entries that consume tokens on every subsequent processing cycle
 
 ### Medical Problems Ranking System Technical Debt Cleanup (June 28, 2025)
 - **CRITICAL ALGORITHMIC DISCREPANCY FIXED**: Fixed inconsistency between main calculation and fallback function in `shared/ranking-calculation-service.ts`

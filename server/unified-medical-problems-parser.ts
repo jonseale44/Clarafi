@@ -925,16 +925,12 @@ REQUIRED JSON RESPONSE FORMAT:
       updatedVisitHistory = [...visitHistory];
       updatedVisitHistory[existingVisitIndex] = updatedVisit;
     } else {
-      // Add new visit ONLY if there are meaningful visit notes
+      // Add new visit ONLY if GPT provided actual visit notes
       const visitNotes = change.visit_notes?.trim() || "";
       
-      // Skip creating visit entry if notes are empty, generic, or meaningless
-      if (!visitNotes || 
-          visitNotes.length < 10 || 
-          visitNotes.toLowerCase().includes("routine follow-up") ||
-          visitNotes.toLowerCase().includes("no acute symptoms") ||
-          visitNotes.toLowerCase().includes("stable") && visitNotes.length < 20) {
-        console.log(`🚫 [UnifiedMedicalProblems] Skipping empty/generic visit entry for problem ${change.problem_id}: "${visitNotes}"`);
+      // Only filter out truly empty entries - GPT is in charge of all clinical decisions
+      if (!visitNotes) {
+        console.log(`🚫 [UnifiedMedicalProblems] Skipping truly empty visit entry for problem ${change.problem_id} (GPT returned empty notes)`);
         return; // Exit without creating visit entry
       }
 
