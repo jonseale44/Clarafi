@@ -268,15 +268,31 @@ export function EnhancedMedicalProblemsList({
     const rankingResult = problem.rankingResult;
     
     if (!problem.rankingFactors) {
-      return (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Clinical Priority Ranking: #{rankingResult.finalRank.toFixed(2)}</p>
-          <p className="text-xs opacity-75">Using legacy ranking system</p>
-          <p className="text-xs opacity-75 mt-1">
-            Lower scores = higher clinical priority (1.00 = most urgent, 99.99 = routine)
-          </p>
-        </div>
-      );
+      // Check if this is truly a legacy problem or a new manual problem
+      const isLegacyProblem = shouldUseLegacyRank(problem);
+      
+      if (isLegacyProblem) {
+        return (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Clinical Priority Ranking: #{rankingResult.finalRank.toFixed(2)}</p>
+            <p className="text-xs opacity-75">Using legacy ranking system</p>
+            <p className="text-xs opacity-75 mt-1">
+              Lower scores = higher clinical priority (1.00 = most urgent, 99.99 = routine)
+            </p>
+          </div>
+        );
+      } else {
+        // New manual problem using modern fallback system
+        return (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Priority Score: {rankingResult.finalRank.toFixed(2)}</p>
+            <p className="text-xs opacity-75">Manual entry - awaiting AI ranking</p>
+            <p className="text-xs opacity-75 mt-1">
+              Higher scores = higher clinical priority (relative to other conditions for this patient)
+            </p>
+          </div>
+        );
+      }
     }
 
     const factors = problem.rankingFactors;
