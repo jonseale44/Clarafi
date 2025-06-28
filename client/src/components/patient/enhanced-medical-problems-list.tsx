@@ -17,6 +17,7 @@ import { RankingWeightControls } from "./ranking-weight-controls";
 import { useLocation } from "wouter";
 import { 
   calculateMedicalProblemRanking, 
+  assignPriorityLevels,
   getRankingStyles, 
   getPriorityDisplayName,
   shouldUseLegacyRank,
@@ -398,10 +399,13 @@ export function EnhancedMedicalProblemsList({
     // Sort by score descending (highest scores first) and assign ranks
     const sortedProblems = problemsWithScores.sort((a, b) => b.rankingResult.finalRank - a.rankingResult.finalRank);
     
-    return sortedProblems.map((problem, index) => ({
+    const problemsWithRanks = sortedProblems.map((problem, index) => ({
       ...problem,
       displayRank: index + 1 // Rank 1 = highest score (most urgent)
     }));
+    
+    // Apply relative priority levels based on ranking position
+    return assignPriorityLevels(problemsWithRanks);
   };
 
   // Calculate filtered problems based on small handle value (for already-enhanced and sorted problems)

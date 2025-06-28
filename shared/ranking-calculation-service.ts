@@ -35,12 +35,10 @@ export const RANKING_CONFIG = {
     default_fallback: 99.99
   },
   
-  // Priority level thresholds for UI styling (higher scores = higher priority)
-  PRIORITY_THRESHOLDS: {
-    critical: 50,     // 50.01-100.00 = Critical (red)
-    high: 35,         // 35.01-50.00 = High (orange)
-    medium: 20,       // 20.01-35.00 = Medium (yellow)
-    low: 0.01         // 0.01-20.00 = Low (green)
+  // Priority levels now determined by relative ranking position (percentile-based)
+  PRIORITY_LEVELS: {
+    HIGH_PERCENTILE: 33,    // Top 33% of problems = High priority
+    MEDIUM_PERCENTILE: 67   // Middle 33% = Medium, Bottom 33% = Low
   }
 } as const;
 
@@ -132,12 +130,9 @@ export function calculateMedicalProblemRanking(
     Math.min(100.00, totalWeightedScore)
   );
 
-  // Determine priority level for UI styling (higher scores = higher priority)
-  const priorityLevel = getPriorityLevel(finalScore);
-
   return {
     finalRank: parseFloat(finalScore.toFixed(2)),
-    priorityLevel,
+    priorityLevel: 'medium', // Default level, will be determined at list level based on relative ranking
     calculationDetails: {
       factors,
       weights,
@@ -170,13 +165,33 @@ function applyWeightAdjustment(
 /**
  * PRIORITY LEVEL CLASSIFICATION
  * 
- * Converts numerical ranking to categorical priority level for UI styling
+ * Assigns priority levels to all problems based on their relative ranking position
  */
-function getPriorityLevel(score: number): 'critical' | 'high' | 'medium' | 'low' {
-  if (score > RANKING_CONFIG.PRIORITY_THRESHOLDS.critical) return 'critical';
-  if (score > RANKING_CONFIG.PRIORITY_THRESHOLDS.high) return 'high';
-  if (score > RANKING_CONFIG.PRIORITY_THRESHOLDS.medium) return 'medium';
-  return 'low';
+export function assignPriorityLevels<T extends { rankingResult: RankingResult; displayRank: number }>(
+  problems: T[]
+): (T & { rankingResult: RankingResult & { priorityLevel: 'high' | 'medium' | 'low' } })[] {
+  const totalProblems = problems.length;
+  
+  return problems.map(problem => {
+    const percentile = (problem.displayRank / totalProblems) * 100;
+    
+    let priorityLevel: 'high' | 'medium' | 'low';
+    if (percentile <= RANKING_CONFIG.PRIORITY_LEVELS.HIGH_PERCENTILE) {
+      priorityLevel = 'high';
+    } else if (percentile <= RANKING_CONFIG.PRIORITY_LEVELS.MEDIUM_PERCENTILE) {
+      priorityLevel = 'medium';
+    } else {
+      priorityLevel = 'low';
+    }
+    
+    return {
+      ...problem,
+      rankingResult: {
+        ...problem.rankingResult,
+        priorityLevel
+      }
+    };
+  });
 }
 
 /**
@@ -240,7 +255,7 @@ function createFallbackResult(weights: RankingWeights): RankingResult {
   
   return {
     finalRank: parseFloat(finalRank.toFixed(2)),
-    priorityLevel: getPriorityLevel(finalRank), // Use proper priority level calculation
+    priorityLevel: 'medium', // Default for fallback, will be determined at list level
     calculationDetails: {
       factors: fallbackFactors,
       weights,
