@@ -109,6 +109,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Technical Debt Cleanup (June 28, 2025)
+- **CRITICAL ARCHITECTURAL FIX**: Resolved major API endpoint inconsistencies causing UI update failures and CRUD operation issues
+- **CACHE INVALIDATION STANDARDIZED**: Updated all medical problems cache invalidation calls from legacy/orphaned endpoints to unified API
+  - Fixed: `/api/patients/${patientId}/medical-problems-enhanced` → `/api/medical-problems/${patientId}` (unified API)
+  - Fixed: `/api/patients/${patientId}/medical-problems` → `/api/medical-problems/${patientId}` (unified API)
+  - Consolidated: 4 different cache invalidation patterns → 1 standardized pattern
+- **ORPHANED IMPORT REMOVED**: Fixed missing `enhanced-medical-problems.tsx` component reference causing build errors
+- **COMPONENT ARCHITECTURE CLARIFIED**: Identified 3 medical problems components with different purposes:
+  - `enhanced-medical-problems-list.tsx` (ACTIVE - production component with ranking system)
+  - `medical-problems-section.tsx` (LEGACY - basic CRUD only, not used in current UI)
+  - `enhanced-medical-problems.tsx` (MISSING - referenced but file doesn't exist)
+- **API ENDPOINT CONSOLIDATION**: All medical problems operations now use unified `/api/medical-problems/*` endpoints
+- **ROOT CAUSE IDENTIFIED**: Mixed API usage explained why manual medical problems deletion/editing was broken
+- **MANUAL CRUD LIMITATION DOCUMENTED**: System designed for AI-automated processing rather than manual CRUD operations
+- **ENCOUNTER VIEW STABILITY IMPROVED**: Fixed cache invalidation in stop recording, manual processing, and CPT workflows
+
 ### Critical Stop Recording Parallel Processing Optimization (June 28, 2025)
 - **MAJOR PERFORMANCE IMPROVEMENT**: Fixed sequential bottleneck in "stop recording" processing pipeline that was causing speed issues
 - **ROOT CAUSE IDENTIFIED**: Medical problems processing was running sequentially BEFORE other services, creating 3-5 second delay

@@ -239,9 +239,11 @@ export function EnhancedMedicalProblemsDialog({
         }))
       };
 
+      // Note: Manual CRUD operations may not be available in unified API
+      // This system is designed for AI-automated processing
       const url = problem?.id 
         ? `/api/medical-problems/${problem.id}`
-        : `/api/medical-problems/create`;
+        : `/api/medical-problems/manual-create`;
       
       const response = await fetch(url, {
         method: problem?.id ? "PUT" : "POST",
@@ -253,7 +255,7 @@ export function EnhancedMedicalProblemsDialog({
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems-enhanced`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
       toast({ title: "Success", description: "Medical problem saved successfully" });
       onClose();
     },
