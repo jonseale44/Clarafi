@@ -386,7 +386,6 @@ router.post("/medical-problems/refresh-rankings/:patientId", async (req, res) =>
         console.log(`✅ [RankingRefresh] Updated problem ${id}: ${problem?.problemTitle} -> rank ${ranking.finalRank.toFixed(2)} (${ranking.priorityLevel})`);
       } catch (updateError) {
         console.warn(`⚠️ [RankingRefresh] Could not update ranking for problem ${id}:`, updateError);
-        }
       }
     }
 
