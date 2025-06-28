@@ -316,9 +316,8 @@ export function EnhancedMedicalProblemsList({
     ];
 
     const totalFactorScore = calculations.reduce((sum, calc) => sum + calc.contribution, 0);
-    // CRITICAL FIX: Apply inversion formula for ranking direction correction
-    const invertedScore = 100 - totalFactorScore; // Higher weighted percentages = lower rank numbers (better priority)
-    const totalScore = invertedScore; // Inverted score for clinical intuition alignment
+    // Direct score: higher weighted percentages = higher clinical priority
+    const totalScore = totalFactorScore; // Higher score means higher clinical priority
 
     return (
       <div className="space-y-4 w-80">
@@ -382,26 +381,34 @@ export function EnhancedMedicalProblemsList({
             <span className="text-blue-600 dark:text-blue-400">{totalScore.toFixed(2)}</span>
           </div>
           <p className="text-xs opacity-75 mt-1">
-            Lower rank numbers = higher clinical priority (relative to other conditions for this patient)
+            Higher scores = higher clinical priority (relative to other conditions for this patient)
           </p>
         </div>
       </div>
     );
   };
 
-  // Transform problems with real-time ranking calculations
-  const getProblemsWithRealTimeRanking = (problems: MedicalProblem[]): (MedicalProblem & { rankingResult: RankingResult })[] => {
-    return problems.map(problem => ({
+  // Transform problems with real-time ranking calculations and convert to ranks
+  const getProblemsWithRealTimeRanking = (problems: MedicalProblem[]): (MedicalProblem & { rankingResult: RankingResult; displayRank: number })[] => {
+    const problemsWithScores = problems.map(problem => ({
       ...problem,
       rankingResult: calculateProblemRanking(problem, currentRankingWeights)
     }));
+    
+    // Sort by score descending (highest scores first) and assign ranks
+    const sortedProblems = problemsWithScores.sort((a, b) => b.rankingResult.finalRank - a.rankingResult.finalRank);
+    
+    return sortedProblems.map((problem, index) => ({
+      ...problem,
+      displayRank: index + 1 // Rank 1 = highest score (most urgent)
+    }));
   };
 
-  // Calculate filtered problems based on small handle value (for already-enhanced problems)
-  const getFilteredProblems = (problems: (MedicalProblem & { rankingResult: RankingResult })[]) => {
+  // Calculate filtered problems based on small handle value (for already-enhanced and sorted problems)
+  const getFilteredProblems = (problems: (MedicalProblem & { rankingResult: RankingResult; displayRank: number })[]) => {
     if (!problems.length) return problems;
     
-    // Problems are already enhanced and sorted, just apply percentage filter
+    // Problems are already enhanced and sorted by score descending, just apply percentage filter
     const totalProblems = problems.length;
     const percentageToShow = smallHandleValue;
     const problemsToShow = Math.max(1, Math.ceil((percentageToShow / 100) * totalProblems));

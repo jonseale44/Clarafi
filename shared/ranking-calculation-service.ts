@@ -35,12 +35,12 @@ export const RANKING_CONFIG = {
     default_fallback: 99.99
   },
   
-  // Priority level thresholds for UI styling
+  // Priority level thresholds for UI styling (higher scores = higher priority)
   PRIORITY_THRESHOLDS: {
-    critical: 20,     // 1.00-20.00 = Critical (red)
-    high: 40,         // 20.01-40.00 = High (orange)
-    medium: 70,       // 40.01-70.00 = Medium (yellow)
-    low: 99.99        // 70.01-99.99 = Low (green)
+    critical: 70,     // 70.01-100.00 = Critical (red)
+    high: 50,         // 50.01-70.00 = High (orange)
+    medium: 30,       // 30.01-50.00 = Medium (yellow)
+    low: 0.01         // 0.01-30.00 = Low (green)
   }
 } as const;
 
@@ -124,20 +124,19 @@ export function calculateMedicalProblemRanking(
     weightedScores.patient_frequency +
     weightedScores.clinical_relevance;
 
-  // Convert to final ranking: INVERT so higher weighted importance = lower (better) rank numbers
-  // Higher totalWeightedScore should result in lower finalRank (better priority)
-  // Formula: 100 - totalWeightedScore, then clamp to 1.00-99.99 range
-  const invertedScore = 100 - totalWeightedScore;
-  const finalRank = Math.max(
-    RANKING_CONFIG.SCALE.highest_priority,
-    Math.min(RANKING_CONFIG.SCALE.lowest_priority, invertedScore)
+  // Use direct score: higher weighted importance = higher score (better priority)
+  // Higher totalWeightedScore directly represents higher clinical priority
+  // Clamp to 0.01-100.00 range for consistency
+  const finalScore = Math.max(
+    0.01,
+    Math.min(100.00, totalWeightedScore)
   );
 
-  // Determine priority level for UI styling
-  const priorityLevel = getPriorityLevel(finalRank);
+  // Determine priority level for UI styling (higher scores = higher priority)
+  const priorityLevel = getPriorityLevel(finalScore);
 
   return {
-    finalRank: parseFloat(finalRank.toFixed(2)),
+    finalRank: parseFloat(finalScore.toFixed(2)),
     priorityLevel,
     calculationDetails: {
       factors,
@@ -173,10 +172,10 @@ function applyWeightAdjustment(
  * 
  * Converts numerical ranking to categorical priority level for UI styling
  */
-function getPriorityLevel(rank: number): 'critical' | 'high' | 'medium' | 'low' {
-  if (rank <= RANKING_CONFIG.PRIORITY_THRESHOLDS.critical) return 'critical';
-  if (rank <= RANKING_CONFIG.PRIORITY_THRESHOLDS.high) return 'high';
-  if (rank <= RANKING_CONFIG.PRIORITY_THRESHOLDS.medium) return 'medium';
+function getPriorityLevel(score: number): 'critical' | 'high' | 'medium' | 'low' {
+  if (score > RANKING_CONFIG.PRIORITY_THRESHOLDS.critical) return 'critical';
+  if (score > RANKING_CONFIG.PRIORITY_THRESHOLDS.high) return 'high';
+  if (score > RANKING_CONFIG.PRIORITY_THRESHOLDS.medium) return 'medium';
   return 'low';
 }
 
