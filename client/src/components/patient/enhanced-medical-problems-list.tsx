@@ -223,7 +223,7 @@ export function EnhancedMedicalProblemsList({
   const calculateRealTimeRanking = (problem: MedicalProblem, weights: RankingWeights): number => {
     // If no ranking factors available, fall back to database rank or default
     if (!problem.rankingFactors) {
-      return problem.rankScore ? parseFloat(problem.rankScore.toString()) : 1.00;
+      return problem.rankScore ? parseFloat(problem.rankScore.toString()) : 99.99;
     }
 
     const factors = problem.rankingFactors;
@@ -236,14 +236,8 @@ export function EnhancedMedicalProblemsList({
       (factors.clinical_relevance * weights.clinical_relevance / 100)
     );
 
-    // Maximum possible score (all factors at max with 100% weights)
-    const maxPossibleScore = (40 * 100/100) + (30 * 100/100) + (20 * 100/100) + (10 * 100/100); // = 100
-    
-    // Invert the score so higher factor scores = higher priority rankings
-    const invertedScore = maxPossibleScore - weightedScore;
-    
-    // Normalize to 1.00-99.99 scale (higher = higher priority)
-    return Math.max(1.00, Math.min(99.99, invertedScore));
+    // Normalize to 1.00-99.99 scale (lower = higher priority, as original system intended)
+    return Math.max(1.00, Math.min(99.99, weightedScore));
   };
 
   // Generate clinical reasoning text for each factor
@@ -290,7 +284,7 @@ export function EnhancedMedicalProblemsList({
           <p className="text-sm font-medium">Clinical Priority Ranking: #{calculatedRank.toFixed(2)}</p>
           <p className="text-xs opacity-75">Using legacy ranking system</p>
           <p className="text-xs opacity-75 mt-1">
-            Higher scores = higher clinical priority (99.99 = most urgent, 1.00 = routine)
+            Lower scores = higher clinical priority (1.00 = most urgent, 99.99 = routine)
           </p>
         </div>
       );
@@ -384,7 +378,7 @@ export function EnhancedMedicalProblemsList({
             <span className="text-blue-600 dark:text-blue-400">{totalScore.toFixed(2)}</span>
           </div>
           <p className="text-xs opacity-75 mt-1">
-            Higher scores = higher clinical priority (99.99 = most urgent, 1.00 = routine)
+            Lower scores = higher clinical priority (1.00 = most urgent, 99.99 = routine)
           </p>
         </div>
       </div>
@@ -514,21 +508,21 @@ export function EnhancedMedicalProblemsList({
   // Transform all problems with real-time ranking calculations first
   const enhancedProblems = getProblemsWithRealTimeRanking(medicalProblems);
 
-  // Separate and intelligently sort problems by calculated rank (higher = higher priority)
+  // Separate and intelligently sort problems by calculated rank (lower = higher priority)
   const activeProblems = enhancedProblems
     .filter(p => p.problemStatus === 'active')
-    .sort((a, b) => b.calculatedRank - a.calculatedRank); // Descending: highest priority first
+    .sort((a, b) => a.calculatedRank - b.calculatedRank); // Ascending: lowest number = highest priority first
 
   // Apply filtering based on slider values to active problems only
   const filteredActiveProblems = getFilteredProblems(activeProblems);
   
   const chronicProblems = enhancedProblems
     .filter(p => p.problemStatus === 'chronic')
-    .sort((a, b) => b.calculatedRank - a.calculatedRank); // Descending: highest priority first
+    .sort((a, b) => a.calculatedRank - b.calculatedRank); // Ascending: lowest number = highest priority first
   
   const resolvedProblems = enhancedProblems
     .filter(p => p.problemStatus === 'resolved')
-    .sort((a, b) => b.calculatedRank - a.calculatedRank); // Descending: highest priority first
+    .sort((a, b) => a.calculatedRank - b.calculatedRank); // Ascending: lowest number = highest priority first
 
   const getStatusColor = (status: string) => {
     switch (status) {
