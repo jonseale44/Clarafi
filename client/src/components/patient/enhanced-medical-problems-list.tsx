@@ -757,7 +757,16 @@ export function EnhancedMedicalProblemsList({
                 {problem.visitHistory && problem.visitHistory.length > 0 ? (
                   <div className="space-y-3">
                     {problem.visitHistory
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .sort((a, b) => {
+                        // Primary sort: Date descending (most recent first)
+                        const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+                        if (dateComparison !== 0) return dateComparison;
+                        
+                        // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+                        const aEncounterId = a.encounterId || 0;
+                        const bEncounterId = b.encounterId || 0;
+                        return bEncounterId - aEncounterId;
+                      })
                       .map((visit, index) => (
                       <div key={index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
                         <div className="flex items-center gap-2 mb-2">

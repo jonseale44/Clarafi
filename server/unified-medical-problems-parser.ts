@@ -47,15 +47,15 @@ export interface UnifiedProblemChange {
   transfer_visit_history_from?: number; // problem_id to transfer history from
   extracted_date?: string; // ISO date string extracted from attachment content
   consolidation_reasoning?: string; // GPT's reasoning for consolidation decisions
-  
+
   // GPT-powered intelligent ranking
   rank_score?: number; // 1.00 (highest priority) to 99.99 (lowest priority)
   ranking_reason?: string; // GPT's reasoning for rank assignment
   ranking_factors?: {
-    clinical_severity: number;      // Relative percentage (0-100%) within patient context
-    treatment_complexity: number;   // Relative percentage (0-100%) within patient context
-    patient_frequency: number;      // Relative percentage (0-100%) within patient context
-    clinical_relevance: number;     // Relative percentage (0-100%) within patient context
+    clinical_severity: number; // Relative percentage (0-100%) within patient context
+    treatment_complexity: number; // Relative percentage (0-100%) within patient context
+    patient_frequency: number; // Relative percentage (0-100%) within patient context
+    clinical_relevance: number; // Relative percentage (0-100%) within patient context
   }; // GPT-generated factor breakdown for user weight customization
 }
 
@@ -107,14 +107,15 @@ export class UnifiedMedicalProblemsParser {
 
     try {
       // Get existing context and comprehensive patient chart data
-      const [existingProblems, encounter, patient, patientChart] = await Promise.all([
-        this.getExistingProblems(patientId),
-        encounterId
-          ? this.getEncounterInfo(encounterId)
-          : Promise.resolve(null),
-        this.getPatientInfo(patientId),
-        PatientChartService.getPatientChartData(patientId),
-      ]);
+      const [existingProblems, encounter, patient, patientChart] =
+        await Promise.all([
+          this.getExistingProblems(patientId),
+          encounterId
+            ? this.getEncounterInfo(encounterId)
+            : Promise.resolve(null),
+          this.getPatientInfo(patientId),
+          PatientChartService.getPatientChartData(patientId),
+        ]);
 
       console.log(
         `🔄 [UnifiedMedicalProblems] Found ${existingProblems.length} existing problems`,
@@ -574,7 +575,7 @@ REQUIRED JSON RESPONSE FORMAT:
         model: "gpt-4.1",
         messages: [{ role: "user", content: unifiedPrompt }],
         temperature: 0.1,
-        max_tokens: 3000,
+        max_tokens: 30000,
         response_format: { type: "json_object" },
       });
 
@@ -768,7 +769,9 @@ REQUIRED JSON RESPONSE FORMAT:
       // GPT-powered intelligent ranking
       rankScore: change.rank_score?.toString() || "99.99",
       lastRankedEncounterId: encounterId,
-      rankingReason: change.ranking_reason || "Automatically ranked by GPT analysis during evolution",
+      rankingReason:
+        change.ranking_reason ||
+        "Automatically ranked by GPT analysis during evolution",
     });
 
     // Mark old problem as resolved/evolved
@@ -850,7 +853,8 @@ REQUIRED JSON RESPONSE FORMAT:
       // GPT-powered intelligent ranking
       rankScore: change.rank_score?.toString() || "99.99",
       lastRankedEncounterId: encounterId,
-      rankingReason: change.ranking_reason || "Automatically ranked by GPT analysis",
+      rankingReason:
+        change.ranking_reason || "Automatically ranked by GPT analysis",
       rankingFactors: change.ranking_factors || null,
     });
 
@@ -927,10 +931,12 @@ REQUIRED JSON RESPONSE FORMAT:
     } else {
       // Add new visit ONLY if GPT provided actual visit notes
       const visitNotes = change.visit_notes?.trim() || "";
-      
+
       // Only filter out truly empty entries - GPT is in charge of all clinical decisions
       if (!visitNotes) {
-        console.log(`🚫 [UnifiedMedicalProblems] Skipping truly empty visit entry for problem ${change.problem_id} (GPT returned empty notes)`);
+        console.log(
+          `🚫 [UnifiedMedicalProblems] Skipping truly empty visit entry for problem ${change.problem_id} (GPT returned empty notes)`,
+        );
         return; // Exit without creating visit entry
       }
 
@@ -966,7 +972,9 @@ REQUIRED JSON RESPONSE FORMAT:
         ...(change.rank_score && {
           rankScore: change.rank_score.toString(),
           lastRankedEncounterId: encounterId,
-          rankingReason: change.ranking_reason || "Updated ranking based on current clinical context",
+          rankingReason:
+            change.ranking_reason ||
+            "Updated ranking based on current clinical context",
         }),
       })
       .where(eq(medicalProblems.id, change.problem_id));
@@ -1042,9 +1050,12 @@ REQUIRED JSON RESPONSE FORMAT:
     if (patientChart.currentMedications?.length > 0) {
       sections.push(`
 CURRENT MEDICATIONS (Use for medication-related problem visit histories):
-${patientChart.currentMedications.map((med: any) => 
-  `- ${med.medicationName} ${med.dosage} ${med.frequency} (started ${med.startDate || 'unknown date'})`
-).join('\n')}`);
+${patientChart.currentMedications
+  .map(
+    (med: any) =>
+      `- ${med.medicationName} ${med.dosage} ${med.frequency} (started ${med.startDate || "unknown date"})`,
+  )
+  .join("\n")}`);
     }
 
     // Recent Vitals (for vital sign-related visit history enrichment)
@@ -1052,7 +1063,7 @@ ${patientChart.currentMedications.map((med: any) =>
       const latestVitals = patientChart.vitals[0];
       sections.push(`
 RECENT VITALS (Use for condition-specific correlations):
-- Latest Reading: BP ${latestVitals.systolic || '?'}/${latestVitals.diastolic || '?'} mmHg, HR ${latestVitals.heartRate || '?'} bpm, Temp ${latestVitals.temperature || '?'}°F
+- Latest Reading: BP ${latestVitals.systolic || "?"}/${latestVitals.diastolic || "?"} mmHg, HR ${latestVitals.heartRate || "?"} bpm, Temp ${latestVitals.temperature || "?"}°F
 - For HYPERTENSION visit histories: Include relevant BP readings
 - For DIABETES visit histories: Include weight/BMI trends if available
 - For CARDIAC conditions: Include HR and BP correlations`);
@@ -1062,32 +1073,35 @@ RECENT VITALS (Use for condition-specific correlations):
     if (patientChart.allergies?.length > 0) {
       sections.push(`
 ALLERGIES (Use for medication-related visit histories):
-${patientChart.allergies.map((allergy: any) => 
-  `- ${allergy.allergen}: ${allergy.reaction} (${allergy.severity})`
-).join('\n')}`);
+${patientChart.allergies
+  .map(
+    (allergy: any) =>
+      `- ${allergy.allergen}: ${allergy.reaction} (${allergy.severity})`,
+  )
+  .join("\n")}`);
     }
 
     // Family History (for genetic predisposition context)
     if (patientChart.familyHistory?.length > 0) {
       sections.push(`
 FAMILY HISTORY (Use for genetic/hereditary condition context):
-${patientChart.familyHistory.map((fh: any) => 
-  `- ${fh.relationship}: ${fh.condition}`
-).join('\n')}`);
+${patientChart.familyHistory
+  .map((fh: any) => `- ${fh.relationship}: ${fh.condition}`)
+  .join("\n")}`);
     }
 
     // Social History (for lifestyle-related conditions)
     if (patientChart.socialHistory?.length > 0) {
       sections.push(`
 SOCIAL HISTORY (Use for lifestyle-related condition context):
-${patientChart.socialHistory.map((sh: any) => 
-  `- ${sh.category}: ${sh.details}`
-).join('\n')}`);
+${patientChart.socialHistory
+  .map((sh: any) => `- ${sh.category}: ${sh.details}`)
+  .join("\n")}`);
     }
 
-    return sections.length > 0 
-      ? sections.join('\n') 
-      : '- No additional clinical data available for visit history enhancement';
+    return sections.length > 0
+      ? sections.join("\n")
+      : "- No additional clinical data available for visit history enhancement";
   }
 }
 

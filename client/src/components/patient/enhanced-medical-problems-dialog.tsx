@@ -275,9 +275,16 @@ export function EnhancedMedicalProblemsDialog({
       source: "manual",
     };
 
-    setVisitHistory(prev => [...prev, visitNote].sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    ));
+    setVisitHistory(prev => [...prev, visitNote].sort((a, b) => {
+      // Primary sort: Date descending (most recent first)
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateComparison !== 0) return dateComparison;
+      
+      // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+      const aEncounterId = a.encounterId || 0;
+      const bEncounterId = b.encounterId || 0;
+      return bEncounterId - aEncounterId;
+    }));
 
     setNewVisitNote({
       date: new Date().toISOString().split('T')[0],
@@ -292,7 +299,16 @@ export function EnhancedMedicalProblemsDialog({
   const saveVisitEdit = (visitId: string, updatedVisit: Partial<VisitNote>) => {
     setVisitHistory(prev => prev.map(visit => 
       visit.id === visitId ? { ...visit, ...updatedVisit } : visit
-    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    ).sort((a, b) => {
+      // Primary sort: Date descending (most recent first)
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateComparison !== 0) return dateComparison;
+      
+      // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+      const aEncounterId = a.encounterId || 0;
+      const bEncounterId = b.encounterId || 0;
+      return bEncounterId - aEncounterId;
+    }));
     setEditingVisitId(null);
   };
 
