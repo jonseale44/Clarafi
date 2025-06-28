@@ -463,20 +463,21 @@ router.post("/medical-problems/refresh-rankings/:patientId", async (req, res) =>
       null, // No attachment content
       null, // No attachment ID
       req.user.id, // Provider ID
-      "manual_ranking_refresh" // Trigger type
+      "manual_edit" // Trigger type for manual operations
     );
 
     console.log(`✅ [RankingRefresh] Unified parser completed:`, {
-      problemsProcessed: processingResult.summary.total_problems_affected,
-      consolidationsPerformed: processingResult.summary.consolidations_performed || 0,
-      newProblemsCreated: processingResult.summary.new_problems_created || 0
+      problemsProcessed: processingResult.total_problems_affected,
+      processingTimeMs: processingResult.processing_time_ms,
+      changesArray: processingResult.changes?.length || 0
     });
 
     res.json({ 
       success: true, 
       message: `Rankings refreshed using AI intelligence`,
-      refreshedCount: processingResult.summary.total_problems_affected,
-      consolidationsPerformed: processingResult.summary.consolidations_performed || 0,
+      refreshedCount: processingResult.total_problems_affected,
+      processingTime: processingResult.processing_time_ms,
+      changesProcessed: processingResult.changes?.length || 0,
       processingResult
     });
 
