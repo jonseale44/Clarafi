@@ -320,11 +320,10 @@ export function shouldUseLegacyRank(
 
 export function migrateLegacyRanking(legacyRank: number): RankingResult {
   // Convert legacy rank to new format for display consistency
-  const priorityLevel = getPriorityLevel(legacyRank);
   
   return {
     finalRank: legacyRank,
-    priorityLevel,
+    priorityLevel: 'medium', // Default for legacy migration, will be determined at list level
     calculationDetails: {
       factors: { clinical_severity: 0, treatment_complexity: 0, patient_frequency: 0, clinical_relevance: 0 },
       weights: RANKING_CONFIG.DEFAULT_WEIGHTS,
