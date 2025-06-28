@@ -282,13 +282,13 @@ export function EnhancedMedicalProblemsList({
           </div>
         );
       } else {
-        // New manual problem using modern fallback system
+        // New manual problem - unranked
         return (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Priority Score: {rankingResult.finalRank.toFixed(2)}</p>
+            <p className="text-sm font-medium">Status: Unranked</p>
             <p className="text-xs opacity-75">Manual entry - awaiting AI ranking</p>
             <p className="text-xs opacity-75 mt-1">
-              Higher scores = higher clinical priority (relative to other conditions for this patient)
+              Click "Refresh Rankings" to analyze and rank this problem using AI
             </p>
           </div>
         );
@@ -412,7 +412,25 @@ export function EnhancedMedicalProblemsList({
     }));
     
     // Sort by score descending (highest scores first) and assign ranks
-    const sortedProblems = problemsWithScores.sort((a, b) => b.rankingResult.finalRank - a.rankingResult.finalRank);
+    // Handle null/undefined ranks by placing them at the top (unranked problems)
+    const sortedProblems = problemsWithScores.sort((a, b) => {
+      // If both have null/undefined ranks, maintain original order
+      if ((a.rankingResult.finalRank === null || a.rankingResult.finalRank === undefined) && 
+          (b.rankingResult.finalRank === null || b.rankingResult.finalRank === undefined)) {
+        return 0;
+      }
+      
+      // Null ranks go to top (are "higher priority" than any numbered rank)
+      if (a.rankingResult.finalRank === null || a.rankingResult.finalRank === undefined) {
+        return -1;
+      }
+      if (b.rankingResult.finalRank === null || b.rankingResult.finalRank === undefined) {
+        return 1;
+      }
+      
+      // Normal ranking comparison: higher scores first
+      return b.rankingResult.finalRank - a.rankingResult.finalRank;
+    });
     
     const problemsWithRanks = sortedProblems.map((problem, index) => ({
       ...problem,
@@ -697,7 +715,10 @@ export function EnhancedMedicalProblemsList({
                             <TooltipTrigger asChild>
                               <div>
                                 <Badge variant="outline" className={`text-xs font-medium ${badgeClass} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
-                                  {getPriorityDisplayName(problem.rankingResult.priorityLevel)} (#{problem.displayRank})
+                                  {problem.rankingResult.finalRank === null || problem.rankingResult.finalRank === undefined 
+                                    ? "Unranked" 
+                                    : `${getPriorityDisplayName(problem.rankingResult.priorityLevel)} (#${problem.displayRank})`
+                                  }
                                 </Badge>
                               </div>
                             </TooltipTrigger>
