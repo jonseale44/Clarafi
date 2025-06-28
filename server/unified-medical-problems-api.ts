@@ -364,7 +364,7 @@ router.post("/medical-problems/manual-create", async (req, res) => {
       lastRankedEncounterId: null
     });
 
-    console.log(`✅ [ManualCreate] Created medical problem ${newProblem.id}: ${diagnosis}`);
+    console.log(`✅ [ManualCreate] Created medical problem ${newProblem.id}: ${title}`);
     res.json({ 
       success: true, 
       problem: newProblem,
@@ -389,34 +389,33 @@ router.put("/medical-problems/:problemId", async (req, res) => {
 
     const problemId = parseInt(req.params.problemId);
     const { 
+      problemTitle,
       diagnosis, 
+      currentIcd10Code,
       icd10Code, 
+      problemStatus,
       status, 
       firstDiagnosedDate, 
       visitHistory 
     } = req.body;
 
-    console.log(`🔨 [ManualUpdate] Updating medical problem ${problemId}:`, diagnosis);
+    const title = problemTitle || diagnosis;
+    console.log(`🔨 [ManualUpdate] Updating medical problem ${problemId}:`, title);
     
     if (isNaN(problemId)) {
       return res.status(400).json({ error: "Invalid problem ID" });
     }
 
     // Update the medical problem using storage service
-    const success = await storage.updateMedicalProblem(problemId, {
-      problemTitle: diagnosis,
-      currentIcd10Code: icd10Code,
-      problemStatus: status,
+    const updated = await storage.updateMedicalProblem(problemId, {
+      problemTitle: title,
+      currentIcd10Code: currentIcd10Code || icd10Code,
+      problemStatus: problemStatus || status,
       firstDiagnosedDate: firstDiagnosedDate,
-      visitHistory: visitHistory,
-      updatedAt: new Date()
+      visitHistory: visitHistory
     });
 
-    if (!success) {
-      return res.status(404).json({ error: "Medical problem not found" });
-    }
-
-    console.log(`✅ [ManualUpdate] Updated medical problem ${problemId}: ${diagnosis}`);
+    console.log(`✅ [ManualUpdate] Updated medical problem ${problemId}: ${title}`);
     res.json({ 
       success: true, 
       message: "Medical problem updated successfully" 
