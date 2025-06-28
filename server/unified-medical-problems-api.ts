@@ -282,11 +282,7 @@ router.delete("/medical-problems/:problemId", async (req, res) => {
     }
 
     // Delete the medical problem using storage service
-    const success = await storage.deleteMedicalProblem(problemId);
-    
-    if (!success) {
-      return res.status(404).json({ error: "Medical problem not found" });
-    }
+    await storage.deleteMedicalProblem(problemId);
 
     console.log(`✅ [UnifiedMedicalProblemsAPI] Problem ${problemId} deleted successfully`);
     res.json({ success: true, message: "Medical problem deleted successfully" });
@@ -315,11 +311,7 @@ router.put("/medical-problems/:problemId/resolve", async (req, res) => {
     }
 
     // Update the problem status to resolved
-    const success = await storage.updateMedicalProblemStatus(problemId, "resolved");
-    
-    if (!success) {
-      return res.status(404).json({ error: "Medical problem not found" });
-    }
+    await storage.updateMedicalProblemStatus(problemId, "resolved");
 
     console.log(`✅ [UnifiedMedicalProblemsAPI] Problem ${problemId} marked as resolved`);
     res.json({ success: true, message: "Medical problem marked as resolved" });
@@ -327,6 +319,112 @@ router.put("/medical-problems/:problemId/resolve", async (req, res) => {
   } catch (error) {
     console.error(`❌ [UnifiedMedicalProblemsAPI] Error resolving problem ${req.params.problemId}:`, error);
     res.status(500).json({ error: "Failed to resolve medical problem" });
+  }
+});
+
+/**
+ * POST /api/medical-problems/manual-create
+ * Manually create a new medical problem with AI-powered standardization
+ */
+router.post("/medical-problems/manual-create", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const { 
+      patientId, 
+      problemTitle, 
+      diagnosis, 
+      currentIcd10Code,
+      icd10Code, 
+      problemStatus,
+      status, 
+      firstDiagnosedDate, 
+      visitHistory 
+    } = req.body;
+
+    const title = problemTitle || diagnosis;
+    console.log(`🔨 [ManualCreate] Creating medical problem for patient ${patientId}:`, title);
+    
+    if (!patientId || !title) {
+      return res.status(400).json({ error: "Patient ID and diagnosis are required" });
+    }
+
+    // Create the medical problem using storage service
+    const newProblem = await storage.createMedicalProblem({
+      patientId: parseInt(patientId),
+      problemTitle: title,
+      currentIcd10Code: currentIcd10Code || icd10Code || null,
+      problemStatus: problemStatus || status || 'active',
+      firstDiagnosedDate: firstDiagnosedDate || null,
+      visitHistory: visitHistory || [],
+      rankScore: null, // Will be calculated later
+      rankingReason: 'Manually created - ranking pending',
+      lastRankedEncounterId: null
+    });
+
+    console.log(`✅ [ManualCreate] Created medical problem ${newProblem.id}: ${diagnosis}`);
+    res.json({ 
+      success: true, 
+      problem: newProblem,
+      message: "Medical problem created successfully" 
+    });
+
+  } catch (error) {
+    console.error(`❌ [ManualCreate] Error creating medical problem:`, error);
+    res.status(500).json({ error: "Failed to create medical problem" });
+  }
+});
+
+/**
+ * PUT /api/medical-problems/:problemId
+ * Update an existing medical problem
+ */
+router.put("/medical-problems/:problemId", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const problemId = parseInt(req.params.problemId);
+    const { 
+      diagnosis, 
+      icd10Code, 
+      status, 
+      firstDiagnosedDate, 
+      visitHistory 
+    } = req.body;
+
+    console.log(`🔨 [ManualUpdate] Updating medical problem ${problemId}:`, diagnosis);
+    
+    if (isNaN(problemId)) {
+      return res.status(400).json({ error: "Invalid problem ID" });
+    }
+
+    // Update the medical problem using storage service
+    const success = await storage.updateMedicalProblem(problemId, {
+      problemTitle: diagnosis,
+      currentIcd10Code: icd10Code,
+      problemStatus: status,
+      firstDiagnosedDate: firstDiagnosedDate,
+      visitHistory: visitHistory,
+      updatedAt: new Date()
+    });
+
+    if (!success) {
+      return res.status(404).json({ error: "Medical problem not found" });
+    }
+
+    console.log(`✅ [ManualUpdate] Updated medical problem ${problemId}: ${diagnosis}`);
+    res.json({ 
+      success: true, 
+      message: "Medical problem updated successfully" 
+    });
+
+  } catch (error) {
+    console.error(`❌ [ManualUpdate] Error updating medical problem:`, error);
+    res.status(500).json({ error: "Failed to update medical problem" });
   }
 });
 
