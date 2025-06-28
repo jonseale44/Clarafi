@@ -322,7 +322,7 @@ export function EnhancedMedicalProblemsList({
     return (
       <div className="space-y-4 w-80">
         <div className="text-center">
-          <p className="text-sm font-bold">Ranking Calculation: #{totalScore.toFixed(2)}</p>
+          <p className="text-sm font-bold">Priority Score: {totalScore.toFixed(2)}</p>
           <p className="text-xs opacity-75">{problem.problemTitle}</p>
         </div>
         
@@ -519,21 +519,18 @@ export function EnhancedMedicalProblemsList({
   // Transform all problems with real-time ranking calculations first
   const enhancedProblems = getProblemsWithRealTimeRanking(medicalProblems);
 
-  // Separate and intelligently sort problems by calculated rank (lower = higher priority)
+  // Separate problems while preserving global sort order by score (already sorted in getProblemsWithRealTimeRanking)
   const activeProblems = enhancedProblems
-    .filter(p => p.problemStatus === 'active')
-    .sort((a, b) => a.rankingResult.finalRank - b.rankingResult.finalRank); // Ascending: lowest number = highest priority first
+    .filter(p => p.problemStatus === 'active'); // Keep existing order from global sort (highest scores first)
 
   // Apply filtering based on slider values to active problems only
   const filteredActiveProblems = getFilteredProblems(activeProblems);
   
   const chronicProblems = enhancedProblems
-    .filter(p => p.problemStatus === 'chronic')
-    .sort((a, b) => a.rankingResult.finalRank - b.rankingResult.finalRank); // Ascending: lowest number = highest priority first
+    .filter(p => p.problemStatus === 'chronic'); // Keep existing order from global sort (highest scores first)
   
   const resolvedProblems = enhancedProblems
-    .filter(p => p.problemStatus === 'resolved')
-    .sort((a, b) => a.rankingResult.finalRank - b.rankingResult.finalRank); // Ascending: lowest number = highest priority first
+    .filter(p => p.problemStatus === 'resolved'); // Keep existing order from global sort (highest scores first)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -652,7 +649,7 @@ export function EnhancedMedicalProblemsList({
     );
   }
 
-  const renderProblemCard = (problem: MedicalProblem & { rankingResult: RankingResult }) => {
+  const renderProblemCard = (problem: MedicalProblem & { rankingResult: RankingResult; displayRank: number }) => {
     const badgeClass = getRankingStyles(problem.rankingResult.priorityLevel);
     
     return (
@@ -681,7 +678,7 @@ export function EnhancedMedicalProblemsList({
                             <TooltipTrigger asChild>
                               <div>
                                 <Badge variant="outline" className={`text-xs font-medium ${badgeClass} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
-                                  {getPriorityDisplayName(problem.rankingResult.priorityLevel)} (#{problem.rankingResult.finalRank.toFixed(2)})
+                                  {getPriorityDisplayName(problem.rankingResult.priorityLevel)} (#{problem.displayRank})
                                 </Badge>
                               </div>
                             </TooltipTrigger>
