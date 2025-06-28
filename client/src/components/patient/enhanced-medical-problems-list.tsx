@@ -263,8 +263,9 @@ export function EnhancedMedicalProblemsList({
   };
 
   // Generate problem-specific ranking tooltip content with horizontal bar chart
-  const getRankingTooltipContent = (problem: MedicalProblem, weights: RankingWeights) => {
-    const rankingResult = calculateProblemRanking(problem, weights);
+  const getRankingTooltipContent = (problem: MedicalProblem & { rankingResult: RankingResult }, weights: RankingWeights) => {
+    // Use the same ranking result that's displayed in the main list for consistency
+    const rankingResult = problem.rankingResult;
     
     if (!problem.rankingFactors) {
       return (
