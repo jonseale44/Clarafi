@@ -440,7 +440,7 @@ router.put("/medical-problems/:problemId", async (req, res) => {
 
 /**
  * POST /api/medical-problems/refresh-rankings/:patientId
- * Refresh medical problem rankings for a patient using current user weights
+ * Refresh medical problem rankings using unified parser with consolidation and AI intelligence
  */
 router.post("/medical-problems/refresh-rankings/:patientId", async (req, res) => {
   try {
@@ -449,66 +449,40 @@ router.post("/medical-problems/refresh-rankings/:patientId", async (req, res) =>
     }
 
     const patientId = parseInt(req.params.patientId);
-    console.log(`🔄 [RankingRefresh] Refresh rankings request for patient ${patientId}`);
+    console.log(`🔄 [RankingRefresh] Refresh rankings request for patient ${patientId} - using unified parser`);
     
     if (isNaN(patientId)) {
       return res.status(400).json({ error: "Invalid patient ID" });
     }
 
-    // Get current user preferences for ranking weights
-    const userId = req.user.id;
-    const userPreferences = await storage.getUserNotePreferences(userId);
-    
-    // Extract ranking weights (use centralized defaults if not set)
-    const rankingWeights = userPreferences?.rankingWeights || RANKING_CONFIG.DEFAULT_WEIGHTS;
+    // Use unified medical problems parser for intelligent ranking and consolidation
+    const processingResult = await unifiedMedicalProblemsParser.processUnified(
+      patientId,
+      null, // No specific encounter for manual refresh
+      '', // Empty SOAP content - processing existing problems 
+      null, // No attachment content
+      null, // No attachment ID
+      req.user.id, // Provider ID
+      "manual_ranking_refresh" // Trigger type
+    );
 
-    console.log(`🔄 [RankingRefresh] Using ranking weights:`, rankingWeights);
+    console.log(`✅ [RankingRefresh] Unified parser completed:`, {
+      problemsProcessed: processingResult.summary.total_problems_affected,
+      consolidationsPerformed: processingResult.summary.consolidations_performed || 0,
+      newProblemsCreated: processingResult.summary.new_problems_created || 0
+    });
 
-    // Get all medical problems for the patient
-    const problems = await storage.getPatientMedicalProblems(patientId);
-    console.log(`🔄 [RankingRefresh] Found ${problems.length} problems to refresh rankings`);
-
-    let refreshedCount = 0;
-
-    // Use centralized batch ranking calculation service
-    const problemsForRanking = problems.map(p => ({
-      id: p.id,
-      rankingFactors: p.rankingFactors ? (typeof p.rankingFactors === 'string' ? JSON.parse(p.rankingFactors) : p.rankingFactors) : undefined
-    }));
-
-    const batchRankings = calculateBatchRankings(problemsForRanking, rankingWeights);
-
-    // Update database with new rankings
-    for (const { id, ranking } of batchRankings) {
-      try {
-        await db
-          .update(medicalProblems)
-          .set({ 
-            rankScore: ranking.finalRank.toString(),
-            updatedAt: new Date()
-          })
-          .where(eq(medicalProblems.id, id));
-
-        refreshedCount++;
-        const problem = problems.find(p => p.id === id);
-        console.log(`✅ [RankingRefresh] Updated problem ${id}: ${problem?.problemTitle} -> rank ${ranking.finalRank.toFixed(2)} (${ranking.priorityLevel})`);
-      } catch (updateError) {
-        console.warn(`⚠️ [RankingRefresh] Could not update ranking for problem ${id}:`, updateError);
-      }
-    }
-
-    console.log(`✅ [RankingRefresh] Successfully refreshed rankings for ${refreshedCount} problems`);
     res.json({ 
       success: true, 
-      message: `Rankings refreshed for ${refreshedCount} medical problems`,
-      refreshedCount,
-      totalProblems: problems.length,
-      rankingWeights
+      message: `Rankings refreshed using AI intelligence`,
+      refreshedCount: processingResult.summary.total_problems_affected,
+      consolidationsPerformed: processingResult.summary.consolidations_performed || 0,
+      processingResult
     });
 
   } catch (error) {
-    console.error(`❌ [RankingRefresh] Error refreshing rankings for patient ${req.params.patientId}:`, error);
-    res.status(500).json({ error: "Failed to refresh medical problem rankings" });
+    console.error(`❌ [RankingRefresh] Error refreshing rankings with unified parser for patient ${req.params.patientId}:`, error);
+    res.status(500).json({ error: "Failed to refresh rankings using AI" });
   }
 });
 
