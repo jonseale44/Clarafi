@@ -42,7 +42,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { Extension } from "@tiptap/core";
 import { DraftOrders } from "./draft-orders";
 import { CPTCodesDiagnoses } from "./cpt-codes-diagnoses";
-import { EnhancedMedicalProblems } from "./enhanced-medical-problems";
+
 import { EncounterSignaturePanel } from "./encounter-signature-panel";
 import { EncounterWorkflowControls } from "./encounter-workflow-controls";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
@@ -815,12 +815,9 @@ export function EncounterDetailView({
             `✅ [MedicalProblems] Processing time: ${result.processingTimeMs || result.processing_time_ms || "unknown"}ms`,
           );
 
-          // Invalidate medical problems queries to refresh UI
+          // Invalidate medical problems queries to refresh UI (unified API)
           await queryClient.invalidateQueries({
-            queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`],
-          });
-          await queryClient.invalidateQueries({
-            queryKey: [`/api/patients/${patient.id}/medical-problems`],
+            queryKey: ['/api/medical-problems', patient.id],
           });
           console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
         } else {
@@ -984,12 +981,9 @@ export function EncounterDetailView({
         queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}`],
       });
 
-      // Invalidate medical problems cache since CPT codes trigger medical problems processing
+      // Invalidate medical problems cache since CPT codes trigger medical problems processing (unified API)
       await queryClient.invalidateQueries({
-        queryKey: [`/api/patients/${patient.id}/medical-problems`],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`],
+        queryKey: ['/api/medical-problems', patient.id],
       });
 
       console.log("🔄 [EncounterView] Query invalidation completed");
@@ -2609,12 +2603,9 @@ Please provide medical suggestions based on this complete conversation context.`
               `✅ [StopRecording] Medical problems processed: ${result.problemsAffected || 0} problems affected`,
             );
 
-            // Invalidate medical problems cache to refresh UI
+            // Invalidate medical problems cache to refresh UI (unified API)
             await queryClient.invalidateQueries({
-              queryKey: [`/api/patients/${patient.id}/medical-problems-enhanced`],
-            });
-            await queryClient.invalidateQueries({
-              queryKey: [`/api/patients/${patient.id}/medical-problems`],
+              queryKey: ['/api/medical-problems', patient.id],
             });
             
             // Complete medical problems animation
@@ -3135,14 +3126,9 @@ Please provide medical suggestions based on this complete conversation context.`
             // Update tracking state
             setLastProcessedSOAPContent(currentContent);
 
-            // Invalidate medical problems cache
+            // Invalidate medical problems cache (unified API)
             await queryClient.invalidateQueries({
-              queryKey: [
-                `/api/patients/${patient.id}/medical-problems-enhanced`,
-              ],
-            });
-            await queryClient.invalidateQueries({
-              queryKey: [`/api/patients/${patient.id}/medical-problems`],
+              queryKey: ['/api/medical-problems', patient.id],
             });
           } else {
             console.error(

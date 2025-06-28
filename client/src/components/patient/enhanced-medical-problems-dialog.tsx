@@ -241,7 +241,7 @@ export function EnhancedMedicalProblemsDialog({
 
       const url = problem?.id 
         ? `/api/medical-problems/${problem.id}`
-        : `/api/patients/${patientId}/medical-problems-enhanced`;
+        : `/api/medical-problems/create`;
       
       const response = await fetch(url, {
         method: problem?.id ? "PUT" : "POST",
