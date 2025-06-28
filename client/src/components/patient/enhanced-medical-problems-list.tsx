@@ -219,13 +219,13 @@ export function EnhancedMedicalProblemsList({
       return calculateMedicalProblemRanking(problem.rankingFactors, weights);
     }
     
-    // Only fall back to legacy system if no ranking factors exist
-    if (problem.rankScore) {
+    // Only fall back to legacy system if this is truly a legacy problem with old rankScore
+    if (problem.rankScore && shouldUseLegacyRank(problem)) {
       return migrateLegacyRanking(problem.rankScore);
     }
     
-    // Default fallback for problems with no ranking data
-    return migrateLegacyRanking(99.99);
+    // For manually created problems without AI ranking factors, use modern fallback system
+    return calculateMedicalProblemRanking(null, weights);
   };
 
   // Generate clinical reasoning text for each factor
