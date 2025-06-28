@@ -33,7 +33,7 @@ export class IntelligentDiagnosisService {
   private openai: OpenAI;
 
   constructor() {
-    // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
+    // Using gpt-4.1-nano for faster performance
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -184,7 +184,7 @@ RULES:
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
+        model: "gpt-4.1-nano", // Fast performance for real-time suggestions
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 1500,
@@ -244,7 +244,7 @@ RULES:
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1", // the newest OpenAI model is "gpt-4.1" which is faster, cheaper, and smarter
+        model: "gpt-4.1-nano", // Fast performance for real-time suggestions
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 800,
