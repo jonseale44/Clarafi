@@ -109,6 +109,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Ranking System Relative Algorithm Implementation (June 28, 2025)
+- **CRITICAL ARCHITECTURAL CHANGE**: Converted ranking system from absolute scoring to relative percentage distribution
+- **GPT INSTRUCTION OVERHAUL**: Updated unified medical problems parser to distribute factor percentages (0-100%) across all patient problems, where each factor category sums to exactly 100%
+- **ELIMINATED ARBITRARY RANGES**: Replaced confusing absolute ranges (0-40, 0-30, 0-20, 0-10) with intuitive relative percentages (0-100% each factor)
+- **RELATIVE COMPARISON LOGIC**: GPT now compares clinical severity of THIS patient's diabetes vs THIS patient's CKD vs THIS patient's other conditions
+- **MATHEMATICAL CONSISTENCY**: Each factor (clinical severity, treatment complexity, patient frequency, clinical relevance) distributed as percentages that sum to 100% across all patient problems
+- **ENHANCED CALCULATION SERVICE**: Updated `shared/ranking-calculation-service.ts` to handle percentage-based factor scores with proper weight multiplication
+- **FACTOR RANGE MODERNIZATION**: Updated all factor ranges from legacy absolute values to 0-100 percentage ranges
+- **WEIGHT ALGORITHM REFINEMENT**: Modified weight adjustment to directly multiply user weight percentages against factor percentages
+- **RANKING DIRECTION CORRECTION**: Higher total weighted percentage now equals higher priority (matches clinical intuition)
+- **FALLBACK SYSTEM UPDATE**: Single medical problem scenarios assign 100% to each factor category as mathematically correct baseline
+- **EXAMPLE-DRIVEN DOCUMENTATION**: Added comprehensive examples showing factor distribution across multiple patient conditions
+- **MATHEMATICAL VERIFICATION**: Built-in sum validation ensures factor percentages always total 100% per category
+
 ### Medical Problems Ranking System Enhancement Completed (June 27, 2025)
 - **INTELLIGENT RANKING TOOLTIP**: Added comprehensive hover tooltip to medical problems rank display explaining GPT-4 ranking system
 - **RANKING CRITERIA DOCUMENTED**: Tooltip explains the four key factors: clinical severity & immediacy, treatment complexity & follow-up needs, patient-specific frequency & impact, and current clinical relevance

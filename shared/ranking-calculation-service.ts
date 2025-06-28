@@ -73,9 +73,9 @@ export interface RankingResult {
 /**
  * CORE RANKING CALCULATION FUNCTION
  * 
- * Converts GPT-4.1 generated factor scores + user weights into final ranking
+ * Converts GPT-4.1 generated relative percentages + user weights into final ranking
  * 
- * @param factors - Raw factor scores from GPT (0-40, 0-30, 0-20, 0-10 ranges)
+ * @param factors - Relative percentage scores from GPT (0-100% ranges, each factor sums to 100% across patient problems)
  * @param weights - User preference weights for factor importance
  * @returns Complete ranking result with calculation details
  */
@@ -208,21 +208,36 @@ function isValidFactors(factors: any): factors is RankingFactors {
  * Creates safe fallback when factors are missing or invalid
  */
 function createFallbackResult(weights: RankingWeights): RankingResult {
+  // For single problem fallback, assign 100% to each factor
   const fallbackFactors: RankingFactors = {
-    clinical_severity: 5,
-    treatment_complexity: 3,
-    patient_frequency: 2,
-    clinical_relevance: 1
+    clinical_severity: 100,
+    treatment_complexity: 100,
+    patient_frequency: 100,
+    clinical_relevance: 100
   };
   
+  // Calculate weighted scores using new percentage system
+  const weightedScores: RankingFactors = {
+    clinical_severity: (fallbackFactors.clinical_severity * weights.clinical_severity) / 100,
+    treatment_complexity: (fallbackFactors.treatment_complexity * weights.treatment_complexity) / 100,
+    patient_frequency: (fallbackFactors.patient_frequency * weights.patient_frequency) / 100,
+    clinical_relevance: (fallbackFactors.clinical_relevance * weights.clinical_relevance) / 100
+  };
+  
+  const totalWeightedScore = 
+    weightedScores.clinical_severity +
+    weightedScores.treatment_complexity +
+    weightedScores.patient_frequency +
+    weightedScores.clinical_relevance;
+  
   return {
-    finalRank: RANKING_CONFIG.SCALE.default_fallback,
-    priorityLevel: 'low',
+    finalRank: parseFloat(totalWeightedScore.toFixed(2)),
+    priorityLevel: 'medium', // Single problem should be medium priority
     calculationDetails: {
       factors: fallbackFactors,
       weights,
-      weightedScores: fallbackFactors,
-      totalWeightedScore: 11
+      weightedScores,
+      totalWeightedScore: parseFloat(totalWeightedScore.toFixed(2))
     }
   };
 }
