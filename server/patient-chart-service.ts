@@ -15,7 +15,6 @@ export class PatientChartService {
     activeProblems: any[];
     medicalHistory: any[];
     currentMedications: any[];
-    recentDiagnoses: any[];
     allergies: any[];
     demographics: any;
     medicalProblems: any[];
