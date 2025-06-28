@@ -50,6 +50,12 @@ export interface UnifiedProblemChange {
   // GPT-powered intelligent ranking
   rank_score?: number; // 1.00 (highest priority) to 99.99 (lowest priority)
   ranking_reason?: string; // GPT's reasoning for rank assignment
+  ranking_factors?: {
+    clinical_severity: number;      // Raw factor score (0-40 range)
+    treatment_complexity: number;   // Raw factor score (0-30 range)
+    patient_frequency: number;      // Raw factor score (0-20 range)
+    clinical_relevance: number;     // Raw factor score (0-10 range)
+  }; // GPT-generated factor breakdown for user weight customization
 }
 
 export interface UnifiedProcessingResult {
@@ -471,6 +477,31 @@ RANKING INSTRUCTIONS:
 - MANDATORY: Provide ranking_factors breakdown for EVERY medical problem using the 4-factor scoring system above
 
 INSTRUCTION: Systematically evaluate medical conditions against existing problems using consolidation rules. When SOAP notes document problem resolution, use RESOLVE action. Create new problems when conditions don't reasonably match existing ones. For ALL problems (new/updated/existing), provide intelligent ranking with clinical reasoning. Document consolidation reasoning and ranking reasoning in respective fields.
+
+REQUIRED JSON RESPONSE FORMAT:
+{
+  "changes": [
+    {
+      "problem_id": number or null,
+      "action": "NEW_PROBLEM" | "UPDATE_ICD" | "ADD_VISIT" | "EVOLVE_PROBLEM" | "RESOLVE",
+      "problem_title": "string",
+      "visit_notes": "string",
+      "icd10_change": { "from": "string", "to": "string" } or null,
+      "confidence": number (0.0-1.0),
+      "source_type": "encounter" | "attachment",
+      "extracted_date": "YYYY-MM-DD" or null,
+      "consolidation_reasoning": "string",
+      "rank_score": number (1.00-99.99),
+      "ranking_reason": "string",
+      "ranking_factors": {
+        "clinical_severity": number (0-40),
+        "treatment_complexity": number (0-30),
+        "patient_frequency": number (0-20),
+        "clinical_relevance": number (0-10)
+      }
+    }
+  ]
+}
 `;
 
     console.log(`🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1`);
@@ -760,6 +791,7 @@ INSTRUCTION: Systematically evaluate medical conditions against existing problem
       rankScore: change.rank_score?.toString() || "99.99",
       lastRankedEncounterId: encounterId,
       rankingReason: change.ranking_reason || "Automatically ranked by GPT analysis",
+      rankingFactors: change.ranking_factors || null,
     });
 
     console.log(
