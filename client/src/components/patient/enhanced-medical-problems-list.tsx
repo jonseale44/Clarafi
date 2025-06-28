@@ -81,9 +81,9 @@ interface EnhancedMedicalProblemsListProps {
   isReadOnly?: boolean;
 }
 
-// Legacy styling function for backward compatibility during migration
-const getLegacyRankStyles = (rankScore?: number) => {
-  if (!rankScore) return { 
+// Priority styling function based on rankingResult.priorityLevel (determined by relative position)
+const getPriorityLevelStyles = (problem: { rankingResult: { priorityLevel: string } }) => {
+  if (!problem.rankingResult?.priorityLevel) return { 
     bgColor: "bg-gray-50 dark:bg-gray-800", 
     borderColor: "border-gray-200 dark:border-gray-700", 
     textColor: "text-gray-600 dark:text-gray-400",
@@ -348,16 +348,16 @@ export function EnhancedMedicalProblemsList({
                   </span>
                 </div>
                 
-                {/* Progress bar showing factor score */}
+                {/* Progress bar showing weighted contribution percentage */}
                 <div className="relative">
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
                       className={`${calc.color} h-2 rounded-full transition-all duration-300`}
-                      style={{ width: `${fillPercentage}%` }}
+                      style={{ width: `${(calc.contribution / totalScore) * 100}%` }}
                     />
                   </div>
                   <div className="absolute -top-1 -right-1 text-xs font-mono text-gray-500">
-                    {calc.score}/{calc.maxScore}
+                    {((calc.contribution / totalScore) * 100).toFixed(1)}%
                   </div>
                 </div>
                 
