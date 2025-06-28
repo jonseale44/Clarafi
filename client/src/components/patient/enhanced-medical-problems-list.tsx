@@ -240,6 +240,83 @@ export function EnhancedMedicalProblemsList({
     return Math.max(1.00, Math.min(99.99, weightedScore));
   };
 
+  // Generate problem-specific ranking tooltip content
+  const getRankingTooltipContent = (problem: MedicalProblem, weights: RankingWeights) => {
+    const calculatedRank = calculateRealTimeRanking(problem, weights);
+    
+    if (!problem.rankingFactors) {
+      return (
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Clinical Priority Ranking: #{calculatedRank.toFixed(2)}</p>
+          <p className="text-xs opacity-75">Using legacy ranking system</p>
+        </div>
+      );
+    }
+
+    const factors = problem.rankingFactors;
+    const calculations = [
+      {
+        name: "Clinical Severity",
+        score: factors.clinical_severity,
+        weight: weights.clinical_severity,
+        contribution: (factors.clinical_severity * weights.clinical_severity / 100)
+      },
+      {
+        name: "Treatment Complexity", 
+        score: factors.treatment_complexity,
+        weight: weights.treatment_complexity,
+        contribution: (factors.treatment_complexity * weights.treatment_complexity / 100)
+      },
+      {
+        name: "Patient Frequency",
+        score: factors.patient_frequency,
+        weight: weights.patient_frequency,
+        contribution: (factors.patient_frequency * weights.patient_frequency / 100)
+      },
+      {
+        name: "Clinical Relevance",
+        score: factors.clinical_relevance,
+        weight: weights.clinical_relevance,
+        contribution: (factors.clinical_relevance * weights.clinical_relevance / 100)
+      }
+    ];
+
+    const totalScore = calculations.reduce((sum, calc) => sum + calc.contribution, 0);
+
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-medium">Ranking Calculation: #{totalScore.toFixed(2)}</p>
+        
+        <div className="text-xs space-y-2">
+          <p className="font-medium">Factor Breakdown:</p>
+          {calculations.map((calc, index) => (
+            <div key={index} className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">{calc.name}:</span>
+                <span>{calc.contribution.toFixed(2)}</span>
+              </div>
+              <div className="text-xs opacity-75 ml-2">
+                {calc.score} × {calc.weight}% = {calc.contribution.toFixed(2)}
+              </div>
+            </div>
+          ))}
+          
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center font-medium">
+              <span>Total Score:</span>
+              <span>{totalScore.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-xs opacity-75 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <p><strong>Scale:</strong> 1.00 (highest priority) → 99.99 (lowest priority)</p>
+          <p>Lower numbers = higher clinical priority</p>
+        </div>
+      </div>
+    );
+  };
+
   // Transform problems with real-time ranking calculations
   const getProblemsWithRealTimeRanking = (problems: MedicalProblem[]): (MedicalProblem & { calculatedRank: number })[] => {
     return problems.map(problem => ({
@@ -530,23 +607,7 @@ export function EnhancedMedicalProblemsList({
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-sm">
-                              <div className="space-y-2">
-                                <p className="text-sm font-medium">Clinical Priority Ranking: #{problem.calculatedRank.toFixed(2)}</p>
-                                <div className="text-xs space-y-1">
-                                  <p><strong>GPT-4 Intelligent Ranking System</strong></p>
-                                  <p>Based on multiple clinical factors:</p>
-                                  <ul className="list-disc list-inside space-y-0.5 ml-2">
-                                    <li>Clinical severity & immediacy</li>
-                                    <li>Treatment complexity & follow-up needs</li>
-                                    <li>Patient-specific frequency & impact</li>
-                                    <li>Current clinical relevance</li>
-                                  </ul>
-                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                                    <p><strong>Scale:</strong> 1.00 (highest priority) → 99.99 (lowest priority)</p>
-                                    <p className="opacity-75">Lower numbers = higher clinical priority</p>
-                                  </div>
-                                </div>
-                              </div>
+                              {getRankingTooltipContent(problem, currentRankingWeights)}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
