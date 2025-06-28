@@ -219,6 +219,36 @@ export function EnhancedMedicalProblemsList({
     // Small handle changes are temporary and not saved
   };
 
+  // Real-time ranking calculation using GPT factors and user weights
+  const calculateRealTimeRanking = (problem: MedicalProblem, weights: RankingWeights): number => {
+    // If no ranking factors available, fall back to database rank or default
+    if (!problem.rankingFactors) {
+      console.log(`⚠️ [RealTimeRanking] No ranking factors for problem "${problem.problemTitle}", using fallback rank:`, problem.rankScore);
+      return problem.rankScore ? parseFloat(problem.rankScore.toString()) : 99.99;
+    }
+
+    const factors = problem.rankingFactors;
+    console.log(`🧮 [RealTimeRanking] Calculating for "${problem.problemTitle}":`, {
+      factors,
+      weights,
+      originalRank: problem.rankScore
+    });
+    
+    // Calculate weighted score using user preferences
+    const weightedScore = (
+      (factors.clinical_severity * weights.clinical_severity / 100) +
+      (factors.treatment_complexity * weights.treatment_complexity / 100) +
+      (factors.patient_frequency * weights.patient_frequency / 100) +
+      (factors.clinical_relevance * weights.clinical_relevance / 100)
+    );
+
+    // Normalize to 1.00-99.99 scale (lower = higher priority)
+    const finalRank = Math.max(1.00, Math.min(99.99, weightedScore));
+    console.log(`✅ [RealTimeRanking] Final calculated rank for "${problem.problemTitle}": ${finalRank.toFixed(2)} (was ${problem.rankScore})`);
+    
+    return finalRank;
+  };
+
   // Transform problems with real-time ranking calculations
   const getProblemsWithRealTimeRanking = (problems: MedicalProblem[]): (MedicalProblem & { calculatedRank: number })[] => {
     return problems.map(problem => ({
