@@ -325,6 +325,18 @@ export function EnhancedMedicalProblemsList({
           <p className="text-xs opacity-75">{problem.problemTitle}</p>
         </div>
         
+        {/* Column headers */}
+        <div className="flex justify-between items-center text-xs font-semibold text-gray-500 dark:text-gray-400 px-1">
+          <span></span>
+          <div className="flex items-center space-x-1">
+            <span className="text-blue-600 dark:text-blue-400">GPT</span>
+            <span>×</span>
+            <span className="text-purple-600 dark:text-purple-400">User</span>
+            <span>=</span>
+            <span>Score</span>
+          </div>
+        </div>
+        
         <div className="space-y-3">
           {calculations.map((calc, index) => {
             const fillPercentage = (calc.score / calc.maxScore) * 100;
@@ -336,7 +348,7 @@ export function EnhancedMedicalProblemsList({
                 <div className="flex justify-between items-center text-xs font-medium">
                   <span>{calc.name}</span>
                   <span className="text-gray-600 dark:text-gray-300">
-                    {calc.score} × {calc.weight}/{calc.maxScore} = {calc.contribution.toFixed(1)}
+                    <span className="text-blue-600 dark:text-blue-400">{calc.score}%</span> × <span className="text-purple-600 dark:text-purple-400">{calc.weight}%</span> = {calc.contribution.toFixed(1)}
                   </span>
                 </div>
                 
