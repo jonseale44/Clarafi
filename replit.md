@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Ranking Direction Fix (June 28, 2025)
+- **CRITICAL RANKING LOGIC CORRECTION**: Fixed ranking direction so higher clinical importance results in lower rank numbers (better priority)
+- **MATHEMATICAL INVERSION**: Implemented `100 - totalWeightedScore` formula to align system behavior with clinical intuition
+- **CLINICAL INTUITION ALIGNMENT**: Heart failure (high importance) now gets rank #1-20 instead of #70-100, matching medical priority expectations
+- **CONSISTENT PRIORITY ORDERING**: Lower rank numbers (#1, #5, #10) now correctly indicate higher clinical priority across all system components
+- **TOOLTIP TEXT UPDATED**: Changed tooltip from "Higher scores = higher priority" to "Lower rank numbers = higher priority" for accuracy
+- **FALLBACK SYSTEM ALIGNED**: Updated fallback calculation to use same inversion logic for consistency
+- **TRADITIONAL RANKING RESTORED**: System now follows standard ranking convention where #1 = most important, matching user expectations
+
 ### Medical Problems Ranking System Relative Algorithm Implementation (June 28, 2025)
 - **CRITICAL ARCHITECTURAL CHANGE**: Converted ranking system from absolute scoring to relative percentage distribution
 - **GPT INSTRUCTION OVERHAUL**: Updated unified medical problems parser to distribute factor percentages (0-100%) across all patient problems, where each factor category sums to exactly 100%
@@ -118,7 +127,7 @@ Preferred communication style: Simple, everyday language.
 - **ENHANCED CALCULATION SERVICE**: Updated `shared/ranking-calculation-service.ts` to handle percentage-based factor scores with proper weight multiplication
 - **FACTOR RANGE MODERNIZATION**: Updated all factor ranges from legacy absolute values to 0-100 percentage ranges
 - **WEIGHT ALGORITHM REFINEMENT**: Modified weight adjustment to directly multiply user weight percentages against factor percentages
-- **RANKING DIRECTION CORRECTION**: Higher total weighted percentage now equals higher priority (matches clinical intuition)
+- **RANKING DIRECTION CORRECTION**: Inverted calculation so higher weighted percentages result in lower rank numbers (better priority), matching clinical intuition where #1 = most important
 - **FALLBACK SYSTEM UPDATE**: Single medical problem scenarios assign 100% to each factor category as mathematically correct baseline
 - **EXAMPLE-DRIVEN DOCUMENTATION**: Added comprehensive examples showing factor distribution across multiple patient conditions
 - **MATHEMATICAL VERIFICATION**: Built-in sum validation ensures factor percentages always total 100% per category

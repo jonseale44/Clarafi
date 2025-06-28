@@ -380,7 +380,7 @@ export function EnhancedMedicalProblemsList({
             <span className="text-blue-600 dark:text-blue-400">{totalScore.toFixed(2)}</span>
           </div>
           <p className="text-xs opacity-75 mt-1">
-            Higher scores = higher clinical priority (relative to other conditions for this patient)
+            Lower rank numbers = higher clinical priority (relative to other conditions for this patient)
           </p>
         </div>
       </div>

@@ -124,11 +124,13 @@ export function calculateMedicalProblemRanking(
     weightedScores.patient_frequency +
     weightedScores.clinical_relevance;
 
-  // Convert to final ranking (higher total = higher priority, so use total directly)
-  // Clamp between 1.00-99.99 range for consistency with existing UI
+  // Convert to final ranking: INVERT so higher weighted importance = lower (better) rank numbers
+  // Higher totalWeightedScore should result in lower finalRank (better priority)
+  // Formula: 100 - totalWeightedScore, then clamp to 1.00-99.99 range
+  const invertedScore = 100 - totalWeightedScore;
   const finalRank = Math.max(
     RANKING_CONFIG.SCALE.highest_priority,
-    Math.min(RANKING_CONFIG.SCALE.lowest_priority, totalWeightedScore)
+    Math.min(RANKING_CONFIG.SCALE.lowest_priority, invertedScore)
   );
 
   // Determine priority level for UI styling
@@ -230,9 +232,16 @@ function createFallbackResult(weights: RankingWeights): RankingResult {
     weightedScores.patient_frequency +
     weightedScores.clinical_relevance;
   
+  // Apply same inversion as main calculation: higher weighted score = lower rank number  
+  const invertedScore = 100 - totalWeightedScore;
+  const finalRank = Math.max(
+    RANKING_CONFIG.SCALE.highest_priority,
+    Math.min(RANKING_CONFIG.SCALE.lowest_priority, invertedScore)
+  );
+  
   return {
-    finalRank: parseFloat(totalWeightedScore.toFixed(2)),
-    priorityLevel: 'medium', // Single problem should be medium priority
+    finalRank: parseFloat(finalRank.toFixed(2)),
+    priorityLevel: getPriorityLevel(finalRank), // Use proper priority level calculation
     calculationDetails: {
       factors: fallbackFactors,
       weights,
