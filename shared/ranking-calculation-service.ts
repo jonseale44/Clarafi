@@ -246,11 +246,10 @@ function createFallbackResult(weights: RankingWeights): RankingResult {
     weightedScores.patient_frequency +
     weightedScores.clinical_relevance;
   
-  // Apply same inversion as main calculation: higher weighted score = lower rank number  
-  const invertedScore = 100 - totalWeightedScore;
-  const finalRank = Math.max(
-    RANKING_CONFIG.SCALE.highest_priority,
-    Math.min(RANKING_CONFIG.SCALE.lowest_priority, invertedScore)
+  // Use direct scoring consistent with main calculation: higher weighted score = higher priority
+  const finalScore = Math.max(
+    0.01,
+    Math.min(100.00, totalWeightedScore)
   );
   
   return {
