@@ -227,8 +227,13 @@ export function EnhancedMedicalProblemsDialog({
 
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log(`🔍 [Dialog] Raw form data:`, data);
+      console.log(`🔍 [Dialog] patientId prop:`, patientId);
+      console.log(`🔍 [Dialog] problem prop:`, problem);
+      
       const payload = {
         ...data,
+        patientId: patientId, // Explicitly add patientId
         visitHistory: visitHistory.map(visit => ({
           date: visit.date,
           notes: visit.notes,
@@ -239,11 +244,15 @@ export function EnhancedMedicalProblemsDialog({
         }))
       };
 
+      console.log(`🔍 [Dialog] Final payload being sent:`, JSON.stringify(payload, null, 2));
+
       // Note: Manual CRUD operations may not be available in unified API
       // This system is designed for AI-automated processing
       const url = problem?.id 
         ? `/api/medical-problems/${problem.id}`
         : `/api/medical-problems/manual-create`;
+      
+      console.log(`🔍 [Dialog] Request URL:`, url);
       
       const response = await fetch(url, {
         method: problem?.id ? "PUT" : "POST",

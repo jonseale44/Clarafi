@@ -332,6 +332,9 @@ router.post("/medical-problems/manual-create", async (req, res) => {
       return res.sendStatus(401);
     }
 
+    console.log(`🔍 [ManualCreate] FULL REQUEST BODY:`, JSON.stringify(req.body, null, 2));
+    console.log(`🔍 [ManualCreate] REQUEST HEADERS:`, JSON.stringify(req.headers, null, 2));
+
     const { 
       patientId, 
       problemTitle, 
@@ -345,7 +348,15 @@ router.post("/medical-problems/manual-create", async (req, res) => {
     } = req.body;
 
     const title = problemTitle || diagnosis;
-    console.log(`🔨 [ManualCreate] Creating medical problem for patient ${patientId}:`, title);
+    console.log(`🔨 [ManualCreate] Extracted values:`);
+    console.log(`  - patientId: ${patientId} (type: ${typeof patientId})`);
+    console.log(`  - problemTitle: ${problemTitle}`);
+    console.log(`  - diagnosis: ${diagnosis}`);
+    console.log(`  - title: ${title}`);
+    console.log(`  - currentIcd10Code: ${currentIcd10Code}`);
+    console.log(`  - icd10Code: ${icd10Code}`);
+    console.log(`  - problemStatus: ${problemStatus}`);
+    console.log(`  - status: ${status}`);
     
     if (!patientId || !title) {
       return res.status(400).json({ error: "Patient ID and diagnosis are required" });
