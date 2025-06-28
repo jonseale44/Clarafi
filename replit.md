@@ -122,6 +122,9 @@ Preferred communication style: Simple, everyday language.
 - **FALLBACK SYSTEM UPDATE**: Single medical problem scenarios assign 100% to each factor category as mathematically correct baseline
 - **EXAMPLE-DRIVEN DOCUMENTATION**: Added comprehensive examples showing factor distribution across multiple patient conditions
 - **MATHEMATICAL VERIFICATION**: Built-in sum validation ensures factor percentages always total 100% per category
+- **FRONTEND TOOLTIP FIXES**: Corrected tooltip calculation logic to use new percentage system (maxScore: 100 instead of old absolute ranges)
+- **DUAL SYSTEM ELIMINATION**: Fixed frontend/backend calculation inconsistencies where tooltip and main display showed different ranking values
+- **UI DESCRIPTION UPDATE**: Updated tooltip descriptions to reflect that higher scores = higher priority in new relative percentage system
 
 ### Medical Problems Ranking System Enhancement Completed (June 27, 2025)
 - **INTELLIGENT RANKING TOOLTIP**: Added comprehensive hover tooltip to medical problems rank display explaining GPT-4 ranking system
