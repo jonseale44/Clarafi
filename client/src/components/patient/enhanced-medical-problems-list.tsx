@@ -25,7 +25,7 @@ import {
   type RankingWeights,
   type RankingResult,
   RANKING_CONFIG
-} from "../../../../shared/ranking-calculation-service";
+} from "@shared/ranking-calculation-service";
 
 interface VisitNote {
   date: string;
@@ -80,8 +80,8 @@ interface EnhancedMedicalProblemsListProps {
   isReadOnly?: boolean;
 }
 
-// Utility function for rank-based visual styling
-const getRankStyles = (rankScore?: number) => {
+// Legacy styling function for backward compatibility during migration
+const getLegacyRankStyles = (rankScore?: number) => {
   if (!rankScore) return { 
     bgColor: "bg-gray-50 dark:bg-gray-800", 
     borderColor: "border-gray-200 dark:border-gray-700", 
@@ -89,7 +89,7 @@ const getRankStyles = (rankScore?: number) => {
     priority: "Unranked"
   };
   
-  // 1.00 = Highest Priority (Red), 99.99 = Lowest Priority (Blue)
+  // Legacy styling - to be phased out in favor of centralized service
   if (rankScore <= 10) {
     return { 
       bgColor: "bg-red-50 dark:bg-red-900/20", 
@@ -212,31 +212,15 @@ export function EnhancedMedicalProblemsList({
     // Small handle changes are temporary and not saved
   };
 
-  // Real-time ranking calculation using GPT factors and user weights
-  const calculateRealTimeRanking = (problem: MedicalProblem, weights: RankingWeights): number => {
-    // If no ranking factors available, fall back to database rank or default
-    if (!problem.rankingFactors) {
-      return problem.rankScore ? parseFloat(problem.rankScore.toString()) : 99.99;
+  // CENTRALIZED ranking calculation using the shared service
+  const calculateProblemRanking = (problem: MedicalProblem, weights: RankingWeights): RankingResult => {
+    // Handle legacy problems that use old rankScore system
+    if (shouldUseLegacyRank(problem)) {
+      return migrateLegacyRanking(problem.rankScore!);
     }
-
-    const factors = problem.rankingFactors;
     
-    // Apply user weight adjustments to the raw factor scores
-    // Raw factors are in ranges: severity(0-40), complexity(0-30), frequency(0-20), relevance(0-10)
-    const adjustedSeverity = factors.clinical_severity * (weights.clinical_severity / 40); // 40 = default weight
-    const adjustedComplexity = factors.treatment_complexity * (weights.treatment_complexity / 30); // 30 = default weight
-    const adjustedFrequency = factors.patient_frequency * (weights.patient_frequency / 20); // 20 = default weight
-    const adjustedRelevance = factors.clinical_relevance * (weights.clinical_relevance / 10); // 10 = default weight
-    
-    // Sum the adjusted factors
-    const totalFactorScore = adjustedSeverity + adjustedComplexity + adjustedFrequency + adjustedRelevance;
-    
-    // Convert to rank score using the original GPT logic: higher factors = lower rank (better priority)
-    // Based on examples: 98 factors → 1.50 rank, 84 factors → 15.25 rank, 42 factors → 45.80 rank
-    const rankScore = 100 - totalFactorScore;
-    
-    // Ensure within valid range (1.00 = highest priority, 99.99 = lowest priority)
-    return Math.max(1.00, Math.min(99.99, rankScore));
+    // Use centralized calculation service for modern ranking system
+    return calculateMedicalProblemRanking(problem.rankingFactors, weights);
   };
 
   // Generate clinical reasoning text for each factor
@@ -641,13 +625,13 @@ export function EnhancedMedicalProblemsList({
     );
   }
 
-  const renderProblemCard = (problem: MedicalProblem & { calculatedRank: number }) => {
-    const rankStyles = getRankStyles(problem.calculatedRank);
+  const renderProblemCard = (problem: MedicalProblem & { rankingResult: RankingResult }) => {
+    const badgeClass = getRankingStyles(problem.rankingResult.priorityLevel);
     
     return (
       <Card 
         key={problem.id} 
-        className={`relative border-l-4 ${rankStyles.borderColor} ${rankStyles.bgColor} hover:shadow-md transition-all duration-200`}
+        className={`relative border-l-4 border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200`}
       >
         <Collapsible
           open={expandedProblems.has(problem.id)}
