@@ -578,7 +578,7 @@ REQUIRED JSON RESPONSE FORMAT:
       "source_type": "encounter" | "attachment",
       "extracted_date": "YYYY-MM-DD" or null,
       "consolidation_reasoning": "string",
-      "rank_score": number (1.00-99.99),
+
       "ranking_reason": "string",
       "ranking_factors": {
         "clinical_severity": number (0-100, percentage relative to other patient problems),
@@ -792,8 +792,8 @@ REQUIRED JSON RESPONSE FORMAT:
           processing_time_ms: 0,
         },
       ],
-      // GPT-powered intelligent ranking
-      rankScore: change.rank_score?.toString() || "99.99",
+      // GPT-powered intelligent ranking factors (frontend calculates final score)
+      rankingFactors: change.ranking_factors || null,
       lastRankedEncounterId: encounterId,
       rankingReason:
         change.ranking_reason ||
@@ -876,12 +876,11 @@ REQUIRED JSON RESPONSE FORMAT:
           processing_time_ms: 0,
         },
       ],
-      // GPT-powered intelligent ranking
-      rankScore: change.rank_score?.toString() || "99.99",
+      // GPT-powered intelligent ranking factors (frontend calculates final score)
+      rankingFactors: change.ranking_factors || null,
       lastRankedEncounterId: encounterId,
       rankingReason:
         change.ranking_reason || "Automatically ranked by GPT analysis",
-      rankingFactors: change.ranking_factors || null,
     });
 
     console.log(
@@ -994,7 +993,7 @@ REQUIRED JSON RESPONSE FORMAT:
         lastUpdatedEncounterId: encounterId,
         visitHistory: updatedVisitHistory,
         updatedAt: new Date(),
-        // Update ranking if provided
+        // Update ranking if provided - store factors, frontend calculates final ranking
         ...(change.ranking_factors && {
           rankingFactors: change.ranking_factors,
           lastRankedEncounterId: encounterId,
