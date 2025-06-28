@@ -147,8 +147,8 @@ export class UnifiedMedicalProblemsParser {
           action: change.action,
           problemId: change.problem_id,
           problemTitle: change.problem_title,
-          hasRankScore: !!change.rank_score,
-          rankScore: change.rank_score,
+          hasRankingFactors: !!change.ranking_factors,
+          rankingFactors: change.ranking_factors,
           rankingReason: change.ranking_reason ? change.ranking_reason.substring(0, 100) + '...' : 'None',
           sourceType: change.source_type
         });
@@ -938,7 +938,7 @@ REQUIRED JSON RESPONSE FORMAT:
       }
     });
 
-    let updatedVisitHistory: UnifiedVisitHistoryEntry[];
+    let updatedVisitHistory: UnifiedVisitHistoryEntry[] = visitHistory;
 
     if (existingVisitIndex >= 0) {
       // Update existing visit
@@ -965,24 +965,24 @@ REQUIRED JSON RESPONSE FORMAT:
         );
         // Don't add visit entry but continue to ranking update
       } else {
+        const newVisitEntry: UnifiedVisitHistoryEntry = {
+          date: visitDate,
+          notes: visitNotes,
+          source:
+            change.source_type === "attachment" ? "attachment" : "encounter",
+          encounterId: encounterId || undefined,
+          attachmentId: attachmentId || undefined,
+          icd10AtVisit:
+            change.icd10_change?.to || existingProblem.currentIcd10Code || "",
+          changesMade: change.icd10_change
+            ? ["diagnosis_evolution"]
+            : ["routine_follow_up"],
+          confidence: change.confidence,
+          isSigned: false,
+        };
 
-      const newVisitEntry: UnifiedVisitHistoryEntry = {
-        date: visitDate,
-        notes: visitNotes,
-        source:
-          change.source_type === "attachment" ? "attachment" : "encounter",
-        encounterId: encounterId || undefined,
-        attachmentId: attachmentId || undefined,
-        icd10AtVisit:
-          change.icd10_change?.to || existingProblem.currentIcd10Code || "",
-        changesMade: change.icd10_change
-          ? ["diagnosis_evolution"]
-          : ["routine_follow_up"],
-        confidence: change.confidence,
-        isSigned: false,
-      };
-
-      updatedVisitHistory = [...visitHistory, newVisitEntry];
+        updatedVisitHistory = [...visitHistory, newVisitEntry];
+      }
     }
 
     // Update the problem with ranking
