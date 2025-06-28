@@ -664,7 +664,7 @@ export function EncounterDetailView({
           ordersResponse,
           cptResponse,
         ] = await Promise.all([
-          fetch(`/api/medical-problems/process-encounter`, {
+          fetch(`/api/medical-problems/process-unified`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
