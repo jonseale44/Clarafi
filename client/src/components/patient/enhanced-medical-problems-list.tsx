@@ -228,16 +228,22 @@ export function EnhancedMedicalProblemsList({
 
     const factors = problem.rankingFactors;
     
-    // Calculate weighted score using user preferences
-    const weightedScore = (
-      (factors.clinical_severity * weights.clinical_severity / 100) +
-      (factors.treatment_complexity * weights.treatment_complexity / 100) +
-      (factors.patient_frequency * weights.patient_frequency / 100) +
-      (factors.clinical_relevance * weights.clinical_relevance / 100)
-    );
-
-    // Normalize to 1.00-99.99 scale (lower = higher priority, as original system intended)
-    return Math.max(1.00, Math.min(99.99, weightedScore));
+    // Apply user weight adjustments to the raw factor scores
+    // Raw factors are in ranges: severity(0-40), complexity(0-30), frequency(0-20), relevance(0-10)
+    const adjustedSeverity = factors.clinical_severity * (weights.clinical_severity / 40); // 40 = default weight
+    const adjustedComplexity = factors.treatment_complexity * (weights.treatment_complexity / 30); // 30 = default weight
+    const adjustedFrequency = factors.patient_frequency * (weights.patient_frequency / 20); // 20 = default weight
+    const adjustedRelevance = factors.clinical_relevance * (weights.clinical_relevance / 10); // 10 = default weight
+    
+    // Sum the adjusted factors
+    const totalFactorScore = adjustedSeverity + adjustedComplexity + adjustedFrequency + adjustedRelevance;
+    
+    // Convert to rank score using the original GPT logic: higher factors = lower rank (better priority)
+    // Based on examples: 98 factors → 1.50 rank, 84 factors → 15.25 rank, 42 factors → 45.80 rank
+    const rankScore = 100 - totalFactorScore;
+    
+    // Ensure within valid range (1.00 = highest priority, 99.99 = lowest priority)
+    return Math.max(1.00, Math.min(99.99, rankScore));
   };
 
   // Generate clinical reasoning text for each factor
@@ -297,7 +303,7 @@ export function EnhancedMedicalProblemsList({
         score: factors.clinical_severity,
         maxScore: 40,
         weight: weights.clinical_severity,
-        contribution: (factors.clinical_severity * weights.clinical_severity / 100),
+        contribution: (factors.clinical_severity * weights.clinical_severity / 40), // Use correct weight ratio
         color: "bg-red-500"
       },
       {
@@ -305,7 +311,7 @@ export function EnhancedMedicalProblemsList({
         score: factors.treatment_complexity,
         maxScore: 30,
         weight: weights.treatment_complexity,
-        contribution: (factors.treatment_complexity * weights.treatment_complexity / 100),
+        contribution: (factors.treatment_complexity * weights.treatment_complexity / 30), // Use correct weight ratio
         color: "bg-blue-500"
       },
       {
@@ -313,7 +319,7 @@ export function EnhancedMedicalProblemsList({
         score: factors.patient_frequency,
         maxScore: 20,
         weight: weights.patient_frequency,
-        contribution: (factors.patient_frequency * weights.patient_frequency / 100),
+        contribution: (factors.patient_frequency * weights.patient_frequency / 20), // Use correct weight ratio
         color: "bg-green-500"
       },
       {
@@ -321,12 +327,13 @@ export function EnhancedMedicalProblemsList({
         score: factors.clinical_relevance,
         maxScore: 10,
         weight: weights.clinical_relevance,
-        contribution: (factors.clinical_relevance * weights.clinical_relevance / 100),
+        contribution: (factors.clinical_relevance * weights.clinical_relevance / 10), // Use correct weight ratio
         color: "bg-purple-500"
       }
     ];
 
-    const totalScore = calculations.reduce((sum, calc) => sum + calc.contribution, 0);
+    const totalFactorScore = calculations.reduce((sum, calc) => sum + calc.contribution, 0);
+    const totalScore = 100 - totalFactorScore; // Convert to ranking (higher factors = lower rank = better priority)
 
     return (
       <div className="space-y-4 w-80">
@@ -346,7 +353,7 @@ export function EnhancedMedicalProblemsList({
                 <div className="flex justify-between items-center text-xs font-medium">
                   <span>{calc.name}</span>
                   <span className="text-gray-600 dark:text-gray-300">
-                    {calc.score} × {calc.weight}% = {calc.contribution.toFixed(1)}
+                    {calc.score} × {calc.weight}/{calc.maxScore} = {calc.contribution.toFixed(1)}
                   </span>
                 </div>
                 
