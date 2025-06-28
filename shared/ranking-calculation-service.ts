@@ -58,14 +58,14 @@ export interface RankingWeights {
 }
 
 export interface RankingResult {
-  finalRank: number;
+  finalRank: number | null;
   priorityLevel: 'critical' | 'high' | 'medium' | 'low';
   calculationDetails: {
     factors: RankingFactors;
     weights: RankingWeights;
     weightedScores: RankingFactors;
     totalWeightedScore: number;
-  };
+  } | null;
 }
 
 /**

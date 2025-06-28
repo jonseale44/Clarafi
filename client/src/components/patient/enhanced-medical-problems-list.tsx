@@ -224,7 +224,16 @@ export function EnhancedMedicalProblemsList({
       return migrateLegacyRanking(problem.rankScore);
     }
     
-    // For manually created problems without AI ranking factors, use modern fallback system
+    // Handle manually created problems with null rank - return unranked status
+    if (problem.rankScore === null || problem.rankScore === undefined) {
+      return {
+        finalRank: null,
+        priorityLevel: 'medium', // Default for display purposes
+        calculationDetails: null
+      };
+    }
+    
+    // For other problems without AI ranking factors, use modern fallback system
     return calculateMedicalProblemRanking(null, weights);
   };
 
