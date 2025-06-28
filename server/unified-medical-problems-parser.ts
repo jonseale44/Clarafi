@@ -262,6 +262,9 @@ PATIENT CONTEXT:
 - Age: ${this.calculateAge(patient.dateOfBirth)}
 - Processing Date: ${new Date().toISOString()}
 
+COMPREHENSIVE CLINICAL DATA AVAILABLE FOR ENHANCED VISIT HISTORIES:
+${this.formatPatientChartForGPT(patientChart)}
+
 MEDICAL INTELLIGENCE CONSOLIDATION RULES:
 You must use sophisticated medical knowledge to identify matching conditions. Apply this decision tree systematically:
 
@@ -395,6 +398,41 @@ FORMATTING RULES:
 - Include specific lab values, vital signs, medication names/doses
 - Use standard medical abbreviations (BP, A1c, BID, etc.)
 - Keep entries under 100 characters when possible
+
+ENHANCED VISIT HISTORY WITH CLINICAL DATA CORRELATION:
+When building visit histories, you now have access to comprehensive patient chart data. Use this information to create more robust and clinically relevant visit entries:
+
+FOR DIABETES-RELATED PROBLEMS:
+- Cross-reference current medications (metformin, insulin, etc.) to enrich visit histories
+- Include medication start dates and dosing in visit notes
+- Example: "Started on metformin 500mg BID (${med.startDate}), baseline A1c pending"
+
+FOR HYPERTENSION-RELATED PROBLEMS:
+- Include current vital signs in visit notes when clinically relevant
+- Correlate BP readings with medication timing
+- Example: "BP ${vitals.systolic}/${vitals.diastolic} on current lisinopril regimen"
+
+FOR CARDIAC CONDITIONS:
+- Include heart rate and blood pressure correlations
+- Reference cardiac medications in visit histories
+- Example: "HR ${vitals.heartRate}, well controlled on carvedilol ${med.dosage}"
+
+FOR MEDICATION-RELATED PROBLEMS:
+- Reference allergy information for medication safety context
+- Include medication interactions or contraindications
+- Example: "Avoiding ACE inhibitors due to documented cough reaction"
+
+FOR HEREDITARY CONDITIONS:
+- Include family history context when creating new genetic/hereditary problems
+- Example: "Strong family history of CAD (father: MI at 65), genetic counseling discussed"
+
+CLINICAL DATA INTEGRATION RULES:
+1. Only include clinical data that is directly relevant to the specific medical problem
+2. Use current medications to provide context for medication-related visit entries
+3. Include vital signs when they directly relate to the condition (BP for HTN, HR for arrhythmia)
+4. Reference allergies when creating medication-related visit histories
+5. Include family history context for genetic predisposition conditions
+6. Use social history for lifestyle-related conditions (smoking for COPD, alcohol for liver disease)
 - Focus on clinical decision points and changes
 - Empty string if no meaningful clinical information
 - Use periods to separate distinct clinical facts
@@ -978,6 +1016,64 @@ REQUIRED JSON RESPONSE FORMAT:
     return Math.floor(
       (today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
     );
+  }
+
+  /**
+   * Format comprehensive patient chart data for GPT to use in enhanced visit histories
+   */
+  private formatPatientChartForGPT(patientChart: any): string {
+    const sections = [];
+
+    // Current Medications (for medication-related visit history enrichment)
+    if (patientChart.currentMedications?.length > 0) {
+      sections.push(`
+CURRENT MEDICATIONS (Use for medication-related problem visit histories):
+${patientChart.currentMedications.map((med: any) => 
+  `- ${med.medicationName} ${med.dosage} ${med.frequency} (started ${med.startDate || 'unknown date'})`
+).join('\n')}`);
+    }
+
+    // Recent Vitals (for vital sign-related visit history enrichment)
+    if (patientChart.vitals?.length > 0) {
+      const latestVitals = patientChart.vitals[0];
+      sections.push(`
+RECENT VITALS (Use for condition-specific correlations):
+- Latest Reading: BP ${latestVitals.systolic || '?'}/${latestVitals.diastolic || '?'} mmHg, HR ${latestVitals.heartRate || '?'} bpm, Temp ${latestVitals.temperature || '?'}°F
+- For HYPERTENSION visit histories: Include relevant BP readings
+- For DIABETES visit histories: Include weight/BMI trends if available
+- For CARDIAC conditions: Include HR and BP correlations`);
+    }
+
+    // Allergies (for medication safety and visit history context)
+    if (patientChart.allergies?.length > 0) {
+      sections.push(`
+ALLERGIES (Use for medication-related visit histories):
+${patientChart.allergies.map((allergy: any) => 
+  `- ${allergy.allergen}: ${allergy.reaction} (${allergy.severity})`
+).join('\n')}`);
+    }
+
+    // Family History (for genetic predisposition context)
+    if (patientChart.familyHistory?.length > 0) {
+      sections.push(`
+FAMILY HISTORY (Use for genetic/hereditary condition context):
+${patientChart.familyHistory.map((fh: any) => 
+  `- ${fh.relationship}: ${fh.condition}`
+).join('\n')}`);
+    }
+
+    // Social History (for lifestyle-related conditions)
+    if (patientChart.socialHistory?.length > 0) {
+      sections.push(`
+SOCIAL HISTORY (Use for lifestyle-related condition context):
+${patientChart.socialHistory.map((sh: any) => 
+  `- ${sh.category}: ${sh.details}`
+).join('\n')}`);
+    }
+
+    return sections.length > 0 
+      ? sections.join('\n') 
+      : '- No additional clinical data available for visit history enhancement';
   }
 }
 
