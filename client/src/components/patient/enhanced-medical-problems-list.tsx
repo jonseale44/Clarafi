@@ -214,13 +214,18 @@ export function EnhancedMedicalProblemsList({
 
   // CENTRALIZED ranking calculation using the shared service
   const calculateProblemRanking = (problem: MedicalProblem, weights: RankingWeights): RankingResult => {
-    // Handle legacy problems that use old rankScore system
-    if (shouldUseLegacyRank(problem)) {
-      return migrateLegacyRanking(problem.rankScore!);
+    // Always use real-time calculation if ranking factors are available
+    if (problem.rankingFactors) {
+      return calculateMedicalProblemRanking(problem.rankingFactors, weights);
     }
     
-    // Use centralized calculation service for modern ranking system
-    return calculateMedicalProblemRanking(problem.rankingFactors, weights);
+    // Only fall back to legacy system if no ranking factors exist
+    if (problem.rankScore) {
+      return migrateLegacyRanking(problem.rankScore);
+    }
+    
+    // Default fallback for problems with no ranking data
+    return migrateLegacyRanking(99.99);
   };
 
   // Generate clinical reasoning text for each factor
