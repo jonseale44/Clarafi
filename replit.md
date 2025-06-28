@@ -119,6 +119,21 @@ Preferred communication style: Simple, everyday language.
 - **PATIENT-SPECIFIC CONTEXT**: Ranking considers entire patient context and relative prioritization across all conditions for that specific patient
 - **TOOLTIP CONSISTENCY**: Maintained same design pattern as confidence tooltips for consistent user experience
 
+### Medical Problems Ranking System Architectural Consolidation (June 28, 2025)
+- **COMPREHENSIVE TECHNICAL DEBT ELIMINATION**: Successfully consolidated dual ranking systems into unified centralized calculation service
+- **CENTRALIZED CALCULATION SERVICE**: Created `shared/ranking-calculation-service.ts` as single source of truth for all ranking algorithms and configuration
+- **ELIMINATED HARDCODED VALUES**: Removed scattered hardcoded factor ranges (40, 30, 20, 10) and replaced with centralized `RANKING_CONFIG` constants
+- **UNIFIED FRONTEND ARCHITECTURE**: Updated `enhanced-medical-problems-list.tsx` to use centralized `calculateMedicalProblemRanking()` function instead of duplicated local calculations
+- **MODERNIZED TYPE DEFINITIONS**: Replaced legacy `calculatedRank: number` with comprehensive `rankingResult: RankingResult` containing priority levels and calculation details
+- **CENTRALIZED STYLING SYSTEM**: Replaced scattered styling functions with standardized `getRankingStyles()` and `getPriorityDisplayName()` utilities
+- **BACKEND API CONSOLIDATION**: Updated `unified-medical-problems-api.ts` to use `calculateBatchRankings()` for efficient server-side ranking refresh operations
+- **CONFIGURATION CONSISTENCY**: All default weights, factor ranges, and priority thresholds now sourced from single `RANKING_CONFIG` object
+- **LEGACY MIGRATION SUPPORT**: Implemented backward compatibility functions `shouldUseLegacyRank()` and `migrateLegacyRanking()` for smooth transition
+- **WEIGHT CONTROLS MODERNIZATION**: Updated `ranking-weight-controls.tsx` to use centralized configuration and type definitions
+- **SYSTEMATIC CLEANUP**: Removed technical debt including duplicate calculation functions, inconsistent fallback logic, and format discrepancies
+- **PRESERVED FUNCTIONALITY**: All existing ranking behavior maintained while eliminating architectural inconsistencies
+- **COMPREHENSIVE DOCUMENTATION**: Added detailed inline documentation explaining algorithm, factor ranges, and calculation methodology
+
 ### Critical API Endpoint Fix - Stop Recording Error Resolution (June 27, 2025)
 - **CRITICAL BUG FIXED**: Resolved "instanceof is not callable" error that prevented stop recording functionality from working
 - **ROOT CAUSE IDENTIFIED**: Code was calling non-existent `/api/medical-problems/process-encounter` endpoint, which returned HTML 404 error instead of JSON

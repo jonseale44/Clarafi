@@ -351,13 +351,8 @@ router.post("/medical-problems/refresh-rankings/:patientId", async (req, res) =>
     const userId = req.user.id;
     const userPreferences = await storage.getUserNotePreferences(userId);
     
-    // Extract ranking weights (use defaults if not set)
-    const rankingWeights = userPreferences?.rankingWeights || {
-      clinical_severity: 40,
-      treatment_complexity: 30,
-      patient_frequency: 20,
-      clinical_relevance: 10
-    };
+    // Extract ranking weights (use centralized defaults if not set)
+    const rankingWeights = userPreferences?.rankingWeights || RANKING_CONFIG.DEFAULT_WEIGHTS;
 
     console.log(`🔄 [RankingRefresh] Using ranking weights:`, rankingWeights);
 
@@ -367,32 +362,30 @@ router.post("/medical-problems/refresh-rankings/:patientId", async (req, res) =>
 
     let refreshedCount = 0;
 
-    // Recalculate rankings for each problem
-    for (const problem of problems) {
-      if (problem.rankingFactors) {
-        try {
-          const factors = JSON.parse(problem.rankingFactors);
-          
-          // Calculate new weighted score
-          const newRankScore = 
-            (factors.clinical_severity * rankingWeights.clinical_severity / 100) +
-            (factors.treatment_complexity * rankingWeights.treatment_complexity / 100) +
-            (factors.patient_frequency * rankingWeights.patient_frequency / 100) +
-            (factors.clinical_relevance * rankingWeights.clinical_relevance / 100);
+    // Use centralized batch ranking calculation service
+    const problemsForRanking = problems.map(p => ({
+      id: p.id,
+      rankingFactors: p.rankingFactors ? (typeof p.rankingFactors === 'string' ? JSON.parse(p.rankingFactors) : p.rankingFactors) : undefined
+    }));
 
-          // Update the problem with new ranking
-          await db
-            .update(medicalProblems)
-            .set({ 
-              rankScore: newRankScore,
-              lastUpdated: new Date().toISOString()
-            })
-            .where(eq(medicalProblems.id, problem.id));
+    const batchRankings = calculateBatchRankings(problemsForRanking, rankingWeights);
 
-          refreshedCount++;
-          console.log(`✅ [RankingRefresh] Updated problem ${problem.id}: ${problem.problemTitle} -> rank ${newRankScore.toFixed(2)}`);
-        } catch (parseError) {
-          console.warn(`⚠️ [RankingRefresh] Could not parse ranking factors for problem ${problem.id}:`, parseError);
+    // Update database with new rankings
+    for (const { id, ranking } of batchRankings) {
+      try {
+        await db
+          .update(medicalProblems)
+          .set({ 
+            rankScore: ranking.finalRank.toString(),
+            updatedAt: new Date()
+          })
+          .where(eq(medicalProblems.id, id));
+
+        refreshedCount++;
+        const problem = problems.find(p => p.id === id);
+        console.log(`✅ [RankingRefresh] Updated problem ${id}: ${problem?.problemTitle} -> rank ${ranking.finalRank.toFixed(2)} (${ranking.priorityLevel})`);
+      } catch (updateError) {
+        console.warn(`⚠️ [RankingRefresh] Could not update ranking for problem ${id}:`, updateError);
         }
       }
     }
