@@ -140,6 +140,19 @@ export class UnifiedMedicalProblemsParser {
       console.log(
         `🔄 [UnifiedMedicalProblems] Generated ${changes.length} changes`,
       );
+      
+      // Detailed logging for each change
+      changes.forEach((change, index) => {
+        console.log(`🔍 [UnifiedGPT] Change ${index + 1}:`, {
+          action: change.action,
+          problemId: change.problem_id,
+          problemTitle: change.problem_title,
+          hasRankScore: !!change.rank_score,
+          rankScore: change.rank_score,
+          rankingReason: change.ranking_reason ? change.ranking_reason.substring(0, 100) + '...' : 'None',
+          sourceType: change.source_type
+        });
+      });
 
       // Apply changes with visit history transfer logic
       await this.applyUnifiedChanges(
@@ -233,7 +246,20 @@ SOAP NOTE PROCESSING RULES:
 - Only CREATE new problems when no reasonable match exists in current problem list
 - Apply clinical intelligence to recognize condition variations (HTN/Hypertension, DM/Diabetes, etc.)
 `
-    : "NO SOAP NOTE PROVIDED"
+    : triggerType === "manual_edit" 
+      ? `
+MANUAL RANKING REFRESH REQUEST:
+- This is a MANUAL RANKING REFRESH operation
+- NO new content to process - focus on RANKING existing problems
+- PRIMARY RESPONSIBILITY: Apply intelligent ranking to all existing problems
+- MANDATORY: Every existing problem MUST receive a rank_score and ranking_reason
+- Use clinical intelligence to assess relative priority within this patient's context
+- Consider clinical severity, treatment complexity, patient frequency, and current relevance
+- Assign rank_score from 1.00 (highest priority) to 99.99 (lowest priority)
+- Generate ranking_factors with relative percentages that sum to 100% within each category
+- Action should be "ADD_VISIT" with empty visit_notes for ranking-only updates
+`
+      : "NO SOAP NOTE PROVIDED"
 }
 
 ${
@@ -981,6 +1007,12 @@ REQUIRED JSON RESPONSE FORMAT:
 
     console.log(
       `✅ [UnifiedMedicalProblems] Updated problem ${change.problem_id} (${change.source_type})`,
+      {
+        hasRankScore: !!change.rank_score,
+        rankScoreValue: change.rank_score,
+        rankingReason: change.ranking_reason,
+        problemTitle: change.problem_title || 'Unknown'
+      }
     );
   }
 
