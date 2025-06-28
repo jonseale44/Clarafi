@@ -316,7 +316,9 @@ export function EnhancedMedicalProblemsList({
     ];
 
     const totalFactorScore = calculations.reduce((sum, calc) => sum + calc.contribution, 0);
-    const totalScore = totalFactorScore; // New percentage system: higher total = higher priority
+    // CRITICAL FIX: Apply inversion formula for ranking direction correction
+    const invertedScore = 100 - totalFactorScore; // Higher weighted percentages = lower rank numbers (better priority)
+    const totalScore = invertedScore; // Inverted score for clinical intuition alignment
 
     return (
       <div className="space-y-4 w-80">
