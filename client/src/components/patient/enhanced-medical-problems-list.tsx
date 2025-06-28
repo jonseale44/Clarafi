@@ -240,7 +240,41 @@ export function EnhancedMedicalProblemsList({
     return Math.max(1.00, Math.min(99.99, weightedScore));
   };
 
-  // Generate problem-specific ranking tooltip content
+  // Generate clinical reasoning text for each factor
+  const getFactorReasoning = (factorName: string, score: number, problemTitle: string) => {
+    const title = problemTitle.toLowerCase();
+    
+    switch (factorName) {
+      case "Clinical Severity":
+        if (score >= 30) return "Life-threatening condition requiring immediate intervention";
+        if (score >= 20) return "Serious condition with high complication risk";
+        if (score >= 10) return "Moderate condition requiring active management";
+        return "Stable condition with routine monitoring needs";
+        
+      case "Treatment Complexity":
+        if (score >= 25) return "Multiple medications, specialist care, frequent monitoring";
+        if (score >= 15) return "Moderate complexity with regular provider oversight";
+        if (score >= 8) return "Standard treatment protocols with routine follow-up";
+        return "Simple management with minimal interventions";
+        
+      case "Patient Frequency":
+        if (score >= 15) return "Frequently discussed, rapidly changing, high patient concern";
+        if (score >= 10) return "Regular mentions across multiple encounters";
+        if (score >= 5) return "Occasional documentation with stable course";
+        return "Infrequent mentions, stable baseline condition";
+        
+      case "Clinical Relevance":
+        if (score >= 8) return "Primary focus of current care, active treatment adjustments";
+        if (score >= 6) return "Important ongoing condition requiring monitoring";
+        if (score >= 3) return "Relevant to current care but stable";
+        return "Historical reference with minimal current impact";
+        
+      default:
+        return "Clinical assessment factor";
+    }
+  };
+
+  // Generate problem-specific ranking tooltip content with horizontal bar chart
   const getRankingTooltipContent = (problem: MedicalProblem, weights: RankingWeights) => {
     const calculatedRank = calculateRealTimeRanking(problem, weights);
     
@@ -258,60 +292,91 @@ export function EnhancedMedicalProblemsList({
       {
         name: "Clinical Severity",
         score: factors.clinical_severity,
+        maxScore: 40,
         weight: weights.clinical_severity,
-        contribution: (factors.clinical_severity * weights.clinical_severity / 100)
+        contribution: (factors.clinical_severity * weights.clinical_severity / 100),
+        color: "bg-red-500"
       },
       {
         name: "Treatment Complexity", 
         score: factors.treatment_complexity,
+        maxScore: 30,
         weight: weights.treatment_complexity,
-        contribution: (factors.treatment_complexity * weights.treatment_complexity / 100)
+        contribution: (factors.treatment_complexity * weights.treatment_complexity / 100),
+        color: "bg-blue-500"
       },
       {
         name: "Patient Frequency",
         score: factors.patient_frequency,
+        maxScore: 20,
         weight: weights.patient_frequency,
-        contribution: (factors.patient_frequency * weights.patient_frequency / 100)
+        contribution: (factors.patient_frequency * weights.patient_frequency / 100),
+        color: "bg-green-500"
       },
       {
         name: "Clinical Relevance",
         score: factors.clinical_relevance,
+        maxScore: 10,
         weight: weights.clinical_relevance,
-        contribution: (factors.clinical_relevance * weights.clinical_relevance / 100)
+        contribution: (factors.clinical_relevance * weights.clinical_relevance / 100),
+        color: "bg-purple-500"
       }
     ];
 
     const totalScore = calculations.reduce((sum, calc) => sum + calc.contribution, 0);
 
     return (
-      <div className="space-y-3">
-        <p className="text-sm font-medium">Ranking Calculation: #{totalScore.toFixed(2)}</p>
-        
-        <div className="text-xs space-y-2">
-          <p className="font-medium">Factor Breakdown:</p>
-          {calculations.map((calc, index) => (
-            <div key={index} className="space-y-1">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">{calc.name}:</span>
-                <span>{calc.contribution.toFixed(2)}</span>
-              </div>
-              <div className="text-xs opacity-75 ml-2">
-                {calc.score} × {calc.weight}% = {calc.contribution.toFixed(2)}
-              </div>
-            </div>
-          ))}
-          
-          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-center font-medium">
-              <span>Total Score:</span>
-              <span>{totalScore.toFixed(2)}</span>
-            </div>
-          </div>
+      <div className="space-y-4 w-80">
+        <div className="text-center">
+          <p className="text-sm font-bold">Ranking Calculation: #{totalScore.toFixed(2)}</p>
+          <p className="text-xs opacity-75">{problem.problemTitle}</p>
         </div>
         
-        <div className="text-xs opacity-75 pt-2 border-t border-gray-200 dark:border-gray-700">
-          <p><strong>Scale:</strong> 1.00 (highest priority) → 99.99 (lowest priority)</p>
-          <p>Lower numbers = higher clinical priority</p>
+        <div className="space-y-3">
+          {calculations.map((calc, index) => {
+            const fillPercentage = (calc.score / calc.maxScore) * 100;
+            const reasoning = getFactorReasoning(calc.name, calc.score, problem.problemTitle);
+            
+            return (
+              <div key={index} className="space-y-1.5">
+                {/* Factor name and contribution */}
+                <div className="flex justify-between items-center text-xs font-medium">
+                  <span>{calc.name}</span>
+                  <span className="text-gray-600 dark:text-gray-300">
+                    {calc.score} × {calc.weight}% = {calc.contribution.toFixed(1)}
+                  </span>
+                </div>
+                
+                {/* Progress bar showing factor score */}
+                <div className="relative">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className={`${calc.color} h-2 rounded-full transition-all duration-300`}
+                      style={{ width: `${fillPercentage}%` }}
+                    />
+                  </div>
+                  <div className="absolute -top-1 -right-1 text-xs font-mono text-gray-500">
+                    {calc.score}/{calc.maxScore}
+                  </div>
+                </div>
+                
+                {/* Clinical reasoning */}
+                <p className="text-xs text-gray-600 dark:text-gray-400 italic leading-tight">
+                  {reasoning}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center text-sm font-bold">
+            <span>Total Priority Score:</span>
+            <span className="text-blue-600 dark:text-blue-400">{totalScore.toFixed(2)}</span>
+          </div>
+          <p className="text-xs opacity-75 mt-1">
+            Lower scores = higher clinical priority (1.00 = most urgent, 99.99 = routine)
+          </p>
         </div>
       </div>
     );
@@ -606,7 +671,7 @@ export function EnhancedMedicalProblemsList({
                                 </Badge>
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-sm">
+                            <TooltipContent side="top" className="max-w-none p-4">
                               {getRankingTooltipContent(problem, currentRankingWeights)}
                             </TooltipContent>
                           </Tooltip>
