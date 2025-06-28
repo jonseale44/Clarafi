@@ -284,39 +284,39 @@ export function EnhancedMedicalProblemsList({
       {
         name: "Clinical Severity",
         score: factors.clinical_severity,
-        maxScore: 40,
+        maxScore: 100,
         weight: weights.clinical_severity,
-        contribution: (factors.clinical_severity * weights.clinical_severity / 40), // Use correct weight ratio
+        contribution: (factors.clinical_severity * weights.clinical_severity / 100), // New percentage system
         color: "bg-red-500"
       },
       {
         name: "Treatment Complexity", 
         score: factors.treatment_complexity,
-        maxScore: 30,
+        maxScore: 100,
         weight: weights.treatment_complexity,
-        contribution: (factors.treatment_complexity * weights.treatment_complexity / 30), // Use correct weight ratio
+        contribution: (factors.treatment_complexity * weights.treatment_complexity / 100), // New percentage system
         color: "bg-blue-500"
       },
       {
         name: "Patient Frequency",
         score: factors.patient_frequency,
-        maxScore: 20,
+        maxScore: 100,
         weight: weights.patient_frequency,
-        contribution: (factors.patient_frequency * weights.patient_frequency / 20), // Use correct weight ratio
+        contribution: (factors.patient_frequency * weights.patient_frequency / 100), // New percentage system
         color: "bg-green-500"
       },
       {
         name: "Clinical Relevance",
         score: factors.clinical_relevance,
-        maxScore: 10,
+        maxScore: 100,
         weight: weights.clinical_relevance,
-        contribution: (factors.clinical_relevance * weights.clinical_relevance / 10), // Use correct weight ratio
+        contribution: (factors.clinical_relevance * weights.clinical_relevance / 100), // New percentage system
         color: "bg-purple-500"
       }
     ];
 
     const totalFactorScore = calculations.reduce((sum, calc) => sum + calc.contribution, 0);
-    const totalScore = 100 - totalFactorScore; // Convert to ranking (higher factors = lower rank = better priority)
+    const totalScore = totalFactorScore; // New percentage system: higher total = higher priority
 
     return (
       <div className="space-y-4 w-80">
