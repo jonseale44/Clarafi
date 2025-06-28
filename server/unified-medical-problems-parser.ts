@@ -49,7 +49,7 @@ export interface UnifiedProblemChange {
   consolidation_reasoning?: string; // GPT's reasoning for consolidation decisions
 
   // GPT-powered intelligent ranking
-  rank_score?: number; // 1.00 (highest priority) to 99.99 (lowest priority)
+  // rank_score removed - frontend calculates final score using ranking_factors + user weights
   ranking_reason?: string; // GPT's reasoning for rank assignment
   ranking_factors?: {
     clinical_severity: number; // Relative percentage (0-100%) within patient context
@@ -252,11 +252,11 @@ MANUAL RANKING REFRESH REQUEST:
 - This is a MANUAL RANKING REFRESH operation
 - NO new content to process - focus on RANKING existing problems
 - PRIMARY RESPONSIBILITY: Apply intelligent ranking to all existing problems
-- MANDATORY: Every existing problem MUST receive a rank_score and ranking_reason
+- MANDATORY: Every existing problem MUST receive ranking_factors and ranking_reason
 - Use clinical intelligence to assess relative priority within this patient's context
 - Consider clinical severity, treatment complexity, patient frequency, and current relevance
-- Assign rank_score from 1.00 (highest priority) to 99.99 (lowest priority)
-- Generate ranking_factors with relative percentages that sum to 100% within each category
+- Generate ONLY ranking_factors with relative percentages that sum to 100% within each category
+- DO NOT generate rank_score - frontend will calculate final score using user weight preferences
 - Action should be "ADD_VISIT" with empty visit_notes for ranking-only updates
 `
       : "NO SOAP NOTE PROVIDED"
@@ -360,7 +360,7 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "transfer_visit_history_from": number | null,
       "extracted_date": "2011-10-07" | null,
       "consolidation_reasoning": "Why this was matched/not matched with existing problems",
-      "rank_score": 25.75,
+
       "ranking_reason": "Clinical reasoning for rank assignment based on severity, complexity, and current relevance",
       "ranking_factors": {
         "clinical_severity": 28,      // Relative percentage (0-100%) within patient context
@@ -375,25 +375,25 @@ RESPONSE FORMAT - Return ONLY valid JSON:
 ENHANCED EXAMPLES WITH RANKING:
 
 1. SOAP has "Type 2 DM with neuropathy" + existing "Type 2 Diabetes" (E11.9):
-   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "rank_score": 15.25, "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring", "ranking_factors": {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}}
+   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring", "ranking_factors": {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}}
 
 2. Attachment with "HTN" + existing "Hypertension" (I10):
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "rank_score": 42.50, "ranking_reason": "Stable chronic hypertension with routine management requirements", "ranking_factors": {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}}
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "ranking_reason": "Stable chronic hypertension with routine management requirements", "ranking_factors": {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}}
 
 3. Attachment with "High Blood Pressure" + existing "Essential Hypertension":
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence", "rank_score": 44.80, "ranking_reason": "Well-documented stable hypertension with good historical context", "ranking_factors": {"clinical_severity": 17, "treatment_complexity": 11, "patient_frequency": 9, "clinical_relevance": 4}}
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence", "ranking_reason": "Well-documented stable hypertension with good historical context", "ranking_factors": {"clinical_severity": 17, "treatment_complexity": 11, "patient_frequency": 9, "clinical_relevance": 4}}
 
 4. Attachment with completely new condition "Atrial Fibrillation" + no existing cardiac rhythm problems:
-   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib", "rank_score": 18.75, "ranking_reason": "Significant cardiac arrhythmia requiring anticoagulation management and stroke prevention", "ranking_factors": {"clinical_severity": 30, "treatment_complexity": 24, "patient_frequency": 14, "clinical_relevance": 7}}
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib", "ranking_reason": "Significant cardiac arrhythmia requiring anticoagulation management and stroke prevention", "ranking_factors": {"clinical_severity": 30, "treatment_complexity": 24, "patient_frequency": 14, "clinical_relevance": 7}}
 
 5. SOAP note states "Shortness of breath on exertion resolved per patient report" + existing "Shortness of breath on exertion" problem:
-   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem", "rank_score": 95.00, "ranking_reason": "Resolved condition with no ongoing clinical significance", "ranking_factors": {"clinical_severity": 5, "treatment_complexity": 2, "patient_frequency": 1, "clinical_relevance": 1}}
+   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem", "ranking_reason": "Resolved condition with no ongoing clinical significance", "ranking_factors": {"clinical_severity": 5, "treatment_complexity": 2, "patient_frequency": 1, "clinical_relevance": 1}}
 
 6. SOAP note mentions "Acute bronchitis resolved, patient feeling better" + existing "Acute bronchitis" problem:
-   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved", "rank_score": 92.50, "ranking_reason": "Acute respiratory infection fully resolved with no sequelae", "ranking_factors": {"clinical_severity": 6, "treatment_complexity": 3, "patient_frequency": 2, "clinical_relevance": 1}}
+   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved", "ranking_reason": "Acute respiratory infection fully resolved with no sequelae", "ranking_factors": {"clinical_severity": 6, "treatment_complexity": 3, "patient_frequency": 2, "clinical_relevance": 1}}
 
 7. SOAP note documents "UTI treated successfully with antibiotics, symptoms resolved" + existing "Urinary tract infection":
-   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented", "rank_score": 90.25, "ranking_reason": "Successfully treated acute infection with complete symptom resolution", "ranking_factors": {"clinical_severity": 7, "treatment_complexity": 4, "patient_frequency": 3, "clinical_relevance": 1}}
+   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented", "ranking_reason": "Successfully treated acute infection with complete symptom resolution", "ranking_factors": {"clinical_severity": 7, "treatment_complexity": 4, "patient_frequency": 3, "clinical_relevance": 1}}
 
 VISIT HISTORY CREATION RULE - CRITICAL:
 ONLY create visit history entries when the medical problem was ACTUALLY DISCUSSED, EVALUATED, or MANAGED during this encounter/document. 
@@ -995,8 +995,8 @@ REQUIRED JSON RESPONSE FORMAT:
         visitHistory: updatedVisitHistory,
         updatedAt: new Date(),
         // Update ranking if provided
-        ...(change.rank_score && {
-          rankScore: change.rank_score.toString(),
+        ...(change.ranking_factors && {
+          rankingFactors: change.ranking_factors,
           lastRankedEncounterId: encounterId,
           rankingReason:
             change.ranking_reason ||
@@ -1008,8 +1008,8 @@ REQUIRED JSON RESPONSE FORMAT:
     console.log(
       `✅ [UnifiedMedicalProblems] Updated problem ${change.problem_id} (${change.source_type})`,
       {
-        hasRankScore: !!change.rank_score,
-        rankScoreValue: change.rank_score,
+        hasRankingFactors: !!change.ranking_factors,
+        rankingFactors: change.ranking_factors,
         rankingReason: change.ranking_reason,
         problemTitle: change.problem_title || 'Unknown'
       }
