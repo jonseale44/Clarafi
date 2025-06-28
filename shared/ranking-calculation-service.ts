@@ -253,7 +253,7 @@ function createFallbackResult(weights: RankingWeights): RankingResult {
   );
   
   return {
-    finalRank: parseFloat(finalRank.toFixed(2)),
+    finalRank: parseFloat(finalScore.toFixed(2)),
     priorityLevel: 'medium', // Default for fallback, will be determined at list level
     calculationDetails: {
       factors: fallbackFactors,

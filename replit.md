@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Ranking System Technical Debt Cleanup (June 28, 2025)
+- **CRITICAL ALGORITHMIC DISCREPANCY FIXED**: Fixed inconsistency between main calculation and fallback function in `shared/ranking-calculation-service.ts`
+- **FALLBACK ALGORITHM CORRECTED**: Updated `createFallbackResult()` to use direct scoring consistent with main calculation (higher weighted score = higher priority)
+- **LEGACY DOCUMENTATION ELIMINATED**: Updated all comments throughout codebase from outdated absolute ranges (0-40, 0-30, 0-20, 0-10) to current relative percentage system (0-100%)
+- **DATABASE SCHEMA COMMENTS UPDATED**: Fixed schema documentation in `shared/schema.ts` to reflect relative percentage system
+- **FRONTEND INTERFACE UPDATED**: Corrected interface type comments in `enhanced-medical-problems-list.tsx` to match current system
+- **GPT PARSER EXAMPLES MODERNIZED**: Updated GPT instruction examples in `unified-medical-problems-parser.ts` to use relative percentage comments
+- **BACKUP FILE CLEANUP**: Removed obsolete `enhanced-medical-problems-list.tsx.backup` containing old ranking system
+- **SYSTEM CONSISTENCY ACHIEVED**: All ranking calculations now use unified direct scoring algorithm with consistent documentation
+
 ### Medical Problems Ranking Direction Fix (June 28, 2025)
 - **CRITICAL RANKING LOGIC CORRECTION**: Fixed ranking direction so higher clinical importance results in lower rank numbers (better priority)
 - **ELIMINATED INVERSION FORMULA**: Removed confusing `100 - totalWeightedScore` formula and implemented direct scoring where higher scores = higher priority

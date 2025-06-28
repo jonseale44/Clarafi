@@ -59,10 +59,10 @@ interface MedicalProblem {
   rankingReason?: string; // GPT's reasoning for rank assignment
   // Enhanced ranking with factor breakdown for user weighting
   rankingFactors?: {
-    clinical_severity: number;      // Raw factor score (0-40 range)
-    treatment_complexity: number;   // Raw factor score (0-30 range)
-    patient_frequency: number;      // Raw factor score (0-20 range)
-    clinical_relevance: number;     // Raw factor score (0-10 range)
+    clinical_severity: number;      // Relative percentage (0-100%) within patient context
+    treatment_complexity: number;   // Relative percentage (0-100%) within patient context
+    patient_frequency: number;      // Relative percentage (0-100%) within patient context
+    clinical_relevance: number;     // Relative percentage (0-100%) within patient context
   };
 }
 

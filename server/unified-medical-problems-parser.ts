@@ -51,10 +51,10 @@ export interface UnifiedProblemChange {
   rank_score?: number; // 1.00 (highest priority) to 99.99 (lowest priority)
   ranking_reason?: string; // GPT's reasoning for rank assignment
   ranking_factors?: {
-    clinical_severity: number;      // Raw factor score (0-40 range)
-    treatment_complexity: number;   // Raw factor score (0-30 range)
-    patient_frequency: number;      // Raw factor score (0-20 range)
-    clinical_relevance: number;     // Raw factor score (0-10 range)
+    clinical_severity: number;      // Relative percentage (0-100%) within patient context
+    treatment_complexity: number;   // Relative percentage (0-100%) within patient context
+    patient_frequency: number;      // Relative percentage (0-100%) within patient context
+    clinical_relevance: number;     // Relative percentage (0-100%) within patient context
   }; // GPT-generated factor breakdown for user weight customization
 }
 
@@ -326,10 +326,10 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "rank_score": 25.75,
       "ranking_reason": "Clinical reasoning for rank assignment based on severity, complexity, and current relevance",
       "ranking_factors": {
-        "clinical_severity": 28,      // Raw factor score (0-40 range based on severity & acuity)
-        "treatment_complexity": 22,   // Raw factor score (0-30 range based on management complexity)
-        "patient_frequency": 16,      // Raw factor score (0-20 range based on recent mentions/updates)
-        "clinical_relevance": 8       // Raw factor score (0-10 range based on current clinical activity)
+        "clinical_severity": 28,      // Relative percentage (0-100%) within patient context
+        "treatment_complexity": 22,   // Relative percentage (0-100%) within patient context
+        "patient_frequency": 16,      // Relative percentage (0-100%) within patient context
+        "clinical_relevance": 8       // Relative percentage (0-100%) within patient context
       }
     }
   ]
