@@ -368,10 +368,12 @@ ENHANCED EXAMPLES WITH RANKING:
 7. SOAP note documents "UTI treated successfully with antibiotics, symptoms resolved" + existing "Urinary tract infection":
    {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented", "rank_score": 90.25, "ranking_reason": "Successfully treated acute infection with complete symptom resolution", "ranking_factors": {"clinical_severity": 7, "treatment_complexity": 4, "patient_frequency": 3, "clinical_relevance": 1}}
 
-VISIT HISTORY FORMAT REQUIREMENTS:
-Visit history entries should be concise, clinical, and data-rich. Use medical shorthand and include specific values. Examples:
+VISIT HISTORY CREATION RULE - CRITICAL:
+ONLY create visit history entries when the medical problem was ACTUALLY DISCUSSED, EVALUATED, or MANAGED during this encounter/document. 
 
-PERFECT VISIT HISTORY EXAMPLES:
+DO NOT create empty, generic, or placeholder visit entries. If a problem was not addressed in this encounter, DO NOT include it in your response.
+
+PERFECT VISIT HISTORY EXAMPLES (only when problem was actively managed):
 - "A1c 10.0, added glipizide 10mg daily. Continue metformin 1000mg BID"
 - "A1c 9.2, patient reports dietary lapses. Reinforced lifestyle advice. Continue meds"
 - "A1c 8.5, blood glucose logs 130-170. Assess for medication adherence. Plan: Increase metformin to 1000mg BID"
@@ -392,7 +394,11 @@ PERFECT VISIT HISTORY EXAMPLES:
 - "Echo shows EF improved to 45%, uptitrated carvedilol to 6.25mg BID"
 - "no acute symptoms, continue current regimen"
 - "routine follow-up, stable"
-- "" (empty string for visits with no meaningful clinical updates)
+
+EXAMPLES OF WHEN NOT TO CREATE VISIT ENTRIES:
+- Patient came for knee pain but has diabetes in problem list → NO diabetes visit entry
+- Attachment mentions "history of hypertension" but no current BP discussed → NO hypertension visit entry  
+- SOAP note focuses on acute UTI, mentions patient has CHF but no cardiac exam → NO CHF visit entry
 
 FORMATTING RULES:
 - Include specific lab values, vital signs, medication names/doses
@@ -919,10 +925,22 @@ REQUIRED JSON RESPONSE FORMAT:
       updatedVisitHistory = [...visitHistory];
       updatedVisitHistory[existingVisitIndex] = updatedVisit;
     } else {
-      // Add new visit
+      // Add new visit ONLY if there are meaningful visit notes
+      const visitNotes = change.visit_notes?.trim() || "";
+      
+      // Skip creating visit entry if notes are empty, generic, or meaningless
+      if (!visitNotes || 
+          visitNotes.length < 10 || 
+          visitNotes.toLowerCase().includes("routine follow-up") ||
+          visitNotes.toLowerCase().includes("no acute symptoms") ||
+          visitNotes.toLowerCase().includes("stable") && visitNotes.length < 20) {
+        console.log(`🚫 [UnifiedMedicalProblems] Skipping empty/generic visit entry for problem ${change.problem_id}: "${visitNotes}"`);
+        return; // Exit without creating visit entry
+      }
+
       const newVisitEntry: UnifiedVisitHistoryEntry = {
         date: visitDate,
-        notes: change.visit_notes || "",
+        notes: visitNotes,
         source:
           change.source_type === "attachment" ? "attachment" : "encounter",
         encounterId: encounterId || undefined,
