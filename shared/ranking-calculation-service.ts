@@ -37,10 +37,10 @@ export const RANKING_CONFIG = {
   
   // Priority level thresholds for UI styling (higher scores = higher priority)
   PRIORITY_THRESHOLDS: {
-    critical: 70,     // 70.01-100.00 = Critical (red)
-    high: 50,         // 50.01-70.00 = High (orange)
-    medium: 30,       // 30.01-50.00 = Medium (yellow)
-    low: 0.01         // 0.01-30.00 = Low (green)
+    critical: 50,     // 50.01-100.00 = Critical (red)
+    high: 35,         // 35.01-50.00 = High (orange)
+    medium: 20,       // 20.01-35.00 = Medium (yellow)
+    low: 0.01         // 0.01-20.00 = Low (green)
   }
 } as const;
 

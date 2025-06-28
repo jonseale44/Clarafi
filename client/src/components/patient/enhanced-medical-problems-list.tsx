@@ -89,29 +89,29 @@ const getLegacyRankStyles = (rankScore?: number) => {
     priority: "Unranked"
   };
   
-  // Legacy styling - to be phased out in favor of centralized service
-  if (rankScore <= 10) {
+  // Priority classification based on score ranges (higher scores = higher priority)
+  if (rankScore >= 50) {
     return { 
       bgColor: "bg-red-50 dark:bg-red-900/20", 
       borderColor: "border-red-300 dark:border-red-800", 
       textColor: "text-red-700 dark:text-red-300", 
       priority: "Critical" 
     };
-  } else if (rankScore <= 20) {
+  } else if (rankScore >= 35) {
     return { 
       bgColor: "bg-orange-50 dark:bg-orange-900/20", 
       borderColor: "border-orange-300 dark:border-orange-800", 
       textColor: "text-orange-700 dark:text-orange-300", 
       priority: "High" 
     };
-  } else if (rankScore <= 40) {
+  } else if (rankScore >= 20) {
     return { 
       bgColor: "bg-yellow-50 dark:bg-yellow-900/20", 
       borderColor: "border-yellow-300 dark:border-yellow-800", 
       textColor: "text-yellow-700 dark:text-yellow-300", 
       priority: "Medium" 
     };
-  } else if (rankScore <= 60) {
+  } else if (rankScore >= 10) {
     return { 
       bgColor: "bg-green-50 dark:bg-green-900/20", 
       borderColor: "border-green-300 dark:border-green-800", 

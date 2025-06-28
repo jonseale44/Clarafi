@@ -111,12 +111,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Medical Problems Ranking Direction Fix (June 28, 2025)
 - **CRITICAL RANKING LOGIC CORRECTION**: Fixed ranking direction so higher clinical importance results in lower rank numbers (better priority)
-- **MATHEMATICAL INVERSION**: Implemented `100 - totalWeightedScore` formula to align system behavior with clinical intuition
-- **CLINICAL INTUITION ALIGNMENT**: Heart failure (high importance) now gets rank #1-20 instead of #70-100, matching medical priority expectations
-- **CONSISTENT PRIORITY ORDERING**: Lower rank numbers (#1, #5, #10) now correctly indicate higher clinical priority across all system components
-- **TOOLTIP TEXT UPDATED**: Changed tooltip from "Higher scores = higher priority" to "Lower rank numbers = higher priority" for accuracy
-- **FALLBACK SYSTEM ALIGNED**: Updated fallback calculation to use same inversion logic for consistency
-- **TRADITIONAL RANKING RESTORED**: System now follows standard ranking convention where #1 = most important, matching user expectations
+- **ELIMINATED INVERSION FORMULA**: Removed confusing `100 - totalWeightedScore` formula and implemented direct scoring where higher scores = higher priority
+- **MAIN UI DISPLAY**: Updated to show whole number ranks (#1, #2, #3) while tooltips display precise decimal scores
+- **TOOLTIP CALCULATION FIX**: Corrected tooltip to show actual priority scores with "Higher scores = higher priority" explanation
+- **PRIORITY THRESHOLD CORRECTION**: Updated classification thresholds for new scoring system (Critical: >50, High: >35, Medium: >20, Low: >0)
+- **SORT ORDER FIXED**: Problems now sorted by score descending (highest priority conditions appear first)
+- **DATA FLOW OPTIMIZATION**: Preserved global ranking order across all problem categories (active, chronic, resolved)
+- **CLINICAL INTUITION ALIGNMENT**: Heart failure (high importance) now shows appropriate priority level instead of "Low" classification
 
 ### Medical Problems Ranking System Relative Algorithm Implementation (June 28, 2025)
 - **CRITICAL ARCHITECTURAL CHANGE**: Converted ranking system from absolute scoring to relative percentage distribution
