@@ -79,6 +79,9 @@ interface EnhancedMedicalProblemsListProps {
   encounterId?: number;
   mode?: "patient-chart" | "encounter";
   isReadOnly?: boolean;
+  // Animation props for optimistic UI updating
+  isAutoGeneratingMedicalProblems?: boolean;
+  medicalProblemsProgress?: number;
 }
 
 // Priority styling function based on rankingResult.priorityLevel (determined by relative position)
@@ -127,7 +130,9 @@ export function EnhancedMedicalProblemsList({
   patientId, 
   encounterId, 
   mode = "patient-chart", 
-  isReadOnly = false 
+  isReadOnly = false,
+  isAutoGeneratingMedicalProblems = false,
+  medicalProblemsProgress = 0
 }: EnhancedMedicalProblemsListProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProblem, setEditingProblem] = useState<MedicalProblem | null>(null);

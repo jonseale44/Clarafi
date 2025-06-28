@@ -22,6 +22,9 @@ interface SharedChartSectionsProps {
   isReadOnly?: boolean;
   sectionId?: string;
   highlightAttachmentId?: number;
+  // Medical problems animation props
+  isAutoGeneratingMedicalProblems?: boolean;
+  medicalProblemsProgress?: number;
 }
 
 // Enhanced Vitals Section Component with Expandable View
@@ -164,7 +167,9 @@ export function SharedChartSections({
   encounterId,
   isReadOnly = false,
   sectionId,
-  highlightAttachmentId
+  highlightAttachmentId,
+  isAutoGeneratingMedicalProblems = false,
+  medicalProblemsProgress = 0
 }: SharedChartSectionsProps) {
   
   const renderSectionContent = (targetSectionId: string) => {
@@ -176,6 +181,8 @@ export function SharedChartSections({
             encounterId={encounterId}
             mode={mode}
             isReadOnly={isReadOnly}
+            isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
+            medicalProblemsProgress={medicalProblemsProgress}
           />
         );
       
