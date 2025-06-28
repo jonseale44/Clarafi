@@ -259,12 +259,12 @@ export function EnhancedMedicalProblemsList({
 
   // Generate problem-specific ranking tooltip content with horizontal bar chart
   const getRankingTooltipContent = (problem: MedicalProblem, weights: RankingWeights) => {
-    const calculatedRank = calculateRealTimeRanking(problem, weights);
+    const rankingResult = calculateProblemRanking(problem, weights);
     
     if (!problem.rankingFactors) {
       return (
         <div className="space-y-2">
-          <p className="text-sm font-medium">Clinical Priority Ranking: #{calculatedRank.toFixed(2)}</p>
+          <p className="text-sm font-medium">Clinical Priority Ranking: #{rankingResult.finalRank.toFixed(2)}</p>
           <p className="text-xs opacity-75">Using legacy ranking system</p>
           <p className="text-xs opacity-75 mt-1">
             Lower scores = higher clinical priority (1.00 = most urgent, 99.99 = routine)
@@ -370,15 +370,15 @@ export function EnhancedMedicalProblemsList({
   };
 
   // Transform problems with real-time ranking calculations
-  const getProblemsWithRealTimeRanking = (problems: MedicalProblem[]): (MedicalProblem & { calculatedRank: number })[] => {
+  const getProblemsWithRealTimeRanking = (problems: MedicalProblem[]): (MedicalProblem & { rankingResult: RankingResult })[] => {
     return problems.map(problem => ({
       ...problem,
-      calculatedRank: calculateRealTimeRanking(problem, currentRankingWeights)
+      rankingResult: calculateProblemRanking(problem, currentRankingWeights)
     }));
   };
 
   // Calculate filtered problems based on small handle value (for already-enhanced problems)
-  const getFilteredProblems = (problems: (MedicalProblem & { calculatedRank: number })[]) => {
+  const getFilteredProblems = (problems: (MedicalProblem & { rankingResult: RankingResult })[]) => {
     if (!problems.length) return problems;
     
     // Problems are already enhanced and sorted, just apply percentage filter
@@ -495,14 +495,14 @@ export function EnhancedMedicalProblemsList({
   // Separate and intelligently sort problems by calculated rank (lower = higher priority)
   const activeProblems = enhancedProblems
     .filter(p => p.problemStatus === 'active')
-    .sort((a, b) => a.calculatedRank - b.calculatedRank); // Ascending: lowest number = highest priority first
+    .sort((a, b) => a.rankingResult.finalRank - b.rankingResult.finalRank); // Ascending: lowest number = highest priority first
 
   // Apply filtering based on slider values to active problems only
   const filteredActiveProblems = getFilteredProblems(activeProblems);
   
   const chronicProblems = enhancedProblems
     .filter(p => p.problemStatus === 'chronic')
-    .sort((a, b) => a.calculatedRank - b.calculatedRank); // Ascending: lowest number = highest priority first
+    .sort((a, b) => a.rankingResult.finalRank - b.rankingResult.finalRank); // Ascending: lowest number = highest priority first
   
   const resolvedProblems = enhancedProblems
     .filter(p => p.problemStatus === 'resolved')
