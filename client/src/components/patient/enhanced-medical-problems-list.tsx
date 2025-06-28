@@ -15,6 +15,17 @@ import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialo
 import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
 import { RankingWeightControls } from "./ranking-weight-controls";
 import { useLocation } from "wouter";
+import { 
+  calculateMedicalProblemRanking, 
+  getRankingStyles, 
+  getPriorityDisplayName,
+  shouldUseLegacyRank,
+  migrateLegacyRanking,
+  type RankingFactors,
+  type RankingWeights,
+  type RankingResult,
+  RANKING_CONFIG
+} from "../../../../shared/ranking-calculation-service";
 
 interface VisitNote {
   date: string;
@@ -54,31 +65,13 @@ interface MedicalProblem {
   };
 }
 
-interface RankingWeights {
+// Legacy interfaces kept for compatibility during migration
+interface LegacyRankingWeights {
   clinical_severity: number;
   treatment_complexity: number;
   patient_frequency: number;
   clinical_relevance: number;
 }
-
-// Calculate real-time ranking based on user weight preferences
-const calculateRealTimeRanking = (problem: MedicalProblem, userWeights: RankingWeights): number => {
-  // Use factor breakdown if available, otherwise fall back to legacy rank
-  if (!problem.rankingFactors) {
-    return problem.rankScore || 99.99; // Default to lowest priority if no data
-  }
-  
-  const factors = problem.rankingFactors;
-  
-  // Apply user weight preferences to GPT factor breakdown
-  const weightedScore = 
-    (factors.clinical_severity * userWeights.clinical_severity / 100) +
-    (factors.treatment_complexity * userWeights.treatment_complexity / 100) +
-    (factors.patient_frequency * userWeights.patient_frequency / 100) +
-    (factors.clinical_relevance * userWeights.clinical_relevance / 100);
-  
-  return Math.round(weightedScore * 100) / 100; // Round to 2 decimal places
-};
 
 interface EnhancedMedicalProblemsListProps {
   patientId: number;
