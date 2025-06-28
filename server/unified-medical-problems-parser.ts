@@ -958,13 +958,13 @@ REQUIRED JSON RESPONSE FORMAT:
       // Add new visit ONLY if GPT provided actual visit notes
       const visitNotes = change.visit_notes?.trim() || "";
 
-      // Only filter out truly empty entries - GPT is in charge of all clinical decisions
+      // Handle visit notes creation - but don't exit early as we still need ranking updates
       if (!visitNotes) {
         console.log(
-          `🚫 [UnifiedMedicalProblems] Skipping truly empty visit entry for problem ${change.problem_id} (GPT returned empty notes)`,
+          `🚫 [UnifiedMedicalProblems] Skipping visit entry for problem ${change.problem_id} (empty notes), but proceeding with ranking update`,
         );
-        return; // Exit without creating visit entry
-      }
+        // Don't add visit entry but continue to ranking update
+      } else {
 
       const newVisitEntry: UnifiedVisitHistoryEntry = {
         date: visitDate,
