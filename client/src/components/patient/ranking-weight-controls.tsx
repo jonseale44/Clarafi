@@ -5,13 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Settings, RotateCcw, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-interface RankingWeights {
-  clinical_severity: number;
-  treatment_complexity: number;
-  patient_frequency: number;
-  clinical_relevance: number;
-}
+import { RANKING_CONFIG, type RankingWeights } from '@shared/ranking-calculation-service';
 
 interface RankingWeightControlsProps {
   patientId: number;
@@ -19,12 +13,7 @@ interface RankingWeightControlsProps {
 }
 
 export function RankingWeightControls({ patientId, onWeightsChange }: RankingWeightControlsProps) {
-  const [weights, setWeights] = useState<RankingWeights>({
-    clinical_severity: 40,
-    treatment_complexity: 30,
-    patient_frequency: 20,
-    clinical_relevance: 10
-  });
+  const [weights, setWeights] = useState<RankingWeights>(RANKING_CONFIG.DEFAULT_WEIGHTS);
   
   const [isExpanded, setIsExpanded] = useState(false);
   const { toast } = useToast();
@@ -143,14 +132,8 @@ export function RankingWeightControls({ patientId, onWeightsChange }: RankingWei
   };
 
   const resetToDefaults = () => {
-    const defaults = {
-      clinical_severity: 40,
-      treatment_complexity: 30,
-      patient_frequency: 20,
-      clinical_relevance: 10
-    };
-    setWeights(defaults);
-    onWeightsChange?.(defaults);
+    setWeights(RANKING_CONFIG.DEFAULT_WEIGHTS);
+    onWeightsChange?.(RANKING_CONFIG.DEFAULT_WEIGHTS);
   };
 
   const saveWeights = () => {

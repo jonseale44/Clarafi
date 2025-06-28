@@ -506,7 +506,7 @@ export function EnhancedMedicalProblemsList({
   
   const resolvedProblems = enhancedProblems
     .filter(p => p.problemStatus === 'resolved')
-    .sort((a, b) => a.calculatedRank - b.calculatedRank); // Ascending: lowest number = highest priority first
+    .sort((a, b) => a.rankingResult.finalRank - b.rankingResult.finalRank); // Ascending: lowest number = highest priority first
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -648,13 +648,13 @@ export function EnhancedMedicalProblemsList({
                   )}
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      {problem.calculatedRank && (
+                      {problem.rankingResult && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div>
-                                <Badge variant="outline" className={`text-xs font-medium ${rankStyles.textColor} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
-                                  {rankStyles.priority} (#{problem.calculatedRank.toFixed(2)})
+                                <Badge variant="outline" className={`text-xs font-medium ${badgeClass} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
+                                  {getPriorityDisplayName(problem.rankingResult.priorityLevel)} (#{problem.rankingResult.finalRank.toFixed(2)})
                                 </Badge>
                               </div>
                             </TooltipTrigger>
@@ -668,7 +668,7 @@ export function EnhancedMedicalProblemsList({
                         {problem.problemStatus}
                       </Badge>
                     </div>
-                    <CardTitle className={`text-base font-semibold ${rankStyles.textColor} leading-tight`}>
+                    <CardTitle className={`text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight`}>
                       {problem.problemTitle}
                       {problem.currentIcd10Code && (
                         <span className="ml-2 text-sm font-mono text-gray-500 dark:text-gray-400">

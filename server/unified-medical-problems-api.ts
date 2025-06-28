@@ -9,6 +9,7 @@ import { db } from "./db.js";
 import { medicalProblems } from "../shared/schema.js";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { storage } from "./storage.js";
+import { calculateBatchRankings, RANKING_CONFIG, type RankingWeights } from "../shared/ranking-calculation-service.js";
 
 const router = Router();
 
