@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### PatientChartService Integration with Unified Medical Problems Parser (June 28, 2025)
+- **COMPREHENSIVE CLINICAL DATA INTEGRATION**: Successfully integrated PatientChartService with unified medical problems parser to provide GPT with complete patient context
+- **ENHANCED GPT PROMPTS**: Updated GPT instructions to include medications, vitals, allergies, family history, and social history for clinical correlations
+- **TEMPLATE LITERAL BUG FIX**: Fixed critical JavaScript error where template literals in GPT prompt examples were being interpreted as code instead of strings
+- **CLINICAL DATA FORMATTING**: Created formatPatientChartForGPT method to structure comprehensive patient data for GPT consumption
+- **VISIT HISTORY ENHANCEMENT**: GPT can now incorporate lab values (A1c for diabetes), vital signs (BP for hypertension), and medication data into medical problem visit histories
+- **LOGGING IMPROVEMENTS**: Added comprehensive patient chart data logging to track medications, vitals, and problems count during processing
+- **CLINICAL INTELLIGENCE UPGRADE**: Medical problems parser now has access to complete patient clinical picture for enhanced decision-making
+
 ### Medical Problems Ranking System Technical Debt Cleanup (June 28, 2025)
 - **CRITICAL ALGORITHMIC DISCREPANCY FIXED**: Fixed inconsistency between main calculation and fallback function in `shared/ranking-calculation-service.ts`
 - **FALLBACK ALGORITHM CORRECTED**: Updated `createFallbackResult()` to use direct scoring consistent with main calculation (higher weighted score = higher priority)

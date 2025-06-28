@@ -405,17 +405,17 @@ When building visit histories, you now have access to comprehensive patient char
 FOR DIABETES-RELATED PROBLEMS:
 - Cross-reference current medications (metformin, insulin, etc.) to enrich visit histories
 - Include medication start dates and dosing in visit notes
-- Example: "Started on metformin 500mg BID (${med.startDate}), baseline A1c pending"
+- Example: "Started on metformin 500mg BID (2023-01-15), baseline A1c pending"
 
 FOR HYPERTENSION-RELATED PROBLEMS:
 - Include current vital signs in visit notes when clinically relevant
 - Correlate BP readings with medication timing
-- Example: "BP ${vitals.systolic}/${vitals.diastolic} on current lisinopril regimen"
+- Example: "BP 140/85 on current lisinopril regimen"
 
 FOR CARDIAC CONDITIONS:
 - Include heart rate and blood pressure correlations
 - Reference cardiac medications in visit histories
-- Example: "HR ${vitals.heartRate}, well controlled on carvedilol ${med.dosage}"
+- Example: "HR 72, well controlled on carvedilol 6.25mg BID"
 
 FOR MEDICATION-RELATED PROBLEMS:
 - Reference allergy information for medication safety context

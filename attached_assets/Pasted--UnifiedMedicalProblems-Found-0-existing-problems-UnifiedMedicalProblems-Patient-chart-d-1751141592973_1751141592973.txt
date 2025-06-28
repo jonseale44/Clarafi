@@ -1,0 +1,32 @@
+
+}
+🔄 [UnifiedMedicalProblems] Found 0 existing problems
+🔄 [UnifiedMedicalProblems] Patient chart data: 0 problems, 0 medications, 0 vitals
+❌ [UnifiedMedicalProblems] Processing error: ReferenceError: med is not defined
+    at UnifiedMedicalProblemsParser.generateUnifiedChanges (/home/runner/workspace/server/unified-medical-problems-parser.ts:408:47)
+    at UnifiedMedicalProblemsParser.processUnified (/home/runner/workspace/server/unified-medical-problems-parser.ts:127:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AttachmentChartProcessor.processDocumentForMedicalProblems (/home/runner/workspace/server/attachment-chart-processor.ts:238:22)
+    at async Promise.allSettled (index 1)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:81:55)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9)
+❌ [MedicalProblemsExtraction] Error processing medical problems from attachment 33: ReferenceError: med is not defined
+    at UnifiedMedicalProblemsParser.generateUnifiedChanges (/home/runner/workspace/server/unified-medical-problems-parser.ts:408:47)
+    at UnifiedMedicalProblemsParser.processUnified (/home/runner/workspace/server/unified-medical-problems-parser.ts:127:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AttachmentChartProcessor.processDocumentForMedicalProblems (/home/runner/workspace/server/attachment-chart-processor.ts:238:22)
+    at async Promise.allSettled (index 1)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:81:55)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9)
+❌ [MedicalProblemsExtraction] Error stack: ReferenceError: med is not defined
+    at UnifiedMedicalProblemsParser.generateUnifiedChanges (/home/runner/workspace/server/unified-medical-problems-parser.ts:408:47)
+    at UnifiedMedicalProblemsParser.processUnified (/home/runner/workspace/server/unified-medical-problems-parser.ts:127:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AttachmentChartProcessor.processDocumentForMedicalProblems (/home/runner/workspace/server/attachment-chart-processor.ts:238:22)
+    at async Promise.allSettled (index 1)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:81:55)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9)
+🔥 [MEDICAL PROBLEMS WORKFLOW] ============= MEDICAL
