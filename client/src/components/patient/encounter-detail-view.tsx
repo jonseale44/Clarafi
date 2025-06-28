@@ -302,13 +302,16 @@ export function EncounterDetailView({
   // Track automatic SOAP generation after stopping recording
   const [isAutoGeneratingSOAP, setIsAutoGeneratingSOAP] = useState(false);
 
-  // Track automatic orders and billing generation after stopping recording
+  // Track automatic medical problems, orders and billing generation after stopping recording
+  const [isAutoGeneratingMedicalProblems, setIsAutoGeneratingMedicalProblems] = useState(false);
   const [isAutoGeneratingOrders, setIsAutoGeneratingOrders] = useState(false);
   const [isAutoGeneratingBilling, setIsAutoGeneratingBilling] = useState(false);
   
-  // Enhanced progress tracking for orders and billing animations
+  // Enhanced progress tracking for medical problems, orders and billing animations
+  const [medicalProblemsProgress, setMedicalProblemsProgress] = useState(0);
   const [ordersProgress, setOrdersProgress] = useState(0);
   const [billingProgress, setBillingProgress] = useState(0);
+  const medicalProblemsProgressInterval = useRef<NodeJS.Timeout | null>(null);
   const ordersProgressInterval = useRef<NodeJS.Timeout | null>(null);
   const billingProgressInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -416,7 +419,36 @@ export function EncounterDetailView({
     }, 3000);
   };
 
-  // Animation helper functions for orders and billing progress
+  // Animation helper functions for medical problems, orders and billing progress
+  const startMedicalProblemsAnimation = () => {
+    console.log("🎬 [MedicalProblemsAnimation] Starting medical problems animation");
+    setIsAutoGeneratingMedicalProblems(true);
+    setMedicalProblemsProgress(0);
+    
+    const startTime = Date.now();
+    const estimatedDuration = 4500; // Medical problems typically take 4.5 seconds (GPT-4.1 processing)
+    
+    medicalProblemsProgressInterval.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
+      setMedicalProblemsProgress(progress);
+    }, 50);
+  };
+
+  const completeMedicalProblemsAnimation = () => {
+    console.log("✅ [MedicalProblemsAnimation] Completing medical problems animation");
+    if (medicalProblemsProgressInterval.current) {
+      clearInterval(medicalProblemsProgressInterval.current);
+      medicalProblemsProgressInterval.current = null;
+    }
+    
+    setMedicalProblemsProgress(100);
+    setTimeout(() => {
+      setIsAutoGeneratingMedicalProblems(false);
+      setMedicalProblemsProgress(0);
+    }, 500);
+  };
+
   const startOrdersAnimation = () => {
     console.log("🎬 [OrdersAnimation] Starting orders animation");
     setIsAutoGeneratingOrders(true);
@@ -478,6 +510,9 @@ export function EncounterDetailView({
   // Cleanup intervals on unmount
   useEffect(() => {
     return () => {
+      if (medicalProblemsProgressInterval.current) {
+        clearInterval(medicalProblemsProgressInterval.current);
+      }
       if (ordersProgressInterval.current) {
         clearInterval(ordersProgressInterval.current);
       }
@@ -2429,7 +2464,8 @@ Please provide medical suggestions based on this complete conversation context.`
           soapNote: soapNote.substring(0, 200) + "...",
         });
 
-        // Start animations for orders and billing processing
+        // Start animations for medical problems, orders and billing processing
+        startMedicalProblemsAnimation();
         startOrdersAnimation();
         startBillingAnimation();
 
@@ -2580,9 +2616,14 @@ Please provide medical suggestions based on this complete conversation context.`
             await queryClient.invalidateQueries({
               queryKey: [`/api/patients/${patient.id}/medical-problems`],
             });
+            
+            // Complete medical problems animation
+            completeMedicalProblemsAnimation();
           } catch (jsonError) {
             console.error("❌ [StopRecording] Error parsing medical problems JSON:", jsonError);
             console.error("❌ [StopRecording] Medical problems returned non-JSON content (likely HTML error page)");
+            // Complete medical problems animation even if failed
+            completeMedicalProblemsAnimation();
           }
         } else {
           try {
@@ -2594,6 +2635,8 @@ Please provide medical suggestions based on this complete conversation context.`
           } catch (textError) {
             console.error("❌ [StopRecording] Error reading medical problems error text:", textError);
           }
+          // Complete medical problems animation even if failed
+          completeMedicalProblemsAnimation();
         }
         
         if (medicationsResponse.ok) {
