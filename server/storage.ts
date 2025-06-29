@@ -4,7 +4,7 @@ import {
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
   signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
-  userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews,
+  userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews, userPreferences,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
@@ -12,7 +12,8 @@ import {
   type SelectUserNoteTemplate, type InsertUserNoteTemplate, 
   type SelectTemplateShare, type InsertTemplateShare,
   type SelectUserNotePreferences, type InsertUserNotePreferences,
-  type AdminPromptReview, type InsertAdminPromptReview
+  type AdminPromptReview, type InsertAdminPromptReview,
+  type UserPreferences, type InsertUserPreferences
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -29,6 +30,10 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  
+  // User preferences management
+  getUserPreferences(userId: number): Promise<UserPreferences | undefined>;
+  upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
   
   // Patient management
   getPatient(id: number): Promise<Patient | undefined>;
