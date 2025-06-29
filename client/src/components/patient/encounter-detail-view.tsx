@@ -38,6 +38,7 @@ import { SOAPNoteEditor } from "@/components/ui/soap-note-editor";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { SharedChartSections } from "./shared-chart-sections";
+import { UnifiedChartPanel } from "./unified-chart-panel";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Extension } from "@tiptap/core";
 import { DraftOrders } from "./draft-orders";
@@ -210,6 +211,11 @@ export function EncounterDetailView({
   encounter,
   onBackToChart,
 }: EncounterDetailViewProps) {
+  // Get current user for role-based filtering
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
+  }) as { data?: { role?: string } };
+
   const [isRecording, setIsRecording] = useState(false);
   const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">("INACTIVE");
   const [transcription, setTranscription] = useState("");
@@ -3177,140 +3183,23 @@ Please provide medical suggestions based on this complete conversation context.`
 
   return (
     <div className="flex h-full">
-      {/* Left Sidebar */}
-      <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
-        {/* Patient Header */}
-        <div className="p-4 bg-white border-b border-gray-200">
-          <div className="flex items-start space-x-3">
-            <Avatar className="w-12 h-12 border-2 border-gray-200">
-              <AvatarImage
-                src={
-                  patient.profilePhotoFilename
-                    ? `/uploads/${patient.profilePhotoFilename}`
-                    : undefined
-                }
-                alt={`${patient.firstName} ${patient.lastName}`}
-              />
-              <AvatarFallback className="text-sm bg-gray-100">
-                {patient.firstName?.[0] || "P"}
-                {patient.lastName?.[0] || "P"}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {patient.firstName} {patient.lastName}
-              </h3>
-              <p className="text-sm text-gray-600">
-                DOB: {formatDate(patient.dateOfBirth)}
-              </p>
-              <p className="text-sm text-blue-600">
-                Encounter #{encounterId} -{" "}
-                {formatDate(new Date().toISOString())}
-              </p>
-
-              <div className="flex space-x-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={onBackToChart}
-                >
-                  <ArrowLeft className="h-3 w-3 mr-1" />
-                  Back to Patient Chart
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Encounter Status */}
-        <div className="p-4 bg-blue-50 border-b border-gray-200">
-          <div className="text-sm">
-            <div className="font-medium text-blue-900">Office Visit</div>
-            <div className="text-blue-700">
-              Encounter #{encounterId} - Type: Office Visit
-            </div>
-            <div className="flex items-center mt-2">
-              <Badge
-                variant="outline"
-                className="bg-green-100 text-green-800 border-green-300"
-              >
-                Scheduled
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search patient chart..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Chart Sections */}
-        <div className="flex-1 overflow-y-auto">
-          {chartSections.map((section) => (
-            <Collapsible
-              key={section.id}
-              open={expandedSections.has(section.id)}
-              onOpenChange={() => toggleSection(section.id)}
-            >
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100">
-                  <span className="font-medium text-sm">{section.label}</span>
-                  {expandedSections.has(section.id) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="bg-white border-b border-gray-100 p-3">
-                  {section.id === "encounters" ? (
-                    <div className="text-xs text-gray-600">
-                      Current encounter in progress
-                    </div>
-                  ) : section.id === "vitals" ? (
-                    <SharedChartSections
-                      patientId={patient.id}
-                      mode="encounter"
-                      encounterId={encounterId}
-                      isReadOnly={false}
-                      sectionId="vitals"
-                    />
-                  ) : section.id === "documents" ? (
-                    <EmbeddedPDFViewer
-                      patientId={patient.id}
-                      title="Patient Documents"
-                      showAllPDFs={false}
-                    />
-                  ) : section.id === "ai-debug" ? (
-                    <AIDebugSection patientId={patient.id} />
-                  ) : (
-                    <SharedChartSections
-                      patientId={patient.id}
-                      mode="encounter"
-                      encounterId={encounter?.id}
-                      isReadOnly={false}
-                      sectionId={section.id}
-                      isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
-                      medicalProblemsProgress={medicalProblemsProgress}
-                    />
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </div>
-      </div>
+      {/* Left Chart Panel - Unified Expandable */}
+      <UnifiedChartPanel
+        patient={patient}
+        config={{
+          context: 'provider-encounter',
+          userRole: currentUser?.role,
+          allowResize: true,
+          defaultWidth: "w-80",
+          maxExpandedWidth: "90vw",
+          enableSearch: true
+        }}
+        encounterId={encounterId}
+        encounter={encounter}
+        onBackToChart={onBackToChart}
+        isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
+        medicalProblemsProgress={medicalProblemsProgress}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">

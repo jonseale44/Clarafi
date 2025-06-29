@@ -26,6 +26,9 @@ interface SharedChartSectionsProps {
   // Medical problems animation props
   isAutoGeneratingMedicalProblems?: boolean;
   medicalProblemsProgress?: number;
+  // Layout control props
+  compactMode?: boolean;
+  isExpanded?: boolean;
 }
 
 // Enhanced Vitals Section Component with Expandable View

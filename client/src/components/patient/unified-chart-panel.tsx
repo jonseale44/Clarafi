@@ -121,7 +121,7 @@ export function UnifiedChartPanel({
   // Filter sections based on search query
   const filteredSections = panelState.searchQuery && panelState.searchQuery.trim()
     ? availableSections.filter(section =>
-        section.label.toLowerCase().includes(panelState.searchQuery.toLowerCase())
+        section.label.toLowerCase().includes((panelState.searchQuery || "").toLowerCase())
       )
     : availableSections;
 
