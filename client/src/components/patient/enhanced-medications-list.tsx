@@ -29,7 +29,8 @@ import {
   Activity,
   FileText,
   Edit,
-  Zap
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -535,6 +536,10 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                           onEdit={readOnly ? undefined : (medicationData) => 
                             updateMedication.mutate(medicationData)
                           }
+                          onMoveToOrders={readOnly || !encounterId ? undefined : (medicationId: number) => 
+                            moveToOrders.mutate({ medicationId, encounterId })
+                          }
+                          canMoveToOrders={!readOnly && !!encounterId}
                         />
                       ))}
                     </div>
@@ -567,9 +572,11 @@ interface MedicationCardProps {
   onToggleExpanded: () => void;
   onDiscontinue?: (reason: string) => void;
   onEdit?: (medicationData: any) => void;
+  onMoveToOrders?: (medicationId: number) => void;
+  canMoveToOrders?: boolean;
 }
 
-function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinue, onEdit }: MedicationCardProps) {
+function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinue, onEdit, onMoveToOrders, canMoveToOrders }: MedicationCardProps) {
   const [discontinueReason, setDiscontinueReason] = useState('');
   const [showDiscontinueForm, setShowDiscontinueForm] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -815,6 +822,17 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                         onClick={() => setShowDiscontinueForm(true)}
                       >
                         Discontinue
+                      </Button>
+                    )}
+                    {onMoveToOrders && canMoveToOrders && medication.status === 'active' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => onMoveToOrders(medication.id)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                      >
+                        <ArrowRight className="h-3 w-3 mr-1" />
+                        Move to Orders
                       </Button>
                     )}
                   </div>
