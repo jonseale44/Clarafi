@@ -66,8 +66,6 @@ function VitalsSection({ patientId, encounterId, mode }: {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Vitals</h3>
           <Badge variant="secondary" className="text-xs">
             {vitalsCount} entries
           </Badge>
@@ -202,7 +200,6 @@ export function SharedChartSections({
       case "allergies":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Allergies</h2>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center py-8 text-gray-500">
@@ -232,7 +229,6 @@ export function SharedChartSections({
       case "imaging":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Imaging</h2>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center py-8 text-gray-500">

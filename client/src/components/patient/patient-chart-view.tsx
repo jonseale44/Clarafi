@@ -199,16 +199,6 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       case "encounters":
         return (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Star className="h-5 w-5 text-yellow-500" />
-                <h2 className="text-xl font-semibold">Patient Encounters</h2>
-              </div>
-              <Button onClick={handleStartNewEncounter} className="bg-slate-700 hover:bg-slate-800 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                New Encounter
-              </Button>
-            </div>
             <EncountersTab 
               encounters={Array.isArray(encounters) ? encounters : []} 
               patientId={patientId} 
