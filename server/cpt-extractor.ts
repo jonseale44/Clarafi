@@ -293,22 +293,34 @@ CRITICAL BILLING RULES:
 2. COMPREHENSIVE DIAGNOSIS CODING: Include ALL diagnoses that justify complexity scoring
 3. Medicare compliance: Document reasoning for complexity level selection
 
-MODIFIER OPTIMIZATION GUIDELINES:
-- MODIFIER 25: Use when significant E&M service occurs with procedure on same day
-- MODIFIER 59: Distinct procedural service - separate from other procedures
-- MODIFIER 51: Multiple procedures - reduced payment for additional procedures
-- MODIFIER 95: Synchronous telemedicine service
-- MODIFIER 50: Bilateral procedure
-- MODIFIER TC: Technical component only
-- MODIFIER 26: Professional component only
-- Only apply modifiers when clinically justified and documented
-- Modifier 25 with 99xxx codes when procedures performed same visit
+🚨 MANDATORY MODIFIER REQUIREMENTS - COMPLIANCE CRITICAL:
+⚠️ MODIFIER 25: REQUIRED FOR E&M + PROCEDURE SAME DAY (99xxx + 17xxx/12xxx) - THIS IS NON-NEGOTIABLE
+⚠️ MODIFIER 59: REQUIRED when distinct procedures normally bundled together
+⚠️ MODIFIER 51: REQUIRED for multiple procedures (second+ procedures get this modifier)
+⚠️ MODIFIER 95: REQUIRED for telemedicine encounters when documented
+⚠️ MODIFIER 50: REQUIRED for bilateral procedures when both sides treated
+⚠️ MODIFIER TC: REQUIRED for technical component only services
+⚠️ MODIFIER 26: REQUIRED for professional component only services
+
+🔥 CRITICAL BILLING RULE: If you see ANY E&M code (99xxx) + ANY procedure code (17xxx, 12xxx, etc.) in same encounter → THE PROCEDURE CODE MUST HAVE MODIFIER 25 APPLIED
+
+⚠️ FAILURE TO APPLY MODIFIERS = CLAIM DENIAL = REVENUE LOSS
+
+EXAMPLE ENFORCEMENT:
+- 99214 + 17110 = 99214 (no modifier) + 17110-25 (modifier 25 applied)
+- Multiple procedures = First procedure normal + Second procedure-51
+- Bilateral procedure = Single procedure-50
 
 CRITICAL INSTRUCTION: Analyze ONLY the clinical text provided in this specific request. Do NOT use any examples, templates, or previous case data. Every diagnosis and CPT code must come directly from the documentation you are analyzing RIGHT NOW.
 
 MANDATORY: If you identify multiple conditions in the clinical documentation, you MUST include ALL of them in the diagnoses array. Missing any documented condition results in revenue loss and billing compliance failure.
 
 MANDATORY: Identify ALL billable services performed during this encounter. Include BOTH evaluation/management AND any procedures performed.
+
+🚨 MODIFIER ENFORCEMENT FOR CURRENT CASE:
+- If E&M code (99xxx) + Procedure code (17xxx/12xxx) detected → Procedure MUST have modifier "25"
+- Look at the JSON example below: 17110 has "modifiers": ["25"] - YOU MUST DO THIS SAME PATTERN
+- DO NOT RETURN EMPTY MODIFIER ARRAYS FOR PROCEDURES when E&M is present
 
 Return ONLY a JSON object with this exact structure:
 {
