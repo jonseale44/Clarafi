@@ -979,7 +979,7 @@ export function ProviderDashboard() {
                           queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
                           queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedLabForReview.patientId, 'lab-results'] });
                           
-                        } catch (error) {
+                        } catch (error: any) {
                           console.error('🚨 [Dashboard] Review failed with detailed error:', {
                             error: error,
                             message: error?.message,
@@ -1370,7 +1370,7 @@ export function ProviderDashboard() {
                           queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
                           queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedLabForReview.patientId, 'lab-results'] });
                           
-                        } catch (error) {
+                        } catch (error: any) {
                           console.error('🚨 [Dashboard] Review failed with detailed error:', {
                             error: error,
                             message: error?.message,
