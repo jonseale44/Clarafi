@@ -6,7 +6,6 @@
 import { Router } from "express";
 import { storage } from "./storage";
 import { medicationDelta } from "./medication-delta-service";
-import { chartMedicationService } from "./chart-medication-service";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -370,6 +369,121 @@ router.delete("/medications/:medicationId", async (req: Request, res: Response) 
   } catch (error) {
     console.error("❌ [EnhancedMedications] Error discontinuing medication:", error);
     res.status(500).json({ error: "Failed to discontinue medication" });
+  }
+});
+
+/**
+ * POST /api/patients/:patientId/chart-medications
+ * Add medication directly to chart with GPT-powered duplicate detection
+ */
+router.post("/patients/:patientId/chart-medications", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    const medicationData = {
+      ...req.body,
+      patientId,
+      prescriberId: (req as any).user?.id
+    };
+
+    console.log(`💊 [ChartMedications] Adding medication to chart for patient ${patientId}`);
+    console.log(`💊 [ChartMedications] Medication: ${medicationData.medicationName}`);
+
+    const result = await medicationDelta.addChartMedication(medicationData);
+
+    if (!result.success) {
+      console.log(`⚠️ [ChartMedications] Duplicate detected: ${result.duplicateReasoning}`);
+      return res.status(409).json({
+        error: "Duplicate medication detected",
+        duplicateDetected: true,
+        reasoning: result.duplicateReasoning,
+        conflictingMedications: result.conflictingMedications,
+        recommendations: result.recommendations
+      });
+    }
+
+    console.log(`✅ [ChartMedications] Successfully added medication ${result.medication.id}`);
+    res.json({
+      success: true,
+      medication: result.medication,
+      gptAnalysis: result.gptAnalysis
+    });
+
+  } catch (error) {
+    console.error("❌ [ChartMedications] Error adding chart medication:", error);
+    res.status(500).json({ error: "Failed to add medication to chart" });
+  }
+});
+
+/**
+ * POST /api/medications/:medicationId/move-to-orders
+ * Move existing medication to orders for refill
+ */
+router.post("/medications/:medicationId/move-to-orders", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const medicationId = parseInt(req.params.medicationId);
+    const moveData = {
+      ...req.body,
+      medicationId,
+      requestedBy: (req as any).user?.id
+    };
+
+    console.log(`🔄 [MoveToOrders] Converting medication ${medicationId} to order`);
+
+    const result = await medicationDelta.moveToOrders(moveData);
+
+    console.log(`✅ [MoveToOrders] Created order ${result.draftOrder.id} for medication refill`);
+    res.json({
+      success: true,
+      draftOrder: result.draftOrder,
+      refillData: result.refillData,
+      originalMedication: result.originalMedication
+    });
+
+  } catch (error) {
+    console.error("❌ [MoveToOrders] Error moving medication to orders:", error);
+    res.status(500).json({ error: "Failed to move medication to orders" });
+  }
+});
+
+/**
+ * GET /api/medications/formulary/search
+ * Search medication formulary for intelligent suggestions
+ */
+router.get("/medications/formulary/search", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const query = req.query.q as string;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!query) {
+      return res.status(400).json({ error: "Search query required" });
+    }
+
+    console.log(`🔍 [FormularySearch] Searching for: "${query}"`);
+
+    const results = await medicationDelta.searchFormulary(query, limit);
+
+    console.log(`✅ [FormularySearch] Found ${results.length} matches`);
+    res.json({
+      query,
+      results,
+      count: results.length
+    });
+
+  } catch (error) {
+    console.error("❌ [FormularySearch] Error searching formulary:", error);
+    res.status(500).json({ error: "Failed to search formulary" });
   }
 });
 

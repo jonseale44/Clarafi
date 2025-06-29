@@ -1,15 +1,17 @@
 /**
- * Medication Delta Processing Service
+ * Enhanced Medication Delta Processing Service
  * Implements incremental medication history building with GPT-driven medication evolution
+ * Enhanced with GPT-powered duplicate detection and chart medication management
  * Mirrors the medical problems delta service architecture
  */
 
 import OpenAI from "openai";
 import { db } from "./db";
-import { medications, encounters, patients } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { medications, encounters, patients, medicationFormulary } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { storage } from "./storage";
 import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
+import { MedicationStandardizationService } from "./medication-standardization-service.js";
 
 export interface MedicationHistoryEntry {
   date: string; // Authoritative medical event date (encounter date)
@@ -1039,6 +1041,441 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         console.log(`🔄 [MedicationSync] Unknown order status: ${orderStatus}, defaulting to pending`);
         return 'pending';
     }
+  }
+
+  // ===== CHART MEDICATION MANAGEMENT WITH GPT INTELLIGENCE =====
+
+  /**
+   * Add medication directly to patient chart with GPT-powered duplicate detection
+   */
+  async addChartMedication(input: {
+    patientId: number;
+    medicationName: string;
+    dosage: string;
+    frequency: string;
+    route?: string;
+    quantity?: number;
+    daysSupply?: number;
+    refills?: number;
+    sig?: string;
+    clinicalIndication?: string;
+    startDate: string;
+    prescriberId: number;
+    strength?: string;
+    dosageForm?: string;
+  }): Promise<any> {
+    console.log(`💊 [ChartMedication] Adding medication directly to chart for patient ${input.patientId}`);
+    console.log(`💊 [ChartMedication] Medication: ${input.medicationName} ${input.dosage} ${input.frequency}`);
+
+    try {
+      // Validate patient exists
+      const [patient] = await db.select()
+        .from(patients)
+        .where(eq(patients.id, input.patientId))
+        .limit(1);
+
+      if (!patient) {
+        throw new Error(`Patient ${input.patientId} not found`);
+      }
+
+      // Create virtual encounter for chart-based medication
+      const chartEncounter = await this.getOrCreateChartEncounter(input.patientId, input.prescriberId);
+
+      // Standardize medication using existing service
+      const standardizedMedication = MedicationStandardizationService.standardizeMedicationFromAI(
+        input.medicationName,
+        input.dosage,
+        input.dosageForm,
+        input.route
+      );
+
+      // Get all existing active medications for GPT analysis
+      const existingMedications = await this.getAllActiveMedications(input.patientId);
+
+      // Use GPT to intelligently detect duplicates vs. different dosages
+      const duplicateAnalysis = await this.analyzeForDuplicatesWithGPT(
+        {
+          medicationName: standardizedMedication.medicationName || input.medicationName,
+          dosage: input.dosage,
+          frequency: input.frequency,
+          route: input.route || 'oral',
+          clinicalIndication: input.clinicalIndication
+        },
+        existingMedications
+      );
+
+      if (duplicateAnalysis.isDuplicate) {
+        console.log(`⚠️ [ChartMedication] GPT detected true duplicate:`, duplicateAnalysis.reasoning);
+        return {
+          success: false,
+          duplicateDetected: true,
+          duplicateReasoning: duplicateAnalysis.reasoning,
+          conflictingMedications: duplicateAnalysis.conflictingMedications,
+          recommendations: duplicateAnalysis.recommendations
+        };
+      }
+
+      // Insert medication with chart source attribution
+      const [newMedication] = await db.insert(medications).values({
+        patientId: input.patientId,
+        encounterId: chartEncounter.id,
+        medicationName: standardizedMedication.medicationName || input.medicationName,
+        genericName: standardizedMedication.genericName,
+        brandName: standardizedMedication.brandName,
+        dosage: input.dosage,
+        strength: standardizedMedication.strength || input.strength,
+        dosageForm: standardizedMedication.dosageForm || input.dosageForm,
+        route: standardizedMedication.route || input.route || 'oral',
+        frequency: input.frequency,
+        quantity: input.quantity,
+        daysSupply: input.daysSupply,
+        refillsRemaining: input.refills || 0,
+        totalRefills: input.refills || 0,
+        sig: input.sig || standardizedMedication.sig,
+        clinicalIndication: input.clinicalIndication,
+        startDate: input.startDate,
+        status: 'active',
+        prescriber: 'Chart Entry',
+        prescriberId: input.prescriberId,
+        firstEncounterId: chartEncounter.id,
+        lastUpdatedEncounterId: chartEncounter.id,
+        rxNormCode: standardizedMedication.rxNormCode,
+        ndcCode: standardizedMedication.ndcCode,
+        reasonForChange: 'Direct chart entry',
+        changeLog: [{
+          action: 'chart_added',
+          timestamp: new Date().toISOString(),
+          userId: input.prescriberId,
+          details: 'Added directly to patient chart'
+        }]
+      }).returning();
+
+      console.log(`✅ [ChartMedication] Successfully added medication ${newMedication.id} to chart`);
+      console.log(`✅ [ChartMedication] GPT Analysis: ${duplicateAnalysis.reasoning}`);
+
+      return {
+        success: true,
+        medication: newMedication,
+        standardizedData: standardizedMedication,
+        gptAnalysis: duplicateAnalysis
+      };
+
+    } catch (error) {
+      console.error(`❌ [ChartMedication] Error adding medication to chart:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Move existing medication to orders for refill
+   */
+  async moveToOrders(input: {
+    medicationId: number;
+    encounterId: number;
+    quantity?: number;
+    daysSupply?: number;
+    refills?: number;
+    clinicalIndication?: string;
+    requestedBy: number;
+  }): Promise<any> {
+    console.log(`🔄 [MoveToOrders] Converting medication ${input.medicationId} to refill order`);
+
+    try {
+      // Get existing medication
+      const [existingMedication] = await db.select()
+        .from(medications)
+        .where(eq(medications.id, input.medicationId))
+        .limit(1);
+
+      if (!existingMedication) {
+        throw new Error(`Medication ${input.medicationId} not found`);
+      }
+
+      // Calculate intelligent refill quantities
+      const refillData = this.calculateRefillQuantities(existingMedication, input);
+
+      // Create draft order
+      const { orders } = await import("../shared/schema.js");
+      
+      const [draftOrder] = await db.insert(orders).values({
+        patientId: existingMedication.patientId,
+        encounterId: input.encounterId,
+        orderType: 'medication',
+        orderStatus: 'draft',
+        medicationName: existingMedication.medicationName,
+        dosage: existingMedication.dosage,
+        quantity: refillData.quantity,
+        sig: existingMedication.sig,
+        refills: refillData.refills,
+        form: existingMedication.dosageForm,
+        routeOfAdministration: existingMedication.route,
+        daysSupply: refillData.daysSupply,
+        clinicalIndication: input.clinicalIndication || existingMedication.clinicalIndication,
+        priority: 'routine',
+        orderedBy: input.requestedBy,
+        providerNotes: `Refill for existing medication ID ${input.medicationId}`
+      }).returning();
+
+      // Update medication with refill reference
+      await db.update(medications)
+        .set({
+          changeLog: sql`COALESCE(change_log, '[]'::jsonb) || ${JSON.stringify([{
+            action: 'moved_to_orders',
+            timestamp: new Date().toISOString(),
+            userId: input.requestedBy,
+            orderId: draftOrder.id,
+            details: 'Converted to refill order'
+          }])}`
+        })
+        .where(eq(medications.id, input.medicationId));
+
+      console.log(`✅ [MoveToOrders] Created draft order ${draftOrder.id} for medication refill`);
+
+      return {
+        success: true,
+        draftOrder,
+        refillData,
+        originalMedication: existingMedication
+      };
+
+    } catch (error) {
+      console.error(`❌ [MoveToOrders] Error converting medication to order:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search medication formulary for intelligent suggestions
+   */
+  async searchFormulary(query: string, limit: number = 10): Promise<any[]> {
+    console.log(`🔍 [Formulary] Searching for: "${query}"`);
+
+    try {
+      const results = await db.select()
+        .from(medicationFormulary)
+        .where(sql`
+          LOWER(${medicationFormulary.genericName}) LIKE ${`%${query.toLowerCase()}%`} OR
+          EXISTS (
+            SELECT 1 FROM unnest(${medicationFormulary.brandNames}) AS brand_name
+            WHERE LOWER(brand_name) LIKE ${`%${query.toLowerCase()}%`}
+          ) OR
+          EXISTS (
+            SELECT 1 FROM unnest(${medicationFormulary.commonNames}) AS common_name
+            WHERE LOWER(common_name) LIKE ${`%${query.toLowerCase()}%`}
+          )
+        `)
+        .orderBy(medicationFormulary.popularityRank)
+        .limit(limit);
+
+      console.log(`✅ [Formulary] Found ${results.length} matches`);
+      return results;
+
+    } catch (error) {
+      console.error(`❌ [Formulary] Search error:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all active medications for GPT analysis
+   */
+  private async getAllActiveMedications(patientId: number): Promise<any[]> {
+    return db.select()
+      .from(medications)
+      .where(and(
+        eq(medications.patientId, patientId),
+        eq(medications.status, 'active')
+      ))
+      .orderBy(medications.medicationName);
+  }
+
+  /**
+   * GPT-powered intelligent duplicate detection
+   * Handles complex scenarios like different dosages of same medication
+   */
+  private async analyzeForDuplicatesWithGPT(
+    proposedMedication: {
+      medicationName: string;
+      dosage: string;
+      frequency: string;
+      route: string;
+      clinicalIndication?: string;
+    },
+    existingMedications: any[]
+  ): Promise<{
+    isDuplicate: boolean;
+    reasoning: string;
+    conflictingMedications?: any[];
+    recommendations?: string[];
+  }> {
+    if (existingMedications.length === 0) {
+      return {
+        isDuplicate: false,
+        reasoning: "No existing medications to compare against"
+      };
+    }
+
+    console.log(`🤖 [GPT-DuplicateAnalysis] Analyzing ${proposedMedication.medicationName} against ${existingMedications.length} existing medications`);
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert clinical pharmacist with 20 years of experience in medication management and drug interactions. Your task is to analyze whether a proposed medication represents a true duplicate that should be prevented, or a legitimate different prescription (like different dosages of the same drug).
+
+CRITICAL DISTINCTIONS:
+- LEGITIMATE SCENARIOS (NOT duplicates):
+  * Same medication, different dosages (e.g., Glyburide 5mg + Glyburide 10mg for complex diabetes management)
+  * Same medication, different formulations (e.g., Metformin XR + Metformin immediate release)
+  * Same medication, different routes (e.g., oral vs topical preparation)
+  * Same medication for different indications (e.g., Aspirin 81mg for cardioprotection + Aspirin 325mg PRN pain)
+
+- TRUE DUPLICATES (should be prevented):
+  * Identical medication, dosage, frequency, and route
+  * Same generic drug under different brand names with same dosage
+  * Therapeutically equivalent medications that would cause overdose
+
+ANALYSIS REQUIREMENTS:
+1. Compare proposed medication against each existing medication
+2. Consider clinical appropriateness of multiple formulations/dosages
+3. Identify potential therapeutic duplication vs. legitimate polypharmacy
+4. Provide clear clinical reasoning for your decision
+
+Respond with a JSON object containing:
+{
+  "isDuplicate": boolean,
+  "reasoning": "Detailed clinical explanation of your decision",
+  "conflictingMedications": [array of medication IDs that conflict],
+  "recommendations": [array of clinical recommendations if applicable]
+}`
+          },
+          {
+            role: "user",
+            content: `PROPOSED MEDICATION:
+Name: ${proposedMedication.medicationName}
+Dosage: ${proposedMedication.dosage}
+Frequency: ${proposedMedication.frequency}
+Route: ${proposedMedication.route}
+Clinical Indication: ${proposedMedication.clinicalIndication || 'Not specified'}
+
+EXISTING MEDICATIONS:
+${existingMedications.map((med, index) => `
+${index + 1}. ID: ${med.id}
+   Name: ${med.medicationName} (Generic: ${med.genericName || 'Not specified'})
+   Dosage: ${med.dosage}
+   Strength: ${med.strength || 'Not specified'}
+   Form: ${med.dosageForm || 'Not specified'}
+   Route: ${med.route || 'Not specified'}
+   Frequency: ${med.frequency}
+   Indication: ${med.clinicalIndication || 'Not specified'}
+   Status: ${med.status}
+`).join('')}
+
+Please analyze whether this proposed medication represents a true duplicate that should be prevented.`
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 1000
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error("No response from GPT");
+      }
+
+      // Parse GPT response
+      const analysis = JSON.parse(response);
+      
+      console.log(`✅ [GPT-DuplicateAnalysis] Decision: ${analysis.isDuplicate ? 'DUPLICATE DETECTED' : 'NO DUPLICATE'}`);
+      console.log(`✅ [GPT-DuplicateAnalysis] Reasoning: ${analysis.reasoning}`);
+
+      return analysis;
+
+    } catch (error) {
+      console.error(`❌ [GPT-DuplicateAnalysis] Error:`, error);
+      
+      // Fallback to conservative approach if GPT fails
+      const simpleNameMatch = existingMedications.find(med => 
+        med.medicationName?.toLowerCase().includes(proposedMedication.medicationName.toLowerCase()) ||
+        proposedMedication.medicationName.toLowerCase().includes(med.medicationName?.toLowerCase() || '')
+      );
+
+      return {
+        isDuplicate: !!simpleNameMatch,
+        reasoning: simpleNameMatch ? 
+          `GPT analysis failed, but found potential name match with existing medication: ${simpleNameMatch.medicationName}. Manual review recommended.` :
+          "GPT analysis failed, no obvious name matches found. Manual review recommended.",
+        conflictingMedications: simpleNameMatch ? [simpleNameMatch] : []
+      };
+    }
+  }
+
+  /**
+   * Get or create a virtual "Chart Management" encounter for direct medication management
+   */
+  private async getOrCreateChartEncounter(patientId: number, providerId: number): Promise<any> {
+    // Look for existing chart management encounter
+    const existingChartEncounter = await db.select()
+      .from(encounters)
+      .where(and(
+        eq(encounters.patientId, patientId),
+        eq(encounters.encounterType, 'Chart Management')
+      ))
+      .limit(1);
+
+    if (existingChartEncounter.length > 0) {
+      return existingChartEncounter[0];
+    }
+
+    // Create new chart management encounter
+    const [chartEncounter] = await db.insert(encounters).values({
+      patientId,
+      providerId,
+      encounterType: 'Chart Management',
+      encounterSubtype: 'Direct Chart Entry',
+      startTime: new Date(),
+      encounterStatus: 'active',
+      chiefComplaint: 'Chart medication management',
+      note: 'Virtual encounter for direct chart medication management'
+    }).returning();
+
+    console.log(`📋 [ChartEncounter] Created chart management encounter ${chartEncounter.id}`);
+    return chartEncounter;
+  }
+
+  /**
+   * Calculate intelligent refill quantities based on existing medication
+   */
+  private calculateRefillQuantities(medication: any, input: any) {
+    // Use provided values or intelligent defaults
+    const quantity = input.quantity || medication.quantity || this.calculateDefaultQuantity(medication);
+    const daysSupply = input.daysSupply || medication.daysSupply || 30; // Default 30-day supply
+    const refills = input.refills !== undefined ? input.refills : 
+                   medication.refillsRemaining > 0 ? medication.refillsRemaining : 5; // Default 5 refills
+
+    return { quantity, daysSupply, refills };
+  }
+
+  /**
+   * Calculate default quantity based on frequency and days supply
+   */
+  private calculateDefaultQuantity(medication: any): number {
+    const daysSupply = medication.daysSupply || 30;
+    const frequency = medication.frequency?.toLowerCase() || '';
+
+    // Parse frequency to daily count
+    let dailyCount = 1; // Default
+    if (frequency.includes('twice') || frequency.includes('bid') || frequency.includes('2')) {
+      dailyCount = 2;
+    } else if (frequency.includes('three') || frequency.includes('tid') || frequency.includes('3')) {
+      dailyCount = 3;
+    } else if (frequency.includes('four') || frequency.includes('qid') || frequency.includes('4')) {
+      dailyCount = 4;
+    }
+
+    return daysSupply * dailyCount;
   }
 }
 
