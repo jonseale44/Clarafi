@@ -378,5 +378,24 @@ export function setupBillingRoutes(app: Express) {
     }
   });
 
+  // Development: Seed billing data endpoint
+  app.post('/api/billing/seed', async (req: Request, res: Response) => {
+    try {
+      const { seedBillingData } = await import('./billing-data-seeder');
+      await seedBillingData();
+      
+      res.json({
+        success: true,
+        message: 'Billing data seeded successfully'
+      });
+    } catch (error) {
+      console.error('❌ [Billing Seeder] Error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to seed billing data'
+      });
+    }
+  });
+
   console.log('🏥 [Billing API] Production billing routes initialized');
 }
