@@ -36,17 +36,7 @@ export const users = pgTable("users", {
 });
 
 // User Interface Preferences
-export const userPreferences = pgTable("user_preferences", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  
-  // Chart panel preferences
-  chartPanelWidth: integer("chart_panel_width").default(400), // Default 400px
-  
-  // Other UI preferences can be added here in the future
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Removed orphaned userPreferences table - chartPanelWidth moved to userNotePreferences
 
 // User Clinical Note Templates - Example-Based Customization System
 export const userNoteTemplates = pgTable("user_note_templates", {
@@ -1932,10 +1922,4 @@ export type UserProblemListPreferences = typeof userProblemListPreferences.$infe
 export type InsertUserProblemListPreferences = z.infer<typeof insertUserProblemListPreferencesSchema>;
 
 // User Preferences Types
-export const insertUserPreferencesSchema = createInsertSchema(userPreferences).pick({
-  userId: true,
-  chartPanelWidth: true,
-});
-
-export type UserPreferences = typeof userPreferences.$inferSelect;
-export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+// Removed orphaned UserPreferences types - chartPanelWidth moved to userNotePreferences

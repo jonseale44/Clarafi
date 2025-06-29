@@ -4,7 +4,7 @@ import {
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
   signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
-  userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews, userPreferences,
+  userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
@@ -13,7 +13,7 @@ import {
   type SelectTemplateShare, type InsertTemplateShare,
   type SelectUserNotePreferences, type InsertUserNotePreferences,
   type AdminPromptReview, type InsertAdminPromptReview,
-  type UserPreferences, type InsertUserPreferences
+  // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -148,38 +148,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(users.username);
   }
 
-  // User preferences management
-  async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
-    console.log('🔧 [Storage] Getting user preferences for userId:', userId);
-    const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
-    console.log('🔧 [Storage] Raw database result:', preferences);
-    return preferences || undefined;
-  }
-
-  async upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
-    const existing = await this.getUserPreferences(preferences.userId);
-    
-    if (existing) {
-      // Merge existing data with new data
-      const updateData = {
-        ...preferences,
-        updatedAt: new Date()
-      };
-      
-      const [updated] = await db
-        .update(userPreferences)
-        .set(updateData)
-        .where(eq(userPreferences.userId, preferences.userId))
-        .returning();
-      return updated;
-    } else {
-      const [created] = await db
-        .insert(userPreferences)
-        .values(preferences)
-        .returning();
-      return created;
-    }
-  }
+  // User preferences management removed - now handled via getUserNotePreferences in auth.ts
 
   // Patient management
   async getPatient(id: number): Promise<Patient | undefined> {
