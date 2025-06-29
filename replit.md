@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medications Technical Debt Cleanup (June 29, 2025)
+- **LEGACY ENDPOINT REMOVAL**: Removed unused `/api/patients/:patientId/medications` endpoint that was never called by frontend components
+- **STORAGE METHOD CONSOLIDATION**: Unified duplicate storage methods `getPatientMedications()` and `getPatientMedicationsEnhanced()` into single standardized method
+- **INTERFACE CLEANUP**: Updated IStorage interface to remove reference to deleted method, eliminating compiler errors
+- **ENHANCED ROUTES UPDATED**: Modified enhanced medication routes to use consolidated storage method
+- **FRONTEND VERIFICATION**: Confirmed all UI components use `/api/patients/:patientId/medications-enhanced` endpoint exclusively
+- **NO BREAKING CHANGES**: All existing functionality preserved while eliminating technical debt
+- **ARCHITECTURAL CONSISTENCY**: Standardized medication data access patterns across the system
+
 ### Medical Problems Ranking System Final Cleanup (June 29, 2025)
 - **DOCUMENTATION MODERNIZATION**: Updated `MEDICAL_PROBLEMS_RANKING_SYSTEM.md` to reflect relative percentage system instead of outdated absolute ranges
 - **LEGACY CODE REMOVAL**: Eliminated unused `LegacyRankingWeights` interface from frontend component

@@ -54,9 +54,8 @@ export interface IStorage {
   
   // Patient chart data
   getPatientAllergies(patientId: number): Promise<any[]>;
-  // Enhanced medications methods
+  // Medications methods
   getPatientMedications(patientId: number): Promise<Medication[]>;
-  getPatientMedicationsEnhanced(patientId: number): Promise<Medication[]>;
   getMedicationById(id: number): Promise<Medication | undefined>;
   getPatientMedicationsByEncounter(encounterId: number): Promise<Medication[]>;
   createMedication(medication: InsertMedication): Promise<Medication>;
