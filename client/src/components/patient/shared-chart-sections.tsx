@@ -199,10 +199,10 @@ export function SharedChartSections({
       
       case "allergies":
         return (
-          <div className="space-y-4">
+          <div className="emr-tight-spacing">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
+              <CardContent className="pt-3 emr-card-content-tight">
+                <div className="text-center py-4 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <p className="text-lg font-medium">Allergies management coming soon</p>
                   <p className="text-sm">Full CRUD functionality will be available here.</p>
@@ -228,10 +228,10 @@ export function SharedChartSections({
       
       case "imaging":
         return (
-          <div className="space-y-4">
+          <div className="emr-tight-spacing">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
+              <CardContent className="pt-3 emr-card-content-tight">
+                <div className="text-center py-4 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <p className="text-lg font-medium">Imaging management coming soon</p>
                   <p className="text-sm">View imaging orders and results here.</p>
@@ -243,10 +243,10 @@ export function SharedChartSections({
       
       case "family-history":
         return (
-          <div className="space-y-4">
+          <div className="emr-tight-spacing">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
+              <CardContent className="pt-3 emr-card-content-tight">
+                <div className="text-center py-4 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <p className="text-lg font-medium">Family history management coming soon</p>
                   <p className="text-sm">Record family medical history here.</p>
@@ -258,10 +258,10 @@ export function SharedChartSections({
       
       case "social-history":
         return (
-          <div className="space-y-4">
+          <div className="emr-tight-spacing">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
+              <CardContent className="pt-3 emr-card-content-tight">
+                <div className="text-center py-4 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <p className="text-lg font-medium">Social history management coming soon</p>
                   <p className="text-sm">Document smoking, alcohol, occupation history.</p>
@@ -273,10 +273,10 @@ export function SharedChartSections({
       
       case "surgical-history":
         return (
-          <div className="space-y-4">
+          <div className="emr-tight-spacing">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
+              <CardContent className="pt-3 emr-card-content-tight">
+                <div className="text-center py-4 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <p className="text-lg font-medium">Surgical history management coming soon</p>
                   <p className="text-sm">Track surgical procedures and outcomes.</p>
