@@ -347,7 +347,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
       if (data.success) {
         toast({
           title: "Added to Orders",
-          description: `${data.orderDetails.medicationName} refill has been added to draft orders.`,
+          description: `${data.draftOrder.medicationName} refill has been added to draft orders.`,
         });
       }
     },

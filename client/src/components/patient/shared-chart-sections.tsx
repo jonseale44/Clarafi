@@ -190,6 +190,7 @@ export function SharedChartSections({
         return (
           <EnhancedMedicationsList 
             patientId={patientId} 
+            encounterId={encounterId}
             readOnly={isReadOnly}
           />
         );
