@@ -906,8 +906,7 @@ export function EnhancedMedicalProblemsList({
     <div className="relative">
       <div className="space-y-6">
         {!isReadOnly && (
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Medical Problems</h3>
+          <div className="flex justify-end items-center">
             <div className="flex gap-2">
               {/* Auto-generation progress indicator */}
               {isAutoGeneratingMedicalProblems && (

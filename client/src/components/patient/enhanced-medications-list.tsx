@@ -401,13 +401,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5" />
-            Medications
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex items-center justify-center py-8">
             <div className="text-gray-500">Loading medications...</div>
           </div>
@@ -419,13 +413,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   if (error) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5" />
-            Medications
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -441,15 +429,6 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
     <Card>
       <CardHeader className="pb-3">
         <div className="space-y-3">
-          {/* Title Row - Always on its own line for consistency */}
-          <CardTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5" />
-            Medications
-            <Badge variant="outline" className="ml-2">
-              {(medicationData as MedicationResponse)?.summary.total || 0}
-            </Badge>
-          </CardTitle>
-          
           {/* Controls Row - Guaranteed to stay within card bounds */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 min-w-0 flex-1">
