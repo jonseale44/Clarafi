@@ -460,10 +460,10 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
         </div>
       </CardHeader>
       
-      <CardContent className="emr-card-content-tight emr-tight-spacing">
+      <CardContent className="emr-card-content-proportional emr-space-y-tight">
         {/* Status Tabs */}
         <Tabs value={activeStatusTab} onValueChange={(value: any) => setActiveStatusTab(value)}>
-          <TabsList className="grid w-full grid-cols-4 h-auto medication-tabs">
+          <TabsList className="grid w-full grid-cols-4 h-auto medication-tabs emr-element-gap-tight">
             <TabsTrigger value="current" className="medication-tab-trigger flex flex-col items-center gap-0.5 text-xs leading-tight">
               <Activity className="h-3 w-3 flex-shrink-0" />
               <span className="medication-tab-text">Current</span>
@@ -502,16 +502,16 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="emr-space-y-proportional">
                 {Object.entries(groupedMedications).map(([groupName, medications]) => (
                   <div key={groupName}>
                     {groupingMode === 'medical_problem' && (
-                      <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                      <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 emr-space-y-tight flex items-center emr-element-gap-tight">
                         <Zap className="h-3 w-3" />
                         {groupName}
                       </h3>
                     )}
-                    <div className="space-y-2">
+                    <div className="emr-space-y-tight">
                       {medications.map((medication: Medication) => (
                         <MedicationCard
                           key={medication.id}
@@ -615,8 +615,8 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
     <Collapsible open={isExpanded} onOpenChange={onToggleExpanded}>
       <Card className={`border-l-4 ${getCardBorderColor(medication.status)}`}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors pb-3">
-            <div className="space-y-2">
+          <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors emr-card-header-proportional">
+            <div className="emr-space-y-tight">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0 pr-2">
                   <div className="space-y-1">
@@ -654,7 +654,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                   </Button>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-4 emr-ultra-compact-content text-gray-600 dark:text-gray-300">
+              <div className="flex flex-wrap items-center emr-element-gap-normal emr-ultra-compact-content text-gray-600 dark:text-gray-300">
                 <span className="font-medium">
                   {medication.sig || `${medication.dosage} ${medication.frequency}`}
                 </span>
@@ -662,7 +662,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                   <span className="text-gray-500">for {medication.clinicalIndication}</span>
                 )}
                 {medication.startDate && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center emr-element-gap-tight">
                     <Calendar className="h-3 w-3" />
                     Started {new Date(medication.startDate).toLocaleDateString()}
                   </span>
@@ -673,8 +673,8 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <CardContent className="emr-card-content-proportional">
+            <div className="grid grid-cols-1 md:grid-cols-2 emr-element-gap-normal emr-space-y-proportional">
               <div>
                 <h4 className="font-medium mb-2">Prescription Details</h4>
                 <div className="space-y-1 text-sm">
