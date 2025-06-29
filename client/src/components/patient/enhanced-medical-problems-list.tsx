@@ -702,7 +702,7 @@ export function EnhancedMedicalProblemsList({
           onOpenChange={() => toggleProblemExpansion(problem.id)}
         >
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-opacity-80 pb-3 transition-colors">
+            <CardHeader className="cursor-pointer hover:bg-opacity-80 medical-problem-header transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   {expandedProblems.has(problem.id) ? (
@@ -717,7 +717,7 @@ export function EnhancedMedicalProblemsList({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div>
-                                <Badge variant="outline" className={`text-xs font-medium ${badgeClass} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
+                                <Badge variant="outline" className={`emr-badge-small font-medium ${badgeClass} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
                                   {problem.rankingResult.finalRank === null || problem.rankingResult.finalRank === undefined 
                                     ? "Unranked" 
                                     : `${getPriorityDisplayName(problem.rankingResult.priorityLevel)} (#${problem.displayRank})`
@@ -735,7 +735,7 @@ export function EnhancedMedicalProblemsList({
                         {problem.problemStatus}
                       </Badge>
                     </div>
-                    <CardTitle className={`text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight`}>
+                    <CardTitle className={`text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight`}>
                       {problem.problemTitle}
                       {problem.currentIcd10Code && (
                         <span className="ml-2 text-sm font-mono text-gray-500 dark:text-gray-400">

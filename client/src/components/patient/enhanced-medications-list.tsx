@@ -484,15 +484,15 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
       <CardContent className="space-y-4">
         {/* Status Tabs */}
         <Tabs value={activeStatusTab} onValueChange={(value: any) => setActiveStatusTab(value)}>
-          <TabsList className="grid w-full grid-cols-4 h-auto min-h-[60px]">
-            <TabsTrigger value="current" className="flex flex-col items-center gap-0.5 p-1.5 text-xs leading-tight">
+          <TabsList className="grid w-full grid-cols-4 h-auto medication-tabs">
+            <TabsTrigger value="current" className="medication-tab-trigger flex flex-col items-center gap-0.5 text-xs leading-tight">
               <Activity className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate max-w-full">Current</span>
+              <span className="medication-tab-text">Current</span>
               <span className="text-[10px] opacity-70 leading-none">({((medicationData as MedicationResponse)?.summary.active || 0) + ((medicationData as MedicationResponse)?.summary.pending || 0)})</span>
             </TabsTrigger>
-            <TabsTrigger value="discontinued" className="flex flex-col items-center gap-0.5 p-1.5 text-xs leading-tight">
+            <TabsTrigger value="discontinued" className="medication-tab-trigger flex flex-col items-center gap-0.5 text-xs leading-tight">
               <Clock className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate max-w-full">Disc.</span>
+              <span className="medication-tab-text">Disc.</span>
               <span className="text-[10px] opacity-70 leading-none">({(medicationData as MedicationResponse)?.summary.discontinued || 0})</span>
             </TabsTrigger>
             <TabsTrigger value="held" className="flex flex-col items-center gap-0.5 p-1.5 text-xs leading-tight">

@@ -405,7 +405,7 @@ export function UnifiedChartPanel({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className={`bg-white border-b border-gray-100 ${
-                  panelState.isExpanded && isActive ? 'p-6' : 'p-3'
+                  panelState.isExpanded && isActive ? 'emr-compact-spacing' : 'emr-compact-small'
                 }`}>
                   {renderSectionContent(section)}
                 </div>
