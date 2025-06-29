@@ -422,7 +422,7 @@ router.put("/medical-problems/:problemId", async (req, res) => {
       problemTitle: title,
       currentIcd10Code: currentIcd10Code || icd10Code,
       problemStatus: problemStatus || status,
-      firstDiagnosedDate: firstDiagnosedDate,
+      firstDiagnosedDate: firstDiagnosedDate || null, // Convert empty string to null
       visitHistory: visitHistory
     });
 

@@ -283,7 +283,7 @@ export function EnhancedMedicalProblemsList({
       if (isLegacyProblem) {
         return (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Clinical Priority Ranking: #{rankingResult.finalRank.toFixed(2)}</p>
+            <p className="text-sm font-medium">Clinical Priority Ranking: #{rankingResult.finalRank?.toFixed(2) || 'N/A'}</p>
             <p className="text-xs opacity-75">Using legacy ranking system</p>
             <p className="text-xs opacity-75 mt-1">
               Lower scores = higher clinical priority (1.00 = most urgent, 99.99 = routine)
