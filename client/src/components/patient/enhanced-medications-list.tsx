@@ -502,11 +502,11 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                 )}
               </div>
             ) : (
-              <div className="emr-space-y-proportional">
+              <div className="emr-ultra-tight-spacing">
                 {Object.entries(groupedMedications).map(([groupName, medications]) => (
                   <div key={groupName}>
                     {groupingMode === 'medical_problem' && (
-                      <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 emr-space-y-tight flex items-center emr-element-gap-tight">
+                      <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 emr-ultra-tight-spacing flex items-center emr-ultra-tight-gap">
                         <Zap className="h-3 w-3" />
                         {groupName}
                       </h3>
@@ -532,7 +532,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       ))}
                     </div>
                     {groupingMode === 'medical_problem' && Object.keys(groupedMedications).length > 1 && (
-                      <Separator className="mt-4" />
+                      <Separator className="emr-ultra-tight-spacing" />
                     )}
                   </div>
                 ))}
