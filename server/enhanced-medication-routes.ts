@@ -28,7 +28,7 @@ router.get("/patients/:patientId/medications-enhanced", async (req: Request, res
     }
 
     const patientId = parseInt(patientIdParam);
-    const medications = await storage.getPatientMedicationsEnhanced(patientId);
+    const medications = await storage.getPatientMedications(patientId);
 
     // Group medications by status for EMR-standard display
     const groupedMedications = {

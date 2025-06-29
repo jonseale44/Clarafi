@@ -1030,17 +1030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/patients/:patientId/medications", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const patientId = parseInt(req.params.patientId);
-      const medications = await storage.getPatientMedications(patientId);
-      res.json(medications);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
 
   app.get("/api/patients/:patientId/diagnoses", async (req, res) => {
     try {

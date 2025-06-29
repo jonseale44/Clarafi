@@ -390,12 +390,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPatientMedications(patientId: number): Promise<Medication[]> {
-    return await db.select().from(medications)
-      .where(eq(medications.patientId, patientId))
-      .orderBy(desc(medications.createdAt));
-  }
-
-  async getPatientMedicationsEnhanced(patientId: number): Promise<Medication[]> {
     const patientMedications = await db.select().from(medications)
       .where(eq(medications.patientId, patientId))
       .orderBy(desc(medications.createdAt));
