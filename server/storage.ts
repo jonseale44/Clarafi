@@ -160,12 +160,15 @@ export class DatabaseStorage implements IStorage {
     const existing = await this.getUserPreferences(preferences.userId);
     
     if (existing) {
+      // Merge existing data with new data
+      const updateData = {
+        ...preferences,
+        updatedAt: new Date()
+      };
+      
       const [updated] = await db
         .update(userPreferences)
-        .set({ 
-          chartPanelWidth: preferences.chartPanelWidth,
-          updatedAt: new Date()
-        })
+        .set(updateData)
         .where(eq(userPreferences.userId, preferences.userId))
         .returning();
       return updated;

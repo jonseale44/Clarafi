@@ -80,7 +80,9 @@ export function UnifiedChartPanel({
 
   // Update panel width when user preferences load
   useEffect(() => {
+    console.log('🔧 [ChartPanel] User preferences loaded:', userPreferences);
     if (userPreferences?.chartPanelWidth != null) {
+      console.log('🔧 [ChartPanel] Setting panel width from preferences:', userPreferences.chartPanelWidth);
       setPanelWidth(userPreferences.chartPanelWidth);
     }
   }, [userPreferences]);
@@ -181,6 +183,7 @@ export function UnifiedChartPanel({
 
   const handleMouseUp = () => {
     if (isDragging) {
+      console.log('🔧 [ChartPanel] Saving panel width to preferences:', panelWidth);
       // Save preferences silently (no toast)
       savePreferences.mutate({ chartPanelWidth: panelWidth });
     }
