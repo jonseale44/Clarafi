@@ -37,54 +37,10 @@ const chartSections = [
   { id: "surgical-history", label: "Surgical History", icon: null },
   { id: "attachments", label: "Attachments", icon: null },
   { id: "appointments", label: "Appointments", icon: null },
-  { id: "ai-debug", label: "AI Assistant Debug", icon: null },
+
 ];
 
-// AI Debug Section Component
-function AIDebugSection({ patientId }: { patientId: number }) {
-  const {
-    data: assistantConfig,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: [`/api/patients/${patientId}/assistant`],
-    enabled: !!patientId,
-  });
 
-  if (isLoading) {
-    return (
-      <div className="p-4 text-sm text-gray-500">Loading assistant info...</div>
-    );
-  }
-
-  if (error || !assistantConfig) {
-    return <div className="p-4 text-sm text-red-600">No assistant found</div>;
-  }
-
-  const config = assistantConfig as any;
-
-  return (
-    <div className="p-4">
-      <div className="text-sm space-y-3">
-        <div>
-          <span className="font-medium">Assistant:</span>{" "}
-          {config?.name || "Unknown"}
-        </div>
-        <div>
-          <span className="font-medium">Model:</span>{" "}
-          {config?.model || "Unknown"}
-        </div>
-        <div>
-          <span className="font-medium">Thread:</span>{" "}
-          {config?.thread_id ? "Active" : "None"}
-        </div>
-        <Button size="sm" variant="outline" className="w-full">
-          View Full Debug
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export function PatientChartView({ patient, patientId }: PatientChartViewProps) {
   const [activeSection, setActiveSection] = useState("encounters");
@@ -282,8 +238,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           sectionId={activeSection}
           highlightAttachmentId={highlightAttachmentId}
         />;
-      case "ai-debug":
-        return <AIDebugSection patientId={patientId} />;
+
       default:
         return <div>Section not found</div>;
     }
@@ -355,170 +310,6 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           {renderSectionContent()}
         </div>
       </div>
-    </div>
-  );
-}
-
-function AIDebugSection({ patientId }: { patientId: number }) {
-  const [refreshing, setRefreshing] = useState(false);
-  
-  const { data: assistantConfig, isLoading, error, refetch } = useQuery({
-    queryKey: [`/api/patients/${patientId}/assistant`],
-    enabled: !!patientId
-  });
-
-  const { data: threadMessages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
-    queryKey: [`/api/patients/${patientId}/assistant/messages`],
-    enabled: !!patientId && !!(assistantConfig as any)?.thread_id
-  });
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([refetch(), refetchMessages()]);
-    setRefreshing(false);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            AI Assistant Debug
-          </h2>
-        </div>
-        <div className="text-center py-8 text-gray-500">Loading assistant information...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            AI Assistant Debug
-          </h2>
-        </div>
-        <Card className="border-red-200">
-          <CardContent className="pt-6">
-            <p className="text-red-600">No AI assistant found for this patient</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Bot className="h-5 w-5" />
-          AI Assistant Debug
-        </h2>
-        <Button 
-          onClick={handleRefresh} 
-          disabled={refreshing}
-          variant="outline"
-          size="sm"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
-
-      {assistantConfig && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Assistant Overview</span>
-                <Badge variant="secondary">{(assistantConfig as any)?.model}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <label className="font-medium text-gray-700">Assistant ID:</label>
-                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{(assistantConfig as any)?.id}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-gray-700">Thread ID:</label>
-                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{(assistantConfig as any)?.thread_id || 'Not assigned'}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-gray-700">Name:</label>
-                  <p className="mt-1">{(assistantConfig as any)?.name || 'Unnamed Assistant'}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-gray-700">Created:</label>
-                  <p className="mt-1">
-                    {(assistantConfig as any)?.created_at ? new Date((assistantConfig as any).created_at * 1000).toLocaleString() : 'Unknown'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Medical Context & Instructions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={(assistantConfig as any)?.instructions || 'No instructions provided'}
-                readOnly
-                className="min-h-[200px] font-mono text-xs"
-              />
-            </CardContent>
-          </Card>
-
-          {threadMessages && (threadMessages as any)?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Conversation History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {(threadMessages as any)?.map((message: any, index: number) => (
-                    <div key={index} className={`p-3 rounded-lg ${
-                      message.role === 'assistant' ? 'bg-blue-50 border-l-4 border-blue-200' : 'bg-gray-50 border-l-4 border-gray-200'
-                    }`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant={message.role === 'assistant' ? 'default' : 'secondary'}>
-                          {message.role}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {new Date(message.created_at * 1000).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {(assistantConfig as any)?.tools && (assistantConfig as any)?.tools.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Available Tools</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 flex-wrap">
-                  {(assistantConfig as any)?.tools.map((tool: any, index: number) => (
-                    <Badge key={index} variant="outline">
-                      {tool.type}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
     </div>
   );
 }

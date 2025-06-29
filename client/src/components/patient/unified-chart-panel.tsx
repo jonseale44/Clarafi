@@ -37,54 +37,7 @@ interface UnifiedChartPanelProps {
   medicalProblemsProgress?: number;
 }
 
-interface AIDebugSectionProps {
-  patientId: number;
-}
 
-function AIDebugSection({ patientId }: AIDebugSectionProps) {
-  const {
-    data: assistantConfig,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: [`/api/patients/${patientId}/assistant`],
-    enabled: !!patientId,
-  });
-
-  if (isLoading) {
-    return (
-      <div className="p-2 text-xs text-gray-500">Loading assistant info...</div>
-    );
-  }
-
-  if (error || !assistantConfig) {
-    return <div className="p-2 text-xs text-red-600">No assistant found</div>;
-  }
-
-  const config = assistantConfig as any;
-
-  return (
-    <div className="p-2">
-      <div className="text-xs space-y-2">
-        <div>
-          <span className="font-medium">Assistant:</span>{" "}
-          {config?.name || "Unknown"}
-        </div>
-        <div>
-          <span className="font-medium">Model:</span>{" "}
-          {config?.model || "Unknown"}
-        </div>
-        <div>
-          <span className="font-medium">Thread:</span>{" "}
-          {config?.thread_id ? "Active" : "None"}
-        </div>
-        <Button size="sm" variant="outline" className="w-full text-xs">
-          View Full Debug
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export function UnifiedChartPanel({
   patient,
