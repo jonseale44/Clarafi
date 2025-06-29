@@ -175,18 +175,6 @@ Preferred communication style: Simple, everyday language.
 - **TECHNICAL DEBT ELIMINATED**: Removed all remaining legacy interfaces and outdated documentation
 - **ARCHITECTURE VALIDATED**: Confirmed ranking system is in production-ready state with unified, centralized calculation service
 
-### Critical Billing System Technical Debt Cleanup Completed (June 29, 2025)
-- **DUAL ENDPOINT CHAOS RESOLVED**: Fixed critical technical debt where two different CPT extraction systems were running in parallel
-- **UNIFIED ARCHITECTURE ACHIEVED**: All frontend calls now use enhanced `/api/billing/extract-cpt` endpoint with full modifier intelligence
-- **LEGACY ENDPOINT ELIMINATION**: Removed all calls to basic `/api/patients/:id/encounters/:encounterId/extract-cpt` endpoint from frontend
-- **ENHANCED MODIFIER SYSTEM ACTIVATED**: All CPT extractions now use EnhancedCPTExtractor with database-validated modifiers and audit trails
-- **CONSISTENT AI PROMPTS**: Eliminated prompt inconsistencies where different endpoints used different GPT instructions
-- **PRODUCTION AUDIT COMPLIANCE**: All CPT code generation now creates proper audit trail entries for billing compliance
-- **REVENUE CALCULATION STANDARDIZED**: All extractions use unified revenue impact calculation with modifier adjustments
-- **DATABASE VALIDATION ENFORCED**: All CPT codes validated against AMA database with proper modifier compatibility checks
-- **FOREIGN KEY CONSTRAINTS FIXED**: Added cascade deletion to billing_audit_trail table preventing foreign key constraint violations
-- **PRODUCTION SYSTEM ACTIVE**: Enhanced billing system now running with GPT-4.1 powered extraction, database validation, and audit compliance
-
 ### Critical Visit History Filtering Fix (June 29, 2025)
 - **CRITICAL BUG FIXED**: Resolved visit history filtering logic that prevented multiple visit entries per encounter
 - **ROOT CAUSE IDENTIFIED**: System blocked encounter-based visit entries when attachment from same encounter was processed earlier

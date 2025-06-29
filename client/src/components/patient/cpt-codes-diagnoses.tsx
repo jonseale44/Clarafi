@@ -36,10 +36,6 @@ interface CPTCode {
   complexity?: 'low' | 'moderate' | 'high' | 'straightforward';
   category?: string;
   baseRate?: number;
-  modifiers?: string[]; // Production modifiers support
-  modifierReasons?: string; // Clinical justification for modifiers
-  clinicalJustification?: string; // GPT clinical rationale
-  estimatedRevenueImpact?: number; // Revenue calculation
 }
 
 interface DiagnosisCode {
@@ -197,13 +193,13 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       
       const { soapNote } = await soapResponse.json();
       
-      // Use enhanced CPT extraction with modifier intelligence  
-      const response = await fetch(`/api/billing/extract-cpt`, {
+      // Extract CPT codes from SOAP note
+      const response = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/extract-cpt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ soapNote, patientId, encounterId }),
+        body: JSON.stringify({ soapNote }),
       });
 
       if (!response.ok) {
@@ -695,30 +691,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                       <Badge variant="outline" className="mt-1">
                                         {cpt.complexity}
                                       </Badge>
-                                    )}
-                                    {cpt.modifiers && cpt.modifiers.length > 0 && (
-                                      <div className="mt-2 pt-2 border-t">
-                                        <p className="text-xs font-medium text-blue-600">Modifiers:</p>
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                          {cpt.modifiers.map((modifier, idx) => (
-                                            <Badge key={idx} variant="secondary" className="text-xs">
-                                              {modifier}
-                                            </Badge>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {cpt.modifierReasons && (
-                                      <div className="mt-2 pt-2 border-t">
-                                        <p className="text-xs font-medium text-green-600">Modifier Reason:</p>
-                                        <p className="text-xs text-gray-600">{cpt.modifierReasons}</p>
-                                      </div>
-                                    )}
-                                    {cpt.clinicalJustification && (
-                                      <div className="mt-2 pt-2 border-t">
-                                        <p className="text-xs font-medium text-purple-600">Clinical Justification:</p>
-                                        <p className="text-xs text-gray-600">{cpt.clinicalJustification}</p>
-                                      </div>
                                     )}
                                   </div>
                                 </TooltipContent>

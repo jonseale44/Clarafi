@@ -11,11 +11,6 @@ interface CPTCode {
   description: string;
   complexity?: string;
   reasoning?: string;
-  modifiers?: string[];
-  modifierReasons?: string;
-  clinicalJustification?: string;
-  baseRate?: number;
-  estimatedRevenueImpact?: number;
 }
 
 interface DiagnosisCode {
@@ -293,34 +288,11 @@ CRITICAL BILLING RULES:
 2. COMPREHENSIVE DIAGNOSIS CODING: Include ALL diagnoses that justify complexity scoring
 3. Medicare compliance: Document reasoning for complexity level selection
 
-🚨 MANDATORY MODIFIER REQUIREMENTS - COMPLIANCE CRITICAL:
-⚠️ MODIFIER 25: REQUIRED FOR E&M + PROCEDURE SAME DAY (99xxx + 17xxx/12xxx) - THIS IS NON-NEGOTIABLE
-⚠️ MODIFIER 59: REQUIRED when distinct procedures normally bundled together
-⚠️ MODIFIER 51: REQUIRED for multiple procedures (second+ procedures get this modifier)
-⚠️ MODIFIER 95: REQUIRED for telemedicine encounters when documented
-⚠️ MODIFIER 50: REQUIRED for bilateral procedures when both sides treated
-⚠️ MODIFIER TC: REQUIRED for technical component only services
-⚠️ MODIFIER 26: REQUIRED for professional component only services
-
-🔥 CRITICAL BILLING RULE: If you see ANY E&M code (99xxx) + ANY procedure code (17xxx, 12xxx, etc.) in same encounter → THE PROCEDURE CODE MUST HAVE MODIFIER 25 APPLIED
-
-⚠️ FAILURE TO APPLY MODIFIERS = CLAIM DENIAL = REVENUE LOSS
-
-EXAMPLE ENFORCEMENT:
-- 99214 + 17110 = 99214 (no modifier) + 17110-25 (modifier 25 applied)
-- Multiple procedures = First procedure normal + Second procedure-51
-- Bilateral procedure = Single procedure-50
-
 CRITICAL INSTRUCTION: Analyze ONLY the clinical text provided in this specific request. Do NOT use any examples, templates, or previous case data. Every diagnosis and CPT code must come directly from the documentation you are analyzing RIGHT NOW.
 
 MANDATORY: If you identify multiple conditions in the clinical documentation, you MUST include ALL of them in the diagnoses array. Missing any documented condition results in revenue loss and billing compliance failure.
 
 MANDATORY: Identify ALL billable services performed during this encounter. Include BOTH evaluation/management AND any procedures performed.
-
-🚨 MODIFIER ENFORCEMENT FOR CURRENT CASE:
-- If E&M code (99xxx) + Procedure code (17xxx/12xxx) detected → Procedure MUST have modifier "25"
-- Look at the JSON example below: 17110 has "modifiers": ["25"] - YOU MUST DO THIS SAME PATTERN
-- DO NOT RETURN EMPTY MODIFIER ARRAYS FOR PROCEDURES when E&M is present
 
 Return ONLY a JSON object with this exact structure:
 {
@@ -329,34 +301,19 @@ Return ONLY a JSON object with this exact structure:
       "code": "99204",
       "description": "Office visit, new patient, moderate complexity",
       "complexity": "moderate",
-      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity",
-      "modifiers": [],
-      "modifierReasons": "",
-      "clinicalJustification": "Complex medical decision making with multiple problems addressed",
-      "baseRate": 274.00,
-      "estimatedRevenueImpact": 274.00
+      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity"
     },
     {
       "code": "99386", 
       "description": "Preventive medicine service, new patient, 40-64 years",
       "complexity": "preventive",
-      "reasoning": "Annual wellness exam component of visit",
-      "modifiers": [],
-      "modifierReasons": "",
-      "clinicalJustification": "Age-appropriate preventive care visit",
-      "baseRate": 195.00,
-      "estimatedRevenueImpact": 195.00
+      "reasoning": "Annual wellness exam component of visit"
     },
     {
       "code": "17110",
       "description": "Destruction of benign lesions, up to 14 lesions",
       "complexity": "procedure",
-      "reasoning": "Cryotherapy performed on skin lesions",
-      "modifiers": ["25"],
-      "modifierReasons": "Significant E&M service performed on same day as procedure",
-      "clinicalJustification": "Wart destruction with separate evaluation and management",
-      "baseRate": 165.00,
-      "estimatedRevenueImpact": 165.00
+      "reasoning": "Cryotherapy performed on skin lesions"
     }
   ],
   "diagnoses": [
