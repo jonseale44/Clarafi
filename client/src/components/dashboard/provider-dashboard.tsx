@@ -78,6 +78,8 @@ export function ProviderDashboard() {
   const [unreviewReason, setUnreviewReason] = useState("");
 
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
+  const [selectedPatientForReview, setSelectedPatientForReview] = useState<{id: number, name: string} | null>(null);
+  const [showFixedLabReview, setShowFixedLabReview] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
