@@ -41,7 +41,7 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
     return (
       <Card className="border-green-200 bg-green-50">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-green-800 emr-header-title">
+          <CardTitle className="flex items-center space-x-2 text-green-800 text-xl font-semibold">
             <Stethoscope className="h-5 w-5" />
             <span>Nursing Assessment Summary</span>
             <Badge variant="outline" className="text-green-600 border-green-600">
@@ -64,7 +64,7 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
     return (
       <Card className="border-yellow-200 bg-yellow-50">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-yellow-800 emr-header-title">
+          <CardTitle className="flex items-center space-x-2 text-yellow-800 text-xl font-semibold">
             <AlertCircle className="h-5 w-5" />
             <span>Nursing Assessment Summary</span>
             <Badge variant="outline" className="text-yellow-600 border-yellow-600">
@@ -85,7 +85,7 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
     return (
       <Card className="border-gray-200 bg-gray-50">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-gray-600 emr-header-title">
+          <CardTitle className="flex items-center space-x-2 text-gray-600 text-xl font-semibold">
             <Stethoscope className="h-5 w-5" />
             <span>Nursing Assessment Summary</span>
             <Badge variant="outline" className="text-gray-500 border-gray-500">
