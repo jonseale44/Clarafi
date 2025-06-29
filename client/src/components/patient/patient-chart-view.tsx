@@ -10,6 +10,7 @@ import { EncountersTab } from "./encounters-tab";
 import { EncounterDetailView } from "./encounter-detail-view";
 import { NursingEncounterView } from "./nursing-encounter-view";
 import { SharedChartSections } from "./shared-chart-sections";
+import { UnifiedChartPanel } from "./unified-chart-panel";
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
@@ -38,6 +39,52 @@ const chartSections = [
   { id: "appointments", label: "Appointments", icon: null },
   { id: "ai-debug", label: "AI Assistant Debug", icon: null },
 ];
+
+// AI Debug Section Component
+function AIDebugSection({ patientId }: { patientId: number }) {
+  const {
+    data: assistantConfig,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: [`/api/patients/${patientId}/assistant`],
+    enabled: !!patientId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-4 text-sm text-gray-500">Loading assistant info...</div>
+    );
+  }
+
+  if (error || !assistantConfig) {
+    return <div className="p-4 text-sm text-red-600">No assistant found</div>;
+  }
+
+  const config = assistantConfig as any;
+
+  return (
+    <div className="p-4">
+      <div className="text-sm space-y-3">
+        <div>
+          <span className="font-medium">Assistant:</span>{" "}
+          {config?.name || "Unknown"}
+        </div>
+        <div>
+          <span className="font-medium">Model:</span>{" "}
+          {config?.model || "Unknown"}
+        </div>
+        <div>
+          <span className="font-medium">Thread:</span>{" "}
+          {config?.thread_id ? "Active" : "None"}
+        </div>
+        <Button size="sm" variant="outline" className="w-full">
+          View Full Debug
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function PatientChartView({ patient, patientId }: PatientChartViewProps) {
   const [activeSection, setActiveSection] = useState("encounters");
@@ -274,108 +321,39 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
 
   return (
     <div className="flex h-full">
-      {/* Left Sidebar */}
-      <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
-        {/* Patient Header */}
-        <div className="p-6 bg-white border-b border-gray-200">
-          <div className="flex items-start space-x-4">
-            <div className="relative">
-              <Avatar className="w-16 h-16 border-2 border-gray-200">
-                <AvatarImage 
-                  src={patient.profilePhotoFilename ? `/uploads/${patient.profilePhotoFilename}` : undefined}
-                  alt={`${patient.firstName} ${patient.lastName}`}
-                />
-                <AvatarFallback className="text-lg bg-gray-100">
-                  {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
-                </AvatarFallback>
-              </Avatar>
-              <button className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded text-[10px]">
-                Upload Photo
-              </button>
-            </div>
-            
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {patient.firstName} {patient.lastName}
-              </h3>
-              <p className="text-sm text-gray-600">
-                DOB: {formatDate(patient.dateOfBirth)}
-              </p>
-              
-              <div className="flex space-x-2 mt-2">
-                <Button variant="outline" size="sm" className="text-xs">
-                  Edit Profile
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs">
-                  Back to Patient List
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search patient chart..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Chart Sections */}
-        <div className="flex-1 overflow-y-auto">
-          {chartSections.map((section) => (
-            <Collapsible
-              key={section.id}
-              open={expandedSections.has(section.id)}
-              onOpenChange={() => toggleSection(section.id)}
-            >
-              <CollapsibleTrigger className="w-full">
-                <div 
-                  className={`flex items-center justify-between w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 ${
-                    activeSection === section.id ? 'bg-blue-50 text-blue-700 border-l-4 border-l-blue-500' : ''
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveSection(section.id);
-                  }}
-                >
-                  <div className="flex items-center space-x-2">
-                    {section.icon && <section.icon className="h-4 w-4" />}
-                    <span className="font-medium text-sm">{section.label}</span>
-                  </div>
-                  {expandedSections.has(section.id) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                {section.id === "encounters" && Array.isArray(encounters) && encounters.length > 0 && (
-                  <div className="bg-white border-b border-gray-100">
-                    {encounters.slice(0, 3).map((encounter: any) => (
-                      <div key={encounter.id} className="p-3 text-xs text-gray-600 border-b border-gray-50 last:border-b-0">
-                        <div className="font-medium">{encounter.encounterType}</div>
-                        <div>{encounter.startTime ? formatDate(encounter.startTime) : 'No date'}</div>
-                        <Badge variant="outline" className="mt-1 text-[10px]">{encounter.status}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </div>
-      </div>
+      {/* Left Chart Panel - Unified Resizable */}
+      <UnifiedChartPanel
+        patient={patient}
+        config={{
+          context: 'patient-chart',
+          userRole: (currentUser as any)?.role,
+          allowResize: true,
+          defaultWidth: "w-80",
+          maxExpandedWidth: "90vw",
+          enableSearch: true
+        }}
+        highlightAttachmentId={highlightAttachmentId}
+      />
 
       {/* Main Content */}
       <div className="flex-1 p-6 overflow-y-auto">
-        {renderSectionContent()}
+        <div className="max-w-full">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {patient.firstName} {patient.lastName}
+              </h1>
+              <p className="text-gray-600">
+                Patient Chart • DOB: {formatDate(patient.dateOfBirth)} • Age: {calculateAge(patient.dateOfBirth)}
+              </p>
+            </div>
+            <Button onClick={handleStartNewEncounter} className="bg-slate-700 hover:bg-slate-800 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              New Encounter
+            </Button>
+          </div>
+          {renderSectionContent()}
+        </div>
       </div>
     </div>
   );

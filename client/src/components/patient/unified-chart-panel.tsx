@@ -387,24 +387,19 @@ export function UnifiedChartPanel({
                     {Icon && <Icon className="h-4 w-4 text-gray-600 flex-shrink-0" />}
                     <span className="font-medium text-sm truncate">{section.label}</span>
                     {section.allowExpanded && !panelState.isExpanded && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <div
                         onClick={(e) => {
                           e.stopPropagation();
                           expandSection(section.id);
                         }}
-                        className="h-6 w-6 p-0 ml-2 opacity-70 hover:opacity-100 transition-opacity"
+                        className="h-6 w-6 p-1 ml-2 opacity-70 hover:opacity-100 transition-opacity cursor-pointer rounded hover:bg-gray-100 flex items-center justify-center"
                         title="Click to expand section"
                       >
                         <Maximize2 className="h-3 w-3" />
-                      </Button>
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 flex-shrink-0">
-                    {section.allowExpanded && !panelState.isExpanded && (
-                      <span className="text-xs text-gray-500">Double-click to expand</span>
-                    )}
+                  <div className="flex-shrink-0">
                     {isExpanded ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
