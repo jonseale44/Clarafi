@@ -197,13 +197,13 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       
       const { soapNote } = await soapResponse.json();
       
-      // Use proven legacy system with modifier enhancements
-      const response = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/extract-cpt`, {
+      // Use enhanced CPT extraction with modifier intelligence  
+      const response = await fetch(`/api/billing/extract-cpt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ soapNote }),
+        body: JSON.stringify({ soapNote, patientId, encounterId }),
       });
 
       if (!response.ok) {
