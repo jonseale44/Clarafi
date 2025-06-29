@@ -1,6 +1,7 @@
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
 import { PatientAttachments } from "./patient-attachments";
+import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
 import { VitalsTrendingGraph } from "@/components/vitals/vitals-trending-graph";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
