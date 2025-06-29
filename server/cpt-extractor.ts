@@ -11,6 +11,11 @@ interface CPTCode {
   description: string;
   complexity?: string;
   reasoning?: string;
+  modifiers?: string[];
+  modifierReasons?: string;
+  clinicalJustification?: string;
+  baseRate?: number;
+  estimatedRevenueImpact?: number;
 }
 
 interface DiagnosisCode {
@@ -288,6 +293,17 @@ CRITICAL BILLING RULES:
 2. COMPREHENSIVE DIAGNOSIS CODING: Include ALL diagnoses that justify complexity scoring
 3. Medicare compliance: Document reasoning for complexity level selection
 
+MODIFIER OPTIMIZATION GUIDELINES:
+- MODIFIER 25: Use when significant E&M service occurs with procedure on same day
+- MODIFIER 59: Distinct procedural service - separate from other procedures
+- MODIFIER 51: Multiple procedures - reduced payment for additional procedures
+- MODIFIER 95: Synchronous telemedicine service
+- MODIFIER 50: Bilateral procedure
+- MODIFIER TC: Technical component only
+- MODIFIER 26: Professional component only
+- Only apply modifiers when clinically justified and documented
+- Modifier 25 with 99xxx codes when procedures performed same visit
+
 CRITICAL INSTRUCTION: Analyze ONLY the clinical text provided in this specific request. Do NOT use any examples, templates, or previous case data. Every diagnosis and CPT code must come directly from the documentation you are analyzing RIGHT NOW.
 
 MANDATORY: If you identify multiple conditions in the clinical documentation, you MUST include ALL of them in the diagnoses array. Missing any documented condition results in revenue loss and billing compliance failure.
@@ -301,19 +317,34 @@ Return ONLY a JSON object with this exact structure:
       "code": "99204",
       "description": "Office visit, new patient, moderate complexity",
       "complexity": "moderate",
-      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity"
+      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity",
+      "modifiers": [],
+      "modifierReasons": "",
+      "clinicalJustification": "Complex medical decision making with multiple problems addressed",
+      "baseRate": 274.00,
+      "estimatedRevenueImpact": 274.00
     },
     {
       "code": "99386", 
       "description": "Preventive medicine service, new patient, 40-64 years",
       "complexity": "preventive",
-      "reasoning": "Annual wellness exam component of visit"
+      "reasoning": "Annual wellness exam component of visit",
+      "modifiers": [],
+      "modifierReasons": "",
+      "clinicalJustification": "Age-appropriate preventive care visit",
+      "baseRate": 195.00,
+      "estimatedRevenueImpact": 195.00
     },
     {
       "code": "17110",
       "description": "Destruction of benign lesions, up to 14 lesions",
       "complexity": "procedure",
-      "reasoning": "Cryotherapy performed on skin lesions"
+      "reasoning": "Cryotherapy performed on skin lesions",
+      "modifiers": ["25"],
+      "modifierReasons": "Significant E&M service performed on same day as procedure",
+      "clinicalJustification": "Wart destruction with separate evaluation and management",
+      "baseRate": 165.00,
+      "estimatedRevenueImpact": 165.00
     }
   ],
   "diagnoses": [

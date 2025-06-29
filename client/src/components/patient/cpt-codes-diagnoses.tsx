@@ -197,17 +197,13 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       
       const { soapNote } = await soapResponse.json();
       
-      // Extract CPT codes using Enhanced Billing System (with modifiers support)
-      const response = await fetch(`/api/billing/extract-cpt`, {
+      // Use proven legacy system with modifier enhancements
+      const response = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/extract-cpt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          soapNoteText: soapNote,
-          patientId: patientId,
-          encounterId: encounterId
-        }),
+        body: JSON.stringify({ soapNote }),
       });
 
       if (!response.ok) {
@@ -216,26 +212,18 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
 
       const data = await response.json();
       
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to extract CPT codes');
-      }
-      
-      // Handle Enhanced Billing API response format (includes modifiers)
-      const extractedCPTCodes = data.extractedCodes || [];
-      const extractedDiagnoses = data.extractedDiagnoses || [];
-      
       // Convert GPT data to unique ID format before setting state
-      const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(extractedCPTCodes, extractedDiagnoses);
+      const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(data.cptCodes || [], data.diagnoses || []);
       
       setCPTCodes(convertedCPTCodes);
       setDiagnoses(convertedDiagnoses);
       
       // Use GPT's intelligent mappings with clinical rationale - GPT is smarter than hardcoded rules
-      initializeMappings(convertedCPTCodes, convertedDiagnoses, data.intelligentMappings || []);
+      initializeMappings(convertedCPTCodes, convertedDiagnoses, data.intelligentMappings);
       
       toast({
-        title: "Enhanced CPT Codes Generated",
-        description: `Extracted ${extractedCPTCodes.length} CPT codes with modifiers and ${extractedDiagnoses.length} diagnoses`,
+        title: "CPT Codes Generated",
+        description: `Extracted ${data.cptCodes?.length || 0} CPT codes and ${data.diagnoses?.length || 0} diagnoses`,
       });
 
     } catch (error) {
