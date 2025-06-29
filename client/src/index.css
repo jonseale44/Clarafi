@@ -549,7 +549,7 @@
   }
   
   .chart-section-label {
-    @apply text-xs font-medium; /* Smaller font */
+    @apply text-base font-medium; /* Updated from text-xs (12px) to text-base (16px) */
   }
   
   /* Patient header compact styling */

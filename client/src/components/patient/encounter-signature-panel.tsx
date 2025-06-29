@@ -118,7 +118,7 @@ export function EncounterSignaturePanel({
     return (
       <Card className="border-green-200 bg-green-50">
         <CardHeader>
-          <CardTitle className="flex items-center text-green-800">
+          <CardTitle className="flex items-center text-green-800 text-xl font-semibold">
             <CheckCircle className="h-5 w-5 mr-2" />
             Encounter Signed
           </CardTitle>
@@ -168,7 +168,7 @@ export function EncounterSignaturePanel({
   return (
     <Card className="border-blue-200">
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex items-center text-xl font-semibold">
           <PenTool className="h-5 w-5 mr-2" />
           Electronic Signature
         </CardTitle>
