@@ -1369,9 +1369,9 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation */}
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div className="bg-white border-b border-gray-200 emr-nav-compact">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Nursing Documentation</h1>
+            <h1 className="emr-header-title">Nursing Documentation</h1>
             <div className="text-sm text-gray-600">
               Encounter ID: {encounterId}
             </div>
@@ -1383,12 +1383,12 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
         </div>
 
         {/* Content Area - Two Column Layout */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="flex gap-6 h-full">
+        <div className="flex-1 overflow-y-auto emr-content-padding">
+          <div className="flex emr-grid-gap h-full">
             {/* Left Column - Assessment and Summary */}
-            <div className="w-1/2 space-y-6">
+            <div className="w-1/2 emr-tight-spacing">
               {/* Nursing Template Assessment Section */}
-              <Card className="p-6">
+              <Card className="emr-ultra-compact-card">
                 <NursingTemplateAssessment
                   ref={nursingTemplateRef}
                   patientId={patient.id.toString()}
@@ -1404,11 +1404,11 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
             </div>
 
             {/* Right Column - Transcription and AI Suggestions */}
-            <div className="w-1/2 space-y-6">
+            <div className="w-1/2 emr-tight-spacing">
               {/* Voice Recording and Transcription Section */}
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-semibold leading-none tracking-tight">
+              <Card className="emr-ultra-compact-card">
+                <div className="flex items-center justify-between emr-ultra-compact-spacing">
+                  <h2 className="emr-section-title">
                     Transcription
                   </h2>
                   <div className="flex items-center space-x-2">
@@ -1446,9 +1446,9 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
               </Card>
 
               {/* AI Suggestions */}
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-semibold leading-none tracking-tight">
+              <Card className="emr-ultra-compact-card">
+                <div className="flex items-center justify-between emr-ultra-compact-spacing">
+                  <h2 className="emr-section-title">
                     AI Suggestions
                   </h2>
                   <Button
