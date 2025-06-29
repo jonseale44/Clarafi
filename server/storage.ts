@@ -150,6 +150,34 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(users.username);
   }
 
+  // User preferences management
+  async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
+    const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    return preferences || undefined;
+  }
+
+  async upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    const existing = await this.getUserPreferences(preferences.userId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(userPreferences)
+        .set({ 
+          chartPanelWidth: preferences.chartPanelWidth,
+          updatedAt: new Date()
+        })
+        .where(eq(userPreferences.userId, preferences.userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(userPreferences)
+        .values(preferences)
+        .returning();
+      return created;
+    }
+  }
+
   // Patient management
   async getPatient(id: number): Promise<Patient | undefined> {
     const [patient] = await db.select().from(patients).where(eq(patients.id, id));

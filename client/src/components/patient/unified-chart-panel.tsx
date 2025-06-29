@@ -16,8 +16,9 @@ import {
 import { Patient } from "@shared/schema";
 import { SharedChartSections } from "./shared-chart-sections";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User as UserType } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   getAvailableSections, 
   getSectionConfig, 
@@ -49,9 +50,17 @@ export function UnifiedChartPanel({
   isAutoGeneratingMedicalProblems = false,
   medicalProblemsProgress = 0
 }: UnifiedChartPanelProps) {
+  const queryClient = useQueryClient();
+  
   // Get current user for role-based filtering
   const { data: currentUser } = useQuery<UserType>({
     queryKey: ["/api/user"],
+  });
+
+  // Load user preferences
+  const { data: userPreferences } = useQuery({
+    queryKey: ["/api/user/preferences"],
+    enabled: !!currentUser,
   });
 
   // Panel state
@@ -66,8 +75,30 @@ export function UnifiedChartPanel({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
   const [dragStartWidth, setDragStartWidth] = useState(0);
-  const [panelWidth, setPanelWidth] = useState(320); // 320px = w-80
+  const [panelWidth, setPanelWidth] = useState(userPreferences?.chartPanelWidth || 400);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Update panel width when user preferences load
+  useEffect(() => {
+    if (userPreferences?.chartPanelWidth) {
+      setPanelWidth(userPreferences.chartPanelWidth);
+    }
+  }, [userPreferences]);
+
+  // Mutation to save user preferences (no toast)
+  const savePreferences = useMutation({
+    mutationFn: async (preferences: { chartPanelWidth: number }) => {
+      return apiRequest("/api/user/preferences", {
+        method: "PUT",
+        body: JSON.stringify(preferences),
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+    onSuccess: () => {
+      // Silently update cache without showing any toast
+      queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
+    },
+  });
 
   // Get available sections based on context and user role
   const availableSections = getAvailableSections(config.context, currentUser?.role);
