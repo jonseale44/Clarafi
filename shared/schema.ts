@@ -522,7 +522,6 @@ export const medicalProblems = pgTable("medical_problems", {
   changeLog: jsonb("change_log").default([]), // Audit trail of changes
   
   // GPT-powered intelligent ranking system
-  rankScore: numeric("rank_score", { precision: 5, scale: 2 }).default("99.99"), // 1.00 = highest priority, 99.99 = lowest
   lastRankedEncounterId: integer("last_ranked_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
   rankingReason: text("ranking_reason"), // GPT's reasoning for rank assignment
   
