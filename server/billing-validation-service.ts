@@ -76,11 +76,10 @@ export class BillingValidationService {
 
     console.log(`✅ [BillingValidation] [${validationId}] CPT record found: ${cptRecord.description}`);
     console.log(`💰 [BillingValidation] [${validationId}] Base rate: $${cptRecord.baseRate}`);
-    console.log(`📋 [BillingValidation] [${validationId}] Category: ${cptRecord.category}, Complexity: ${cptRecord.complexityLevel || 'N/A'}`);
-    console.log(`🏥 [BillingValidation] [${validationId}] Specialty: ${cptRecord.specialty || 'General'}`);
+    console.log(`📋 [BillingValidation] [${validationId}] Category: ${cptRecord.category}`);
     console.log(`📅 [BillingValidation] [${validationId}] Active: ${cptRecord.isActive}, Valid from: ${cptRecord.effectiveDate}`);
-    if (cptRecord.workRvu) {
-      console.log(`⚡ [BillingValidation] [${validationId}] Work RVU: ${cptRecord.workRvu}, Practice expense RVU: ${cptRecord.practiceExpenseRvu || 'N/A'}`);
+    if (cptRecord.rvu) {
+      console.log(`⚡ [BillingValidation] [${validationId}] RVU: ${cptRecord.rvu}`);
     }
 
     if (!cptRecord.isActive) {

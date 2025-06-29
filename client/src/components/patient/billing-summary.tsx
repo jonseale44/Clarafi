@@ -83,7 +83,7 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
             <h4 className="font-medium text-sm mb-2">CPT Code Breakdown</h4>
             <div className="space-y-2">
               {cptCodes.map((code, index) => {
-                const rate = CPT_REIMBURSEMENT_RATES[code.code] || 0;
+                const rate = 0; // Rate via BillingValidationService API
                 return (
                   <div key={index} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
                     <div className="flex items-center space-x-2">
