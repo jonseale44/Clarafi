@@ -32,6 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useSharedRealtimeService } from "@/utils/shared-realtime-service";
 import { SharedChartSections } from "@/components/patient/shared-chart-sections";
+import { UnifiedChartPanel } from "@/components/patient/unified-chart-panel";
 
 import {
   NursingTemplateAssessment,
@@ -105,9 +106,9 @@ export function NursingEncounterView({
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Get current user for role-based functionality
-  const { data: currentUser } = useQuery<UserType>({
+  const { data: currentUser } = useQuery({
     queryKey: ["/api/user"],
-  });
+  }) as { data?: { role?: string } };
 
   // Get encounter data
   const { data: encounter, isLoading } = useQuery({
@@ -1349,145 +1350,21 @@ IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insig
 
   return (
     <div className="flex h-full">
-      {/* Left Sidebar - Complete Patient Chart */}
-      <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
-        {/* Patient Header */}
-        <div className="p-4 bg-white border-b border-gray-200">
-          <div className="flex items-start space-x-3">
-            <Avatar className="w-12 h-12 border-2 border-gray-200">
-              <AvatarImage
-                src={
-                  patient.profilePhotoFilename
-                    ? `/uploads/${patient.profilePhotoFilename}`
-                    : undefined
-                }
-                alt={`${patient.firstName} ${patient.lastName}`}
-              />
-              <AvatarFallback className="text-sm bg-gray-100">
-                {patient.firstName?.[0] || "P"}
-                {patient.lastName?.[0] || "P"}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {patient.firstName} {patient.lastName}
-              </h3>
-              <p className="text-sm text-gray-600">
-                DOB: {formatDate(patient.dateOfBirth)}
-              </p>
-              <p className="text-sm text-blue-600">
-                Encounter #{encounterId} -{" "}
-                {formatDate(new Date().toISOString())}
-              </p>
-
-              <div className="flex space-x-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={onBackToChart}
-                >
-                  <ArrowLeft className="h-3 w-3 mr-1" />
-                  Back to Patient Chart
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Encounter Status */}
-        <div className="p-4 bg-green-50 border-b border-gray-200">
-          <div className="text-sm">
-            <div className="font-medium text-green-900 flex items-center">
-              <Stethoscope className="w-4 h-4 mr-2" />
-              Nursing Encounter
-            </div>
-            <div className="text-green-700">
-              Encounter #{encounterId} -{" "}
-              {(encounter as any)?.encounterType || "Office Visit"}
-            </div>
-            <div className="flex items-center mt-2">
-              <Badge
-                variant="outline"
-                className="bg-green-100 text-green-800 border-green-300"
-              >
-                {(encounter as any)?.encounterStatus?.replace("_", " ") ||
-                  "In Progress"}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search patient chart..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-        </div>
-
-        {/* Chart Sections */}
-        <div className="flex-1 overflow-y-auto">
-          {nursingChartSections.map((section) => (
-            <Collapsible
-              key={section.id}
-              open={expandedSections.has(section.id)}
-              onOpenChange={() => toggleSection(section.id)}
-            >
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100">
-                  <span className="font-medium text-sm">{section.label}</span>
-                  {expandedSections.has(section.id) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="bg-white border-b border-gray-100 p-3">
-                  {section.id === "encounters" ? (
-                    <div className="text-xs text-gray-600">
-                      Current nursing encounter in progress
-                    </div>
-                  ) : section.id === "nursing-assessments" ? (
-                    <div className="text-xs text-gray-600">
-                      <div className="space-y-1">
-                        <div className="font-medium">Recent Assessments:</div>
-                        <div>Pain: 3/10</div>
-                        <div>Fall Risk: Low</div>
-                        <div>Skin Integrity: Intact</div>
-                      </div>
-                    </div>
-                  ) : section.id === "care-plans" ? (
-                    <div className="text-xs text-gray-600">
-                      <div className="space-y-1">
-                        <div className="font-medium">Active Plans:</div>
-                        <div>• Monitor vital signs q4h</div>
-                        <div>• Patient education on medications</div>
-                        <div>• Mobility assistance</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <SharedChartSections
-                      patientId={patient.id}
-                      mode="encounter"
-                      encounterId={(encounter as any)?.id}
-                      isReadOnly={false}
-                      sectionId={section.id}
-                    />
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </div>
-      </div>
+      {/* Left Chart Panel - Unified Expandable */}
+      <UnifiedChartPanel
+        patient={patient}
+        config={{
+          context: 'nurse-encounter',
+          userRole: currentUser?.role,
+          allowResize: true,
+          defaultWidth: "w-80",
+          maxExpandedWidth: "90vw",
+          enableSearch: true
+        }}
+        encounterId={encounterId}
+        encounter={encounter}
+        onBackToChart={onBackToChart}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">

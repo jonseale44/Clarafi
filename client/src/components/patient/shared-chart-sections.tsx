@@ -42,16 +42,16 @@ function VitalsSection({ patientId, encounterId, mode }: {
   const { data: patient } = useQuery({
     queryKey: [`/api/patients/${patientId}`],
     enabled: !!patientId
-  });
+  }) as { data?: any };
 
   // Always fetch patient vitals to show historical data in encounter view
   const { data: vitalsData } = useQuery({
     queryKey: [`/api/vitals/patient/${patientId}`],
     enabled: !!patientId
-  });
+  }) as { data?: any };
 
   // Normalize vitals data - handle both wrapped and direct array responses
-  const vitalsArray = vitalsData?.data || vitalsData || [];
+  const vitalsArray = (vitalsData as any)?.data || (vitalsData as any) || [];
   const vitalsEntries = Array.isArray(vitalsArray) ? vitalsArray : [];
   
   // Get latest vitals for compact summary
