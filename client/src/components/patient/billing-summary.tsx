@@ -88,7 +88,7 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
     return (
       <Card className="p-6">
         <CardHeader className="px-0 pt-0">
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-xl font-semibold">
             <DollarSign className="h-5 w-5 mr-2" />
             Billing Summary
           </CardTitle>
@@ -107,7 +107,7 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
   return (
     <Card className="p-6">
       <CardHeader className="px-0 pt-0">
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between text-xl font-semibold">
           <div className="flex items-center">
             <DollarSign className="h-5 w-5 mr-2" />
             Billing Summary

@@ -373,7 +373,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Orders</CardTitle>
+          <CardTitle className="text-xl font-semibold">Orders</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-2">
@@ -388,7 +388,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-xl font-semibold">
           Orders
           {orders.length > 0 && (
             <Badge variant="secondary">{orders.length}</Badge>

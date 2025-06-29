@@ -165,7 +165,7 @@ export function EncounterWorkflowControls({
   return (
     <Card className="border-gray-200">
       <CardHeader>
-        <CardTitle className="flex items-center text-base">
+        <CardTitle className="flex items-center text-xl font-semibold">
           <Save className="h-4 w-4 mr-2" />
           Encounter Workflow
         </CardTitle>
