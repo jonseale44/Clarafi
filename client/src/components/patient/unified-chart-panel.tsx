@@ -254,7 +254,7 @@ export function UnifiedChartPanel({
       style={{ 
         width: panelState.isExpanded ? panelState.currentWidth : `${panelWidth}px`,
         minWidth: panelState.isExpanded ? '500px' : '280px',
-        maxWidth: panelState.isExpanded ? '90vw' : '400px'
+        maxWidth: panelState.isExpanded ? '90vw' : '50vw'
       }}
     >
       {/* Resize Handle */}
