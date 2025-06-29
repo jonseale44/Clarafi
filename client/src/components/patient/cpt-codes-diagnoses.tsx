@@ -334,7 +334,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       description: cptData.description,
       complexity: cptData.complexity,
       category: cptData.category,
-      baseRate: cptData.baseRate
+      baseRate: undefined // Rate fetched via validation API
     };
     setCPTCodes(prev => [...prev, newCPT]);
     
@@ -434,7 +434,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
             description: cptData.description,
             complexity: cptData.complexity,
             category: cptData.category,
-            baseRate: cptData.baseRate
+            baseRate: undefined // Rate fetched via validation API
           }
         : cpt
     ));
@@ -458,7 +458,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
               description: foundCPT.description,
               complexity: foundCPT.complexity,
               category: foundCPT.category,
-              baseRate: foundCPT.baseRate
+              baseRate: undefined // Rate fetched via validation API
             }
           : cpt
       ));
