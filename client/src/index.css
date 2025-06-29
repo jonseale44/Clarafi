@@ -404,4 +404,42 @@
       @apply grid-cols-2;
     }
   }
+
+  /* Medication component specific responsive fixes */
+  .medication-tabs {
+    min-height: 60px;
+  }
+  
+  .medication-tab-trigger {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+  }
+  
+  .medication-tab-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  
+  .medication-header-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  @media (max-width: 640px) {
+    .medication-header-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .medication-tab-trigger {
+      padding: 4px 6px;
+    }
+    
+    .medication-tab-text {
+      font-size: 10px;
+    }
+  }
 }

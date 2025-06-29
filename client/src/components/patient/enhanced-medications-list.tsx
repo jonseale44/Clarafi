@@ -440,17 +440,17 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 flex-shrink-0">
             <Pill className="h-5 w-5" />
             Medications
             <Badge variant="outline" className="ml-2">
               {(medicationData as MedicationResponse)?.summary.total || 0}
             </Badge>
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
             <Select value={groupingMode} onValueChange={(value: any) => setGroupingMode(value)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-36 min-w-[120px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -462,10 +462,11 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
               <Button 
                 onClick={() => setIsAddingMedication(true)}
                 size="sm"
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 flex-shrink-0 w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4" />
-                Add Medication
+                <span className="hidden sm:inline">Add Medication</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             )}
           </div>
@@ -475,26 +476,26 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
       <CardContent className="space-y-4">
         {/* Status Tabs */}
         <Tabs value={activeStatusTab} onValueChange={(value: any) => setActiveStatusTab(value)}>
-          <TabsList className="grid w-full grid-cols-4 h-auto">
-            <TabsTrigger value="current" className="flex flex-col items-center gap-1 p-2 text-xs">
-              <Activity className="h-3 w-3" />
-              <span>Current</span>
-              <span className="text-xs opacity-70">({((medicationData as MedicationResponse)?.summary.active || 0) + ((medicationData as MedicationResponse)?.summary.pending || 0)})</span>
+          <TabsList className="grid w-full grid-cols-4 h-auto min-h-[60px]">
+            <TabsTrigger value="current" className="flex flex-col items-center gap-0.5 p-1.5 text-xs leading-tight">
+              <Activity className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate max-w-full">Current</span>
+              <span className="text-[10px] opacity-70 leading-none">({((medicationData as MedicationResponse)?.summary.active || 0) + ((medicationData as MedicationResponse)?.summary.pending || 0)})</span>
             </TabsTrigger>
-            <TabsTrigger value="discontinued" className="flex flex-col items-center gap-1 p-2 text-xs">
-              <Clock className="h-3 w-3" />
-              <span>Discontinued</span>
-              <span className="text-xs opacity-70">({(medicationData as MedicationResponse)?.summary.discontinued || 0})</span>
+            <TabsTrigger value="discontinued" className="flex flex-col items-center gap-0.5 p-1.5 text-xs leading-tight">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate max-w-full">Disc.</span>
+              <span className="text-[10px] opacity-70 leading-none">({(medicationData as MedicationResponse)?.summary.discontinued || 0})</span>
             </TabsTrigger>
-            <TabsTrigger value="held" className="flex flex-col items-center gap-1 p-2 text-xs">
-              <AlertTriangle className="h-3 w-3" />
-              <span>Held</span>
-              <span className="text-xs opacity-70">({(medicationData as MedicationResponse)?.summary.held || 0})</span>
+            <TabsTrigger value="held" className="flex flex-col items-center gap-0.5 p-1.5 text-xs leading-tight">
+              <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate max-w-full">Held</span>
+              <span className="text-[10px] opacity-70 leading-none">({(medicationData as MedicationResponse)?.summary.held || 0})</span>
             </TabsTrigger>
-            <TabsTrigger value="historical" className="flex flex-col items-center gap-1 p-2 text-xs">
-              <FileText className="h-3 w-3" />
-              <span>Historical</span>
-              <span className="text-xs opacity-70">({(medicationData as MedicationResponse)?.summary.historical || 0})</span>
+            <TabsTrigger value="historical" className="flex flex-col items-center gap-0.5 p-1.5 text-xs leading-tight">
+              <FileText className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate max-w-full">History</span>
+              <span className="text-[10px] opacity-70 leading-none">({(medicationData as MedicationResponse)?.summary.historical || 0})</span>
             </TabsTrigger>
           </TabsList>
 
