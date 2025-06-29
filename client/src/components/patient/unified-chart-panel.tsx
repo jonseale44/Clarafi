@@ -112,6 +112,7 @@ export function UnifiedChartPanel({
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
+  const [dragStartWidth, setDragStartWidth] = useState(0);
   const [panelWidth, setPanelWidth] = useState(320); // 320px = w-80
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -172,34 +173,42 @@ export function UnifiedChartPanel({
     });
   };
 
-  // Handle panel resizing
+  // Handle panel resizing - Fixed version
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(true);
     setDragStart(e.clientX);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    setDragStartWidth(panelWidth);
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || dragStart === 0) return;
     
     const diff = e.clientX - dragStart;
-    const newWidth = Math.max(280, Math.min(800, panelWidth + diff));
+    const newWidth = Math.max(280, Math.min(800, dragStartWidth + diff));
     setPanelWidth(newWidth);
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+    setDragStart(0);
+    setDragStartWidth(0);
   };
 
   useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const renderSectionContent = (section: any) => {
     if (section.id === "encounters") {
@@ -259,11 +268,12 @@ export function UnifiedChartPanel({
       {/* Resize Handle */}
       {config.allowResize && (
         <div
-          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500 transition-colors group"
+          className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-blue-400 bg-gray-200 transition-colors group z-20"
           onMouseDown={handleMouseDown}
+          title="Drag to resize panel"
         >
-          <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <GripVertical className="h-4 w-4 text-gray-400" />
+          <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 opacity-60 group-hover:opacity-100 transition-opacity">
+            <GripVertical className="h-4 w-4 text-gray-600" />
           </div>
         </div>
       )}
@@ -361,9 +371,18 @@ export function UnifiedChartPanel({
               onOpenChange={() => toggleSection(section.id)}
             >
               <CollapsibleTrigger className="w-full">
-                <div className={`flex items-center justify-between w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 transition-colors ${
-                  isActive ? 'bg-blue-50 border-blue-200' : ''
-                }`}>
+                <div 
+                  className={`flex items-center justify-between w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 transition-colors ${
+                    isActive ? 'bg-blue-50 border-blue-200' : ''
+                  }`}
+                  onDoubleClick={(e) => {
+                    if (section.allowExpanded && !panelState.isExpanded) {
+                      e.stopPropagation();
+                      expandSection(section.id);
+                    }
+                  }}
+                  title={section.allowExpanded && !panelState.isExpanded ? "Double-click to expand section" : undefined}
+                >
                   <div className="flex items-center space-x-2 flex-1 min-w-0">
                     {Icon && <Icon className="h-4 w-4 text-gray-600 flex-shrink-0" />}
                     <span className="font-medium text-sm truncate">{section.label}</span>
@@ -375,13 +394,17 @@ export function UnifiedChartPanel({
                           e.stopPropagation();
                           expandSection(section.id);
                         }}
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-6 w-6 p-0 ml-2 opacity-70 hover:opacity-100 transition-opacity"
+                        title="Click to expand section"
                       >
                         <Maximize2 className="h-3 w-3" />
                       </Button>
                     )}
                   </div>
-                  <div className="flex-shrink-0">
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    {section.allowExpanded && !panelState.isExpanded && (
+                      <span className="text-xs text-gray-500">Double-click to expand</span>
+                    )}
                     {isExpanded ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
