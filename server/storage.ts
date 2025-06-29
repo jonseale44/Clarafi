@@ -152,7 +152,9 @@ export class DatabaseStorage implements IStorage {
 
   // User preferences management
   async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
+    console.log('🔧 [Storage] Getting user preferences for userId:', userId);
     const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    console.log('🔧 [Storage] Raw database result:', preferences);
     return preferences || undefined;
   }
 
