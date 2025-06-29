@@ -427,8 +427,8 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="space-y-3">
+      <CardHeader className="pb-1 emr-compact-header">
+        <div className="emr-tight-spacing">
           {/* Controls Row - Guaranteed to stay within card bounds */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 min-w-0 flex-1">
@@ -460,7 +460,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="emr-card-content-tight emr-tight-spacing">
         {/* Status Tabs */}
         <Tabs value={activeStatusTab} onValueChange={(value: any) => setActiveStatusTab(value)}>
           <TabsList className="grid w-full grid-cols-4 h-auto medication-tabs">

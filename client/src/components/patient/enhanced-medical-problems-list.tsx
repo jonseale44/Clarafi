@@ -702,7 +702,7 @@ export function EnhancedMedicalProblemsList({
           onOpenChange={() => toggleProblemExpansion(problem.id)}
         >
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-opacity-80 medical-problem-header transition-colors">
+            <CardHeader className="cursor-pointer hover:bg-opacity-80 medical-problem-header transition-colors emr-compact-header">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   {expandedProblems.has(problem.id) ? (
@@ -797,10 +797,10 @@ export function EnhancedMedicalProblemsList({
           </CollapsibleTrigger>
           
           <CollapsibleContent>
-            <CardContent className="pt-0">
-              <div className="space-y-4">
+            <CardContent className="pt-0 emr-card-content-tight">
+              <div className="emr-tight-spacing">
                 {problem.visitHistory && problem.visitHistory.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="emr-dense-list">
                     {problem.visitHistory
                       .sort((a, b) => {
                         // Primary sort: Date descending (most recent first)

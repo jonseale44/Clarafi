@@ -447,6 +447,68 @@
   .medication-tabs {
     min-height: 40px; /* Reduced from 60px for density */
   }
+
+  /* Ultra-compact EMR spacing for EPIC-level density */
+  .emr-ultra-compact {
+    @apply p-1 space-y-0.5;
+  }
+
+  .emr-ultra-compact-card {
+    @apply p-2 space-y-1;
+  }
+
+  .emr-minimal-padding {
+    @apply p-1;
+  }
+
+  .emr-tight-spacing {
+    @apply space-y-0.5;
+  }
+
+  .emr-no-gap {
+    @apply gap-0;
+  }
+
+  .emr-micro-gap {
+    @apply gap-1;
+  }
+
+  .emr-compact-header {
+    @apply py-1 px-2;
+  }
+
+  .emr-dense-list {
+    @apply space-y-0.5;
+  }
+
+  .emr-micro-margin {
+    @apply my-0.5;
+  }
+
+  /* Card content with minimal padding */
+  .emr-card-content-tight {
+    @apply px-3 py-2;
+  }
+
+  /* Button spacing reduction */
+  .emr-button-compact {
+    @apply px-2 py-1 text-xs;
+  }
+
+  /* Tab content with reduced padding */
+  .emr-tab-content-compact {
+    @apply pt-2 px-0;
+  }
+
+  /* List items with minimal spacing */
+  .emr-list-item-tight {
+    @apply py-0.5 px-1;
+  }
+
+  /* Section dividers with minimal margin */
+  .emr-divider-tight {
+    @apply my-1;
+  }
   
   .medication-tab-trigger {
     flex: 1;
