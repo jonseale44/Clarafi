@@ -620,7 +620,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
               <div className="flex items-start justify-between emr-ultra-tight-gap">
                 <div className="flex-1 min-w-0 pr-1">
                   <div className="emr-ultra-tight-spacing">
-                    <h3 className="emr-ultra-compact-content font-medium leading-tight">
+                    <h3 className="text-sm font-medium leading-tight">
                       {medication.medicationName}
                       {medication.dosage && ` ${medication.dosage}`}
                       {medication.strength && medication.strength !== medication.dosage && ` ${medication.strength}`}

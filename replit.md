@@ -121,6 +121,7 @@ Preferred communication style: Simple, everyday language.
 - **SCALABLE ARCHITECTURE**: System automatically maintains visual hierarchy and professional appearance regardless of font size changes (16px → 11px)
 - **EPIC-LEVEL DENSITY ACHIEVEMENT**: Achieves medical-grade information density with ultra-tight proportional spacing that scales efficiently across all EMR components
 - **MICRO-SPACING CLASSES**: Added .emr-micro-spacing (0.2em) and .emr-ultra-tight-spacing for densest possible layout configurations
+- **MEDICATION FONT OPTIMIZATION**: Updated medication names and doses from 11px to 13px for improved readability while maintaining ultra-tight proportional spacing system that scales with font changes
 
 ### Complete EMR Header Font Standardization (June 29, 2025)
 - **RIGHT-SIDE HEADER STANDARDIZATION COMPLETE**: All 8 right-side panel headers now use consistent text-xl font-semibold (20px) styling
