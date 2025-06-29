@@ -172,9 +172,7 @@ export function UnifiedChartPanel({
       );
     }
 
-    if (section.id === "ai-debug") {
-      return <AIDebugSection patientId={patient.id} />;
-    }
+
 
     if (section.id === "documents") {
       return (

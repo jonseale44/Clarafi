@@ -162,16 +162,6 @@ export const CHART_SECTIONS: ChartSection[] = [
     allowExpanded: true,
     expandedWidth: "w-96"
   },
-  {
-    id: "ai-debug",
-    label: "AI Assistant Debug",
-    icon: Bot,
-    contexts: ['patient-chart', 'provider-encounter'],
-    roles: ['admin'],
-    priority: 14,
-    allowExpanded: true,
-    expandedWidth: "w-[500px]"
-  },
   // Nursing-specific sections
   {
     id: "nursing-assessments",
