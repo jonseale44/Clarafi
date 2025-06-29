@@ -2408,7 +2408,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         patientId: encounter.patientId,
         encounterId,
         userId: req.user?.id || 1,
-        allCptCodes: encounter.cptCodes.map((cpt: any) => ({
+        allCptCodes: (encounter.cptCodes || []).map((cpt: any) => ({
           code: cpt.code,
           modifiers: cpt.modifiers || [],
           description: cpt.description || ""

@@ -36,6 +36,16 @@ interface CPTCode {
   complexity?: 'low' | 'moderate' | 'high' | 'straightforward';
   category?: string;
   baseRate?: number;
+  modifiers?: string[]; // New: CPT modifiers like ["-25", "-59", "-RT"] 
+  modifierReasoning?: string; // New: GPT reasoning for modifier selection
+  primaryModifier?: string; // New: Most important modifier
+  validation?: {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+    revenueImpact?: number;
+    suggestedModifiers?: string[];
+  };
 }
 
 interface DiagnosisCode {
@@ -72,6 +82,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
   const [editCPTDescription, setEditCPTDescription] = useState("");
   const [editDiagnosisValue, setEditDiagnosisValue] = useState("");
   const [editDiagnosisICD, setEditDiagnosisICD] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -613,6 +624,16 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={validateBilling}
+              disabled={isGenerating || isAutoGenerating || cptCodes.length === 0}
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 hover:border-purple-300"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Validate Billing
+            </Button>
+            <Button
+              size="sm"
               onClick={saveCPTData}
               disabled={cptCodes.length === 0 && diagnoses.length === 0}
             >
@@ -680,13 +701,73 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                     className="font-mono text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
                                     onClick={() => startEditingCPT(cpt.id)}
                                   >
-                                    {cpt.code}
+                                    <div className="flex items-center justify-center gap-1">
+                                      {cpt.code}
+                                      {/* Visual indicators for modifiers and validation */}
+                                      {cpt.modifiers && cpt.modifiers.length > 0 && (
+                                        <span className="text-blue-600 font-semibold" title={`${cpt.modifiers.length} modifier(s)`}>
+                                          +{cpt.modifiers.length}
+                                        </span>
+                                      )}
+                                      {cpt.validation && (
+                                        <div className={`w-1.5 h-1.5 rounded-full ${cpt.validation.isValid ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                      )}
+                                    </div>
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <div className="max-w-xs">
                                     <p className="font-medium">{cpt.code}</p>
                                     <p className="text-sm">{cpt.description}</p>
+                                    
+                                    {/* Show modifiers if present */}
+                                    {cpt.modifiers && cpt.modifiers.length > 0 && (
+                                      <div className="mt-2">
+                                        <p className="text-xs font-medium text-gray-600">Modifiers:</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {cpt.modifiers.map((modifier, idx) => (
+                                            <Badge key={idx} variant="secondary" className="text-xs">
+                                              {modifier}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                        {cpt.modifierReasoning && (
+                                          <p className="text-xs text-gray-500 mt-1">{cpt.modifierReasoning}</p>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Show validation status */}
+                                    {cpt.validation && (
+                                      <div className="mt-2">
+                                        <div className="flex items-center gap-1">
+                                          <div className={`w-2 h-2 rounded-full ${cpt.validation.isValid ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                          <p className="text-xs font-medium">{cpt.validation.isValid ? 'Valid' : 'Issues Found'}</p>
+                                        </div>
+                                        {cpt.validation.warnings.length > 0 && (
+                                          <div className="mt-1">
+                                            <p className="text-xs text-yellow-600">Warnings:</p>
+                                            {cpt.validation.warnings.map((warning, idx) => (
+                                              <p key={idx} className="text-xs text-yellow-600">• {warning}</p>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {cpt.validation.errors.length > 0 && (
+                                          <div className="mt-1">
+                                            <p className="text-xs text-red-600">Errors:</p>
+                                            {cpt.validation.errors.map((error, idx) => (
+                                              <p key={idx} className="text-xs text-red-600">• {error}</p>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {cpt.validation.revenueImpact && (
+                                          <p className="text-xs text-green-600 mt-1">
+                                            Revenue: ${cpt.validation.revenueImpact.toFixed(2)}
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+                                    
                                     {cpt.complexity && (
                                       <Badge variant="outline" className="mt-1">
                                         {cpt.complexity}
