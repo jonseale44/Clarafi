@@ -6,6 +6,7 @@
 import { Router } from "express";
 import { storage } from "./storage";
 import { medicationDelta } from "./medication-delta-service";
+import { chartMedicationService } from "./chart-medication-service";
 import type { Request, Response } from "express";
 
 const router = Router();

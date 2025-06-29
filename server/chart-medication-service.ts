@@ -1,6 +1,7 @@
 /**
- * Chart Medication Service
+ * Chart Medication Service with GPT-Powered Intelligence
  * Handles direct medication management in patient chart independent of encounter workflow
+ * Uses GPT for intelligent duplicate detection and clinical decision-making
  * Provides production-level EMR medication management capabilities
  */
 
@@ -8,6 +9,9 @@ import { db } from "./db.js";
 import { medications, medicationFormulary, patients, encounters } from "../shared/schema.js";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { MedicationStandardizationService } from "./medication-standardization-service.js";
+import { OpenAI } from "openai";
+
+const openai = new OpenAI();
 
 export interface ChartMedicationInput {
   patientId: number;
@@ -37,14 +41,12 @@ export interface MoveToOrdersInput {
 }
 
 export class ChartMedicationService {
-  private standardizationService: MedicationStandardizationService;
-
   constructor() {
-    this.standardizationService = new MedicationStandardizationService();
+    // MedicationStandardizationService is a static class
   }
 
   /**
-   * Add medication directly to patient chart (independent of encounter)
+   * Add medication directly to patient chart with GPT-powered duplicate intelligence
    */
   async addChartMedication(input: ChartMedicationInput): Promise<any> {
     console.log(`💊 [ChartMedication] Adding medication directly to chart for patient ${input.patientId}`);
@@ -62,34 +64,39 @@ export class ChartMedicationService {
       }
 
       // Create virtual encounter for chart-based medication
-      // This maintains data integrity while enabling chart-independent management
       const chartEncounter = await this.getOrCreateChartEncounter(input.patientId, input.prescriberId);
 
       // Standardize medication using existing service
-      const standardizedMedication = await this.standardizationService.standardizeAndEnhance({
-        medicationName: input.medicationName,
-        dosage: input.dosage,
-        frequency: input.frequency,
-        route: input.route,
-        sig: input.sig,
-        quantity: input.quantity,
-        daysSupply: input.daysSupply
-      });
-
-      // Check for potential duplicates
-      const existingMedications = await this.checkForDuplicates(
-        input.patientId,
-        standardizedMedication.genericName || standardizedMedication.medicationName
+      const standardizedMedication = MedicationStandardizationService.standardizeMedicationFromAI(
+        input.medicationName,
+        input.dosage,
+        input.dosageForm,
+        input.route
       );
 
-      if (existingMedications.length > 0) {
-        console.log(`⚠️ [ChartMedication] Found ${existingMedications.length} potential duplicate(s)`);
-        // Return duplicate information for user decision
+      // Get all existing active medications for GPT analysis
+      const existingMedications = await this.getAllActiveMedications(input.patientId);
+
+      // Use GPT to intelligently detect duplicates vs. different dosages
+      const duplicateAnalysis = await this.analyzeForDuplicatesWithGPT(
+        {
+          medicationName: standardizedMedication.medicationName || input.medicationName,
+          dosage: input.dosage,
+          frequency: input.frequency,
+          route: input.route || 'oral',
+          clinicalIndication: input.clinicalIndication
+        },
+        existingMedications
+      );
+
+      if (duplicateAnalysis.isDuplicate) {
+        console.log(`⚠️ [ChartMedication] GPT detected true duplicate:`, duplicateAnalysis.reasoning);
         return {
           success: false,
-          duplicatesFound: true,
-          existingMedications,
-          proposedMedication: standardizedMedication
+          duplicateDetected: true,
+          duplicateReasoning: duplicateAnalysis.reasoning,
+          conflictingMedications: duplicateAnalysis.conflictingMedications,
+          recommendations: duplicateAnalysis.recommendations
         };
       }
 
@@ -97,7 +104,7 @@ export class ChartMedicationService {
       const [newMedication] = await db.insert(medications).values({
         patientId: input.patientId,
         encounterId: chartEncounter.id,
-        medicationName: standardizedMedication.medicationName,
+        medicationName: standardizedMedication.medicationName || input.medicationName,
         genericName: standardizedMedication.genericName,
         brandName: standardizedMedication.brandName,
         dosage: input.dosage,
@@ -119,8 +126,6 @@ export class ChartMedicationService {
         lastUpdatedEncounterId: chartEncounter.id,
         rxNormCode: standardizedMedication.rxNormCode,
         ndcCode: standardizedMedication.ndcCode,
-        // Chart-specific fields
-        sourceOrderId: null, // No source order - direct chart entry
         reasonForChange: 'Direct chart entry',
         changeLog: [{
           action: 'chart_added',
@@ -131,11 +136,13 @@ export class ChartMedicationService {
       }).returning();
 
       console.log(`✅ [ChartMedication] Successfully added medication ${newMedication.id} to chart`);
+      console.log(`✅ [ChartMedication] GPT Analysis: ${duplicateAnalysis.reasoning}`);
 
       return {
         success: true,
         medication: newMedication,
-        standardizedData: standardizedMedication
+        standardizedData: standardizedMedication,
+        gptAnalysis: duplicateAnalysis
       };
 
     } catch (error) {
