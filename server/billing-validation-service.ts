@@ -127,7 +127,7 @@ export class BillingValidationService {
       .from(cptModifiers)
       .where(inArray(cptModifiers.modifier, modifiers));
 
-    const foundModifiers = modifierRecords.map(m => m.modifier);
+    const foundModifiers = modifierRecords.map((m: any) => m.modifier);
     const missingModifiers = modifiers.filter(m => !foundModifiers.includes(m));
 
     if (missingModifiers.length > 0) {
@@ -142,7 +142,7 @@ export class BillingValidationService {
       }
 
       // Check if modifier is applicable to this CPT category
-      if (modifierRecord.applicableCptCategories?.length > 0 && 
+      if (modifierRecord.applicableCptCategories && modifierRecord.applicableCptCategories.length > 0 && 
           !modifierRecord.applicableCptCategories.includes(cptRecord.category)) {
         warnings.push(`Modifier ${modifierRecord.modifier} may not be applicable to ${cptRecord.category} procedures`);
       }
@@ -158,7 +158,7 @@ export class BillingValidationService {
     }
 
     // Check for missing required modifiers based on allowed list
-    if (cptRecord.allowedModifiers?.length > 0) {
+    if (cptRecord.allowedModifiers && cptRecord.allowedModifiers.length > 0) {
       const requiredButMissing = cptRecord.allowedModifiers.filter(allowed => 
         !modifiers.includes(allowed) && this.isModifierContextRequired(allowed, cptCode)
       );
@@ -265,7 +265,7 @@ export class BillingValidationService {
         changedBy: context.userId,
         changeSource: 'system_validation',
         validationStatus: eventType === 'validation_passed' ? 'validated' : 'flagged',
-        revenueImpact: details.revenueImpact ? Number(details.revenueImpact) : null
+        revenueImpact: details.revenueImpact ? details.revenueImpact.toString() : null
       };
 
       await db.insert(billingAuditTrail).values(auditEntry);
@@ -345,7 +345,7 @@ export class BillingValidationService {
         recommendations.push(`⚠️ ${code}: ${result.warnings.join(', ')}`);
       }
 
-      if (result.suggestedModifiers?.length > 0) {
+      if (result.suggestedModifiers && result.suggestedModifiers.length > 0) {
         recommendations.push(`💡 ${code}: Consider modifiers ${result.suggestedModifiers.join(', ')}`);
       }
 

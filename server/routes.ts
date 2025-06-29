@@ -2331,6 +2331,109 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
     },
   );
 
+  // Production Billing Validation API Endpoints
+  app.post(
+    "/api/billing/validate-cpt",
+    APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const { cptCode, modifiers, patientId, encounterId } = req.body;
+
+      if (!cptCode) {
+        return res.status(400).json({ message: "CPT code is required" });
+      }
+
+      const { BillingValidationService } = await import("./billing-validation-service.js");
+      const billingValidator = new BillingValidationService();
+
+      const validationContext = {
+        patientId: patientId || 1,
+        encounterId: encounterId || 1,
+        userId: req.user?.id || 1,
+        allCptCodes: [{
+          code: cptCode,
+          modifiers: modifiers || [],
+          description: "Manual validation"
+        }]
+      };
+
+      const validationResult = await billingValidator.validateCPTCode(
+        cptCode,
+        modifiers || [],
+        validationContext
+      );
+
+      res.json(validationResult);
+    })
+  );
+
+  app.get(
+    "/api/billing/audit-trail/:patientId",
+    APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const patientId = parseInt(req.params.patientId);
+      
+      const { db } = await import("./db.js");
+      const { billingAuditTrail } = await import("../shared/schema.js");
+      const { eq, desc } = await import("drizzle-orm");
+
+      const auditTrail = await db
+        .select()
+        .from(billingAuditTrail)
+        .where(eq(billingAuditTrail.patientId, patientId))
+        .orderBy(desc(billingAuditTrail.createdAt))
+        .limit(50);
+
+      res.json(auditTrail);
+    })
+  );
+
+  app.get(
+    "/api/billing/revenue-impact/:encounterId",
+    APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const encounterId = parseInt(req.params.encounterId);
+      const encounter = await storage.getEncounter(encounterId);
+      
+      if (!encounter || !encounter.cptCodes) {
+        return res.json({ totalRevenue: 0, cptBreakdown: [] });
+      }
+
+      const { BillingValidationService } = await import("./billing-validation-service.js");
+      const billingValidator = new BillingValidationService();
+
+      const validationContext = {
+        patientId: encounter.patientId,
+        encounterId,
+        userId: req.user?.id || 1,
+        allCptCodes: encounter.cptCodes.map((cpt: any) => ({
+          code: cpt.code,
+          modifiers: cpt.modifiers || [],
+          description: cpt.description || ""
+        }))
+      };
+
+      const validationResults = await billingValidator.validateEncounterBilling(
+        validationContext.allCptCodes,
+        validationContext
+      );
+
+      const totalRevenue = Object.values(validationResults)
+        .reduce((sum: number, result: any) => sum + (result.revenueImpact || 0), 0);
+
+      const cptBreakdown = Object.entries(validationResults).map(([code, result]: [string, any]) => ({
+        code,
+        revenue: result.revenueImpact || 0,
+        isValid: result.isValid,
+        warnings: result.warnings
+      }));
+
+      res.json({ totalRevenue, cptBreakdown, validationResults });
+    })
+  );
+
   // Unified Orders API routes for draft orders processing system
   app.get("/api/patients/:patientId/orders/draft", async (req, res) => {
     try {
