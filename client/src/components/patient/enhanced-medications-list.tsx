@@ -629,37 +629,39 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors pb-3">
             <div className="space-y-2">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-medium text-base">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0 pr-2">
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-base leading-tight">
                       {medication.medicationName}
                       {medication.dosage && ` ${medication.dosage}`}
                       {medication.strength && medication.strength !== medication.dosage && ` ${medication.strength}`}
                     </h3>
-                    {medication.brandName && medication.brandName !== medication.medicationName && (
-                      <span className="text-sm text-gray-500">({medication.brandName})</span>
-                    )}
-                    <Badge variant={getStatusBadgeVariant(medication.status)} className="flex items-center gap-1">
-                      {getStatusIcon(medication.status)}
-                      {medication.status}
-                    </Badge>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {medication.brandName && medication.brandName !== medication.medicationName && (
+                        <span className="text-sm text-gray-500">({medication.brandName})</span>
+                      )}
+                      <Badge variant={getStatusBadgeVariant(medication.status)} className="flex items-center gap-1 text-xs">
+                        {getStatusIcon(medication.status)}
+                        {medication.status}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-start gap-1 flex-shrink-0 flex-wrap max-w-[40%]">
                   {medication.drugInteractions?.length > 0 && (
-                    <Badge variant="destructive" className="flex items-center gap-1">
+                    <Badge variant="destructive" className="flex items-center gap-1 text-xs">
                       <AlertTriangle className="h-3 w-3" />
-                      {medication.drugInteractions.length} interaction{medication.drugInteractions.length !== 1 ? 's' : ''}
+                      {medication.drugInteractions.length}
                     </Badge>
                   )}
                   {medication.priorAuthRequired && (
-                    <Badge variant="outline" className="flex items-center gap-1">
+                    <Badge variant="outline" className="flex items-center gap-1 text-xs">
                       <Shield className="h-3 w-3" />
-                      Prior Auth
+                      PA
                     </Badge>
                   )}
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="ml-1">
                     {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -802,14 +804,15 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
 
             {/* Actions */}
             {(onEdit || onDiscontinue) && (medication.status === 'active' || medication.status === 'pending') && (
-              <div className="flex items-center gap-2">
+              <div className="mt-4 pt-4 border-t border-gray-200">
                 {!showDiscontinueForm && !isEditMode ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {onEdit && (
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => setIsEditMode(true)}
+                        className="flex-shrink-0"
                       >
                         <Edit className="h-3 w-3 mr-1" />
                         Edit
@@ -820,6 +823,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                         variant="outline" 
                         size="sm"
                         onClick={() => setShowDiscontinueForm(true)}
+                        className="flex-shrink-0"
                       >
                         Discontinue
                       </Button>
@@ -829,41 +833,44 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                         variant="outline" 
                         size="sm"
                         onClick={() => onMoveToOrders(medication.id)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 flex-shrink-0"
                       >
                         <ArrowRight className="h-3 w-3 mr-1" />
-                        Move to Orders
+                        <span className="hidden sm:inline">Move to Orders</span>
+                        <span className="sm:hidden">Move</span>
                       </Button>
                     )}
                   </div>
                 ) : showDiscontinueForm ? (
-                  <div className="flex items-center gap-2 w-full">
+                  <div className="space-y-3">
                     <Input
                       placeholder="Reason for discontinuation"
                       value={discontinueReason}
                       onChange={(e) => setDiscontinueReason(e.target.value)}
-                      className="flex-1"
+                      className="w-full"
                     />
-                    <Button 
-                      size="sm" 
-                      onClick={handleDiscontinue}
-                      disabled={!discontinueReason.trim()}
-                    >
-                      Confirm
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setShowDiscontinueForm(false);
-                        setDiscontinueReason('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setShowDiscontinueForm(false);
+                          setDiscontinueReason('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={handleDiscontinue}
+                        disabled={!discontinueReason.trim()}
+                      >
+                        Confirm
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-end">
                     <Button 
                       variant="outline" 
                       size="sm"
