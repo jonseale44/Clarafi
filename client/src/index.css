@@ -508,64 +508,79 @@
   /* === PROPORTIONAL SPACING SYSTEM === */
   /* These classes scale spacing proportionally with font size */
   
-  /* Base spacing unit: 0.5em = scales with font size */
+  /* Ultra-tight spacing for maximum density */
   .emr-proportional-tight {
+    padding: 0.3em;
+    gap: 0.15em;
+  }
+  
+  .emr-proportional-normal {
     padding: 0.5em;
     gap: 0.25em;
   }
   
-  .emr-proportional-normal {
-    padding: 0.75em;
-    gap: 0.5em;
-  }
-  
   .emr-proportional-loose {
-    padding: 1em;
-    gap: 0.75em;
+    padding: 0.75em;
+    gap: 0.4em;
   }
 
-  /* Card components with proportional spacing */
+  /* Card components with ultra-compact proportional spacing */
   .emr-card-proportional {
-    padding: 0.6em;
+    padding: 0.4em;
   }
   
   .emr-card-header-proportional {
-    padding: 0.5em 0.75em 0.4em 0.75em; /* Reduced bottom padding */
+    padding: 0.3em 0.5em 0.2em 0.5em; /* Much tighter spacing */
   }
   
   .emr-card-content-proportional {
-    padding: 0 0.75em 0.6em 0.75em;
+    padding: 0 0.5em 0.3em 0.5em; /* Reduced all padding */
   }
   
-  /* Element spacing that scales with content */
+  /* Element spacing that scales with content - ultra tight */
   .emr-element-gap-tight {
-    gap: 0.25em;
+    gap: 0.15em;
   }
   
   .emr-element-gap-normal {
-    gap: 0.5em;
+    gap: 0.25em;
   }
   
   .emr-space-y-proportional > * + * {
-    margin-top: 0.4em;
+    margin-top: 0.2em; /* Much tighter vertical spacing */
   }
   
   .emr-space-y-tight > * + * {
-    margin-top: 0.25em;
+    margin-top: 0.1em; /* Ultra-tight vertical spacing */
   }
 
-  /* Medication card specific proportional spacing */
+  /* Ultra-tight medication card specific spacing */
   .medication-card-proportional {
-    padding: 0.6em;
+    padding: 0.3em;
   }
   
   .medication-card-proportional .card-header {
-    padding-bottom: 0.4em;
+    padding-bottom: 0.2em;
   }
   
   .medication-card-proportional .medication-content {
-    line-height: 1.2;
-    gap: 0.3em;
+    line-height: 1.1;
+    gap: 0.15em;
+  }
+
+  /* Ultra-compact element spacing for maximum density */
+  .emr-ultra-tight-gap {
+    gap: 0.1em;
+  }
+
+  .emr-ultra-tight-spacing > * + * {
+    margin-top: 0.05em;
+  }
+
+  /* Micro-spacing for densest possible layout */
+  .emr-micro-spacing {
+    padding: 0.2em;
+    gap: 0.1em;
   }
 
   /* Section dividers with minimal margin */

@@ -511,7 +511,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                         {groupName}
                       </h3>
                     )}
-                    <div className="emr-space-y-tight">
+                    <div className="emr-ultra-tight-spacing">
                       {medications.map((medication: Medication) => (
                         <MedicationCard
                           key={medication.id}
@@ -616,16 +616,16 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
       <Card className={`border-l-4 ${getCardBorderColor(medication.status)}`}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors emr-card-header-proportional">
-            <div className="emr-space-y-tight">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0 pr-2">
-                  <div className="space-y-1">
+            <div className="emr-ultra-tight-spacing">
+              <div className="flex items-start justify-between emr-ultra-tight-gap">
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="emr-ultra-tight-spacing">
                     <h3 className="emr-ultra-compact-content font-medium leading-tight">
                       {medication.medicationName}
                       {medication.dosage && ` ${medication.dosage}`}
                       {medication.strength && medication.strength !== medication.dosage && ` ${medication.strength}`}
                     </h3>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center emr-ultra-tight-gap flex-wrap">
                       {medication.brandName && medication.brandName !== medication.medicationName && (
                         <span className="text-sm text-gray-500">({medication.brandName})</span>
                       )}
