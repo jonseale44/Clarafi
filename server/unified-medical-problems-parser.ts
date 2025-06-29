@@ -957,10 +957,18 @@ REQUIRED JSON RESPONSE FORMAT:
       // Add new visit ONLY if GPT provided actual visit notes
       const visitNotes = change.visit_notes?.trim() || "";
 
+      // Enhanced filtering for meaningless generic visit entries
+      const isGenericEntry = this.isGenericVisitEntry(visitNotes);
+      
       // Handle visit notes creation - but don't exit early as we still need ranking updates
       if (!visitNotes) {
         console.log(
           `🚫 [UnifiedMedicalProblems] Skipping visit entry for problem ${change.problem_id} (empty notes), but proceeding with ranking update`,
+        );
+        // Don't add visit entry but continue to ranking update
+      } else if (isGenericEntry) {
+        console.log(
+          `🚫 [UnifiedMedicalProblems] Skipping visit entry for problem ${change.problem_id} (generic/meaningless content: "${visitNotes}"), but proceeding with ranking update`,
         );
         // Don't add visit entry but continue to ranking update
       } else {
@@ -1133,6 +1141,62 @@ ${patientChart.socialHistory
     return sections.length > 0
       ? sections.join("\n")
       : "- No additional clinical data available for visit history enhancement";
+  }
+
+  /**
+   * Detects generic, meaningless visit history entries that should be filtered out
+   */
+  private isGenericVisitEntry(visitNotes: string): boolean {
+    const note = visitNotes.toLowerCase().trim();
+    
+    // List of generic patterns that indicate meaningless entries
+    const genericPatterns = [
+      // Review of systems patterns
+      /no current .* symptoms/,
+      /review of systems negative/,
+      /review of systems\s*:?\s*negative/,
+      /ros negative/,
+      /ros\s*:?\s*negative/,
+      
+      // General monitoring patterns
+      /general monitoring/,
+      /routine monitoring/,
+      /no specific diagnosis/,
+      /monitoring for symptoms/,
+      /assess for symptoms/,
+      /evaluate for symptoms/,
+      
+      // Generic status patterns
+      /no acute symptoms/,
+      /no complaints/,
+      /patient denies/,
+      /no changes/,
+      /stable condition/,
+      /unremarkable/,
+      
+      // Placeholder patterns
+      /no specific/,
+      /not addressed/,
+      /not discussed/,
+      /not evaluated/,
+      /not mentioned/,
+      
+      // Very short generic entries
+      /^stable$/,
+      /^unchanged$/,
+      /^no change$/,
+      /^routine$/,
+      /^ok$/,
+      /^good$/,
+    ];
+    
+    // Check if note matches any generic pattern
+    const isGeneric = genericPatterns.some(pattern => pattern.test(note));
+    
+    // Also filter extremely short notes (less than 10 characters) as likely meaningless
+    const tooShort = note.length < 10;
+    
+    return isGeneric || tooShort;
   }
 }
 
