@@ -3183,7 +3183,7 @@ Please provide medical suggestions based on this complete conversation context.`
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold leading-none tracking-tight">
+              <h2 className="emr-section-title">
                 Real-Time Transcription
               </h2>
               <div className="flex items-center space-x-2">
@@ -3282,7 +3282,7 @@ Please provide medical suggestions based on this complete conversation context.`
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                <h2 className="emr-section-title">
                   AI Suggestions
                 </h2>
                 <div className="flex items-center space-x-2 text-sm">
