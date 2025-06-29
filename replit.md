@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Problems Ranking System Final Cleanup (June 29, 2025)
+- **DOCUMENTATION MODERNIZATION**: Updated `MEDICAL_PROBLEMS_RANKING_SYSTEM.md` to reflect relative percentage system instead of outdated absolute ranges
+- **LEGACY CODE REMOVAL**: Eliminated unused `LegacyRankingWeights` interface from frontend component
+- **ALGORITHM DOCUMENTATION**: Clarified that GPT assigns 0-100% scores for each factor, distributed across all patient conditions
+- **WEIGHT SYSTEM EXPLAINED**: Updated documentation to show how user weight preferences (40%, 30%, 20%, 10%) multiply factor percentages
+- **CLINICAL EXAMPLES UPDATED**: Replaced absolute ranking examples with percentage-based factor scoring examples
+- **TECHNICAL DEBT ELIMINATED**: Removed all remaining legacy interfaces and outdated documentation
+- **ARCHITECTURE VALIDATED**: Confirmed ranking system is in production-ready state with unified, centralized calculation service
+
 ### Critical Visit History Filtering Fix (June 29, 2025)
 - **CRITICAL BUG FIXED**: Resolved visit history filtering logic that prevented multiple visit entries per encounter
 - **ROOT CAUSE IDENTIFIED**: System blocked encounter-based visit entries when attachment from same encounter was processed earlier
