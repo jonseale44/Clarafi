@@ -1135,6 +1135,395 @@ export function ProviderDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Fixed Lab Review Dialog */}
+      <Dialog open={showFixedLabReview} onOpenChange={setShowFixedLabReview}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Lab Results Review - {selectedPatientForReview?.name}</DialogTitle>
+            <DialogDescription>
+              Review pending lab results for this patient
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedPatientForReview && (
+              <LabResultsMatrix
+                patientId={selectedPatientForReview.id}
+                mode="review"
+                showTitle={false}
+                onReviewEncounter={(date, encounterIds) => {
+                  setSelectedLabForReview({
+                    type: 'encounter',
+                    date,
+                    encounterIds,
+                    patientName: selectedPatientForReview.name,
+                    patientId: selectedPatientForReview.id
+                  });
+                }}
+                onReviewTestGroup={(testName, resultIds) => {
+                  setSelectedLabForReview({
+                    type: 'testGroup',
+                    testName,
+                    resultIds,
+                    patientName: selectedPatientForReview.name,
+                    patientId: selectedPatientForReview.id
+                  });
+                }}
+                onReviewSpecific={(testName, date, resultId) => {
+                  setSelectedLabForReview({
+                    type: 'specific',
+                    testName,
+                    date,
+                    resultId,
+                    patientName: selectedPatientForReview.name,
+                    patientId: selectedPatientForReview.id
+                  });
+                }}
+                onUnreviewEncounter={(date, encounterIds, resultIds) => {
+                  setSelectedForUnreview({
+                    type: 'encounter',
+                    date,
+                    encounterIds,
+                    resultIds,
+                    patientName: selectedPatientForReview.name,
+                    patientId: selectedPatientForReview.id
+                  });
+                }}
+                onUnreviewTestGroup={(testName, resultIds) => {
+                  setSelectedForUnreview({
+                    type: 'testGroup',
+                    testName,
+                    resultIds,
+                    patientName: selectedPatientForReview.name,
+                    patientId: selectedPatientForReview.id
+                  });
+                }}
+              />
+            )}
+
+            {/* Enhanced Lab Review Section */}
+            {selectedLabForReview && (
+              <div className="border-t pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">
+                    {selectedLabForReview.type === 'encounter' && `Review Labs from ${selectedLabForReview.date}`}
+                    {selectedLabForReview.type === 'testGroup' && `Review ${selectedLabForReview.testName} Results`}
+                    {selectedLabForReview.type === 'specific' && `Review ${selectedLabForReview.testName} - ${selectedLabForReview.date}`}
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {selectedLabForReview.type === 'encounter' && `${selectedLabForReview.resultIds?.length || 0} lab results`}
+                      {selectedLabForReview.type === 'testGroup' && `${selectedLabForReview.resultIds?.length || 0} results`}
+                      {selectedLabForReview.type === 'specific' && 'Single result'}
+                    </Badge>
+                    {reviewingInProgress && (
+                      <Badge variant="secondary">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                        Processing...
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <Label className="text-sm font-medium">Review Scope</Label>
+                  <p className="text-sm text-gray-600">
+                    {selectedLabForReview.type === 'encounter' && `All lab results from encounter(s) on ${selectedLabForReview.date}`}
+                    {selectedLabForReview.type === 'testGroup' && `All ${selectedLabForReview.testName} results for this patient`}
+                    {selectedLabForReview.type === 'specific' && `Single ${selectedLabForReview.testName} result from ${selectedLabForReview.date}`}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="reviewNote">Clinical Review & Notes</Label>
+                  <Textarea
+                    id="reviewNote"
+                    placeholder={
+                      selectedLabForReview.type === 'encounter' 
+                        ? "Enter clinical interpretation for all labs from this encounter... (optional - will use default if empty)"
+                        : selectedLabForReview.type === 'testGroup'
+                        ? `Enter clinical interpretation for ${selectedLabForReview.testName} trend analysis... (optional)`
+                        : "Enter clinical interpretation, follow-up needed, patient communication notes... (optional)"
+                    }
+                    value={reviewNote}
+                    onChange={(e) => setReviewNote(e.target.value)}
+                    className="min-h-[120px]"
+                  />
+                  <p className="text-sm text-gray-500">
+                    Note: Review notes are optional. If left empty, a default review note will be used.
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setSelectedLabForReview(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      if (selectedLabForReview) {
+                        setReviewingInProgress(true);
+                        
+                        try {
+                          console.log('🔍 [Dashboard] Starting professional lab review process for:', selectedLabForReview);
+                          
+                          let reviewResponse;
+                          
+                          if (selectedLabForReview.type === 'encounter' && selectedLabForReview.date && selectedLabForReview.patientId) {
+                            // Use professional lab review service for date-based review
+                            console.log('🔍 [Dashboard] Using professional date-based review service');
+                            
+                            reviewResponse = await fetch('/api/lab-review/by-date', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                patientId: selectedLabForReview.patientId,
+                                selectedDate: selectedLabForReview.date,
+                                reviewNote: reviewNote || "Provider reviewed - no additional notes",
+                                reviewType: 'encounter'
+                              })
+                            });
+                            
+                          } else if (selectedLabForReview.type === 'testGroup' && selectedLabForReview.testName) {
+                            // Use professional panel-based review service
+                            console.log('🔍 [Dashboard] Using professional panel-based review service');
+                            
+                            reviewResponse = await fetch('/api/lab-review/by-panel', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                patientId: selectedLabForReview.patientId,
+                                panelNames: [selectedLabForReview.testName],
+                                reviewNote: reviewNote,
+                                reviewType: 'panel'
+                              })
+                            });
+                            
+                          } else if (selectedLabForReview.resultIds && selectedLabForReview.resultIds.length > 0) {
+                            // Use professional batch review service
+                            console.log('🔍 [Dashboard] Using professional batch review service');
+                            
+                            reviewResponse = await fetch('/api/lab-review/batch', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                resultIds: selectedLabForReview.resultIds,
+                                reviewNote: reviewNote,
+                                reviewType: selectedLabForReview.type
+                              })
+                            });
+                            
+                          } else if (selectedLabForReview.resultId) {
+                            // Single result review
+                            reviewResponse = await fetch('/api/lab-review/batch', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                resultIds: [selectedLabForReview.resultId],
+                                reviewNote: reviewNote,
+                                reviewType: 'individual'
+                              })
+                            });
+                          }
+                          
+                          if (!reviewResponse) {
+                            throw new Error('No valid review type configured');
+                          }
+                          
+                          console.log('🔍 [Dashboard] Raw response status:', reviewResponse.status, reviewResponse.statusText);
+                          
+                          const reviewResult = await reviewResponse.json();
+                          console.log('🔍 [Dashboard] Professional review response:', reviewResult);
+                          
+                          if (!reviewResponse.ok) {
+                            console.error('🚨 [Dashboard] Review request failed:', {
+                              status: reviewResponse.status,
+                              statusText: reviewResponse.statusText,
+                              result: reviewResult
+                            });
+                            throw new Error(reviewResult.error?.message || reviewResult.message || `Review failed with status ${reviewResponse.status}`);
+                          }
+                          
+                          // Extract result information from successful response
+                          const reviewedResultIds = reviewResult.data?.reviewedResults || [];
+                          const successCount = reviewResult.data?.resultCount || 0;
+                          
+                          console.log('🔍 [Dashboard] Review successful:', {
+                            successCount,
+                            reviewedResultIds,
+                            auditTrail: reviewResult.data?.auditTrail
+                          });
+                          
+                          // Show success feedback
+                          toast({
+                            title: "Review Completed",
+                            description: `Successfully reviewed ${successCount} lab result${successCount > 1 ? 's' : ''}`,
+                            duration: 3000,
+                          });
+                          
+                          setSelectedLabForReview(null);
+                          setReviewNote("");
+                          
+                          // Refresh the data to show updated status
+                          queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedLabForReview.patientId, 'lab-results'] });
+                          
+                        } catch (error) {
+                          console.error('🚨 [Dashboard] Review failed with detailed error:', {
+                            error: error,
+                            message: error?.message,
+                            stack: error?.stack,
+                            selectedLabForReview: selectedLabForReview,
+                            reviewNote: reviewNote
+                          });
+                          
+                          toast({
+                            title: "Review Failed",
+                            description: error?.message || "There was an error completing the review. Please try again.",
+                            variant: "destructive",
+                            duration: 5000,
+                          });
+                        } finally {
+                          setReviewingInProgress(false);
+                        }
+                      }
+                    }}
+                    disabled={reviewingInProgress}
+                  >
+                    {reviewingInProgress ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        Reviewing...
+                      </div>
+                    ) : (
+                      "Complete Review"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Unreview Dialog */}
+            {selectedForUnreview && (
+              <div className="border-t pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-red-600">
+                    Unreview: {selectedForUnreview.type === 'encounter' ? `Labs from ${selectedForUnreview.date}` : `${selectedForUnreview.testName} Results`}
+                  </h4>
+                  <Badge variant="destructive">
+                    {selectedForUnreview.resultIds?.length || 0} results
+                  </Badge>
+                </div>
+
+                <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                  <p className="text-sm text-red-800 font-medium mb-2">Important:</p>
+                  <p className="text-sm text-red-700">
+                    Unreviewing lab results will return them to "pending review" status. This action creates an audit trail and should only be used for workflow corrections.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="unreviewReason">Reason for Unreview (Required)</Label>
+                  <Textarea
+                    id="unreviewReason"
+                    placeholder="Enter detailed reason for unreviewing (e.g., 'Need to add additional clinical notes', 'Incorrect review by mistake', 'Requires re-interpretation after additional data')..."
+                    value={unreviewReason}
+                    onChange={(e) => setUnreviewReason(e.target.value)}
+                    className="min-h-[100px]"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedForUnreview(null);
+                      setUnreviewReason("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={async () => {
+                      if (!unreviewReason.trim()) {
+                        toast({
+                          title: "Reason Required",
+                          description: "Please provide a reason for unreviewing these results.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+
+                      try {
+                        const response = await fetch('/api/lab-review/unreview', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            resultIds: selectedForUnreview.resultIds,
+                            unreviewReason: unreviewReason,
+                            reviewType: selectedForUnreview.type
+                          })
+                        });
+
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                          throw new Error(result.error?.message || 'Unreview failed');
+                        }
+
+                        toast({
+                          title: "Unreview Completed",
+                          description: `Successfully unreviewed ${result.data?.resultCount || 0} lab results`,
+                          duration: 3000,
+                        });
+
+                        setSelectedForUnreview(null);
+                        setUnreviewReason("");
+                        
+                        // Refresh data to show updated status
+                        queryClient.invalidateQueries({ queryKey: ['/api/dashboard/lab-orders-to-review'] });
+                        if (selectedForUnreview.patientId) {
+                          queryClient.invalidateQueries({ queryKey: ['/api/patients', selectedForUnreview.patientId, 'lab-results'] });
+                        }
+
+                      } catch (error: any) {
+                        toast({
+                          title: "Unreview Failed",
+                          description: error.message || "Failed to unreview lab results",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    disabled={!unreviewReason.trim()}
+                  >
+                    Unreview Results
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowFixedLabReview(false);
+                  setSelectedPatientForReview(null);
+                  setSelectedLabForReview(null);
+                  setSelectedForUnreview(null);
+                  setReviewNote("");
+                  setUnreviewReason("");
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
