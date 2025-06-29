@@ -41,7 +41,7 @@ export function NursingSummaryDisplay({ encounterId, patientId }: NursingSummary
     return (
       <Card className="border-green-200 bg-green-50">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-green-800">
+          <CardTitle className="flex items-center space-x-2 text-green-800 emr-header-title">
             <Stethoscope className="h-5 w-5" />
             <span>Nursing Assessment Summary</span>
             <Badge variant="outline" className="text-green-600 border-green-600">
