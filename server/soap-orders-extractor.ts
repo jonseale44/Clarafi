@@ -372,7 +372,7 @@ Extract all medical orders and provide complete standardized parameters required
       "days_supply": number_of_days,
       "diagnosis_code": "ICD-10 code if available",
       "requires_prior_auth": boolean,
-      "clinical_indication": "detailed reason for prescription"
+      "clinical_indication": "concise 1-2 word indication using standard pharmacy abbreviations"
     }
   ],
   "labs": [
@@ -434,7 +434,14 @@ CRITICAL EXTRACTION RULES:
    - Vitamin B12 = 2132-9
 3. IMAGING: Always include study type and region - required for DICOM routing and scheduling
 4. REFERRALS: Map to standard specialty types for provider network routing
-5. CLINICAL INDICATIONS: Provide detailed context, not just "routine" - required for authorization
+5. CLINICAL INDICATIONS: Use concise 1-2 word pharmacy-standard abbreviations:
+   - HTN (not "hypertension" or "high blood pressure")
+   - T2DM (not "type 2 diabetes mellitus") 
+   - Neuropathy (not "diabetic neuropathic pain")
+   - Acne (not "acne vulgaris treatment")
+   - Migraine (not "migraine headache prevention")
+   - Osteoporosis (single word conditions preferred)
+   - Stroke prevention (maximum 2 words for complex indications)
 6. QUANTITIES: For medications, estimate 30-90 day supplies based on frequency
 7. SPECIMEN TYPES: Use specific types (blood vs whole_blood, swab vs throat swab)
 8. PRIORITIES: Map clinical urgency to standard values (STAT, URGENT, ROUTINE)
@@ -450,6 +457,22 @@ MEDICATION NAME STANDARDIZATION:
   * CCB → Amlodipine (or specific calcium channel blocker mentioned)
   * PPI → Omeprazole (or specific proton pump inhibitor mentioned)
   * ARB → Losartan (or specific angiotensin receptor blocker mentioned)
+
+CLINICAL INDICATION EXAMPLES (MANDATORY CONCISE FORMAT):
+- Gabapentin → "Neuropathy" (NOT "neuropathic pain" or "diabetic neuropathy")
+- Losartan → "HTN" (NOT "hypertension" or "blood pressure control")
+- Clopidogrel → "Stroke prevention" (acceptable 2-word indication)
+- Doxycycline → "Acne" (NOT "acne treatment" or "skin infection")
+- Montelukast → "Allergic rhinitis" (acceptable 2-word indication)
+- Insulin lispro → "T1DM" (use standard abbreviations)
+- Ondansetron → "Nausea" (NOT "nausea and vomiting" - choose primary)
+- Alendronate → "Osteoporosis" (single word preferred)
+- Cyclobenzaprine → "Muscle spasm" (acceptable 2-word indication)
+- Topiramate → "Migraine" (NOT "migraine prevention" or "headache prophylaxis")
+- Metformin → "T2DM" (NOT "diabetes mellitus type 2")
+- Lisinopril → "HTN" (NOT "hypertension management")
+- Simvastatin → "Hyperlipidemia" (single word preferred)
+- Albuterol → "Asthma" (NOT "bronchospasm" or "breathing difficulty")
 
 DEFAULTS FOR MISSING INFO:
 - For medications: 

@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Concise Clinical Indications GPT Prompt Enhancement (June 29, 2025)
+- **PHARMACY-STANDARD INDICATIONS**: Updated SOAP orders extractor GPT prompt to generate concise 1-2 word clinical indications matching industry standards
+- **MANDATORY ABBREVIATIONS**: GPT now uses "HTN" instead of "hypertension", "T2DM" instead of "type 2 diabetes mellitus", "Neuropathy" instead of "neuropathic pain"
+- **COMPREHENSIVE EXAMPLES**: Added 14 specific medication indication examples showing preferred concise format vs. verbose alternatives
+- **SINGLE-WORD PREFERENCE**: Emphasized single-word indications as most common in pharmacy industry (Acne, Asthma, Osteoporosis, Migraine)
+- **TWO-WORD MAXIMUM**: Limited complex indications to maximum 2 words (e.g., "Stroke prevention", "Allergic rhinitis", "Muscle spasm")
+- **PRODUCTION READY**: Updated live GPT-4.1 prompt in soap-orders-extractor.ts for immediate effect on all new medication orders
+- **STANDARDIZED FORMAT**: Clinical indications now match EMR pharmacy integration requirements for automated processing
+
 ### Enhanced Medication System with GPT Intelligence (June 29, 2025)
 - **ARCHITECTURAL ENHANCEMENT**: Enhanced existing `medication-delta-service.ts` with GPT-powered duplicate detection and chart medication management instead of creating duplicate services
 - **GPT DUPLICATE INTELLIGENCE**: Added sophisticated duplicate detection that distinguishes legitimate scenarios (Glyburide 5mg + 10mg for complex diabetes) from true duplicates (identical medications)
