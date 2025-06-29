@@ -3380,7 +3380,7 @@ Please provide medical suggestions based on this complete conversation context.`
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <h2 className="text-2xl font-semibold leading-none tracking-tight">
+                <h2 className="emr-section-title">
                   Note
                 </h2>
                 {/* Auto-save status indicator */}

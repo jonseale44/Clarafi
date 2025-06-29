@@ -20,7 +20,7 @@ export function SOAPNoteEditor({ content, onChange, placeholder = "Enter SOAP no
     content,
     editorProps: {
       attributes: {
-        class: "outline-none min-h-[300px] prose max-w-none whitespace-pre-wrap p-4",
+        class: "outline-none min-h-[300px] emr-ultra-compact-content max-w-none whitespace-pre-wrap p-4",
       },
     },
     onUpdate: ({ editor }) => {
