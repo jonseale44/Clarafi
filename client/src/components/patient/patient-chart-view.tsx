@@ -16,7 +16,6 @@ import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-import type { User as UserType } from "@shared/schema";
 
 interface PatientChartViewProps {
   patient: Patient;
@@ -48,103 +47,199 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get current user for role-based routing
-  const { data: currentUser } = useQuery<UserType>({
-    queryKey: ["/api/user"],
-  });
-
   // Handle URL parameters for navigation from vitals to attachments
+  const [highlightAttachmentId, setHighlightAttachmentId] = useState<number | null>(null);
+  
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const highlightAttachmentId = urlParams.get('highlightAttachment');
+    const section = urlParams.get('section');
+    const highlight = urlParams.get('highlight');
     
-    if (highlightAttachmentId) {
-      // Switch to attachments section and highlight the specific attachment
-      setActiveSection('attachments');
-      const newExpandedSections = new Set([...expandedSections]);
-      newExpandedSections.add('attachments');
-      setExpandedSections(newExpandedSections);
-      
-      // Clear URL parameter
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+    console.log('🔗 [PatientChart] URL parameters:', { 
+      section, 
+      highlight, 
+      currentLocation: window.location.href,
+      availableSections: chartSections.map(s => s.id)
+    });
+    
+    if (section && chartSections.some(s => s.id === section)) {
+      console.log('🔗 [PatientChart] Setting active section:', section);
+      setActiveSection(section);
+      setExpandedSections(prev => new Set([...prev, section]));
+    }
+    
+    if (highlight) {
+      const attachmentId = parseInt(highlight);
+      console.log('🔗 [PatientChart] Setting highlight attachment:', attachmentId);
+      setHighlightAttachmentId(attachmentId);
+      // Clear highlight after 5 seconds
+      setTimeout(() => {
+        console.log('🔗 [PatientChart] Clearing highlight after 5 seconds');
+        setHighlightAttachmentId(null);
+      }, 5000);
     }
   }, []);
 
-  // Fetch encounters for the encounters tab
-  const { data: encounters = [], refetch: refetchEncounters, isLoading: encountersLoading } = useQuery({
-    queryKey: [`/api/patients/${patientId}/encounters`],
+  // Get current user to determine role-based routing
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
   });
 
+  // Fetch encounters with automatic refresh
+  const { data: encounters = [], refetch: refetchEncounters } = useQuery({
+    queryKey: [`/api/patients/${patientId}/encounters`],
+    enabled: !!patientId,
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always consider data stale to ensure fresh updates
+  });
+
+  // Fetch allergies
+  const { data: allergies = [] } = useQuery({
+    queryKey: ["/api/patients", patientId, "allergies"],
+    enabled: !!patientId,
+  });
+
+  // Mutation to create new encounter
   const createEncounterMutation = useMutation({
-    mutationFn: async (newEncounter: any) => {
-      const response = await fetch(`/api/patients/${patientId}/encounters`, {
-        method: "POST",
+    mutationFn: async (encounterData: any) => {
+      const response = await fetch('/api/encounters', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newEncounter),
+        body: JSON.stringify(encounterData),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create encounter");
-      }
-
+      if (!response.ok) throw new Error('Failed to create encounter');
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/pending-encounters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
         title: "Success",
         description: "New encounter created successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/pending-encounters"] });
-      
-      // Navigate to the new encounter
-      setCurrentEncounterId(data.id);
-      setShowEncounterDetail(true);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create encounter",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
+
+  const handleStartNewEncounter = async () => {
+    const encounterData = {
+      patientId: patientId,
+      providerId: 1, // Assuming current user is provider
+      encounterType: "Office Visit",
+      encounterSubtype: "Routine",
+      startTime: new Date().toISOString(),
+      status: "In Progress",
+      chiefComplaint: "",
+      presentIllness: "",
+      assessmentPlan: "",
+      providerNotes: "",
+    };
+
+    createEncounterMutation.mutate(encounterData, {
+      onSuccess: (newEncounter) => {
+        setCurrentEncounterId(newEncounter.id);
+        setShowEncounterDetail(true);
+      }
+    });
+  };
 
   const handleBackToChart = () => {
     setShowEncounterDetail(false);
     setCurrentEncounterId(null);
   };
 
-  const handleEncounterSelect = (encounterId: number) => {
-    setCurrentEncounterId(encounterId);
-    setShowEncounterDetail(true);
-  };
-
-  const handleNewEncounter = () => {
-    const newEncounter = {
-      patientId: patientId,
-      providerId: (currentUser as any)?.id || 1,
-      encounterType: "Office Visit",
-      status: "scheduled",
-      scheduledDate: new Date().toISOString(),
-    };
-
-    createEncounterMutation.mutate(newEncounter);
-  };
-
   const toggleSection = (sectionId: string) => {
-    const newExpandedSections = new Set([...expandedSections]);
-    if (newExpandedSections.has(sectionId)) {
-      newExpandedSections.delete(sectionId);
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
     } else {
-      newExpandedSections.add(sectionId);
+      newExpanded.add(sectionId);
     }
-    setExpandedSections(newExpandedSections);
+    setExpandedSections(newExpanded);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Invalid Date';
+    // Parse date as local date to avoid timezone conversion issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day); // month is 0-indexed
+    return localDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const calculateAge = (birthDate: string) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case "encounters":
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Star className="h-5 w-5 text-yellow-500" />
+                <h2 className="text-xl font-semibold">Patient Encounters</h2>
+              </div>
+              <Button onClick={handleStartNewEncounter} className="bg-slate-700 hover:bg-slate-800 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                New Encounter
+              </Button>
+            </div>
+            <EncountersTab 
+              encounters={Array.isArray(encounters) ? encounters : []} 
+              patientId={patientId} 
+              onRefresh={refetchEncounters}
+            />
+          </div>
+        );
+      case "problems":
+        return <EnhancedMedicalProblemsList patientId={patientId} mode="patient-chart" isReadOnly={false} />;
+      case "labs":
+        return <LabResultsMatrix patientId={patientId} mode="full" />;
+      case "documents":
+        return <EmbeddedPDFViewer patientId={patientId} title="Patient Documents" />;
+      case "medication":
+      case "allergies":
+      case "vitals":
+      case "imaging":
+      case "family-history":
+      case "social-history":
+      case "surgical-history":
+      case "attachments":
+      case "appointments":
+        return <SharedChartSections 
+          patientId={patientId} 
+          mode="patient-chart" 
+          isReadOnly={false} 
+          sectionId={activeSection}
+          highlightAttachmentId={highlightAttachmentId}
+        />;
+      case "ai-debug":
+        return <AIDebugSection patientId={patientId} />;
+      default:
+        return <div>Section not found</div>;
+    }
   };
 
   // Show role-based encounter view if in encounter mode
@@ -177,51 +272,56 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
     }
   }
 
-  // Main patient chart view
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Left Panel - Chart Sections */}
-      <div className="w-80 bg-white shadow-md border-r border-gray-200 flex flex-col">
+    <div className="flex h-full">
+      {/* Left Sidebar */}
+      <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
         {/* Patient Header */}
-        <div className="p-4 bg-blue-50 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage
-                src="/placeholder-patient.jpg"
-                alt={`${patient.firstName} ${patient.lastName}`}
-              />
-              <AvatarFallback className="bg-blue-100 text-blue-600">
-                {patient.firstName?.[0]}{patient.lastName?.[0]}
-              </AvatarFallback>
-            </Avatar>
+        <div className="p-6 bg-white border-b border-gray-200">
+          <div className="flex items-start space-x-4">
+            <div className="relative">
+              <Avatar className="w-16 h-16 border-2 border-gray-200">
+                <AvatarImage 
+                  src={patient.profilePhotoFilename ? `/uploads/${patient.profilePhotoFilename}` : undefined}
+                  alt={`${patient.firstName} ${patient.lastName}`}
+                />
+                <AvatarFallback className="text-lg bg-gray-100">
+                  {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
+                </AvatarFallback>
+              </Avatar>
+              <button className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded text-[10px]">
+                Upload Photo
+              </button>
+            </div>
+            
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {patient.firstName} {patient.lastName}
               </h3>
               <p className="text-sm text-gray-600">
-                DOB: {new Date(patient.dateOfBirth).toLocaleDateString()}
+                DOB: {formatDate(patient.dateOfBirth)}
               </p>
-              <p className="text-sm text-blue-600">MRN: {patient.mrn}</p>
+              
+              <div className="flex space-x-2 mt-2">
+                <Button variant="outline" size="sm" className="text-xs">
+                  Edit Profile
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs">
+                  Back to Patient List
+                </Button>
+              </div>
             </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex space-x-2 mt-3">
-            <Button variant="outline" size="sm" className="text-xs">
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Refresh
-            </Button>
           </div>
         </div>
 
         {/* Search */}
-        <div className="p-3 border-b border-gray-100">
+        <div className="p-4 border-b border-gray-200">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input 
+              type="text" 
               placeholder="Search patient chart..."
-              className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -234,16 +334,19 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
               open={expandedSections.has(section.id)}
               onOpenChange={() => toggleSection(section.id)}
             >
-              <CollapsibleTrigger asChild>
-                <div
-                  className={`flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 ${
-                    activeSection === section.id ? "bg-blue-50 border-l-4 border-l-blue-500" : ""
+              <CollapsibleTrigger className="w-full">
+                <div 
+                  className={`flex items-center justify-between w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 ${
+                    activeSection === section.id ? 'bg-blue-50 text-blue-700 border-l-4 border-l-blue-500' : ''
                   }`}
-                  onClick={() => setActiveSection(section.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveSection(section.id);
+                  }}
                 >
                   <div className="flex items-center space-x-2">
-                    {section.icon && <section.icon className="h-4 w-4 text-gray-500" />}
-                    <span className="text-sm font-medium text-gray-700">{section.label}</span>
+                    {section.icon && <section.icon className="h-4 w-4" />}
+                    <span className="font-medium text-sm">{section.label}</span>
                   </div>
                   {expandedSections.has(section.id) ? (
                     <ChevronDown className="h-4 w-4" />
@@ -253,134 +356,191 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="bg-white border-b border-gray-100 p-3">
-                  {section.id === "encounters" ? (
-                    <div className="space-y-2">
-                      <Button
-                        onClick={handleNewEncounter}
-                        disabled={createEncounterMutation.isPending}
-                        size="sm"
-                        className="w-full"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        {createEncounterMutation.isPending ? "Creating..." : "New Encounter"}
-                      </Button>
-                      <EncountersTab
-                        encounters={encounters}
-                        patientId={patientId}
-                        onRefresh={refetchEncounters}
-                      />
-                    </div>
-                  ) : section.id === "problems" ? (
-                    <EnhancedMedicalProblemsList patientId={patientId} />
-                  ) : section.id === "labs" ? (
-                    <LabResultsMatrix patientId={patientId} />
-                  ) : section.id === "documents" ? (
-                    <EmbeddedPDFViewer
-                      patientId={patientId}
-                      title="Patient Documents"
-                      maxHeight="300px"
-                    />
-                  ) : (
-                    <SharedChartSections
-                      patientId={patientId}
-                      mode="patient-chart"
-                      encounterId={null}
-                      isReadOnly={false}
-                      sectionId={section.id}
-                    />
-                  )}
-                </div>
+                {section.id === "encounters" && Array.isArray(encounters) && encounters.length > 0 && (
+                  <div className="bg-white border-b border-gray-100">
+                    {encounters.slice(0, 3).map((encounter: any) => (
+                      <div key={encounter.id} className="p-3 text-xs text-gray-600 border-b border-gray-50 last:border-b-0">
+                        <div className="font-medium">{encounter.encounterType}</div>
+                        <div>{encounter.startTime ? formatDate(encounter.startTime) : 'No date'}</div>
+                        <Badge variant="outline" className="mt-1 text-[10px]">{encounter.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CollapsibleContent>
             </Collapsible>
           ))}
         </div>
       </div>
 
-      {/* Right Panel - Main Content */}
-      <div className="flex-1 flex flex-col bg-white">
-        {activeSection === "ai-debug" && (
-          <div className="p-6 border-b border-gray-200 bg-amber-50">
-            <div className="flex items-center space-x-2 mb-4">
-              <Bot className="h-5 w-5 text-amber-600" />
-              <h2 className="text-lg font-semibold text-amber-800">AI Assistant Debug Panel</h2>
-            </div>
-            <p className="text-sm text-amber-700 mb-4">
-              This panel provides debugging information for AI-powered features in the patient chart.
-            </p>
-          </div>
-        )}
+      {/* Main Content */}
+      <div className="flex-1 p-6 overflow-y-auto">
+        {renderSectionContent()}
+      </div>
+    </div>
+  );
+}
 
-        {/* Main Content Area */}
-        <div className="flex-1 p-6">
-          {activeSection === "encounters" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <Star className="h-6 w-6 mr-2 text-yellow-500" />
-                  Patient Encounters
-                </h2>
-                <Button
-                  onClick={handleNewEncounter}
-                  disabled={createEncounterMutation.isPending}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {createEncounterMutation.isPending ? "Creating..." : "New Encounter"}
-                </Button>
+function AIDebugSection({ patientId }: { patientId: number }) {
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const { data: assistantConfig, isLoading, error, refetch } = useQuery({
+    queryKey: [`/api/patients/${patientId}/assistant`],
+    enabled: !!patientId
+  });
+
+  const { data: threadMessages, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
+    queryKey: [`/api/patients/${patientId}/assistant/messages`],
+    enabled: !!patientId && !!(assistantConfig as any)?.thread_id
+  });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetch(), refetchMessages()]);
+    setRefreshing(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            AI Assistant Debug
+          </h2>
+        </div>
+        <div className="text-center py-8 text-gray-500">Loading assistant information...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            AI Assistant Debug
+          </h2>
+        </div>
+        <Card className="border-red-200">
+          <CardContent className="pt-6">
+            <p className="text-red-600">No AI assistant found for this patient</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Bot className="h-5 w-5" />
+          AI Assistant Debug
+        </h2>
+        <Button 
+          onClick={handleRefresh} 
+          disabled={refreshing}
+          variant="outline"
+          size="sm"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {assistantConfig && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Assistant Overview</span>
+                <Badge variant="secondary">{(assistantConfig as any)?.model}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <label className="font-medium text-gray-700">Assistant ID:</label>
+                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{(assistantConfig as any)?.id}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-gray-700">Thread ID:</label>
+                  <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">{(assistantConfig as any)?.thread_id || 'Not assigned'}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-gray-700">Name:</label>
+                  <p className="mt-1">{(assistantConfig as any)?.name || 'Unnamed Assistant'}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-gray-700">Created:</label>
+                  <p className="mt-1">
+                    {(assistantConfig as any)?.created_at ? new Date((assistantConfig as any).created_at * 1000).toLocaleString() : 'Unknown'}
+                  </p>
+                </div>
               </div>
-              <EncountersTab
-                encounters={encounters}
-                patientId={patientId}
-                onRefresh={refetchEncounters}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Medical Context & Instructions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={(assistantConfig as any)?.instructions || 'No instructions provided'}
+                readOnly
+                className="min-h-[200px] font-mono text-xs"
               />
-            </div>
+            </CardContent>
+          </Card>
+
+          {threadMessages && (threadMessages as any)?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Conversation History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {(threadMessages as any)?.map((message: any, index: number) => (
+                    <div key={index} className={`p-3 rounded-lg ${
+                      message.role === 'assistant' ? 'bg-blue-50 border-l-4 border-blue-200' : 'bg-gray-50 border-l-4 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant={message.role === 'assistant' ? 'default' : 'secondary'}>
+                          {message.role}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {new Date(message.created_at * 1000).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {activeSection === "problems" && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">Medical Problems</h2>
-              <EnhancedMedicalProblemsList patientId={patientId} />
-            </div>
-          )}
-
-          {activeSection === "labs" && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">Laboratory Results</h2>
-              <LabResultsMatrix patientId={patientId} />
-            </div>
-          )}
-
-          {activeSection === "ai-debug" && (
-            <div className="space-y-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Bot className="h-6 w-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">AI Assistant Debug</h2>
-              </div>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-gray-600 mb-4">Debug information and controls for AI features will appear here.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {!["encounters", "problems", "labs", "ai-debug"].includes(activeSection) && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 capitalize">
-                {chartSections.find(s => s.id === activeSection)?.label || activeSection}
-              </h2>
-              <SharedChartSections
-                patientId={patientId}
-                mode="patient-chart"
-                encounterId={null}
-                isReadOnly={false}
-                sectionId={activeSection}
-              />
-            </div>
+          {(assistantConfig as any)?.tools && (assistantConfig as any)?.tools.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Tools</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2 flex-wrap">
+                  {(assistantConfig as any)?.tools.map((tool: any, index: number) => (
+                    <Badge key={index} variant="outline">
+                      {tool.type}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
