@@ -367,7 +367,7 @@ export function UnifiedChartPanel({
             >
               <CollapsibleTrigger className="w-full">
                 <div 
-                  className={`flex items-center justify-between w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 transition-colors ${
+                  className={`flex items-center justify-between w-full chart-section-trigger text-left hover:bg-gray-100 border-b border-gray-100 transition-colors ${
                     isActive ? 'bg-blue-50 border-blue-200' : ''
                   }`}
                   onDoubleClick={(e) => {
@@ -380,7 +380,7 @@ export function UnifiedChartPanel({
                 >
                   <div className="flex items-center space-x-2 flex-1 min-w-0">
                     {Icon && <Icon className="h-4 w-4 text-gray-600 flex-shrink-0" />}
-                    <span className="font-medium text-sm truncate">{section.label}</span>
+                    <span className="chart-section-label truncate">{section.label}</span>
                     {section.allowExpanded && !panelState.isExpanded && (
                       <div
                         onClick={(e) => {

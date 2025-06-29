@@ -291,14 +291,14 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       />
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 patient-header overflow-y-auto">
         <div className="max-w-full">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="patient-title font-bold text-gray-900">
                 {patient.firstName} {patient.lastName}
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm">
                 Patient Chart • DOB: {formatDate(patient.dateOfBirth)} • Age: {calculateAge(patient.dateOfBirth)}
               </p>
             </div>

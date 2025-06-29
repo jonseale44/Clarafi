@@ -695,7 +695,7 @@ export function EnhancedMedicalProblemsList({
     return (
       <Card 
         key={problem.id} 
-        className={`relative border-l-4 border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200`}
+        className={`relative medical-problem-card border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200`}
       >
         <Collapsible
           open={expandedProblems.has(problem.id)}
