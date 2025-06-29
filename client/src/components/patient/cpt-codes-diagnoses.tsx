@@ -36,6 +36,10 @@ interface CPTCode {
   complexity?: 'low' | 'moderate' | 'high' | 'straightforward';
   category?: string;
   baseRate?: number;
+  modifiers?: string[]; // Production modifiers support
+  modifierReasons?: string; // Clinical justification for modifiers
+  clinicalJustification?: string; // GPT clinical rationale
+  estimatedRevenueImpact?: number; // Revenue calculation
 }
 
 interface DiagnosisCode {
@@ -193,13 +197,17 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       
       const { soapNote } = await soapResponse.json();
       
-      // Extract CPT codes from SOAP note
-      const response = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/extract-cpt`, {
+      // Extract CPT codes using Enhanced Billing System (with modifiers support)
+      const response = await fetch(`/api/billing/extract-cpt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ soapNote }),
+        body: JSON.stringify({ 
+          soapNoteText: soapNote,
+          patientId: parseInt(patientId),
+          encounterId: parseInt(encounterId)
+        }),
       });
 
       if (!response.ok) {
