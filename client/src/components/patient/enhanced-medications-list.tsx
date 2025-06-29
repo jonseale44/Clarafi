@@ -439,35 +439,43 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 flex-shrink-0">
+      <CardHeader className="pb-3">
+        <div className="space-y-3">
+          {/* Title Row - Always on its own line for consistency */}
+          <CardTitle className="flex items-center gap-2">
             <Pill className="h-5 w-5" />
             Medications
             <Badge variant="outline" className="ml-2">
               {(medicationData as MedicationResponse)?.summary.total || 0}
             </Badge>
           </CardTitle>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-            <Select value={groupingMode} onValueChange={(value: any) => setGroupingMode(value)}>
-              <SelectTrigger className="w-full sm:w-36 min-w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="medical_problem">By Medical Problem</SelectItem>
-                <SelectItem value="alphabetical">Alphabetical</SelectItem>
-              </SelectContent>
-            </Select>
+          
+          {/* Controls Row - Guaranteed to stay within card bounds */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 min-w-0 flex-1">
+              <Select value={groupingMode} onValueChange={(value: any) => setGroupingMode(value)}>
+                <SelectTrigger className="w-full sm:w-40 min-w-[140px] max-w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="medical_problem">By Medical Problem</SelectItem>
+                  <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             {!readOnly && (
-              <Button 
-                onClick={() => setIsAddingMedication(true)}
-                size="sm"
-                className="flex items-center gap-1 flex-shrink-0 w-full sm:w-auto"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Add Medication</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
+              <div className="flex-shrink-0">
+                <Button 
+                  onClick={() => setIsAddingMedication(true)}
+                  size="sm"
+                  className="flex items-center gap-1 w-full sm:w-auto min-w-[100px]"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Add Medication</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </div>
             )}
           </div>
         </div>
