@@ -109,14 +109,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Medications Technical Debt Cleanup (June 29, 2025)
-- **LEGACY ENDPOINT REMOVAL**: Removed unused `/api/patients/:patientId/medications` endpoint that was never called by frontend components
-- **STORAGE METHOD CONSOLIDATION**: Unified duplicate storage methods `getPatientMedications()` and `getPatientMedicationsEnhanced()` into single standardized method
-- **INTERFACE CLEANUP**: Updated IStorage interface to remove reference to deleted method, eliminating compiler errors
-- **ENHANCED ROUTES UPDATED**: Modified enhanced medication routes to use consolidated storage method
-- **FRONTEND VERIFICATION**: Confirmed all UI components use `/api/patients/:patientId/medications-enhanced` endpoint exclusively
-- **NO BREAKING CHANGES**: All existing functionality preserved while eliminating technical debt
-- **ARCHITECTURAL CONSISTENCY**: Standardized medication data access patterns across the system
+### Enhanced Medication System with GPT Intelligence (June 29, 2025)
+- **ARCHITECTURAL ENHANCEMENT**: Enhanced existing `medication-delta-service.ts` with GPT-powered duplicate detection and chart medication management instead of creating duplicate services
+- **GPT DUPLICATE INTELLIGENCE**: Added sophisticated duplicate detection that distinguishes legitimate scenarios (Glyburide 5mg + 10mg for complex diabetes) from true duplicates (identical medications)
+- **CHART MEDICATION MANAGEMENT**: Added `addChartMedication()` method for direct chart medication entry with complete standardization and GPT analysis
+- **MOVE TO ORDERS FUNCTIONALITY**: Implemented `moveToOrders()` for seamless medication-to-refill conversion with intelligent quantity calculations
+- **FORMULARY INTEGRATION**: Added `searchFormulary()` for intelligent medication suggestions from formulary database
+- **PRODUCTION API ENDPOINTS**: Added three new endpoints: `/api/patients/:patientId/chart-medications`, `/api/medications/:medicationId/move-to-orders`, `/api/medications/formulary/search`
+- **VIRTUAL ENCOUNTER SYSTEM**: Created "Chart Management" encounter type for direct medication management independent of clinical visits
+- **CLINICAL PHARMACY PROMPTS**: GPT uses expert clinical pharmacist persona with 20 years experience for nuanced medication decisions
+- **NO SERVICE DUPLICATION**: Enhanced existing service architecture instead of creating technical debt with duplicate chart-medication-service
+- **LEGACY ENDPOINT REMOVAL**: Previously removed unused `/api/patients/:patientId/medications` endpoint and consolidated storage methods for clean architecture
 
 ### Medical Problems Ranking System Final Cleanup (June 29, 2025)
 - **DOCUMENTATION MODERNIZATION**: Updated `MEDICAL_PROBLEMS_RANKING_SYSTEM.md` to reflect relative percentage system instead of outdated absolute ranges
