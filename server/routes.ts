@@ -1975,11 +1975,43 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
           JSON.stringify(extractedData, null, 2),
         );
 
+        // Validate CPT codes with modifiers using BillingValidationService
+        const { BillingValidationService } = await import("./billing-validation-service.js");
+        const billingValidator = new BillingValidationService();
+        
+        console.log(`🔍 [CPT API] Validating ${extractedData.cptCodes?.length || 0} CPT codes with modifiers...`);
+        
+        const validationContext = {
+          patientId,
+          encounterId,
+          userId: req.user?.id || 1,
+          allCptCodes: extractedData.cptCodes.map(cpt => ({
+            code: cpt.code,
+            modifiers: cpt.modifiers || [],
+            description: cpt.description
+          }))
+        };
+
+        const validationResults = await billingValidator.validateEncounterBilling(
+          validationContext.allCptCodes,
+          validationContext
+        );
+
+        const billingRecommendations = billingValidator.generateBillingRecommendations(validationResults);
+        
+        console.log(`✅ [CPT API] Validation complete. Recommendations:`, billingRecommendations);
+
         console.log(
           `✅ [CPT API] Extracted ${extractedData.cptCodes?.length || 0} CPT codes and ${extractedData.diagnoses?.length || 0} diagnoses`,
         );
 
-        res.json(extractedData);
+        res.json({
+          ...extractedData,
+          validation: {
+            results: validationResults,
+            recommendations: billingRecommendations
+          }
+        });
       } catch (error: any) {
         console.error("❌ [CPT API] Error extracting CPT codes:", error);
         res.status(500).json({

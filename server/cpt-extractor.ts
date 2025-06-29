@@ -260,6 +260,41 @@ ${PROCEDURE_CPT_CODES.slice(0, 15)
   .map((p) => `${p.code}: ${p.description}`)
   .join("\n")}
 
+=== CPT MODIFIER SYSTEM ===
+
+CRITICAL: Medicare requires appropriate modifier usage for maximum reimbursement and compliance.
+
+COMMON MODIFIERS YOU MUST CONSIDER:
+-25: Significant, separately identifiable E&M service by same provider on same day as procedure
+    Example: Office visit (99214) + skin lesion removal (17110) requires -25 on E&M code
+    
+-59: Distinct procedural service (separate from other procedures performed same day)
+    Example: Multiple unrelated procedures require -59 to prevent bundling
+    
+-50: Bilateral procedure (performed on both sides of body)
+    Example: Bilateral ear irrigation, bilateral joint injections
+    
+-RT/-LT: Right side / Left side (anatomical modifiers)
+    Example: Right shoulder injection, left knee arthroscopy
+    
+-76: Repeat procedure by same provider
+-77: Repeat procedure by different provider
+-78: Unplanned return to operating room by same provider during postoperative period
+-79: Unrelated procedure during postoperative period
+-91: Repeat clinical diagnostic laboratory test
+
+MODIFIER SELECTION RULES:
+1. REVENUE MAXIMIZATION: Use -25 modifier when E&M and procedure performed same day
+2. ANATOMICAL PRECISION: Use -RT/-LT for side-specific procedures
+3. BILATERAL PROCEDURES: Use -50 when appropriate (increases reimbursement)
+4. DISTINCT SERVICES: Use -59 to prevent inappropriate bundling
+
+EXAMPLES OF REQUIRED MODIFIER USAGE:
+- 99214-25 + 17110: Office visit with wart removal (separate service)
+- 20610-RT: Right shoulder joint injection
+- 12001-59: Simple repair distinct from other procedure same day
+- 87804-91: Repeat Strep test same day (medical necessity)
+
 MANDATORY DIAGNOSIS REQUIREMENTS - CRITICAL FOR BILLING:
 - SCAN THE ENTIRE CLINICAL DOCUMENTATION for every mentioned condition
 - ASSESSMENT/PLAN section contains billable diagnoses - extract ALL of them
@@ -300,22 +335,28 @@ Return ONLY a JSON object with this exact structure:
 {
   "cptCodes": [
     {
-      "code": "99204",
-      "description": "Office visit, new patient, moderate complexity",
+      "code": "99214",
+      "description": "Office visit, established patient, moderate complexity",
       "complexity": "moderate",
-      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity"
-    },
-    {
-      "code": "99386", 
-      "description": "Preventive medicine service, new patient, 40-64 years",
-      "complexity": "preventive",
-      "reasoning": "Annual wellness exam component of visit"
+      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity",
+      "modifiers": ["-25"],
+      "modifierReasoning": "E&M service is significant and separately identifiable from same-day procedure"
     },
     {
       "code": "17110",
       "description": "Destruction of benign lesions, up to 14 lesions",
       "complexity": "procedure",
-      "reasoning": "Cryotherapy performed on skin lesions"
+      "reasoning": "Cryotherapy performed on skin lesions",
+      "modifiers": [],
+      "modifierReasoning": "No modifiers required for standalone procedure"
+    },
+    {
+      "code": "20610",
+      "description": "Arthrocentesis, aspiration and/or injection, major joint",
+      "complexity": "procedure", 
+      "reasoning": "Joint injection performed for therapeutic purposes",
+      "modifiers": ["-RT"],
+      "modifierReasoning": "Procedure performed on right side only"
     }
   ],
   "diagnoses": [
