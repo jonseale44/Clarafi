@@ -1,5 +1,6 @@
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
+import { CompactMedicationsList } from "./compact-medications-list";
 import { PatientAttachments } from "./patient-attachments";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
@@ -26,6 +27,9 @@ interface SharedChartSectionsProps {
   // Medical problems animation props
   isAutoGeneratingMedicalProblems?: boolean;
   medicalProblemsProgress?: number;
+  // Compact mode for preventing spillover
+  compactMode?: boolean;
+  onExpandSection?: (sectionId: string) => void;
 }
 
 // Enhanced Vitals Section Component with Expandable View
@@ -170,7 +174,9 @@ export function SharedChartSections({
   sectionId,
   highlightAttachmentId,
   isAutoGeneratingMedicalProblems = false,
-  medicalProblemsProgress = 0
+  medicalProblemsProgress = 0,
+  compactMode = false,
+  onExpandSection
 }: SharedChartSectionsProps) {
   
   const renderSectionContent = (targetSectionId: string) => {
@@ -188,6 +194,15 @@ export function SharedChartSections({
         );
       
       case "medication":
+        if (compactMode) {
+          return (
+            <CompactMedicationsList
+              patientId={patientId}
+              encounterId={encounterId}
+              onExpandClick={() => onExpandSection?.('medication')}
+            />
+          );
+        }
         return (
           <EnhancedMedicationsList 
             patientId={patientId} 

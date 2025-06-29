@@ -238,6 +238,8 @@ export function UnifiedChartPanel({
         highlightAttachmentId={highlightAttachmentId}
         isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
         medicalProblemsProgress={medicalProblemsProgress}
+        compactMode={useCompactMode}
+        onExpandSection={expandSection}
       />
     );
   };

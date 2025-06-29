@@ -28,7 +28,7 @@ export function CompactMedicationsList({
     );
   }
 
-  const medications = medicationsData?.medications || [];
+  const medications = (medicationsData as any)?.medications || [];
   const displayMedications = medications.slice(0, maxDisplay);
   const hasMore = medications.length > maxDisplay;
 
