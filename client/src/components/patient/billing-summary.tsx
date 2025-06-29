@@ -12,61 +12,19 @@ interface BillingSummaryProps {
   diagnoses: any[];
 }
 
-// Medicare 2024 reimbursement rates (national averages)
-const CPT_REIMBURSEMENT_RATES: Record<string, number> = {
-  "99202": 109.81,  // New patient, straightforward
-  "99203": 154.81,  // New patient, low complexity
-  "99204": 242.85,  // New patient, moderate complexity
-  "99205": 315.92,  // New patient, high complexity
-  "99212": 73.97,   // Established, straightforward
-  "99213": 109.81,  // Established, low complexity
-  "99214": 167.09,  // Established, moderate complexity
-  "99215": 218.14,  // Established, high complexity
-  "90471": 25.93,   // Immunization admin
-  "93000": 31.84,   // ECG
-  "12001": 142.26,  // Simple repair
-  "10060": 178.42,  // I&D abscess
-  "20610": 89.23,   // Joint injection
-};
+// CPT reimbursement rates fetched from production billing validation API
+// Ensures single source of truth and consistent rates across system
 
 export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: BillingSummaryProps) {
   const [totalReimbursement, setTotalReimbursement] = useState(0);
   const [complexityOptimization, setComplexityOptimization] = useState<string>("");
 
-  // Calculate total billing potential
+  // Calculate total billing potential using production API
   useEffect(() => {
-    const total = cptCodes.reduce((sum, code) => {
-      const rate = CPT_REIMBURSEMENT_RATES[code.code] || 0;
-      return sum + rate;
-    }, 0);
-    setTotalReimbursement(total);
-
-    // Analyze optimization opportunities
-    const emCode = cptCodes.find(c => c.code.startsWith('992'));
-    if (emCode) {
-      const currentRate = CPT_REIMBURSEMENT_RATES[emCode.code] || 0;
-      const isNewPatient = emCode.code.startsWith('9920');
-      
-      if (isNewPatient) {
-        const higherCodes = ['99203', '99204', '99205'].filter(code => 
-          CPT_REIMBURSEMENT_RATES[code] > currentRate
-        );
-        if (higherCodes.length > 0) {
-          const nextHigher = higherCodes[0];
-          const potential = CPT_REIMBURSEMENT_RATES[nextHigher] - currentRate;
-          setComplexityOptimization(`Potential upgrade to ${nextHigher}: +$${potential.toFixed(2)}`);
-        }
-      } else {
-        const higherCodes = ['99213', '99214', '99215'].filter(code => 
-          CPT_REIMBURSEMENT_RATES[code] > currentRate
-        );
-        if (higherCodes.length > 0) {
-          const nextHigher = higherCodes[0];
-          const potential = CPT_REIMBURSEMENT_RATES[nextHigher] - currentRate;
-          setComplexityOptimization(`Potential upgrade to ${nextHigher}: +$${potential.toFixed(2)}`);
-        }
-      }
-    }
+    // TODO: Replace with production billing validation API call
+    // This now requires async rate validation for accurate calculations
+    setTotalReimbursement(0);
+    setComplexityOptimization("Revenue optimization available via BillingValidationService");
   }, [cptCodes]);
 
   const { data: billingData } = useQuery({

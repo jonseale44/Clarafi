@@ -2,7 +2,6 @@ import OpenAI from "openai";
 import {
   CPT_OFFICE_VISIT_CODES,
   PROCEDURE_CPT_CODES,
-  CPT_REIMBURSEMENT_RATES,
 } from "./medical-coding-guidelines.js";
 import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 
@@ -190,7 +189,7 @@ Your goal is to maximize legitimate billing while ensuring accuracy and complian
     )
       .map(
         (code) =>
-          `${code.code}: ${code.description} - Medicare Rate: $${CPT_REIMBURSEMENT_RATES[code.code] || "N/A"}`,
+          `${code.code}: ${code.description} - Rate: Via BillingValidationService`,
       )
       .join("\n");
 
@@ -433,7 +432,7 @@ VALIDATION CHECK: Count the conditions you mentioned in your reasoning. Your dia
 AGE-SPECIFIC PREVENTIVE MEDICINE CODING:
 For patient age ${patientAge} years, the correct preventive medicine code is:
 ${ageCode}: Preventive medicine, ${isNewPatient ? 'new' : 'established'} patient, ${ageRange}
-Medicare Rate: $${CPT_REIMBURSEMENT_RATES[ageCode] || "N/A"}
+Rate: Via BillingValidationService
 
 CRITICAL: Always use the age-appropriate preventive medicine code. Using incorrect age ranges will result in claim denials.`;
   }
