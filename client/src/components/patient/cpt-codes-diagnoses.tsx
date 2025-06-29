@@ -205,8 +205,8 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
         },
         body: JSON.stringify({ 
           soapNoteText: soapNote,
-          patientId: parseInt(patientId),
-          encounterId: parseInt(encounterId)
+          patientId: patientId,
+          encounterId: encounterId
         }),
       });
 
@@ -216,18 +216,26 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
 
       const data = await response.json();
       
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to extract CPT codes');
+      }
+      
+      // Handle Enhanced Billing API response format (includes modifiers)
+      const extractedCPTCodes = data.extractedCodes || [];
+      const extractedDiagnoses = data.extractedDiagnoses || [];
+      
       // Convert GPT data to unique ID format before setting state
-      const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(data.cptCodes || [], data.diagnoses || []);
+      const { convertedCPTCodes, convertedDiagnoses } = convertToUniqueIdFormat(extractedCPTCodes, extractedDiagnoses);
       
       setCPTCodes(convertedCPTCodes);
       setDiagnoses(convertedDiagnoses);
       
       // Use GPT's intelligent mappings with clinical rationale - GPT is smarter than hardcoded rules
-      initializeMappings(convertedCPTCodes, convertedDiagnoses, data.intelligentMappings);
+      initializeMappings(convertedCPTCodes, convertedDiagnoses, data.intelligentMappings || []);
       
       toast({
-        title: "CPT Codes Generated",
-        description: `Extracted ${data.cptCodes?.length || 0} CPT codes and ${data.diagnoses?.length || 0} diagnoses`,
+        title: "Enhanced CPT Codes Generated",
+        description: `Extracted ${extractedCPTCodes.length} CPT codes with modifiers and ${extractedDiagnoses.length} diagnoses`,
       });
 
     } catch (error) {
@@ -699,6 +707,30 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                       <Badge variant="outline" className="mt-1">
                                         {cpt.complexity}
                                       </Badge>
+                                    )}
+                                    {cpt.modifiers && cpt.modifiers.length > 0 && (
+                                      <div className="mt-2 pt-2 border-t">
+                                        <p className="text-xs font-medium text-blue-600">Modifiers:</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {cpt.modifiers.map((modifier, idx) => (
+                                            <Badge key={idx} variant="secondary" className="text-xs">
+                                              {modifier}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {cpt.modifierReasons && (
+                                      <div className="mt-2 pt-2 border-t">
+                                        <p className="text-xs font-medium text-green-600">Modifier Reason:</p>
+                                        <p className="text-xs text-gray-600">{cpt.modifierReasons}</p>
+                                      </div>
+                                    )}
+                                    {cpt.clinicalJustification && (
+                                      <div className="mt-2 pt-2 border-t">
+                                        <p className="text-xs font-medium text-purple-600">Clinical Justification:</p>
+                                        <p className="text-xs text-gray-600">{cpt.clinicalJustification}</p>
+                                      </div>
                                     )}
                                   </div>
                                 </TooltipContent>
