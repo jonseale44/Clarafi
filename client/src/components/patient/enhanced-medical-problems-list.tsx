@@ -66,13 +66,7 @@ interface MedicalProblem {
   };
 }
 
-// Legacy interfaces kept for compatibility during migration
-interface LegacyRankingWeights {
-  clinical_severity: number;
-  treatment_complexity: number;
-  patient_frequency: number;
-  clinical_relevance: number;
-}
+
 
 interface EnhancedMedicalProblemsListProps {
   patientId: number;
