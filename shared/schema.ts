@@ -170,6 +170,9 @@ export const userNotePreferences = pgTable("user_note_preferences", {
     clinical_relevance: number;
   }>(),
   
+  // Chart panel UI preferences
+  chartPanelWidth: integer("chart_panel_width").default(400),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
