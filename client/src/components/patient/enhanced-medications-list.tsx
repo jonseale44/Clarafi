@@ -90,6 +90,7 @@ interface MedicationResponse {
 
 interface EnhancedMedicationsListProps {
   patientId: number;
+  encounterId?: number;
   readOnly?: boolean;
 }
 
@@ -226,7 +227,7 @@ const IntelligentAddMedicationForm: React.FC<IntelligentAddMedicationFormProps> 
   );
 };
 
-export function EnhancedMedicationsList({ patientId, readOnly = false }: EnhancedMedicationsListProps) {
+export function EnhancedMedicationsList({ patientId, encounterId, readOnly = false }: EnhancedMedicationsListProps) {
   const [isAddingMedication, setIsAddingMedication] = useState(false);
   const [expandedMedications, setExpandedMedications] = useState<Set<number>>(new Set());
   const [activeStatusTab, setActiveStatusTab] = useState<'current' | 'discontinued' | 'held' | 'historical'>('current');
@@ -245,21 +246,34 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
     staleTime: 0 // Always consider data stale for fresh updates
   });
 
-  // Create medication mutation
+  // Create medication mutation (updated to use new chart medication endpoint)
   const createMedication = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', `/api/patients/${patientId}/medications-enhanced`, data);
-      return await response.json();
+      console.log('💊 [Frontend] Creating chart medication with data:', data);
+      const response = await apiRequest('POST', `/api/patients/${patientId}/chart-medications`, data);
+      const result = await response.json();
+      console.log('💊 [Frontend] Chart medication response:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['enhanced-medications', patientId] });
       setIsAddingMedication(false);
-      toast({
-        title: "Medication Added",
-        description: "New medication has been added to the patient's medication list.",
-      });
+      
+      if (data.success) {
+        toast({
+          title: "Medication Added",
+          description: `${data.medication.medicationName} has been added to the patient's medication list.`,
+        });
+      } else if (data.duplicateDetected) {
+        toast({
+          title: "Duplicate Detected",
+          description: data.reasoning,
+          variant: "destructive",
+        });
+      }
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('💊 [Frontend] Error creating medication:', error);
       toast({
         title: "Error",
         description: "Failed to add medication. Please try again.",
@@ -311,6 +325,36 @@ export function EnhancedMedicationsList({ patientId, readOnly = false }: Enhance
       toast({
         title: "Error", 
         description: "Failed to discontinue medication. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Move to Orders mutation
+  const moveToOrders = useMutation({
+    mutationFn: async ({ medicationId, encounterId }: { medicationId: number; encounterId: number }) => {
+      console.log('📋 [Frontend] Moving medication to orders:', { medicationId, encounterId });
+      const response = await apiRequest('POST', `/api/medications/${medicationId}/move-to-orders`, { encounterId });
+      const result = await response.json();
+      console.log('📋 [Frontend] Move to orders response:', result);
+      return result;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['enhanced-medications', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['draft-orders', patientId] });
+      
+      if (data.success) {
+        toast({
+          title: "Added to Orders",
+          description: `${data.orderDetails.medicationName} refill has been added to draft orders.`,
+        });
+      }
+    },
+    onError: (error: any) => {
+      console.error('📋 [Frontend] Error moving medication to orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to move medication to orders. Please try again.",
         variant: "destructive",
       });
     },
