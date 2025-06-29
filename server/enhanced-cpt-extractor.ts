@@ -86,7 +86,7 @@ export class EnhancedCPTExtractor {
     
     // Format CPT database for GPT prompt
     const cptContext = availableCPTCodes.map(cpt => 
-      `${cpt.code}: ${cpt.description} (Category: ${cpt.category}, Requires Modifier: ${cpt.requiresModifier}, Allowed: [${cpt.allowedModifiers.join(', ')}])`
+      `${cpt.code}: ${cpt.description} (Category: ${cpt.category}, Requires Modifier: ${cpt.requiresModifier}, Allowed: [${(cpt.allowedModifiers || []).join(', ')}])`
     ).join('\n');
     
     const modifierContext = availableModifiers.map(mod => 
@@ -241,13 +241,14 @@ CRITICAL: Return ONLY the JSON array. No additional text or explanation.
       }
 
       // Check if modifier is allowed for this CPT code
-      if (validCPT.allowedModifiers.length > 0 && !validCPT.allowedModifiers.includes(modifier)) {
+      const allowedModifiers = validCPT.allowedModifiers || [];
+      if (allowedModifiers.length > 0 && !allowedModifiers.includes(modifier)) {
         validationIssues.push(`Modifier ${modifier} not allowed for CPT ${gptCode.code}`);
         continue;
       }
 
       validatedModifiers.push(modifier);
-      modifierAdjustment *= parseFloat(dbModifier[0].reimbursementAdjustment.toString());
+      modifierAdjustment *= parseFloat((dbModifier[0].reimbursementAdjustment || 1.0).toString());
     }
 
     // 3. Calculate revenue impact
@@ -386,21 +387,28 @@ CRITICAL: Return ONLY the JSON array. No additional text or explanation.
     if (cpt.length === 0) return [];
 
     // Get all modifiers if no restrictions, otherwise get allowed ones
-    const allowedModifiers = cpt[0].allowedModifiers;
+    const allowedModifiers = cpt[0].allowedModifiers || [];
     
-    let query = db.select().from(cptModifiers).where(eq(cptModifiers.isActive, true));
+    let modifiers;
     
     if (allowedModifiers.length > 0) {
-      query = query.where(inArray(cptModifiers.modifier, allowedModifiers));
+      modifiers = await db.select()
+        .from(cptModifiers)
+        .where(and(
+          eq(cptModifiers.isActive, true),
+          inArray(cptModifiers.modifier, allowedModifiers)
+        ));
+    } else {
+      modifiers = await db.select()
+        .from(cptModifiers)
+        .where(eq(cptModifiers.isActive, true));
     }
-    
-    const modifiers = await query;
     
     return modifiers.map(mod => ({
       modifier: mod.modifier,
       description: mod.description,
       category: mod.category,
-      reimbursementAdjustment: parseFloat(mod.reimbursementAdjustment.toString()),
+      reimbursementAdjustment: parseFloat((mod.reimbursementAdjustment || 1.0).toString()),
       requiresDocumentation: mod.requiresDocumentation
     }));
   }
