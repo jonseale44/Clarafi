@@ -680,12 +680,12 @@ export function EncounterDetailView({
             body: JSON.stringify(ordersRequestBody),
           }),
           fetch(
-            `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
+            `/api/billing/extract-cpt`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
-              body: JSON.stringify({ soapNote: note }),
+              body: JSON.stringify({ soapNote: note, patientId: patient.id, encounterId }),
             },
           ).then(async (response) => {
             console.log(
@@ -2475,12 +2475,12 @@ Please provide medical suggestions based on this complete conversation context.`
               return response;
             }),
             fetch(
-              `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
+              `/api/billing/extract-cpt`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ soapNote }),
+                body: JSON.stringify({ soapNote, patientId: patient.id, encounterId }),
               },
             ).then(async (response) => {
               console.log(
