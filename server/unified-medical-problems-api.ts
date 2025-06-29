@@ -58,7 +58,7 @@ router.get("/medical-problems/:patientId", async (req, res) => {
       changeLog: problem.changeLog || [],
       lastUpdated: problem.updatedAt,
       // Include ranking information
-      rankScore: problem.rankScore ? parseFloat(problem.rankScore.toString()) : undefined,
+
       lastRankedEncounterId: problem.lastRankedEncounterId,
       rankingReason: problem.rankingReason,
       // Include ranking factors for frontend real-time calculation
@@ -69,7 +69,7 @@ router.get("/medical-problems/:patientId", async (req, res) => {
     console.log(`🔍 [MedicalProblemsAPI] Problems with ranking:`, formattedProblems.map(p => ({ 
       id: p.id, 
       title: p.problemTitle, 
-      rank: p.rankScore,
+      rank: undefined, // Rank calculated in frontend from rankingFactors
       status: p.problemStatus
     })));
 
@@ -370,7 +370,7 @@ router.post("/medical-problems/manual-create", async (req, res) => {
       problemStatus: problemStatus || status || 'active',
       firstDiagnosedDate: firstDiagnosedDate || null,
       visitHistory: visitHistory || [],
-      rankScore: null, // Will be calculated later
+      // rankScore field removed - ranking calculated in frontend from rankingFactors
       rankingReason: 'Manually created - ranking pending',
       lastRankedEncounterId: null
     });

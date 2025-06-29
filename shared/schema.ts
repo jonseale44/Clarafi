@@ -1508,7 +1508,6 @@ export const insertMedicalProblemSchema = createInsertSchema(medicalProblems).pi
   lastUpdatedEncounterId: true,
   visitHistory: true,
   changeLog: true,
-  rankScore: true,
   lastRankedEncounterId: true,
   rankingReason: true,
 });
