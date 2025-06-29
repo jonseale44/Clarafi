@@ -17,7 +17,7 @@ import { Patient } from "@shared/schema";
 import { SharedChartSections } from "./shared-chart-sections";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { User as UserType } from "@shared/schema";
+import type { User as UserType, UserPreferences } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { 
   getAvailableSections, 
@@ -58,7 +58,7 @@ export function UnifiedChartPanel({
   });
 
   // Load user preferences
-  const { data: userPreferences } = useQuery({
+  const { data: userPreferences } = useQuery<UserPreferences>({
     queryKey: ["/api/user/preferences"],
     enabled: !!currentUser,
   });
@@ -75,12 +75,12 @@ export function UnifiedChartPanel({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
   const [dragStartWidth, setDragStartWidth] = useState(0);
-  const [panelWidth, setPanelWidth] = useState(userPreferences?.chartPanelWidth || 400);
+  const [panelWidth, setPanelWidth] = useState(400);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Update panel width when user preferences load
   useEffect(() => {
-    if (userPreferences?.chartPanelWidth) {
+    if (userPreferences?.chartPanelWidth != null) {
       setPanelWidth(userPreferences.chartPanelWidth);
     }
   }, [userPreferences]);
@@ -88,11 +88,15 @@ export function UnifiedChartPanel({
   // Mutation to save user preferences (no toast)
   const savePreferences = useMutation({
     mutationFn: async (preferences: { chartPanelWidth: number }) => {
-      return apiRequest("/api/user/preferences", {
+      const response = await fetch("/api/user/preferences", {
         method: "PUT",
         body: JSON.stringify(preferences),
         headers: { "Content-Type": "application/json" },
       });
+      if (!response.ok) {
+        throw new Error("Failed to save preferences");
+      }
+      return response.json();
     },
     onSuccess: () => {
       // Silently update cache without showing any toast
@@ -169,11 +173,17 @@ export function UnifiedChartPanel({
     if (!isDragging || dragStart === 0) return;
     
     const diff = e.clientX - dragStart;
-    const newWidth = Math.max(280, Math.min(800, dragStartWidth + diff));
+    // Allow dragging up to 50% of screen width (much larger than before)
+    const maxWidth = Math.floor(window.innerWidth * 0.5);
+    const newWidth = Math.max(280, Math.min(maxWidth, dragStartWidth + diff));
     setPanelWidth(newWidth);
   };
 
   const handleMouseUp = () => {
+    if (isDragging) {
+      // Save preferences silently (no toast)
+      savePreferences.mutate({ chartPanelWidth: panelWidth });
+    }
     setIsDragging(false);
     setDragStart(0);
     setDragStartWidth(0);
