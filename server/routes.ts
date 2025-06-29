@@ -22,7 +22,6 @@ import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 import setupTemplateRoutes from "./template-routes";
-import { registerUserPreferencesRoutes } from "./user-preferences-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -723,8 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Template management routes (custom user templates)
   setupTemplateRoutes(app);
 
-  // User preferences routes (UI customization)
-  registerUserPreferencesRoutes(app);
+  // NOTE: User preferences routes now handled by auth.ts to avoid duplication
 
   // Patient attachments routes
   app.use("/api/patients", patientAttachmentsRoutes);

@@ -31,9 +31,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   
-  // User preferences management
-  getUserPreferences(userId: number): Promise<UserPreferences | undefined>;
-  upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
+  // User preferences management (note: now handled via getUserNotePreferences in auth.ts)
   
   // Patient management
   getPatient(id: number): Promise<Patient | undefined>;
