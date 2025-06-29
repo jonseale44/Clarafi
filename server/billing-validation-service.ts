@@ -38,6 +38,14 @@ export class BillingValidationService {
     modifiers: string[] = [],
     context: CPTValidationContext
   ): Promise<ValidationResult> {
+    const startTime = Date.now();
+    const validationId = `${cptCode}-${Date.now()}`;
+    
+    console.log(`🔍 [BillingValidation] [${validationId}] Starting validation for CPT ${cptCode}`);
+    console.log(`🔍 [BillingValidation] [${validationId}] Modifiers: ${modifiers.length > 0 ? modifiers.join(', ') : 'none'}`);
+    console.log(`🔍 [BillingValidation] [${validationId}] Context: Patient ${context.patientId}, Encounter ${context.encounterId}, User ${context.userId}`);
+    console.log(`🔍 [BillingValidation] [${validationId}] Total CPT codes in encounter: ${context.allCptCodes?.length || 0}`);
+
     const result: ValidationResult = {
       isValid: true,
       errors: [],
@@ -46,56 +54,99 @@ export class BillingValidationService {
     };
 
     // 1. Validate CPT code exists and is active
+    console.log(`🔍 [BillingValidation] [${validationId}] Querying database for CPT ${cptCode}`);
     const cptRecord = await this.getCPTFromDatabase(cptCode);
+    
     if (!cptRecord) {
+      console.warn(`⚠️ [BillingValidation] [${validationId}] CPT ${cptCode} not found in database`);
+      console.log(`🔍 [BillingValidation] [${validationId}] This indicates:`);
+      console.log(`   - CPT code ${cptCode} is invalid or deprecated`);
+      console.log(`   - Database needs CPT code seeding for 2024`);
+      console.log(`   - Code entry error (check formatting)`);
+      
       result.isValid = false;
       result.errors.push(`CPT code ${cptCode} not found in database`);
       await this.logValidationEvent(context, 'validation_failed', {
         code: cptCode,
         reason: 'code_not_found'
       });
+      console.log(`❌ [BillingValidation] [${validationId}] Validation failed - code not found in ${Date.now() - startTime}ms`);
       return result;
     }
 
+    console.log(`✅ [BillingValidation] [${validationId}] CPT record found: ${cptRecord.description}`);
+    console.log(`💰 [BillingValidation] [${validationId}] Base rate: $${cptRecord.baseRate}`);
+    console.log(`📋 [BillingValidation] [${validationId}] Category: ${cptRecord.category}, Complexity: ${cptRecord.complexityLevel || 'N/A'}`);
+    console.log(`🏥 [BillingValidation] [${validationId}] Specialty: ${cptRecord.specialty || 'General'}`);
+    console.log(`📅 [BillingValidation] [${validationId}] Active: ${cptRecord.isActive}, Valid from: ${cptRecord.effectiveDate}`);
+    if (cptRecord.workRvu) {
+      console.log(`⚡ [BillingValidation] [${validationId}] Work RVU: ${cptRecord.workRvu}, Practice expense RVU: ${cptRecord.practiceExpenseRvu || 'N/A'}`);
+    }
+
     if (!cptRecord.isActive) {
+      console.warn(`⚠️ [BillingValidation] [${validationId}] CPT ${cptCode} is inactive (terminated: ${cptRecord.terminationDate})`);
       result.isValid = false;
       result.errors.push(`CPT code ${cptCode} is no longer active (terminated: ${cptRecord.terminationDate})`);
       await this.logValidationEvent(context, 'validation_failed', {
         code: cptCode,
         reason: 'code_inactive'
       });
+      console.log(`❌ [BillingValidation] [${validationId}] Validation failed - code inactive in ${Date.now() - startTime}ms`);
       return result;
     }
 
     // 2. Validate modifiers
+    console.log(`🔍 [BillingValidation] [${validationId}] Validating ${modifiers.length} modifiers`);
     const modifierValidation = await this.validateModifiers(cptCode, modifiers, cptRecord);
     result.errors.push(...modifierValidation.errors);
     result.warnings.push(...modifierValidation.warnings);
     result.suggestedModifiers = modifierValidation.suggested;
 
     if (modifierValidation.errors.length > 0) {
+      console.warn(`⚠️ [BillingValidation] [${validationId}] Modifier validation failed: ${modifierValidation.errors.join(', ')}`);
       result.isValid = false;
+    } else {
+      console.log(`✅ [BillingValidation] [${validationId}] Modifiers validated successfully`);
+    }
+
+    if (modifierValidation.warnings.length > 0) {
+      console.log(`⚠️ [BillingValidation] [${validationId}] Modifier warnings: ${modifierValidation.warnings.join(', ')}`);
     }
 
     // 3. Check for bundling conflicts
+    console.log(`🔍 [BillingValidation] [${validationId}] Checking bundling conflicts with ${context.allCptCodes?.length || 0} other codes`);
     const bundlingValidation = await this.validateBundling(cptCode, context.allCptCodes);
     result.errors.push(...bundlingValidation.errors);
     result.warnings.push(...bundlingValidation.warnings);
 
     if (bundlingValidation.errors.length > 0) {
+      console.warn(`⚠️ [BillingValidation] [${validationId}] Bundling conflicts detected: ${bundlingValidation.errors.join(', ')}`);
       result.isValid = false;
+    } else {
+      console.log(`✅ [BillingValidation] [${validationId}] No bundling conflicts found`);
     }
 
     // 4. Calculate revenue impact
+    console.log(`🔍 [BillingValidation] [${validationId}] Calculating revenue impact`);
     result.revenueImpact = await this.calculateRevenueImpact(cptCode, modifiers, cptRecord);
+    console.log(`💰 [BillingValidation] [${validationId}] Revenue impact: $${result.revenueImpact}`);
 
-    // 5. Log successful validation
+    // 5. Log final validation result
+    const validationTime = Date.now() - startTime;
     if (result.isValid) {
+      console.log(`✅ [BillingValidation] [${validationId}] Validation PASSED in ${validationTime}ms`);
+      console.log(`✅ [BillingValidation] [${validationId}] Final result: Valid CPT with $${result.revenueImpact} revenue impact`);
       await this.logValidationEvent(context, 'validation_passed', {
         code: cptCode,
         modifiers,
         revenueImpact: result.revenueImpact
       });
+    } else {
+      console.log(`❌ [BillingValidation] [${validationId}] Validation FAILED in ${validationTime}ms`);
+      console.log(`❌ [BillingValidation] [${validationId}] Errors: ${result.errors.join(', ')}`);
+      if (result.warnings.length > 0) {
+        console.log(`⚠️ [BillingValidation] [${validationId}] Warnings: ${result.warnings.join(', ')}`);
+      }
     }
 
     return result;
