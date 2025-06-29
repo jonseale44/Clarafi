@@ -942,11 +942,14 @@ REQUIRED JSON RESPONSE FORMAT:
       visitDate = new Date().toISOString().split("T")[0];
     }
 
-    // Check for existing visit from this source
+    // Check for existing visit from this EXACT source (encounter + source type, or specific attachment)
     const existingVisitIndex = visitHistory.findIndex((visit) => {
       if (change.source_type === "encounter") {
-        return visit.encounterId === encounterId;
+        // For encounter source: match BOTH encounterId AND source type to prevent 
+        // blocking when attachment from same encounter was processed earlier
+        return visit.encounterId === encounterId && visit.source === "encounter";
       } else {
+        // For attachment source: match specific attachmentId
         return visit.attachmentId === attachmentId;
       }
     });

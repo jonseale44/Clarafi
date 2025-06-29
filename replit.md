@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical Visit History Filtering Fix (June 29, 2025)
+- **CRITICAL BUG FIXED**: Resolved visit history filtering logic that prevented multiple visit entries per encounter
+- **ROOT CAUSE IDENTIFIED**: System blocked encounter-based visit entries when attachment from same encounter was processed earlier
+- **PROBLEM SCENARIO**: User uploads old medical record during active encounter → attachment processing creates visit entry → later SOAP processing blocked → only old data remains, current encounter data lost
+- **SOLUTION IMPLEMENTED**: Updated filtering logic to check BOTH encounter ID AND source type, allowing separate entries for attachment vs encounter processing within same encounter
+- **PRESERVED DEDUPLICATION**: Maintains protection against actual duplicates (same source type + same encounter ID, or same attachment ID)
+- **ENHANCED CLINICAL CONTINUITY**: Both historical attachment data and current encounter findings now properly preserved in visit history
+
 ### Medical Problems Technical Debt Cleanup (June 28, 2025)
 - **CRITICAL ARCHITECTURAL FIX**: Resolved major API endpoint inconsistencies causing UI update failures and CRUD operation issues
 - **CACHE INVALIDATION STANDARDIZED**: Updated all medical problems cache invalidation calls from legacy/orphaned endpoints to unified API
