@@ -244,7 +244,6 @@ export function SharedChartSections({
       case "family-history":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Family History</h2>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center py-8 text-gray-500">
@@ -260,7 +259,6 @@ export function SharedChartSections({
       case "social-history":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Social History</h2>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center py-8 text-gray-500">
@@ -276,7 +274,6 @@ export function SharedChartSections({
       case "surgical-history":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Surgical History</h2>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center py-8 text-gray-500">
