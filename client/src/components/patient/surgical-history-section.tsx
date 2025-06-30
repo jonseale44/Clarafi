@@ -202,7 +202,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
   const getSourceColor = (sourceType: string) => {
     switch (sourceType) {
       case "soap_derived": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "attachment_derived": return "bg-purple-100 text-purple-800 border-purple-200";
+      case "attachment_extracted": return "bg-purple-100 text-purple-800 border-purple-200";
       case "manual_entry": return "bg-gray-100 text-gray-800 border-gray-200";
       default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -404,11 +404,11 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className={`text-xs ${getSourceColor(surgery.sourceType)}`}>
                           {surgery.sourceType === "soap_derived" ? "SOAP" : 
-                           surgery.sourceType === "attachment_derived" ? "Document" : "Manual"}
+                           surgery.sourceType === "attachment_extracted" ? "Document" : "Manual"}
                         </Badge>
                         
                         {/* Attachment source link and confidence for document-derived surgeries */}
-                        {surgery.sourceType === "attachment_derived" && surgery.extractedFromAttachmentId && (
+                        {surgery.sourceType === "attachment_extracted" && surgery.extractedFromAttachmentId && (
                           <>
                             <a 
                               href={`/patients/${surgery.patientId}/attachments/${surgery.extractedFromAttachmentId}`}
