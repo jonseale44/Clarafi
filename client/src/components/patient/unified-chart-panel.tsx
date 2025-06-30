@@ -36,6 +36,8 @@ interface UnifiedChartPanelProps {
   highlightAttachmentId?: number;
   isAutoGeneratingMedicalProblems?: boolean;
   medicalProblemsProgress?: number;
+  onSectionChange?: (sectionId: string) => void;
+  activeSection?: string;
 }
 
 
@@ -48,7 +50,9 @@ export function UnifiedChartPanel({
   onBackToChart,
   highlightAttachmentId,
   isAutoGeneratingMedicalProblems = false,
-  medicalProblemsProgress = 0
+  medicalProblemsProgress = 0,
+  onSectionChange,
+  activeSection
 }: UnifiedChartPanelProps) {
   const queryClient = useQueryClient();
   
@@ -68,9 +72,20 @@ export function UnifiedChartPanel({
     expandedSections: new Set(getDefaultExpandedSections(config.context)),
     isExpanded: false,
     currentWidth: config.defaultWidth || "w-80",
-    activeSection: undefined,
+    activeSection: activeSection,
     searchQuery: ""
   });
+
+  // Sync external activeSection prop with internal state
+  useEffect(() => {
+    if (activeSection !== panelState.activeSection) {
+      console.log('🔗 [UnifiedChartPanel] Syncing external activeSection:', activeSection);
+      setPanelState(prev => ({
+        ...prev,
+        activeSection: activeSection
+      }));
+    }
+  }, [activeSection, panelState.activeSection]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
@@ -119,14 +134,31 @@ export function UnifiedChartPanel({
   const toggleSection = (sectionId: string) => {
     setPanelState(prev => {
       const newExpanded = new Set(prev.expandedSections);
+      let newActiveSection = prev.activeSection;
+      
       if (newExpanded.has(sectionId)) {
+        // If section is already expanded, collapse it
         newExpanded.delete(sectionId);
+        // If this was the active section, clear active section
+        if (prev.activeSection === sectionId) {
+          newActiveSection = undefined;
+        }
       } else {
+        // If section is collapsed, expand it and make it active
         newExpanded.add(sectionId);
+        newActiveSection = sectionId;
+        
+        // Notify parent component about section change
+        console.log('🔗 [UnifiedChartPanel] Setting active section:', sectionId);
+        if (onSectionChange) {
+          onSectionChange(sectionId);
+        }
       }
+      
       return {
         ...prev,
-        expandedSections: newExpanded
+        expandedSections: newExpanded,
+        activeSection: newActiveSection
       };
     });
   };

@@ -67,7 +67,10 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       if (savedState) {
         const parsed = JSON.parse(savedState);
         console.log('🔄 [StateRestore] Restoring active section:', parsed.activeSection);
-        return parsed.activeSection;
+        // Only restore if it's not "attachments" (to fix the stuck state issue)
+        if (parsed.activeSection && parsed.activeSection !== "attachments") {
+          return parsed.activeSection;
+        }
       }
     } catch (error) {
       console.warn('🔄 [StateRestore] Failed to restore active section:', error);
@@ -227,7 +230,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   useEffect(() => {
     console.log('🏥 [PatientChart] Encounters data:', {
       encounters,
-      encountersLength: encounters?.length,
+      encountersLength: Array.isArray(encounters) ? encounters.length : 0,
       encountersType: typeof encounters,
       isArray: Array.isArray(encounters),
       activeSection,
@@ -416,6 +419,11 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           enableSearch: true
         }}
         highlightAttachmentId={highlightAttachmentId}
+        activeSection={activeSection}
+        onSectionChange={(sectionId) => {
+          console.log('🔗 [PatientChartView] Received section change:', sectionId);
+          setActiveSection(sectionId);
+        }}
       />
 
       {/* Main Content */}
