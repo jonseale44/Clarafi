@@ -109,17 +109,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Unified Surgical History System Implementation Completed (June 30, 2025)
+### Unified Surgical History System with Visit History Tracking Completed (June 30, 2025)
 - **PRODUCTION-READY SURGICAL HISTORY SYSTEM**: Implemented comprehensive surgical history management following same architecture as medical problems parser
 - **UNIFIED SURGICAL HISTORY PARSER**: Built UnifiedSurgicalHistoryParser class with GPT-4.1 powered extraction, consolidation, and deduplication logic
 - **AUTOMATIC ATTACHMENT EXTRACTION**: Integrated surgical history extraction into attachment processing workflow - all uploaded documents automatically analyzed for surgical procedures
 - **COMPLETE DATABASE SCHEMA**: Created production-level surgicalHistory table with comprehensive fields including CPT codes, ICD-10 procedure codes, complications, outcomes, anesthesia types
-- **FULL CRUD API ENDPOINTS**: Implemented RESTful API with GET, POST, PUT, DELETE operations for surgical history management
-- **FRONTEND COMPONENT INTEGRATION**: Built surgical-history-section.tsx component with full CRUD interface successfully integrated into patient chart UI
-- **PARALLEL PROCESSING ARCHITECTURE**: Added surgical history extraction to parallel processing pipeline alongside vitals and medical problems extraction
+- **VISIT HISTORY TRACKING SYSTEM**: Implemented comprehensive visit history tracking for surgical procedures with chronological change documentation
+  - **DATABASE SCHEMA**: Added visitHistory JSONB field to surgicalHistory table with encounter/attachment source tracking
+  - **CHANGE DETECTION**: System automatically detects and tracks changes (date corrections, surgeon updates, complications noted, etc.)
+  - **SOURCE ATTRIBUTION**: Each visit history entry links to source encounter or attachment with confidence scoring
+  - **FRONTEND DISPLAY**: Enhanced surgical-history-section.tsx with expandable visit history timeline showing dates, changes, and source links
+- **PARALLEL PROCESSING INTEGRATION**: Added surgical history extraction to parallel processing pipeline alongside medical problems, medications, orders, and CPT codes
 - **GPT CLINICAL INTELLIGENCE**: Expert surgical assistant prompts with 20+ years experience for accurate surgical documentation and consolidation
-- **SOURCE ATTRIBUTION**: Complete provenance tracking with attachment source links, confidence scoring, and extraction notes
-- **EPIC-LEVEL EMR STANDARDS**: Meets production EMR requirements with comprehensive surgical procedure documentation workflow
+- **DATE CORRECTION WORKFLOW**: Handles user test case - vertebroplasty date correction from 2015→2016 preserves original entry via visit history
+- **COMPREHENSIVE TEST SUITE**: Created test-surgical-history-visit-system.js demonstrating complete workflow from attachment extraction to encounter updates
+- **EPIC-LEVEL EMR STANDARDS**: Meets production EMR requirements with comprehensive surgical procedure documentation and historical change tracking
 
 ### Ultra-Tight Proportional White Space Control System Implementation (June 29, 2025)
 - **PROPORTIONAL SPACING ARCHITECTURE**: Created comprehensive em-based spacing system that scales proportionally with font sizes to solve white space disproportion issues

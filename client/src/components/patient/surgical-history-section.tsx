@@ -486,6 +486,67 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                         <strong>Complications:</strong> {surgery.complications}
                       </div>
                     )}
+
+                    {/* Visit History Display */}
+                    {surgery.visitHistory && surgery.visitHistory.length > 0 && (
+                      <div className="mt-2 border-t pt-2">
+                        <div className="text-xs font-medium text-gray-700 mb-1">Visit History:</div>
+                        <div className="space-y-1">
+                          {surgery.visitHistory
+                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                            .map((visit, index) => (
+                              <div key={index} className="text-xs bg-gray-50 rounded p-2 border">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-medium text-gray-800">
+                                    {format(parseISO(visit.date), "MMM d, yyyy")}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    {visit.source === "encounter" && visit.encounterId && (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-xs cursor-pointer hover:bg-blue-600 hover:text-white transition-colors bg-blue-50 text-blue-700 border-blue-200"
+                                        onClick={() => {
+                                          navigateWithContext(
+                                            `/patients/${surgery.patientId}/encounters/${visit.encounterId}`,
+                                            'surgical-history',
+                                            mode
+                                          );
+                                        }}
+                                        title="Click to view encounter"
+                                      >
+                                        Encounter
+                                      </Badge>
+                                    )}
+                                    {visit.source === "attachment" && visit.attachmentId && (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
+                                        onClick={() => {
+                                          navigateWithContext(
+                                            `/patients/${surgery.patientId}/chart?section=attachments&highlight=${visit.attachmentId}`,
+                                            'surgical-history',
+                                            mode
+                                          );
+                                        }}
+                                        title="Click to view attachment"
+                                      >
+                                        Document
+                                      </Badge>
+                                    )}
+                                    {visit.changesMade && visit.changesMade.length > 0 && (
+                                      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                        {visit.changesMade.length === 1 ? visit.changesMade[0].replace('_', ' ') : `${visit.changesMade.length} changes`}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-gray-600">{visit.notes}</div>
+                              </div>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {!isReadOnly && (
