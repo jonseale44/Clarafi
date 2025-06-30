@@ -1,5 +1,6 @@
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
+import { SurgicalHistorySection } from "./surgical-history-section";
 import { PatientAttachments } from "./patient-attachments";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
@@ -274,15 +275,12 @@ export function SharedChartSections({
       case "surgical-history":
         return (
           <div className="emr-tight-spacing">
-            <Card>
-              <CardContent className="pt-3 emr-card-content-tight">
-                <div className="text-center py-4 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Surgical history management coming soon</p>
-                  <p className="text-sm">Track surgical procedures and outcomes.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <SurgicalHistorySection
+              patientId={patientId}
+              encounterId={encounterId}
+              mode={mode}
+              isReadOnly={isReadOnly}
+            />
           </div>
         );
       
