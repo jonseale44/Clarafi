@@ -240,16 +240,6 @@ export function UnifiedChartPanel({
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const renderSectionContent = (section: any) => {
-    if (section.id === "encounters") {
-      return (
-        <div className="text-xs text-gray-600">
-          {config.context === 'patient-chart' ? "View all patient encounters" : "Current encounter in progress"}
-        </div>
-      );
-    }
-
-
-
     if (section.id === "documents") {
       return (
         <EmbeddedPDFViewer
