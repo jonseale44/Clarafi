@@ -1976,7 +1976,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         );
 
         // Validate CPT codes with modifiers using BillingValidationService
-        const { BillingValidationService } = await import("./billing-validation-service.js");
+        const { BillingValidationService } = await import("./billing-validation-service");
         const billingValidator = new BillingValidationService();
         
         console.log(`🔍 [CPT API] Validating ${extractedData.cptCodes?.length || 0} CPT codes with modifiers...`);
@@ -2343,7 +2343,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         return res.status(400).json({ message: "CPT code is required" });
       }
 
-      const { BillingValidationService } = await import("./billing-validation-service.js");
+      const { BillingValidationService } = await import("./billing-validation-service");
       const billingValidator = new BillingValidationService();
 
       const validationContext = {
@@ -2401,7 +2401,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         return res.json({ totalRevenue: 0, cptBreakdown: [] });
       }
 
-      const { BillingValidationService } = await import("./billing-validation-service.js");
+      const { BillingValidationService } = await import("./billing-validation-service");
       const billingValidator = new BillingValidationService();
 
       const validationContext = {
