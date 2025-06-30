@@ -13,6 +13,7 @@ import { Scissors, Plus, Edit2, Trash2, Calendar, MapPin, User, FileText, AlertT
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 interface SurgicalHistoryEntry {
   id: number;
@@ -50,6 +51,7 @@ interface SurgicalHistorySectionProps {
 export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: SurgicalHistorySectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location, setLocation] = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSurgery, setEditingSurgery] = useState<SurgicalHistoryEntry | null>(null);
   const [newSurgery, setNewSurgery] = useState({
@@ -402,41 +404,34 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Badge variant="outline" className={`text-xs ${getSourceColor(surgery.sourceType)}`}>
-                          {surgery.sourceType === "soap_derived" ? "SOAP" : 
-                           surgery.sourceType === "attachment_extracted" ? "Document" : "Manual"}
-                        </Badge>
-                        
-                        {/* Attachment source link and confidence for document-derived surgeries */}
-                        {surgery.sourceType === "attachment_extracted" && surgery.extractedFromAttachmentId && (
-                          <>
-                            <a 
-                              href={`/patients/${surgery.patientId}/attachments/${surgery.extractedFromAttachmentId}`}
-                              className="text-xs text-blue-600 hover:text-blue-800 underline"
-                              title="View source document"
-                            >
-                              📎 Source
-                            </a>
-                            {surgery.sourceConfidence && (
-                              <Badge 
-                                variant="outline" 
-                                className="text-xs bg-green-50 text-green-700 border-green-200"
-                                title={`Extraction confidence: ${Math.round(surgery.sourceConfidence * 100)}%`}
-                              >
-                                {Math.round(surgery.sourceConfidence * 100)}%
-                              </Badge>
-                            )}
-                          </>
-                        )}
-                        
-                        {/* Confidence for SOAP-derived surgeries */}
-                        {surgery.sourceType === "soap_derived" && surgery.sourceConfidence && (
+                        {/* Combined source attribution badge for attachment-extracted surgeries */}
+                        {surgery.sourceType === "attachment_extracted" && surgery.extractedFromAttachmentId ? (
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
+                            onClick={() => {
+                              console.log(`🏥 [SurgicalHistory] Navigating to attachment ${surgery.extractedFromAttachmentId} for surgery ${surgery.id}`);
+                              setLocation(`/patients/${surgery.patientId}/chart?section=attachments&highlight=${surgery.extractedFromAttachmentId}`);
+                            }}
+                            title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
+                          >
+                            Doc Extract {Math.round(surgery.sourceConfidence * 100)}%
+                          </Badge>
+                        ) : surgery.sourceType === "soap_derived" && surgery.sourceConfidence ? (
                           <Badge 
                             variant="outline" 
                             className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                            title={`Extraction confidence: ${Math.round(surgery.sourceConfidence * 100)}%`}
+                            title={`SOAP-derived surgery (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
                           >
-                            {Math.round(surgery.sourceConfidence * 100)}%
+                            SOAP {Math.round(surgery.sourceConfidence * 100)}%
+                          </Badge>
+                        ) : (
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs bg-gray-50 text-gray-700 border-gray-200"
+                            title="Manually entered surgery"
+                          >
+                            Manual
                           </Badge>
                         )}
                       </div>
