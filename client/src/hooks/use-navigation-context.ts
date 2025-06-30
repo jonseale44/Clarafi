@@ -58,8 +58,13 @@ export function useNavigationContext() {
 
   const goBack = () => {
     if (navContext?.fromUrl) {
-      // Remove navigation context parameters when going back
-      const cleanUrl = navContext.fromUrl.split('?')[0];
+      // Parse the return URL and clean only navigation context parameters
+      const url = new URL(navContext.fromUrl, window.location.origin);
+      url.searchParams.delete('from');
+      url.searchParams.delete('context');
+      url.searchParams.delete('returnUrl');
+      
+      const cleanUrl = url.pathname + (url.search ? url.search : '');
       console.log(`🔗 [NavigationContext] Going back to: ${cleanUrl}`);
       setLocation(cleanUrl);
     } else {
