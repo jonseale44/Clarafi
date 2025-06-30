@@ -13,8 +13,33 @@ async function testSurgicalHistoryVisitSystem() {
   console.log("🏥 === Testing Surgical History Visit System ===");
 
   try {
-    // Test patient ID (using existing patient from system)
-    const patientId = 12;
+    // Step 0: Create test patient if needed
+    console.log("\n📋 Step 0: Ensure test patient exists");
+    
+    const createPatientResponse = await fetch(`${BASE_URL}/api/patients`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstName: "Test",
+        lastName: "Patient",
+        dateOfBirth: "1980-01-01",
+        gender: "male",
+        contactNumber: "555-0123",
+        email: "test@example.com"
+      })
+    });
+
+    let patientId;
+    if (createPatientResponse.ok) {
+      const newPatient = await createPatientResponse.json();
+      patientId = newPatient.id;
+      console.log(`✅ Created test patient with ID: ${patientId}`);
+    } else {
+      // Use existing patient ID if creation fails (patient might already exist)
+      patientId = 1;
+      console.log(`✅ Using existing patient ID: ${patientId}`);
+    }
+
     const providerId = 1;
 
     console.log("\n📋 Step 1: Simulate initial attachment processing creating vertebroplasty 2015");
