@@ -1,6 +1,6 @@
 import { 
   users, patients, encounters, vitals, medications, diagnoses,
-  familyHistory, medicalHistory, socialHistory, allergies,
+  familyHistory, medicalHistory, socialHistory, surgicalHistory, allergies,
   labOrders, labResults, imagingOrders, imagingResults, orders,
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
   signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
@@ -72,6 +72,7 @@ export interface IStorage {
   getPatientFamilyHistory(patientId: number): Promise<any[]>;
   getPatientMedicalHistory(patientId: number): Promise<any[]>;
   getPatientSocialHistory(patientId: number): Promise<any[]>;
+  getPatientSurgicalHistory(patientId: number): Promise<any[]>;
   
   // Lab orders and results
   getPatientLabOrders(patientId: number): Promise<any[]>;
@@ -214,6 +215,9 @@ export class DatabaseStorage implements IStorage {
       
       await db.delete(socialHistory).where(eq(socialHistory.patientId, id));
       console.log(`🗑️ [Storage] Deleted social history for patient ${id}`);
+      
+      await db.delete(surgicalHistory).where(eq(surgicalHistory.patientId, id));
+      console.log(`🗑️ [Storage] Deleted surgical history for patient ${id}`);
       
       await db.delete(labResults).where(eq(labResults.patientId, id));
       console.log(`🗑️ [Storage] Deleted lab results for patient ${id}`);
@@ -548,6 +552,12 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(socialHistory)
       .where(eq(socialHistory.patientId, patientId))
       .orderBy(desc(socialHistory.updatedAt));
+  }
+
+  async getPatientSurgicalHistory(patientId: number): Promise<any[]> {
+    return await db.select().from(surgicalHistory)
+      .where(eq(surgicalHistory.patientId, patientId))
+      .orderBy(desc(surgicalHistory.procedureDate));
   }
 
   // Lab orders and results - Enhanced for production EMR
