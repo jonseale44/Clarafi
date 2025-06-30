@@ -1021,6 +1021,42 @@ export function EncounterDetailView({
   const [editorVulnerableWindow, setEditorVulnerableWindow] = useState(false);
   const [vulnerableWindowTimeout, setVulnerableWindowTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  // Smart Chart Update Button State
+  const [lastProcessedSOAPHash, setLastProcessedSOAPHash] = useState<string>("");
+  const [isChartUpdateAvailable, setIsChartUpdateAvailable] = useState(false);
+  const [isUpdatingChart, setIsUpdatingChart] = useState(false);
+  const [chartUpdateProgress, setChartUpdateProgress] = useState(0);
+
+  // Hash generation utility (reusing logic from medical-problems-orchestrator)
+  const generateSOAPHash = (content: string): string => {
+    let hash = 0;
+    const cleanContent = content.trim();
+    for (let i = 0; i < cleanContent.length; i++) {
+      const char = cleanContent.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString();
+  };
+
+  // Check if chart update should be available
+  const checkForChartUpdateAvailability = (currentSOAP: string) => {
+    if (!currentSOAP || currentSOAP.trim().length < 100) {
+      setIsChartUpdateAvailable(false);
+      return;
+    }
+
+    const currentHash = generateSOAPHash(currentSOAP);
+    
+    // Only show button if content has changed significantly since last processing
+    if (lastProcessedSOAPHash && currentHash !== lastProcessedSOAPHash) {
+      setIsChartUpdateAvailable(true);
+      console.log("📝 [ChartUpdate] SOAP content changed - update button available");
+    } else {
+      setIsChartUpdateAvailable(false);
+    }
+  };
+
   // Cleanup timeout on unmount  
   useEffect(() => {
     return () => {
