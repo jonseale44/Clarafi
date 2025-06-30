@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Patient, Vitals } from "@shared/schema";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { UserPlus, Trash2, MessageSquare } from "lucide-react";
 import {
   AlertDialog,
@@ -30,6 +30,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [, setLocation] = useLocation();
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -174,8 +175,7 @@ export default function Dashboard() {
                     <div 
                       className="flex-1 cursor-pointer" 
                       onClick={() => {
-                        setSelectedPatientId(p.id);
-                        setActiveTab("encounters");
+                        setLocation(`/patients/${p.id}/chart`);
                       }}
                     >
                       <h3 className="font-semibold">{p.firstName} {p.lastName}</h3>
