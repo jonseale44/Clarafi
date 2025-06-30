@@ -724,6 +724,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Template management routes (custom user templates)
   setupTemplateRoutes(app);
 
+  // Surgical history routes (unified processing and management)
+  app.use("/api/surgical-history", unifiedSurgicalHistoryRoutes);
+
   // NOTE: User preferences routes now handled by auth.ts to avoid duplication
 
   // Patient attachments routes
