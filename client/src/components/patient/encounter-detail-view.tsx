@@ -865,6 +865,13 @@ export function EncounterDetailView({
         }
 
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
+        
+        // Update hash after successful processing to track chart state
+        const processedHash = generateSOAPHash(soapNote);
+        setLastProcessedSOAPHash(processedHash);
+        setIsChartUpdateAvailable(false);
+        console.log("📝 [ChartUpdate] Hash updated after stop recording processing");
+        
       } catch (error) {
         console.error(
           `❌ [ParallelProcessing] EXCEPTION during processing:`,
@@ -1054,6 +1061,143 @@ export function EncounterDetailView({
       console.log("📝 [ChartUpdate] SOAP content changed - update button available");
     } else {
       setIsChartUpdateAvailable(false);
+    }
+  };
+
+  // FUTURE-PROOF REMINDER: When adding new chart sections, update BOTH:
+  // 1. Stop Recording parallel processing (lines ~680-880)
+  // 2. Manual Update Chart button (this function)
+  // Current sections: medicalProblems, surgicalHistory, medications
+  // Future sections: allergies, imaging, familyHistory, [add here]
+  
+  // Selective chart update - processes only chart data (excludes orders & billing)
+  const updateChartFromNote = async () => {
+    if (!patient || !encounter || !soapNote || isUpdatingChart) return;
+
+    console.log("🔄 [ChartUpdate] === SELECTIVE CHART UPDATE START ===");
+    console.log("🔄 [ChartUpdate] Processing: Medical Problems + Surgical History + Medications");
+    
+    setIsUpdatingChart(true);
+    setChartUpdateProgress(0);
+
+    try {
+      // Start progress animation
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += 2;
+        if (progress <= 90) {
+          setChartUpdateProgress(progress);
+        }
+      }, 50);
+
+      // Process only chart sections in parallel (exclude orders & CPT)
+      const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse] = await Promise.all([
+        // Medical Problems Processing
+        fetch("/api/medical-problems/process-unified", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            patientId: patient.id,
+            encounterId: encounter.id,
+            soapNote: soapNote,
+            attachmentContent: null,
+            attachmentId: null,
+            providerId: currentUser?.id || 1,
+            triggerType: "manual_chart_update",
+          }),
+        }),
+
+        // Surgical History Processing  
+        fetch("/api/surgical-history/process-unified", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            patientId: patient.id,
+            encounterId: encounter.id,
+            soapNote: soapNote,
+            attachmentContent: null,
+            attachmentId: null,
+            providerId: currentUser?.id || 1,
+            triggerType: "manual_chart_update",
+          }),
+        }),
+
+        // Medications Processing
+        fetch(`/api/encounters/${encounter.id}/process-medications`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            soapNote: soapContent,
+          }),
+        }),
+      ]);
+
+      clearInterval(progressInterval);
+      setChartUpdateProgress(100);
+
+      console.log(`🔄 [ChartUpdate] All chart requests completed`);
+      console.log(`🔄 [ChartUpdate] Medical Problems: ${medicalProblemsResponse.status}`);
+      console.log(`🔄 [ChartUpdate] Surgical History: ${surgicalHistoryResponse.status}`);  
+      console.log(`🔄 [ChartUpdate] Medications: ${medicationsResponse.status}`);
+
+      // Handle responses and refresh UI
+      let sectionsUpdated = 0;
+
+      if (medicalProblemsResponse.ok) {
+        const result = await medicalProblemsResponse.json();
+        console.log(`✅ [ChartUpdate-MedProblems] ${result.problemsAffected || result.total_problems_affected || 0} problems affected`);
+        
+        await queryClient.invalidateQueries({
+          queryKey: ['/api/medical-problems', patient.id],
+        });
+        sectionsUpdated++;
+      }
+
+      if (surgicalHistoryResponse.ok) {
+        const result = await surgicalHistoryResponse.json();
+        console.log(`✅ [ChartUpdate-Surgery] ${result.surgeriesAffected || 0} surgeries affected`);
+        
+        await queryClient.invalidateQueries({
+          queryKey: [`/api/patients/${patient.id}/surgical-history`],
+        });
+        sectionsUpdated++;
+      }
+
+      if (medicationsResponse.ok) {
+        const result = await medicationsResponse.json();
+        console.log(`✅ [ChartUpdate-Meds] ${result.medicationsAffected || 0} medications affected`);
+        
+        await queryClient.invalidateQueries({
+          queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
+        });
+        sectionsUpdated++;
+      }
+
+      // Update hash to prevent button from showing again
+      const newHash = generateSOAPHash(soapContent);
+      setLastProcessedSOAPHash(newHash);
+      setIsChartUpdateAvailable(false);
+
+      toast({
+        title: "Chart Updated Successfully",
+        description: `Updated ${sectionsUpdated} chart sections from SOAP note content`,
+      });
+
+      console.log("🔄 [ChartUpdate] === SELECTIVE CHART UPDATE COMPLETE ===");
+
+    } catch (error) {
+      console.error("❌ [ChartUpdate] Error during selective chart update:", error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update chart sections. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingChart(false);
+      setChartUpdateProgress(0);
     }
   };
 
