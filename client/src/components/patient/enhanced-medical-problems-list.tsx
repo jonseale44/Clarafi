@@ -136,6 +136,7 @@ export function EnhancedMedicalProblemsList({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { navigateWithContext } = useNavigationContext();
   const { uploadState } = useUpload();
   
   // Check if upload is for current patient to show loading overlay
@@ -617,7 +618,11 @@ export function EnhancedMedicalProblemsList({
         const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleDocumentClick = () => {
           if (attachmentId) {
-            setLocation(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`);
+            navigateWithContext(
+              `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`,
+              'medical-problems',
+              mode
+            );
           }
         };
         
