@@ -531,7 +531,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
             {surgicalHistory.map((surgery) => (
               <Card 
                 key={surgery.id} 
-                className="relative surgical-card border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200"
+                className="relative surgical-card border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200 group"
               >
                 <Collapsible
                   open={expandedSurgeries.has(surgery.id)}
