@@ -3,6 +3,7 @@ import { EnhancedMedicationsList } from "./enhanced-medications-list";
 import { SurgicalHistorySection } from "./surgical-history-section";
 import { PatientAttachments } from "./patient-attachments";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
+import { EncountersTab } from "./encounters-tab";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
 import { VitalsTrendingGraph } from "@/components/vitals/vitals-trending-graph";
 import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
@@ -177,6 +178,27 @@ export function SharedChartSections({
   
   const renderSectionContent = (targetSectionId: string) => {
     switch (targetSectionId) {
+      case "encounters":
+        // EncountersTab component handles its own data fetching
+        const EncountersWrapper = () => {
+          const { data: encounters = [] } = useQuery({
+            queryKey: [`/api/patients/${patientId}/encounters`],
+          });
+          
+          return (
+            <EncountersTab 
+              encounters={encounters as any[]} 
+              patientId={patientId} 
+              onRefresh={() => {
+                // Refresh encounters data
+                // This will be handled by React Query refetch
+              }}
+            />
+          );
+        };
+        
+        return <EncountersWrapper />;
+      
       case "problems":
         return (
           <EnhancedMedicalProblemsList 
