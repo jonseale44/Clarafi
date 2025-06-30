@@ -33,6 +33,9 @@ interface SurgicalHistoryEntry {
   sourceType: string;
   sourceConfidence: number;
   sourceNotes: string | null;
+  extractedFromAttachmentId: number | null;
+  attachmentId?: number; // For backward compatibility
+  confidence?: number; // For backward compatibility
   createdAt: Date;
   updatedAt: Date;
 }
@@ -398,10 +401,45 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                           {surgery.outcome}
                         </Badge>
                       </div>
-                      <Badge variant="outline" className={`text-xs ${getSourceColor(surgery.sourceType)}`}>
-                        {surgery.sourceType === "soap_derived" ? "SOAP" : 
-                         surgery.sourceType === "attachment_derived" ? "Document" : "Manual"}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className={`text-xs ${getSourceColor(surgery.sourceType)}`}>
+                          {surgery.sourceType === "soap_derived" ? "SOAP" : 
+                           surgery.sourceType === "attachment_derived" ? "Document" : "Manual"}
+                        </Badge>
+                        
+                        {/* Attachment source link and confidence for document-derived surgeries */}
+                        {surgery.sourceType === "attachment_derived" && surgery.extractedFromAttachmentId && (
+                          <>
+                            <a 
+                              href={`/patients/${surgery.patientId}/attachments/${surgery.extractedFromAttachmentId}`}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              title="View source document"
+                            >
+                              📎 Source
+                            </a>
+                            {surgery.sourceConfidence && (
+                              <Badge 
+                                variant="outline" 
+                                className="text-xs bg-green-50 text-green-700 border-green-200"
+                                title={`Extraction confidence: ${Math.round(surgery.sourceConfidence * 100)}%`}
+                              >
+                                {Math.round(surgery.sourceConfidence * 100)}%
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                        
+                        {/* Confidence for SOAP-derived surgeries */}
+                        {surgery.sourceType === "soap_derived" && surgery.sourceConfidence && (
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                            title={`Extraction confidence: ${Math.round(surgery.sourceConfidence * 100)}%`}
+                          >
+                            {Math.round(surgery.sourceConfidence * 100)}%
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
