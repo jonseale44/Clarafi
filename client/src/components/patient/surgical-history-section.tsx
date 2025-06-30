@@ -66,7 +66,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
   });
 
   // Fetch surgical history for the patient
-  const { data: surgicalHistory = [], isLoading } = useQuery({
+  const { data: surgicalHistory = [], isLoading } = useQuery<SurgicalHistoryEntry[]>({
     queryKey: [`/api/surgical-history/${patientId}`],
     enabled: !!patientId
   });
@@ -386,7 +386,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
           </div>
         ) : (
           <div className="space-y-3">
-            {surgicalHistory.map((surgery: SurgicalHistoryEntry) => (
+            {surgicalHistory.map((surgery) => (
               <div key={surgery.id} className="border rounded-lg p-3 bg-gray-50">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
