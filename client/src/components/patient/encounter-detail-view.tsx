@@ -2410,7 +2410,7 @@ Please provide medical suggestions based on this complete conversation context.`
 
         // Process ALL services in parallel for maximum speed optimization
         console.log(
-          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, medications, orders, and CPT codes...",
+          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, and CPT codes...",
         );
         console.log(
           "🏥 [StopRecording] CPT extraction URL:",
@@ -2425,7 +2425,7 @@ Please provide medical suggestions based on this complete conversation context.`
         startOrdersAnimation();
         startBillingAnimation();
 
-        const [medicalProblemsResponse, medicationsResponse, ordersResponse, cptResponse] =
+        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse] =
           await Promise.all([
             fetch(`/api/medical-problems/process-unified`, {
               method: "POST",
@@ -2443,6 +2443,25 @@ Please provide medical suggestions based on this complete conversation context.`
               if (!response.ok) {
                 const errorText = await response.text();
                 console.error("❌ [StopRecording] Medical problems processing failed:", errorText.substring(0, 500));
+              }
+              return response;
+            }),
+            fetch(`/api/surgical-history/process-unified`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                patientId: patient.id,
+                encounterId: encounterId,
+                soapNote: soapNote,
+                triggerType: "recording_complete",
+              }),
+            }).then(async (response) => {
+              console.log("🏥 [StopRecording] Surgical history response status:", response.status);
+              console.log("🏥 [StopRecording] Surgical history response headers:", Object.fromEntries(response.headers.entries()));
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error("❌ [StopRecording] Surgical history processing failed:", errorText.substring(0, 500));
               }
               return response;
             }),
@@ -2590,6 +2609,36 @@ Please provide medical suggestions based on this complete conversation context.`
           }
           // Complete medical problems animation even if failed
           completeMedicalProblemsAnimation();
+        }
+
+        // Handle surgical history response
+        if (surgicalHistoryResponse.ok) {
+          try {
+            const result = await surgicalHistoryResponse.json();
+            console.log(
+              `✅ [StopRecording] Surgical history processed: ${result.total_surgeries_affected || 0} surgeries affected`,
+            );
+
+            // Invalidate surgical history cache to refresh UI
+            await queryClient.invalidateQueries({
+              queryKey: [`/api/surgical-history/${patient.id}`],
+            });
+            
+            console.log("✅ [StopRecording] Surgical history cache invalidated");
+          } catch (jsonError) {
+            console.error("❌ [StopRecording] Error parsing surgical history JSON:", jsonError);
+            console.error("❌ [StopRecording] Surgical history returned non-JSON content (likely HTML error page)");
+          }
+        } else {
+          try {
+            const errorText = await surgicalHistoryResponse.text();
+            console.error(
+              `❌ [StopRecording] Surgical history processing failed: ${surgicalHistoryResponse.status}`,
+            );
+            console.error("❌ [StopRecording] Surgical history error text:", errorText.substring(0, 500));
+          } catch (textError) {
+            console.error("❌ [StopRecording] Error reading surgical history error text:", textError);
+          }
         }
         
         if (medicationsResponse.ok) {
