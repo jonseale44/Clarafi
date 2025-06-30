@@ -556,7 +556,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                               </div>
                               <div className="flex items-center gap-1">
                                 {/* Combined source attribution badge for attachment-extracted surgeries */}
-                                {surgery.sourceType === "attachment_extracted" && surgery.extractedFromAttachmentId ? (
+                                {(surgery.sourceType === "attachment_extracted" || surgery.sourceType === "attachment") && surgery.extractedFromAttachmentId ? (
                                   <Badge 
                                     variant="outline" 
                                     className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
@@ -572,6 +572,14 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                     title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
                                   >
                                     Doc Extract {Math.round(surgery.sourceConfidence * 100)}%
+                                  </Badge>
+                                ) : (surgery.sourceType === "attachment_extracted" || surgery.sourceType === "attachment") ? (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                                    title={`Document-extracted surgery (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
+                                  >
+                                    Document {Math.round(surgery.sourceConfidence * 100)}%
                                   </Badge>
                                 ) : surgery.sourceType === "soap_derived" && surgery.sourceConfidence ? (
                                   <Badge 
