@@ -2251,6 +2251,65 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
     },
   );
 
+  // Enhanced RCM billing workflow routes
+  app.put("/api/diagnoses/:diagnosisId/rcm-status", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const diagnosisId = parseInt(req.params.diagnosisId);
+      const updates = req.body;
+
+      console.log(`💰 [RCM API] Updating billing status for diagnosis ${diagnosisId}`);
+
+      const updatedDiagnosis = await storage.updateDiagnosisRCMStatus(diagnosisId, updates);
+
+      res.json({
+        message: "Diagnosis billing status updated successfully",
+        diagnosis: updatedDiagnosis,
+      });
+    } catch (error: any) {
+      console.error("❌ [RCM API] Error updating diagnosis status:", error);
+      res.status(500).json({
+        message: "Failed to update diagnosis billing status",
+        error: error.message,
+      });
+    }
+  });
+
+  app.get("/api/diagnoses/claims", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const { status } = req.query;
+      const diagnoses = await storage.getDiagnosesForClaims(status as string);
+
+      res.json(diagnoses);
+    } catch (error: any) {
+      console.error("❌ [RCM API] Error fetching claims diagnoses:", error);
+      res.status(500).json({
+        message: "Failed to fetch claims diagnoses",
+        error: error.message,
+      });
+    }
+  });
+
+  app.get("/api/diagnoses/payer/:payerId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const { payerId } = req.params;
+      const diagnoses = await storage.getDiagnosesByPayer(payerId);
+
+      res.json(diagnoses);
+    } catch (error: any) {
+      console.error("❌ [RCM API] Error fetching payer diagnoses:", error);
+      res.status(500).json({
+        message: "Failed to fetch payer diagnoses",
+        error: error.message,
+      });
+    }
+  });
+
   // Get billing summary for encounter (for EMR billing integration)
   app.get(
     "/api/patients/:id/encounters/:encounterId/billing-summary",
