@@ -50,9 +50,27 @@ export function useNavigationContext() {
     const url = new URL(targetUrl, window.location.origin);
     url.searchParams.set('from', sourceSection);
     url.searchParams.set('context', sourceContext);
-    url.searchParams.set('returnUrl', window.location.pathname + window.location.search);
     
-    console.log(`🔗 [NavigationContext] Navigating with context: ${sourceSection} (${sourceContext})`);
+    // Construct proper return URL based on current location
+    let returnUrl = window.location.pathname + window.location.search;
+    
+    // Debug current location
+    console.log(`🔗 [NavigationContext] Current window.location:`, {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      href: window.location.href,
+      wouter_location: location
+    });
+    
+    // If we're at root but in patient chart context, construct proper patient chart URL
+    if (window.location.pathname === '/' && location.includes('/patients/')) {
+      returnUrl = location;
+      console.log(`🔗 [NavigationContext] Using wouter location as returnUrl: ${returnUrl}`);
+    }
+    
+    url.searchParams.set('returnUrl', returnUrl);
+    
+    console.log(`🔗 [NavigationContext] Navigating with context: ${sourceSection} (${sourceContext}), returnUrl: ${returnUrl}`);
     setLocation(url.pathname + url.search);
   };
 
