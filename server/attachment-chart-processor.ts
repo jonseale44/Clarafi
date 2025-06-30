@@ -1,6 +1,7 @@
 import { db } from "./db.js";
 import { VitalsParserService } from "./vitals-parser-service.js";
 import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
+import { UnifiedSurgicalHistoryParser } from "./unified-surgical-history-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -16,9 +17,11 @@ import { eq } from "drizzle-orm";
  */
 export class AttachmentChartProcessor {
   private vitalsParser: VitalsParserService;
+  private surgicalHistoryParser: UnifiedSurgicalHistoryParser;
 
   constructor() {
     this.vitalsParser = new VitalsParserService();
+    this.surgicalHistoryParser = new UnifiedSurgicalHistoryParser();
   }
 
   /**
@@ -72,15 +75,16 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Process both vitals and medical problems in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems`);
+      // Process vitals, medical problems, and surgical history in parallel for efficiency
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history`);
       const parallelStartTime = Date.now();
       
-      // Process both vitals and medical problems in parallel for efficiency
+      // Process all three chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
-          this.processDocumentForMedicalProblems(attachment, extractedContent)
+          this.processDocumentForMedicalProblems(attachment, extractedContent),
+          this.processDocumentForSurgicalHistory(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
@@ -94,6 +98,12 @@ export class AttachmentChartProcessor {
           console.error(`❌ [AttachmentChartProcessor] Medical problems processing failed:`, medicalProblemsResult.reason);
         } else {
           console.log(`✅ [AttachmentChartProcessor] Medical problems processing completed successfully`);
+        }
+        
+        if (surgicalHistoryResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] Surgical history processing failed:`, surgicalHistoryResult.reason);
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Surgical history processing completed successfully`);
         }
         
       } catch (error) {
@@ -274,7 +284,78 @@ export class AttachmentChartProcessor {
     }
   }
 
+  /**
+   * Process any medical document for surgical history extraction
+   * Uses unified surgical history parser for consistent processing
+   */
+  private async processDocumentForSurgicalHistory(attachment: any, extractedContent: any): Promise<void> {
+    console.log(`🔥 [SURGICAL HISTORY WORKFLOW] ============= STARTING SURGICAL HISTORY EXTRACTION =============`);
+    console.log(`🏥 [SurgicalHistoryExtraction] 🚀 Processing attachment ${attachment.id} for patient ${attachment.patientId}`);
+    console.log(`🏥 [SurgicalHistoryExtraction] 📄 Document type: ${extractedContent.documentType || 'unknown type'}`);
+    console.log(`🏥 [SurgicalHistoryExtraction] 📄 Document text length: ${extractedContent.extractedText?.length || 0} characters`);
+    console.log(`🏥 [SurgicalHistoryExtraction] 📄 Original filename: ${attachment.originalFileName}`);
+    console.log(`🏥 [SurgicalHistoryExtraction] 📄 Text preview: "${extractedContent.extractedText?.substring(0, 300)}..."`);
 
+    // Validation checks with detailed error messages
+    if (!extractedContent.extractedText) {
+      const errorMsg = `No extracted text available for surgical history parsing - attachment ${attachment.id}`;
+      console.error(`🏥 [SurgicalHistoryExtraction] ❌ CRITICAL: ${errorMsg}`);
+      console.log(`🔥 [SURGICAL HISTORY WORKFLOW] ============= SURGICAL HISTORY EXTRACTION FAILED - NO TEXT =============`);
+      throw new Error(errorMsg);
+    }
+
+    if (extractedContent.extractedText.length < 50) {
+      const errorMsg = `Document text too short (${extractedContent.extractedText.length} chars) for meaningful surgical history extraction - attachment ${attachment.id}`;
+      console.error(`🏥 [SurgicalHistoryExtraction] ❌ CRITICAL: ${errorMsg}`);
+      console.log(`🔥 [SURGICAL HISTORY WORKFLOW] ============= SURGICAL HISTORY EXTRACTION FAILED - TEXT TOO SHORT =============`);
+      throw new Error(errorMsg);
+    }
+
+    try {
+      console.log(`🏥 [SurgicalHistoryExtraction] 🔍 Starting unified surgical history extraction for patient ${attachment.patientId}`);
+      console.log(`🏥 [SurgicalHistoryExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+
+      const startTime = Date.now();
+
+      // Use the unified surgical history parser for attachment processing
+      const result = await this.surgicalHistoryParser.processUnified(
+        attachment.patientId,
+        null, // No specific encounter ID for attachment
+        null, // No SOAP note text
+        extractedContent.extractedText, // Attachment content
+        attachment.id, // Attachment ID for source tracking
+        2, // Default provider ID (Jonathan Seale) - could be made configurable
+        "attachment_processed"
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`🏥 [SurgicalHistoryExtraction] ✅ Successfully processed surgical history in ${processingTime}ms`);
+      console.log(`🏥 [SurgicalHistoryExtraction] ✅ Surgeries affected: ${result.total_surgeries_affected}`);
+      console.log(`🏥 [SurgicalHistoryExtraction] ✅ Processing time: ${result.processing_time_ms}ms`);
+      console.log(`🏥 [SurgicalHistoryExtraction] ✅ Source summary:`, result.source_summary);
+
+      // Log individual changes for debugging
+      if (result.changes && result.changes.length > 0) {
+        console.log(`🏥 [SurgicalHistoryExtraction] ✅ Changes made (${result.changes.length} total):`);
+        result.changes.forEach((change, index) => {
+          console.log(`🏥 [SurgicalHistoryExtraction]   ${index + 1}. ${change.action}: ${change.procedure_name || 'existing procedure'}`);
+          if (change.procedure_date) {
+            console.log(`🏥 [SurgicalHistoryExtraction]      Date: ${change.procedure_date}`);
+          }
+        });
+      } else {
+        console.log(`🏥 [SurgicalHistoryExtraction] ℹ️ No surgical history changes made - may be no surgical content or all procedures already documented`);
+      }
+
+      console.log(`🔥 [SURGICAL HISTORY WORKFLOW] ============= SURGICAL HISTORY EXTRACTION COMPLETE =============`);
+
+    } catch (error) {
+      console.error(`❌ [SurgicalHistoryExtraction] Error processing surgical history from attachment ${attachment.id}:`, error);
+      console.error(`❌ [SurgicalHistoryExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [SURGICAL HISTORY WORKFLOW] ============= SURGICAL HISTORY EXTRACTION FAILED =============`);
+    }
+  }
 
   /**
    * Save individual vitals set to database with full source attribution
