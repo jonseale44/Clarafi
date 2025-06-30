@@ -421,6 +421,19 @@ export const surgicalHistory = pgTable("surgical_history", {
   consolidationReasoning: text("consolidation_reasoning"), // GPT's explanation for consolidation decisions
   extractionNotes: text("extraction_notes"), // GPT's notes about extraction process
   
+  // Visit history tracking - similar to medical problems system
+  visitHistory: jsonb("visit_history").$type<Array<{
+    date: string; // YYYY-MM-DD format
+    notes: string; // Clinical notes about surgery discussion/follow-up
+    source: "encounter" | "attachment"; // Source of this visit entry
+    encounterId?: number; // Reference to encounter if source is encounter
+    attachmentId?: number; // Reference to attachment if source is attachment
+    changesMade?: string[]; // Array of changes made (e.g., 'date_corrected', 'surgeon_updated', 'complications_noted')
+    confidence?: number; // AI confidence in extraction (0.0-1.0)
+    isSigned?: boolean; // Provider signature status
+    sourceNotes?: string; // Additional context from extraction source
+  }>>().default([]),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1969,6 +1982,7 @@ export const insertSurgicalHistorySchema = createInsertSchema(surgicalHistory).p
   enteredBy: true,
   consolidationReasoning: true,
   extractionNotes: true,
+  visitHistory: true,
 });
 
 export type InsertVital = z.infer<typeof insertVitalSchema>;

@@ -38,6 +38,17 @@ interface SurgicalHistoryEntry {
   extractedFromAttachmentId: number | null;
   attachmentId?: number; // For backward compatibility
   confidence?: number; // For backward compatibility
+  visitHistory?: Array<{
+    date: string;
+    notes: string;
+    source: "encounter" | "attachment";
+    encounterId?: number;
+    attachmentId?: number;
+    changesMade?: string[];
+    confidence?: number;
+    isSigned?: boolean;
+    sourceNotes?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }

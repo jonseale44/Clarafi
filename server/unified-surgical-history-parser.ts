@@ -291,7 +291,8 @@ REQUIRED OUTPUT FORMAT (JSON array only):
     "source_type": "${sourceType}",
     "source_confidence": confidence_0_to_1,
     "consolidation_reasoning": "explanation of consolidation decision",
-    "extraction_notes": "relevant extraction context"
+    "extraction_notes": "relevant extraction context",
+    "visit_notes": "clinical notes about surgery discussion - only create if surgery was ACTUALLY discussed/evaluated in this encounter/document"
   }
 ]
 
@@ -450,7 +451,7 @@ Return only the JSON array with no additional text:`;
   }
 
   /**
-   * Update existing surgical history entry
+   * Update existing surgical history entry with visit history tracking
    */
   private async updateExistingSurgery(
     surgery: any,
@@ -465,26 +466,112 @@ Return only the JSON array with no additional text:`;
       return null;
     }
 
+    // Get existing surgery to track changes for visit history
+    const [existingSurgery] = await db
+      .select()
+      .from(surgicalHistory)
+      .where(eq(surgicalHistory.id, surgery.surgery_id));
+
+    if (!existingSurgery) {
+      console.error(`🏥 [UnifiedSurgicalHistory] ❌ Surgery ${surgery.surgery_id} not found`);
+      return null;
+    }
+
     const updateData: any = {
       lastUpdatedEncounter: encounterId,
       updatedAt: new Date(),
     };
 
-    // Update fields that have new information
-    if (surgery.procedure_date) updateData.procedureDate = new Date(surgery.procedure_date);
-    if (surgery.surgeon_name) updateData.surgeonName = surgery.surgeon_name;
-    if (surgery.facility_name) updateData.facilityName = surgery.facility_name;
-    if (surgery.indication) updateData.indication = surgery.indication;
-    if (surgery.complications) updateData.complications = surgery.complications;
-    if (surgery.outcome) updateData.outcome = surgery.outcome;
-    if (surgery.anesthesia_type) updateData.anesthesiaType = surgery.anesthesia_type;
-    if (surgery.anatomical_site) updateData.anatomicalSite = surgery.anatomical_site;
-    if (surgery.laterality) updateData.laterality = surgery.laterality;
-    if (surgery.cpt_code) updateData.cptCode = surgery.cpt_code;
+    // Track changes made for visit history entry
+    const changesMade: string[] = [];
+    
+    // Update fields that have new information and track changes
+    if (surgery.procedure_date && surgery.procedure_date !== existingSurgery.procedureDate) {
+      updateData.procedureDate = new Date(surgery.procedure_date);
+      changesMade.push('date_corrected');
+    }
+    if (surgery.surgeon_name && surgery.surgeon_name !== existingSurgery.surgeonName) {
+      updateData.surgeonName = surgery.surgeon_name;
+      changesMade.push('surgeon_updated');
+    }
+    if (surgery.facility_name && surgery.facility_name !== existingSurgery.facilityName) {
+      updateData.facilityName = surgery.facility_name;
+      changesMade.push('facility_updated');
+    }
+    if (surgery.indication && surgery.indication !== existingSurgery.indication) {
+      updateData.indication = surgery.indication;
+      changesMade.push('indication_updated');
+    }
+    if (surgery.complications && surgery.complications !== existingSurgery.complications) {
+      updateData.complications = surgery.complications;
+      changesMade.push('complications_noted');
+    }
+    if (surgery.outcome && surgery.outcome !== existingSurgery.outcome) {
+      updateData.outcome = surgery.outcome;
+      changesMade.push('outcome_updated');
+    }
+    if (surgery.anesthesia_type && surgery.anesthesia_type !== existingSurgery.anesthesiaType) {
+      updateData.anesthesiaType = surgery.anesthesia_type;
+      changesMade.push('anesthesia_updated');
+    }
+    if (surgery.anatomical_site && surgery.anatomical_site !== existingSurgery.anatomicalSite) {
+      updateData.anatomicalSite = surgery.anatomical_site;
+      changesMade.push('anatomical_site_updated');
+    }
+    if (surgery.laterality && surgery.laterality !== existingSurgery.laterality) {
+      updateData.laterality = surgery.laterality;
+      changesMade.push('laterality_updated');
+    }
+    if (surgery.cpt_code && surgery.cpt_code !== existingSurgery.cptCode) {
+      updateData.cptCode = surgery.cpt_code;
+      changesMade.push('cpt_code_updated');
+    }
     
     // Update consolidation reasoning
     updateData.consolidationReasoning = surgery.consolidation_reasoning;
     if (surgery.extraction_notes) updateData.extractionNotes = surgery.extraction_notes;
+
+    // Add visit history entry if there are actual changes or new information
+    if (changesMade.length > 0 || surgery.visit_notes) {
+      
+      // Determine appropriate date for visit history
+      let visitDate: string;
+      if (encounterId) {
+        // Use encounter date for SOAP note content
+        const encounter = await db
+          .select()
+          .from(encounters)
+          .where(eq(encounters.id, encounterId))
+          .limit(1);
+        const encounterDate = encounter[0]?.startTime || new Date();
+        visitDate = encounterDate.toISOString().split("T")[0];
+      } else {
+        // Fallback to current date for attachment processing
+        visitDate = new Date().toISOString().split("T")[0];
+      }
+
+      // Create visit history entry
+      const visitHistoryEntry = {
+        date: visitDate,
+        notes: surgery.visit_notes || `Updated surgical information: ${changesMade.join(', ')}`,
+        source: encounterId ? "encounter" as const : "attachment" as const,
+        encounterId: encounterId || undefined,
+        attachmentId: attachmentId || undefined,
+        changesMade: changesMade.length > 0 ? changesMade : ['routine_follow_up'],
+        confidence: surgery.source_confidence || 0.8,
+        isSigned: false,
+        sourceNotes: surgery.consolidation_reasoning || null,
+      };
+
+      // Add to existing visit history
+      const currentVisitHistory = Array.isArray(existingSurgery.visitHistory) 
+        ? existingSurgery.visitHistory 
+        : [];
+      
+      updateData.visitHistory = [...currentVisitHistory, visitHistoryEntry];
+      
+      console.log(`🏥 [UnifiedSurgicalHistory] 📝 Adding visit history entry: ${visitHistoryEntry.notes}`);
+    }
 
     console.log(`🏥 [UnifiedSurgicalHistory] 💾 Updating surgery ID: ${surgery.surgery_id}`);
     
@@ -493,7 +580,7 @@ Return only the JSON array with no additional text:`;
       .set(updateData)
       .where(eq(surgicalHistory.id, surgery.surgery_id));
 
-    console.log(`🏥 [UnifiedSurgicalHistory] ✅ Updated surgery ID: ${surgery.surgery_id}`);
+    console.log(`🏥 [UnifiedSurgicalHistory] ✅ Updated surgery ID: ${surgery.surgery_id} with ${changesMade.length} changes`);
 
     return {
       action: "UPDATE_EXISTING",
@@ -504,7 +591,8 @@ Return only the JSON array with no additional text:`;
       facility_name: surgery.facility_name,
       consolidation_reasoning: surgery.consolidation_reasoning,
       source_type: surgery.source_type,
-      extracted_date: surgery.procedure_date
+      extracted_date: surgery.procedure_date,
+      changes_made: changesMade
     };
   }
 }
