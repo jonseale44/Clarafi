@@ -22,7 +22,6 @@ import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 import setupTemplateRoutes from "./template-routes";
-import { setupBillingRoutes } from "./billing-api-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -722,9 +721,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Template management routes (custom user templates)
   setupTemplateRoutes(app);
-
-  // Production billing routes (CPT extraction, validation, audit trails, external integrations)
-  setupBillingRoutes(app);
 
   // NOTE: User preferences routes now handled by auth.ts to avoid duplication
 
