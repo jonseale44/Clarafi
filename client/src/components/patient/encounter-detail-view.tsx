@@ -1238,7 +1238,7 @@ export function EncounterDetailView({
         console.log(`✅ [ChartUpdate-Surgery] ${result.surgeriesAffected || 0} surgeries affected`);
         
         await queryClient.invalidateQueries({
-          queryKey: [`/api/patients/${patient.id}/surgical-history`],
+          queryKey: [`/api/surgical-history/${patient.id}`],
         });
         sectionsUpdated++;
       }
