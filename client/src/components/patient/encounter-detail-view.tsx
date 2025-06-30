@@ -601,6 +601,12 @@ export function EncounterDetailView({
       console.log(
         `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
       );
+      
+      // 🔑 Set baseline hash for chart update detection immediately after SOAP save
+      const baselineHash = generateSOAPHash(note);
+      setLastProcessedSOAPHash(baselineHash);
+      console.log("🔑 [ChartUpdate] Setting baseline hash after recording stop:", baselineHash);
+      
       console.log(
         `🔍 [EncounterView] SOAP save completed successfully, starting medical problems processing...`,
       );
@@ -1048,19 +1054,33 @@ export function EncounterDetailView({
 
   // Check if chart update should be available
   const checkForChartUpdateAvailability = (currentSOAP: string) => {
+    console.log("🔍 [ChartUpdate] Checking availability:", {
+      soapLength: currentSOAP?.length || 0,
+      hasLastHash: !!lastProcessedSOAPHash,
+      lastHash: lastProcessedSOAPHash,
+      buttonCurrentlyVisible: isChartUpdateAvailable
+    });
+
     if (!currentSOAP || currentSOAP.trim().length < 100) {
+      console.log("❌ [ChartUpdate] SOAP too short or empty - hiding button");
       setIsChartUpdateAvailable(false);
       return;
     }
 
     const currentHash = generateSOAPHash(currentSOAP);
+    console.log("🔍 [ChartUpdate] Hash comparison:", {
+      currentHash,
+      lastProcessedHash: lastProcessedSOAPHash,
+      hashesMatch: currentHash === lastProcessedSOAPHash
+    });
     
     // Only show button if content has changed significantly since last processing
     if (lastProcessedSOAPHash && currentHash !== lastProcessedSOAPHash) {
       setIsChartUpdateAvailable(true);
-      console.log("📝 [ChartUpdate] SOAP content changed - update button available");
+      console.log("✅ [ChartUpdate] SOAP content changed - showing update button");
     } else {
       setIsChartUpdateAvailable(false);
+      console.log("❌ [ChartUpdate] No significant changes or no baseline hash - hiding button");
     }
   };
 
@@ -1070,6 +1090,22 @@ export function EncounterDetailView({
       checkForChartUpdateAvailability(soapNote);
     }
   }, [soapNote, lastProcessedSOAPHash]);
+
+  // Initialize hash for existing SOAP notes (for existing encounters with SOAP but no hash baseline)
+  useEffect(() => {
+    if (soapNote && soapNote.trim().length > 100 && !lastProcessedSOAPHash) {
+      // For existing encounters that already have SOAP notes, set initial hash on load
+      const initialHash = generateSOAPHash(soapNote);
+      setLastProcessedSOAPHash(initialHash);
+      console.log("🔧 [ChartUpdate] Setting initial hash for existing SOAP note:", initialHash);
+      
+      // 🔧 TEMPORARY TEST: Simulate a change to verify button UI works
+      setTimeout(() => {
+        console.log("🧪 [ChartUpdate] TEST: Temporarily showing button to verify UI");
+        setIsChartUpdateAvailable(true);
+      }, 2000);
+    }
+  }, [soapNote]); // Only depends on soapNote, not lastProcessedSOAPHash to avoid infinite loop
 
   // FUTURE-PROOF REMINDER: When adding new chart sections, update BOTH:
   // 1. Stop Recording parallel processing (lines ~680-880)
