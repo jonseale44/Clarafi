@@ -43,8 +43,40 @@ const chartSections = [
 
 
 export function PatientChartView({ patient, patientId }: PatientChartViewProps) {
-  const [activeSection, setActiveSection] = useState("encounters");
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["encounters"]));
+  // State preservation key for this patient's chart
+  const stateKey = `patient-chart-state-${patientId}`;
+  
+  // Initialize state with potential restoration from sessionStorage
+  const getInitialExpandedSections = () => {
+    try {
+      const savedState = sessionStorage.getItem(stateKey);
+      if (savedState) {
+        const parsed = JSON.parse(savedState);
+        console.log('🔄 [StateRestore] Restoring accordion state:', parsed.expandedSections);
+        return new Set<string>(parsed.expandedSections || []);
+      }
+    } catch (error) {
+      console.warn('🔄 [StateRestore] Failed to restore state:', error);
+    }
+    return new Set<string>(["encounters"]); // Default state
+  };
+
+  const getInitialActiveSection = () => {
+    try {
+      const savedState = sessionStorage.getItem(stateKey);
+      if (savedState) {
+        const parsed = JSON.parse(savedState);
+        console.log('🔄 [StateRestore] Restoring active section:', parsed.activeSection);
+        return parsed.activeSection;
+      }
+    } catch (error) {
+      console.warn('🔄 [StateRestore] Failed to restore active section:', error);
+    }
+    return "encounters"; // Default state
+  };
+
+  const [activeSection, setActiveSection] = useState(getInitialActiveSection());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(getInitialExpandedSections());
   const [currentEncounterId, setCurrentEncounterId] = useState<number | null>(null);
   const [showEncounterDetail, setShowEncounterDetail] = useState(false);
   const { toast } = useToast();
@@ -114,6 +146,67 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       }, 5000);
     }
   }, [currentUrl]);
+
+  // Save current state to sessionStorage whenever it changes
+  useEffect(() => {
+    const currentState = {
+      activeSection,
+      expandedSections: Array.from(expandedSections),
+      timestamp: Date.now()
+    };
+    
+    try {
+      sessionStorage.setItem(stateKey, JSON.stringify(currentState));
+      console.log('💾 [StateSave] Saved chart state:', currentState);
+    } catch (error) {
+      console.warn('💾 [StateSave] Failed to save state:', error);
+    }
+  }, [activeSection, expandedSections, stateKey]);
+
+  // Enhanced URL parameter handling with state preservation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section');
+    const highlight = urlParams.get('highlight');
+    const returnUrl = urlParams.get('returnUrl');
+    
+    console.log('🔗 [PatientChart] Enhanced URL parameters:', { 
+      section, 
+      highlight,
+      returnUrl,
+      currentLocation: window.location.href,
+      availableSections: chartSections.map(s => s.id)
+    });
+    
+    // If returning from attachment navigation, restore state but allow temporary navigation
+    if (section && returnUrl) {
+      console.log('🔄 [StateRestore] Temporary navigation to section:', section);
+      
+      // Save current state before temporary navigation
+      const currentState = {
+        activeSection,
+        expandedSections: [...expandedSections],
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem(`${stateKey}-temp`, JSON.stringify(currentState));
+      
+      // Temporarily navigate to the requested section
+      setActiveSection(section);
+      setExpandedSections(prev => new Set([...prev, section]));
+    }
+    
+    if (highlight) {
+      const attachmentId = parseInt(highlight);
+      console.log('🔗 [PatientChart] Setting highlight attachment:', attachmentId);
+      setHighlightAttachmentId(attachmentId);
+      
+      // Clear highlight after 5 seconds
+      setTimeout(() => {
+        console.log('🔗 [PatientChart] Clearing highlight after 5 seconds');
+        setHighlightAttachmentId(null);
+      }, 5000);
+    }
+  }, [currentUrl, activeSection, expandedSections, stateKey]);
 
   // Get current user to determine role-based routing
   const { data: currentUser } = useQuery({
