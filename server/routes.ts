@@ -14,6 +14,7 @@ import { parseRoutes } from "./parse-routes";
 import dashboardRoutes from "./dashboard-routes";
 // Removed orphaned enhanced-medical-problems-routes - functionality moved to unified API
 import unifiedMedicalProblemsRoutes from "./unified-medical-problems-api";
+import unifiedSurgicalHistoryRoutes from "./unified-surgical-history-api";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
 import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";
@@ -565,6 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Unified medical problems routes (handles both SOAP and attachment processing)
   // NOTE: Must be registered BEFORE enhanced routes to avoid route conflicts
   app.use("/api", unifiedMedicalProblemsRoutes);
+  app.use("/api", unifiedSurgicalHistoryRoutes);
 
   // Removed orphaned enhanced medical problems routes - functionality consolidated into unified API
 

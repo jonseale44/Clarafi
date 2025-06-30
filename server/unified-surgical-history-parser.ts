@@ -408,7 +408,7 @@ Return only the JSON array with no additional text:`;
     const surgeryData = {
       patientId,
       procedureName: surgery.procedure_name,
-      procedureDate: surgery.procedure_date ? new Date(surgery.procedure_date) : null,
+      procedureDate: surgery.procedure_date || null,
       surgeonName: surgery.surgeon_name || null,
       facilityName: surgery.facility_name || null,
       indication: surgery.indication || null,
@@ -432,7 +432,7 @@ Return only the JSON array with no additional text:`;
 
     console.log(`🏥 [UnifiedSurgicalHistory] 💾 Creating new surgery: ${surgery.procedure_name}`);
     
-    const result = await db.insert(surgicalHistory).values(surgeryData).returning();
+    const result = await db.insert(surgicalHistory).values([surgeryData]).returning();
     
     console.log(`🏥 [UnifiedSurgicalHistory] ✅ Created surgery ID: ${result[0].id}`);
 
