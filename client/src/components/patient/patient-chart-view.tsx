@@ -169,28 +169,29 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
     const section = urlParams.get('section');
     const highlight = urlParams.get('highlight');
     const returnUrl = urlParams.get('returnUrl');
+    const fromSection = urlParams.get('from');
     
     console.log('🔗 [PatientChart] Enhanced URL parameters:', { 
       section, 
       highlight,
       returnUrl,
+      fromSection,
       currentLocation: window.location.href,
       availableSections: chartSections.map(s => s.id)
     });
     
-    // If returning from attachment navigation, restore state but allow temporary navigation
-    if (section && returnUrl) {
-      console.log('🔄 [StateRestore] Temporary navigation to section:', section);
+    // If navigating via badge (has returnUrl and fromSection), temporarily show target section
+    if (section && returnUrl && fromSection) {
+      console.log('🔄 [StateRestore] Badge navigation - temporarily showing section:', section);
+      console.log('🔄 [StateRestore] Original section from badge:', fromSection);
       
-      // Save current state before temporary navigation
-      const currentState = {
-        activeSection,
-        expandedSections: [...expandedSections],
-        timestamp: Date.now()
-      };
-      sessionStorage.setItem(`${stateKey}-temp`, JSON.stringify(currentState));
-      
-      // Temporarily navigate to the requested section
+      // Don't save the current attachments state - we want to return to the original section
+      // Just temporarily show the target section
+      setActiveSection(section);
+      setExpandedSections(prev => new Set([...prev, section]));
+    } else if (section && !returnUrl) {
+      // Direct navigation to section (no badge navigation)
+      console.log('🔄 [StateRestore] Direct navigation to section:', section);
       setActiveSection(section);
       setExpandedSections(prev => new Set([...prev, section]));
     }
@@ -206,7 +207,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
         setHighlightAttachmentId(null);
       }, 5000);
     }
-  }, [currentUrl, activeSection, expandedSections, stateKey]);
+  }, [currentUrl]);
 
   // Get current user to determine role-based routing
   const { data: currentUser } = useQuery({
@@ -221,6 +222,18 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
     refetchOnWindowFocus: true,
     staleTime: 0, // Always consider data stale to ensure fresh updates
   });
+
+  // Debug encounters data
+  useEffect(() => {
+    console.log('🏥 [PatientChart] Encounters data:', {
+      encounters,
+      encountersLength: encounters?.length,
+      encountersType: typeof encounters,
+      isArray: Array.isArray(encounters),
+      activeSection,
+      shouldShowEncounters: activeSection === 'encounters'
+    });
+  }, [encounters, activeSection]);
 
   // Fetch allergies
   const { data: allergies = [] } = useQuery({
