@@ -2,8 +2,8 @@ import OpenAI from "openai";
 import {
   CPT_OFFICE_VISIT_CODES,
   PROCEDURE_CPT_CODES,
-} from "./medical-coding-guidelines.js";
-import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
+} from "./medical-coding-guidelines.ts";
+import { TokenCostAnalyzer } from "./token-cost-analyzer.ts";
 
 interface CPTCode {
   code: string;

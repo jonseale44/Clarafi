@@ -21,11 +21,44 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
 
   // Calculate total billing potential using production API
   useEffect(() => {
-    // TODO: Replace with production billing validation API call
-    // This now requires async rate validation for accurate calculations
-    setTotalReimbursement(0);
-    setComplexityOptimization("Revenue optimization available via BillingValidationService");
-  }, [cptCodes]);
+    if (cptCodes.length === 0) {
+      setTotalReimbursement(0);
+      setComplexityOptimization("");
+      return;
+    }
+
+    // Call production BillingValidationService for accurate rates
+    const calculateTotalRevenue = async () => {
+      try {
+        let totalRevenue = 0;
+        for (const code of cptCodes) {
+          const response = await fetch(`/api/billing/validate-cpt`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cptCode: code.code,
+              modifiers: code.modifiers || [],
+              patientId,
+              encounterId,
+            }),
+          });
+          
+          if (response.ok) {
+            const validation = await response.json();
+            totalRevenue += validation.revenueImpact || 0;
+          }
+        }
+        setTotalReimbursement(totalRevenue);
+        setComplexityOptimization("Revenue calculated via BillingValidationService");
+      } catch (error) {
+        console.error("Error calculating billing revenue:", error);
+        setTotalReimbursement(0);
+        setComplexityOptimization("Error calculating revenue");
+      }
+    };
+
+    calculateTotalRevenue();
+  }, [cptCodes, patientId, encounterId]);
 
   const { data: billingData } = useQuery({
     queryKey: [`/api/patients/${patientId}/encounters/${encounterId}/billing-summary`],
@@ -83,7 +116,11 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
             <h4 className="font-medium text-sm mb-2">CPT Code Breakdown</h4>
             <div className="space-y-2">
               {cptCodes.map((code, index) => {
-                const rate = 0; // Rate via BillingValidationService API
+                // Display actual validation data if available
+                const validation = code.validation;
+                const rate = validation?.revenueImpact || 0;
+                const isValid = validation?.isValid;
+                
                 return (
                   <div key={index} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
                     <div className="flex items-center space-x-2">
@@ -91,10 +128,17 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
                       <Badge variant="outline" className={getComplexityColor(code.complexity || 'straightforward')}>
                         {code.complexity || 'straightforward'}
                       </Badge>
+                      {validation && (
+                        <Badge variant={isValid ? "default" : "destructive"} className="text-xs">
+                          {isValid ? "Valid" : "Invalid"}
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="font-medium">${rate.toFixed(2)}</div>
-                      <div className="text-xs text-gray-600">Medicare rate</div>
+                      <div className="text-xs text-gray-600">
+                        {validation ? "Validated rate" : "Validation required"}
+                      </div>
                     </div>
                   </div>
                 );
