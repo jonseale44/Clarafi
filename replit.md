@@ -109,6 +109,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Intelligent "Update Chart from Note" Button Implementation (June 30, 2025)
+- **SMART SELECTIVE PROCESSING**: Implemented intelligent chart update button that appears only when SOAP note content changes significantly after recording stop
+- **CHART-FOCUSED UPDATES**: Button processes only chart data (Medical Problems, Surgical History, Medications) excluding transactional data (Orders, Billing) for clinical accuracy
+- **HASH-BASED CHANGE DETECTION**: Reuses existing hash logic from medical-problems-orchestrator for efficient content change detection without duplicate processing
+- **PARALLEL PROCESSING ARCHITECTURE**: Maintains same 3-function parallel processing (3-4 seconds) used in stop recording for optimal performance 
+- **FUTURE-PROOF DESIGN**: Added comprehensive reminder comments for adding new chart sections (allergies, imaging, family history) to both stop recording and manual update functions
+- **INTELLIGENT UI**: Blue highlighted card only appears when meaningful changes detected, includes progress animation and section indicators
+- **COST OPTIMIZATION**: Prevents unnecessary GPT calls by tracking processed content hash and hiding button after successful updates
+- **DUAL WORKFLOW SUPPORT**: Preserves automatic processing on stop recording while adding selective manual control for post-recording SOAP edits
+- **COMPREHENSIVE ERROR HANDLING**: Includes proper error states, loading indicators, and user feedback through toast notifications
+- **PRODUCTION READY**: Complete implementation with proper state management, cache invalidation, and comprehensive logging for debugging
+
 ### Surgical History Accordion UI & Visit History Editing Completed (June 30, 2025)
 - **COMPLETE ACCORDION SYSTEM**: Successfully implemented full accordion pattern for surgical history matching medical problems architecture exactly
 - **EDIT/DELETE BUTTON FUNCTIONALITY**: Added missing edit and delete buttons to surgical history cards with proper hover behavior using `group` class

@@ -170,7 +170,7 @@ export function EncounterDetailView({
   // Get current user for role-based filtering
   const { data: currentUser } = useQuery({
     queryKey: ["/api/user"],
-  }) as { data?: { role?: string } };
+  }) as { data?: { id?: number; role?: string } };
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">("INACTIVE");
@@ -1064,6 +1064,13 @@ export function EncounterDetailView({
     }
   };
 
+  // Detect SOAP content changes and show update button when appropriate
+  useEffect(() => {
+    if (soapNote && soapNote.trim().length > 100) {
+      checkForChartUpdateAvailability(soapNote);
+    }
+  }, [soapNote, lastProcessedSOAPHash]);
+
   // FUTURE-PROOF REMINDER: When adding new chart sections, update BOTH:
   // 1. Stop Recording parallel processing (lines ~680-880)
   // 2. Manual Update Chart button (this function)
@@ -1130,7 +1137,7 @@ export function EncounterDetailView({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            soapNote: soapContent,
+            soapNote: soapNote,
           }),
         }),
       ]);
@@ -1177,7 +1184,7 @@ export function EncounterDetailView({
       }
 
       // Update hash to prevent button from showing again
-      const newHash = generateSOAPHash(soapContent);
+      const newHash = generateSOAPHash(soapNote);
       setLastProcessedSOAPHash(newHash);
       setIsChartUpdateAvailable(false);
 
@@ -3889,6 +3896,62 @@ Please provide medical suggestions based on this complete conversation context.`
               });
             }}
           />
+
+          {/* Smart Chart Update Button */}
+          {isChartUpdateAvailable && (
+            <Card className="mb-4 border-l-4 border-l-blue-500 bg-blue-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <RefreshCw className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <h3 className="font-semibold text-blue-900">Chart Update Available</h3>
+                        <p className="text-sm text-blue-700">
+                          SOAP note has been modified. Update chart sections with latest content.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={updateChartFromNote}
+                    disabled={isUpdatingChart}
+                    className={`relative overflow-hidden transition-all duration-300 ${
+                      isUpdatingChart 
+                        ? 'bg-blue-100 text-blue-500 border-blue-300 cursor-not-allowed' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                    title="Update Medical Problems, Surgical History, and Medications from SOAP note changes"
+                  >
+                    {/* Progress bar background */}
+                    {isUpdatingChart && (
+                      <div 
+                        className="absolute inset-0 bg-gradient-to-r from-blue-200 to-blue-300 transition-all duration-100 ease-linear"
+                        style={{ 
+                          width: `${chartUpdateProgress}%`,
+                          opacity: 0.3
+                        }}
+                      />
+                    )}
+                    
+                    <RefreshCw className={`h-4 w-4 mr-2 relative z-10 ${
+                      isUpdatingChart ? 'animate-spin' : ''
+                    }`} />
+                    
+                    <span className="relative z-10">
+                      {isUpdatingChart 
+                        ? `Updating... ${Math.round(chartUpdateProgress)}%`
+                        : "Update Chart from Note"
+                      }
+                    </span>
+                  </Button>
+                </div>
+                <div className="mt-2 text-xs text-blue-600">
+                  Will update: Medical Problems • Surgical History • Medications
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Encounter Signature Panel */}
           <EncounterSignaturePanel
