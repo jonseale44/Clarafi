@@ -117,12 +117,43 @@ router.put("/surgical-history/:surgeryId",
     try {
       console.log(`🏥 [SurgicalHistoryAPI] 🔄 Processing date conversions...`);
       
-      // Convert date strings to Date objects for database
+      // Log all timestamp fields that might cause issues
+      console.log(`🏥 [SurgicalHistoryAPI] 🔍 Checking for problematic timestamp fields...`);
+      Object.keys(updates).forEach(key => {
+        const value = updates[key];
+        console.log(`🏥 [SurgicalHistoryAPI] Field "${key}": type=${typeof value}, value=${value}`);
+        if (key.includes('Date') || key.includes('At') || key.includes('Time')) {
+          console.log(`🏥 [SurgicalHistoryAPI] ⚠️  TIMESTAMP FIELD DETECTED: "${key}" = ${value} (type: ${typeof value})`);
+        }
+      });
+      
+      // Convert date strings to Date objects for database timestamp fields
       if (updates.procedureDate && typeof updates.procedureDate === 'string') {
         const originalDate = updates.procedureDate;
         updates.procedureDate = new Date(updates.procedureDate);
         console.log(`🏥 [SurgicalHistoryAPI] 📅 Converted procedureDate: "${originalDate}" → ${updates.procedureDate}`);
       }
+      
+      // Check for other potential timestamp fields that might be strings
+      const timestampFields = ['createdAt', 'updatedAt', 'lastUpdatedEncounter'];
+      timestampFields.forEach(field => {
+        if (updates[field] && typeof updates[field] === 'string') {
+          console.log(`🏥 [SurgicalHistoryAPI] ⚠️  Converting timestamp field "${field}" from string to Date`);
+          const originalValue = updates[field];
+          updates[field] = new Date(updates[field]);
+          console.log(`🏥 [SurgicalHistoryAPI] 📅 Converted ${field}: "${originalValue}" → ${updates[field]}`);
+        }
+      });
+      
+      // Remove any fields that shouldn't be updated directly (like auto-generated timestamps)
+      // and ensure we don't accidentally send string timestamps to the database
+      const fieldsToClean = ['createdAt']; // Don't allow updating createdAt
+      fieldsToClean.forEach(field => {
+        if (updates[field]) {
+          console.log(`🏥 [SurgicalHistoryAPI] 🧹 Removing field "${field}" from updates to prevent database conflicts`);
+          delete updates[field];
+        }
+      });
       
       // Handle visit history date conversions
       if (updates.visitHistory && Array.isArray(updates.visitHistory)) {
@@ -136,11 +167,11 @@ router.put("/surgical-history/:surgeryId",
         });
       }
       
-      // Add timestamp to updates
+      // Add timestamp to updates - ensure it's a proper Date object
       updates.updatedAt = new Date();
-      console.log(`🏥 [SurgicalHistoryAPI] 🕐 Added updatedAt timestamp: ${updates.updatedAt}`);
+      console.log(`🏥 [SurgicalHistoryAPI] 🕐 Added updatedAt timestamp: ${updates.updatedAt} (type: ${typeof updates.updatedAt})`);
 
-      console.log(`🏥 [SurgicalHistoryAPI] 🔄 Final updates object:`, JSON.stringify(updates, null, 2));
+      console.log(`🏥 [SurgicalHistoryAPI] 🔄 Final updates object with all conversions:`, JSON.stringify(updates, null, 2));
 
       // Update using direct database query since this is manual editing
       console.log(`🏥 [SurgicalHistoryAPI] 🗃️ Importing database modules...`);
