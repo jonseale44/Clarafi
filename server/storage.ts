@@ -478,10 +478,58 @@ export class DatabaseStorage implements IStorage {
       .insert(diagnoses)
       .values({
         ...insertDiagnosis,
-        createdAt: new Date()
+        createdAt: new Date(),
+        updatedAt: new Date()
       })
       .returning();
     return diagnosis;
+  }
+
+  // Enhanced RCM methods for billing workflow
+  async updateDiagnosisRCMStatus(diagnosisId: number, updates: {
+    claimSubmissionStatus?: string;
+    claimId?: string;
+    clearinghouseId?: string;
+    payerId?: string;
+    allowedAmount?: number;
+    paidAmount?: number;
+    patientResponsibility?: number;
+    adjustmentAmount?: number;
+    denialReason?: string;
+    denialCode?: string;
+    appealStatus?: string;
+    appealDeadline?: string;
+    billingNotes?: string;
+    lastBillingAction?: string;
+    assignedBiller?: number;
+    modifierApplied?: string;
+  }): Promise<any> {
+    const [updatedDiagnosis] = await db
+      .update(diagnoses)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+        billingActionDate: new Date()
+      })
+      .where(eq(diagnoses.id, diagnosisId))
+      .returning();
+    return updatedDiagnosis;
+  }
+
+  async getDiagnosesForClaims(status?: string): Promise<any[]> {
+    const query = db.select().from(diagnoses);
+    
+    if (status) {
+      query.where(eq(diagnoses.claimSubmissionStatus, status));
+    }
+    
+    return await query.orderBy(desc(diagnoses.updatedAt));
+  }
+
+  async getDiagnosesByPayer(payerId: string): Promise<any[]> {
+    return await db.select().from(diagnoses)
+      .where(eq(diagnoses.payerId, payerId))
+      .orderBy(desc(diagnoses.updatedAt));
   }
 
   async getPatientFamilyHistory(patientId: number): Promise<any[]> {

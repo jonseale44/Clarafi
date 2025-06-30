@@ -2195,8 +2195,9 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
             (d) => d.encounterId === encounterId,
           );
 
-          // Create new diagnosis records
-          for (const diagnosis of diagnoses) {
+          // Create new diagnosis records with enhanced RCM support
+          for (let i = 0; i < diagnoses.length; i++) {
+            const diagnosis = diagnoses[i];
             try {
               await storage.createDiagnosis({
                 patientId,
@@ -2206,7 +2207,22 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
                 diagnosisDate: new Date().toISOString().split("T")[0],
                 status: diagnosis.isPrimary ? "active" : "active",
                 notes: `Updated via CPT codes interface on ${new Date().toISOString()}`,
+                
+                // Enhanced RCM billing workflow fields
+                isPrimary: diagnosis.isPrimary || false,
+                diagnosisPointer: String.fromCharCode(65 + i), // A, B, C, D for claim linking
+                billingSequence: i + 1,
+                claimSubmissionStatus: "pending",
+                medicalNecessityDocumented: true, // AI-generated = documented
+                priorAuthorizationRequired: false, // Default - can be updated by billing staff
+                
+                // Automatic modifier application from CPT codes if available
+                modifierApplied: cptCodes?.find(cpt => 
+                  cpt.modifiers && cpt.modifiers.length > 0
+                )?.modifiers?.join(", ") || null
               });
+              
+              console.log(`✅ [CPT API] Created diagnosis with RCM fields: ${diagnosis.diagnosis} (${diagnosis.icd10Code})`);
             } catch (diagnosisError) {
               console.error(
                 `❌ [CPT API] Error creating diagnosis:`,

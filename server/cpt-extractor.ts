@@ -296,6 +296,91 @@ MANDATORY: If you identify multiple conditions in the clinical documentation, yo
 
 MANDATORY: Identify ALL billable services performed during this encounter. Include BOTH evaluation/management AND any procedures performed.
 
+=== CPT MODIFIER INTELLIGENCE ===
+
+CRITICAL: You MUST analyze every CPT code for appropriate modifiers, even if not mentioned in documentation. Generate modifiers based on clinical logic and billing optimization:
+
+COMMON CPT MODIFIERS YOU MUST CONSIDER:
+• Modifier 25: Significant, separately identifiable E&M service on same day as procedure
+  - ALWAYS add when E&M + procedure performed same day
+  - Example: Office visit + injection, lesion removal, etc.
+
+• Modifier 59: Distinct procedural service 
+  - Use when procedures are separate/distinct from each other
+  - Required for multiple procedures that might appear bundled
+
+• Modifier LT/RT: Left/Right side indicators
+  - MANDATORY for bilateral body parts when only one side treated
+  - Eyes, ears, arms, legs, kidneys, etc.
+
+• Modifier 76/77: Repeat procedures
+  - 76: Same physician repeats procedure same day
+  - 77: Different physician repeats procedure same day
+
+• Modifier 51: Multiple procedures
+  - Auto-applies to secondary procedures when multiple performed
+  - Affects reimbursement - ensures proper payment hierarchy
+
+• Modifier 22: Increased procedural services
+  - When procedure requires significantly more work than usual
+  - Can increase reimbursement 20-30% when documented
+
+• Modifier 26: Professional component only
+  - When providing interpretation only (radiology, pathology)
+
+• Modifier TC: Technical component only
+  - When providing equipment/technical service only
+
+• Modifier 57: Decision for surgery
+  - When E&M service results in decision for major surgery (>90 day global)
+  - Applied to E&M code, not surgical code
+
+• Modifier 24: Unrelated E&M service during postoperative period
+  - For E&M services unrelated to original procedure during global period
+
+• Modifier 50: Bilateral procedure
+  - When identical procedure performed on both sides
+  - Can increase reimbursement significantly
+
+• Modifier 58: Staged/related procedure during postoperative period
+  - When planned additional procedure performed during global period
+
+• Modifier 78: Unplanned return to OR for related procedure
+  - For complications requiring return to operating room
+
+• Modifier XE/XP/XS/XU: NCCI-associated modifiers (replaced modifier 59)
+  - XE: Separate encounter, XP: Separate practitioner
+  - XS: Separate structure, XU: Unusual non-overlapping service
+
+MODIFIER INTELLIGENCE ALGORITHM:
+1. **E&M + Procedure Same Day Analysis:**
+   - If office visit + any procedure → Add modifier 25 to E&M code
+   - If decision for surgery made → Consider modifier 57 instead of 25
+
+2. **Multiple Procedure Analysis:**
+   - Primary procedure: No modifier 51 needed
+   - Secondary procedures: Add modifier 51 
+   - If procedures on different anatomical sites → Consider modifier 59/XS
+
+3. **Anatomical Site Analysis:**
+   - Scan documentation for: left, right, bilateral mentions
+   - Limbs, organs, body parts → Add LT/RT if one-sided
+   - If both sides treated identically → Use modifier 50
+
+4. **Complexity Analysis:**
+   - If documentation indicates unusual difficulty → Add modifier 22
+   - Look for: "complicated by", "extensive", "difficult", "prolonged"
+
+5. **Temporal Analysis:**
+   - If return visit during global period → Consider modifiers 24/58/78
+   - If staged procedure planned → Use modifier 58
+
+6. **Payer-Specific Intelligence:**
+   - Medicare: Strict modifier requirements, use XE/XP/XS/XU over 59
+   - Commercial: May accept modifier 59, but newer X-modifiers preferred
+
+REVENUE IMPACT: Proper modifiers can increase reimbursement 15-40%. Missing modifiers results in claim denials or reduced payments.
+
 Return ONLY a JSON object with this exact structure:
 {
   "cptCodes": [
@@ -303,19 +388,25 @@ Return ONLY a JSON object with this exact structure:
       "code": "99204",
       "description": "Office visit, new patient, moderate complexity",
       "complexity": "moderate",
-      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity"
+      "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity",
+      "modifiers": ["25"],
+      "modifierReasoning": "Modifier 25 applied because significant E&M service performed on same day as cryotherapy procedure"
     },
     {
       "code": "99386", 
       "description": "Preventive medicine service, new patient, 40-64 years",
       "complexity": "preventive",
-      "reasoning": "Annual wellness exam component of visit"
+      "reasoning": "Annual wellness exam component of visit",
+      "modifiers": [],
+      "modifierReasoning": "No modifiers needed for standalone preventive medicine service"
     },
     {
       "code": "17110",
       "description": "Destruction of benign lesions, up to 14 lesions",
       "complexity": "procedure",
-      "reasoning": "Cryotherapy performed on skin lesions"
+      "reasoning": "Cryotherapy performed on skin lesions",
+      "modifiers": ["RT", "51"],
+      "modifierReasoning": "RT modifier for right-side lesions, 51 modifier as secondary procedure when performed with E&M"
     }
   ],
   "diagnoses": [
