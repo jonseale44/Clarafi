@@ -36,7 +36,7 @@ async function testSurgicalHistoryVisitSystem() {
       console.log(`✅ Created test patient with ID: ${patientId}`);
     } else {
       // Use existing patient ID if creation fails (patient might already exist)
-      patientId = 1;
+      patientId = 13;
       console.log(`✅ Using existing patient ID: ${patientId}`);
     }
 
