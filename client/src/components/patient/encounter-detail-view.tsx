@@ -1054,34 +1054,73 @@ export function EncounterDetailView({
 
   // Check if chart update should be available
   const checkForChartUpdateAvailability = (currentSOAP: string) => {
-    console.log("🔍 [ChartUpdate] Checking availability:", {
+    console.log("🔍 [ChartUpdate] === DETAILED BUTTON AVAILABILITY CHECK ===");
+    console.log("🔍 [ChartUpdate] Input conditions:", {
+      soapNoteExists: !!currentSOAP,
       soapLength: currentSOAP?.length || 0,
+      soapPreview: currentSOAP ? currentSOAP.substring(0, 100) + "..." : "NO SOAP NOTE",
       hasLastHash: !!lastProcessedSOAPHash,
-      lastHash: lastProcessedSOAPHash,
-      buttonCurrentlyVisible: isChartUpdateAvailable
+      lastHash: lastProcessedSOAPHash || "NONE SET",
+      buttonCurrentlyVisible: isChartUpdateAvailable,
+      isRecording: isRecording,
+      isGenerating: isGeneratingSOAP || isAutoGeneratingSOAP
     });
 
     if (!currentSOAP || currentSOAP.trim().length < 100) {
       console.log("❌ [ChartUpdate] SOAP too short or empty - hiding button");
+      console.log("💡 [ChartUpdate] Need at least 100 characters in SOAP note");
       setIsChartUpdateAvailable(false);
       return;
     }
 
+    // Generate current hash
     const currentHash = generateSOAPHash(currentSOAP);
-    console.log("🔍 [ChartUpdate] Hash comparison:", {
+    console.log("🔍 [ChartUpdate] Hash analysis:", {
       currentHash,
-      lastProcessedHash: lastProcessedSOAPHash,
-      hashesMatch: currentHash === lastProcessedSOAPHash
+      lastProcessedHash: lastProcessedSOAPHash || "NONE",
+      hashesMatch: currentHash === lastProcessedSOAPHash,
+      hashExists: !!lastProcessedSOAPHash
+    });
+
+    // Check all conditions for showing button
+    const hasBaseline = !!lastProcessedSOAPHash;
+    const hasChanges = currentHash !== lastProcessedSOAPHash;
+    const notRecording = !isRecording;
+    const notGenerating = !isGeneratingSOAP && !isAutoGeneratingSOAP;
+    const soapLongEnough = currentSOAP && currentSOAP.length > 100;
+
+    console.log("🔍 [ChartUpdate] Condition analysis:", {
+      hasBaseline: hasBaseline ? "✅ YES" : "❌ NO - need baseline hash first",
+      hasChanges: hasChanges ? "✅ YES" : "❌ NO - content unchanged", 
+      notRecording: notRecording ? "✅ YES" : "❌ NO - recording active",
+      notGenerating: notGenerating ? "✅ YES" : "❌ NO - generation active",
+      soapLongEnough: soapLongEnough ? "✅ YES" : "❌ NO - SOAP too short",
+      allConditionsMet: hasBaseline && hasChanges && notRecording && notGenerating && soapLongEnough
     });
     
     // Only show button if content has changed significantly since last processing
-    if (lastProcessedSOAPHash && currentHash !== lastProcessedSOAPHash) {
+    if (hasBaseline && hasChanges && notRecording && notGenerating && soapLongEnough) {
       setIsChartUpdateAvailable(true);
-      console.log("✅ [ChartUpdate] SOAP content changed - showing update button");
+      console.log("✅ [ChartUpdate] ALL CONDITIONS MET - SHOWING BUTTON");
+      console.log("✅ [ChartUpdate] Button will process: Medical Problems, Surgical History, Medications");
+      console.log("✅ [ChartUpdate] Will exclude: Orders, Billing (transactional data)");
     } else {
       setIsChartUpdateAvailable(false);
-      console.log("❌ [ChartUpdate] No significant changes or no baseline hash - hiding button");
+      console.log("❌ [ChartUpdate] CONDITIONS NOT MET - HIDING BUTTON");
+      if (!hasBaseline) {
+        console.log("💡 [ChartUpdate] TIP: Baseline hash gets set when recording stops or on initial load");
+      }
+      if (!hasChanges && hasBaseline) {
+        console.log("💡 [ChartUpdate] TIP: Edit the SOAP note content to trigger button");
+      }
+      if (!notRecording) {
+        console.log("💡 [ChartUpdate] TIP: Stop recording first before manual chart updates");
+      }
+      if (!notGenerating) {
+        console.log("💡 [ChartUpdate] TIP: Wait for AI generation to complete");
+      }
     }
+    console.log("🔍 [ChartUpdate] === END AVAILABILITY CHECK ===");
   };
 
   // Detect SOAP content changes and show update button when appropriate
@@ -1098,12 +1137,7 @@ export function EncounterDetailView({
       const initialHash = generateSOAPHash(soapNote);
       setLastProcessedSOAPHash(initialHash);
       console.log("🔧 [ChartUpdate] Setting initial hash for existing SOAP note:", initialHash);
-      
-      // 🔧 TEMPORARY TEST: Simulate a change to verify button UI works
-      setTimeout(() => {
-        console.log("🧪 [ChartUpdate] TEST: Temporarily showing button to verify UI");
-        setIsChartUpdateAvailable(true);
-      }, 2000);
+      console.log("🔧 [ChartUpdate] Note: Button will only appear after SOAP content changes significantly");
     }
   }, [soapNote]); // Only depends on soapNote, not lastProcessedSOAPHash to avoid infinite loop
 
