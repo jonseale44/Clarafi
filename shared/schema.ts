@@ -375,6 +375,56 @@ export const socialHistory = pgTable("social_history", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Surgical History - Production EMR Standard
+export const surgicalHistory = pgTable("surgical_history", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  
+  // Core surgical information (EMR Standard Fields)
+  procedureName: text("procedure_name").notNull(),
+  procedureDate: date("procedure_date"),
+  surgeonName: text("surgeon_name"),
+  facilityName: text("facility_name"),
+  indication: text("indication"), // Reason for surgery
+  
+  // Clinical details
+  complications: text("complications"),
+  outcome: text("outcome").default("successful"), // 'successful', 'complicated', 'cancelled', 'ongoing'
+  anesthesiaType: text("anesthesia_type"), // 'general', 'local', 'regional', 'MAC', 'spinal'
+  
+  // Medical coding integration (Production EMR standard)
+  cptCode: text("cpt_code"),
+  icd10ProcedureCode: text("icd10_procedure_code"),
+  
+  // Additional clinical details
+  anatomicalSite: text("anatomical_site"),
+  laterality: text("laterality"), // 'left', 'right', 'bilateral', 'midline'
+  urgencyLevel: text("urgency_level"), // 'elective', 'urgent', 'emergent'
+  lengthOfStay: text("length_of_stay"), // 'outpatient', '1 day', '3 days', etc.
+  
+  // Advanced surgical details
+  bloodLoss: text("blood_loss"),
+  transfusionsRequired: boolean("transfusions_required").default(false),
+  implantsHardware: text("implants_hardware"),
+  followUpRequired: text("follow_up_required"),
+  recoveryStatus: text("recovery_status"), // 'complete', 'ongoing', 'complicated', 'unknown'
+  
+  // Source tracking (same pattern as medical problems/medical history)
+  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'operative_report', 'discharge_summary', 'imported_records'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceNotes: text("source_notes"), // Additional context about data source
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
+  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  
+  // GPT processing metadata
+  consolidationReasoning: text("consolidation_reasoning"), // GPT's explanation for consolidation decisions
+  extractionNotes: text("extraction_notes"), // GPT's notes about extraction process
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Allergies
 export const allergies = pgTable("allergies", {
   id: serial("id").primaryKey(),
@@ -1249,6 +1299,7 @@ export const patientsRelations = relations(patients, ({ many }) => ({
   familyHistory: many(familyHistory),
   medicalHistory: many(medicalHistory),
   socialHistory: many(socialHistory),
+  surgicalHistory: many(surgicalHistory),
   allergies: many(allergies),
   vitals: many(vitals),
   medications: many(medications),
@@ -1687,6 +1738,7 @@ export type ImagingResult = typeof imagingResults.$inferSelect;
 export type FamilyHistory = typeof familyHistory.$inferSelect;
 export type MedicalHistory = typeof medicalHistory.$inferSelect;
 export type SocialHistory = typeof socialHistory.$inferSelect;
+export type SurgicalHistory = typeof surgicalHistory.$inferSelect;
 export type Allergy = typeof allergies.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
@@ -1888,12 +1940,44 @@ export const insertSocialHistorySchema = createInsertSchema(socialHistory).pick(
   enteredBy: true,
 });
 
+export const insertSurgicalHistorySchema = createInsertSchema(surgicalHistory).pick({
+  patientId: true,
+  procedureName: true,
+  procedureDate: true,
+  surgeonName: true,
+  facilityName: true,
+  indication: true,
+  complications: true,
+  outcome: true,
+  anesthesiaType: true,
+  cptCode: true,
+  icd10ProcedureCode: true,
+  anatomicalSite: true,
+  laterality: true,
+  urgencyLevel: true,
+  lengthOfStay: true,
+  bloodLoss: true,
+  transfusionsRequired: true,
+  implantsHardware: true,
+  followUpRequired: true,
+  recoveryStatus: true,
+  sourceType: true,
+  sourceConfidence: true,
+  sourceNotes: true,
+  extractedFromAttachmentId: true,
+  lastUpdatedEncounter: true,
+  enteredBy: true,
+  consolidationReasoning: true,
+  extractionNotes: true,
+});
+
 export type InsertVital = z.infer<typeof insertVitalSchema>;
 export type Vital = typeof vitals.$inferSelect;
 export type InsertAllergy = z.infer<typeof insertAllergySchema>;
 export type InsertFamilyHistory = z.infer<typeof insertFamilyHistorySchema>;
 export type InsertMedicalHistory = z.infer<typeof insertMedicalHistorySchema>;
 export type InsertSocialHistory = z.infer<typeof insertSocialHistorySchema>;
+export type InsertSurgicalHistory = z.infer<typeof insertSurgicalHistorySchema>;
 
 // Admin prompt management table for viewing/editing generated prompts
 export const adminPromptReviews = pgTable("admin_prompt_reviews", {
