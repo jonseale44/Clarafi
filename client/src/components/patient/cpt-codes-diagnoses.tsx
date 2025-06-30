@@ -102,7 +102,9 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       description: cpt.description,
       complexity: cpt.complexity,
       category: cpt.category,
-      baseRate: cpt.baseRate
+      baseRate: cpt.baseRate,
+      modifiers: cpt.modifiers || [],
+      modifierReasoning: cpt.modifierReasoning
     }));
 
     const convertedDiagnoses: DiagnosisCode[] = diagnoses.map((diag, index) => ({
@@ -325,7 +327,9 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       description: cptData.description,
       complexity: cptData.complexity,
       category: cptData.category,
-      baseRate: cptData.baseRate
+      baseRate: cptData.baseRate,
+      modifiers: [],
+      modifierReasoning: undefined
     };
     setCPTCodes(prev => [...prev, newCPT]);
     
