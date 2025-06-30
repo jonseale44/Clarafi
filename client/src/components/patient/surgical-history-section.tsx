@@ -68,6 +68,10 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
   const { navigateWithContext } = useNavigationContext();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSurgery, setEditingSurgery] = useState<SurgicalHistoryEntry | null>(null);
+  const [expandedSurgeries, setExpandedSurgeries] = useState<Set<number>>(new Set());
+  const [editingVisitHistory, setEditingVisitHistory] = useState<any[]>([]);
+  const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
+  const [newVisitNote, setNewVisitNote] = useState({ date: "", notes: "" });
   const [newSurgery, setNewSurgery] = useState({
     procedureName: "",
     procedureDate: "",
@@ -179,13 +183,19 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
 
   const handleEditSurgery = (surgery: SurgicalHistoryEntry) => {
     setEditingSurgery(surgery);
+    setEditingVisitHistory(surgery.visitHistory || []);
+    setNewVisitNote({ date: "", notes: "" });
+    setEditingVisitId(null);
   };
 
   const handleUpdateSurgery = () => {
     if (!editingSurgery) return;
     updateSurgeryMutation.mutate({
       surgeryId: editingSurgery.id,
-      updates: editingSurgery
+      updates: {
+        ...editingSurgery,
+        visitHistory: editingVisitHistory
+      }
     });
   };
 
@@ -193,6 +203,61 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
     if (confirm("Are you sure you want to delete this surgical history entry?")) {
       deleteSurgeryMutation.mutate(surgeryId);
     }
+  };
+
+  const toggleSurgeryExpansion = (surgeryId: number) => {
+    setExpandedSurgeries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(surgeryId)) {
+        newSet.delete(surgeryId);
+      } else {
+        newSet.add(surgeryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Visit History Management Functions
+  const addVisitNote = () => {
+    if (!newVisitNote.date || !newVisitNote.notes) {
+      toast({ title: "Error", description: "Date and notes are required", variant: "destructive" });
+      return;
+    }
+
+    const visitNote = {
+      id: Date.now().toString(),
+      date: newVisitNote.date,
+      notes: newVisitNote.notes,
+      source: "manual" as const,
+    };
+
+    setEditingVisitHistory(prev => [...prev, visitNote].sort((a, b) => {
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateComparison !== 0) return dateComparison;
+      
+      const aEncounterId = a.encounterId || 0;
+      const bEncounterId = b.encounterId || 0;
+      return bEncounterId - aEncounterId;
+    }));
+
+    setNewVisitNote({ date: "", notes: "" });
+  };
+
+  const editVisitNote = (visitId: string) => {
+    setEditingVisitId(visitId);
+  };
+
+  const saveVisitEdit = (visitId: string, updatedVisit: any) => {
+    setEditingVisitHistory(prev => 
+      prev.map(visit => 
+        visit.id === visitId ? { ...visit, ...updatedVisit } : visit
+      )
+    );
+    setEditingVisitId(null);
+  };
+
+  const deleteVisitNote = (visitId: string) => {
+    setEditingVisitHistory(prev => prev.filter(visit => visit.id !== visitId));
   };
 
   const getOutcomeIcon = (outcome: string) => {
@@ -406,172 +471,230 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
         ) : (
           <div className="space-y-3">
             {surgicalHistory.map((surgery) => (
-              <div key={surgery.id} className="border rounded-lg p-3 bg-gray-50">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-gray-900">{surgery.procedureName}</h4>
-                      <div className="flex items-center gap-1">
-                        {getOutcomeIcon(surgery.outcome)}
-                        <Badge variant="outline" className={`text-xs ${getOutcomeColor(surgery.outcome)}`}>
-                          {surgery.outcome}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {/* Combined source attribution badge for attachment-extracted surgeries */}
-                        {surgery.sourceType === "attachment_extracted" && surgery.extractedFromAttachmentId ? (
-                          <Badge 
-                            variant="outline" 
-                            className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
-                            onClick={() => {
-                              console.log(`🏥 [SurgicalHistory] Navigating to attachment ${surgery.extractedFromAttachmentId} for surgery ${surgery.id}`);
-                              navigateWithContext(
-                                `/patients/${surgery.patientId}/chart?section=attachments&highlight=${surgery.extractedFromAttachmentId}`,
-                                'surgical-history',
-                                mode
-                              );
-                            }}
-                            title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
-                          >
-                            Doc Extract {Math.round(surgery.sourceConfidence * 100)}%
-                          </Badge>
-                        ) : surgery.sourceType === "soap_derived" && surgery.sourceConfidence ? (
-                          <Badge 
-                            variant="outline" 
-                            className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                            title={`SOAP-derived surgery (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
-                          >
-                            SOAP {Math.round(surgery.sourceConfidence * 100)}%
-                          </Badge>
-                        ) : (
-                          <Badge 
-                            variant="outline" 
-                            className="text-xs bg-gray-50 text-gray-700 border-gray-200"
-                            title="Manually entered surgery"
-                          >
-                            Manual
-                          </Badge>
+              <Card 
+                key={surgery.id} 
+                className="relative surgical-card border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200"
+              >
+                <Collapsible
+                  open={expandedSurgeries.has(surgery.id)}
+                  onOpenChange={() => toggleSurgeryExpansion(surgery.id)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-opacity-80 surgical-header transition-colors emr-compact-header">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          {expandedSurgeries.has(surgery.id) ? (
+                            <ChevronDown className="h-4 w-4 text-gray-400" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-gray-400" />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <div className="flex items-center gap-1">
+                                {getOutcomeIcon(surgery.outcome)}
+                                <Badge variant="outline" className={`text-xs ${getOutcomeColor(surgery.outcome)}`}>
+                                  {surgery.outcome}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {/* Combined source attribution badge for attachment-extracted surgeries */}
+                                {surgery.sourceType === "attachment_extracted" && surgery.extractedFromAttachmentId ? (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log(`🏥 [SurgicalHistory] Navigating to attachment ${surgery.extractedFromAttachmentId} for surgery ${surgery.id}`);
+                                      navigateWithContext(
+                                        `/patients/${surgery.patientId}/chart?section=attachments&highlight=${surgery.extractedFromAttachmentId}`,
+                                        'surgical-history',
+                                        mode
+                                      );
+                                    }}
+                                    title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
+                                  >
+                                    Doc Extract {Math.round(surgery.sourceConfidence * 100)}%
+                                  </Badge>
+                                ) : surgery.sourceType === "soap_derived" && surgery.sourceConfidence ? (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                    title={`SOAP-derived surgery (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
+                                  >
+                                    SOAP {Math.round(surgery.sourceConfidence * 100)}%
+                                  </Badge>
+                                ) : (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-gray-50 text-gray-700 border-gray-200"
+                                    title="Manually entered surgery"
+                                  >
+                                    Manual
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">
+                              {surgery.procedureName}
+                              {surgery.cptCode && (
+                                <span className="ml-2 text-sm font-mono text-gray-500 dark:text-gray-400">
+                                  {surgery.cptCode}
+                                </span>
+                              )}
+                            </CardTitle>
+                            
+                            <div className="flex items-center gap-3 mt-2">
+                              {surgery.procedureDate && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {format(parseISO(surgery.procedureDate), "MMM d, yyyy")}
+                                </span>
+                              )}
+                              {surgery.visitHistory?.length > 0 && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {surgery.visitHistory.length} visit{surgery.visitHistory.length === 1 ? '' : 's'}
+                                </span>
+                              )}
+                              {surgery.surgeonName && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  Dr. {surgery.surgeonName}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {!isReadOnly && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditSurgery(surgery)}
+                              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                              title="Edit surgery"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteSurgery(surgery.id)}
+                              className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                              title="Delete surgery"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         )}
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                      {surgery.procedureDate && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(parseISO(surgery.procedureDate), "MMM d, yyyy")}
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <CardContent className="pt-0 emr-card-content-tight">
+                      <div className="emr-tight-spacing">
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                          {surgery.surgeonName && (
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {surgery.surgeonName}
+                            </div>
+                          )}
+                          {surgery.facilityName && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {surgery.facilityName}
+                            </div>
+                          )}
+                          {surgery.indication && (
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              {surgery.indication}
+                            </div>
+                          )}
+                          {surgery.anatomicalSite && (
+                            <div className="flex items-center gap-1">
+                              <Activity className="h-3 w-3" />
+                              {surgery.anatomicalSite}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {surgery.surgeonName && (
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {surgery.surgeonName}
-                        </div>
-                      )}
-                      {surgery.facilityName && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {surgery.facilityName}
-                        </div>
-                      )}
-                      {surgery.indication && (
-                        <div className="flex items-center gap-1">
-                          <FileText className="h-3 w-3" />
-                          {surgery.indication}
-                        </div>
-                      )}
-                    </div>
 
-                    {surgery.complications && (
-                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
-                        <strong>Complications:</strong> {surgery.complications}
-                      </div>
-                    )}
+                        {surgery.complications && (
+                          <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                            <strong>Complications:</strong> {surgery.complications}
+                          </div>
+                        )}
 
-                    {/* Visit History Display */}
-                    {surgery.visitHistory && surgery.visitHistory.length > 0 && (
-                      <div className="mt-2 border-t pt-2">
-                        <div className="text-xs font-medium text-gray-700 mb-1">Visit History:</div>
-                        <div className="space-y-1">
-                          {surgery.visitHistory
-                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                            .map((visit, index) => (
-                              <div key={index} className="text-xs bg-gray-50 rounded p-2 border">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-medium text-gray-800">
+                        {/* Visit History Section */}
+                        {surgery.visitHistory && surgery.visitHistory.length > 0 ? (
+                          <div className="emr-dense-list">
+                            {surgery.visitHistory
+                              .sort((a, b) => {
+                                // Primary sort: Date descending (most recent first)
+                                const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+                                if (dateComparison !== 0) return dateComparison;
+                                
+                                // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+                                const aEncounterId = a.encounterId || 0;
+                                const bEncounterId = b.encounterId || 0;
+                                return bEncounterId - aEncounterId;
+                              })
+                              .map((visit, index) => (
+                              <div key={index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                                     {format(parseISO(visit.date), "MMM d, yyyy")}
                                   </span>
-                                  <div className="flex items-center gap-1">
-                                    {visit.source === "encounter" && visit.encounterId && (
-                                      <Badge 
-                                        variant="outline" 
-                                        className="text-xs cursor-pointer hover:bg-blue-600 hover:text-white transition-colors bg-blue-50 text-blue-700 border-blue-200"
-                                        onClick={() => {
-                                          navigateWithContext(
-                                            `/patients/${surgery.patientId}/encounters/${visit.encounterId}`,
-                                            'surgical-history',
-                                            mode
-                                          );
-                                        }}
-                                        title="Click to view encounter"
-                                      >
-                                        Encounter
-                                      </Badge>
-                                    )}
-                                    {visit.source === "attachment" && visit.attachmentId && (
-                                      <Badge 
-                                        variant="outline" 
-                                        className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
-                                        onClick={() => {
-                                          navigateWithContext(
-                                            `/patients/${surgery.patientId}/chart?section=attachments&highlight=${visit.attachmentId}`,
-                                            'surgical-history',
-                                            mode
-                                          );
-                                        }}
-                                        title="Click to view attachment"
-                                      >
-                                        Document
-                                      </Badge>
-                                    )}
-                                    {visit.changesMade && visit.changesMade.length > 0 && (
-                                      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                                        {visit.changesMade.length === 1 ? visit.changesMade[0].replace('_', ' ') : `${visit.changesMade.length} changes`}
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  {visit.source === "encounter" && visit.encounterId && (
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-xs cursor-pointer hover:bg-blue-600 hover:text-white transition-colors bg-blue-50 text-blue-700 border-blue-200"
+                                      onClick={() => {
+                                        navigateWithContext(
+                                          `/patients/${surgery.patientId}/encounters/${visit.encounterId}`,
+                                          'surgical-history',
+                                          mode
+                                        );
+                                      }}
+                                      title="Click to view encounter"
+                                    >
+                                      Encounter #{visit.encounterId}
+                                    </Badge>
+                                  )}
+                                  {visit.source === "attachment" && visit.attachmentId && (
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
+                                      onClick={() => {
+                                        navigateWithContext(
+                                          `/patients/${surgery.patientId}/chart?section=attachments&highlight=${visit.attachmentId}`,
+                                          'surgical-history',
+                                          mode
+                                        );
+                                      }}
+                                      title="Click to view attachment"
+                                    >
+                                      Document
+                                    </Badge>
+                                  )}
+                                  {visit.changesMade && visit.changesMade.length > 0 && (
+                                    <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                      {visit.changesMade.length === 1 ? visit.changesMade[0].replace('_', ' ') : `${visit.changesMade.length} changes`}
+                                    </Badge>
+                                  )}
                                 </div>
-                                <div className="text-gray-600">{visit.notes}</div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
                               </div>
-                            ))
-                          }
-                        </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 italic">No visit history recorded</p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  
-                  {!isReadOnly && (
-                    <div className="flex gap-1 ml-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditSurgery(surgery)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteSurgery(surgery.id)}
-                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
             ))}
           </div>
         )}
