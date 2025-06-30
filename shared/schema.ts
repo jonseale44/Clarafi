@@ -544,28 +544,67 @@ export const medicalProblems = pgTable("medical_problems", {
 });
 
 /**
- * BILLING DIAGNOSES TABLE (NOT LEGACY - ACTIVE BILLING SYSTEM)
+ * BILLING DIAGNOSES TABLE (ACTIVE BILLING & RCM SYSTEM)
  * 
- * PURPOSE: Encounter-specific billing codes for insurance/coding
- * SCOPE: Single encounter billing (what you're treating TODAY)
+ * PURPOSE: Encounter-specific billing codes for insurance/coding and revenue cycle management
+ * SCOPE: Single encounter billing (what you're treating TODAY) with full RCM workflow support
  * 
  * IMPORTANT: This is DIFFERENT from medicalProblems table:
- * - diagnoses = Billing codes for THIS encounter (required for reimbursement)
+ * - diagnoses = Billing codes for THIS encounter (required for reimbursement) + RCM workflow
  * - medicalProblems = Longitudinal patient problem list (ongoing conditions across encounters)
  * 
  * Both tables serve different business purposes and should coexist.
- * DO NOT deprecate this table - it's essential for medical billing.
+ * Enhanced for production RCM, claims processing, and reimbursement tracking.
  */
 export const diagnoses = pgTable("diagnoses", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  
+  // Core diagnosis information
   diagnosis: text("diagnosis").notNull(),
   icd10Code: text("icd10_code"),
   diagnosisDate: date("diagnosis_date"),
   status: text("status").notNull(), // 'active', 'resolved', 'chronic', 'rule_out'
   notes: text("notes"),
+  
+  // Billing hierarchy and priority
+  isPrimary: boolean("is_primary").default(false), // Primary diagnosis for billing
+  diagnosisPointer: text("diagnosis_pointer"), // A, B, C, D for CPT linking
+  billingSequence: integer("billing_sequence"), // Order for claim submission
+  
+  // RCM and Claims Processing Fields
+  claimSubmissionStatus: text("claim_submission_status").default("pending"), // 'pending', 'submitted', 'paid', 'denied', 'appealed'
+  claimId: text("claim_id"), // External claim reference number
+  clearinghouseId: text("clearinghouse_id"), // EDI clearinghouse reference
+  payerId: text("payer_id"), // Insurance payer identifier
+  
+  // Reimbursement Tracking
+  allowedAmount: decimal("allowed_amount", { precision: 10, scale: 2 }), // Insurance allowed amount
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }), // Amount actually paid
+  patientResponsibility: decimal("patient_responsibility", { precision: 10, scale: 2 }), // Patient portion
+  adjustmentAmount: decimal("adjustment_amount", { precision: 10, scale: 2 }), // Write-offs/adjustments
+  
+  // Denial Management
+  denialReason: text("denial_reason"), // Reason for claim denial
+  denialCode: text("denial_code"), // Insurance denial code
+  appealStatus: text("appeal_status"), // 'none', 'first_appeal', 'second_appeal', 'external_review'
+  appealDeadline: date("appeal_deadline"), // Deadline for appeal submission
+  
+  // Workflow and Audit Trail
+  billingNotes: text("billing_notes"), // Billing team notes
+  lastBillingAction: text("last_billing_action"), // Last action taken
+  billingActionDate: timestamp("billing_action_date"), // When last action occurred
+  assignedBiller: integer("assigned_biller").references(() => users.id), // Assigned billing staff
+  
+  // Compliance and Documentation
+  medicalNecessityDocumented: boolean("medical_necessity_documented").default(false),
+  priorAuthorizationRequired: boolean("prior_authorization_required").default(false),
+  priorAuthNumber: text("prior_auth_number"),
+  modifierApplied: text("modifier_applied"), // Any applicable modifiers
+  
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // External Labs

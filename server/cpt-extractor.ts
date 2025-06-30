@@ -11,6 +11,8 @@ interface CPTCode {
   description: string;
   complexity?: string;
   reasoning?: string;
+  modifiers?: string[]; // CPT modifiers (e.g., ['25', '59', 'LT'])
+  modifierReasoning?: string; // GPT's reasoning for modifier selection
 }
 
 interface DiagnosisCode {
