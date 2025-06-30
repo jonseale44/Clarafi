@@ -14,6 +14,7 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { useNavigationContext } from "@/hooks/use-navigation-context";
 
 interface SurgicalHistoryEntry {
   id: number;
@@ -52,6 +53,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
+  const { navigateWithContext } = useNavigationContext();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSurgery, setEditingSurgery] = useState<SurgicalHistoryEntry | null>(null);
   const [newSurgery, setNewSurgery] = useState({

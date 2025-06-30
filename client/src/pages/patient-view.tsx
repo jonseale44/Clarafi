@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Patient } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { NavigationBreadcrumb } from "@/components/ui/navigation-breadcrumb";
 
 export function PatientView() {
   const { id } = useParams();
@@ -43,6 +44,9 @@ export function PatientView() {
 
   return (
     <div className="h-screen bg-background flex flex-col">
+      {/* Navigation breadcrumb for hyperlink navigation */}
+      <NavigationBreadcrumb />
+      
       <div className="bg-white border-b border-gray-200 px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">

@@ -1,0 +1,48 @@
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, X } from "lucide-react";
+import { useNavigationContext } from "@/hooks/use-navigation-context";
+
+interface NavigationBreadcrumbProps {
+  className?: string;
+}
+
+export function NavigationBreadcrumb({ className = "" }: NavigationBreadcrumbProps) {
+  const { navContext, goBack, clearContext, hasContext } = useNavigationContext();
+
+  if (!hasContext || !navContext) {
+    return null;
+  }
+
+  return (
+    <div className={`bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center justify-between ${className}`}>
+      <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={goBack}
+          className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 h-8 px-3"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back to {navContext.contextLabel}
+        </Button>
+        
+        <div className="text-sm text-blue-600 hidden sm:block">
+          Viewing document from: <span className="font-medium">{navContext.contextLabel}</span>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={clearContext}
+          className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 h-7 px-2"
+          title="Clear navigation context and stay here"
+        >
+          <X className="h-3 w-3" />
+          <span className="sr-only">Clear navigation context</span>
+        </Button>
+      </div>
+    </div>
+  );
+}
