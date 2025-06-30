@@ -1185,8 +1185,8 @@ export const billingAuditTrail = pgTable("billing_audit_trail", {
   entityId: text("entity_id").notNull(), // ID of the changed entity
   
   // Context
-  patientId: integer("patient_id").references(() => patients.id).notNull(),
-  encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  patientId: integer("patient_id").references(() => patients.id, { onDelete: "cascade" }).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id, { onDelete: "cascade" }).notNull(),
   
   // Change details
   beforeValue: jsonb("before_value"), // Original value

@@ -22,6 +22,7 @@ import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 import setupTemplateRoutes from "./template-routes";
+import { setupBillingRoutes } from "./billing-api-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -721,6 +722,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Template management routes (custom user templates)
   setupTemplateRoutes(app);
+
+  // Production billing routes (CPT extraction, validation, audit trails, external integrations)
+  setupBillingRoutes(app);
 
   // NOTE: User preferences routes now handled by auth.ts to avoid duplication
 
@@ -1975,43 +1979,11 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
           JSON.stringify(extractedData, null, 2),
         );
 
-        // Validate CPT codes with modifiers using BillingValidationService
-        const { BillingValidationService } = await import("./billing-validation-service");
-        const billingValidator = new BillingValidationService();
-        
-        console.log(`🔍 [CPT API] Validating ${extractedData.cptCodes?.length || 0} CPT codes with modifiers...`);
-        
-        const validationContext = {
-          patientId,
-          encounterId,
-          userId: req.user?.id || 1,
-          allCptCodes: extractedData.cptCodes.map(cpt => ({
-            code: cpt.code,
-            modifiers: cpt.modifiers || [],
-            description: cpt.description
-          }))
-        };
-
-        const validationResults = await billingValidator.validateEncounterBilling(
-          validationContext.allCptCodes,
-          validationContext
-        );
-
-        const billingRecommendations = billingValidator.generateBillingRecommendations(validationResults);
-        
-        console.log(`✅ [CPT API] Validation complete. Recommendations:`, billingRecommendations);
-
         console.log(
           `✅ [CPT API] Extracted ${extractedData.cptCodes?.length || 0} CPT codes and ${extractedData.diagnoses?.length || 0} diagnoses`,
         );
 
-        res.json({
-          ...extractedData,
-          validation: {
-            results: validationResults,
-            recommendations: billingRecommendations
-          }
-        });
+        res.json(extractedData);
       } catch (error: any) {
         console.error("❌ [CPT API] Error extracting CPT codes:", error);
         res.status(500).json({
@@ -2329,109 +2301,6 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         });
       }
     },
-  );
-
-  // Production Billing Validation API Endpoints
-  app.post(
-    "/api/billing/validate-cpt",
-    APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const { cptCode, modifiers, patientId, encounterId } = req.body;
-
-      if (!cptCode) {
-        return res.status(400).json({ message: "CPT code is required" });
-      }
-
-      const { BillingValidationService } = await import("./billing-validation-service");
-      const billingValidator = new BillingValidationService();
-
-      const validationContext = {
-        patientId: patientId || 1,
-        encounterId: encounterId || 1,
-        userId: req.user?.id || 1,
-        allCptCodes: [{
-          code: cptCode,
-          modifiers: modifiers || [],
-          description: "Manual validation"
-        }]
-      };
-
-      const validationResult = await billingValidator.validateCPTCode(
-        cptCode,
-        modifiers || [],
-        validationContext
-      );
-
-      res.json(validationResult);
-    })
-  );
-
-  app.get(
-    "/api/billing/audit-trail/:patientId",
-    APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const patientId = parseInt(req.params.patientId);
-      
-      const { db } = await import("./db.js");
-      const { billingAuditTrail } = await import("../shared/schema.js");
-      const { eq, desc } = await import("drizzle-orm");
-
-      const auditTrail = await db
-        .select()
-        .from(billingAuditTrail)
-        .where(eq(billingAuditTrail.patientId, patientId))
-        .orderBy(desc(billingAuditTrail.createdAt))
-        .limit(50);
-
-      res.json(auditTrail);
-    })
-  );
-
-  app.get(
-    "/api/billing/revenue-impact/:encounterId",
-    APIResponseHandler.asyncHandler(async (req: Request, res: Response) => {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const encounterId = parseInt(req.params.encounterId);
-      const encounter = await storage.getEncounter(encounterId);
-      
-      if (!encounter || !encounter.cptCodes) {
-        return res.json({ totalRevenue: 0, cptBreakdown: [] });
-      }
-
-      const { BillingValidationService } = await import("./billing-validation-service");
-      const billingValidator = new BillingValidationService();
-
-      const validationContext = {
-        patientId: encounter.patientId,
-        encounterId,
-        userId: req.user?.id || 1,
-        allCptCodes: (encounter.cptCodes || []).map((cpt: any) => ({
-          code: cpt.code,
-          modifiers: cpt.modifiers || [],
-          description: cpt.description || ""
-        }))
-      };
-
-      const validationResults = await billingValidator.validateEncounterBilling(
-        validationContext.allCptCodes,
-        validationContext
-      );
-
-      const totalRevenue = Object.values(validationResults)
-        .reduce((sum: number, result: any) => sum + (result.revenueImpact || 0), 0);
-
-      const cptBreakdown = Object.entries(validationResults).map(([code, result]: [string, any]) => ({
-        code,
-        revenue: result.revenueImpact || 0,
-        isValid: result.isValid,
-        warnings: result.warnings
-      }));
-
-      res.json({ totalRevenue, cptBreakdown, validationResults });
-    })
   );
 
   // Unified Orders API routes for draft orders processing system

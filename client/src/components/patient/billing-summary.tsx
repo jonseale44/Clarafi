@@ -12,53 +12,62 @@ interface BillingSummaryProps {
   diagnoses: any[];
 }
 
-// CPT reimbursement rates fetched from production billing validation API
-// Ensures single source of truth and consistent rates across system
+// Medicare 2024 reimbursement rates (national averages)
+const CPT_REIMBURSEMENT_RATES: Record<string, number> = {
+  "99202": 109.81,  // New patient, straightforward
+  "99203": 154.81,  // New patient, low complexity
+  "99204": 242.85,  // New patient, moderate complexity
+  "99205": 315.92,  // New patient, high complexity
+  "99212": 73.97,   // Established, straightforward
+  "99213": 109.81,  // Established, low complexity
+  "99214": 167.09,  // Established, moderate complexity
+  "99215": 218.14,  // Established, high complexity
+  "90471": 25.93,   // Immunization admin
+  "93000": 31.84,   // ECG
+  "12001": 142.26,  // Simple repair
+  "10060": 178.42,  // I&D abscess
+  "20610": 89.23,   // Joint injection
+};
 
 export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: BillingSummaryProps) {
   const [totalReimbursement, setTotalReimbursement] = useState(0);
   const [complexityOptimization, setComplexityOptimization] = useState<string>("");
 
-  // Calculate total billing potential using production API
+  // Calculate total billing potential
   useEffect(() => {
-    if (cptCodes.length === 0) {
-      setTotalReimbursement(0);
-      setComplexityOptimization("");
-      return;
-    }
+    const total = cptCodes.reduce((sum, code) => {
+      const rate = CPT_REIMBURSEMENT_RATES[code.code] || 0;
+      return sum + rate;
+    }, 0);
+    setTotalReimbursement(total);
 
-    // Call production BillingValidationService for accurate rates
-    const calculateTotalRevenue = async () => {
-      try {
-        let totalRevenue = 0;
-        for (const code of cptCodes) {
-          const response = await fetch(`/api/billing/validate-cpt`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              cptCode: code.code,
-              modifiers: code.modifiers || [],
-              patientId,
-              encounterId,
-            }),
-          });
-          
-          if (response.ok) {
-            const validation = await response.json();
-            totalRevenue += validation.revenueImpact || 0;
-          }
+    // Analyze optimization opportunities
+    const emCode = cptCodes.find(c => c.code.startsWith('992'));
+    if (emCode) {
+      const currentRate = CPT_REIMBURSEMENT_RATES[emCode.code] || 0;
+      const isNewPatient = emCode.code.startsWith('9920');
+      
+      if (isNewPatient) {
+        const higherCodes = ['99203', '99204', '99205'].filter(code => 
+          CPT_REIMBURSEMENT_RATES[code] > currentRate
+        );
+        if (higherCodes.length > 0) {
+          const nextHigher = higherCodes[0];
+          const potential = CPT_REIMBURSEMENT_RATES[nextHigher] - currentRate;
+          setComplexityOptimization(`Potential upgrade to ${nextHigher}: +$${potential.toFixed(2)}`);
         }
-        setTotalReimbursement(totalRevenue);
-        setComplexityOptimization("Revenue calculated via BillingValidationService");
-      } catch (error) {
-        console.error("Error calculating billing revenue:", error);
-        setTotalReimbursement(0);
-        setComplexityOptimization("Error calculating revenue");
+      } else {
+        const higherCodes = ['99213', '99214', '99215'].filter(code => 
+          CPT_REIMBURSEMENT_RATES[code] > currentRate
+        );
+        if (higherCodes.length > 0) {
+          const nextHigher = higherCodes[0];
+          const potential = CPT_REIMBURSEMENT_RATES[nextHigher] - currentRate;
+          setComplexityOptimization(`Potential upgrade to ${nextHigher}: +$${potential.toFixed(2)}`);
+        }
       }
-    };
-
-    calculateTotalRevenue();
-  }, [cptCodes, patientId, encounterId]);
+    }
+  }, [cptCodes]);
 
   const { data: billingData } = useQuery({
     queryKey: [`/api/patients/${patientId}/encounters/${encounterId}/billing-summary`],
@@ -116,11 +125,7 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
             <h4 className="font-medium text-sm mb-2">CPT Code Breakdown</h4>
             <div className="space-y-2">
               {cptCodes.map((code, index) => {
-                // Display actual validation data if available
-                const validation = code.validation;
-                const rate = validation?.revenueImpact || 0;
-                const isValid = validation?.isValid;
-                
+                const rate = CPT_REIMBURSEMENT_RATES[code.code] || 0;
                 return (
                   <div key={index} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
                     <div className="flex items-center space-x-2">
@@ -128,17 +133,10 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
                       <Badge variant="outline" className={getComplexityColor(code.complexity || 'straightforward')}>
                         {code.complexity || 'straightforward'}
                       </Badge>
-                      {validation && (
-                        <Badge variant={isValid ? "default" : "destructive"} className="text-xs">
-                          {isValid ? "Valid" : "Invalid"}
-                        </Badge>
-                      )}
                     </div>
                     <div className="text-right">
                       <div className="font-medium">${rate.toFixed(2)}</div>
-                      <div className="text-xs text-gray-600">
-                        {validation ? "Validated rate" : "Validation required"}
-                      </div>
+                      <div className="text-xs text-gray-600">Medicare rate</div>
                     </div>
                   </div>
                 );

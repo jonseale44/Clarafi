@@ -2,16 +2,20 @@ import OpenAI from "openai";
 import {
   CPT_OFFICE_VISIT_CODES,
   PROCEDURE_CPT_CODES,
-} from "./medical-coding-guidelines.ts";
-import { TokenCostAnalyzer } from "./token-cost-analyzer.ts";
+  CPT_REIMBURSEMENT_RATES,
+} from "./medical-coding-guidelines.js";
+import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 
 interface CPTCode {
   code: string;
   description: string;
   complexity?: string;
   reasoning?: string;
-  modifiers?: string[]; // CPT modifiers like ["-25", "-59", "-RT"]
-  modifierReasoning?: string; // Why GPT selected these modifiers
+  modifiers?: string[];
+  modifierReasons?: string;
+  clinicalJustification?: string;
+  baseRate?: number;
+  estimatedRevenueImpact?: number;
 }
 
 interface DiagnosisCode {
@@ -189,7 +193,7 @@ Your goal is to maximize legitimate billing while ensuring accuracy and complian
     )
       .map(
         (code) =>
-          `${code.code}: ${code.description} - Rate: Via BillingValidationService`,
+          `${code.code}: ${code.description} - Medicare Rate: $${CPT_REIMBURSEMENT_RATES[code.code] || "N/A"}`,
       )
       .join("\n");
 
@@ -259,41 +263,6 @@ ${PROCEDURE_CPT_CODES.slice(0, 15)
   .map((p) => `${p.code}: ${p.description}`)
   .join("\n")}
 
-=== CPT MODIFIER SYSTEM ===
-
-CRITICAL: Medicare requires appropriate modifier usage for maximum reimbursement and compliance.
-
-COMMON MODIFIERS YOU MUST CONSIDER:
--25: Significant, separately identifiable E&M service by same provider on same day as procedure
-    Example: Office visit (99214) + skin lesion removal (17110) requires -25 on E&M code
-    
--59: Distinct procedural service (separate from other procedures performed same day)
-    Example: Multiple unrelated procedures require -59 to prevent bundling
-    
--50: Bilateral procedure (performed on both sides of body)
-    Example: Bilateral ear irrigation, bilateral joint injections
-    
--RT/-LT: Right side / Left side (anatomical modifiers)
-    Example: Right shoulder injection, left knee arthroscopy
-    
--76: Repeat procedure by same provider
--77: Repeat procedure by different provider
--78: Unplanned return to operating room by same provider during postoperative period
--79: Unrelated procedure during postoperative period
--91: Repeat clinical diagnostic laboratory test
-
-MODIFIER SELECTION RULES:
-1. REVENUE MAXIMIZATION: Use -25 modifier when E&M and procedure performed same day
-2. ANATOMICAL PRECISION: Use -RT/-LT for side-specific procedures
-3. BILATERAL PROCEDURES: Use -50 when appropriate (increases reimbursement)
-4. DISTINCT SERVICES: Use -59 to prevent inappropriate bundling
-
-EXAMPLES OF REQUIRED MODIFIER USAGE:
-- 99214-25 + 17110: Office visit with wart removal (separate service)
-- 20610-RT: Right shoulder joint injection
-- 12001-59: Simple repair distinct from other procedure same day
-- 87804-91: Repeat Strep test same day (medical necessity)
-
 MANDATORY DIAGNOSIS REQUIREMENTS - CRITICAL FOR BILLING:
 - SCAN THE ENTIRE CLINICAL DOCUMENTATION for every mentioned condition
 - ASSESSMENT/PLAN section contains billable diagnoses - extract ALL of them
@@ -324,38 +293,70 @@ CRITICAL BILLING RULES:
 2. COMPREHENSIVE DIAGNOSIS CODING: Include ALL diagnoses that justify complexity scoring
 3. Medicare compliance: Document reasoning for complexity level selection
 
+🚨 MANDATORY MODIFIER REQUIREMENTS - COMPLIANCE CRITICAL:
+⚠️ MODIFIER 25: REQUIRED FOR E&M + PROCEDURE SAME DAY (99xxx + 17xxx/12xxx) - THIS IS NON-NEGOTIABLE
+⚠️ MODIFIER 59: REQUIRED when distinct procedures normally bundled together
+⚠️ MODIFIER 51: REQUIRED for multiple procedures (second+ procedures get this modifier)
+⚠️ MODIFIER 95: REQUIRED for telemedicine encounters when documented
+⚠️ MODIFIER 50: REQUIRED for bilateral procedures when both sides treated
+⚠️ MODIFIER TC: REQUIRED for technical component only services
+⚠️ MODIFIER 26: REQUIRED for professional component only services
+
+🔥 CRITICAL BILLING RULE: If you see ANY E&M code (99xxx) + ANY procedure code (17xxx, 12xxx, etc.) in same encounter → THE PROCEDURE CODE MUST HAVE MODIFIER 25 APPLIED
+
+⚠️ FAILURE TO APPLY MODIFIERS = CLAIM DENIAL = REVENUE LOSS
+
+EXAMPLE ENFORCEMENT:
+- 99214 + 17110 = 99214 (no modifier) + 17110-25 (modifier 25 applied)
+- Multiple procedures = First procedure normal + Second procedure-51
+- Bilateral procedure = Single procedure-50
+
 CRITICAL INSTRUCTION: Analyze ONLY the clinical text provided in this specific request. Do NOT use any examples, templates, or previous case data. Every diagnosis and CPT code must come directly from the documentation you are analyzing RIGHT NOW.
 
 MANDATORY: If you identify multiple conditions in the clinical documentation, you MUST include ALL of them in the diagnoses array. Missing any documented condition results in revenue loss and billing compliance failure.
 
 MANDATORY: Identify ALL billable services performed during this encounter. Include BOTH evaluation/management AND any procedures performed.
 
+🚨 MODIFIER ENFORCEMENT FOR CURRENT CASE:
+- If E&M code (99xxx) + Procedure code (17xxx/12xxx) detected → Procedure MUST have modifier "25"
+- Look at the JSON example below: 17110 has "modifiers": ["25"] - YOU MUST DO THIS SAME PATTERN
+- DO NOT RETURN EMPTY MODIFIER ARRAYS FOR PROCEDURES when E&M is present
+
 Return ONLY a JSON object with this exact structure:
 {
   "cptCodes": [
     {
-      "code": "99214",
-      "description": "Office visit, established patient, moderate complexity",
+      "code": "99204",
+      "description": "Office visit, new patient, moderate complexity",
       "complexity": "moderate",
       "reasoning": "Problem-focused visit for respiratory symptoms with moderate complexity",
-      "modifiers": ["-25"],
-      "modifierReasoning": "E&M service is significant and separately identifiable from same-day procedure"
+      "modifiers": [],
+      "modifierReasons": "",
+      "clinicalJustification": "Complex medical decision making with multiple problems addressed",
+      "baseRate": 274.00,
+      "estimatedRevenueImpact": 274.00
+    },
+    {
+      "code": "99386", 
+      "description": "Preventive medicine service, new patient, 40-64 years",
+      "complexity": "preventive",
+      "reasoning": "Annual wellness exam component of visit",
+      "modifiers": [],
+      "modifierReasons": "",
+      "clinicalJustification": "Age-appropriate preventive care visit",
+      "baseRate": 195.00,
+      "estimatedRevenueImpact": 195.00
     },
     {
       "code": "17110",
       "description": "Destruction of benign lesions, up to 14 lesions",
       "complexity": "procedure",
       "reasoning": "Cryotherapy performed on skin lesions",
-      "modifiers": [],
-      "modifierReasoning": "No modifiers required for standalone procedure"
-    },
-    {
-      "code": "20610",
-      "description": "Arthrocentesis, aspiration and/or injection, major joint",
-      "complexity": "procedure", 
-      "reasoning": "Joint injection performed for therapeutic purposes",
-      "modifiers": ["-RT"],
-      "modifierReasoning": "Procedure performed on right side only"
+      "modifiers": ["25"],
+      "modifierReasons": "Significant E&M service performed on same day as procedure",
+      "clinicalJustification": "Wart destruction with separate evaluation and management",
+      "baseRate": 165.00,
+      "estimatedRevenueImpact": 165.00
     }
   ],
   "diagnoses": [
@@ -432,7 +433,7 @@ VALIDATION CHECK: Count the conditions you mentioned in your reasoning. Your dia
 AGE-SPECIFIC PREVENTIVE MEDICINE CODING:
 For patient age ${patientAge} years, the correct preventive medicine code is:
 ${ageCode}: Preventive medicine, ${isNewPatient ? 'new' : 'established'} patient, ${ageRange}
-Rate: Via BillingValidationService
+Medicare Rate: $${CPT_REIMBURSEMENT_RATES[ageCode] || "N/A"}
 
 CRITICAL: Always use the age-appropriate preventive medicine code. Using incorrect age ranges will result in claim denials.`;
   }

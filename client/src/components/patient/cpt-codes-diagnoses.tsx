@@ -36,16 +36,10 @@ interface CPTCode {
   complexity?: 'low' | 'moderate' | 'high' | 'straightforward';
   category?: string;
   baseRate?: number;
-  modifiers?: string[]; // New: CPT modifiers like ["-25", "-59", "-RT"] 
-  modifierReasoning?: string; // New: GPT reasoning for modifier selection
-  primaryModifier?: string; // New: Most important modifier
-  validation?: {
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-    revenueImpact?: number;
-    suggestedModifiers?: string[];
-  };
+  modifiers?: string[]; // Production modifiers support
+  modifierReasons?: string; // Clinical justification for modifiers
+  clinicalJustification?: string; // GPT clinical rationale
+  estimatedRevenueImpact?: number; // Revenue calculation
 }
 
 interface DiagnosisCode {
@@ -82,7 +76,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
   const [editCPTDescription, setEditCPTDescription] = useState("");
   const [editDiagnosisValue, setEditDiagnosisValue] = useState("");
   const [editDiagnosisICD, setEditDiagnosisICD] = useState("");
-  const [isValidating, setIsValidating] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -204,13 +197,13 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       
       const { soapNote } = await soapResponse.json();
       
-      // Extract CPT codes from SOAP note
-      const response = await fetch(`/api/patients/${patientId}/encounters/${encounterId}/extract-cpt`, {
+      // Use enhanced CPT extraction with modifier intelligence  
+      const response = await fetch(`/api/billing/extract-cpt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ soapNote }),
+        body: JSON.stringify({ soapNote, patientId, encounterId }),
       });
 
       if (!response.ok) {
@@ -334,7 +327,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
       description: cptData.description,
       complexity: cptData.complexity,
       category: cptData.category,
-      baseRate: undefined // Rate fetched via validation API
+      baseRate: cptData.baseRate
     };
     setCPTCodes(prev => [...prev, newCPT]);
     
@@ -434,7 +427,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
             description: cptData.description,
             complexity: cptData.complexity,
             category: cptData.category,
-            baseRate: undefined // Rate fetched via validation API
+            baseRate: cptData.baseRate
           }
         : cpt
     ));
@@ -458,7 +451,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
               description: foundCPT.description,
               complexity: foundCPT.complexity,
               category: foundCPT.category,
-              baseRate: undefined // Rate fetched via validation API
+              baseRate: foundCPT.baseRate
             }
           : cpt
       ));
@@ -569,84 +562,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
     }
   };
 
-  // Validate billing with our new BillingValidationService
-  const validateBilling = async () => {
-    if (cptCodes.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "No CPT Codes",
-        description: "Please generate or add CPT codes before validating billing",
-      });
-      return;
-    }
-
-    setIsValidating(true);
-
-    try {
-      console.log("🔍 [CPTComponent] Starting billing validation for", cptCodes.length, "CPT codes");
-
-      // Validate each CPT code individually and update with results
-      const updatedCptCodes = await Promise.all(
-        cptCodes.map(async (cpt) => {
-          try {
-            const response = await fetch("/api/billing/validate-cpt", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                cptCode: cpt.code,
-                modifiers: cpt.modifiers || [],
-                patientId,
-                encounterId,
-              }),
-            });
-
-            if (!response.ok) {
-              console.warn("⚠️ [CPTComponent] Validation failed for CPT", cpt.code);
-              return cpt; // Return original if validation fails
-            }
-
-            const validationResult = await response.json();
-            console.log("✅ [CPTComponent] Validation result for", cpt.code, ":", validationResult);
-
-            return {
-              ...cpt,
-              validation: validationResult,
-            };
-          } catch (error) {
-            console.error("❌ [CPTComponent] Error validating CPT", cpt.code, ":", error);
-            return cpt; // Return original if validation fails
-          }
-        })
-      );
-
-      setCPTCodes(updatedCptCodes);
-
-      // Calculate summary statistics
-      const validCount = updatedCptCodes.filter(cpt => cpt.validation?.isValid).length;
-      const totalRevenue = updatedCptCodes.reduce((sum, cpt) => 
-        sum + (cpt.validation?.revenueImpact || 0), 0
-      );
-
-      toast({
-        title: "Billing Validation Complete",
-        description: `${validCount}/${updatedCptCodes.length} codes valid. Estimated revenue: $${totalRevenue.toFixed(2)}`,
-      });
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error("❌ [CPTComponent] Billing validation error:", errorMessage);
-      toast({
-        variant: "destructive",
-        title: "Validation Failed",
-        description: errorMessage,
-      });
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <Card className="p-6">
@@ -699,16 +614,6 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                   : "Generate from SOAP"
                 }
               </span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={validateBilling}
-              disabled={isGenerating || isAutoGenerating || isValidating || cptCodes.length === 0}
-              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 hover:border-purple-300"
-            >
-              <Search className={`h-4 w-4 mr-2 ${isValidating ? 'animate-spin' : ''}`} />
-              {isValidating ? "Validating..." : "Validate Billing"}
             </Button>
             <Button
               size="sm"
@@ -779,29 +684,21 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                     className="font-mono text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
                                     onClick={() => startEditingCPT(cpt.id)}
                                   >
-                                    <div className="flex items-center justify-center gap-1">
-                                      {cpt.code}
-                                      {/* Visual indicators for modifiers and validation */}
-                                      {cpt.modifiers && cpt.modifiers.length > 0 && (
-                                        <span className="text-blue-600 font-semibold" title={`${cpt.modifiers.length} modifier(s)`}>
-                                          +{cpt.modifiers.length}
-                                        </span>
-                                      )}
-                                      {cpt.validation && (
-                                        <div className={`w-1.5 h-1.5 rounded-full ${cpt.validation.isValid ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                      )}
-                                    </div>
+                                    {cpt.code}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <div className="max-w-xs">
                                     <p className="font-medium">{cpt.code}</p>
                                     <p className="text-sm">{cpt.description}</p>
-                                    
-                                    {/* Show modifiers if present */}
+                                    {cpt.complexity && (
+                                      <Badge variant="outline" className="mt-1">
+                                        {cpt.complexity}
+                                      </Badge>
+                                    )}
                                     {cpt.modifiers && cpt.modifiers.length > 0 && (
-                                      <div className="mt-2">
-                                        <p className="text-xs font-medium text-gray-600">Modifiers:</p>
+                                      <div className="mt-2 pt-2 border-t">
+                                        <p className="text-xs font-medium text-blue-600">Modifiers:</p>
                                         <div className="flex flex-wrap gap-1 mt-1">
                                           {cpt.modifiers.map((modifier, idx) => (
                                             <Badge key={idx} variant="secondary" className="text-xs">
@@ -809,47 +706,19 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                             </Badge>
                                           ))}
                                         </div>
-                                        {cpt.modifierReasoning && (
-                                          <p className="text-xs text-gray-500 mt-1">{cpt.modifierReasoning}</p>
-                                        )}
                                       </div>
                                     )}
-                                    
-                                    {/* Show validation status */}
-                                    {cpt.validation && (
-                                      <div className="mt-2">
-                                        <div className="flex items-center gap-1">
-                                          <div className={`w-2 h-2 rounded-full ${cpt.validation.isValid ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                          <p className="text-xs font-medium">{cpt.validation.isValid ? 'Valid' : 'Issues Found'}</p>
-                                        </div>
-                                        {cpt.validation.warnings.length > 0 && (
-                                          <div className="mt-1">
-                                            <p className="text-xs text-yellow-600">Warnings:</p>
-                                            {cpt.validation.warnings.map((warning, idx) => (
-                                              <p key={idx} className="text-xs text-yellow-600">• {warning}</p>
-                                            ))}
-                                          </div>
-                                        )}
-                                        {cpt.validation.errors.length > 0 && (
-                                          <div className="mt-1">
-                                            <p className="text-xs text-red-600">Errors:</p>
-                                            {cpt.validation.errors.map((error, idx) => (
-                                              <p key={idx} className="text-xs text-red-600">• {error}</p>
-                                            ))}
-                                          </div>
-                                        )}
-                                        {cpt.validation.revenueImpact && (
-                                          <p className="text-xs text-green-600 mt-1">
-                                            Revenue: ${cpt.validation.revenueImpact.toFixed(2)}
-                                          </p>
-                                        )}
+                                    {cpt.modifierReasons && (
+                                      <div className="mt-2 pt-2 border-t">
+                                        <p className="text-xs font-medium text-green-600">Modifier Reason:</p>
+                                        <p className="text-xs text-gray-600">{cpt.modifierReasons}</p>
                                       </div>
                                     )}
-                                    
-                                    {cpt.complexity && (
-                                      <Badge variant="outline" className="mt-1">
-                                        {cpt.complexity}
-                                      </Badge>
+                                    {cpt.clinicalJustification && (
+                                      <div className="mt-2 pt-2 border-t">
+                                        <p className="text-xs font-medium text-purple-600">Clinical Justification:</p>
+                                        <p className="text-xs text-gray-600">{cpt.clinicalJustification}</p>
+                                      </div>
                                     )}
                                   </div>
                                 </TooltipContent>

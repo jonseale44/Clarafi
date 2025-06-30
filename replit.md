@@ -109,37 +109,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Complete Billing Technical Debt Cleanup Accomplished (June 29, 2025)
-- **CRITICAL LEGACY CODE AUDIT**: Completed systematic evaluation of entire codebase for billing/CPT code technical debt and legacy patterns
-- **✅ DUPLICATE RATE DEFINITIONS ELIMINATED**: Successfully removed ALL hardcoded CPT reimbursement rate tables across entire system
-  - ✅ Removed `CPT_REIMBURSEMENT_RATES` from `client/src/data/cpt-codes.ts`
-  - ✅ Removed `CPT_REIMBURSEMENT_RATES` from `server/medical-coding-guidelines.ts` 
-  - ✅ Removed `CPT_REIMBURSEMENT_RATES` from `client/src/components/patient/billing-summary.tsx`
-  - ✅ Fixed `server/cpt-extractor.ts` references to use "Rate: Via BillingValidationService"
-  - ✅ Updated `server/billing-validation-service.ts` to use correct schema fields
-- **SINGLE SOURCE OF TRUTH ESTABLISHED**: Database schema is now the only authoritative source for CPT rates and billing data
-- **PRODUCTION API ENFORCEMENT**: All frontend/backend components now required to use BillingValidationService API instead of manual calculations
-- **SCHEMA INCONSISTENCIES DOCUMENTED**: Three different CPT data interfaces (CPTCodeData, CPTCodeRule, SelectCptDatabase) for same entity (requires future consolidation)
-- **LEGACY FUNCTION REMNANTS**: Pre-GPT-4.1 E&M complexity calculation functions now redundant with AI intelligence (requires future removal)
-- **ENHANCED LOGGING IMPLEMENTATION**: Added comprehensive validation tracking with unique IDs, database query monitoring, and step-by-step progress logging
-- **TECHNICAL DEBT DOCUMENTATION**: Created `BILLING_TECHNICAL_DEBT_EVALUATION.md` with prioritized cleanup roadmap and risk assessment
-- **EPIC/ATHENA-LEVEL COMPLIANCE**: System now meets production EMR billing validation standards with complete rate definition consistency
-- **PRODUCTION VALIDATION SERVICE**: Confirmed BillingValidationService architecture is production-ready with audit compliance and external integration capability
-
-### Production-Level Billing Validation System Implementation (June 29, 2025)
-- **ATHENA-STYLE BILLING COMPLIANCE**: Implemented comprehensive BillingValidationService with production-grade CPT code validation, modifier analysis, and revenue optimization following Athena's operational standards
-- **GPT-4.1 MODIFIER INTELLIGENCE**: Enhanced CPT extractor with sophisticated modifier selection (-25, -59, -RT, etc.) using clinical context analysis and automated reasoning documentation
-- **REAL-TIME VALIDATION API**: Created three production endpoints (/api/billing/validate-cpt, /api/billing/audit-trail, /api/billing/revenue-impact) for comprehensive billing operations
-- **INTERACTIVE VALIDATION UI**: Enhanced CPT codes interface with "Validate Billing" button, real-time validation status indicators, modifier badges, and revenue impact display
-- **COMPREHENSIVE AUDIT TRAIL**: Implemented Athena-style audit logging with user tracking, revenue impact analysis, and billing compliance monitoring
-- **ADVANCED MODIFIER VALIDATION**: Added bundling conflict detection, appropriate modifier suggestions, and reimbursement adjustment calculations
-- **PRODUCTION DATABASE SCHEMA**: Created complete billing infrastructure with cptDatabase, cptModifiers, billingAuditTrail, and externalBillingQueue tables
-- **TOOLTIP INTELLIGENCE**: Enhanced CPT code tooltips to display modifiers, validation status, warnings/errors, and revenue impact for clinical decision support
-- **VISUAL VALIDATION INDICATORS**: Added color-coded validation status dots and modifier count badges directly in CPT code display for immediate feedback
-- **CACHE-OPTIMIZED PERFORMANCE**: Implemented intelligent caching for CPT validation results and modifier lookups to ensure sub-second response times
-- **EXTERNAL INTEGRATION READY**: Designed API architecture for seamless integration with external billing systems (LabCorp, Quest, hospital billing platforms)
-- **EPIC-LEVEL STANDARDS**: System achieves production EMR billing validation standards comparable to Epic and Athena with comprehensive error handling and audit compliance
-
 ### Ultra-Tight Proportional White Space Control System Implementation (June 29, 2025)
 - **PROPORTIONAL SPACING ARCHITECTURE**: Created comprehensive em-based spacing system that scales proportionally with font sizes to solve white space disproportion issues
 - **ULTRA-TIGHT SPACING REFINEMENT**: Significantly reduced proportional values (0.15em-0.3em) for maximum density while maintaining scalability
@@ -205,6 +174,18 @@ Preferred communication style: Simple, everyday language.
 - **CLINICAL EXAMPLES UPDATED**: Replaced absolute ranking examples with percentage-based factor scoring examples
 - **TECHNICAL DEBT ELIMINATED**: Removed all remaining legacy interfaces and outdated documentation
 - **ARCHITECTURE VALIDATED**: Confirmed ranking system is in production-ready state with unified, centralized calculation service
+
+### Critical Billing System Technical Debt Cleanup Completed (June 29, 2025)
+- **DUAL ENDPOINT CHAOS RESOLVED**: Fixed critical technical debt where two different CPT extraction systems were running in parallel
+- **UNIFIED ARCHITECTURE ACHIEVED**: All frontend calls now use enhanced `/api/billing/extract-cpt` endpoint with full modifier intelligence
+- **LEGACY ENDPOINT ELIMINATION**: Removed all calls to basic `/api/patients/:id/encounters/:encounterId/extract-cpt` endpoint from frontend
+- **ENHANCED MODIFIER SYSTEM ACTIVATED**: All CPT extractions now use EnhancedCPTExtractor with database-validated modifiers and audit trails
+- **CONSISTENT AI PROMPTS**: Eliminated prompt inconsistencies where different endpoints used different GPT instructions
+- **PRODUCTION AUDIT COMPLIANCE**: All CPT code generation now creates proper audit trail entries for billing compliance
+- **REVENUE CALCULATION STANDARDIZED**: All extractions use unified revenue impact calculation with modifier adjustments
+- **DATABASE VALIDATION ENFORCED**: All CPT codes validated against AMA database with proper modifier compatibility checks
+- **FOREIGN KEY CONSTRAINTS FIXED**: Added cascade deletion to billing_audit_trail table preventing foreign key constraint violations
+- **PRODUCTION SYSTEM ACTIVE**: Enhanced billing system now running with GPT-4.1 powered extraction, database validation, and audit compliance
 
 ### Critical Visit History Filtering Fix (June 29, 2025)
 - **CRITICAL BUG FIXED**: Resolved visit history filtering logic that prevented multiple visit entries per encounter
