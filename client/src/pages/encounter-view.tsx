@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Patient, Encounter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { NavigationBreadcrumb } from "@/components/ui/navigation-breadcrumb";
 
 export function EncounterView() {
   const params = useParams();
@@ -64,13 +65,18 @@ export function EncounterView() {
   };
 
   return (
-    <div className="h-screen bg-background">
-      <RoleBasedEncounterView 
-        patient={patient} 
-        encounterId={encounterId} 
-        encounter={encounter}
-        onBackToChart={handleBackToChart}
-      />
+    <div className="h-screen bg-background flex flex-col">
+      {/* Navigation breadcrumb for hyperlink navigation */}
+      <NavigationBreadcrumb />
+      
+      <div className="flex-1">
+        <RoleBasedEncounterView 
+          patient={patient} 
+          encounterId={encounterId} 
+          encounter={encounter}
+          onBackToChart={handleBackToChart}
+        />
+      </div>
     </div>
   );
 }

@@ -413,7 +413,11 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                             className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
                             onClick={() => {
                               console.log(`🏥 [SurgicalHistory] Navigating to attachment ${surgery.extractedFromAttachmentId} for surgery ${surgery.id}`);
-                              setLocation(`/patients/${surgery.patientId}/chart?section=attachments&highlight=${surgery.extractedFromAttachmentId}`);
+                              navigateWithContext(
+                                `/patients/${surgery.patientId}/chart?section=attachments&highlight=${surgery.extractedFromAttachmentId}`,
+                                'surgical-history',
+                                mode
+                              );
                             }}
                             title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
                           >

@@ -15,6 +15,7 @@ import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialo
 import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
 import { RankingWeightControls } from "./ranking-weight-controls";
 import { useLocation } from "wouter";
+import { useNavigationContext } from "@/hooks/use-navigation-context";
 import { 
   calculateMedicalProblemRanking, 
   assignPriorityLevels,

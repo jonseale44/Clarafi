@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
+import { useNavigationContext } from "@/hooks/use-navigation-context";
 
 // Utility functions to format dates without timezone conversion
 const formatVitalsDate = (dateString: string) => {
@@ -140,13 +141,16 @@ export function VitalsFlowsheet({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const { navigateWithContext } = useNavigationContext();
 
-  // Navigate to attachment source
+  // Navigate to attachment source with context
   const navigateToAttachment = (attachmentId: number) => {
-    // Navigate to patient chart attachments section with attachment ID highlighted
-    const url = `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`;
-    console.log('🔗 [VitalsNavigation] Navigating to attachment:', { attachmentId, url, patientId });
-    setLocation(url);
+    console.log('🔗 [VitalsNavigation] Navigating to attachment:', { attachmentId, patientId });
+    navigateWithContext(
+      `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`,
+      'vitals',
+      'patient-chart'
+    );
   };
 
   // Calculate patient age from dateOfBirth if not provided
