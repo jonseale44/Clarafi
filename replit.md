@@ -109,6 +109,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Surgical History Accordion UI & Visit History Editing Completed (June 30, 2025)
+- **COMPLETE ACCORDION SYSTEM**: Successfully implemented full accordion pattern for surgical history matching medical problems architecture exactly
+- **EDIT/DELETE BUTTON FUNCTIONALITY**: Added missing edit and delete buttons to surgical history cards with proper hover behavior using `group` class
+- **COMPREHENSIVE VISIT HISTORY EDITING**: Enhanced edit dialog with complete visit history management including add, edit, delete operations
+- **EDITABLE VISIT NOTE COMPONENT**: Built EditableVisitNote helper component for inline editing with date and notes fields
+- **DATE CONVERSION BUG FIX**: Fixed critical database issue where date strings from frontend weren't properly converted to Date objects for timestamp fields
+- **ENHANCED UPDATE API**: Updated surgical history update endpoint to handle `procedureDate` conversion and visit history properly
+- **PRODUCTION TESTING**: Created test surgical history data for patient 14 with 7 procedures including complex visit history
+- **UI/UX CONSISTENCY**: Surgical history section now displays exactly like medical problems with expandable cards, chevron indicators, and proper source attribution
+- **TYPESCRIPT ERROR RESOLUTION**: Fixed optional chaining issues for `visitHistory` fields with proper null checking
+- **COMPLETE FEATURE PARITY**: Surgical history now has full edit dialog with visit history section matching medical problems implementation
+
 ### Unified Surgical History System with Visit History Tracking Completed (June 30, 2025)
 - **PRODUCTION-READY SURGICAL HISTORY SYSTEM**: Implemented comprehensive surgical history management following same architecture as medical problems parser
 - **UNIFIED SURGICAL HISTORY PARSER**: Built UnifiedSurgicalHistoryParser class with GPT-4.1 powered extraction, consolidation, and deduplication logic

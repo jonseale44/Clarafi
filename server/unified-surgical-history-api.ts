@@ -112,6 +112,19 @@ router.put("/surgical-history/:surgeryId",
     console.log(`🏥 [SurgicalHistoryAPI] Updating surgery ${surgeryId}`);
 
     try {
+      // Convert date strings to Date objects for database
+      if (updates.procedureDate && typeof updates.procedureDate === 'string') {
+        updates.procedureDate = new Date(updates.procedureDate);
+      }
+      
+      // Handle visit history date conversions
+      if (updates.visitHistory && Array.isArray(updates.visitHistory)) {
+        updates.visitHistory = updates.visitHistory.map(visit => ({
+          ...visit,
+          date: typeof visit.date === 'string' ? visit.date : visit.date // Keep as string for JSON field
+        }));
+      }
+      
       // Add timestamp to updates
       updates.updatedAt = new Date();
 
@@ -193,6 +206,11 @@ router.post("/surgical-history",
     try {
       const { db } = await import("./db.js");
       const { surgicalHistory } = await import("../shared/schema.js");
+
+      // Convert date strings to Date objects for database
+      if (surgeryData.procedureDate && typeof surgeryData.procedureDate === 'string') {
+        surgeryData.procedureDate = new Date(surgeryData.procedureDate);
+      }
 
       // Set metadata for manual entry
       surgeryData.sourceType = "manual_entry";
