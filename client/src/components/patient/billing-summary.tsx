@@ -129,10 +129,27 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
                 return (
                   <div key={index} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
                     <div className="flex items-center space-x-2">
-                      <span className="font-mono text-sm font-medium">{code.code}</span>
-                      <Badge variant="outline" className={getComplexityColor(code.complexity || 'straightforward')}>
-                        {code.complexity || 'straightforward'}
-                      </Badge>
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-sm font-medium">{code.code}</span>
+                          <Badge variant="outline" className={getComplexityColor(code.complexity || 'straightforward')}>
+                            {code.complexity || 'straightforward'}
+                          </Badge>
+                        </div>
+                        {code.modifiers && code.modifiers.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {code.modifiers.map((modifier, idx) => (
+                              <Badge 
+                                key={idx} 
+                                variant="secondary" 
+                                className="text-xs px-1 py-0 h-4 bg-blue-100 text-blue-800"
+                              >
+                                {modifier}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="font-medium">${rate.toFixed(2)}</div>

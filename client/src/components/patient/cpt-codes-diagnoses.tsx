@@ -36,6 +36,8 @@ interface CPTCode {
   complexity?: 'low' | 'moderate' | 'high' | 'straightforward';
   category?: string;
   baseRate?: number;
+  modifiers?: string[]; // CPT modifiers (e.g., ['25', '59', 'LT'])
+  modifierReasoning?: string; // GPT's reasoning for modifier selection
 }
 
 interface DiagnosisCode {
@@ -677,10 +679,25 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className="font-mono text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                    className="cursor-pointer hover:bg-gray-100 p-1 rounded space-y-1"
                                     onClick={() => startEditingCPT(cpt.id)}
                                   >
-                                    {cpt.code}
+                                    <div className="font-mono text-sm font-medium">
+                                      {cpt.code}
+                                    </div>
+                                    {cpt.modifiers && cpt.modifiers.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 justify-center">
+                                        {cpt.modifiers.map((modifier, idx) => (
+                                          <Badge 
+                                            key={idx} 
+                                            variant="secondary" 
+                                            className="text-xs px-1 py-0 h-4 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                          >
+                                            {modifier}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -691,6 +708,28 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                       <Badge variant="outline" className="mt-1">
                                         {cpt.complexity}
                                       </Badge>
+                                    )}
+                                    {cpt.modifiers && cpt.modifiers.length > 0 && (
+                                      <div className="mt-2">
+                                        <p className="text-xs font-medium mb-1">Modifiers:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {cpt.modifiers.map((modifier, idx) => (
+                                            <Badge 
+                                              key={idx} 
+                                              variant="secondary" 
+                                              className="text-xs bg-blue-100 text-blue-800"
+                                            >
+                                              {modifier}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {cpt.modifierReasoning && (
+                                      <div className="mt-2 pt-2 border-t">
+                                        <p className="text-xs font-medium mb-1">Modifier Rationale:</p>
+                                        <p className="text-xs text-gray-600">{cpt.modifierReasoning}</p>
+                                      </div>
                                     )}
                                   </div>
                                 </TooltipContent>
