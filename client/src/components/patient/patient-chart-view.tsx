@@ -52,7 +52,39 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
 
   // Handle URL parameters for navigation from vitals to attachments
   const [highlightAttachmentId, setHighlightAttachmentId] = useState<number | null>(null);
+  const [currentUrl, setCurrentUrl] = useState(window.location.href);
   
+  // Monitor URL changes
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setCurrentUrl(window.location.href);
+    };
+    
+    // Listen for popstate (back/forward buttons)
+    window.addEventListener('popstate', handleUrlChange);
+    
+    // Monitor for programmatic navigation
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    
+    history.pushState = function(...args) {
+      originalPushState.apply(history, args);
+      handleUrlChange();
+    };
+    
+    history.replaceState = function(...args) {
+      originalReplaceState.apply(history, args);
+      handleUrlChange();
+    };
+    
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+    };
+  }, []);
+  
+  // React to URL changes
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const section = urlParams.get('section');
@@ -81,7 +113,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
         setHighlightAttachmentId(null);
       }, 5000);
     }
-  }, []);
+  }, [currentUrl]);
 
   // Get current user to determine role-based routing
   const { data: currentUser } = useQuery({
