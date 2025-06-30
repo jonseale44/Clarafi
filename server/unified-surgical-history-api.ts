@@ -105,48 +105,72 @@ router.put("/surgical-history/:surgeryId",
     const surgeryId = parseInt(req.params.surgeryId);
     const updates = req.body;
 
+    console.log(`🏥 [SurgicalHistoryAPI] === UPDATE REQUEST START ===`);
+    console.log(`🏥 [SurgicalHistoryAPI] Surgery ID: ${surgeryId}`);
+    console.log(`🏥 [SurgicalHistoryAPI] Raw request body:`, JSON.stringify(updates, null, 2));
+
     if (!surgeryId) {
+      console.log(`🏥 [SurgicalHistoryAPI] ❌ Invalid surgery ID: ${req.params.surgeryId}`);
       return res.status(400).json({ error: "Valid surgery ID required" });
     }
 
-    console.log(`🏥 [SurgicalHistoryAPI] Updating surgery ${surgeryId}`);
-
     try {
+      console.log(`🏥 [SurgicalHistoryAPI] 🔄 Processing date conversions...`);
+      
       // Convert date strings to Date objects for database
       if (updates.procedureDate && typeof updates.procedureDate === 'string') {
+        const originalDate = updates.procedureDate;
         updates.procedureDate = new Date(updates.procedureDate);
+        console.log(`🏥 [SurgicalHistoryAPI] 📅 Converted procedureDate: "${originalDate}" → ${updates.procedureDate}`);
       }
       
       // Handle visit history date conversions
       if (updates.visitHistory && Array.isArray(updates.visitHistory)) {
-        updates.visitHistory = updates.visitHistory.map(visit => ({
-          ...visit,
-          date: typeof visit.date === 'string' ? visit.date : visit.date // Keep as string for JSON field
-        }));
+        console.log(`🏥 [SurgicalHistoryAPI] 📝 Processing ${updates.visitHistory.length} visit history entries...`);
+        updates.visitHistory = updates.visitHistory.map((visit, index) => {
+          console.log(`🏥 [SurgicalHistoryAPI] Visit ${index + 1}:`, JSON.stringify(visit, null, 2));
+          return {
+            ...visit,
+            date: typeof visit.date === 'string' ? visit.date : visit.date // Keep as string for JSON field
+          };
+        });
       }
       
       // Add timestamp to updates
       updates.updatedAt = new Date();
+      console.log(`🏥 [SurgicalHistoryAPI] 🕐 Added updatedAt timestamp: ${updates.updatedAt}`);
+
+      console.log(`🏥 [SurgicalHistoryAPI] 🔄 Final updates object:`, JSON.stringify(updates, null, 2));
 
       // Update using direct database query since this is manual editing
+      console.log(`🏥 [SurgicalHistoryAPI] 🗃️ Importing database modules...`);
       const { db } = await import("./db.js");
       const { surgicalHistory } = await import("../shared/schema.js");
       const { eq } = await import("drizzle-orm");
 
+      console.log(`🏥 [SurgicalHistoryAPI] 🔄 Executing database update...`);
       const result = await db
         .update(surgicalHistory)
         .set(updates)
         .where(eq(surgicalHistory.id, surgeryId))
         .returning();
 
+      console.log(`🏥 [SurgicalHistoryAPI] 📊 Database update result:`, JSON.stringify(result, null, 2));
+
       if (result.length === 0) {
+        console.log(`🏥 [SurgicalHistoryAPI] ❌ No rows updated - surgery ${surgeryId} not found`);
         return res.status(404).json({ error: "Surgical history entry not found" });
       }
 
-      console.log(`🏥 [SurgicalHistoryAPI] ✅ Updated surgery ${surgeryId}`);
+      console.log(`🏥 [SurgicalHistoryAPI] ✅ Successfully updated surgery ${surgeryId}`);
+      console.log(`🏥 [SurgicalHistoryAPI] === UPDATE REQUEST END ===`);
       res.json(result[0]);
     } catch (error) {
-      console.error(`🏥 [SurgicalHistoryAPI] Error updating surgical history:`, error);
+      console.error(`🏥 [SurgicalHistoryAPI] ❌ CRITICAL ERROR updating surgical history:`, error);
+      console.error(`🏥 [SurgicalHistoryAPI] ❌ Error name:`, error.name);
+      console.error(`🏥 [SurgicalHistoryAPI] ❌ Error message:`, error.message);
+      console.error(`🏥 [SurgicalHistoryAPI] ❌ Error stack:`, error.stack);
+      console.log(`🏥 [SurgicalHistoryAPI] === UPDATE REQUEST FAILED ===`);
       res.status(500).json({ error: "Failed to update surgical history" });
     }
   })
