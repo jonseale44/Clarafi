@@ -260,6 +260,64 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
     setEditingVisitHistory(prev => prev.filter(visit => visit.id !== visitId));
   };
 
+  // Helper component for editing visit notes
+  const EditableVisitNote = ({ visit, onSave, onCancel }: {
+    visit: any;
+    onSave: (updatedVisit: any) => void;
+    onCancel: () => void;
+  }) => {
+    const [editDate, setEditDate] = useState(visit.date);
+    const [editNotes, setEditNotes] = useState(visit.notes);
+
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-4 gap-3">
+          <Input
+            type="date"
+            value={editDate}
+            onChange={(e) => setEditDate(e.target.value)}
+          />
+          <div className="col-span-3">
+            <Textarea
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              rows={2}
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => onSave({ date: editDate, notes: editNotes })}>
+            Save
+          </Button>
+          <Button size="sm" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), "MMM d, yyyy");
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getSourceBadge = (source: string) => {
+    switch (source) {
+      case "encounter":
+        return <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">Encounter</Badge>;
+      case "attachment":
+        return <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">Document</Badge>;
+      case "manual":
+        return <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">Manual</Badge>;
+      default:
+        return null;
+    }
+  };
+
   const getOutcomeIcon = (outcome: string) => {
     switch (outcome) {
       case "successful": return <CheckCircle className="h-4 w-4 text-green-600" />;
@@ -549,9 +607,9 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                   {format(parseISO(surgery.procedureDate), "MMM d, yyyy")}
                                 </span>
                               )}
-                              {surgery.visitHistory?.length > 0 && (
+                              {(surgery.visitHistory?.length ?? 0) > 0 && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {surgery.visitHistory.length} visit{surgery.visitHistory.length === 1 ? '' : 's'}
+                                  {surgery.visitHistory?.length} visit{surgery.visitHistory?.length === 1 ? '' : 's'}
                                 </span>
                               )}
                               {surgery.surgeonName && (
@@ -765,6 +823,94 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                   onChange={(e) => setEditingSurgery({ ...editingSurgery, complications: e.target.value })}
                   rows={2}
                 />
+              </div>
+
+              {/* Visit History Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Visit History</h3>
+                  <p className="text-sm text-gray-500">Chronological notes for this procedure</p>
+                </div>
+
+                {/* Add New Visit Note */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Visit Note
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-4 gap-3">
+                      <Input
+                        type="date"
+                        value={newVisitNote.date}
+                        onChange={(e) => setNewVisitNote(prev => ({ ...prev, date: e.target.value }))}
+                        placeholder="Date"
+                      />
+                      <div className="col-span-3">
+                        <Textarea
+                          value={newVisitNote.notes}
+                          onChange={(e) => setNewVisitNote(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Clinical notes for this visit..."
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                    <Button type="button" onClick={addVisitNote} size="sm">
+                      Add Note
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Existing Visit Notes */}
+                <div className="space-y-3">
+                  {editingVisitHistory.map((visit) => (
+                    <Card key={visit.id || `${visit.date}-${visit.notes.substring(0, 10)}`}>
+                      <CardContent className="pt-4">
+                        {editingVisitId === visit.id ? (
+                          <EditableVisitNote
+                            visit={visit}
+                            onSave={(updatedVisit) => saveVisitEdit(visit.id!, updatedVisit)}
+                            onCancel={() => setEditingVisitId(null)}
+                          />
+                        ) : (
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Calendar className="h-4 w-4 text-gray-500" />
+                                <span className="font-medium">{formatDate(visit.date)}</span>
+                                {getSourceBadge(visit.source)}
+                                {visit.providerName && (
+                                  <span className="text-sm text-gray-500">by {visit.providerName}</span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700">{visit.notes}</p>
+                            </div>
+                            <div className="flex gap-1 ml-4">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => editVisitNote(visit.id!)}
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteVisitNote(visit.id!)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
 
               <div className="flex justify-end gap-2">
