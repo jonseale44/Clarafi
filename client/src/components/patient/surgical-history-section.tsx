@@ -569,25 +569,25 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                         mode
                                       );
                                     }}
-                                    title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
+                                    title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence)}%)`}
                                   >
-                                    Doc Extract {Math.round(surgery.sourceConfidence * 100)}%
+                                    Doc Extract {Math.round(surgery.sourceConfidence)}%
                                   </Badge>
                                 ) : (surgery.sourceType === "attachment_extracted" || surgery.sourceType === "attachment") ? (
                                   <Badge 
                                     variant="outline" 
                                     className="text-xs bg-purple-50 text-purple-700 border-purple-200"
-                                    title={`Document-extracted surgery (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
+                                    title={`Document-extracted surgery (Confidence: ${Math.round(surgery.sourceConfidence)}%)`}
                                   >
-                                    Document {Math.round(surgery.sourceConfidence * 100)}%
+                                    Document {Math.round(surgery.sourceConfidence)}%
                                   </Badge>
                                 ) : surgery.sourceType === "soap_derived" && surgery.sourceConfidence ? (
                                   <Badge 
                                     variant="outline" 
                                     className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                    title={`SOAP-derived surgery (Confidence: ${Math.round(surgery.sourceConfidence * 100)}%)`}
+                                    title={`SOAP-derived surgery (Confidence: ${Math.round(surgery.sourceConfidence)}%)`}
                                   >
-                                    SOAP {Math.round(surgery.sourceConfidence * 100)}%
+                                    SOAP {Math.round(surgery.sourceConfidence)}%
                                   </Badge>
                                 ) : (
                                   <Badge 
