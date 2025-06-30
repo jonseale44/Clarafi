@@ -569,10 +569,10 @@ Analyze the document and return appropriate surgical history changes:`;
       change.source_type
     );
 
-    const newVisitEntry: UnifiedSurgicalVisitHistoryEntry = {
+    const newVisitEntry = {
       date: visitDate,
       notes: change.visit_notes || `Surgery discussed: ${existingSurgery.procedureName}`,
-      source: change.source_type === "attachment" ? "attachment" : "encounter",
+      source: change.source_type === "attachment" ? "attachment" as const : "encounter" as const,
       encounterId: encounterId || undefined,
       attachmentId: attachmentId || undefined,
       confidence: change.confidence,
@@ -664,7 +664,7 @@ Analyze the document and return appropriate surgical history changes:`;
       procedureName: change.procedure_name!,
       procedureDate: oldSurgery.procedureDate, // Preserve original surgery date
       sourceType: change.source_type,
-      sourceConfidence: change.confidence,
+      sourceConfidence: change.confidence.toString(),
       visitHistory: transferredHistory,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -711,9 +711,8 @@ Analyze the document and return appropriate surgical history changes:`;
     await db
       .update(surgicalHistory)
       .set({
-        procedureDate: new Date(change.date_change.to),
+        procedureDate: change.date_change.to,
         visitHistory,
-        updatedAt: new Date(),
       })
       .where(eq(surgicalHistory.id, change.surgery_id));
 
