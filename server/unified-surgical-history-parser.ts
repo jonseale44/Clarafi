@@ -15,21 +15,15 @@ import { eq, and, desc } from "drizzle-orm";
 import { PatientChartService } from "./patient-chart-service.js";
 
 export interface UnifiedSurgicalVisitHistoryEntry {
-  date: string; // DP - authoritative medical event date
-  notes: string;
-  source: "encounter" | "attachment" | "manual" | "imported_record";
-  encounterId?: number;
-  attachmentId?: number;
-  providerId?: number;
-  providerName?: string;
-  cptCodeAtVisit?: string;
-  icd10AtVisit?: string;
-  changesMade?: string[];
-  confidence?: number;
-  isSigned?: boolean;
-  signedAt?: string;
-  sourceConfidence?: number;
-  sourceNotes?: string;
+  date: string; // YYYY-MM-DD format
+  notes: string; // Clinical notes about surgery discussion/follow-up
+  source: "encounter" | "attachment"; // Source of this visit entry - MUST match schema
+  encounterId?: number; // Reference to encounter if source is encounter
+  attachmentId?: number; // Reference to attachment if source is attachment
+  changesMade?: string[]; // Array of changes made (e.g., 'date_corrected', 'surgeon_updated', 'complications_noted')
+  confidence?: number; // AI confidence in extraction (0.0-1.0)
+  isSigned?: boolean; // Provider signature status
+  sourceNotes?: string; // Additional context from extraction source
 }
 
 export interface UnifiedSurgicalChange {
@@ -505,10 +499,10 @@ Analyze the document and return appropriate surgical history changes:`;
     }
 
     // Create initial visit history entry
-    const initialVisitEntry: UnifiedSurgicalVisitHistoryEntry = {
+    const initialVisitEntry = {
       date: visitDate,
       notes: change.visit_notes || `Surgical procedure: ${change.procedure_name}`,
-      source: change.source_type === "attachment" ? "attachment" : "encounter",
+      source: change.source_type === "attachment" ? "attachment" as const : "encounter" as const,
       encounterId: encounterId || undefined,
       attachmentId: attachmentId || undefined,
       confidence: change.confidence,
@@ -519,9 +513,9 @@ Analyze the document and return appropriate surgical history changes:`;
     await db.insert(surgicalHistory).values({
       patientId,
       procedureName: change.procedure_name!,
-      procedureDate: change.extracted_date ? new Date(change.extracted_date) : null,
+      procedureDate: change.extracted_date || null,
       sourceType: change.source_type,
-      sourceConfidence: change.confidence,
+      sourceConfidence: change.confidence.toString(),
       visitHistory: [initialVisitEntry],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -808,229 +802,6 @@ Analyze the document and return appropriate surgical history changes:`;
       
       return true; // Keep all other entries
     });
-  }
-}
-
-// Export singleton instance
-export const unifiedSurgicalHistoryParser = new UnifiedSurgicalHistoryParser();
-    try {
-      const action = surgery.action;
-      console.log(`🏥 [UnifiedSurgicalHistory] Processing ${action}: ${surgery.procedure_name}`);
-
-      if (action === "NEW_SURGERY") {
-        return await this.createNewSurgery(surgery, patientId, encounterId, attachmentId, providerId);
-      } else if (action === "UPDATE_EXISTING" || action === "CONSOLIDATE") {
-        return await this.updateExistingSurgery(surgery, patientId, encounterId, attachmentId, providerId);
-      } else {
-        console.warn(`🏥 [UnifiedSurgicalHistory] ⚠️ Unknown action: ${action}`);
-        return null;
-      }
-
-    } catch (error) {
-      console.error(`🏥 [UnifiedSurgicalHistory] ❌ Error processing surgery:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Create new surgical history entry
-   */
-  private async createNewSurgery(
-    surgery: any,
-    patientId: number,
-    encounterId: number | null,
-    attachmentId: number | null,
-    providerId: number
-  ): Promise<any> {
-    
-    const surgeryData = {
-      patientId,
-      procedureName: surgery.procedure_name,
-      procedureDate: surgery.procedure_date || null,
-      surgeonName: surgery.surgeon_name || null,
-      facilityName: surgery.facility_name || null,
-      indication: surgery.indication || null,
-      complications: surgery.complications || null,
-      outcome: surgery.outcome || "successful",
-      anesthesiaType: surgery.anesthesia_type || null,
-      cptCode: surgery.cpt_code || null,
-      anatomicalSite: surgery.anatomical_site || null,
-      laterality: surgery.laterality || null,
-      urgencyLevel: surgery.urgency_level || null,
-      lengthOfStay: surgery.length_of_stay || null,
-      sourceType: surgery.source_type || "soap_derived",
-      sourceConfidence: surgery.source_confidence || 0.8,
-      sourceNotes: surgery.extraction_notes || null,
-      extractedFromAttachmentId: attachmentId,
-      lastUpdatedEncounter: encounterId,
-      enteredBy: providerId,
-      consolidationReasoning: surgery.consolidation_reasoning || null,
-      extractionNotes: surgery.extraction_notes || null,
-    };
-
-    console.log(`🏥 [UnifiedSurgicalHistory] 💾 Creating new surgery: ${surgery.procedure_name}`);
-    
-    const result = await db.insert(surgicalHistory).values([surgeryData]).returning();
-    
-    console.log(`🏥 [UnifiedSurgicalHistory] ✅ Created surgery ID: ${result[0].id}`);
-
-    return {
-      action: "NEW_SURGERY",
-      surgery_id: result[0].id,
-      procedure_name: surgery.procedure_name,
-      procedure_date: surgery.procedure_date,
-      surgeon_name: surgery.surgeon_name,
-      facility_name: surgery.facility_name,
-      consolidation_reasoning: surgery.consolidation_reasoning,
-      source_type: surgery.source_type,
-      extracted_date: surgery.procedure_date
-    };
-  }
-
-  /**
-   * Update existing surgical history entry with visit history tracking
-   */
-  private async updateExistingSurgery(
-    surgery: any,
-    patientId: number,
-    encounterId: number | null,
-    attachmentId: number | null,
-    providerId: number
-  ): Promise<any> {
-    
-    if (!surgery.surgery_id) {
-      console.error(`🏥 [UnifiedSurgicalHistory] ❌ No surgery_id provided for update`);
-      return null;
-    }
-
-    // Get existing surgery to track changes for visit history
-    const [existingSurgery] = await db
-      .select()
-      .from(surgicalHistory)
-      .where(eq(surgicalHistory.id, surgery.surgery_id));
-
-    if (!existingSurgery) {
-      console.error(`🏥 [UnifiedSurgicalHistory] ❌ Surgery ${surgery.surgery_id} not found`);
-      return null;
-    }
-
-    const updateData: any = {
-      lastUpdatedEncounter: encounterId,
-      updatedAt: new Date(),
-    };
-
-    // Track changes made for visit history entry
-    const changesMade: string[] = [];
-    
-    // Update fields that have new information and track changes
-    if (surgery.procedure_date && surgery.procedure_date !== existingSurgery.procedureDate) {
-      updateData.procedureDate = new Date(surgery.procedure_date);
-      changesMade.push('date_corrected');
-    }
-    if (surgery.surgeon_name && surgery.surgeon_name !== existingSurgery.surgeonName) {
-      updateData.surgeonName = surgery.surgeon_name;
-      changesMade.push('surgeon_updated');
-    }
-    if (surgery.facility_name && surgery.facility_name !== existingSurgery.facilityName) {
-      updateData.facilityName = surgery.facility_name;
-      changesMade.push('facility_updated');
-    }
-    if (surgery.indication && surgery.indication !== existingSurgery.indication) {
-      updateData.indication = surgery.indication;
-      changesMade.push('indication_updated');
-    }
-    if (surgery.complications && surgery.complications !== existingSurgery.complications) {
-      updateData.complications = surgery.complications;
-      changesMade.push('complications_noted');
-    }
-    if (surgery.outcome && surgery.outcome !== existingSurgery.outcome) {
-      updateData.outcome = surgery.outcome;
-      changesMade.push('outcome_updated');
-    }
-    if (surgery.anesthesia_type && surgery.anesthesia_type !== existingSurgery.anesthesiaType) {
-      updateData.anesthesiaType = surgery.anesthesia_type;
-      changesMade.push('anesthesia_updated');
-    }
-    if (surgery.anatomical_site && surgery.anatomical_site !== existingSurgery.anatomicalSite) {
-      updateData.anatomicalSite = surgery.anatomical_site;
-      changesMade.push('anatomical_site_updated');
-    }
-    if (surgery.laterality && surgery.laterality !== existingSurgery.laterality) {
-      updateData.laterality = surgery.laterality;
-      changesMade.push('laterality_updated');
-    }
-    if (surgery.cpt_code && surgery.cpt_code !== existingSurgery.cptCode) {
-      updateData.cptCode = surgery.cpt_code;
-      changesMade.push('cpt_code_updated');
-    }
-    
-    // Update consolidation reasoning
-    updateData.consolidationReasoning = surgery.consolidation_reasoning;
-    if (surgery.extraction_notes) updateData.extractionNotes = surgery.extraction_notes;
-
-    // Add visit history entry if there are actual changes or new information
-    if (changesMade.length > 0 || surgery.visit_notes) {
-      
-      // Determine appropriate date for visit history
-      let visitDate: string;
-      if (encounterId) {
-        // Use encounter date for SOAP note content
-        const encounter = await db
-          .select()
-          .from(encounters)
-          .where(eq(encounters.id, encounterId))
-          .limit(1);
-        const encounterDate = encounter[0]?.startTime || new Date();
-        visitDate = encounterDate.toISOString().split("T")[0];
-      } else {
-        // Fallback to current date for attachment processing
-        visitDate = new Date().toISOString().split("T")[0];
-      }
-
-      // Create visit history entry
-      const visitHistoryEntry = {
-        date: visitDate,
-        notes: surgery.visit_notes || `Updated surgical information: ${changesMade.join(', ')}`,
-        source: encounterId ? "encounter" as const : "attachment" as const,
-        encounterId: encounterId || undefined,
-        attachmentId: attachmentId || undefined,
-        changesMade: changesMade.length > 0 ? changesMade : ['routine_follow_up'],
-        confidence: surgery.source_confidence || 0.8,
-        isSigned: false,
-        sourceNotes: surgery.consolidation_reasoning || null,
-      };
-
-      // Add to existing visit history
-      const currentVisitHistory = Array.isArray(existingSurgery.visitHistory) 
-        ? existingSurgery.visitHistory 
-        : [];
-      
-      updateData.visitHistory = [...currentVisitHistory, visitHistoryEntry];
-      
-      console.log(`🏥 [UnifiedSurgicalHistory] 📝 Adding visit history entry: ${visitHistoryEntry.notes}`);
-    }
-
-    console.log(`🏥 [UnifiedSurgicalHistory] 💾 Updating surgery ID: ${surgery.surgery_id}`);
-    
-    await db
-      .update(surgicalHistory)
-      .set(updateData)
-      .where(eq(surgicalHistory.id, surgery.surgery_id));
-
-    console.log(`🏥 [UnifiedSurgicalHistory] ✅ Updated surgery ID: ${surgery.surgery_id} with ${changesMade.length} changes`);
-
-    return {
-      action: "UPDATE_EXISTING",
-      surgery_id: surgery.surgery_id,
-      procedure_name: surgery.procedure_name,
-      procedure_date: surgery.procedure_date,
-      surgeon_name: surgery.surgeon_name,
-      facility_name: surgery.facility_name,
-      consolidation_reasoning: surgery.consolidation_reasoning,
-      source_type: surgery.source_type,
-      extracted_date: surgery.procedure_date,
-      changes_made: changesMade
-    };
   }
 }
 
