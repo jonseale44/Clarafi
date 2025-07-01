@@ -741,6 +741,71 @@ export class AttachmentChartProcessor {
       console.log(`🔥 [SOCIAL HISTORY WORKFLOW] ============= SOCIAL HISTORY EXTRACTION FAILED =============`);
     }
   }
+
+  /**
+   * Process document for allergy extraction and consolidation
+   */
+  private async processDocumentForAllergies(
+    attachment: any,
+    extractedContent: any
+  ): Promise<void> {
+    console.log(`🔥 [ALLERGY WORKFLOW] ============= ALLERGY EXTRACTION =============`);
+    console.log(`🚨 [AllergyExtraction] Starting allergy analysis for attachment ${attachment.id}`);
+    console.log(`🚨 [AllergyExtraction] Processing content for patient ${attachment.patientId}`);
+
+    if (!extractedContent.extractedText || extractedContent.extractedText.length < 50) {
+      console.log(`🚨 [AllergyExtraction] ℹ️ Insufficient text content for allergy analysis, skipping`);
+      return;
+    }
+
+    try {
+      console.log(`🚨 [AllergyExtraction] 🔍 Starting unified allergy extraction for patient ${attachment.patientId}`);
+      console.log(`🚨 [AllergyExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+
+      const startTime = Date.now();
+
+      // Use the unified allergy parser for attachment processing
+      console.log(`🚨 [AllergyExtraction] 🔧 Using provider ID: 1 (hardcoded to match user)`);
+      const result = await this.allergyParser.processUnified(
+        attachment.patientId,
+        null, // No specific encounter ID for attachment
+        null, // No SOAP note text
+        extractedContent.extractedText, // Attachment content
+        attachment.id, // Attachment ID for source tracking
+        1, // Provider ID (Jonathan Seale)
+        "attachment_processing" // Trigger type
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`🚨 [AllergyExtraction] ✅ Successfully processed allergies in ${processingTime}ms`);
+      console.log(`🚨 [AllergyExtraction] ✅ Allergy entries affected: ${result.allergiesAffected}`);
+      console.log(`🚨 [AllergyExtraction] ✅ Encounter allergies: ${result.encounterAllergies}`);
+      console.log(`🚨 [AllergyExtraction] ✅ Attachment allergies: ${result.attachmentAllergies}`);
+
+      // Log individual changes for debugging
+      if (result.changes && result.changes.length > 0) {
+        console.log(`🚨 [AllergyExtraction] ✅ Changes made (${result.changes.length} total):`);
+        result.changes.forEach((change, index) => {
+          console.log(`🚨 [AllergyExtraction]   ${index + 1}. ${change.action}: ${change.allergen} - ${change.reaction || 'unknown reaction'}`);
+          console.log(`🚨 [AllergyExtraction]      Severity: ${change.severity || 'unknown'}`);
+          console.log(`🚨 [AllergyExtraction]      Confidence: ${change.confidence}`);
+          if (change.consolidationReason) {
+            console.log(`🚨 [AllergyExtraction]      Consolidation: ${change.consolidationReason}`);
+          }
+        });
+      } else {
+        console.log(`🚨 [AllergyExtraction] ℹ️ No allergy changes made - may be no allergy content or all information already documented`);
+      }
+
+      console.log(`🔥 [ALLERGY WORKFLOW] ============= ALLERGY EXTRACTION COMPLETE =============`);
+
+    } catch (error) {
+      console.error(`❌ [AllergyExtraction] Error processing allergies from attachment ${attachment.id}:`, error);
+      console.error(`❌ [AllergyExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [ALLERGY WORKFLOW] ============= ALLERGY EXTRACTION FAILED =============`);
+    }
+  }
 }
 
 // Export singleton instance
