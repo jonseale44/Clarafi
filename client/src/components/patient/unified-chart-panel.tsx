@@ -26,6 +26,7 @@ import {
   type ChartPanelConfig,
   type ChartPanelState 
 } from "@/lib/chart-sections";
+import { DenseViewToggle } from "@/components/ui/dense-view-toggle";
 
 interface UnifiedChartPanelProps {
   patient: Patient;
@@ -373,6 +374,11 @@ export function UnifiedChartPanel({
           </div>
         </div>
       )}
+
+      {/* Dense View Toggle */}
+      <div className="px-4 py-2 border-b border-gray-200 bg-gray-50/50">
+        <DenseViewToggle size="sm" />
+      </div>
 
       {/* Chart Sections */}
       <div className="flex-1 overflow-y-auto">

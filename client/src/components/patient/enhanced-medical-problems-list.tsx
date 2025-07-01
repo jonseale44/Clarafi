@@ -16,6 +16,7 @@ import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
 import { RankingWeightControls } from "./ranking-weight-controls";
 import { useLocation } from "wouter";
 import { useNavigationContext } from "@/hooks/use-navigation-context";
+import { useDenseView } from "@/hooks/use-dense-view";
 import { 
   calculateMedicalProblemRanking, 
   assignPriorityLevels,
@@ -138,6 +139,7 @@ export function EnhancedMedicalProblemsList({
   const [, setLocation] = useLocation();
   const { navigateWithContext } = useNavigationContext();
   const { uploadState } = useUpload();
+  const { isDenseView } = useDenseView();
   
   // Check if upload is for current patient to show loading overlay
   const isUploadingForThisPatient = uploadState.isUploading && uploadState.patientId === patientId;
