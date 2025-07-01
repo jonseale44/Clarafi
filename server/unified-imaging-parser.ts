@@ -320,9 +320,15 @@ Return a JSON object with this exact structure:
 **IMPORTANT**: Only extract actual imaging RESULTS, not orders or recommendations. Focus on clean clinical summaries suitable for provider chart review.`;
 
     try {
-      console.log(
-        `🤖 [UnifiedImagingParser] Sending request to GPT-4.1-mini...`,
-      );
+      console.log(`🤖 [IMAGING WORKFLOW] ======== STARTING GPT PROCESSING ========`);
+      console.log(`🤖 [IMAGING WORKFLOW] Model: gpt-4.1-nano`);
+      console.log(`🤖 [IMAGING WORKFLOW] Content length: ${content.length} characters`);
+      console.log(`🤖 [IMAGING WORKFLOW] Existing imaging count: ${existingImaging.length}`);
+      console.log(`🤖 [IMAGING WORKFLOW] Trigger type: ${triggerType}`);
+      console.log(`🤖 [IMAGING WORKFLOW] Context: ${JSON.stringify(context)}`);
+      console.log(`🤖 [IMAGING WORKFLOW] Content preview: "${content.substring(0, 500)}..."`);
+      console.log(`🤖 [IMAGING WORKFLOW] Prompt length: ${prompt.length} characters`);
+      console.log(`🤖 [IMAGING WORKFLOW] Sending request to GPT-4.1-nano...`);
 
       const completion = await this.openai.chat.completions.create({
         model: "gpt-4.1-nano",
@@ -336,14 +342,35 @@ Return a JSON object with this exact structure:
         throw new Error("No response from GPT");
       }
 
-      console.log(
-        `🤖 [UnifiedImagingParser] GPT response received, parsing JSON...`,
-      );
+      console.log(`🤖 [IMAGING WORKFLOW] ======== GPT RESPONSE RECEIVED ========`);
+      console.log(`🤖 [IMAGING WORKFLOW] Response length: ${response.length} characters`);
+      console.log(`🤖 [IMAGING WORKFLOW] Response preview: "${response.substring(0, 1000)}..."`);
+      console.log(`🤖 [IMAGING WORKFLOW] Parsing JSON response...`);
+      
       const result = JSON.parse(response);
-      console.log(
-        `🤖 [UnifiedImagingParser] Parsed successfully - ${result.changes?.length || 0} changes`,
-      );
-
+      
+      console.log(`🤖 [IMAGING WORKFLOW] ======== JSON PARSED SUCCESSFULLY ========`);
+      console.log(`🤖 [IMAGING WORKFLOW] Changes found: ${result.changes?.length || 0}`);
+      console.log(`🤖 [IMAGING WORKFLOW] Total affected: ${result.total_imaging_affected || 0}`);
+      console.log(`🤖 [IMAGING WORKFLOW] Extraction confidence: ${result.extraction_confidence || 0}%`);
+      console.log(`🤖 [IMAGING WORKFLOW] Processing notes: "${result.processing_notes || 'None'}"`);
+      
+      if (result.changes?.length > 0) {
+        result.changes.forEach((change, index) => {
+          console.log(`🤖 [IMAGING WORKFLOW] Change #${index + 1}:`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Action: ${change.action}`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Modality: ${change.modality}`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Body Part: ${change.body_part}`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Clinical Summary: ${change.clinical_summary}`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Study Date: ${change.study_date}`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Confidence: ${change.confidence}`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Source Type: ${change.source_type}`);
+        });
+      } else {
+        console.log(`🤖 [IMAGING WORKFLOW] No changes detected by GPT`);
+      }
+      
+      console.log(`🤖 [IMAGING WORKFLOW] ======== GPT PROCESSING COMPLETE ========`);
       return result;
     } catch (error) {
       console.error(`❌ [UnifiedImagingParser] GPT processing failed:`, error);
