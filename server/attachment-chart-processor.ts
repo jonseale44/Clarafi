@@ -81,19 +81,20 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Process vitals, medical problems, surgical history, family history, social history, and allergies in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies`);
+      // Process vitals, medical problems, surgical history, family history, social history, allergies, and medications in parallel for efficiency
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies + medications`);
       const parallelStartTime = Date.now();
       
-      // Process all six chart sections in parallel for efficiency
+      // Process all seven chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult, medicationsResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
           this.processDocumentForMedicalProblems(attachment, extractedContent),
           this.processDocumentForSurgicalHistory(attachment, extractedContent),
           this.processDocumentForFamilyHistory(attachment, extractedContent),
           this.processDocumentForSocialHistory(attachment, extractedContent),
-          this.processDocumentForAllergies(attachment, extractedContent)
+          this.processDocumentForAllergies(attachment, extractedContent),
+          this.processDocumentForMedications(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
