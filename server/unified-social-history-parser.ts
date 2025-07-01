@@ -350,6 +350,12 @@ Process the content and return ONLY the JSON response with social history findin
     triggerType: string
   ) {
     console.log(`🚬 [UnifiedSocialHistory] 💾 Applying ${changes.length} changes to database`);
+    console.log(`🚬 [UnifiedSocialHistory] 🔧 Database operation parameters:`);
+    console.log(`🚬 [UnifiedSocialHistory] 🔧   - patientId: ${patientId}`);
+    console.log(`🚬 [UnifiedSocialHistory] 🔧   - encounterId: ${encounterId}`);
+    console.log(`🚬 [UnifiedSocialHistory] 🔧   - attachmentId: ${attachmentId}`);
+    console.log(`🚬 [UnifiedSocialHistory] 🔧   - providerId: ${providerId} (THIS SHOULD BE 1, NOT 2)`);
+    console.log(`🚬 [UnifiedSocialHistory] 🔧   - triggerType: ${triggerType}`);
 
     const appliedChanges = [];
     let socialHistoryAffected = 0;
@@ -368,6 +374,18 @@ Process the content and return ONLY the JSON response with social history findin
 
         if (change.action === "create") {
           // Create new social history entry
+          console.log(`🚬 [UnifiedSocialHistory] 🔧 CREATE OPERATION - About to insert with enteredBy: ${providerId}`);
+          console.log(`🚬 [UnifiedSocialHistory] 🔧 CREATE VALUES OBJECT:`, {
+            patientId,
+            category: change.category,
+            currentStatus: change.currentStatus,
+            historyNotes: change.historyNotes,
+            lastUpdatedEncounter: encounterId,
+            sourceType: attachmentId ? "attachment_extracted" : "soap_derived",
+            sourceConfidence: change.confidence.toString(),
+            extractedFromAttachmentId: attachmentId,
+            enteredBy: providerId,
+          });
           const newEntry = await db.insert(socialHistory).values({
             patientId,
             category: change.category,

@@ -114,8 +114,10 @@ Preferred communication style: Simple, everyday language.
 - **ROOT CAUSE IDENTIFIED**: System was referencing non-existent user ID 2 instead of existing user ID 1 (jonseale) in multiple locations
 - **COMPREHENSIVE USER ID FIXES**: Updated hardcoded user ID references in:
   - `attachment-chart-processor.ts` line 530: `enteredBy: 1` (was 2)
+  - `attachment-chart-processor.ts` line 696: `providerId: 1` (was 2) - social history processing
   - `unified-social-history-api.ts` line 171: `enteredBy: 1` (was 2) 
   - `unified-social-history-parser.ts` line 65: `providerId: 1` (was 2)
+  - `lab-workflow-service.ts` line 126: `providerId: 1` (was 2) - critical lab encounter creation
 - **ENHANCED ERROR LOGGING**: Comprehensive logging system captures detailed database constraint violation information across all 5 parallel processing sections
 - **VERIFIED ATTACHMENT PROCESSING**: Foreign key constraints resolved - social history parsing 4 changes, medical problems processing successfully
 - **NEW NUMERIC PRECISION ISSUES IDENTIFIED**: Error code 22003 in confidence fields with precision 3,2 receiving values >= 10

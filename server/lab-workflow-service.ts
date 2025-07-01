@@ -120,9 +120,10 @@ export class LabWorkflowService {
     if (!recentEncounters.length) {
       console.log(`⚠️ [Lab Workflow] No existing encounter found, creating new one for critical result`);
       // If no encounter exists, create a minimal one
+      console.log(`⚠️ [Lab Workflow] Creating encounter with provider ID: 1 (was hardcoded to 2, now fixed)`);
       const [encounter] = await db.insert(encounters).values({
         patientId: patientId,
-        providerId: 2,
+        providerId: 1, // FIXED: was 2, now 1 (Jonathan Seale)
         encounterType: 'lab_review',
         chiefComplaint: `Critical lab result review - Result ID: ${resultId}`,
         note: `Critical lab result requiring immediate attention and follow-up.`

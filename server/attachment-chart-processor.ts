@@ -687,13 +687,14 @@ export class AttachmentChartProcessor {
       const startTime = Date.now();
 
       // Use the unified social history parser for attachment processing
+      console.log(`🚭 [SocialHistoryExtraction] 🔧 Using provider ID: 1 (was hardcoded to 2, now fixed)`);
       const result = await unifiedSocialHistoryParser.processUnified(
         attachment.patientId,
         null, // No specific encounter ID for attachment
         null, // No SOAP note text
         extractedContent.extractedText, // Attachment content
         attachment.id, // Attachment ID for source tracking
-        2, // Provider ID (Jonathan Seale)
+        1, // Provider ID (Jonathan Seale) - FIXED: was 2, now 1
         "attachment_processing" // Trigger type
       );
 
