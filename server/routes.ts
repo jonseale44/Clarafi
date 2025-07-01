@@ -15,6 +15,7 @@ import dashboardRoutes from "./dashboard-routes";
 // Removed orphaned enhanced-medical-problems-routes - functionality moved to unified API
 import unifiedMedicalProblemsRoutes from "./unified-medical-problems-api";
 import unifiedSurgicalHistoryRoutes from "./unified-surgical-history-api";
+import { unifiedFamilyHistoryRoutes } from "./unified-family-history-api";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
 import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";

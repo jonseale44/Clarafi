@@ -542,6 +542,40 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(familyHistory.updatedAt));
   }
 
+  async createFamilyHistory(data: any): Promise<any> {
+    const [created] = await db.insert(familyHistory).values(data).returning();
+    return created;
+  }
+
+  async updateFamilyHistory(id: number, data: any): Promise<any> {
+    const [updated] = await db.update(familyHistory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(familyHistory.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteFamilyHistory(id: number): Promise<void> {
+    await db.delete(familyHistory).where(eq(familyHistory.id, id));
+  }
+
+  async addFamilyHistoryVisitHistory(familyHistoryId: number, visitEntry: any): Promise<void> {
+    // Get current visit history
+    const [current] = await db.select({ visitHistory: familyHistory.visitHistory })
+      .from(familyHistory)
+      .where(eq(familyHistory.id, familyHistoryId));
+    
+    const currentVisitHistory = current?.visitHistory || [];
+    const newVisitHistory = [...currentVisitHistory, visitEntry];
+    
+    await db.update(familyHistory)
+      .set({ 
+        visitHistory: newVisitHistory,
+        updatedAt: new Date()
+      })
+      .where(eq(familyHistory.id, familyHistoryId));
+  }
+
   async getPatientMedicalHistory(patientId: number): Promise<any[]> {
     return await db.select().from(medicalHistory)
       .where(eq(medicalHistory.patientId, patientId))

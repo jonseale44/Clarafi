@@ -321,9 +321,26 @@ export const encounters = pgTable("encounters", {
 export const familyHistory = pgTable("family_history", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
-  familyMember: text("family_member").notNull(), // 'father', 'mother', 'brother'
+  familyMember: text("family_member").notNull(), // 'father', 'mother', 'brother', 'sister', 'son', 'daughter', 'grandmother', 'grandfather'
   medicalHistory: text("medical_history"), // "DM2, h/o CAD, died of MI at age 70"
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  
+  // Visit history tracking for family history updates over time
+  visitHistory: jsonb("visit_history").$type<Array<{
+    date: string; // Medical event date
+    notes: string; // Visit notes about family history changes
+    source: "encounter" | "attachment" | "manual" | "imported_record";
+    encounterId?: number;
+    attachmentId?: number;
+    providerId?: number;
+    providerName?: string;
+    changesMade?: string[]; // What was updated in this visit
+    confidence?: number;
+    isSigned?: boolean;
+    signedAt?: string;
+    sourceConfidence?: number;
+    sourceNotes?: string;
+  }>>(),
   
   // Source tracking for multi-source family history data
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'family_reported', 'imported_records'
