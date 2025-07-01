@@ -34,7 +34,12 @@ export interface UnifiedAllergyVisitEntry {
 }
 
 export interface UnifiedAllergyChange {
-  action: "create" | "update" | "consolidate" | "resolve_conflict" | "document_nkda";
+  action:
+    | "create"
+    | "update"
+    | "consolidate"
+    | "resolve_conflict"
+    | "document_nkda";
   allergen: string;
   reaction?: string;
   severity?: string;
@@ -54,7 +59,7 @@ export class UnifiedAllergyParser {
 
   constructor() {
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: process.env.OPENAI_API_KEY,
     });
   }
 
@@ -69,18 +74,32 @@ export class UnifiedAllergyParser {
       encounterId?: number;
       attachmentId?: number;
       triggerType: "stop_recording" | "attachment_processing" | "manual_save";
-    }
+    },
   ) {
-    const { soapNote, attachmentContent, encounterId, attachmentId, triggerType } = options;
+    const {
+      soapNote,
+      attachmentContent,
+      encounterId,
+      attachmentId,
+      triggerType,
+    } = options;
 
-    console.log(`🚨 [UnifiedAllergy] Starting unified allergy processing for patient ${patientId}`);
-    console.log(`🚨 [UnifiedAllergy] Trigger: ${triggerType}, EncounterID: ${encounterId}, AttachmentID: ${attachmentId}`);
+    console.log(
+      `🚨 [UnifiedAllergy] Starting unified allergy processing for patient ${patientId}`,
+    );
+    console.log(
+      `🚨 [UnifiedAllergy] Trigger: ${triggerType}, EncounterID: ${encounterId}, AttachmentID: ${attachmentId}`,
+    );
 
     if (soapNote) {
-      console.log(`🚨 [UnifiedAllergy] SOAP note content preview: "${soapNote.substring(0, 200)}..."`);
+      console.log(
+        `🚨 [UnifiedAllergy] SOAP note content preview: "${soapNote.substring(0, 200)}..."`,
+      );
     }
     if (attachmentContent) {
-      console.log(`🚨 [UnifiedAllergy] Attachment content preview: "${attachmentContent.substring(0, 200)}..."`);
+      console.log(
+        `🚨 [UnifiedAllergy] Attachment content preview: "${attachmentContent.substring(0, 200)}..."`,
+      );
     }
 
     if (!soapNote && !attachmentContent) {
@@ -97,14 +116,22 @@ export class UnifiedAllergyParser {
     try {
       // Get existing allergies for consolidation and conflict detection
       const existingAllergies = await this.getExistingAllergies(patientId);
-      console.log(`🚨 [UnifiedAllergy] Found ${existingAllergies.length} existing allergy entries for patient ${patientId}`);
+      console.log(
+        `🚨 [UnifiedAllergy] Found ${existingAllergies.length} existing allergy entries for patient ${patientId}`,
+      );
 
       // Get patient chart context for intelligent extraction
-      const patientChart = await PatientChartService.getPatientChartData(patientId);
-      console.log(`🚨 [UnifiedAllergy] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`);
+      const patientChart =
+        await PatientChartService.getPatientChartData(patientId);
+      console.log(
+        `🚨 [UnifiedAllergy] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`,
+      );
 
       // Prepare combined content for GPT analysis
-      const combinedContent = this.prepareCombinedContent(soapNote, attachmentContent);
+      const combinedContent = this.prepareCombinedContent(
+        soapNote,
+        attachmentContent,
+      );
       const patientContextForGPT = this.formatPatientChartForGPT(patientChart);
 
       // Process with GPT-4.1 for allergy extraction
@@ -114,23 +141,31 @@ export class UnifiedAllergyParser {
         existingAllergies,
         triggerType,
         encounterId,
-        attachmentId
+        attachmentId,
       );
 
-      console.log(`🚨 [UnifiedAllergy] GPT processed ${gptResponse.length} allergy changes`);
+      console.log(
+        `🚨 [UnifiedAllergy] GPT processed ${gptResponse.length} allergy changes`,
+      );
 
       // Apply changes to database
-      const processedChanges = await this.applyAllergyChanges(gptResponse, patientId, encounterId);
+      const processedChanges = await this.applyAllergyChanges(
+        gptResponse,
+        patientId,
+        encounterId,
+      );
 
-      const encounterAllergies = processedChanges.filter(change => 
-        change.visitEntry.source === 'encounter'
+      const encounterAllergies = processedChanges.filter(
+        (change) => change.visitEntry.source === "encounter",
       ).length;
 
-      const attachmentAllergies = processedChanges.filter(change => 
-        change.visitEntry.source === 'attachment'
+      const attachmentAllergies = processedChanges.filter(
+        (change) => change.visitEntry.source === "attachment",
       ).length;
 
-      console.log(`🚨 [UnifiedAllergy] ✅ Processing complete: ${processedChanges.length} total changes, ${encounterAllergies} from encounter, ${attachmentAllergies} from attachment`);
+      console.log(
+        `🚨 [UnifiedAllergy] ✅ Processing complete: ${processedChanges.length} total changes, ${encounterAllergies} from encounter, ${attachmentAllergies} from attachment`,
+      );
 
       return {
         success: true,
@@ -139,12 +174,14 @@ export class UnifiedAllergyParser {
         encounterAllergies,
         attachmentAllergies,
       };
-
     } catch (error) {
-      console.error('🚨 [UnifiedAllergy] ❌ Error processing allergies:', error);
+      console.error(
+        "🚨 [UnifiedAllergy] ❌ Error processing allergies:",
+        error,
+      );
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         changes: [],
         allergiesAffected: 0,
         encounterAllergies: 0,
@@ -162,14 +199,17 @@ export class UnifiedAllergyParser {
     existingAllergies: any[],
     triggerType: string,
     encounterId?: number,
-    attachmentId?: number
+    attachmentId?: number,
   ): Promise<UnifiedAllergyChange[]> {
-    
-    const existingAllergiesContext = existingAllergies.length > 0 
-      ? existingAllergies.map(allergy => 
-          `- ${allergy.allergen}: ${allergy.reaction || 'reaction not specified'} (${allergy.severity || 'severity unknown'}) - Status: ${allergy.status}, Type: ${allergy.allergyType || 'unknown'}`
-        ).join('\n')
-      : 'No existing allergies documented';
+    const existingAllergiesContext =
+      existingAllergies.length > 0
+        ? existingAllergies
+            .map(
+              (allergy) =>
+                `- ${allergy.allergen}: ${allergy.reaction || "reaction not specified"} (${allergy.severity || "severity unknown"}) - Status: ${allergy.status}, Type: ${allergy.allergyType || "unknown"}`,
+            )
+            .join("\n")
+        : "No existing allergies documented";
 
     const prompt = `You are an expert clinical allergist with 20+ years of experience in allergy documentation and drug safety. Process the following clinical content to extract and manage allergy information with sophisticated temporal awareness and conflict resolution.
 
@@ -252,10 +292,10 @@ RESPONSE FORMAT (JSON Array):
     "consolidationReason": "Combined PCN and Amoxicillin into Penicillins class",
     "confidence": 0.95,
     "visitEntry": {
-      "date": "${new Date().toLocaleDateString('en-CA')}",
+      "date": "${new Date().toLocaleDateString("en-CA")}",
       "notes": "Patient reports penicillin allergy causing rash and hives, moderate severity",
-      "source": "${triggerType === 'attachment_processing' ? 'attachment' : 'encounter'}",
-      ${attachmentId ? `"attachmentId": ${attachmentId},` : ''}
+      "source": "${triggerType === "attachment_processing" ? "attachment" : "encounter"}",
+      ${attachmentId ? `"attachmentId": ${attachmentId},` : ""}
       "changesMade": ["allergy_documented", "severity_specified", "reaction_detailed"],
       "confidence": 0.95,
       "conflictResolution": "No temporal conflicts - first documentation of this allergy"
@@ -270,32 +310,33 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 4000,
+        max_tokens: 30000,
       });
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
-        console.log('🚨 [UnifiedAllergy] No content returned from GPT');
+        console.log("🚨 [UnifiedAllergy] No content returned from GPT");
         return [];
       }
 
       // Parse GPT response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
-        console.log('🚨 [UnifiedAllergy] No JSON array found in GPT response');
+        console.log("🚨 [UnifiedAllergy] No JSON array found in GPT response");
         return [];
       }
 
       const changes: UnifiedAllergyChange[] = JSON.parse(jsonMatch[0]);
-      console.log(`🚨 [UnifiedAllergy] GPT extracted ${changes.length} allergy changes`);
+      console.log(
+        `🚨 [UnifiedAllergy] GPT extracted ${changes.length} allergy changes`,
+      );
 
       return changes;
-
     } catch (error) {
-      console.error('🚨 [UnifiedAllergy] Error with GPT processing:', error);
+      console.error("🚨 [UnifiedAllergy] Error with GPT processing:", error);
       return [];
     }
   }
@@ -306,7 +347,7 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
   private async applyAllergyChanges(
     changes: UnifiedAllergyChange[],
     patientId: number,
-    encounterId?: number
+    encounterId?: number,
   ): Promise<UnifiedAllergyChange[]> {
     const processedChanges: UnifiedAllergyChange[] = [];
 
@@ -314,57 +355,78 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
       try {
         let allergyId: number;
 
-        if (change.action === 'create' || change.action === 'document_nkda') {
+        if (change.action === "create" || change.action === "document_nkda") {
           // Create new allergy record
-          const [newAllergy] = await db.insert(allergies).values({
-            patientId,
-            allergen: change.allergen,
-            reaction: change.reaction || null,
-            severity: change.severity || null,
-            allergyType: change.allergyType || null,
-            status: change.status || 'active',
-            verificationStatus: 'unconfirmed',
-            drugClass: change.drugClass || null,
-            crossReactivity: change.crossReactivity || null,
-            sourceType: change.visitEntry.source === 'attachment' ? 'attachment_extracted' : 'soap_derived',
-            sourceConfidence: change.confidence.toString(),
-            extractedFromAttachmentId: change.visitEntry.attachmentId || null,
-            lastUpdatedEncounter: encounterId || null,
-            enteredBy: 1, // Default user ID
-            consolidationReasoning: change.consolidationReason || null,
-            temporalConflictResolution: change.temporalConflictResolution || null,
-            visitHistory: [change.visitEntry],
-          }).returning();
+          const [newAllergy] = await db
+            .insert(allergies)
+            .values({
+              patientId,
+              allergen: change.allergen,
+              reaction: change.reaction || null,
+              severity: change.severity || null,
+              allergyType: change.allergyType || null,
+              status: change.status || "active",
+              verificationStatus: "unconfirmed",
+              drugClass: change.drugClass || null,
+              crossReactivity: change.crossReactivity || null,
+              sourceType:
+                change.visitEntry.source === "attachment"
+                  ? "attachment_extracted"
+                  : "soap_derived",
+              sourceConfidence: change.confidence.toString(),
+              extractedFromAttachmentId: change.visitEntry.attachmentId || null,
+              lastUpdatedEncounter: encounterId || null,
+              enteredBy: 1, // Default user ID
+              consolidationReasoning: change.consolidationReason || null,
+              temporalConflictResolution:
+                change.temporalConflictResolution || null,
+              visitHistory: [change.visitEntry],
+            })
+            .returning();
 
           allergyId = newAllergy.id;
-          console.log(`🚨 [UnifiedAllergy] Created new allergy record: ${change.allergen} (ID: ${allergyId})`);
-
-        } else if (change.action === 'update' || change.action === 'consolidate' || change.action === 'resolve_conflict') {
+          console.log(
+            `🚨 [UnifiedAllergy] Created new allergy record: ${change.allergen} (ID: ${allergyId})`,
+          );
+        } else if (
+          change.action === "update" ||
+          change.action === "consolidate" ||
+          change.action === "resolve_conflict"
+        ) {
           // Update existing allergy record
           const existingAllergyId = change.existingRecordId;
           if (!existingAllergyId) {
-            console.error(`🚨 [UnifiedAllergy] No existing record ID for update action: ${change.allergen}`);
+            console.error(
+              `🚨 [UnifiedAllergy] No existing record ID for update action: ${change.allergen}`,
+            );
             continue;
           }
 
           // Get current visit history
-          const [existingRecord] = await db.select()
+          const [existingRecord] = await db
+            .select()
             .from(allergies)
             .where(eq(allergies.id, existingAllergyId));
 
           if (!existingRecord) {
-            console.error(`🚨 [UnifiedAllergy] Existing allergy record not found: ${existingAllergyId}`);
+            console.error(
+              `🚨 [UnifiedAllergy] Existing allergy record not found: ${existingAllergyId}`,
+            );
             continue;
           }
 
-          const currentVisitHistory = Array.isArray(existingRecord.visitHistory) 
-            ? existingRecord.visitHistory 
+          const currentVisitHistory = Array.isArray(existingRecord.visitHistory)
+            ? existingRecord.visitHistory
             : [];
 
-          const updatedVisitHistory = [...currentVisitHistory, change.visitEntry];
+          const updatedVisitHistory = [
+            ...currentVisitHistory,
+            change.visitEntry,
+          ];
 
           // Update the record
-          await db.update(allergies)
+          await db
+            .update(allergies)
             .set({
               allergen: change.allergen,
               reaction: change.reaction || existingRecord.reaction,
@@ -372,24 +434,34 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
               allergyType: change.allergyType || existingRecord.allergyType,
               status: change.status || existingRecord.status,
               drugClass: change.drugClass || existingRecord.drugClass,
-              crossReactivity: change.crossReactivity || existingRecord.crossReactivity,
+              crossReactivity:
+                change.crossReactivity || existingRecord.crossReactivity,
               sourceConfidence: change.confidence.toString(),
-              lastUpdatedEncounter: encounterId || existingRecord.lastUpdatedEncounter,
-              consolidationReasoning: change.consolidationReason || existingRecord.consolidationReasoning,
-              temporalConflictResolution: change.temporalConflictResolution || existingRecord.temporalConflictResolution,
+              lastUpdatedEncounter:
+                encounterId || existingRecord.lastUpdatedEncounter,
+              consolidationReasoning:
+                change.consolidationReason ||
+                existingRecord.consolidationReasoning,
+              temporalConflictResolution:
+                change.temporalConflictResolution ||
+                existingRecord.temporalConflictResolution,
               visitHistory: updatedVisitHistory,
               updatedAt: new Date(),
             })
             .where(eq(allergies.id, existingAllergyId));
 
           allergyId = existingAllergyId;
-          console.log(`🚨 [UnifiedAllergy] Updated existing allergy record: ${change.allergen} (ID: ${allergyId})`);
+          console.log(
+            `🚨 [UnifiedAllergy] Updated existing allergy record: ${change.allergen} (ID: ${allergyId})`,
+          );
         }
 
         processedChanges.push(change);
-
       } catch (error) {
-        console.error(`🚨 [UnifiedAllergy] Error processing change for ${change.allergen}:`, error);
+        console.error(
+          `🚨 [UnifiedAllergy] Error processing change for ${change.allergen}:`,
+          error,
+        );
       }
     }
 
@@ -400,7 +472,8 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
    * Get existing allergies for consolidation
    */
   private async getExistingAllergies(patientId: number) {
-    return await db.select()
+    return await db
+      .select()
       .from(allergies)
       .where(eq(allergies.patientId, patientId));
   }
@@ -408,7 +481,10 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
   /**
    * Prepare combined content from multiple sources
    */
-  private prepareCombinedContent(soapNote?: string, attachmentContent?: string): string {
+  private prepareCombinedContent(
+    soapNote?: string,
+    attachmentContent?: string,
+  ): string {
     const sections = [];
 
     if (soapNote?.trim()) {
@@ -451,7 +527,10 @@ ${patientChart.currentMedications
       sections.push(`
 EXISTING ALLERGIES (Use for consolidation decisions):
 ${patientChart.allergies
-  .map((allergy: any) => `- ${allergy.allergen}: ${allergy.reaction || 'unknown reaction'} (${allergy.severity || 'unknown severity'})`)
+  .map(
+    (allergy: any) =>
+      `- ${allergy.allergen}: ${allergy.reaction || "unknown reaction"} (${allergy.severity || "unknown severity"})`,
+  )
   .join("\n")}`);
     }
 

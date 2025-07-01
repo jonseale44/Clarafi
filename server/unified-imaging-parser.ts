@@ -11,7 +11,12 @@
 
 import OpenAI from "openai";
 import { db } from "./db.js";
-import { imagingResults, encounters, patients, patientAttachments } from "../shared/schema.js";
+import {
+  imagingResults,
+  encounters,
+  patients,
+  patientAttachments,
+} from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { PatientChartService } from "./patient-chart-service.js";
 
@@ -73,20 +78,29 @@ export class UnifiedImagingParser {
     patientId: number,
     encounterId: number,
     soapNote: string,
-    triggerType: "stop_recording" | "manual_edit" = "stop_recording"
+    triggerType: "stop_recording" | "manual_edit" = "stop_recording",
   ): Promise<UnifiedImagingProcessingResult> {
     console.log(`🏥 [UnifiedImagingParser] === SOAP PROCESSING START ===`);
-    console.log(`🏥 [UnifiedImagingParser] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
-    console.log(`🏥 [UnifiedImagingParser] Trigger: ${triggerType}, SOAP Length: ${soapNote?.length || 0} chars`);
+    console.log(
+      `🏥 [UnifiedImagingParser] Patient ID: ${patientId}, Encounter ID: ${encounterId}`,
+    );
+    console.log(
+      `🏥 [UnifiedImagingParser] Trigger: ${triggerType}, SOAP Length: ${soapNote?.length || 0} chars`,
+    );
 
     try {
       // Get comprehensive patient chart data for context
-      const patientChartData = await this.patientChartService.getPatientChartData(patientId);
-      console.log(`🏥 [UnifiedImagingParser] Patient context loaded - Imaging count: ${patientChartData.imagingResults?.length || 0}`);
+      const patientChartData =
+        await this.patientChartService.getPatientChartData(patientId);
+      console.log(
+        `🏥 [UnifiedImagingParser] Patient context loaded - Imaging count: ${patientChartData.imagingResults?.length || 0}`,
+      );
 
       // Get existing imaging results for this patient
       const existingImaging = await this.getExistingImaging(patientId);
-      console.log(`🏥 [UnifiedImagingParser] Found ${existingImaging.length} existing imaging studies`);
+      console.log(
+        `🏥 [UnifiedImagingParser] Found ${existingImaging.length} existing imaging studies`,
+      );
 
       // Process with GPT intelligence
       const result = await this.processWithGPT(
@@ -94,24 +108,30 @@ export class UnifiedImagingParser {
         existingImaging,
         patientChartData,
         triggerType,
-        { encounterId, patientId }
+        { encounterId, patientId },
       );
 
-      console.log(`🏥 [UnifiedImagingParser] GPT processing complete - ${result.changes.length} changes identified`);
+      console.log(
+        `🏥 [UnifiedImagingParser] GPT processing complete - ${result.changes.length} changes identified`,
+      );
 
       // Apply changes to database
-      const finalResult = await this.applyChangesToDatabase(result, patientId, encounterId, "encounter");
+      const finalResult = await this.applyChangesToDatabase(
+        result,
+        patientId,
+        encounterId,
+        "encounter",
+      );
 
       console.log(`🏥 [UnifiedImagingParser] === SOAP PROCESSING COMPLETE ===`);
       return finalResult;
-
     } catch (error) {
       console.error(`❌ [UnifiedImagingParser] SOAP processing failed:`, error);
       return {
         changes: [],
         total_imaging_affected: 0,
         extraction_confidence: 0,
-        processing_notes: `Processing failed: ${error.message}`
+        processing_notes: `Processing failed: ${error.message}`,
       };
     }
   }
@@ -122,15 +142,25 @@ export class UnifiedImagingParser {
   async processAttachmentImagingData(
     attachmentId: number,
     extractedText: string,
-    documentType: string
+    documentType: string,
   ): Promise<UnifiedImagingProcessingResult> {
-    console.log(`📄 [UnifiedImagingParser] === ATTACHMENT PROCESSING START ===`);
-    console.log(`📄 [UnifiedImagingParser] Attachment ID: ${attachmentId}, Doc Type: ${documentType}`);
-    console.log(`📄 [UnifiedImagingParser] Text Length: ${extractedText?.length || 0} chars`);
+    console.log(
+      `📄 [UnifiedImagingParser] === ATTACHMENT PROCESSING START ===`,
+    );
+    console.log(
+      `📄 [UnifiedImagingParser] Attachment ID: ${attachmentId}, Doc Type: ${documentType}`,
+    );
+    console.log(
+      `📄 [UnifiedImagingParser] Text Length: ${extractedText?.length || 0} chars`,
+    );
 
     try {
       // Get attachment details and patient info
-      const attachment = await db.select().from(patientAttachments).where(eq(patientAttachments.id, attachmentId)).limit(1);
+      const attachment = await db
+        .select()
+        .from(patientAttachments)
+        .where(eq(patientAttachments.id, attachmentId))
+        .limit(1);
       if (!attachment.length) {
         throw new Error(`Attachment ${attachmentId} not found`);
       }
@@ -139,12 +169,17 @@ export class UnifiedImagingParser {
       console.log(`📄 [UnifiedImagingParser] Patient ID: ${patientId}`);
 
       // Get comprehensive patient chart data for context
-      const patientChartData = await this.patientChartService.getPatientChartData(patientId);
-      console.log(`📄 [UnifiedImagingParser] Patient context loaded - Imaging count: ${patientChartData.imagingResults?.length || 0}`);
+      const patientChartData =
+        await this.patientChartService.getPatientChartData(patientId);
+      console.log(
+        `📄 [UnifiedImagingParser] Patient context loaded - Imaging count: ${patientChartData.imagingResults?.length || 0}`,
+      );
 
       // Get existing imaging results for this patient
       const existingImaging = await this.getExistingImaging(patientId);
-      console.log(`📄 [UnifiedImagingParser] Found ${existingImaging.length} existing imaging studies`);
+      console.log(
+        `📄 [UnifiedImagingParser] Found ${existingImaging.length} existing imaging studies`,
+      );
 
       // Process with GPT intelligence
       const result = await this.processWithGPT(
@@ -152,24 +187,36 @@ export class UnifiedImagingParser {
         existingImaging,
         patientChartData,
         "attachment_processing",
-        { attachmentId, patientId }
+        { attachmentId, patientId },
       );
 
-      console.log(`📄 [UnifiedImagingParser] GPT processing complete - ${result.changes.length} changes identified`);
+      console.log(
+        `📄 [UnifiedImagingParser] GPT processing complete - ${result.changes.length} changes identified`,
+      );
 
       // Apply changes to database
-      const finalResult = await this.applyChangesToDatabase(result, patientId, null, "attachment", attachmentId);
+      const finalResult = await this.applyChangesToDatabase(
+        result,
+        patientId,
+        null,
+        "attachment",
+        attachmentId,
+      );
 
-      console.log(`📄 [UnifiedImagingParser] === ATTACHMENT PROCESSING COMPLETE ===`);
+      console.log(
+        `📄 [UnifiedImagingParser] === ATTACHMENT PROCESSING COMPLETE ===`,
+      );
       return finalResult;
-
     } catch (error) {
-      console.error(`❌ [UnifiedImagingParser] Attachment processing failed:`, error);
+      console.error(
+        `❌ [UnifiedImagingParser] Attachment processing failed:`,
+        error,
+      );
       return {
         changes: [],
         total_imaging_affected: 0,
         extraction_confidence: 0,
-        processing_notes: `Processing failed: ${error.message}`
+        processing_notes: `Processing failed: ${error.message}`,
       };
     }
   }
@@ -193,9 +240,8 @@ export class UnifiedImagingParser {
     existingImaging: any[],
     patientChartData: any,
     triggerType: string,
-    context: { encounterId?: number; attachmentId?: number; patientId: number }
+    context: { encounterId?: number; attachmentId?: number; patientId: number },
   ): Promise<UnifiedImagingProcessingResult> {
-
     const prompt = `You are an expert radiologist and EMR specialist with 20+ years of experience in imaging interpretation and medical record documentation. You excel at extracting structured imaging data from clinical notes and radiology reports while maintaining clinical accuracy and proper consolidation logic.
 
 PATIENT CONTEXT:
@@ -206,7 +252,7 @@ ${this.formatExistingImagingForGPT(existingImaging)}
 
 PROCESSING CONTEXT:
 - Trigger: ${triggerType}
-- Content Source: ${context.encounterId ? 'SOAP Note' : 'PDF Attachment'}
+- Content Source: ${context.encounterId ? "SOAP Note" : "PDF Attachment"}
 - Patient ID: ${context.patientId}
 
 CRITICAL INSTRUCTIONS:
@@ -272,13 +318,15 @@ Return a JSON object with this exact structure:
 **IMPORTANT**: Only extract actual imaging RESULTS, not orders or recommendations. Focus on clean clinical summaries suitable for provider chart review.`;
 
     try {
-      console.log(`🤖 [UnifiedImagingParser] Sending request to GPT-4.1-mini...`);
-      
+      console.log(
+        `🤖 [UnifiedImagingParser] Sending request to GPT-4.1-mini...`,
+      );
+
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
-        max_tokens: 2000,
+        max_tokens: 30000,
       });
 
       const response = completion.choices[0]?.message?.content;
@@ -286,12 +334,15 @@ Return a JSON object with this exact structure:
         throw new Error("No response from GPT");
       }
 
-      console.log(`🤖 [UnifiedImagingParser] GPT response received, parsing JSON...`);
+      console.log(
+        `🤖 [UnifiedImagingParser] GPT response received, parsing JSON...`,
+      );
       const result = JSON.parse(response);
-      console.log(`🤖 [UnifiedImagingParser] Parsed successfully - ${result.changes?.length || 0} changes`);
+      console.log(
+        `🤖 [UnifiedImagingParser] Parsed successfully - ${result.changes?.length || 0} changes`,
+      );
 
       return result;
-
     } catch (error) {
       console.error(`❌ [UnifiedImagingParser] GPT processing failed:`, error);
       throw new Error(`GPT processing failed: ${error.message}`);
@@ -303,22 +354,33 @@ Return a JSON object with this exact structure:
    */
   private formatPatientChartForGPT(chartData: any): string {
     const sections = [];
-    
-    sections.push(`Patient: ${chartData.patient?.firstName} ${chartData.patient?.lastName}, Age: ${chartData.patient?.age || 'Unknown'}`);
-    
+
+    sections.push(
+      `Patient: ${chartData.patient?.firstName} ${chartData.patient?.lastName}, Age: ${chartData.patient?.age || "Unknown"}`,
+    );
+
     if (chartData.medicalProblems?.length) {
-      sections.push(`Medical Problems: ${chartData.medicalProblems.map(p => p.condition).join(', ')}`);
-    }
-    
-    if (chartData.medications?.length) {
-      sections.push(`Current Medications: ${chartData.medications.slice(0, 5).map(m => m.medicationName).join(', ')}`);
-    }
-    
-    if (chartData.allergies?.length) {
-      sections.push(`Allergies: ${chartData.allergies.map(a => a.allergen).join(', ')}`);
+      sections.push(
+        `Medical Problems: ${chartData.medicalProblems.map((p) => p.condition).join(", ")}`,
+      );
     }
 
-    return sections.join('\n');
+    if (chartData.medications?.length) {
+      sections.push(
+        `Current Medications: ${chartData.medications
+          .slice(0, 5)
+          .map((m) => m.medicationName)
+          .join(", ")}`,
+      );
+    }
+
+    if (chartData.allergies?.length) {
+      sections.push(
+        `Allergies: ${chartData.allergies.map((a) => a.allergen).join(", ")}`,
+      );
+    }
+
+    return sections.join("\n");
   }
 
   /**
@@ -329,10 +391,13 @@ Return a JSON object with this exact structure:
       return "No previous imaging studies on record.";
     }
 
-    return imaging.slice(0, 10).map(study => {
-      const date = new Date(study.studyDate).toLocaleDateString();
-      return `${date}: ${study.modality} ${study.bodyPart} - ${study.clinicalSummary || study.impression || 'No summary'}`;
-    }).join('\n');
+    return imaging
+      .slice(0, 10)
+      .map((study) => {
+        const date = new Date(study.studyDate).toLocaleDateString();
+        return `${date}: ${study.modality} ${study.bodyPart} - ${study.clinicalSummary || study.impression || "No summary"}`;
+      })
+      .join("\n");
   }
 
   /**
@@ -343,24 +408,27 @@ Return a JSON object with this exact structure:
     patientId: number,
     encounterId: number | null,
     sourceType: "encounter" | "attachment",
-    attachmentId?: number
+    attachmentId?: number,
   ): Promise<UnifiedImagingProcessingResult> {
-    
     let totalAffected = 0;
 
     for (const change of result.changes) {
       try {
-        console.log(`💾 [UnifiedImagingParser] Processing change: ${change.action} for ${change.modality} ${change.body_part}`);
+        console.log(
+          `💾 [UnifiedImagingParser] Processing change: ${change.action} for ${change.modality} ${change.body_part}`,
+        );
 
         if (change.action === "NEW_IMAGING") {
           // Create new imaging result
           const visitHistoryEntry: UnifiedImagingVisitHistoryEntry = {
-            date: new Date().toISOString().split('T')[0],
-            notes: change.visit_notes || `Initial ${change.modality} ${change.body_part} study`,
+            date: new Date().toISOString().split("T")[0],
+            notes:
+              change.visit_notes ||
+              `Initial ${change.modality} ${change.body_part} study`,
             source: sourceType,
             encounterId: encounterId || undefined,
             attachmentId: attachmentId || undefined,
-            confidence: change.confidence
+            confidence: change.confidence,
           };
 
           await db.insert(imagingResults).values({
@@ -376,51 +444,62 @@ Return a JSON object with this exact structure:
             radiologistName: change.radiologist_name || null,
             facilityName: change.facility_name || null,
             resultStatus: change.result_status || "final",
-            sourceType: sourceType === "encounter" ? "encounter_note" : "pdf_extract",
+            sourceType:
+              sourceType === "encounter" ? "encounter_note" : "pdf_extract",
             sourceConfidence: change.confidence.toString(),
             extractedFromAttachmentId: attachmentId || null,
             enteredBy: 1, // jonseale user ID
-            visitHistory: [visitHistoryEntry]
+            visitHistory: [visitHistoryEntry],
           });
 
           totalAffected++;
-          console.log(`✅ [UnifiedImagingParser] Created new imaging result: ${change.modality} ${change.body_part}`);
-
+          console.log(
+            `✅ [UnifiedImagingParser] Created new imaging result: ${change.modality} ${change.body_part}`,
+          );
         } else if (change.action === "ADD_VISIT" && change.imaging_id) {
           // Add visit history to existing imaging
-          const existing = await db.select().from(imagingResults).where(eq(imagingResults.id, change.imaging_id)).limit(1);
-          
+          const existing = await db
+            .select()
+            .from(imagingResults)
+            .where(eq(imagingResults.id, change.imaging_id))
+            .limit(1);
+
           if (existing.length) {
             const currentHistory = existing[0].visitHistory || [];
             const newVisit: UnifiedImagingVisitHistoryEntry = {
-              date: new Date().toISOString().split('T')[0],
+              date: new Date().toISOString().split("T")[0],
               notes: change.visit_notes || "Study reviewed",
               source: sourceType,
               encounterId: encounterId || undefined,
               attachmentId: attachmentId || undefined,
-              confidence: change.confidence
+              confidence: change.confidence,
             };
 
-            await db.update(imagingResults)
+            await db
+              .update(imagingResults)
               .set({
                 visitHistory: [...currentHistory, newVisit],
-                updatedAt: new Date()
+                updatedAt: new Date(),
               })
               .where(eq(imagingResults.id, change.imaging_id));
 
             totalAffected++;
-            console.log(`✅ [UnifiedImagingParser] Added visit history to imaging ID: ${change.imaging_id}`);
+            console.log(
+              `✅ [UnifiedImagingParser] Added visit history to imaging ID: ${change.imaging_id}`,
+            );
           }
         }
-
       } catch (error) {
-        console.error(`❌ [UnifiedImagingParser] Failed to apply change:`, error);
+        console.error(
+          `❌ [UnifiedImagingParser] Failed to apply change:`,
+          error,
+        );
       }
     }
 
     return {
       ...result,
-      total_imaging_affected: totalAffected
+      total_imaging_affected: totalAffected,
     };
   }
 }

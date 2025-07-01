@@ -175,6 +175,8 @@ export class DocumentAnalysisService {
       console.log(
         `📄 [DocumentAnalysis] ✅ Starting transition to chart processing workflow`,
       );
+      console.log(`🔥 [DEBUG] IMAGING WORKFLOW - About to trigger chart processing that includes imaging extraction`);
+      console.log(`🔥 [DEBUG] IMAGING WORKFLOW - This will process 8 sections in parallel: vitals + medical problems + surgical history + family history + social history + allergies + medications + imaging`);
 
       // Wait for chart processing to complete and handle errors properly
       try {
@@ -632,6 +634,7 @@ Preserve the original structure and formatting where possible. Be thorough and a
     console.log(
       `🔥 [CHART WORKFLOW] ============= STARTING CHART PROCESSING WORKFLOW =============`,
     );
+    console.log(`🔥 [IMAGING WORKFLOW DEBUG] About to call AttachmentChartProcessor.processCompletedAttachment(${attachmentId}) - this WILL trigger imaging processing`);
 
     try {
       // Process chart data extraction with detailed error handling

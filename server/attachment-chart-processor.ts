@@ -28,11 +28,13 @@ export class AttachmentChartProcessor {
   private imagingParser: UnifiedImagingParser;
 
   constructor() {
+    console.log(`🔥 [IMAGING WORKFLOW DEBUG] AttachmentChartProcessor constructor - initializing all parsers including imaging`);
     this.vitalsParser = new VitalsParserService();
     this.surgicalHistoryParser = new UnifiedSurgicalHistoryParser();
     this.allergyParser = new UnifiedAllergyParser();
     this.medicationDeltaService = new MedicationDeltaService();
     this.imagingParser = new UnifiedImagingParser();
+    console.log(`🔥 [IMAGING WORKFLOW DEBUG] All 8 chart processors initialized successfully: vitals, medical problems, surgical history, family history, social history, allergies, medications, imaging`);
   }
 
   /**
