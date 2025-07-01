@@ -1,0 +1,71 @@
+ocedure_name": "Vertebroplasty",
+    "confidence": 95,
+    "source_type": "attachment",
+    "extracted_date": "2015-01-01",
+    "c...
+🔄 [UnifiedSurgicalHistory] ✅ Successfully parsed 3 surgical changes from GPT
+🔄 [UnifiedSurgicalHistory] GPT processing complete, 3 surgical changes identified
+🔄 [UnifiedSurgicalHistory] Applying change: NEW_SURGERY for Pacemaker/defibrillator implantation
+❌ [UnifiedSurgicalHistory] Error applying change: error: numeric field overflow
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedSurgicalHistoryParser.createNewSurgery (/home/runner/workspace/server/unified-surgical-history-parser.ts:513:5)
+    at async UnifiedSurgicalHistoryParser.applyUnifiedChange (/home/runner/workspace/server/unified-surgical-history-parser.ts:454:9)
+    at async UnifiedSurgicalHistoryParser.processUnified (/home/runner/workspace/server/unified-surgical-history-parser.ts:142:11)
+    at async AttachmentChartProcessor.processDocumentForSurgicalHistory (/home/runner/workspace/server/attachment-chart-processor.ts:357:22)
+    at async Promise.allSettled (index 2)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:86:120)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22003',
+  detail: 'A field with precision 3, scale 2 must round to an absolute value less than 10^1.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numeric.c',
+  line: '7909',
+  routine: 'apply_typmod'
+}
+🔄 [UnifiedSurgicalHistory] Applying change: NEW_SURGERY for Vertebroplasty
+❌ [UnifiedSurgicalHistory] Error applying change: error: numeric field overflow
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedSurgicalHistoryParser.createNewSurgery (/home/runner/workspace/server/unified-surgical-history-parser.ts:513:5)
+    at async UnifiedSurgicalHistoryParser.applyUnifiedChange (/home/runner/workspace/server/unified-surgical-history-parser.ts:454:9)
+    at async UnifiedSurgicalHistoryParser.processUnified (/home/runner/workspace/server/unified-surgical-history-parser.ts:142:11)
+    at async AttachmentChartProcessor.processDocumentForSurgicalHistory (/home/runner/workspace/server/attachment-chart-processor.ts:357:22)
+    at async Promise.allSettled (index 2)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:86:120)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22003',
+  detail: 'A field with precision 3, scale 2 must round to an absolute value less than 10^1.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numeric.c',
+  line: '7909',
+  routine: 'apply_typmod'
+}
+🔄 [UnifiedSurgicalHistory] Applying change: NEW_SURGERY for Left-sided sacroiliac fixation surgery
+❌ [UnifiedSurgicalHistory] Error applying change: error: numeric field overflow
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndReje

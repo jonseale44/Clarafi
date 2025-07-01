@@ -381,7 +381,7 @@ Only extract family history information that is explicitly mentioned. Do not inf
             visitHistory: newVisitHistory,
             lastUpdatedEncounter: encounterId,
             sourceType: change.visitEntry.source,
-            sourceConfidence: change.confidence.toString(),
+            sourceConfidence: (change.confidence / 100).toFixed(2),
             extractedFromAttachmentId: attachmentId,
             updatedAt: new Date(),
           })
@@ -402,7 +402,7 @@ Only extract family history information that is explicitly mentioned. Do not inf
           visitHistory: [visitEntryWithLocalDate],
           lastUpdatedEncounter: encounterId,
           sourceType: change.visitEntry.source,
-          sourceConfidence: change.confidence.toString(),
+          sourceConfidence: (change.confidence / 100).toFixed(2),
           extractedFromAttachmentId: attachmentId,
         });
 

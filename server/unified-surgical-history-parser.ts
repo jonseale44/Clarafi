@@ -510,12 +510,16 @@ Analyze the document and return appropriate surgical history changes:`;
       sourceNotes: change.consolidation_reasoning || "New surgical procedure entry",
     };
 
+    // Convert percentage confidence (0-100) to decimal (0.00-1.00) for database storage
+    const confidenceDecimal = change.confidence / 100;
+    console.log(`🏥 [SurgicalHistory] Converting confidence ${change.confidence}% to decimal ${confidenceDecimal.toFixed(2)}`);
+    
     await db.insert(surgicalHistory).values({
       patientId,
       procedureName: change.procedure_name!,
       procedureDate: change.extracted_date || null,
       sourceType: change.source_type,
-      sourceConfidence: change.confidence.toString(),
+      sourceConfidence: confidenceDecimal.toFixed(2),
       visitHistory: [initialVisitEntry],
       createdAt: new Date(),
       updatedAt: new Date(),

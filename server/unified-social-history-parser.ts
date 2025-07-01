@@ -382,7 +382,7 @@ Process the content and return ONLY the JSON response with social history findin
             historyNotes: change.historyNotes,
             lastUpdatedEncounter: encounterId,
             sourceType: attachmentId ? "attachment_extracted" : "soap_derived",
-            sourceConfidence: change.confidence.toString(),
+            sourceConfidence: (change.confidence / 100).toFixed(2),
             extractedFromAttachmentId: attachmentId,
             enteredBy: providerId,
           });
@@ -393,7 +393,7 @@ Process the content and return ONLY the JSON response with social history findin
             historyNotes: change.historyNotes,
             lastUpdatedEncounter: encounterId,
             sourceType: attachmentId ? "attachment_extracted" : "soap_derived",
-            sourceConfidence: change.confidence.toString(),
+            sourceConfidence: (change.confidence / 100).toFixed(2),
             extractedFromAttachmentId: attachmentId,
             enteredBy: providerId,
             consolidationReasoning: change.consolidationReason,
