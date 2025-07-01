@@ -458,7 +458,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
           {familyHistory.length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium">No family history documented</p>
+              <p className="text-sm">No family history documented</p>
               <p className="text-sm">Add family medical history using the button above</p>
             </div>
           ) : (

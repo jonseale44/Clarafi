@@ -811,7 +811,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
           {socialHistory.length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               <Briefcase className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium">No social history documented</p>
+              <p className="text-sm">No social history documented</p>
               <p className="text-sm">Add social history using the button above</p>
             </div>
           ) : (
