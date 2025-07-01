@@ -180,7 +180,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
         // Clickable encounter badge that navigates to encounter detail
         const handleEncounterClick = () => {
           if (encounterId) {
-            setLocation(`/patients/${patientId}/encounters/${encounterId}`);
+            navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "family-history", mode);
           }
         };
         return (
@@ -198,7 +198,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
         const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleDocumentClick = () => {
           if (attachmentId) {
-            setLocation(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`);
+            navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "family-history", mode);
           }
         };
         
