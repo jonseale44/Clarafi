@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medical Record Section Title Consistency Enhancement COMPLETED (July 1, 2025)
+- **DUPLICATE TITLE REMOVAL**: Successfully removed duplicate CardTitle components from Allergies, Family History, and Social History sections to achieve visual consistency
+- **UNIFIED DESIGN PATTERN**: All medical record sections now display only one title per section, matching the Medical Problems section design
+- **ACCORDION-STYLE HEADERS**: Sections maintain their accordion-style headers with chevron icons while eliminating redundant large titles above them
+- **CLEAN INTERFACE**: Removed CardTitle components at lines 303 (allergy-section.tsx), 376 (family-history-section.tsx), and 596 (social-history-section.tsx)
+- **VISUAL HIERARCHY IMPROVEMENT**: Enhanced visual consistency across all chart sections with single-title design pattern
+- **PRODUCTION READY**: All medical record sections now follow unified typography and layout standards
+
 ### Automatic Transcription Saving Implementation COMPLETED (July 1, 2025)
 - **PRODUCTION-READY TRANSCRIPTION PERSISTENCE**: Successfully implemented comprehensive automatic transcription saving to ensure transcription data persists when users navigate away and return to encounters
 - **REAL-TIME AUTO-SAVE SYSTEM**: Added debounced auto-save functionality with 5-second inactivity trigger during recording sessions for optimal performance without excessive API calls

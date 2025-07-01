@@ -300,10 +300,6 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
     <Card className={`emr-card ${className}`}>
       <CardHeader className="emr-card-header">
         <div className="flex items-center justify-between">
-          <CardTitle className="emr-section-title flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Allergies ({allergies.length})
-          </CardTitle>
           <Dialog open={isCreating} onOpenChange={setIsCreating}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="emr-button-compact">

@@ -373,15 +373,6 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
       <Card>
         <CardHeader className="emr-card-header-tight">
           <div className="flex items-center justify-between">
-            <CardTitle className="emr-section-title flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Family History
-              {familyHistory.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {familyHistory.length}
-                </Badge>
-              )}
-            </CardTitle>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="emr-ultra-compact-header">
