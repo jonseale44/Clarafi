@@ -2775,7 +2775,7 @@ Please provide medical suggestions based on this complete conversation context.`
 
         // Process ALL services in parallel for maximum speed optimization
         console.log(
-          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, CPT codes, and allergies...",
+          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, CPT codes, allergies, and family history...",
         );
         console.log(
           "🏥 [StopRecording] CPT extraction URL:",
@@ -2790,7 +2790,7 @@ Please provide medical suggestions based on this complete conversation context.`
         startOrdersAnimation();
         startBillingAnimation();
 
-        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse, allergyResponse] =
+        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse, allergyResponse, familyHistoryResponse] =
           await Promise.all([
             fetch(`/api/medical-problems/process-unified`, {
               method: "POST",
@@ -2968,6 +2968,37 @@ Please provide medical suggestions based on this complete conversation context.`
                 headers: response.headers,
               });
             }),
+            fetch(`/api/family-history/process-unified`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                patientId: patient.id,
+                encounterId: encounterId,
+                soapNote: soapNote,
+                attachmentContent: null,
+                attachmentId: null,
+                triggerType: "recording_complete",
+              }),
+            }).then(async (response) => {
+              console.log("👨‍👩‍👧‍👦 [StopRecording] Family history API response status:", response.status);
+              console.log("👨‍👩‍👧‍👦 [StopRecording] Family history API response headers:", Object.fromEntries(response.headers.entries()));
+              
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error("❌ [StopRecording] Family history processing failed:", errorText.substring(0, 500));
+                return response;
+              }
+
+              const familyHistoryData = await response.json();
+              console.log("✅ [StopRecording] Family history processing successful:", familyHistoryData);
+
+              return new Response(JSON.stringify(familyHistoryData), {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+              });
+            }),
           ]);
 
         // Handle parallel responses and invalidate caches
@@ -3056,6 +3087,14 @@ Please provide medical suggestions based on this complete conversation context.`
           "Allergies",
           "allergiesAffected",
           () => queryClient.invalidateQueries({ queryKey: ['/api/allergies', patient.id] })
+        );
+
+        // Handle family history response
+        await handleServiceResponse(
+          familyHistoryResponse,
+          "Family history",
+          "familyHistoryAffected",
+          () => queryClient.invalidateQueries({ queryKey: [`/api/family-history/${patient.id}`] })
         );
 
         toast({
