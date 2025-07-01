@@ -84,7 +84,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
 
   // Fetch imaging results
   const { data: imagingResults = [], isLoading } = useQuery<ImagingResult[]>({
-    queryKey: ["/api/imaging", patientId],
+    queryKey: ["/api/patients", patientId, "imaging-results"],
     enabled: !!patientId,
   });
 
