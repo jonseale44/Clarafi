@@ -261,6 +261,77 @@ export function EncounterDetailView({
     "saved" | "saving" | "unsaved" | ""
   >("");
 
+  // Transcription auto-save functionality
+  const transcriptionAutoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const [lastSavedTranscription, setLastSavedTranscription] = useState<string>("");
+  const [transcriptionSaveStatus, setTranscriptionSaveStatus] = useState<
+    "saved" | "saving" | "unsaved" | ""
+  >("");
+
+  // Auto-save transcription function
+  const autoSaveTranscription = async (rawTranscription: string, processedTranscription?: string) => {
+    if (!rawTranscription.trim() || rawTranscription === lastSavedTranscription) {
+      return; // Don't save empty content or unchanged content
+    }
+
+    setTranscriptionSaveStatus("saving");
+
+    try {
+      console.log(
+        "🎤 [TranscriptionAutoSave] Saving transcription automatically...",
+        `Raw: ${rawTranscription.length} chars, Processed: ${processedTranscription?.length || 0} chars`
+      );
+
+      const response = await fetch(
+        `/api/patients/${patient.id}/encounters/${encounterId}/transcription`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            transcriptionRaw: rawTranscription,
+            transcriptionProcessed: processedTranscription || null,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to auto-save transcription: ${response.statusText}`,
+        );
+      }
+
+      console.log("✅ [TranscriptionAutoSave] Transcription auto-saved successfully");
+      setLastSavedTranscription(rawTranscription);
+      setTranscriptionSaveStatus("saved");
+
+    } catch (error) {
+      console.error("❌ [TranscriptionAutoSave] Failed to auto-save transcription:", error);
+      setTranscriptionSaveStatus("unsaved");
+    }
+  };
+
+  // Debounced transcription auto-save trigger
+  const triggerTranscriptionAutoSave = (rawContent: string, processedContent?: string) => {
+    // Only trigger auto-save if there are actual changes
+    if (!rawContent.trim() || rawContent === lastSavedTranscription) {
+      setTranscriptionSaveStatus("saved");
+      return;
+    }
+
+    if (transcriptionAutoSaveTimer.current) {
+      clearTimeout(transcriptionAutoSaveTimer.current);
+    }
+
+    setTranscriptionSaveStatus("unsaved");
+
+    // Auto-save after 5 seconds of inactivity during recording
+    transcriptionAutoSaveTimer.current = setTimeout(() => {
+      autoSaveTranscription(rawContent, processedContent);
+    }, 5000);
+  };
+
   // Track automatic SOAP generation after stopping recording
   const [isAutoGeneratingSOAP, setIsAutoGeneratingSOAP] = useState(false);
 

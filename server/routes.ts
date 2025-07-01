@@ -2211,6 +2211,54 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
     },
   );
 
+  // Save transcription for encounter (automatic saving during recording)
+  app.put(
+    "/api/patients/:id/encounters/:encounterId/transcription",
+    async (req, res) => {
+      try {
+        if (!req.isAuthenticated()) return res.sendStatus(401);
+
+        const patientId = parseInt(req.params.id);
+        const encounterId = parseInt(req.params.encounterId);
+        const { transcriptionRaw, transcriptionProcessed } = req.body;
+
+        if (!transcriptionRaw && !transcriptionProcessed) {
+          return res
+            .status(400)
+            .json({ message: "Transcription content is required" });
+        }
+
+        console.log(
+          `🎤 [Transcription] Auto-saving transcription for encounter ${encounterId}`,
+          `Raw: ${transcriptionRaw?.length || 0} chars, Processed: ${transcriptionProcessed?.length || 0} chars`
+        );
+
+        // Save transcription to encounter
+        await storage.updateEncounter(encounterId, {
+          transcriptionRaw: transcriptionRaw || null,
+          transcriptionProcessed: transcriptionProcessed || null,
+        });
+
+        console.log(
+          `✅ [Transcription] Transcription auto-saved for encounter ${encounterId}`,
+        );
+
+        res.json({
+          message: "Transcription saved successfully",
+          encounterId,
+          patientId,
+          savedAt: new Date().toISOString(),
+        });
+      } catch (error: any) {
+        console.error("❌ [Transcription] Error saving transcription:", error);
+        res.status(500).json({
+          message: "Failed to save transcription",
+          error: error.message,
+        });
+      }
+    },
+  );
+
   // Save/Update CPT codes and diagnoses for an encounter
   app.put(
     "/api/patients/:id/encounters/:encounterId/cpt-codes",
