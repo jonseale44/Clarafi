@@ -810,7 +810,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
+      // Utility function to normalize name capitalization
+      const normalizeNameCapitalization = (name: string): string => {
+        if (!name) return name;
+        
+        return name
+          .split(' ')
+          .map(word => {
+            if (!word) return word;
+            // Handle special cases like O'Connor, McDonald, etc.
+            if (word.includes("'")) {
+              return word.split("'").map(part => 
+                part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+              ).join("'");
+            }
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+          })
+          .join(' ');
+      };
+
       const validatedData = insertPatientSchema.parse(req.body);
+      
+      // Normalize name capitalization if firstName and lastName are provided
+      if (validatedData.firstName) {
+        validatedData.firstName = normalizeNameCapitalization(validatedData.firstName);
+      }
+      if (validatedData.lastName) {
+        validatedData.lastName = normalizeNameCapitalization(validatedData.lastName);
+      }
+      
       const patient = await storage.createPatient(validatedData);
       res.status(201).json(patient);
     } catch (error: any) {

@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Patient Name Capitalization Enhancement COMPLETED (July 1, 2025)
+- **GPT PROMPT ENHANCEMENT**: Updated PatientParserService GPT prompt to enforce proper name capitalization for document parsing
+- **COMPREHENSIVE NORMALIZATION**: Added explicit instructions to normalize names from various formats (UPPERCASE, lowercase, Mixed CaSe) to proper capitalization
+- **SPECIAL CASE HANDLING**: GPT prompt now handles apostrophes and compound names (O'Connor, McDonald) with appropriate capitalization rules
+- **MANUAL INPUT PROTECTION**: Enhanced direct patient creation API endpoint to apply same name normalization for manually typed patient names
+- **DUAL COVERAGE**: System now normalizes patient names from both automated document parsing and manual text entry
+- **UTILITY FUNCTION**: Added normalizeNameCapitalization helper function in both PatientParserService and patient creation route
+- **CONSISTENT BEHAVIOR**: Both AI-parsed and manually entered patient names now follow standardized capitalization rules
+- **PRODUCTION READY**: Name capitalization enforcement active for all patient creation workflows
+
 ### Priority Filter Collapsible UI Implementation COMPLETED (July 1, 2025)
 - **COLLAPSIBLE PRIORITY FILTER**: Successfully implemented collapsible Priority Filter in medical problems section matching Ranking Weight Controls pattern
 - **DEFAULT COLLAPSED STATE**: Priority Filter now starts collapsed by default to reduce visual clutter and improve UI cleanliness

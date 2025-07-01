@@ -58,6 +58,12 @@ CRITICAL INSTRUCTIONS:
 - Return "unknown" for any field that cannot be determined from the input
 - Ensure phone numbers include area codes when visible
 - Extract complete addresses when available
+- NORMALIZE NAME CAPITALIZATION: Always format names with proper capitalization (first letter uppercase, remaining letters lowercase). Examples:
+  * "JOHN SMITH" → "John Smith"
+  * "jane doe" → "Jane Doe" 
+  * "mARY jOHNSON" → "Mary Johnson"
+  * "o'CONNOR" → "O'connor"
+  * "mcDONALD" → "Mcdonald"
 
 Return a JSON object with these exact fields:
 {
@@ -182,10 +188,29 @@ Return a JSON object with these exact fields:
       return `MRN${timestamp}${random}`;
     };
 
+    // Utility function to normalize name capitalization
+    const normalizeNameCapitalization = (name: string): string => {
+      if (!name || name === "unknown") return name;
+      
+      return name
+        .split(' ')
+        .map(word => {
+          if (!word) return word;
+          // Handle special cases like O'Connor, McDonald, etc.
+          if (word.includes("'")) {
+            return word.split("'").map(part => 
+              part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+            ).join("'");
+          }
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(' ');
+    };
+
     return {
       mrn: generateMRN(),
-      firstName: extractedData.first_name,
-      lastName: extractedData.last_name,
+      firstName: normalizeNameCapitalization(extractedData.first_name),
+      lastName: normalizeNameCapitalization(extractedData.last_name),
       dateOfBirth: extractedData.date_of_birth,
       gender: extractedData.gender,
       contactNumber: extractedData.contact_number || null,
