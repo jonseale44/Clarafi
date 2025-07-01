@@ -109,6 +109,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Priority Filter Collapsible UI Implementation COMPLETED (July 1, 2025)
+- **COLLAPSIBLE PRIORITY FILTER**: Successfully implemented collapsible Priority Filter in medical problems section matching Ranking Weight Controls pattern
+- **DEFAULT COLLAPSED STATE**: Priority Filter now starts collapsed by default to reduce visual clutter and improve UI cleanliness
+- **CONSISTENT UX PATTERN**: Added "Customize" button to expand filter controls and "Collapse" button to hide them, using same styling as Ranking Weight Controls
+- **IMPROVED VISUAL HIERARCHY**: Reduced initial screen complexity while maintaining full functionality access through expand/collapse interaction
+- **STATE MANAGEMENT**: Added `isFilterExpanded` useState with false default to control collapsed/expanded display modes
+- **CONDITIONAL RENDERING**: Implemented React conditional rendering pattern with separate card components for collapsed vs expanded states
+- **BLUE THEME CONSISTENCY**: Maintained blue color scheme (border-blue-200, bg-blue-50/50) matching existing Priority Filter design
+- **BUTTON STYLING**: Applied consistent hover states and dark mode support for Customize/Collapse buttons
+
+### Social History UI/UX Fixes COMPLETED (July 1, 2025)
+- **DUPLICATE CONFIDENCE BADGE REMOVAL**: Fixed redundant confidence display by removing duplicate "85% confidence" text while keeping "Doc Extract 85%" badge
+- **TIMEZONE DATE CORRECTION**: Enhanced formatDate function to handle YYYY-MM-DD dates without timezone conversion issues
+- **PRESERVED INPUT DATES**: Date inputs like "2010-06-12" now display correctly as "Jun 12, 2010" instead of "Jun 11, 2010" due to timezone shifts
+- **ENHANCED DATE PARSING**: Added intelligent date parsing that treats YYYY-MM-DD format as local dates to prevent timezone conversion
+
 ### Dense View System Database Error Resolution COMPLETED (July 1, 2025)
 - **CRITICAL FOREIGN KEY CONSTRAINT FIX**: Successfully resolved all foreign key constraint violations (PostgreSQL error code 23503) that were blocking attachment chart processing
 - **ROOT CAUSE IDENTIFIED**: System was referencing non-existent user ID 2 instead of existing user ID 1 (jonseale) in multiple locations

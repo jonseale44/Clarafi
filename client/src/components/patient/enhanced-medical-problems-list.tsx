@@ -176,6 +176,7 @@ export function EnhancedMedicalProblemsList({
   const [largeHandleValue, setLargeHandleValue] = useState(100); // Permanent user preference
   const [smallHandleValue, setSmallHandleValue] = useState(100); // Temporary session filter
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false); // Priority Filter collapsed by default
   
   // Initialize slider values from user preferences
   useEffect(() => {
@@ -1068,42 +1069,77 @@ export function EnhancedMedicalProblemsList({
 
         {/* Priority Filter Slider */}
         {activeProblems.length > 0 && (
-          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Priority Filter
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <DualHandleSlider
-                min={1}
-                max={100}
-                largeHandleValue={largeHandleValue}
-                smallHandleValue={smallHandleValue}
-                onLargeHandleChange={handleLargeHandleChange}
-                onSmallHandleChange={handleSmallHandleChange}
-                label="Medical Problems Display"
-                formatValue={(value) => `${value}% (${Math.max(1, Math.ceil((value / 100) * activeProblems.length))} of ${activeProblems.length} problems)`}
-                className="mb-2"
-              />
-              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                <div className="flex justify-between">
-                  <span>• Large handle: Permanent user preference</span>
-                  <span className="font-mono">{largeHandleValue}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>• Small handle: Session filter for this patient</span>
-                  <span className="font-mono">{smallHandleValue}%</span>
-                </div>
-                <div className="pt-1 border-t border-blue-200 dark:border-blue-800">
-                  <span>Showing {filteredActiveProblems.length} of {activeProblems.length} problems based on priority ranking</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <>
+            {!isFilterExpanded ? (
+              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Priority Filter
+                      </CardTitle>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsFilterExpanded(true)}
+                      className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-900/50"
+                    >
+                      Customize
+                    </Button>
+                  </div>
+                </CardHeader>
+              </Card>
+            ) : (
+              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Priority Filter
+                      </CardTitle>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsFilterExpanded(false)}
+                      className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-900/50"
+                    >
+                      Collapse
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <DualHandleSlider
+                    min={1}
+                    max={100}
+                    largeHandleValue={largeHandleValue}
+                    smallHandleValue={smallHandleValue}
+                    onLargeHandleChange={handleLargeHandleChange}
+                    onSmallHandleChange={handleSmallHandleChange}
+                    label="Medical Problems Display"
+                    formatValue={(value) => `${value}% (${Math.max(1, Math.ceil((value / 100) * activeProblems.length))} of ${activeProblems.length} problems)`}
+                    className="mb-2"
+                  />
+                  <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                    <div className="flex justify-between">
+                      <span>• Large handle: Permanent user preference</span>
+                      <span className="font-mono">{largeHandleValue}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Small handle: Session filter for this patient</span>
+                      <span className="font-mono">{smallHandleValue}%</span>
+                    </div>
+                    <div className="pt-1 border-t border-blue-200 dark:border-blue-800">
+                      <span>Showing {filteredActiveProblems.length} of {activeProblems.length} problems based on priority ranking</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
 
         {/* Ranking Weight Controls */}
