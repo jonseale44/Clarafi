@@ -2775,7 +2775,7 @@ Please provide medical suggestions based on this complete conversation context.`
 
         // Process ALL services in parallel for maximum speed optimization
         console.log(
-          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, and CPT codes...",
+          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, CPT codes, and allergies...",
         );
         console.log(
           "🏥 [StopRecording] CPT extraction URL:",
