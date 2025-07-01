@@ -660,12 +660,29 @@ export function EncounterDetailView({
           cptRequestBody,
         );
 
+        // Allergy processing request body
+        const allergyRequestBody = {
+          patientId: patient.id,
+          encounterId: encounterId,
+          soapNote: note,
+          attachmentContent: null, // No attachment for SOAP processing
+          attachmentId: null,
+          triggerType: "recording_complete",
+          providerId: 1, // Current user ID
+        };
+
+        console.log(
+          `🚨 [ParallelProcessing] Allergy request body:`,
+          allergyRequestBody,
+        );
+
         // Process all services in parallel for maximum efficiency
         const [
           medicalProblemsResponse,
           medicationsResponse,
           ordersResponse,
           cptResponse,
+          allergyResponse,
         ] = await Promise.all([
           fetch(`/api/medical-problems/process-unified`, {
             method: "POST",
