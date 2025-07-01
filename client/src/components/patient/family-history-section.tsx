@@ -73,11 +73,37 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
     enabled: !!patientId,
   });
 
-  // Create family history mutation
+  // Create family history mutation with optimistic updates
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest(`/api/family-history/${patientId}`, "POST", data),
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/family-history", patientId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(["/api/family-history", patientId]);
+      
+      // Optimistically update to the new value
+      const optimisticEntry = {
+        id: Date.now(), // Temporary ID
+        patientId,
+        familyMember: newData.familyMember,
+        medicalHistory: newData.medicalHistory,
+        sourceNotes: newData.sourceNotes,
+        sourceType: "manual",
+        sourceConfidence: "100",
+        visitHistory: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(["/api/family-history", patientId], (old: any[]) => 
+        old ? [...old, optimisticEntry] : [optimisticEntry]
+      );
+      
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/family-history", patientId] });
       setIsAddDialogOpen(false);
       resetForm();
       toast({
@@ -85,21 +111,53 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
         description: "Family history entry has been successfully created.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, newData, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/family-history", patientId], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to create family history entry",
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: ["/api/family-history", patientId] });
+    },
   });
 
-  // Update family history mutation
+  // Update family history mutation with optimistic updates
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => 
       apiRequest(`/api/family-history/${id}`, "PUT", { ...data, patientId }),
+    onMutate: async ({ id, data }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/family-history", patientId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(["/api/family-history", patientId]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/family-history", patientId], (old: any[]) => {
+        if (!old) return old;
+        return old.map(entry => 
+          entry.id === id 
+            ? { 
+                ...entry, 
+                familyMember: data.familyMember,
+                medicalHistory: data.medicalHistory,
+                sourceNotes: data.sourceNotes,
+                updatedAt: new Date().toISOString(),
+              }
+            : entry
+        );
+      });
+      
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/family-history", patientId] });
       setEditingEntry(null);
       resetForm();
       toast({
@@ -107,31 +165,61 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
         description: "Family history entry has been successfully updated.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/family-history", patientId], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to update family history entry",
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: ["/api/family-history", patientId] });
+    },
   });
 
-  // Delete family history mutation
+  // Delete family history mutation with optimistic updates
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest(`/api/family-history/${id}`, "DELETE"),
+    onMutate: async (id: number) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/family-history", patientId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(["/api/family-history", patientId]);
+      
+      // Optimistically remove the entry
+      queryClient.setQueryData(["/api/family-history", patientId], (old: any[]) => {
+        if (!old) return old;
+        return old.filter(entry => entry.id !== id);
+      });
+      
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/family-history", patientId] });
       toast({
         title: "Family history deleted",
         description: "Family history entry has been successfully deleted.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, id, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/family-history", patientId], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to delete family history entry",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: ["/api/family-history", patientId] });
     },
   });
 

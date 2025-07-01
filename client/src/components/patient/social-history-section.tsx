@@ -191,7 +191,6 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
       return { previousData };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
       setIsAddDialogOpen(false);
       resetForm();
       toast({
@@ -247,7 +246,6 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
       return { previousData };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
       setEditingEntry(null);
       resetForm();
       toast({
@@ -291,7 +289,6 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
       return { previousData };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
       toast({
         title: "Social history deleted",
         description: "Social history entry has been successfully deleted.",
