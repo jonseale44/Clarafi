@@ -752,6 +752,10 @@ export class AttachmentChartProcessor {
     console.log(`🔥 [ALLERGY WORKFLOW] ============= ALLERGY EXTRACTION =============`);
     console.log(`🚨 [AllergyExtraction] Starting allergy analysis for attachment ${attachment.id}`);
     console.log(`🚨 [AllergyExtraction] Processing content for patient ${attachment.patientId}`);
+    console.log(`🚨 [AllergyExtraction] ✅ REACHED processDocumentForAllergies method successfully`);
+    console.log(`🚨 [AllergyExtraction] Attachment object keys: ${Object.keys(attachment)}`);
+    console.log(`🚨 [AllergyExtraction] ExtractedContent object keys: ${Object.keys(extractedContent)}`);
+    console.log(`🚨 [AllergyExtraction] UnifiedAllergyParser instantiated: ${!!this.allergyParser}`);
 
     if (!extractedContent.extractedText || extractedContent.extractedText.length < 50) {
       console.log(`🚨 [AllergyExtraction] ℹ️ Insufficient text content for allergy analysis, skipping`);
