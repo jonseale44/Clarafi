@@ -157,9 +157,37 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
     })));
   }
 
-  // Create social history mutation
+  // Create social history mutation with optimistic updates
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest(`/api/social-history/${patientId}`, "POST", data),
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/social-history", patientId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(["/api/social-history", patientId]);
+      
+      // Optimistically update to the new value
+      const optimisticEntry = {
+        id: Date.now(), // Temporary ID
+        patientId,
+        category: newData.category,
+        currentStatus: newData.currentStatus,
+        historyNotes: newData.historyNotes,
+        extractionNotes: newData.sourceNotes,
+        sourceType: "manual_entry",
+        sourceConfidence: "100",
+        visitHistory: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(["/api/social-history", patientId], (old: any[]) => 
+        old ? [...old, optimisticEntry] : [optimisticEntry]
+      );
+      
+      return { previousData };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
       setIsAddDialogOpen(false);
@@ -169,19 +197,53 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
         description: "Social history entry has been successfully created.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, newData, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/social-history", patientId], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to create social history entry",
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
+    },
   });
 
-  // Update social history mutation
+  // Update social history mutation with optimistic updates
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => 
       apiRequest(`/api/social-history/${id}`, "PUT", { ...data, patientId }),
+    onMutate: async ({ id, data }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/social-history", patientId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(["/api/social-history", patientId]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/social-history", patientId], (old: any[]) => {
+        if (!old) return old;
+        return old.map(entry => 
+          entry.id === id 
+            ? { 
+                ...entry, 
+                category: data.category,
+                currentStatus: data.currentStatus,
+                historyNotes: data.historyNotes,
+                extractionNotes: data.sourceNotes,
+                updatedAt: new Date().toISOString(),
+              }
+            : entry
+        );
+      });
+      
+      return { previousData };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
       setEditingEntry(null);
@@ -191,18 +253,41 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
         description: "Social history entry has been successfully updated.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/social-history", patientId], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to update social history entry",
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
+    },
   });
 
-  // Delete social history mutation
+  // Delete social history mutation with optimistic updates
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest(`/api/social-history/${id}`, "DELETE"),
+    onMutate: async (id: number) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/social-history", patientId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(["/api/social-history", patientId]);
+      
+      // Optimistically remove the entry
+      queryClient.setQueryData(["/api/social-history", patientId], (old: any[]) => {
+        if (!old) return old;
+        return old.filter(entry => entry.id !== id);
+      });
+      
+      return { previousData };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
       toast({
@@ -210,12 +295,20 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
         description: "Social history entry has been successfully deleted.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, id, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/social-history", patientId], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to delete social history entry",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: ["/api/social-history", patientId] });
     },
   });
 
