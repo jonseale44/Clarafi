@@ -294,7 +294,7 @@ RESPONSE FORMAT (JSON Array):
     "consolidationReason": "Combined existing HTN history with new death information",
     "confidence": 0.95,
     "visitEntry": {
-      "date": "2025-01-01",
+      "date": "${new Date().toLocaleDateString('en-CA')}",
       "notes": "Added father's death from MI at age 83, consolidated with existing HTN history",
       "source": "${triggerType === 'attachment_processing' ? 'attachment' : 'encounter'}",
       ${attachmentId ? `"attachmentId": ${attachmentId},` : ''}
@@ -367,8 +367,12 @@ Only extract family history information that is explicitly mentioned. Do not inf
         const existingRecord = existing[0];
         const currentVisitHistory = existingRecord.visitHistory || [];
         
-        // Add new visit history entry
-        const newVisitHistory = [...currentVisitHistory, change.visitEntry];
+        // Add new visit history entry with timezone-corrected date
+        const visitEntryWithLocalDate = {
+          ...change.visitEntry,
+          date: new Date(change.visitEntry.date + 'T12:00:00').toISOString().split('T')[0] // Convert to local date at noon to avoid timezone shifts
+        };
+        const newVisitHistory = [...currentVisitHistory, visitEntryWithLocalDate];
 
         await db
           .update(familyHistory)
@@ -385,12 +389,17 @@ Only extract family history information that is explicitly mentioned. Do not inf
 
         console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ✅ Updated existing record for ${change.familyMember}`);
       } else {
-        // Create new record
+        // Create new record with timezone-corrected date
+        const visitEntryWithLocalDate = {
+          ...change.visitEntry,
+          date: new Date(change.visitEntry.date + 'T12:00:00').toISOString().split('T')[0] // Convert to local date at noon to avoid timezone shifts
+        };
+        
         await db.insert(familyHistory).values({
           patientId,
           familyMember: change.familyMember,
           medicalHistory: change.medicalHistory,
-          visitHistory: [change.visitEntry],
+          visitHistory: [visitEntryWithLocalDate],
           lastUpdatedEncounter: encounterId,
           sourceType: change.visitEntry.source,
           sourceConfidence: change.confidence.toString(),

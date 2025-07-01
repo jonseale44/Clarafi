@@ -367,7 +367,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className="text-xs">
-                                      {format(new Date(visit.date), "MMM d, yyyy")}
+                                      {format(new Date(visit.date + 'T12:00:00'), "MMM d, yyyy")}
                                     </Badge>
                                     <Badge className={getSourceBadgeColor(visit.source)}>
                                       {visit.source === "attachment" ? "Document" :
