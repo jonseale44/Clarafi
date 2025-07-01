@@ -504,9 +504,8 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
       const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
       if (dateComparison !== 0) return dateComparison;
       
-      const aEncounterId = a.encounterId || 0;
-      const bEncounterId = b.encounterId || 0;
-      return bEncounterId - aEncounterId;
+      // Simple fallback sorting by ID for same date entries
+      return 0;
     }));
 
     setNewVisitNote({ date: "", notes: "" });
@@ -601,77 +600,200 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                   Add
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-4xl">
                 <DialogHeader>
-                  <DialogTitle>Add Social History</DialogTitle>
+                  <DialogTitle>
+                    {editingEntry ? "Edit Social History Entry" : "Add Social History Entry"}
+                  </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SOCIAL_HISTORY_CATEGORIES.map(category => (
-                          <SelectItem key={category} value={category}>
-                            {getCategoryIcon(category)} {formatCategory(category)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="currentStatus">Current Status</Label>
-                    <Textarea
-                      id="currentStatus"
-                      value={formData.currentStatus}
-                      onChange={(e) => setFormData(prev => ({ ...prev, currentStatus: e.target.value }))}
-                      placeholder="e.g., Quit smoking 5 years ago, occasional social drinker"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="historyNotes">History Notes (Optional)</Label>
-                    <Textarea
-                      id="historyNotes"
-                      value={formData.historyNotes}
-                      onChange={(e) => setFormData(prev => ({ ...prev, historyNotes: e.target.value }))}
-                      placeholder="Additional historical context or changes over time"
-                      rows={2}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="sourceNotes">Source Notes (Optional)</Label>
-                    <Input
-                      id="sourceNotes"
-                      value={formData.sourceNotes}
+                
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Main Entry Form - Left Column */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Entry Details</h3>
+                    
+                    <div>
+                      <Label htmlFor="category">Category</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SOCIAL_HISTORY_CATEGORIES.map(category => (
+                            <SelectItem key={category} value={category}>
+                              {getCategoryIcon(category)} {formatCategory(category)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="currentStatus">Current Status</Label>
+                      <Textarea
+                        id="currentStatus"
+                        value={formData.currentStatus}
+                        onChange={(e) => setFormData(prev => ({ ...prev, currentStatus: e.target.value }))}
+                        placeholder="e.g., Quit smoking 5 years ago, occasional social drinker"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="historyNotes">History Notes (Optional)</Label>
+                      <Textarea
+                        id="historyNotes"
+                        value={formData.historyNotes}
+                        onChange={(e) => setFormData(prev => ({ ...prev, historyNotes: e.target.value }))}
+                        placeholder="Additional historical context or changes over time"
+                        rows={2}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="sourceNotes">Source Notes (Optional)</Label>
+                      <Input
+                        id="sourceNotes"
+                        value={formData.sourceNotes}
                       onChange={(e) => setFormData(prev => ({ ...prev, sourceNotes: e.target.value }))}
                       placeholder="Additional context about this information"
                     />
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsAddDialogOpen(false);
-                        resetForm();
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createMutation.isPending}
-                    >
-                      {createMutation.isPending ? "Adding..." : "Add Social History"}
-                    </Button>
                   </div>
-                </form>
+
+                  {/* Visit History Management - Right Column */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Visit History</h3>
+                    <p className="text-sm text-gray-500">Chronological notes for this entry</p>
+                  </div>
+
+                  {/* Add New Visit Note */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Visit Note
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-4 gap-3">
+                        <Input
+                          type="date"
+                          value={newVisitNote.date}
+                          onChange={(e) => setNewVisitNote(prev => ({ ...prev, date: e.target.value }))}
+                          placeholder="Date"
+                        />
+                        <div className="col-span-3">
+                          <Textarea
+                            value={newVisitNote.notes}
+                            onChange={(e) => setNewVisitNote(prev => ({ ...prev, notes: e.target.value }))}
+                            placeholder="Clinical notes for this visit..."
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                      <Button type="button" onClick={addVisitNote} size="sm">
+                        Add Note
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Existing Visit Notes */}
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {editingVisitHistory.map((visit) => (
+                      <Card key={visit.id || `${visit.date}-${visit.notes.substring(0, 10)}`}>
+                        <CardContent className="pt-4">
+                          {editingVisitId === visit.id ? (
+                            <EditableVisitNote
+                              visit={visit}
+                              onSave={(updatedVisit) => saveVisitEdit(visit.id!, updatedVisit)}
+                              onCancel={() => setEditingVisitId(null)}
+                            />
+                          ) : (
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Calendar className="h-4 w-4 text-gray-500" />
+                                  <span className="font-medium">{formatDate(visit.date)}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {visit.source === "manual" ? "Manual" : visit.source}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-gray-700">{visit.notes}</p>
+                              </div>
+                              <div className="flex gap-1 ml-4">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => editVisitNote(visit.id!)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                                  onClick={() => deleteVisitNote(visit.id!)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Dialog Actions */}
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddDialogOpen(false);
+                    setEditingEntry(null);
+                    setEditingVisitHistory([]);
+                    setNewVisitNote({ date: "", notes: "" });
+                    setEditingVisitId(null);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (editingEntry) {
+                      updateMutation.mutate({
+                        id: editingEntry.id,
+                        data: {
+                          ...formData,
+                          visitHistory: editingVisitHistory
+                        }
+                      });
+                    } else {
+                      handleSubmit(e as any);
+                    }
+                  }}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {createMutation.isPending || updateMutation.isPending ? 
+                    "Saving..." : 
+                    editingEntry ? "Update Social History" : "Add Social History"
+                  }
+                </Button>
+              </div>
               </DialogContent>
             </Dialog>
           </div>
@@ -851,11 +973,12 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                           </div>
                         </div>
                       )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
               ))}
-            </Accordion>
+            </div>
           )}
         </CardContent>
       </Card>
