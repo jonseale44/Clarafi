@@ -676,6 +676,12 @@ export function EncounterDetailView({
           allergyRequestBody,
         );
 
+        console.log(`🚨 [ParallelProcessing] === STARTING ALLERGY API CALL ===`);
+        console.log(`🚨 [ParallelProcessing] Calling: /api/allergies/process-unified`);
+        console.log(`🚨 [ParallelProcessing] Patient ID: ${patient.id}`);
+        console.log(`🚨 [ParallelProcessing] Encounter ID: ${encounterId}`);
+        console.log(`🚨 [ParallelProcessing] SOAP Note Length: ${note?.length || 0} chars`);
+
         // Process all services in parallel for maximum efficiency
         const [
           medicalProblemsResponse,
@@ -783,6 +789,36 @@ export function EncounterDetailView({
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(allergyRequestBody),
+          }).then(async (response) => {
+            console.log(
+              "🚨 [ParallelProcessing] Allergy API response status:",
+              response.status,
+            );
+            console.log(
+              "🚨 [ParallelProcessing] Allergy API response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [ParallelProcessing] Allergy API failed:",
+                errorText,
+              );
+              return response;
+            }
+
+            const allergyData = await response.json();
+            console.log(
+              "✅ [ParallelProcessing] Allergy API successful:",
+              allergyData,
+            );
+
+            return new Response(JSON.stringify(allergyData), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers,
+            });
           }),
         ]);
 
@@ -2754,7 +2790,7 @@ Please provide medical suggestions based on this complete conversation context.`
         startOrdersAnimation();
         startBillingAnimation();
 
-        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse] =
+        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse, allergyResponse] =
           await Promise.all([
             fetch(`/api/medical-problems/process-unified`, {
               method: "POST",
