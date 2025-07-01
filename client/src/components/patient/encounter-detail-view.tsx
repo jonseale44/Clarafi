@@ -2936,143 +2936,132 @@ Please provide medical suggestions based on this complete conversation context.`
                 headers: response.headers,
               });
             }),
+            fetch(`/api/allergies/process-unified`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                patientId: patient.id,
+                encounterId: encounterId,
+                soapNote: soapNote,
+                attachmentContent: null,
+                attachmentId: null,
+                triggerType: "recording_complete",
+                providerId: 1,
+              }),
+            }).then(async (response) => {
+              console.log("🚨 [StopRecording] Allergy API response status:", response.status);
+              console.log("🚨 [StopRecording] Allergy API response headers:", Object.fromEntries(response.headers.entries()));
+              
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error("❌ [StopRecording] Allergy processing failed:", errorText.substring(0, 500));
+                return response;
+              }
+
+              const allergyData = await response.json();
+              console.log("✅ [StopRecording] Allergy processing successful:", allergyData);
+
+              return new Response(JSON.stringify(allergyData), {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+              });
+            }),
           ]);
 
         // Handle parallel responses and invalidate caches
         console.log("🔄 [StopRecording] Processing parallel responses...");
         
+        // Helper function to handle response processing with consistent error handling
+        const handleServiceResponse = async (
+          response: Response, 
+          serviceName: string, 
+          resultProperty: string,
+          cacheInvalidation: () => Promise<void>,
+          animationCompletion?: () => void
+        ) => {
+          if (response.ok) {
+            try {
+              const result = await response.json();
+              const affected = result[resultProperty] || 0;
+              console.log(`✅ [StopRecording] ${serviceName} processed: ${affected} items affected`);
+              
+              await cacheInvalidation();
+              console.log(`✅ [StopRecording] ${serviceName} cache invalidated`);
+              
+              if (animationCompletion) animationCompletion();
+            } catch (jsonError) {
+              console.error(`❌ [StopRecording] Error parsing ${serviceName} JSON:`, jsonError);
+              if (animationCompletion) animationCompletion();
+            }
+          } else {
+            try {
+              const errorText = await response.text();
+              console.error(`❌ [StopRecording] ${serviceName} processing failed: ${response.status}`);
+              console.error(`❌ [StopRecording] ${serviceName} error:`, errorText.substring(0, 500));
+            } catch (textError) {
+              console.error(`❌ [StopRecording] Error reading ${serviceName} error text:`, textError);
+            }
+            if (animationCompletion) animationCompletion();
+          }
+        };
+        
         // Handle medical problems response
-        if (medicalProblemsResponse.ok) {
-          try {
-            const result = await medicalProblemsResponse.json();
-            console.log(
-              `✅ [StopRecording] Medical problems processed: ${result.problemsAffected || 0} problems affected`,
-            );
-
-            // Invalidate medical problems cache to refresh UI (unified API)
-            await queryClient.invalidateQueries({
-              queryKey: ['/api/medical-problems', patient.id],
-            });
-            
-            // Complete medical problems animation
-            completeMedicalProblemsAnimation();
-          } catch (jsonError) {
-            console.error("❌ [StopRecording] Error parsing medical problems JSON:", jsonError);
-            console.error("❌ [StopRecording] Medical problems returned non-JSON content (likely HTML error page)");
-            // Complete medical problems animation even if failed
-            completeMedicalProblemsAnimation();
-          }
-        } else {
-          try {
-            const errorText = await medicalProblemsResponse.text();
-            console.error(
-              `❌ [StopRecording] Medical problems processing failed: ${medicalProblemsResponse.status}`,
-            );
-            console.error("❌ [StopRecording] Medical problems error text:", errorText.substring(0, 500));
-          } catch (textError) {
-            console.error("❌ [StopRecording] Error reading medical problems error text:", textError);
-          }
-          // Complete medical problems animation even if failed
-          completeMedicalProblemsAnimation();
-        }
+        await handleServiceResponse(
+          medicalProblemsResponse,
+          "Medical problems",
+          "problemsAffected",
+          () => queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patient.id] }),
+          completeMedicalProblemsAnimation
+        );
 
         // Handle surgical history response
-        if (surgicalHistoryResponse.ok) {
-          try {
-            const result = await surgicalHistoryResponse.json();
-            console.log(
-              `✅ [StopRecording] Surgical history processed: ${result.total_surgeries_affected || 0} surgeries affected`,
-            );
-
-            // Invalidate surgical history cache to refresh UI
-            await queryClient.invalidateQueries({
-              queryKey: [`/api/surgical-history/${patient.id}`],
-            });
-            
-            console.log("✅ [StopRecording] Surgical history cache invalidated");
-          } catch (jsonError) {
-            console.error("❌ [StopRecording] Error parsing surgical history JSON:", jsonError);
-            console.error("❌ [StopRecording] Surgical history returned non-JSON content (likely HTML error page)");
-          }
-        } else {
-          try {
-            const errorText = await surgicalHistoryResponse.text();
-            console.error(
-              `❌ [StopRecording] Surgical history processing failed: ${surgicalHistoryResponse.status}`,
-            );
-            console.error("❌ [StopRecording] Surgical history error text:", errorText.substring(0, 500));
-          } catch (textError) {
-            console.error("❌ [StopRecording] Error reading surgical history error text:", textError);
-          }
-        }
+        await handleServiceResponse(
+          surgicalHistoryResponse,
+          "Surgical history",
+          "total_surgeries_affected",
+          () => queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patient.id}`] })
+        );
         
-        if (medicationsResponse.ok) {
-          try {
-            console.log("💊 [StopRecording] Medications processing successful");
-            await queryClient.invalidateQueries({
-              queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
-            });
-          } catch (error) {
-            console.error("❌ [StopRecording] Error invalidating medications cache:", error);
-          }
-        } else {
-          console.error("❌ [StopRecording] Medications processing failed with status:", medicationsResponse.status);
-        }
+        // Handle medications response
+        await handleServiceResponse(
+          medicationsResponse,
+          "Medications",
+          "medicationsAffected",
+          () => queryClient.invalidateQueries({ queryKey: [`/api/patients/${patient.id}/medications-enhanced`] })
+        );
 
-        if (ordersResponse.ok) {
-          try {
-            console.log("📋 [StopRecording] Orders processing successful");
-            await queryClient.invalidateQueries({
-              queryKey: [`/api/patients/${patient.id}/draft-orders`],
-            });
-            // Complete orders animation
-            completeOrdersAnimation();
-          } catch (error) {
-            console.error("❌ [StopRecording] Error invalidating orders cache:", error);
-            completeOrdersAnimation();
-          }
-        } else {
-          console.error("❌ [StopRecording] Orders processing failed with status:", ordersResponse.status);
-          // Complete orders animation even if failed
-          completeOrdersAnimation();
-        }
+        // Handle orders response
+        await handleServiceResponse(
+          ordersResponse,
+          "Orders",
+          "ordersAffected",
+          () => queryClient.invalidateQueries({ queryKey: [`/api/patients/${patient.id}/draft-orders`] }),
+          completeOrdersAnimation
+        );
 
-        if (cptResponse.ok) {
-          try {
-            console.log(
-              "✅ [StopRecording] CPT extraction successful, invalidating CPT cache...",
-            );
-            await queryClient.invalidateQueries({
-              queryKey: [
-                `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
-              ],
-            });
-            console.log("✅ [StopRecording] CPT cache invalidated");
-            // Complete billing animation
-            completeBillingAnimation();
-          } catch (error) {
-            console.error("❌ [StopRecording] Error invalidating CPT cache:", error);
-            completeBillingAnimation();
-          }
-        } else {
-          console.error(
-            "❌ [StopRecording] CPT extraction failed with status:",
-            cptResponse.status,
-          );
-          try {
-            const errorText = await cptResponse.text();
-            console.error("❌ [StopRecording] CPT error response:", errorText.substring(0, 500));
-          } catch (textError) {
-            console.error("❌ [StopRecording] Error reading CPT error text:", textError);
-          }
-          // Complete billing animation even if failed
-          completeBillingAnimation();
-        }
+        // Handle CPT response  
+        await handleServiceResponse(
+          cptResponse,
+          "CPT codes",
+          "cptCodesAffected",
+          () => queryClient.invalidateQueries({ queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] }),
+          completeBillingAnimation
+        );
+
+        // Handle allergy response
+        await handleServiceResponse(
+          allergyResponse,
+          "Allergies",
+          "allergiesAffected",
+          () => queryClient.invalidateQueries({ queryKey: ['/api/allergies', patient.id] })
+        );
 
         toast({
           title: "Recording Complete",
           description:
-            "SOAP note saved and medical data processed successfully",
+            "SOAP note saved and all medical data processed successfully",
         });
       } catch (error) {
         console.error(
