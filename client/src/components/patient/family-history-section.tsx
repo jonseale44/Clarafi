@@ -197,8 +197,21 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
         // Document Extract badge with confidence score, tooltip, and click navigation
         const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleDocumentClick = () => {
+          console.log("🔗 [FamilyHistory] Document badge clicked!");
+          console.log("🔗 [FamilyHistory] attachmentId:", attachmentId);
+          console.log("🔗 [FamilyHistory] patientId:", patientId);
+          console.log("🔗 [FamilyHistory] mode:", mode);
+          
           if (attachmentId) {
-            navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "family-history", mode);
+            const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`;
+            console.log("🔗 [FamilyHistory] Navigating to:", targetUrl);
+            console.log("🔗 [FamilyHistory] Source section: family-history");
+            console.log("🔗 [FamilyHistory] Source context:", mode);
+            
+            navigateWithContext(targetUrl, "family-history", mode);
+            console.log("🔗 [FamilyHistory] Navigation called successfully");
+          } else {
+            console.log("❌ [FamilyHistory] No attachmentId provided - cannot navigate");
           }
         };
         
@@ -376,12 +389,32 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {getSourceBadge(
-                          entry.sourceType,
-                          entry.sourceConfidence ? parseFloat(entry.sourceConfidence) : undefined,
-                          entry.visitHistory?.find(visit => visit.attachmentId)?.attachmentId,
-                          entry.visitHistory?.find(visit => visit.encounterId)?.encounterId
-                        )}
+                        {(() => {
+                          // Extract attachment ID from visit history OR fall back to extractedFromAttachmentId
+                          const attachmentIdFromVisit = entry.visitHistory?.find(visit => visit.attachmentId)?.attachmentId;
+                          const encounterIdFromVisit = entry.visitHistory?.find(visit => visit.encounterId)?.encounterId;
+                          
+                          // For attachment sources, use extractedFromAttachmentId if visit history doesn't have it
+                          const finalAttachmentId = attachmentIdFromVisit || 
+                            (entry.sourceType === "attachment" ? (entry as any).extractedFromAttachmentId : undefined);
+                          
+                          console.log("🔗 [FamilyHistory] Processing entry for source badge:", {
+                            id: entry.id,
+                            sourceType: entry.sourceType,
+                            visitHistory: entry.visitHistory,
+                            attachmentIdFromVisit,
+                            encounterIdFromVisit,
+                            extractedFromAttachmentId: (entry as any).extractedFromAttachmentId,
+                            finalAttachmentId
+                          });
+                          
+                          return getSourceBadge(
+                            entry.sourceType,
+                            entry.sourceConfidence ? parseFloat(entry.sourceConfidence) : undefined,
+                            finalAttachmentId,
+                            encounterIdFromVisit
+                          );
+                        })()}
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                           <TooltipProvider>
                             <Tooltip>
