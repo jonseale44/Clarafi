@@ -622,10 +622,18 @@ export const medications = pgTable("medications", {
   firstEncounterId: integer("first_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
   lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
   
-  // Change tracking
+  // Change tracking and visit history (unified with other chart sections)
   reasonForChange: text("reason_for_change"),
   medicationHistory: jsonb("medication_history").default([]), // Chronological changes
   changeLog: jsonb("change_log").default([]), // Audit trail
+  visitHistory: jsonb("visit_history").default([]), // Unified visit history like medical problems
+  
+  // Source attribution (unified with other chart sections)
+  sourceType: text("source_type"), // 'encounter', 'attachment', 'manual', 'order_conversion'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }), // 0.00 to 1.00
+  sourceNotes: text("source_notes"),
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id, { onDelete: "set null" }),
+  enteredBy: integer("entered_by").references(() => users.id),
   
   // GPT-driven organization
   groupingStrategy: text("grouping_strategy").default("medical_problem"), // 'medical_problem', 'drug_class', 'alphabetical'
