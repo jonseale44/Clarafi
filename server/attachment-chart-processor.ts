@@ -504,7 +504,7 @@ export class AttachmentChartProcessor {
         
         // Source tracking
         sourceType: "attachment_extracted" as const,
-        sourceConfidence: (overallConfidence / 100).toFixed(2),
+        sourceConfidence: Math.min(0.99, overallConfidence / 100).toFixed(2), // Cap at 0.99 for precision 3,2
         sourceNotes: sourceNotes,
         extractedFromAttachmentId: attachmentId,
         enteredBy: 2, // System user - could be made configurable
@@ -515,6 +515,24 @@ export class AttachmentChartProcessor {
         alerts: vitalSet.warnings || undefined,
       };
 
+      // DETAILED VALUE LOGGING FOR DEBUGGING NUMERIC PRECISION ERRORS
+      console.log(`💾 [AttachmentChartProcessor] ===== DETAILED VALUES DEBUG =====`);
+      console.log(`💾 [AttachmentChartProcessor] overallConfidence (raw): ${overallConfidence}`);
+      console.log(`💾 [AttachmentChartProcessor] sourceConfidence (calculated): ${vitalsEntry.sourceConfidence}`);
+      console.log(`💾 [AttachmentChartProcessor] sourceConfidence type: ${typeof vitalsEntry.sourceConfidence}`);
+      console.log(`💾 [AttachmentChartProcessor] All numeric fields:`);
+      console.log(`💾 [AttachmentChartProcessor]   - systolicBp: ${vitalsEntry.systolicBp} (${typeof vitalsEntry.systolicBp})`);
+      console.log(`💾 [AttachmentChartProcessor]   - diastolicBp: ${vitalsEntry.diastolicBp} (${typeof vitalsEntry.diastolicBp})`);
+      console.log(`💾 [AttachmentChartProcessor]   - heartRate: ${vitalsEntry.heartRate} (${typeof vitalsEntry.heartRate})`);
+      console.log(`💾 [AttachmentChartProcessor]   - temperature: ${vitalsEntry.temperature} (${typeof vitalsEntry.temperature})`);
+      console.log(`💾 [AttachmentChartProcessor]   - weight: ${vitalsEntry.weight} (${typeof vitalsEntry.weight})`);
+      console.log(`💾 [AttachmentChartProcessor]   - height: ${vitalsEntry.height} (${typeof vitalsEntry.height})`);
+      console.log(`💾 [AttachmentChartProcessor]   - bmi: ${vitalsEntry.bmi} (${typeof vitalsEntry.bmi})`);
+      console.log(`💾 [AttachmentChartProcessor]   - oxygenSaturation: ${vitalsEntry.oxygenSaturation} (${typeof vitalsEntry.oxygenSaturation})`);
+      console.log(`💾 [AttachmentChartProcessor]   - respiratoryRate: ${vitalsEntry.respiratoryRate} (${typeof vitalsEntry.respiratoryRate})`);
+      console.log(`💾 [AttachmentChartProcessor]   - painScale: ${vitalsEntry.painScale} (${typeof vitalsEntry.painScale})`);
+      console.log(`💾 [AttachmentChartProcessor] ===== END VALUES DEBUG =====`);
+
       console.log(`💾 [AttachmentChartProcessor] Inserting vitals set ${setLabel}:`, {
         patientId: vitalsEntry.patientId,
         sourceType: vitalsEntry.sourceType,
@@ -524,28 +542,38 @@ export class AttachmentChartProcessor {
         hasVitals: !!(vitalsEntry.systolicBp || vitalsEntry.heartRate)
       });
 
-      const [savedEntry] = await db.insert(vitals).values(vitalsEntry).returning();
-      
-      console.log(`🔥 [DATABASE WORKFLOW] ============= SAVING VITALS SET ${setLabel} =============`);
-      console.log(`💾 [VitalsSave] ✅ Vitals set ${setLabel} saved with ID: ${savedEntry.id}`);
-      if (vitalSet.extractedDate) {
-        console.log(`💾 [VitalsSave] ✅ GPT-Extracted Date: ${vitalSet.extractedDate}`);
+      try {
+        const [savedEntry] = await db.insert(vitals).values(vitalsEntry).returning();
+        console.log(`💾 [AttachmentChartProcessor] ✅ Database insert successful for vitals set ${setLabel}`);
+        
+        console.log(`🔥 [DATABASE WORKFLOW] ============= SAVING VITALS SET ${setLabel} =============`);
+        console.log(`💾 [VitalsSave] ✅ Vitals set ${setLabel} saved with ID: ${savedEntry.id}`);
+        if (vitalSet.extractedDate) {
+          console.log(`💾 [VitalsSave] ✅ GPT-Extracted Date: ${vitalSet.extractedDate}`);
+        }
+        if (vitalSet.timeContext) {
+          console.log(`💾 [VitalsSave] ✅ Time Context: ${vitalSet.timeContext}`);
+        }
+        if (vitalsEntry.systolicBp && vitalsEntry.diastolicBp) {
+          console.log(`💾 [VitalsSave] ✅ Blood Pressure: ${vitalsEntry.systolicBp}/${vitalsEntry.diastolicBp}`);
+        }
+        if (vitalsEntry.heartRate) {
+          console.log(`💾 [VitalsSave] ✅ Heart Rate: ${vitalsEntry.heartRate} bpm`);
+        }
+        if (vitalsEntry.temperature) {
+          console.log(`💾 [VitalsSave] ✅ Temperature: ${vitalsEntry.temperature}°F`);
+        }
+        console.log(`💾 [VitalsSave] ✅ Source Confidence: ${vitalsEntry.sourceConfidence}`);
+        console.log(`💾 [VitalsSave] ✅ Attachment ID: ${attachmentId}`);
+        console.log(`🔥 [DATABASE WORKFLOW] ============= VITALS SET ${setLabel} SAVED SUCCESSFULLY =============`);
+      } catch (dbError: any) {
+        console.error(`❌ [AttachmentChartProcessor] DATABASE ERROR for vitals set ${setLabel}:`, dbError);
+        if (dbError.code === '22003') {
+          console.error(`❌ [AttachmentChartProcessor] NUMERIC PRECISION ERROR - Field with precision 3, scale 2 received invalid value`);
+          console.error(`❌ [AttachmentChartProcessor] Values being inserted:`, JSON.stringify(vitalsEntry, null, 2));
+        }
+        throw dbError;
       }
-      if (vitalSet.timeContext) {
-        console.log(`💾 [VitalsSave] ✅ Time Context: ${vitalSet.timeContext}`);
-      }
-      if (vitalsEntry.systolicBp && vitalsEntry.diastolicBp) {
-        console.log(`💾 [VitalsSave] ✅ Blood Pressure: ${vitalsEntry.systolicBp}/${vitalsEntry.diastolicBp}`);
-      }
-      if (vitalsEntry.heartRate) {
-        console.log(`💾 [VitalsSave] ✅ Heart Rate: ${vitalsEntry.heartRate} bpm`);
-      }
-      if (vitalsEntry.temperature) {
-        console.log(`💾 [VitalsSave] ✅ Temperature: ${vitalsEntry.temperature}°F`);
-      }
-      console.log(`💾 [VitalsSave] ✅ Source Confidence: ${vitalsEntry.sourceConfidence}`);
-      console.log(`💾 [VitalsSave] ✅ Attachment ID: ${attachmentId}`);
-      console.log(`🔥 [DATABASE WORKFLOW] ============= VITALS SET ${setLabel} SAVED SUCCESSFULLY =============`);
 
     } catch (error) {
       console.error(`❌ [AttachmentChartProcessor] Error saving vitals:`, error);
