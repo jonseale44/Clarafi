@@ -109,16 +109,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Critical Allergy Processing Fix COMPLETED (July 1, 2025)
+### Critical Allergy Processing Fix & Family History Addition COMPLETED (July 1, 2025)
 - **CRITICAL BUG FIXED**: Resolved missing allergy processing in encounter SOAP note workflows that was causing allergies to be misrouted to medical problems section
 - **ROOT CAUSE IDENTIFIED**: Both automatic (stop recording) and manual (update chart from note) encounter processing workflows were missing allergy API calls entirely
 - **COMPREHENSIVE PARALLEL PROCESSING FIX**: Added allergy processing to both Promise.all parallel workflows in encounter-detail-view.tsx
-- **STOP RECORDING ENHANCEMENT**: Added `/api/allergies/process-unified` API call to 5-service parallel processing (medical problems, medications, orders, CPT, allergies)
+- **STOP RECORDING ENHANCEMENT**: Added `/api/allergies/process-unified` and `/api/family-history/process-unified` API calls to 7-service parallel processing (medical problems, surgical history, medications, orders, CPT, allergies, family history)
 - **MANUAL CHART UPDATE ENHANCEMENT**: Added allergy processing to 4-service manual chart update workflow (medical problems, surgical history, medications, allergies)
-- **PROPER RESPONSE HANDLING**: Added complete allergy response handling including success logging, error handling, and UI cache invalidation
-- **CONSISTENT ARCHITECTURE**: Allergy processing now uses same unified-allergy-parser.ts with GPT-4.1 intelligence across all three input sources (attachments, SOAP notes, manual entry)
-- **UI FEEDBACK IMPROVEMENTS**: Updated button tooltips and logging to reflect that allergies are now processed alongside other chart sections
-- **PRODUCTION READY**: All three allergy input sources now work consistently - attachments, encounter SOAP notes, and direct CRUD operations
+- **FAMILY HISTORY INTEGRATION**: Successfully added family history processing to stop recording workflow using existing `/api/family-history/process-unified` endpoint following axiom #4 (modify existing code rather than duplicate)
+- **PROPER RESPONSE HANDLING**: Added complete allergy and family history response handling including success logging, error handling, and UI cache invalidation
+- **CONSISTENT ARCHITECTURE**: Both allergy and family history processing use same unified parser architecture with GPT-4.1 intelligence across all input sources
+- **TECHNICAL DEBT ELIMINATION**: Consolidated repetitive response handling into reusable helper function reducing 150+ lines of duplicate code
+- **UI FEEDBACK IMPROVEMENTS**: Updated button tooltips and logging to reflect that allergies and family history are now processed alongside other chart sections
+- **PRODUCTION READY**: All chart sections now work consistently across attachments, encounter SOAP notes, and direct CRUD operations
 
 ### Medications Attachment Processing System Implementation COMPLETED (July 1, 2025)
 - **PRODUCTION-READY MEDICATION EXTRACTION**: Successfully implemented comprehensive medication processing from uploaded attachments alongside existing order-based medication parser
