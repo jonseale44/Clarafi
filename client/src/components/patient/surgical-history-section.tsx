@@ -555,49 +555,71 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-1">
-                                {/* Combined source attribution badge for attachment-extracted surgeries */}
-                                {(surgery.sourceType === "attachment_extracted" || surgery.sourceType === "attachment") && surgery.extractedFromAttachmentId ? (
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      console.log(`🏥 [SurgicalHistory] Navigating to attachment ${surgery.extractedFromAttachmentId} for surgery ${surgery.id}`);
-                                      navigateWithContext(
-                                        `/patients/${surgery.patientId}/chart?section=attachments&highlight=${surgery.extractedFromAttachmentId}`,
-                                        'surgical-history',
-                                        mode
-                                      );
-                                    }}
-                                    title={`Click to view source document (Confidence: ${Math.round(surgery.sourceConfidence)}%)`}
-                                  >
-                                    Doc Extract {Math.round(surgery.sourceConfidence)}%
-                                  </Badge>
-                                ) : (surgery.sourceType === "attachment_extracted" || surgery.sourceType === "attachment") ? (
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs bg-purple-50 text-purple-700 border-purple-200"
-                                    title={`Document-extracted surgery (Confidence: ${Math.round(surgery.sourceConfidence)}%)`}
-                                  >
-                                    Document {Math.round(surgery.sourceConfidence)}%
-                                  </Badge>
-                                ) : surgery.sourceType === "soap_derived" && surgery.sourceConfidence ? (
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                    title={`SOAP-derived surgery (Confidence: ${Math.round(surgery.sourceConfidence)}%)`}
-                                  >
-                                    SOAP {Math.round(surgery.sourceConfidence)}%
-                                  </Badge>
-                                ) : (
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs bg-gray-50 text-gray-700 border-gray-200"
-                                    title="Manually entered surgery"
-                                  >
-                                    Manual
-                                  </Badge>
-                                )}
+                                {(() => {
+                                  // MEDICAL PROBLEMS PATTERN: Use only visit-level confidence to eliminate dual-confidence discrepancy
+                                  // Get the most recent visit to display its confidence
+                                  const mostRecentVisit = surgery.visitHistory?.[0]; // Assuming sorted by date desc
+                                  
+                                  if (mostRecentVisit) {
+                                    // Confidence is already stored as a percentage (0-100), not decimal (0-1)
+                                    const confidence = mostRecentVisit.confidence ? Math.round(mostRecentVisit.confidence) : 0;
+                                    
+                                    switch (mostRecentVisit.source) {
+                                      case "attachment":
+                                        const attachmentId = mostRecentVisit.attachmentId || surgery.extractedFromAttachmentId;
+                                        return (
+                                          <Badge 
+                                            variant="outline" 
+                                            className="text-xs cursor-pointer hover:bg-purple-600 hover:text-white transition-colors bg-purple-50 text-purple-700 border-purple-200"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (attachmentId) {
+                                                navigateWithContext(
+                                                  `/patients/${surgery.patientId}/chart?section=attachments&highlight=${attachmentId}`,
+                                                  'surgical-history',
+                                                  mode
+                                                );
+                                              }
+                                            }}
+                                            title={`Click to view source document (Confidence: ${confidence}%)`}
+                                          >
+                                            Doc Extract {confidence}%
+                                          </Badge>
+                                        );
+                                      case "encounter":
+                                        return (
+                                          <Badge 
+                                            variant="outline" 
+                                            className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                            title={`Encounter-derived surgery (Confidence: ${confidence}%)`}
+                                          >
+                                            Encounter {confidence}%
+                                          </Badge>
+                                        );
+                                      default:
+                                        return (
+                                          <Badge 
+                                            variant="outline" 
+                                            className="text-xs bg-gray-50 text-gray-700 border-gray-200"
+                                            title="Manually entered surgery"
+                                          >
+                                            Manual
+                                          </Badge>
+                                        );
+                                    }
+                                  }
+                                  
+                                  // Fallback for entries without visit history (manual entries)
+                                  return (
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-xs bg-gray-50 text-gray-700 border-gray-200"
+                                      title="Manually entered surgery"
+                                    >
+                                      Manual
+                                    </Badge>
+                                  );
+                                })()}
                               </div>
                             </div>
                             <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">

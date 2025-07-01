@@ -109,6 +109,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Dual-Confidence Badge System Fix COMPLETED (July 1, 2025)
+- **CRITICAL ARCHITECTURE FIX**: Eliminated dual-confidence discrepancies across family history, social history, and surgical history sections
+- **MEDICAL PROBLEMS PATTERN IMPLEMENTATION**: Applied the single-confidence architecture from medical problems to all problematic chart sections
+- **HEADER BADGE CONSISTENCY**: Fixed header badges to use only visit-level confidence instead of mixing entry.sourceConfidence with visit.confidence
+- **FAMILY HISTORY FIX**: Replaced dual-confidence logic with medical problems pattern using mostRecentVisit approach
+- **SOCIAL HISTORY FIX**: Eliminated sourceConfidence from header badge display, now uses only visit history confidence
+- **SURGICAL HISTORY FIX**: Consolidated complex multi-branch confidence logic into single visit-level confidence pattern
+- **UNIFIED CONFIDENCE DISPLAY**: All chart sections now display confidence consistently using visit history as single source of truth
+- **ELIMINATED DISCREPANCIES**: Resolved issue where header badges showed different confidence values than visit history entries
+- **VISIT HISTORY PRESERVATION**: All visit history displays remain unchanged, maintaining proper confidence tracking
+- **PRODUCTION READY**: Consistent confidence badge behavior across all four affected chart sections
+
 ### Patient Name Capitalization Enhancement COMPLETED (July 1, 2025)
 - **GPT PROMPT ENHANCEMENT**: Updated PatientParserService GPT prompt to enforce proper name capitalization for document parsing
 - **COMPREHENSIVE NORMALIZATION**: Added explicit instructions to normalize names from various formats (UPPERCASE, lowercase, Mixed CaSe) to proper capitalization
