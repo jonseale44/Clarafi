@@ -168,7 +168,7 @@ router.post("/social-history/:patientId", APIResponseHandler.asyncHandler(async 
       patientId,
       sourceType: "manual_entry",
       sourceConfidence: "1.00",
-      enteredBy: 2, // Default provider ID
+      enteredBy: 1, // Using existing user ID (jonseale) - TODO: make configurable
       visitHistory: socialHistoryData.visitHistory || [],
     });
 

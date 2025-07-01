@@ -527,7 +527,7 @@ export class AttachmentChartProcessor {
         sourceConfidence: parseFloat(Math.min(0.99, overallConfidence / 100).toFixed(2)), // Cap at 0.99 for precision 3,2
         sourceNotes: sourceNotes,
         extractedFromAttachmentId: attachmentId,
-        enteredBy: 2, // System user - could be made configurable
+        enteredBy: 1, // Using existing user ID (jonseale) - TODO: make configurable
         
         // Additional metadata
         parsedFromText: true,
@@ -565,8 +565,10 @@ export class AttachmentChartProcessor {
       // Validate patient ID exists before insertion
       console.log(`💾 [AttachmentChartProcessor] 🔍 VALIDATING patient ID ${vitalsEntry.patientId} exists in database`);
       try {
-        const patientCheck = await db.select().from({ patients: (await import("@shared/schema")).patients }).where(
-          (await import("drizzle-orm")).eq((await import("@shared/schema")).patients.id, vitalsEntry.patientId)
+        const { patients } = await import("@shared/schema");
+        const { eq } = await import("drizzle-orm");
+        const patientCheck = await db.select().from(patients).where(
+          eq(patients.id, vitalsEntry.patientId)
         ).limit(1);
         
         if (patientCheck.length === 0) {

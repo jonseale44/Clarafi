@@ -62,7 +62,7 @@ export class UnifiedSocialHistoryParser {
     soapNote: string | null = null,
     attachmentContent: string | null = null,
     attachmentId: number | null = null,
-    providerId: number = 2, // Default to Jonathan Seale
+    providerId: number = 1, // Using existing user ID (jonseale) - TODO: make configurable
     triggerType: string = "manual_processing"
   ) {
     console.log(`🚬 [UnifiedSocialHistory] ============= STARTING UNIFIED SOCIAL HISTORY PROCESSING =============`);
