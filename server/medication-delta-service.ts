@@ -985,6 +985,357 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   /**
+   * Process medications from attachment document (unified parser integration)
+   * Follows same pattern as medical problems, surgical history, etc.
+   */
+  async processAttachmentMedications(
+    attachmentId: number,
+    patientId: number,
+    encounterId: number,
+    extractedText: string,
+    providerId: number
+  ): Promise<{ medicationsProcessed: number; changes: any[] }> {
+    console.log(`💊 [AttachmentMedications] === PROCESSING MEDICATIONS FROM ATTACHMENT ${attachmentId} ===`);
+    console.log(`💊 [AttachmentMedications] Patient ID: ${patientId}, Text length: ${extractedText.length} characters`);
+
+    try {
+      // Get existing medications for consolidation analysis
+      const existingMedications = await this.getExistingMedications(patientId);
+      console.log(`💊 [AttachmentMedications] Found ${existingMedications.length} existing medications for consolidation`);
+
+      // Get patient context for intelligent processing
+      const patient = await this.getPatientInfo(patientId);
+      const encounter = await this.getEncounterInfo(encounterId);
+
+      // Build comprehensive patient context
+      const patientContext = await this.buildPatientContext(patientId);
+
+      // Process medications using GPT with consolidation intelligence
+      const gptResponse = await this.callMedicationExtractionGPT(
+        extractedText,
+        existingMedications,
+        patientContext,
+        attachmentId
+      );
+
+      console.log(`💊 [AttachmentMedications] GPT extracted ${gptResponse.medications?.length || 0} medications`);
+
+      // Apply changes with attachment source attribution
+      const changes = [];
+      if (gptResponse.medications && gptResponse.medications.length > 0) {
+        for (const medicationData of gptResponse.medications) {
+          const change = await this.processAttachmentMedication(
+            medicationData,
+            patientId,
+            encounterId,
+            attachmentId,
+            providerId,
+            existingMedications
+          );
+          if (change) {
+            changes.push(change);
+          }
+        }
+      }
+
+      console.log(`💊 [AttachmentMedications] ✅ Successfully processed ${changes.length} medication changes from attachment`);
+      
+      return {
+        medicationsProcessed: changes.length,
+        changes: changes
+      };
+
+    } catch (error) {
+      console.error(`💊 [AttachmentMedications] ❌ Error processing attachment medications:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process individual medication from attachment
+   */
+  private async processAttachmentMedication(
+    medicationData: any,
+    patientId: number,
+    encounterId: number,
+    attachmentId: number,
+    providerId: number,
+    existingMedications: any[]
+  ): Promise<any> {
+    console.log(`💊 [AttachmentMed] Processing medication: ${medicationData.medication_name}`);
+
+    // Check for existing medication to consolidate with
+    const existingMedication = this.findMatchingMedicationForAttachment(medicationData, existingMedications);
+
+    if (existingMedication && medicationData.should_consolidate) {
+      console.log(`💊 [AttachmentMed] Consolidating with existing medication ID ${existingMedication.id}`);
+      return this.addAttachmentVisitHistory(existingMedication, medicationData, attachmentId, encounterId);
+    } else {
+      console.log(`💊 [AttachmentMed] Creating new medication from attachment`);
+      return this.createMedicationFromAttachment(medicationData, patientId, encounterId, attachmentId, providerId);
+    }
+  }
+
+  /**
+   * Find matching medication for attachment consolidation
+   */
+  private findMatchingMedicationForAttachment(medicationData: any, existingMedications: any[]): any {
+    const medName = medicationData.medication_name?.toLowerCase() || '';
+    
+    return existingMedications.find(med => {
+      const existingName = med.medicationName?.toLowerCase() || '';
+      
+      // Check for exact match or close variations
+      if (existingName === medName) return true;
+      if (existingName.includes(medName) || medName.includes(existingName)) return true;
+      
+      // Check brand/generic name matches
+      if (med.brandName?.toLowerCase().includes(medName) || med.genericName?.toLowerCase().includes(medName)) return true;
+      
+      return false;
+    });
+  }
+
+  /**
+   * Add visit history entry from attachment to existing medication
+   */
+  private async addAttachmentVisitHistory(
+    existingMedication: any,
+    medicationData: any,
+    attachmentId: number,
+    encounterId: number
+  ): Promise<any> {
+    console.log(`💊 [AttachmentVisitHistory] Adding visit history to medication ${existingMedication.id}`);
+
+    const visitEntry = {
+      encounterDate: new Date().toISOString().split('T')[0],
+      changes: medicationData.changes || [],
+      notes: medicationData.notes || `Referenced in document`,
+      source: 'attachment',
+      sourceId: attachmentId,
+      encounterId: encounterId,
+      confidence: medicationData.confidence || 0.85,
+      extractedData: {
+        dosage: medicationData.dosage,
+        frequency: medicationData.frequency,
+        indication: medicationData.indication,
+        status: medicationData.status
+      }
+    };
+
+    // Get current visit history and add new entry
+    const currentVisitHistory = (existingMedication.visitHistory as any[]) || [];
+    const updatedVisitHistory = [...currentVisitHistory, visitEntry];
+
+    // Update medication with new visit history
+    await storage.updateMedication(existingMedication.id, {
+      visitHistory: updatedVisitHistory,
+      lastUpdatedEncounterId: encounterId
+    });
+
+    return {
+      action: 'VISIT_HISTORY_ADDED',
+      medicationId: existingMedication.id,
+      medicationName: existingMedication.medicationName,
+      visitEntry: visitEntry
+    };
+  }
+
+  /**
+   * Create new medication from attachment
+   */
+  private async createMedicationFromAttachment(
+    medicationData: any,
+    patientId: number,
+    encounterId: number,
+    attachmentId: number,
+    providerId: number
+  ): Promise<any> {
+    console.log(`💊 [AttachmentCreate] Creating new medication: ${medicationData.medication_name}`);
+
+    // Standardize medication data
+    const standardized = MedicationStandardizationService.standardizeMedicationFromAI(
+      medicationData.medication_name,
+      medicationData.dosage,
+      medicationData.form,
+      medicationData.route
+    );
+
+    // Create initial visit history entry
+    const initialVisitHistory = [{
+      encounterDate: new Date().toISOString().split('T')[0],
+      changes: ['Extracted from document'],
+      notes: medicationData.notes || `Medication extracted from uploaded document`,
+      source: 'attachment',
+      sourceId: attachmentId,
+      encounterId: encounterId,
+      confidence: medicationData.confidence || 0.85,
+      extractedData: {
+        dosage: medicationData.dosage,
+        frequency: medicationData.frequency,
+        indication: medicationData.indication,
+        status: medicationData.status
+      }
+    }];
+
+    // Create medication record with attachment source attribution
+    const medicationRecord = {
+      patientId,
+      encounterId,
+      medicationName: standardized.medicationName || medicationData.medication_name,
+      brandName: standardized.brandName,
+      genericName: standardized.genericName,
+      dosage: standardized.strength || medicationData.dosage || "As directed",
+      strength: standardized.strength,
+      dosageForm: standardized.dosageForm,
+      route: standardized.route || medicationData.route || "oral",
+      frequency: medicationData.frequency || "daily",
+      sig: medicationData.sig || null,
+      clinicalIndication: medicationData.indication,
+      startDate: new Date().toISOString().split('T')[0],
+      status: medicationData.status === 'discontinued' ? 'historical' : 'active',
+      firstEncounterId: encounterId,
+      lastUpdatedEncounterId: encounterId,
+      enteredBy: providerId,
+      // Attachment source attribution
+      sourceType: 'attachment',
+      sourceConfidence: medicationData.confidence || 0.85,
+      extractedFromAttachmentId: attachmentId,
+      sourceNotes: `Extracted from uploaded document`,
+      visitHistory: initialVisitHistory,
+      medicationHistory: initialVisitHistory,
+      changeLog: [{
+        timestamp: new Date().toISOString(),
+        change_type: 'medication_started',
+        encounter_id: encounterId,
+        processing_time_ms: 0
+      }]
+    };
+
+    const [newMedication] = await db.insert(medications).values(medicationRecord).returning();
+    
+    console.log(`💊 [AttachmentCreate] ✅ Created medication ${newMedication.id}: ${medicationRecord.medicationName}`);
+
+    return {
+      action: 'NEW_MEDICATION_FROM_ATTACHMENT',
+      medicationId: newMedication.id,
+      medicationName: medicationRecord.medicationName,
+      sourceType: 'attachment',
+      attachmentId: attachmentId
+    };
+  }
+
+  /**
+   * Call GPT for medication extraction from document
+   */
+  private async callMedicationExtractionGPT(
+    extractedText: string,
+    existingMedications: any[],
+    patientContext: any,
+    attachmentId: number
+  ): Promise<any> {
+    console.log(`💊 [GPT] Calling GPT for medication extraction (attachment ${attachmentId})`);
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const systemPrompt = `You are an expert clinical pharmacist with 20+ years of experience extracting medication information from medical documents. Your task is to identify and consolidate medication data with existing patient medications.
+
+CONSOLIDATION RULES:
+- AGGRESSIVE CONSOLIDATION: Same medication = same drug name, even if dosage/frequency differs
+- Always consolidate if medication names match (Lisinopril = lisinopril = LISINOPRIL)
+- Brand/Generic matching: Synthroid should consolidate with levothyroxine
+- Combination drugs: List active ingredients separately if documented as separate medications
+- DO NOT create duplicate medications for the same drug
+
+EXTRACTION RULES:
+- Extract ALL medications mentioned (current, historical, discontinued)
+- Include dosage, frequency, route, indication, status
+- Mark discontinued medications appropriately
+- Extract start dates if mentioned
+- Include any medication changes documented
+
+CONFIDENCE SCORING:
+- High confidence (0.90+): Explicitly listed in medication list/table
+- Medium confidence (0.70-0.89): Mentioned in narrative with clear details
+- Lower confidence (0.50-0.69): Inferred from clinical context
+
+RESPONSE FORMAT:
+Return JSON with:
+{
+  "medications": [
+    {
+      "medication_name": "standardized name",
+      "dosage": "strength and amount",
+      "frequency": "how often",
+      "route": "route of administration", 
+      "indication": "reason for use",
+      "status": "active/discontinued/historical",
+      "confidence": 0.85,
+      "should_consolidate": true/false,
+      "consolidation_reasoning": "why consolidate or create new",
+      "notes": "additional context",
+      "changes": ["any documented changes"]
+    }
+  ]
+}`;
+
+    const userPrompt = `PATIENT CONTEXT:
+Age: ${patientContext.age} years
+Gender: ${patientContext.gender}
+
+EXISTING MEDICATIONS (${existingMedications.length}):
+${existingMedications.map(med => `- ${med.medicationName} ${med.dosage} ${med.frequency} (${med.status})`).join('\n')}
+
+DOCUMENT TO ANALYZE:
+${extractedText}
+
+Extract all medications from this document. For each medication, determine if it should consolidate with existing medications or be created as new entry.`;
+
+    try {
+      const startTime = Date.now();
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.1,
+        max_tokens: 2000
+      });
+
+      const processingTime = Date.now() - startTime;
+      const responseText = response.choices[0]?.message?.content || "{}";
+      
+      console.log(`💊 [GPT] Response received in ${processingTime}ms`);
+      console.log(`💊 [GPT] Raw response: ${responseText.substring(0, 500)}...`);
+
+      // Parse JSON response
+      const gptResponse = JSON.parse(responseText);
+      
+      // Log token costs would go here if TokenCostAnalyzer was available
+
+      return gptResponse;
+
+    } catch (error) {
+      console.error(`💊 [GPT] Error calling GPT:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Build patient context for GPT processing
+   */
+  private async buildPatientContext(patientId: number): Promise<any> {
+    const patient = await this.getPatientInfo(patientId);
+    
+    return {
+      age: patient?.dateOfBirth ? this.calculateAge(patient.dateOfBirth) : 'Unknown',
+      gender: patient?.gender || 'Unknown',
+      mrn: patient?.mrn || 'Unknown'
+    };
+  }
+
+  /**
    * Sign encounter - finalize all medication visit entries
    */
   async signEncounter(encounterId: number, providerId: number): Promise<void> {

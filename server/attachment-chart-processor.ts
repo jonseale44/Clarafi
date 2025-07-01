@@ -5,6 +5,7 @@ import { UnifiedSurgicalHistoryParser } from "./unified-surgical-history-parser.
 import { unifiedFamilyHistoryParser } from "./unified-family-history-parser.js";
 import { unifiedSocialHistoryParser } from "./unified-social-history-parser.js";
 import { UnifiedAllergyParser } from "./unified-allergy-parser.js";
+import { MedicationDeltaService } from "./medication-delta-service.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -22,11 +23,13 @@ export class AttachmentChartProcessor {
   private vitalsParser: VitalsParserService;
   private surgicalHistoryParser: UnifiedSurgicalHistoryParser;
   private allergyParser: UnifiedAllergyParser;
+  private medicationDeltaService: MedicationDeltaService;
 
   constructor() {
     this.vitalsParser = new VitalsParserService();
     this.surgicalHistoryParser = new UnifiedSurgicalHistoryParser();
     this.allergyParser = new UnifiedAllergyParser();
+    this.medicationDeltaService = new MedicationDeltaService();
   }
 
   /**
@@ -80,19 +83,20 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Process vitals, medical problems, surgical history, family history, social history, and allergies in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies`);
+      // Process vitals, medical problems, surgical history, family history, social history, allergies, and medications in parallel for efficiency
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies + medications`);
       const parallelStartTime = Date.now();
       
-      // Process all six chart sections in parallel for efficiency
+      // Process all seven chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult, medicationsResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
           this.processDocumentForMedicalProblems(attachment, extractedContent),
           this.processDocumentForSurgicalHistory(attachment, extractedContent),
           this.processDocumentForFamilyHistory(attachment, extractedContent),
           this.processDocumentForSocialHistory(attachment, extractedContent),
-          this.processDocumentForAllergies(attachment, extractedContent)
+          this.processDocumentForAllergies(attachment, extractedContent),
+          this.processDocumentForMedications(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
@@ -154,6 +158,16 @@ export class AttachmentChartProcessor {
           }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Allergies processing completed successfully`);
+        }
+
+        if (medicationsResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] MEDICATIONS PROCESSING FAILED:`, medicationsResult.reason);
+          if (medicationsResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN MEDICATIONS - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Medications error details:`, JSON.stringify(medicationsResult.reason, null, 2));
+          }
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Medications processing completed successfully`);
         }
         
       } catch (error) {
@@ -807,6 +821,63 @@ export class AttachmentChartProcessor {
       console.error(`❌ [AllergyExtraction] Error processing allergies from attachment ${attachment.id}:`, error);
       console.error(`❌ [AllergyExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
       console.log(`🔥 [ALLERGY WORKFLOW] ============= ALLERGY EXTRACTION FAILED =============`);
+    }
+  }
+
+  /**
+   * Process document for medication extraction and consolidation
+   */
+  private async processDocumentForMedications(
+    attachment: any,
+    extractedContent: any
+  ): Promise<void> {
+    try {
+      console.log(`💊 [MedicationExtraction] 🔥 ============= ATTACHMENT MEDICATION EXTRACTION START =============`);
+      console.log(`💊 [MedicationExtraction] 🔍 Starting medication extraction for patient ${attachment.patientId}`);
+      console.log(`💊 [MedicationExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+
+      const startTime = Date.now();
+
+      // Use the medication delta service for attachment processing
+      console.log(`💊 [MedicationExtraction] 🔧 Using provider ID: 1 (hardcoded to match user)`);
+      const result = await this.medicationDeltaService.processAttachmentMedications(
+        attachment.id,
+        attachment.patientId,
+        attachment.encounterId,
+        extractedContent.extractedText,
+        1 // Provider ID hardcoded to match existing user
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`💊 [MedicationExtraction] ✅ Successfully processed medications in ${processingTime}ms`);
+      console.log(`💊 [MedicationExtraction] ✅ Medications processed: ${result.medicationsProcessed}`);
+
+      // Log individual changes for debugging
+      if (result.changes && result.changes.length > 0) {
+        console.log(`💊 [MedicationExtraction] ✅ Changes made (${result.changes.length} total):`);
+        result.changes.forEach((change: any, index: number) => {
+          console.log(`💊 [MedicationExtraction]   ${index + 1}. ${change.action}: ${change.medicationName}`);
+          if (change.sourceType) {
+            console.log(`💊 [MedicationExtraction]      Source: ${change.sourceType}`);
+          }
+          if (change.attachmentId) {
+            console.log(`💊 [MedicationExtraction]      Attachment ID: ${change.attachmentId}`);
+          }
+          if (change.visitEntry) {
+            console.log(`💊 [MedicationExtraction]      Visit Entry: ${change.visitEntry.notes}`);
+          }
+        });
+      } else {
+        console.log(`💊 [MedicationExtraction] ℹ️ No medication changes made - may be no medication content or all information already documented`);
+      }
+
+      console.log(`🔥 [MEDICATION WORKFLOW] ============= MEDICATION EXTRACTION COMPLETE =============`);
+
+    } catch (error) {
+      console.error(`❌ [MedicationExtraction] Error processing medications from attachment ${attachment.id}:`, error);
+      console.error(`❌ [MedicationExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [MEDICATION WORKFLOW] ============= MEDICATION EXTRACTION FAILED =============`);
     }
   }
 }
