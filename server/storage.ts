@@ -1480,6 +1480,53 @@ export class DatabaseStorage implements IStorage {
 
     return activeReview?.reviewedPrompt || null;
   }
+
+  // Social History Methods
+  async getSocialHistory(patientId: number) {
+    return await db.select().from(socialHistory).where(eq(socialHistory.patientId, patientId));
+  }
+
+  async createSocialHistory(socialHistoryData: any) {
+    const [result] = await db.insert(socialHistory).values(socialHistoryData).returning();
+    return result;
+  }
+
+  async updateSocialHistory(socialHistoryId: number, updateData: any) {
+    const [result] = await db
+      .update(socialHistory)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(eq(socialHistory.id, socialHistoryId))
+      .returning();
+    return result;
+  }
+
+  async deleteSocialHistory(socialHistoryId: number) {
+    await db.delete(socialHistory).where(eq(socialHistory.id, socialHistoryId));
+  }
+
+  async addSocialHistoryVisitHistory(socialHistoryId: number, visitEntry: any) {
+    // Get current social history entry
+    const [current] = await db
+      .select()
+      .from(socialHistory)
+      .where(eq(socialHistory.id, socialHistoryId));
+
+    if (current) {
+      const currentVisitHistory = current.visitHistory || [];
+      const updatedVisitHistory = [...currentVisitHistory, visitEntry];
+
+      await db
+        .update(socialHistory)
+        .set({
+          visitHistory: updatedVisitHistory,
+          updatedAt: new Date()
+        })
+        .where(eq(socialHistory.id, socialHistoryId));
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

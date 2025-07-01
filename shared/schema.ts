@@ -376,7 +376,7 @@ export const medicalHistory = pgTable("medical_history", {
 export const socialHistory = pgTable("social_history", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
-  category: text("category").notNull(), // 'smoking', 'alcohol', 'occupation'
+  category: text("category").notNull(), // 'smoking', 'alcohol', 'occupation', 'exercise', 'diet', 'sexual_history', 'living_situation', 'recreational_drugs'
   currentStatus: text("current_status").notNull(),
   historyNotes: text("history_notes"),
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
@@ -387,6 +387,27 @@ export const socialHistory = pgTable("social_history", {
   sourceNotes: text("source_notes"), // Additional context about data source
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
   enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  
+  // GPT processing metadata
+  consolidationReasoning: text("consolidation_reasoning"), // GPT's explanation for consolidation decisions
+  extractionNotes: text("extraction_notes"), // GPT's notes about extraction process
+  
+  // Visit history tracking - comprehensive change tracking system
+  visitHistory: jsonb("visit_history").$type<Array<{
+    date: string; // YYYY-MM-DD format
+    notes: string; // Clinical notes about social history discussion/changes
+    source: "encounter" | "attachment" | "manual" | "imported_record";
+    encounterId?: number; // Reference to encounter if source is encounter
+    attachmentId?: number; // Reference to attachment if source is attachment
+    providerId?: number;
+    providerName?: string;
+    changesMade?: string[]; // Array of changes made (e.g., 'status_updated', 'quantity_changed', 'quit_date_added')
+    confidence?: number; // AI confidence in extraction (0.0-1.0)
+    isSigned?: boolean; // Provider signature status
+    signedAt?: string;
+    sourceConfidence?: number;
+    sourceNotes?: string; // Additional context from extraction source
+  }>>().default([]),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1968,6 +1989,9 @@ export const insertSocialHistorySchema = createInsertSchema(socialHistory).pick(
   sourceNotes: true,
   extractedFromAttachmentId: true,
   enteredBy: true,
+  consolidationReasoning: true,
+  extractionNotes: true,
+  visitHistory: true,
 });
 
 export const insertSurgicalHistorySchema = createInsertSchema(surgicalHistory).pick({
