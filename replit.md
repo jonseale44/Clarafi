@@ -114,8 +114,10 @@ Preferred communication style: Simple, everyday language.
 - **REAL-TIME AUTO-SAVE SYSTEM**: Added debounced auto-save functionality with 5-second inactivity trigger during recording sessions for optimal performance without excessive API calls
 - **WEBSOCKET DELTA INTEGRATION**: Integrated auto-save triggers with existing WebSocket transcription delta handling for real-time persistence as users speak
 - **ENCOUNTER RESTORE LOGIC**: Implemented transcription restoration when entering encounters, loading both raw and processed transcription from database
+- **MULTI-SESSION TRANSCRIPTION FIX**: Fixed critical bug where transcription buffer wasn't initialized with saved content, now properly supports multi-session recording continuation
 - **COMPREHENSIVE SAVE ENDPOINTS**: Enhanced existing PUT `/api/patients/:id/encounters/:encounterId/transcription` endpoint for automatic saving during recording
 - **FINAL STATE PRESERVATION**: Added final transcription save on stop recording to ensure complete transcription state is persisted
+- **NAVIGATION SAVE PROTECTION**: Added intelligent toast notifications that trigger immediate saves when users navigate away with unsaved content
 - **VISUAL STATUS INDICATORS**: Implemented transcription save status tracking (saved/saving/unsaved) with proper user feedback
 - **MEMORY CLEANUP**: Added proper timer cleanup on component unmount to prevent memory leaks
 - **PRESERVES EXISTING FUNCTIONALITY**: Maintained all existing recording start/stop functionality and automatic SOAP note saving workflows

@@ -1543,9 +1543,53 @@ export function EncounterDetailView({
     );
   };
 
-  // Cleanup auto-save timers on unmount
+  // Check for unsaved content before navigation and trigger immediate save
+  const checkUnsavedContent = async () => {
+    const hasUnsavedTranscription = transcriptionSaveStatus === "unsaved" || transcriptionSaveStatus === "saving";
+    const hasUnsavedSoapNote = autoSaveStatus === "unsaved" || autoSaveStatus === "saving";
+    
+    if (hasUnsavedTranscription || hasUnsavedSoapNote) {
+      const unsavedItems = [];
+      if (hasUnsavedTranscription) unsavedItems.push("transcription");
+      if (hasUnsavedSoapNote) unsavedItems.push("SOAP note");
+      
+      console.log("💾 [Navigation] Unsaved content detected, triggering immediate save:", {
+        transcription: transcriptionSaveStatus,
+        soapNote: autoSaveStatus,
+        unsavedItems
+      });
+
+      // Trigger immediate saves to prevent data loss
+      try {
+        if (hasUnsavedTranscription && transcription) {
+          await autoSaveTranscription(transcription, liveTranscriptionContent);
+        }
+        if (hasUnsavedSoapNote && soapNote) {
+          triggerAutoSave(soapNote);
+        }
+
+        toast({
+          title: "Content Saved",
+          description: `Your ${unsavedItems.join(" and ")} ${unsavedItems.length === 1 ? 'has' : 'have'} been saved automatically.`,
+          duration: 3000,
+        });
+      } catch (error) {
+        console.error("❌ [Navigation] Failed to save content:", error);
+        toast({
+          title: "Save Warning",
+          description: `Your ${unsavedItems.join(" and ")} will auto-save in a few seconds. Content is protected.`,
+          duration: 4000,
+        });
+      }
+    }
+  };
+
+  // Cleanup auto-save timers on unmount and check for unsaved content
   useEffect(() => {
     return () => {
+      // Check for unsaved content before component unmounts
+      checkUnsavedContent();
+      
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current);
       }
@@ -1553,7 +1597,7 @@ export function EncounterDetailView({
         clearTimeout(transcriptionAutoSaveTimer.current);
       }
     };
-  }, []);
+  }, [transcriptionSaveStatus, autoSaveStatus]);
 
   // Effect to load existing SOAP note and transcription from encounter data
   useEffect(() => {
