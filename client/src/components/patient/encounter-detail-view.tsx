@@ -1587,9 +1587,16 @@ export function EncounterDetailView({
           setTranscription(savedRawTranscription);
           setLastSavedTranscription(savedRawTranscription);
           setTranscriptionSaveStatus("saved");
+          
+          // CRITICAL: Also initialize the transcription buffer for multi-session recording
+          setTranscriptionBuffer(savedRawTranscription);
+          
           console.log(
             "🎤 [EncounterView] Restored transcription from database:",
             `Raw: ${savedRawTranscription.length} chars, Processed: ${savedProcessedTranscription.length} chars`
+          );
+          console.log(
+            "🎤 [EncounterView] MULTI-SESSION FIX: Initialized transcription buffer with saved content for continuation"
           );
         }
 
