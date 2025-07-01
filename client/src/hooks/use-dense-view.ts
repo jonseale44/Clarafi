@@ -25,7 +25,7 @@ export function useDenseView() {
   // Toggle dense view mutation
   const toggleDenseViewMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
-      return apiRequest('/api/user/preferences', 'PUT', { enableDenseView: enabled });
+      return apiRequest('PUT', '/api/user/preferences', { enableDenseView: enabled });
     },
     onSuccess: () => {
       // Invalidate preferences to refetch
