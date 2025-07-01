@@ -463,6 +463,18 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
 
   const formatDate = (dateString: string) => {
     try {
+      // Handle date string to avoid timezone conversion issues
+      // Parse date as YYYY-MM-DD format and treat as local date
+      if (dateString.includes('-')) {
+        const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+        const localDate = new Date(year, month - 1, day); // month is 0-indexed
+        return localDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+      // Fallback for other date formats
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -945,11 +957,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                         visit.attachmentId, 
                                         visit.encounterId
                                       )}
-                                      {visit.confidence && (
-                                        <Badge variant="outline" className="text-xs">
-                                          {Math.round(visit.confidence * 100)}% confidence
-                                        </Badge>
-                                      )}
+
                                     </div>
                                     <p className="text-gray-700 leading-relaxed">{visit.notes}</p>
                                     {visit.changesMade && visit.changesMade.length > 0 && (
