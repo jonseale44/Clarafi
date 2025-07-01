@@ -52,7 +52,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { useNavigationContext } from "@/lib/navigation-context";
+import { useNavigationContext } from "@/hooks/use-navigation-context";
 
 // Social history categories based on the unified parser
 const SOCIAL_HISTORY_CATEGORIES = [

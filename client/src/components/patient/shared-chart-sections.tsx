@@ -283,18 +283,21 @@ export function SharedChartSections({
         );
       
       case "social-history":
+        const SocialHistorySection = React.lazy(() => import("./social-history-section"));
         return (
-          <div className="emr-tight-spacing">
-            <Card>
-              <CardContent className="pt-3 emr-card-content-tight">
-                <div className="text-center py-4 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Social history management coming soon</p>
-                  <p className="text-sm">Document smoking, alcohol, occupation history.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <React.Suspense fallback={
+            <div className="emr-tight-spacing">
+              <Card>
+                <CardContent className="pt-3 emr-card-content-tight">
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          }>
+            <SocialHistorySection patientId={patientId} mode={mode === "patient-chart" ? "chart" : "encounter"} />
+          </React.Suspense>
         );
       
       case "surgical-history":
