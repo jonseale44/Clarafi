@@ -562,7 +562,50 @@ export class AttachmentChartProcessor {
         hasVitals: !!(vitalsEntry.systolicBp || vitalsEntry.heartRate)
       });
 
+      // Validate patient ID exists before insertion
+      console.log(`💾 [AttachmentChartProcessor] 🔍 VALIDATING patient ID ${vitalsEntry.patientId} exists in database`);
       try {
+        const patientCheck = await db.select().from({ patients: (await import("@shared/schema")).patients }).where(
+          (await import("drizzle-orm")).eq((await import("@shared/schema")).patients.id, vitalsEntry.patientId)
+        ).limit(1);
+        
+        if (patientCheck.length === 0) {
+          console.error(`❌ [AttachmentChartProcessor] PATIENT NOT FOUND: Patient ID ${vitalsEntry.patientId} does not exist in patients table`);
+          throw new Error(`Patient ID ${vitalsEntry.patientId} not found in database`);
+        }
+        
+        console.log(`✅ [AttachmentChartProcessor] Patient ID ${vitalsEntry.patientId} validated successfully`);
+      } catch (validationError: any) {
+        console.error(`❌ [AttachmentChartProcessor] PATIENT VALIDATION ERROR:`, validationError);
+        throw validationError;
+      }
+
+      // Validate encounter ID exists if provided
+      if (vitalsEntry.encounterId) {
+        console.log(`💾 [AttachmentChartProcessor] 🔍 VALIDATING encounter ID ${vitalsEntry.encounterId} exists in database`);
+        try {
+          const encounterCheck = await db.select().from({ encounters: (await import("@shared/schema")).encounters }).where(
+            (await import("drizzle-orm")).eq((await import("@shared/schema")).encounters.id, vitalsEntry.encounterId)
+          ).limit(1);
+          
+          if (encounterCheck.length === 0) {
+            console.error(`❌ [AttachmentChartProcessor] ENCOUNTER NOT FOUND: Encounter ID ${vitalsEntry.encounterId} does not exist in encounters table`);
+            throw new Error(`Encounter ID ${vitalsEntry.encounterId} not found in database`);
+          }
+          
+          console.log(`✅ [AttachmentChartProcessor] Encounter ID ${vitalsEntry.encounterId} validated successfully`);
+        } catch (encounterValidationError: any) {
+          console.error(`❌ [AttachmentChartProcessor] ENCOUNTER VALIDATION ERROR:`, encounterValidationError);
+          throw encounterValidationError;
+        }
+      } else {
+        console.log(`💾 [AttachmentChartProcessor] ℹ️ No encounter ID provided - skipping encounter validation`);
+      }
+
+      try {
+        console.log(`💾 [AttachmentChartProcessor] 🔄 ATTEMPTING DATABASE INSERT for vitals set ${setLabel}`);
+        console.log(`💾 [AttachmentChartProcessor] 🔄 Full vitalsEntry object being inserted:`, JSON.stringify(vitalsEntry, null, 2));
+        
         const [savedEntry] = await db.insert(vitals).values(vitalsEntry).returning();
         console.log(`💾 [AttachmentChartProcessor] ✅ Database insert successful for vitals set ${setLabel}`);
         
@@ -588,10 +631,26 @@ export class AttachmentChartProcessor {
         console.log(`🔥 [DATABASE WORKFLOW] ============= VITALS SET ${setLabel} SAVED SUCCESSFULLY =============`);
       } catch (dbError: any) {
         console.error(`❌ [AttachmentChartProcessor] DATABASE ERROR for vitals set ${setLabel}:`, dbError);
+        console.error(`❌ [AttachmentChartProcessor] Error code: ${dbError.code}`);
+        console.error(`❌ [AttachmentChartProcessor] Error message: ${dbError.message}`);
+        console.error(`❌ [AttachmentChartProcessor] Error detail: ${dbError.detail || 'No detail available'}`);
+        console.error(`❌ [AttachmentChartProcessor] Error constraint: ${dbError.constraint || 'No constraint available'}`);
+        console.error(`❌ [AttachmentChartProcessor] Error table: ${dbError.table || 'No table available'}`);
+        console.error(`❌ [AttachmentChartProcessor] Error column: ${dbError.column || 'No column available'}`);
+        console.error(`❌ [AttachmentChartProcessor] Error schema: ${dbError.schema || 'No schema available'}`);
+        console.error(`❌ [AttachmentChartProcessor] Full error object:`, JSON.stringify(dbError, null, 2));
+        console.error(`❌ [AttachmentChartProcessor] Values being inserted:`, JSON.stringify(vitalsEntry, null, 2));
+        
         if (dbError.code === '22003') {
-          console.error(`❌ [AttachmentChartProcessor] NUMERIC PRECISION ERROR - Field with precision 3, scale 2 received invalid value`);
-          console.error(`❌ [AttachmentChartProcessor] Values being inserted:`, JSON.stringify(vitalsEntry, null, 2));
+          console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR - Field with precision 3, scale 2 received invalid value`);
+        } else if (dbError.code === '23503') {
+          console.error(`🔗 [AttachmentChartProcessor] FOREIGN KEY CONSTRAINT VIOLATION`);
+        } else if (dbError.code === '23505') {
+          console.error(`🔑 [AttachmentChartProcessor] UNIQUE CONSTRAINT VIOLATION`);
+        } else if (dbError.code === '23502') {
+          console.error(`❗ [AttachmentChartProcessor] NOT NULL CONSTRAINT VIOLATION`);
         }
+        
         throw dbError;
       }
 
