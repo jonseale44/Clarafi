@@ -35,6 +35,7 @@ interface FamilyHistoryEntry {
   sourceType: string;
   sourceConfidence: string;
   sourceNotes?: string;
+  extractedFromAttachmentId?: number; // Added for proper attachment ID tracking
   createdAt: string;
   updatedAt: string;
 }
@@ -396,7 +397,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                           
                           // For attachment sources, use extractedFromAttachmentId if visit history doesn't have it
                           const finalAttachmentId = attachmentIdFromVisit || 
-                            (entry.sourceType === "attachment" ? (entry as any).extractedFromAttachmentId : undefined);
+                            (entry.sourceType === "attachment" ? entry.extractedFromAttachmentId : undefined);
                           
                           console.log("🔗 [FamilyHistory] Processing entry for source badge:", {
                             id: entry.id,
@@ -404,7 +405,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                             visitHistory: entry.visitHistory,
                             attachmentIdFromVisit,
                             encounterIdFromVisit,
-                            extractedFromAttachmentId: (entry as any).extractedFromAttachmentId,
+                            extractedFromAttachmentId: entry.extractedFromAttachmentId,
                             finalAttachmentId
                           });
                           
