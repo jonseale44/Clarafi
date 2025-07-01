@@ -5,6 +5,7 @@ import { UnifiedSurgicalHistoryParser } from "./unified-surgical-history-parser.
 import { unifiedFamilyHistoryParser } from "./unified-family-history-parser.js";
 import { unifiedSocialHistoryParser } from "./unified-social-history-parser.js";
 import { UnifiedAllergyParser } from "./unified-allergy-parser.js";
+import { unifiedMedicationParser } from "./unified-medication-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
