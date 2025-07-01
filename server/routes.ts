@@ -570,6 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", unifiedMedicalProblemsRoutes);
   app.use("/api", unifiedSurgicalHistoryRoutes);
   app.use("/api", unifiedFamilyHistoryRoutes);
+  app.use("/api", socialHistoryRoutes);
 
   // Removed orphaned enhanced medical problems routes - functionality consolidated into unified API
 

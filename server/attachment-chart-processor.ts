@@ -3,6 +3,7 @@ import { VitalsParserService } from "./vitals-parser-service.js";
 import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
 import { UnifiedSurgicalHistoryParser } from "./unified-surgical-history-parser.js";
 import { unifiedFamilyHistoryParser } from "./unified-family-history-parser.js";
+import { unifiedSocialHistoryParser } from "./unified-social-history-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -76,17 +77,18 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Process vitals, medical problems, surgical history, and family history in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history`);
+      // Process vitals, medical problems, surgical history, family history, and social history in parallel for efficiency
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history`);
       const parallelStartTime = Date.now();
       
-      // Process all four chart sections in parallel for efficiency
+      // Process all five chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
           this.processDocumentForMedicalProblems(attachment, extractedContent),
           this.processDocumentForSurgicalHistory(attachment, extractedContent),
-          this.processDocumentForFamilyHistory(attachment, extractedContent)
+          this.processDocumentForFamilyHistory(attachment, extractedContent),
+          this.processDocumentForSocialHistory(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
@@ -112,6 +114,12 @@ export class AttachmentChartProcessor {
           console.error(`❌ [AttachmentChartProcessor] Family history processing failed:`, familyHistoryResult.reason);
         } else {
           console.log(`✅ [AttachmentChartProcessor] Family history processing completed successfully`);
+        }
+        
+        if (socialHistoryResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] Social history processing failed:`, socialHistoryResult.reason);
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Social history processing completed successfully`);
         }
         
       } catch (error) {
@@ -542,6 +550,68 @@ export class AttachmentChartProcessor {
     } catch (error) {
       console.error(`❌ [AttachmentChartProcessor] Error saving vitals:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Process document for social history extraction and consolidation
+   */
+  private async processDocumentForSocialHistory(
+    attachment: any,
+    extractedContent: any
+  ): Promise<void> {
+    console.log(`🔥 [SOCIAL HISTORY WORKFLOW] ============= SOCIAL HISTORY EXTRACTION =============`);
+    console.log(`🚭 [SocialHistoryExtraction] Starting social history analysis for attachment ${attachment.id}`);
+    console.log(`🚭 [SocialHistoryExtraction] Processing content for patient ${attachment.patientId}`);
+
+    if (!extractedContent.extractedText || extractedContent.extractedText.length < 50) {
+      console.log(`🚭 [SocialHistoryExtraction] ℹ️ Insufficient text content for social history analysis, skipping`);
+      return;
+    }
+
+    try {
+      console.log(`🚭 [SocialHistoryExtraction] 🔍 Starting unified social history extraction for patient ${attachment.patientId}`);
+      console.log(`🚭 [SocialHistoryExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+
+      const startTime = Date.now();
+
+      // Use the unified social history parser for attachment processing
+      const result = await unifiedSocialHistoryParser.processUnified(
+        attachment.patientId,
+        null, // No specific encounter ID for attachment
+        null, // No SOAP note text
+        extractedContent.extractedText, // Attachment content
+        "attachment_processing", // Trigger type
+        attachment.id // Attachment ID for source tracking
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`🚭 [SocialHistoryExtraction] ✅ Successfully processed social history in ${processingTime}ms`);
+      console.log(`🚭 [SocialHistoryExtraction] ✅ Social history entries affected: ${result.socialHistoryAffected}`);
+      console.log(`🚭 [SocialHistoryExtraction] ✅ Encounter social history: ${result.encounterSocialHistory}`);
+      console.log(`🚭 [SocialHistoryExtraction] ✅ Attachment social history: ${result.attachmentSocialHistory}`);
+
+      // Log individual changes for debugging
+      if (result.changes && result.changes.length > 0) {
+        console.log(`🚭 [SocialHistoryExtraction] ✅ Changes made (${result.changes.length} total):`);
+        result.changes.forEach((change, index) => {
+          console.log(`🚭 [SocialHistoryExtraction]   ${index + 1}. ${change.action}: ${change.category} - ${change.currentStatus}`);
+          console.log(`🚭 [SocialHistoryExtraction]      Confidence: ${change.confidence}`);
+          if (change.consolidationReason) {
+            console.log(`🚭 [SocialHistoryExtraction]      Consolidation: ${change.consolidationReason}`);
+          }
+        });
+      } else {
+        console.log(`🚭 [SocialHistoryExtraction] ℹ️ No social history changes made - may be no social history content or all information already documented`);
+      }
+
+      console.log(`🔥 [SOCIAL HISTORY WORKFLOW] ============= SOCIAL HISTORY EXTRACTION COMPLETE =============`);
+
+    } catch (error) {
+      console.error(`❌ [SocialHistoryExtraction] Error processing social history from attachment ${attachment.id}:`, error);
+      console.error(`❌ [SocialHistoryExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [SOCIAL HISTORY WORKFLOW] ============= SOCIAL HISTORY EXTRACTION FAILED =============`);
     }
   }
 }
