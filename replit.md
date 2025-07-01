@@ -143,6 +143,10 @@ Preferred communication style: Simple, everyday language.
 - **VISIT HISTORY SUPPORT**: Full visit history tracking with source attribution, confidence scoring, and change documentation following established patterns
 - **COMPREHENSIVE ERROR HANDLING**: Added numeric precision error detection, comprehensive logging, and proper error recovery throughout imaging pipeline
 - **API ROUTES REGISTERED**: Successfully registered unified imaging routes following surgical history patterns with proper REST endpoints
+- **GPT EXTRACTION VERIFIED**: Successfully tested chest X-ray extraction from H&P document with 100% confidence (cardiomegaly, pulmonary congestion, pleural effusions)
+- **STATIC METHOD FIX**: Fixed PatientChartService calls from instance methods to static methods in unified-imaging-parser.ts
+- **DATABASE CONSTRAINT RESOLUTION**: Made imaging_order_id nullable for historical PDF-based imaging data without associated orders
+- **FOREIGN KEY CASCADE FIX**: Corrected patient deletion order in storage.ts to delete imaging_results before imaging_orders, preventing constraint violations
 
 ### Critical Allergy Processing Fix & Family History Addition COMPLETED (July 1, 2025)
 - **CRITICAL BUG FIXED**: Resolved missing allergy processing in encounter SOAP note workflows that was causing allergies to be misrouted to medical problems section
