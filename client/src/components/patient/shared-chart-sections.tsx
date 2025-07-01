@@ -278,7 +278,7 @@ export function SharedChartSections({
               </Card>
             </div>
           }>
-            <FamilyHistorySection patientId={patientId} />
+            <FamilyHistorySection patientId={patientId} mode={mode} />
           </React.Suspense>
         );
       

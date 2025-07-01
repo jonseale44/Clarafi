@@ -15,6 +15,7 @@ import { Edit, Trash2, Plus, Users, Clock, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { useNavigationContext } from "@/hooks/use-navigation-context";
 
 interface FamilyHistoryEntry {
   id: number;
@@ -41,6 +42,7 @@ interface FamilyHistoryEntry {
 interface FamilyHistorySectionProps {
   patientId: number;
   className?: string;
+  mode?: string;
 }
 
 const FAMILY_RELATIONSHIPS = [
@@ -48,13 +50,14 @@ const FAMILY_RELATIONSHIPS = [
   "grandmother", "grandfather", "aunt", "uncle", "cousin"
 ];
 
-const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, className = "" }) => {
+const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, className = "", mode = "chart" }) => {
   const [editingEntry, setEditingEntry] = useState<FamilyHistoryEntry | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { navigateWithContext } = useNavigationContext();
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
