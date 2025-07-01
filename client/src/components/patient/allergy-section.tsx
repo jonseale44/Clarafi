@@ -328,7 +328,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
         {allergies.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             <Shield className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="text-sm font-medium">No allergies documented</p>
+            <p className="text-sm">No allergies documented</p>
             <p className="text-xs text-gray-400 mt-1">
               Add allergies manually or they will be extracted from clinical notes
             </p>
