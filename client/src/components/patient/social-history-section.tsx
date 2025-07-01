@@ -128,10 +128,34 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
   });
 
   // Get social history data
-  const { data: socialHistory = [], isLoading } = useQuery<SocialHistoryEntry[]>({
+  const { data: socialHistory = [], isLoading, error } = useQuery<SocialHistoryEntry[]>({
     queryKey: ["/api/social-history", patientId],
     enabled: !!patientId,
   });
+
+  // Enhanced logging for social history component
+  console.log(`🚬 [SocialHistorySection] Component rendered for patient ${patientId}`);
+  console.log(`🚬 [SocialHistorySection] Query state:`, {
+    isLoading,
+    hasError: !!error,
+    dataLength: socialHistory?.length || 0,
+    enabled: !!patientId,
+    queryKey: ["/api/social-history", patientId]
+  });
+
+  if (error) {
+    console.error(`🚬 [SocialHistorySection] Query error:`, error);
+  }
+
+  if (socialHistory && socialHistory.length > 0) {
+    console.log(`🚬 [SocialHistorySection] Social history data:`, socialHistory.map(sh => ({
+      id: sh.id,
+      category: sh.category,
+      currentStatus: sh.currentStatus,
+      sourceType: sh.sourceType,
+      visitHistoryLength: sh.visitHistory?.length || 0
+    })));
+  }
 
   // Create social history mutation
   const createMutation = useMutation({
