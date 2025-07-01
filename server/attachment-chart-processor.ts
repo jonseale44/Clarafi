@@ -766,14 +766,13 @@ export class AttachmentChartProcessor {
 
       // Use the unified allergy parser for attachment processing
       console.log(`🚨 [AllergyExtraction] 🔧 Using provider ID: 1 (hardcoded to match user)`);
-      const result = await this.allergyParser.processUnified(
+      const result = await this.allergyParser.processUnifiedAllergies(
         attachment.patientId,
-        null, // No specific encounter ID for attachment
-        null, // No SOAP note text
-        extractedContent.extractedText, // Attachment content
-        attachment.id, // Attachment ID for source tracking
-        1, // Provider ID (Jonathan Seale)
-        "attachment_processing" // Trigger type
+        {
+          attachmentContent: extractedContent.extractedText, // Attachment content
+          attachmentId: attachment.id, // Attachment ID for source tracking
+          triggerType: "attachment_processing" // Trigger type
+        }
       );
 
       const processingTime = Date.now() - startTime;
@@ -786,7 +785,7 @@ export class AttachmentChartProcessor {
       // Log individual changes for debugging
       if (result.changes && result.changes.length > 0) {
         console.log(`🚨 [AllergyExtraction] ✅ Changes made (${result.changes.length} total):`);
-        result.changes.forEach((change, index) => {
+        result.changes.forEach((change: any, index: number) => {
           console.log(`🚨 [AllergyExtraction]   ${index + 1}. ${change.action}: ${change.allergen} - ${change.reaction || 'unknown reaction'}`);
           console.log(`🚨 [AllergyExtraction]      Severity: ${change.severity || 'unknown'}`);
           console.log(`🚨 [AllergyExtraction]      Confidence: ${change.confidence}`);
