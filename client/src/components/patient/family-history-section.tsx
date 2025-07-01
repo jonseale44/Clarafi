@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Edit, Trash2, Plus, Users, Clock, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 interface FamilyHistoryEntry {
   id: number;
@@ -53,6 +54,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
   const [expandedEntries, setExpandedEntries] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
@@ -168,12 +170,78 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
     }
   };
 
-  const getSourceBadgeColor = (sourceType: string) => {
-    switch (sourceType) {
-      case "attachment_extracted": return "bg-blue-100 text-blue-800";
-      case "soap_derived": return "bg-green-100 text-green-800";
-      case "manual_entry": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
+  // Source badge with navigation - matches medical problems pattern exactly
+  const getSourceBadge = (source: string, confidence?: number, attachmentId?: number, encounterId?: number) => {
+    switch (source) {
+      case "encounter":
+        // Clickable encounter badge that navigates to encounter detail
+        const handleEncounterClick = () => {
+          if (encounterId) {
+            setLocation(`/patients/${patientId}/encounters/${encounterId}`);
+          }
+        };
+        return (
+          <Badge 
+            variant="default" 
+            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors"
+            onClick={handleEncounterClick}
+            title={`Click to view encounter details (Encounter #${encounterId})`}
+          >
+            Encounter
+          </Badge>
+        );
+      case "attachment":
+        // Document Extract badge with confidence score, tooltip, and click navigation
+        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+        const handleDocumentClick = () => {
+          if (attachmentId) {
+            setLocation(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`);
+          }
+        };
+        
+        const getConfidenceTooltip = (confidencePercent: number) => {
+          if (confidencePercent >= 90) {
+            return "High Confidence: Document contains specific family history data with clear family member relationships and medical conditions.";
+          } else if (confidencePercent >= 70) {
+            return "Good Confidence: Document has moderate family history specificity with some specific medical details.";
+          } else if (confidencePercent >= 40) {
+            return "Medium Confidence: Document contains general family history information but lacks specific clinical details.";
+          } else if (confidencePercent >= 10) {
+            return "Low Confidence: Document has vague or minimal family history information with limited clinical specificity.";
+          } else {
+            return "Very Low Confidence: Document contains minimal or very general family history information without specific clinical details.";
+          }
+        };
+        
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Badge 
+                    variant="secondary" 
+                    className="text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                    onClick={handleDocumentClick}
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    Doc Extract {confidencePercent}%
+                  </Badge>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-sm font-medium mb-1">Confidence: {confidencePercent}%</p>
+                <p className="text-xs">{getConfidenceTooltip(confidencePercent)}</p>
+                <p className="text-xs mt-2 opacity-75">Click to view source document</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      case "manual":
+        return <Badge variant="secondary" className="text-xs">Manual</Badge>;
+      case "imported_record":
+        return <Badge variant="outline" className="text-xs">Imported</Badge>;
+      default:
+        return null;
     }
   };
 
@@ -305,10 +373,12 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={getSourceBadgeColor(entry.sourceType)}>
-                          {entry.sourceType === "attachment_extracted" ? "Document" :
-                           entry.sourceType === "soap_derived" ? "Note" : "Manual"}
-                        </Badge>
+                        {getSourceBadge(
+                          entry.sourceType,
+                          entry.sourceConfidence ? parseFloat(entry.sourceConfidence) : undefined,
+                          entry.visitHistory?.find(visit => visit.attachmentId)?.attachmentId,
+                          entry.visitHistory?.find(visit => visit.encounterId)?.encounterId
+                        )}
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                           <TooltipProvider>
                             <Tooltip>
