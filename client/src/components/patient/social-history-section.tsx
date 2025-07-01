@@ -847,26 +847,21 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                 </div>
                                 <div className="flex items-center gap-1">
                                   {(() => {
-                                    // Extract attachment ID from visit history OR fall back to extractedFromAttachmentId
-                                    const attachmentIdFromVisit = entry.visitHistory?.find(visit => visit.attachmentId)?.attachmentId;
-                                    const finalAttachmentId = attachmentIdFromVisit || 
-                                      (entry.sourceType === "attachment" ? entry.extractedFromAttachmentId : undefined);
+                                    // MEDICAL PROBLEMS PATTERN: Use only visit-level confidence to eliminate dual-confidence discrepancy
+                                    // Get the most recent visit to display its confidence
+                                    const mostRecentVisit = entry.visitHistory?.[0]; // Assuming sorted by date desc
                                     
-                                    // Extract encounter ID from visit history OR fall back to extractedFromEncounterId
-                                    const encounterIdFromVisit = entry.visitHistory?.find(visit => visit.encounterId)?.encounterId;
-                                    const finalEncounterId = encounterIdFromVisit || 
-                                      (entry.sourceType === "encounter" ? entry.extractedFromEncounterId : undefined);
+                                    if (mostRecentVisit) {
+                                      return getSourceBadge(
+                                        mostRecentVisit.source,
+                                        mostRecentVisit.confidence,
+                                        mostRecentVisit.attachmentId,
+                                        mostRecentVisit.encounterId
+                                      );
+                                    }
                                     
-                                    // Use sourceConfidence from the entry OR visit history
-                                    const finalConfidence = entry.sourceConfidence || 
-                                      entry.visitHistory?.find(visit => visit.confidence)?.confidence;
-                                    
-                                    return getSourceBadge(
-                                      entry.sourceType, 
-                                      finalConfidence, 
-                                      finalAttachmentId, 
-                                      finalEncounterId
-                                    );
+                                    // Fallback for entries without visit history (manual entries)
+                                    return getSourceBadge("manual", undefined, undefined, undefined);
                                   })()}
                                 </div>
                               </div>

@@ -391,30 +391,21 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                       </div>
                       <div className="flex items-center gap-2">
                         {(() => {
-                          // Extract attachment ID from visit history OR fall back to extractedFromAttachmentId
-                          const attachmentIdFromVisit = entry.visitHistory?.find(visit => visit.attachmentId)?.attachmentId;
-                          const encounterIdFromVisit = entry.visitHistory?.find(visit => visit.encounterId)?.encounterId;
+                          // MEDICAL PROBLEMS PATTERN: Use only visit-level confidence to eliminate dual-confidence discrepancy
+                          // Get the most recent visit to display its confidence
+                          const mostRecentVisit = entry.visitHistory?.[0]; // Assuming sorted by date desc
                           
-                          // For attachment sources, use extractedFromAttachmentId if visit history doesn't have it
-                          const finalAttachmentId = attachmentIdFromVisit || 
-                            (entry.sourceType === "attachment" ? entry.extractedFromAttachmentId : undefined);
+                          if (mostRecentVisit) {
+                            return getSourceBadge(
+                              mostRecentVisit.source,
+                              mostRecentVisit.confidence,
+                              mostRecentVisit.attachmentId,
+                              mostRecentVisit.encounterId
+                            );
+                          }
                           
-                          console.log("🔗 [FamilyHistory] Processing entry for source badge:", {
-                            id: entry.id,
-                            sourceType: entry.sourceType,
-                            visitHistory: entry.visitHistory,
-                            attachmentIdFromVisit,
-                            encounterIdFromVisit,
-                            extractedFromAttachmentId: entry.extractedFromAttachmentId,
-                            finalAttachmentId
-                          });
-                          
-                          return getSourceBadge(
-                            entry.sourceType,
-                            entry.sourceConfidence ? parseFloat(entry.sourceConfidence) : undefined,
-                            finalAttachmentId,
-                            encounterIdFromVisit
-                          );
+                          // Fallback for entries without visit history (manual entries)
+                          return getSourceBadge("manual", undefined, undefined, undefined);
                         })()}
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                           <TooltipProvider>
