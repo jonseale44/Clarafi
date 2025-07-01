@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
 import { SurgicalHistorySection } from "./surgical-history-section";
+import { AllergySection } from "./allergy-section";
 import { PatientAttachments } from "./patient-attachments";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { EncountersTab } from "./encounters-tab";
@@ -222,17 +223,10 @@ export function SharedChartSections({
       
       case "allergies":
         return (
-          <div className="emr-tight-spacing">
-            <Card>
-              <CardContent className="pt-3 emr-card-content-tight">
-                <div className="text-center py-4 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Allergies management coming soon</p>
-                  <p className="text-sm">Full CRUD functionality will be available here.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <AllergySection 
+            patientId={patientId} 
+            mode={mode}
+          />
         );
       
       case "labs":

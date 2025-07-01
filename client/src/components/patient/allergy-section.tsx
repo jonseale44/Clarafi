@@ -108,8 +108,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
     isLoading,
     error
   } = useQuery({
-    queryKey: ['/api/allergies', patientId],
-    queryFn: () => apiRequest(`/api/allergies/${patientId}`),
+    queryKey: [`/api/allergies/${patientId}`],
     enabled: !!patientId
   });
 
@@ -125,14 +124,10 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
 
   // Create allergy mutation
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/allergies', {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json' }
-    }),
+    mutationFn: (data: any) => apiRequest('/api/allergies', data),
     onMutate: async (newAllergy) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/allergies', patientId] });
-      const previousAllergies = queryClient.getQueryData(['/api/allergies', patientId]);
+      await queryClient.cancelQueries({ queryKey: [`/api/allergies/${patientId}`] });
+      const previousAllergies = queryClient.getQueryData([`/api/allergies/${patientId}`]);
       
       const tempAllergy = {
         id: Date.now(),
@@ -150,11 +145,11 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
         updatedAt: new Date().toISOString()
       };
 
-      queryClient.setQueryData(['/api/allergies', patientId], (old: any) => [...(old || []), tempAllergy]);
+      queryClient.setQueryData([`/api/allergies/${patientId}`], (old: any) => [...(old || []), tempAllergy]);
       return { previousAllergies };
     },
     onError: (err, newAllergy, context) => {
-      queryClient.setQueryData(['/api/allergies', patientId], context?.previousAllergies);
+      queryClient.setQueryData([`/api/allergies/${patientId}`], context?.previousAllergies);
       toast({
         title: "Error",
         description: "Failed to create allergy. Please try again.",
@@ -169,7 +164,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
       setIsCreating(false);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/allergies', patientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/allergies/${patientId}`] });
     },
   });
 
