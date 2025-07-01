@@ -586,8 +586,10 @@ export class AttachmentChartProcessor {
       if (vitalsEntry.encounterId) {
         console.log(`💾 [AttachmentChartProcessor] 🔍 VALIDATING encounter ID ${vitalsEntry.encounterId} exists in database`);
         try {
-          const encounterCheck = await db.select().from({ encounters: (await import("@shared/schema")).encounters }).where(
-            (await import("drizzle-orm")).eq((await import("@shared/schema")).encounters.id, vitalsEntry.encounterId)
+          const { encounters } = await import("@shared/schema");
+          const { eq } = await import("drizzle-orm");
+          const encounterCheck = await db.select().from(encounters).where(
+            eq(encounters.id, vitalsEntry.encounterId)
           ).limit(1);
           
           if (encounterCheck.length === 0) {
@@ -608,7 +610,7 @@ export class AttachmentChartProcessor {
         console.log(`💾 [AttachmentChartProcessor] 🔄 ATTEMPTING DATABASE INSERT for vitals set ${setLabel}`);
         console.log(`💾 [AttachmentChartProcessor] 🔄 Full vitalsEntry object being inserted:`, JSON.stringify(vitalsEntry, null, 2));
         
-        const [savedEntry] = await db.insert(vitals).values(vitalsEntry).returning();
+        const [savedEntry] = await db.insert(vitals).values([vitalsEntry]).returning();
         console.log(`💾 [AttachmentChartProcessor] ✅ Database insert successful for vitals set ${setLabel}`);
         
         console.log(`🔥 [DATABASE WORKFLOW] ============= SAVING VITALS SET ${setLabel} =============`);

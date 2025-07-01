@@ -110,10 +110,15 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### Dense View System Database Error Resolution COMPLETED (July 1, 2025)
-- **CRITICAL DATABASE FIX**: Successfully resolved numeric precision error (PostgreSQL error code 22003) that was blocking dense view system testing
-- **ROOT CAUSE IDENTIFIED**: sourceConfidence field in vitals table was receiving string values ("0.99") instead of required numeric values (0.99) 
-- **COMPREHENSIVE ERROR LOGGING**: Enhanced attachment chart processor with detailed numeric precision error detection across all 5 parallel processing sections (vitals, medical problems, surgical history, family history, social history)
-- **VERIFIED ATTACHMENT PROCESSING**: All chart sections now processing successfully - recent test extracted 9 medical problems from attachment with 71-second completion time
+- **CRITICAL FOREIGN KEY CONSTRAINT FIX**: Successfully resolved all foreign key constraint violations (PostgreSQL error code 23503) that were blocking attachment chart processing
+- **ROOT CAUSE IDENTIFIED**: System was referencing non-existent user ID 2 instead of existing user ID 1 (jonseale) in multiple locations
+- **COMPREHENSIVE USER ID FIXES**: Updated hardcoded user ID references in:
+  - `attachment-chart-processor.ts` line 530: `enteredBy: 1` (was 2)
+  - `unified-social-history-api.ts` line 171: `enteredBy: 1` (was 2) 
+  - `unified-social-history-parser.ts` line 65: `providerId: 1` (was 2)
+- **ENHANCED ERROR LOGGING**: Comprehensive logging system captures detailed database constraint violation information across all 5 parallel processing sections
+- **VERIFIED ATTACHMENT PROCESSING**: Foreign key constraints resolved - social history parsing 4 changes, medical problems processing successfully
+- **NEW NUMERIC PRECISION ISSUES IDENTIFIED**: Error code 22003 in confidence fields with precision 3,2 receiving values >= 10
 - **PRODUCTION-READY DENSE VIEW SYSTEM**: Complete implementation includes database schema (enableDenseView field), React hooks (useDenseView), UI components (DenseViewToggle), and CSS styling (dense-list-* classes)
 - **MEDICAL PROBLEMS REFERENCE IMPLEMENTATION**: Enhanced medical problems component serves as pattern for extending dense view to remaining 12 chart sections
 - **UNIFIED CHART PANEL INTEGRATION**: Dense view toggle integrated into chart panel header with comprehensive tooltip explaining functionality across all chart sections
