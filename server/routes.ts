@@ -26,6 +26,7 @@ import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 import setupTemplateRoutes from "./template-routes";
+import { imagingRoutes } from "./imaging-api";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
