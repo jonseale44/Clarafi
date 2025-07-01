@@ -1084,34 +1084,61 @@ export const imagingOrders = pgTable("imaging_orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Imaging Results
+// Imaging Results - Enhanced with PDF-centric workflow and visit history tracking
 export const imagingResults = pgTable("imaging_results", {
   id: serial("id").primaryKey(),
-  imagingOrderId: integer("imaging_order_id").references(() => imagingOrders.id).notNull(),
+  imagingOrderId: integer("imaging_order_id").references(() => imagingOrders.id), // Now optional for historical findings
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   
   // Study details
   studyDate: timestamp("study_date").notNull(),
-  modality: text("modality").notNull(), // 'XR', 'CT', 'MR', 'US'
+  modality: text("modality").notNull(), // 'XR', 'CT', 'MR', 'US', 'Echo', 'PET'
   bodyPart: text("body_part"),
+  laterality: text("laterality"), // 'left', 'right', 'bilateral'
+  
+  // GPT-generated clinical summary for chart display
+  clinicalSummary: text("clinical_summary").notNull(), // "Normal heart and lungs", "Small RUL nodule, stable"
   
   // Results
-  findings: text("findings"), // Radiologist findings
-  impression: text("impression"),
+  findings: text("findings"), // Full radiologist findings
+  impression: text("impression"), // Radiologist impression
   radiologistName: text("radiologist_name"),
+  facilityName: text("facility_name"), // Where study was performed
+  
+  // PDF attachment integration
+  attachmentId: integer("attachment_id").references(() => patientAttachments.id), // Link to PDF report
   
   // DICOM details
   dicomStudyId: text("dicom_study_id"),
   dicomSeriesId: text("dicom_series_id"),
   imageFilePaths: text("image_file_paths").array(),
   
-  // Status & review
-  resultStatus: text("result_status").default("pending"),
+  // Status & review workflow (like labs)
+  resultStatus: text("result_status").default("preliminary"), // 'preliminary', 'final', 'addendum', 'corrected'
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   providerNotes: text("provider_notes"),
+  needsReview: boolean("needs_review").default(true), // Auto-assign to ordering provider
+  
+  // Source tracking for multi-source data integration
+  sourceType: text("source_type").default("pdf_extract"), // 'pdf_extract', 'hl7_message', 'manual_entry', 'encounter_note'
+  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("0.95"), // GPT extraction confidence
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id),
+  enteredBy: integer("entered_by").references(() => users.id),
+  
+  // Visit history tracking (like medical problems)
+  visitHistory: jsonb("visit_history").default([]).$type<Array<{
+    encounterId?: number;
+    attachmentId?: number;
+    date: string;
+    notes: string;
+    sourceType: 'encounter' | 'attachment' | 'manual_entry';
+    confidence?: number;
+    changesFrom?: string;
+  }>>(),
   
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Patient Physical Exam Findings (GPT-managed persistent findings)
@@ -2080,6 +2107,38 @@ export type InsertFamilyHistory = z.infer<typeof insertFamilyHistorySchema>;
 export type InsertMedicalHistory = z.infer<typeof insertMedicalHistorySchema>;
 export type InsertSocialHistory = z.infer<typeof insertSocialHistorySchema>;
 export type InsertSurgicalHistory = z.infer<typeof insertSurgicalHistorySchema>;
+
+// Imaging Results schemas
+export const insertImagingResultSchema = createInsertSchema(imagingResults).pick({
+  imagingOrderId: true,
+  patientId: true,
+  studyDate: true,
+  modality: true,
+  bodyPart: true,
+  laterality: true,
+  clinicalSummary: true,
+  findings: true,
+  impression: true,
+  radiologistName: true,
+  facilityName: true,
+  attachmentId: true,
+  dicomStudyId: true,
+  dicomSeriesId: true,
+  imageFilePaths: true,
+  resultStatus: true,
+  reviewedBy: true,
+  reviewedAt: true,
+  providerNotes: true,
+  needsReview: true,
+  sourceType: true,
+  sourceConfidence: true,
+  extractedFromAttachmentId: true,
+  enteredBy: true,
+  visitHistory: true,
+});
+
+export type ImagingResult = typeof imagingResults.$inferSelect;
+export type InsertImagingResult = z.infer<typeof insertImagingResultSchema>;
 
 // Admin prompt management table for viewing/editing generated prompts
 export const adminPromptReviews = pgTable("admin_prompt_reviews", {
