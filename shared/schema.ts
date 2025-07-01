@@ -163,6 +163,9 @@ export const userNotePreferences = pgTable("user_note_preferences", {
   // Chart panel UI preferences
   chartPanelWidth: integer("chart_panel_width").default(400),
   
+  // Dense view toggle for all chart sections
+  enableDenseView: boolean("enable_dense_view").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

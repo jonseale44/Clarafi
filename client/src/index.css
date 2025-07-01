@@ -587,6 +587,86 @@
   .emr-divider-tight {
     @apply my-1;
   }
+
+  /* === DENSE VIEW SYSTEM === */
+  /* Ultra-compact list format for all chart sections when dense view is enabled */
+  
+  /* Dense list container - removes card styling and uses minimal spacing */
+  .dense-list-container {
+    @apply space-y-1;
+  }
+  
+  /* Dense list items - single line format with essential info only */
+  .dense-list-item {
+    @apply flex items-center justify-between px-3 py-1.5 border-l-2 bg-gray-50 dark:bg-gray-800/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors cursor-pointer;
+    border-radius: 4px;
+    min-height: 32px;
+  }
+  
+  /* Dense list item content - compact layout */
+  .dense-list-content {
+    @apply flex items-center gap-2 flex-1 min-w-0;
+  }
+  
+  /* Dense list primary text - problem name, medication name, etc. */
+  .dense-list-primary {
+    @apply text-sm font-medium text-gray-900 dark:text-gray-100 truncate;
+  }
+  
+  /* Dense list secondary text - status, dates, etc. */
+  .dense-list-secondary {
+    @apply text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1;
+  }
+  
+  /* Dense list badges - minimal size */
+  .dense-list-badge {
+    @apply text-xs px-1.5 py-0.5 rounded;
+    font-size: 10px;
+  }
+  
+  /* Dense list actions - compact buttons */
+  .dense-list-actions {
+    @apply flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity;
+  }
+  
+  /* Dense list expandable content */
+  .dense-list-expanded {
+    @apply mt-1 px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm;
+  }
+  
+  /* Status-specific border colors for dense lists */
+  .dense-list-item.status-active {
+    @apply border-l-green-500;
+  }
+  
+  .dense-list-item.status-chronic {
+    @apply border-l-amber-500;
+  }
+  
+  .dense-list-item.status-resolved {
+    @apply border-l-gray-400;
+  }
+  
+  .dense-list-item.status-discontinued {
+    @apply border-l-red-400;
+  }
+  
+  .dense-list-item.priority-high {
+    @apply border-l-red-500;
+  }
+  
+  .dense-list-item.priority-medium {
+    @apply border-l-amber-500;
+  }
+  
+  .dense-list-item.priority-low {
+    @apply border-l-gray-400;
+  }
+  
+  /* Dense view toggle animations */
+  .dense-view-transition {
+    transition: all 0.2s ease-in-out;
+  }
   
   .medication-tab-trigger {
     flex: 1;
