@@ -778,6 +778,12 @@ export function EncounterDetailView({
               headers: response.headers,
             });
           }),
+          fetch(`/api/allergies/process-unified`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(allergyRequestBody),
+          }),
         ]);
 
         console.log(`🏥 [ParallelProcessing] All requests completed`);
@@ -789,6 +795,7 @@ export function EncounterDetailView({
         );
         console.log(`🏥 [Orders] Response status: ${ordersResponse.status}`);
         console.log(`🏥 [CPT] Response status: ${cptResponse.status}`);
+        console.log(`🚨 [Allergies] Response status: ${allergyResponse.status}`);
 
         // Handle medical problems response
         if (medicalProblemsResponse.ok) {
@@ -885,6 +892,27 @@ export function EncounterDetailView({
           const errorText = await cptResponse.text();
           console.error(`❌ [CPT] FAILED with status ${cptResponse.status}`);
           console.error(`❌ [CPT] Error response: ${errorText}`);
+        }
+
+        // Handle allergy response
+        if (allergyResponse.ok) {
+          const result = await allergyResponse.json();
+          console.log(
+            `✅ [Allergies] SUCCESS: ${result.allergiesAffected || result.total_allergies_affected || 0} allergies affected`,
+          );
+          console.log(
+            `✅ [Allergies] Processing time: ${result.processingTimeMs || "unknown"}ms`,
+          );
+
+          // Invalidate allergy queries to refresh UI
+          await queryClient.invalidateQueries({
+            queryKey: ['/api/allergies', patient.id],
+          });
+          console.log(`🔄 [Allergies] Cache invalidation completed`);
+        } else {
+          const errorText = await allergyResponse.text();
+          console.error(`❌ [Allergies] FAILED with status ${allergyResponse.status}`);
+          console.error(`❌ [Allergies] Error response: ${errorText}`);
         }
 
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
@@ -1169,7 +1197,7 @@ export function EncounterDetailView({
     if (!patient || !encounter || !soapNote || isUpdatingChart) return;
 
     console.log("🔄 [ChartUpdate] === SELECTIVE CHART UPDATE START ===");
-    console.log("🔄 [ChartUpdate] Processing: Medical Problems + Surgical History + Medications");
+    console.log("🔄 [ChartUpdate] Processing: Medical Problems + Surgical History + Medications + Allergies");
     
     setIsUpdatingChart(true);
     setChartUpdateProgress(0);
@@ -1225,6 +1253,22 @@ export function EncounterDetailView({
           credentials: "include",
           body: JSON.stringify({
             soapNote: soapNote,
+          }),
+        }),
+
+        // Allergy Processing
+        fetch(`/api/allergies/process-unified`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            patientId: patient.id,
+            encounterId: encounter.id,
+            soapNote: soapNote,
+            attachmentContent: null,
+            attachmentId: null,
+            providerId: currentUser?.id || 1,
+            triggerType: "manual_chart_update",
           }),
         }),
       ]);
