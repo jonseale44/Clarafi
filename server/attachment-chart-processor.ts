@@ -5,7 +5,6 @@ import { UnifiedSurgicalHistoryParser } from "./unified-surgical-history-parser.
 import { unifiedFamilyHistoryParser } from "./unified-family-history-parser.js";
 import { unifiedSocialHistoryParser } from "./unified-social-history-parser.js";
 import { UnifiedAllergyParser } from "./unified-allergy-parser.js";
-import { unifiedMedicationParser } from "./unified-medication-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -81,20 +80,19 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Process vitals, medical problems, surgical history, family history, social history, allergies, and medications in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies + medications`);
+      // Process vitals, medical problems, surgical history, family history, social history, and allergies in parallel for efficiency
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies`);
       const parallelStartTime = Date.now();
       
-      // Process all seven chart sections in parallel for efficiency
+      // Process all six chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult, medicationsResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
           this.processDocumentForMedicalProblems(attachment, extractedContent),
           this.processDocumentForSurgicalHistory(attachment, extractedContent),
           this.processDocumentForFamilyHistory(attachment, extractedContent),
           this.processDocumentForSocialHistory(attachment, extractedContent),
-          this.processDocumentForAllergies(attachment, extractedContent),
-          this.processDocumentForMedications(attachment, extractedContent)
+          this.processDocumentForAllergies(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
