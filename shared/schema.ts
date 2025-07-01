@@ -579,7 +579,7 @@ export const vitals = pgTable("vitals", {
 export const medications = pgTable("medications", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
-  encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id), // Nullable for attachment-based medications
   
   // Core medication info
   medicationName: text("medication_name").notNull(),
