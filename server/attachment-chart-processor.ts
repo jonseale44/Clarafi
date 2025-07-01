@@ -184,6 +184,9 @@ export class AttachmentChartProcessor {
           }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Imaging processing completed successfully`);
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULT VALUE:`, imagingResult.value);
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING EXTRACTION COUNT:`, imagingResult.value?.imagingCount || 0);
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULTS CREATED:`, imagingResult.value?.results?.length || 0);
         }
         
       } catch (error) {

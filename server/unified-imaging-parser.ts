@@ -182,6 +182,9 @@ export class UnifiedImagingParser {
       );
 
       // Process with GPT intelligence
+      console.log(`🏥 [IMAGING WORKFLOW DEBUG] Starting GPT processing with ${extractedText.length} chars of text`);
+      console.log(`🏥 [IMAGING WORKFLOW DEBUG] Document content preview:`, extractedText.substring(0, 800));
+      
       const result = await this.processWithGPT(
         extractedText,
         existingImaging,
@@ -193,6 +196,7 @@ export class UnifiedImagingParser {
       console.log(
         `📄 [UnifiedImagingParser] GPT processing complete - ${result.changes.length} changes identified`,
       );
+      console.log(`🏥 [IMAGING WORKFLOW DEBUG] GPT RESULT CHANGES:`, JSON.stringify(result.changes, null, 2));
 
       // Apply changes to database
       const finalResult = await this.applyChangesToDatabase(
