@@ -17,6 +17,7 @@ import unifiedMedicalProblemsRoutes from "./unified-medical-problems-api";
 import unifiedSurgicalHistoryRoutes from "./unified-surgical-history-api";
 import { unifiedFamilyHistoryRoutes } from "./unified-family-history-api";
 import { socialHistoryRoutes } from "./unified-social-history-api";
+import * as unifiedAllergyAPI from "./unified-allergy-api";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
 import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";
@@ -571,6 +572,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", unifiedSurgicalHistoryRoutes);
   app.use("/api", unifiedFamilyHistoryRoutes);
   app.use("/api", socialHistoryRoutes);
+  
+  // Unified Allergy Routes
+  app.get("/api/allergies/:patientId", APIResponseHandler.asyncHandler(unifiedAllergyAPI.getAllergies));
+  app.post("/api/allergies", APIResponseHandler.asyncHandler(unifiedAllergyAPI.createAllergy));
+  app.put("/api/allergies/:allergyId", APIResponseHandler.asyncHandler(unifiedAllergyAPI.updateAllergy));
+  app.delete("/api/allergies/:allergyId", APIResponseHandler.asyncHandler(unifiedAllergyAPI.deleteAllergy));
+  app.post("/api/allergies/process-unified", APIResponseHandler.asyncHandler(unifiedAllergyAPI.processUnifiedAllergies));
+  app.post("/api/allergies/:allergyId/visit-history", APIResponseHandler.asyncHandler(unifiedAllergyAPI.addAllergyVisitHistory));
 
   // Removed orphaned enhanced medical problems routes - functionality consolidated into unified API
 

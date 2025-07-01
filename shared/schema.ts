@@ -479,21 +479,57 @@ export const surgicalHistory = pgTable("surgical_history", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Allergies
+// Allergies - Production EMR Standard with Visit History
 export const allergies = pgTable("allergies", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
+  
+  // Core allergy information
   allergen: text("allergen").notNull(),
-  reaction: text("reaction"),
-  severity: text("severity"),
-  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  reaction: text("reaction"), // GPT-formatted: "rash, hives" or "anaphylaxis" or free-text
+  severity: text("severity"), // 'mild', 'moderate', 'severe', 'life-threatening', 'unknown'
+  allergyType: text("allergy_type"), // 'drug', 'food', 'environmental', 'contact', 'other'
+  
+  // Clinical details
+  onsetDate: date("onset_date"), // When allergy first occurred
+  lastReactionDate: date("last_reaction_date"), // Most recent reaction
+  status: text("status").default("active"), // 'active', 'inactive', 'resolved', 'unconfirmed'
+  verificationStatus: text("verification_status").default("unconfirmed"), // 'confirmed', 'unconfirmed', 'refuted', 'entered_in_error'
+  
+  // Cross-reference for drug safety
+  drugClass: text("drug_class"), // For drug allergies (e.g., 'penicillins', 'sulfonamides')
+  crossReactivity: text("cross_reactivity").array(), // Related allergens to avoid
   
   // Source tracking for multi-source allergy data
-  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'family_reported', 'imported_records'
+  sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'family_reported', 'imported_records', 'nkda_documented'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
   sourceNotes: text("source_notes"), // Additional context about data source
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
+  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
   enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  
+  // GPT processing metadata
+  consolidationReasoning: text("consolidation_reasoning"), // GPT's explanation for consolidation decisions
+  extractionNotes: text("extraction_notes"), // GPT's notes about extraction process
+  temporalConflictResolution: text("temporal_conflict_resolution"), // How NKDA vs existing allergy conflicts were resolved
+  
+  // Visit history tracking - tracks allergy discussions, changes, confirmations over time
+  visitHistory: jsonb("visit_history").$type<Array<{
+    date: string; // YYYY-MM-DD format
+    notes: string; // Clinical notes about allergy discussion/changes
+    source: "encounter" | "attachment" | "manual" | "imported_record";
+    encounterId?: number; // Reference to encounter if source is encounter
+    attachmentId?: number; // Reference to attachment if source is attachment
+    providerId?: number;
+    providerName?: string;
+    changesMade?: string[]; // Array of changes made (e.g., 'severity_updated', 'reaction_confirmed', 'status_changed', 'nkda_conflict_resolved')
+    confidence?: number; // AI confidence in extraction (0.0-1.0)
+    isSigned?: boolean; // Provider signature status
+    signedAt?: string;
+    sourceConfidence?: number;
+    sourceNotes?: string; // Additional context from extraction source
+    conflictResolution?: string; // How temporal conflicts (NKDA vs allergy) were resolved
+  }>>().default([]),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
