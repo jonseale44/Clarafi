@@ -5,11 +5,11 @@
  * following the established EMR testing patterns
  */
 
-const { db } = require('./server/storage');
-const { attachmentChartProcessor } = require('./server/attachment-chart-processor');
-const { unifiedMedicationParser } = require('./server/unified-medication-parser');
-const { eq } = require('drizzle-orm');
-const { medications as medicationsTable, patientAttachments, attachmentExtractedContent } = require('./shared/schema');
+import { db } from './server/db.ts';
+import { attachmentChartProcessor } from './server/attachment-chart-processor.ts';
+import { unifiedMedicationParser } from './server/unified-medication-parser.ts';
+import { eq } from 'drizzle-orm';
+import { medications as medicationsTable, patientAttachments, attachmentExtractedContent } from './shared/schema.ts';
 
 async function testUnifiedMedicationSystem() {
   console.log('🧪 [TEST] Starting Unified Medication Parser Integration Test');
@@ -27,6 +27,7 @@ async function testUnifiedMedicationSystem() {
       originalFileName: 'Current Medications January 2024.txt',
       fileSize: 2048,
       mimeType: 'text/plain',
+      fileExtension: 'txt',
       filePath: '/uploads/test-medication-list.txt',
       thumbnailPath: null,
       uploadedBy: 1,
