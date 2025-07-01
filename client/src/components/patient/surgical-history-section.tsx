@@ -351,10 +351,6 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
     return (
       <Card>
         <CardHeader className="emr-card-header-proportional">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Scissors className="h-4 w-4" />
-            Surgical History
-          </CardTitle>
         </CardHeader>
         <CardContent className="emr-card-content-proportional">
           <div className="animate-pulse space-y-2">
@@ -371,15 +367,6 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
     <Card>
       <CardHeader className="emr-card-header-proportional">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Scissors className="h-4 w-4" />
-            Surgical History
-            {surgicalHistory.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {surgicalHistory.length}
-              </Badge>
-            )}
-          </CardTitle>
           {!isReadOnly && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
