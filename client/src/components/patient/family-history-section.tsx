@@ -439,16 +439,13 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                                     <Badge variant="outline" className="text-xs">
                                       {format(new Date(visit.date + 'T12:00:00'), "MMM d, yyyy")}
                                     </Badge>
-                                    <Badge className={getSourceBadgeColor(visit.source)}>
-                                      {visit.source === "attachment" ? "Document" :
-                                       visit.source === "encounter" ? "Encounter" : 
-                                       visit.source === "manual" ? "Manual" : visit.source}
-                                    </Badge>
-                                    {visit.confidence && (
-                                      <Badge variant="secondary">
-                                        {Math.round(visit.confidence * 100)}% confidence
-                                      </Badge>
+                                    {getSourceBadge(
+                                      visit.source,
+                                      visit.confidence,
+                                      visit.attachmentId,
+                                      visit.encounterId
                                     )}
+
                                   </div>
                                   {visit.providerName && (
                                     <span className="text-xs text-gray-500">
