@@ -32,6 +32,7 @@ export class AttachmentChartProcessor {
     this.surgicalHistoryParser = new UnifiedSurgicalHistoryParser();
     this.allergyParser = new UnifiedAllergyParser();
     this.medicationDeltaService = new MedicationDeltaService();
+    this.imagingParser = new UnifiedImagingParser();
   }
 
   /**
@@ -85,20 +86,21 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Process vitals, medical problems, surgical history, family history, social history, allergies, and medications in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies + medications`);
+      // Process vitals, medical problems, surgical history, family history, social history, allergies, medications, and imaging in parallel for efficiency
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies + medications + imaging`);
       const parallelStartTime = Date.now();
       
-      // Process all seven chart sections in parallel for efficiency
+      // Process all eight chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult, medicationsResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult, medicationsResult, imagingResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
           this.processDocumentForMedicalProblems(attachment, extractedContent),
           this.processDocumentForSurgicalHistory(attachment, extractedContent),
           this.processDocumentForFamilyHistory(attachment, extractedContent),
           this.processDocumentForSocialHistory(attachment, extractedContent),
           this.processDocumentForAllergies(attachment, extractedContent),
-          this.processDocumentForMedications(attachment, extractedContent)
+          this.processDocumentForMedications(attachment, extractedContent),
+          this.processDocumentForImaging(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
@@ -170,6 +172,16 @@ export class AttachmentChartProcessor {
           }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Medications processing completed successfully`);
+        }
+
+        if (imagingResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] IMAGING PROCESSING FAILED:`, imagingResult.reason);
+          if (imagingResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN IMAGING - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Imaging error details:`, JSON.stringify(imagingResult.reason, null, 2));
+          }
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Imaging processing completed successfully`);
         }
         
       } catch (error) {
@@ -880,6 +892,66 @@ export class AttachmentChartProcessor {
       console.error(`❌ [MedicationExtraction] Error processing medications from attachment ${attachment.id}:`, error);
       console.error(`❌ [MedicationExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
       console.log(`🔥 [MEDICATION WORKFLOW] ============= MEDICATION EXTRACTION FAILED =============`);
+    }
+  }
+
+  /**
+   * Process document for imaging extraction and consolidation
+   */
+  private async processDocumentForImaging(
+    attachment: any,
+    extractedContent: any
+  ): Promise<void> {
+    console.log(`🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION =============`);
+    console.log(`📸 [ImagingExtraction] Starting imaging analysis for attachment ${attachment.id}`);
+    console.log(`📸 [ImagingExtraction] Processing content for patient ${attachment.patientId}`);
+
+    if (!extractedContent.extractedText || extractedContent.extractedText.length < 50) {
+      console.log(`📸 [ImagingExtraction] ℹ️ Insufficient text content for imaging analysis, skipping`);
+      return;
+    }
+
+    try {
+      console.log(`📸 [ImagingExtraction] 🔍 Starting unified imaging extraction for patient ${attachment.patientId}`);
+      console.log(`📸 [ImagingExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+
+      const startTime = Date.now();
+
+      // Use the unified imaging parser for attachment processing
+      console.log(`📸 [ImagingExtraction] 🔧 Using provider ID: 1 (Jonathan Seale)`);
+      const result = await this.imagingParser.processAttachmentImagingData(
+        attachment.patientId,
+        extractedContent.extractedText, // Attachment content
+        attachment.id // Attachment ID for source tracking
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`📸 [ImagingExtraction] ✅ Successfully processed imaging in ${processingTime}ms`);
+      console.log(`📸 [ImagingExtraction] ✅ Total imaging results affected: ${result.total_imaging_affected}`);
+      console.log(`📸 [ImagingExtraction] ✅ Extraction confidence: ${result.extraction_confidence}`);
+      console.log(`📸 [ImagingExtraction] ✅ Processing notes: ${result.processing_notes}`);
+
+      // Log individual changes for debugging
+      if (result.changes && result.changes.length > 0) {
+        console.log(`📸 [ImagingExtraction] ✅ Changes made (${result.changes.length} total):`);
+        result.changes.forEach((change, index) => {
+          console.log(`📸 [ImagingExtraction]   ${index + 1}. ${change.action}: ${change.modality} ${change.body_part}`);
+          console.log(`📸 [ImagingExtraction]      Confidence: ${change.confidence}`);
+          if (change.clinical_summary) {
+            console.log(`📸 [ImagingExtraction]      Summary: ${change.clinical_summary}`);
+          }
+        });
+      } else {
+        console.log(`📸 [ImagingExtraction] ℹ️ No imaging changes made - may be no imaging content or all information already documented`);
+      }
+
+      console.log(`🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION COMPLETE =============`);
+
+    } catch (error) {
+      console.error(`❌ [ImagingExtraction] Error processing imaging from attachment ${attachment.id}:`, error);
+      console.error(`❌ [ImagingExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION FAILED =============`);
     }
   }
 }
