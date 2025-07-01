@@ -125,6 +125,8 @@ Preferred communication style: Simple, everyday language.
 - **GPT CLINICAL INTELLIGENCE**: Expert family history extraction with patient context integration and medical accuracy preservation
 - **CONSOLIDATION BY FAMILY MEMBER**: System consolidates entries by family member (father alive age 80 → died age 83) with complete visit history preservation
 - **MULTI-SOURCE DATA INTEGRATION**: Supports attachment processing, SOAP note extraction, and manual entry with unified processing pipeline
+- **AUTOMATIC ATTACHMENT EXTRACTION**: Integrated family history extraction into parallel attachment processing workflow alongside vitals, medical problems, and surgical history
+- **COMPREHENSIVE DEBUGGING LOGGING**: Added extensive detailed logging throughout family history extraction pipeline to track processing and identify any issues
 
 ### Intelligent "Update Chart from Note" Button Implementation COMPLETED (June 30, 2025)
 - **PRODUCTION-READY IMPLEMENTATION**: Successfully implemented intelligent chart update button with comprehensive change detection and selective processing

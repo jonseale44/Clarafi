@@ -2,6 +2,7 @@ import { db } from "./db.js";
 import { VitalsParserService } from "./vitals-parser-service.js";
 import { unifiedMedicalProblemsParser } from "./unified-medical-problems-parser.js";
 import { UnifiedSurgicalHistoryParser } from "./unified-surgical-history-parser.js";
+import { unifiedFamilyHistoryParser } from "./unified-family-history-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -75,16 +76,17 @@ export class AttachmentChartProcessor {
       // Process ALL documents for vitals extraction (not just H&P)
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
-      // Process vitals, medical problems, and surgical history in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history`);
+      // Process vitals, medical problems, surgical history, and family history in parallel for efficiency
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history`);
       const parallelStartTime = Date.now();
       
-      // Process all three chart sections in parallel for efficiency
+      // Process all four chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
           this.processDocumentForMedicalProblems(attachment, extractedContent),
-          this.processDocumentForSurgicalHistory(attachment, extractedContent)
+          this.processDocumentForSurgicalHistory(attachment, extractedContent),
+          this.processDocumentForFamilyHistory(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
@@ -104,6 +106,12 @@ export class AttachmentChartProcessor {
           console.error(`❌ [AttachmentChartProcessor] Surgical history processing failed:`, surgicalHistoryResult.reason);
         } else {
           console.log(`✅ [AttachmentChartProcessor] Surgical history processing completed successfully`);
+        }
+        
+        if (familyHistoryResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] Family history processing failed:`, familyHistoryResult.reason);
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Family history processing completed successfully`);
         }
         
       } catch (error) {
@@ -354,6 +362,78 @@ export class AttachmentChartProcessor {
       console.error(`❌ [SurgicalHistoryExtraction] Error processing surgical history from attachment ${attachment.id}:`, error);
       console.error(`❌ [SurgicalHistoryExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
       console.log(`🔥 [SURGICAL HISTORY WORKFLOW] ============= SURGICAL HISTORY EXTRACTION FAILED =============`);
+    }
+  }
+
+  /**
+   * Process document for family history extraction
+   */
+  private async processDocumentForFamilyHistory(attachment: any, extractedContent: any): Promise<void> {
+    console.log(`🔥 [FAMILY HISTORY WORKFLOW] ============= STARTING FAMILY HISTORY EXTRACTION =============`);
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] 🚀 Processing attachment ${attachment.id} for patient ${attachment.patientId}`);
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] 📄 Document type: ${extractedContent.documentType || 'unknown type'}`);
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] 📄 Document text length: ${extractedContent.extractedText?.length || 0} characters`);
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] 📄 Original filename: ${attachment.originalFileName}`);
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] 📄 Text preview: "${extractedContent.extractedText?.substring(0, 300)}..."`);
+
+    // Validation checks with detailed error messages
+    if (!extractedContent.extractedText) {
+      const errorMsg = `No extracted text available for family history parsing - attachment ${attachment.id}`;
+      console.error(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ❌ CRITICAL: ${errorMsg}`);
+      console.log(`🔥 [FAMILY HISTORY WORKFLOW] ============= FAMILY HISTORY EXTRACTION FAILED - NO TEXT =============`);
+      throw new Error(errorMsg);
+    }
+
+    if (extractedContent.extractedText.length < 50) {
+      const errorMsg = `Document text too short (${extractedContent.extractedText.length} chars) for meaningful family history extraction - attachment ${attachment.id}`;
+      console.error(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ❌ CRITICAL: ${errorMsg}`);
+      console.log(`🔥 [FAMILY HISTORY WORKFLOW] ============= FAMILY HISTORY EXTRACTION FAILED - TEXT TOO SHORT =============`);
+      throw new Error(errorMsg);
+    }
+
+    try {
+      console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] 🔍 Starting unified family history extraction for patient ${attachment.patientId}`);
+      console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+
+      const startTime = Date.now();
+
+      // Use the unified family history parser for attachment processing
+      const result = await unifiedFamilyHistoryParser.processUnified(
+        attachment.patientId,
+        null, // No specific encounter ID for attachment
+        null, // No SOAP note text
+        extractedContent.extractedText, // Attachment content
+        "attachment_processing", // Trigger type
+        attachment.id // Attachment ID for source tracking
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ✅ Successfully processed family history in ${processingTime}ms`);
+      console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ✅ Family history entries affected: ${result.familyHistoryAffected}`);
+      console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ✅ Encounter family history: ${result.encounterFamilyHistory}`);
+      console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ✅ Attachment family history: ${result.attachmentFamilyHistory}`);
+
+      // Log individual changes for debugging
+      if (result.changes && result.changes.length > 0) {
+        console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ✅ Changes made (${result.changes.length} total):`);
+        result.changes.forEach((change, index) => {
+          console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction]   ${index + 1}. ${change.action}: ${change.familyMember} - ${change.medicalHistory}`);
+          console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction]      Confidence: ${change.confidence}`);
+          if (change.consolidationReason) {
+            console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction]      Consolidation: ${change.consolidationReason}`);
+          }
+        });
+      } else {
+        console.log(`👨‍👩‍👧‍👦 [FamilyHistoryExtraction] ℹ️ No family history changes made - may be no family history content or all information already documented`);
+      }
+
+      console.log(`🔥 [FAMILY HISTORY WORKFLOW] ============= FAMILY HISTORY EXTRACTION COMPLETE =============`);
+
+    } catch (error) {
+      console.error(`❌ [FamilyHistoryExtraction] Error processing family history from attachment ${attachment.id}:`, error);
+      console.error(`❌ [FamilyHistoryExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [FAMILY HISTORY WORKFLOW] ============= FAMILY HISTORY EXTRACTION FAILED =============`);
     }
   }
 

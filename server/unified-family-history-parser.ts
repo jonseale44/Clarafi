@@ -70,6 +70,15 @@ export class UnifiedFamilyHistoryParser {
     console.log(`🔥 [UNIFIED FAMILY HISTORY] ============= PROCESSING INITIATED =============`);
     console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Processing family history for patient ${patientId}`);
     console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Trigger: ${triggerType}, Encounter: ${encounterId}, Attachment: ${attachmentId}`);
+    console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] SOAP note length: ${soapNote?.length || 0} characters`);
+    console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Attachment content length: ${attachmentContent?.length || 0} characters`);
+    
+    if (soapNote) {
+      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] SOAP note preview: "${soapNote.substring(0, 200)}..."`);
+    }
+    if (attachmentContent) {
+      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Attachment content preview: "${attachmentContent.substring(0, 200)}..."`);
+    }
 
     if (!soapNote && !attachmentContent) {
       console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ⚠️ No content to process - skipping`);
