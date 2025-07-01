@@ -27,6 +27,7 @@ import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 import setupTemplateRoutes from "./template-routes";
 import { imagingRoutes } from "./imaging-api";
+import { setupUnifiedImagingRoutes } from "./unified-imaging-api";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -573,6 +574,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", unifiedSurgicalHistoryRoutes);
   app.use("/api", unifiedFamilyHistoryRoutes);
   app.use("/api", socialHistoryRoutes);
+  
+  // Unified Imaging Routes (8th parallel processing service)
+  setupUnifiedImagingRoutes(app);
   
   // Unified Allergy Routes
   app.get("/api/allergies/:patientId", APIResponseHandler.asyncHandler(unifiedAllergyAPI.getAllergies));

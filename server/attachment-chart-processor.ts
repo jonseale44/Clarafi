@@ -6,6 +6,7 @@ import { unifiedFamilyHistoryParser } from "./unified-family-history-parser.js";
 import { unifiedSocialHistoryParser } from "./unified-social-history-parser.js";
 import { UnifiedAllergyParser } from "./unified-allergy-parser.js";
 import { MedicationDeltaService } from "./medication-delta-service.js";
+import { UnifiedImagingParser } from "./unified-imaging-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 
@@ -24,6 +25,7 @@ export class AttachmentChartProcessor {
   private surgicalHistoryParser: UnifiedSurgicalHistoryParser;
   private allergyParser: UnifiedAllergyParser;
   private medicationDeltaService: MedicationDeltaService;
+  private imagingParser: UnifiedImagingParser;
 
   constructor() {
     this.vitalsParser = new VitalsParserService();
