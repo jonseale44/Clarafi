@@ -13,12 +13,26 @@ router.get("/family-history/:patientId", APIResponseHandler.asyncHandler(async (
   const patientId = parseInt(req.params.patientId);
   
   console.log(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Getting family history for patient ${patientId}`);
+  console.log(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Request parameters:`, req.params);
+  console.log(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Parsed patientId:`, patientId);
   
-  const familyHistoryRecords = await storage.getPatientFamilyHistory(patientId);
-  
-  console.log(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Retrieved ${familyHistoryRecords.length} family history entries for patient ${patientId}`);
-  
-  res.json(familyHistoryRecords);
+  try {
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Calling storage.getPatientFamilyHistory(${patientId})`);
+    const familyHistoryRecords = await storage.getPatientFamilyHistory(patientId);
+    
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Retrieved ${familyHistoryRecords.length} family history entries for patient ${patientId}`);
+    console.log(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Family history data:`, JSON.stringify(familyHistoryRecords, null, 2));
+    
+    res.json(familyHistoryRecords);
+  } catch (error) {
+    console.error(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Error retrieving family history for patient ${patientId}:`, error);
+    console.error(`👨‍👩‍👧‍👦 [FamilyHistoryAPI] Error details:`, {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    throw error;
+  }
 }));
 
 /**
