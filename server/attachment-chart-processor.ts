@@ -524,7 +524,7 @@ export class AttachmentChartProcessor {
         
         // Source tracking
         sourceType: "attachment_extracted" as const,
-        sourceConfidence: parseFloat(Math.min(0.99, overallConfidence / 100).toFixed(2)), // Cap at 0.99 for precision 3,2
+        sourceConfidence: Math.min(0.99, overallConfidence / 100).toFixed(2), // Cap at 0.99 for precision 3,2
         sourceNotes: sourceNotes,
         extractedFromAttachmentId: attachmentId,
         enteredBy: 1, // Using existing user ID (jonseale) - TODO: make configurable
