@@ -1483,7 +1483,24 @@ export class DatabaseStorage implements IStorage {
 
   // Social History Methods
   async getSocialHistory(patientId: number) {
-    return await db.select().from(socialHistory).where(eq(socialHistory.patientId, patientId));
+    console.log(`🚬 [Storage] getSocialHistory called with patientId: ${patientId}`);
+    console.log(`🚬 [Storage] Executing query: SELECT * FROM social_history WHERE patient_id = ${patientId}`);
+    
+    try {
+      const result = await db.select().from(socialHistory).where(eq(socialHistory.patientId, patientId));
+      console.log(`🚬 [Storage] Query successful, found ${result.length} social history entries`);
+      console.log(`🚬 [Storage] Social history results:`, result.map(r => ({
+        id: r.id,
+        category: r.category,
+        currentStatus: r.currentStatus,
+        sourceType: r.sourceType,
+        hasVisitHistory: !!r.visitHistory
+      })));
+      return result;
+    } catch (error) {
+      console.error(`🚬 [Storage] Database error in getSocialHistory:`, error);
+      throw error;
+    }
   }
 
   async createSocialHistory(socialHistoryData: any) {
