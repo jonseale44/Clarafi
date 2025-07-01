@@ -91,7 +91,7 @@ export class UnifiedImagingParser {
     try {
       // Get comprehensive patient chart data for context
       const patientChartData =
-        await this.patientChartService.getPatientChartData(patientId);
+        await PatientChartService.getPatientChartData(patientId);
       console.log(
         `🏥 [UnifiedImagingParser] Patient context loaded - Imaging count: ${patientChartData.imagingResults?.length || 0}`,
       );
