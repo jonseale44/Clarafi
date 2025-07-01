@@ -581,8 +581,9 @@ export class AttachmentChartProcessor {
         null, // No specific encounter ID for attachment
         null, // No SOAP note text
         extractedContent.extractedText, // Attachment content
-        "attachment_processing", // Trigger type
-        attachment.id // Attachment ID for source tracking
+        attachment.id, // Attachment ID for source tracking
+        2, // Provider ID (Jonathan Seale)
+        "attachment_processing" // Trigger type
       );
 
       const processingTime = Date.now() - startTime;

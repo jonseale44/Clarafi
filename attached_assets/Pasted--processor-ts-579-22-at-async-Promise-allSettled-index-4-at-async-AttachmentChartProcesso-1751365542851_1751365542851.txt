@@ -1,0 +1,109 @@
+-processor.ts:579:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:86:120)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $8 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '617',
+  routine: 'pg_strtoint32_safe'
+}
+🚬 [UnifiedSocialHistory] Processing change: create for category recreational_drugs
+🚬 [UnifiedSocialHistory] Error applying change for recreational_drugs: error: invalid input syntax for type integer: "attachment_processing"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async UnifiedSocialHistoryParser.applyChangesToDatabase (/home/runner/workspace/server/unified-social-history-parser.ts:371:28)
+    at async UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:116:22)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:579:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:86:120)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $8 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '617',
+  routine: 'pg_strtoint32_safe'
+}
+🚬 [UnifiedSocialHistory] Processing change: create for category living_situation
+🚬 [UnifiedSocialHistory] Error applying change for living_situation: error: invalid input syntax for type integer: "attachment_processing"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async UnifiedSocialHistoryParser.applyChangesToDatabase (/home/runner/workspace/server/unified-social-history-parser.ts:371:28)
+    at async UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:116:22)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:579:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:86:120)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $8 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '617',
+  routine: 'pg_strtoint32_safe'
+}
+🚬 [UnifiedSocialHistory] Processing change: create for category exercise
+10:24:08 AM [express] GET /api/patients/25/attachments 304 in 159ms :: [{"id":38,"patientId":25,"enco…
+🚬 [UnifiedSocialHistory] Error applying change for exercise: error: invalid input syntax for type integer: "attachment_processing"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async UnifiedSocialHistoryParser.applyChangesToDatabase (/home/runner/workspace/server/unified-social-history-parser.ts:371:28)
+    at async UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:116:22)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:579:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:86:120)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:639:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:181:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $8 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
