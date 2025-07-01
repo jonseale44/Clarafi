@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { EnhancedMedicalProblemsList } from "./enhanced-medical-problems-list";
 import { EnhancedMedicationsList } from "./enhanced-medications-list";
 import { SurgicalHistorySection } from "./surgical-history-section";
@@ -15,7 +16,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Expand, Minimize2, Activity, TrendingUp, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import { format } from "date-fns";
 
 interface SharedChartSectionsProps {
@@ -265,18 +265,21 @@ export function SharedChartSections({
         );
       
       case "family-history":
+        const FamilyHistorySection = React.lazy(() => import("./family-history-section"));
         return (
-          <div className="emr-tight-spacing">
-            <Card>
-              <CardContent className="pt-3 emr-card-content-tight">
-                <div className="text-center py-4 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Family history management coming soon</p>
-                  <p className="text-sm">Record family medical history here.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <React.Suspense fallback={
+            <div className="emr-tight-spacing">
+              <Card>
+                <CardContent className="pt-3 emr-card-content-tight">
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          }>
+            <FamilyHistorySection patientId={patientId} />
+          </React.Suspense>
         );
       
       case "social-history":

@@ -568,6 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NOTE: Must be registered BEFORE enhanced routes to avoid route conflicts
   app.use("/api", unifiedMedicalProblemsRoutes);
   app.use("/api", unifiedSurgicalHistoryRoutes);
+  app.use("/api", unifiedFamilyHistoryRoutes);
 
   // Removed orphaned enhanced medical problems routes - functionality consolidated into unified API
 
