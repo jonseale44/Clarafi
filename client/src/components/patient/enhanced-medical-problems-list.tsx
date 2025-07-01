@@ -847,34 +847,151 @@ export function EnhancedMedicalProblemsList({
     );
   };
 
+  // Dense list rendering for compact view
+  const renderProblemDenseList = (problem: MedicalProblem & { rankingResult: RankingResult; displayRank: number }) => {
+    const badgeClass = getRankingStyles(problem.rankingResult.priorityLevel);
+    const statusColor = problem.problemStatus === 'active' ? 'status-active' : 
+                       problem.problemStatus === 'chronic' ? 'status-chronic' : 'status-resolved';
+    
+    return (
+      <Collapsible
+        key={problem.id}
+        open={expandedProblems.has(problem.id)}
+        onOpenChange={() => toggleProblemExpansion(problem.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <div className={`dense-list-item group ${statusColor} dense-view-transition`}>
+            <div className="dense-list-content">
+              {expandedProblems.has(problem.id) ? (
+                <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              )}
+              
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="dense-list-primary">{problem.problemTitle}</span>
+                
+                {problem.rankingResult && (
+                  <Badge variant="outline" className={`dense-list-badge ${badgeClass}`}>
+                    #{problem.displayRank}
+                  </Badge>
+                )}
+                
+                <Badge className={`dense-list-badge ${getStatusColor(problem.problemStatus)}`}>
+                  {getStatusIcon(problem.problemStatus)}
+                </Badge>
+              </div>
+              
+              <div className="dense-list-secondary">
+                {problem.firstDiagnosedDate && (
+                  <span>{formatDate(problem.firstDiagnosedDate)}</span>
+                )}
+                {problem.visitHistory?.length > 0 && (
+                  <span>• {problem.visitHistory.length} visits</span>
+                )}
+                {problem.currentIcd10Code && (
+                  <span className="font-mono">• {problem.currentIcd10Code}</span>
+                )}
+              </div>
+            </div>
+            
+            {!isReadOnly && (
+              <div className="dense-list-actions" onClick={(e) => e.stopPropagation()}>
+                {problem.problemStatus !== 'resolved' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleResolve(problem.id)}
+                    className="h-6 w-6 p-0 text-gray-500 hover:text-green-600"
+                    title="Mark as resolved"
+                  >
+                    <CheckCircle2 className="h-3 w-3" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(problem)}
+                  className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                  title="Edit problem"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(problem.id)}
+                  className="h-6 w-6 p-0 text-gray-500 hover:text-red-600"
+                  title="Delete problem"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="dense-list-expanded">
+            {problem.visitHistory && problem.visitHistory.length > 0 ? (
+              <div className="space-y-2">
+                {problem.visitHistory
+                  .sort((a, b) => {
+                    const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+                    if (dateComparison !== 0) return dateComparison;
+                    const aEncounterId = a.encounterId || 0;
+                    const bEncounterId = b.encounterId || 0;
+                    return bEncounterId - aEncounterId;
+                  })
+                  .map((visit, index) => (
+                    <div key={index} className="flex items-start gap-3 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                      <span className="font-medium text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
+                        {formatDate(visit.date)}
+                      </span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {getSourceBadge(visit)}
+                      </div>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 flex-1">{visit.notes}</p>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 dark:text-gray-400 italic">No visit history recorded</p>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
   const resolvedCount = resolvedProblems.length;
   const currentProblemsCount = activeProblems.length + chronicProblems.length;
 
   const renderCurrentProblems = () => (
-    <div className="space-y-6">
+    <div className={isDenseView ? "space-y-1" : "space-y-6"}>
       {/* Active Problems */}
       {filteredActiveProblems.length > 0 && (
-        <div className="space-y-3">
+        <div className={isDenseView ? "space-y-1" : "space-y-3"}>
           <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
             <Activity className="h-4 w-4" />
             Active Problems ({filteredActiveProblems.length}{activeProblems.length !== filteredActiveProblems.length ? ` of ${activeProblems.length}` : ''})
           </div>
-          <div className="space-y-3 group">
-            {filteredActiveProblems.map(renderProblemCard)}
+          <div className={isDenseView ? "dense-list-container" : "space-y-3 group"}>
+            {filteredActiveProblems.map(isDenseView ? renderProblemDenseList : renderProblemCard)}
           </div>
         </div>
       )}
 
       {/* Chronic Problems */}
       {chronicProblems.length > 0 && (
-        <div className="space-y-3">
-          {activeProblems.length > 0 && <Separator className="my-6" />}
+        <div className={isDenseView ? "space-y-1" : "space-y-3"}>
+          {activeProblems.length > 0 && <Separator className={isDenseView ? "my-2" : "my-6"} />}
           <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300">
             <Clock className="h-4 w-4" />
             Chronic Conditions ({chronicProblems.length})
           </div>
-          <div className="space-y-3 group">
-            {chronicProblems.map(renderProblemCard)}
+          <div className={isDenseView ? "dense-list-container" : "space-y-3 group"}>
+            {chronicProblems.map(isDenseView ? renderProblemDenseList : renderProblemCard)}
           </div>
         </div>
       )}
@@ -896,10 +1013,10 @@ export function EnhancedMedicalProblemsList({
   );
 
   const renderResolvedProblems = () => (
-    <div className="space-y-3">
+    <div className={isDenseView ? "space-y-1" : "space-y-3"}>
       {resolvedProblems.length > 0 ? (
-        <div className="space-y-3 group">
-          {resolvedProblems.map(renderProblemCard)}
+        <div className={isDenseView ? "dense-list-container" : "space-y-3 group"}>
+          {resolvedProblems.map(isDenseView ? renderProblemDenseList : renderProblemCard)}
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
