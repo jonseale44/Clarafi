@@ -924,10 +924,12 @@ export class AttachmentChartProcessor {
 
       // Use the unified imaging parser for attachment processing
       console.log(`📸 [ImagingExtraction] 🔧 Using provider ID: 1 (Jonathan Seale)`);
+      console.log(`📸 [ImagingExtraction] 🔧 Document type: ${extractedContent.documentType || 'unknown'}`);
+      console.log(`📸 [ImagingExtraction] 🔧 Calling processAttachmentImagingData with attachmentId=${attachment.id}, text length=${extractedContent.extractedText.length}, docType=${extractedContent.documentType}`);
       const result = await this.imagingParser.processAttachmentImagingData(
-        attachment.patientId,
+        attachment.id, // Attachment ID for source tracking
         extractedContent.extractedText, // Attachment content
-        attachment.id // Attachment ID for source tracking
+        extractedContent.documentType || 'unknown' // Document type
       );
 
       const processingTime = Date.now() - startTime;
