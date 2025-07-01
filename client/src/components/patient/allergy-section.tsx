@@ -107,7 +107,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
     data: allergies = [],
     isLoading,
     error
-  } = useQuery({
+  } = useQuery<AllergyEntry[]>({
     queryKey: [`/api/allergies/${patientId}`],
     enabled: !!patientId
   });
@@ -170,16 +170,12 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
 
   // Update allergy mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/allergies/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json' }
-    }),
+    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/allergies/${id}`, data, 'PUT'),
     onMutate: async (updatedAllergy) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/allergies', patientId] });
-      const previousAllergies = queryClient.getQueryData(['/api/allergies', patientId]);
+      await queryClient.cancelQueries({ queryKey: [`/api/allergies/${patientId}`] });
+      const previousAllergies = queryClient.getQueryData([`/api/allergies/${patientId}`]);
       
-      queryClient.setQueryData(['/api/allergies', patientId], (old: any) =>
+      queryClient.setQueryData([`/api/allergies/${patientId}`], (old: any) =>
         (old || []).map((allergy: any) =>
           allergy.id === updatedAllergy.id
             ? { ...allergy, ...updatedAllergy, updatedAt: new Date().toISOString() }
@@ -189,7 +185,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
       return { previousAllergies };
     },
     onError: (err, updatedAllergy, context) => {
-      queryClient.setQueryData(['/api/allergies', patientId], context?.previousAllergies);
+      queryClient.setQueryData([`/api/allergies/${patientId}`], context?.previousAllergies);
       toast({
         title: "Error",
         description: "Failed to update allergy. Please try again.",
@@ -204,26 +200,24 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
       setEditingAllergy(null);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/allergies', patientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/allergies/${patientId}`] });
     },
   });
 
   // Delete allergy mutation
   const deleteMutation = useMutation({
-    mutationFn: (allergyId: number) => apiRequest(`/api/allergies/${allergyId}`, {
-      method: 'DELETE'
-    }),
+    mutationFn: (allergyId: number) => apiRequest(`/api/allergies/${allergyId}`, undefined, 'DELETE'),
     onMutate: async (allergyId) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/allergies', patientId] });
-      const previousAllergies = queryClient.getQueryData(['/api/allergies', patientId]);
+      await queryClient.cancelQueries({ queryKey: [`/api/allergies/${patientId}`] });
+      const previousAllergies = queryClient.getQueryData([`/api/allergies/${patientId}`]);
       
-      queryClient.setQueryData(['/api/allergies', patientId], (old: any) =>
+      queryClient.setQueryData([`/api/allergies/${patientId}`], (old: any) =>
         (old || []).filter((allergy: any) => allergy.id !== allergyId)
       );
       return { previousAllergies };
     },
     onError: (err, allergyId, context) => {
-      queryClient.setQueryData(['/api/allergies', patientId], context?.previousAllergies);
+      queryClient.setQueryData([`/api/allergies/${patientId}`], context?.previousAllergies);
       toast({
         title: "Error",
         description: "Failed to delete allergy. Please try again.",
@@ -237,7 +231,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/allergies', patientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/allergies/${patientId}`] });
     },
   });
 
