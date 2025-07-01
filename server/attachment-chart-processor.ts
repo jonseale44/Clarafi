@@ -93,31 +93,51 @@ export class AttachmentChartProcessor {
         
         // Check results and log any failures
         if (vitalsResult.status === 'rejected') {
-          console.error(`❌ [AttachmentChartProcessor] Vitals processing failed:`, vitalsResult.reason);
+          console.error(`❌ [AttachmentChartProcessor] VITALS PROCESSING FAILED:`, vitalsResult.reason);
+          if (vitalsResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN VITALS - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Vitals error details:`, JSON.stringify(vitalsResult.reason, null, 2));
+          }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Vitals processing completed successfully`);
         }
         
         if (medicalProblemsResult.status === 'rejected') {
-          console.error(`❌ [AttachmentChartProcessor] Medical problems processing failed:`, medicalProblemsResult.reason);
+          console.error(`❌ [AttachmentChartProcessor] MEDICAL PROBLEMS PROCESSING FAILED:`, medicalProblemsResult.reason);
+          if (medicalProblemsResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN MEDICAL PROBLEMS - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Medical problems error details:`, JSON.stringify(medicalProblemsResult.reason, null, 2));
+          }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Medical problems processing completed successfully`);
         }
         
         if (surgicalHistoryResult.status === 'rejected') {
-          console.error(`❌ [AttachmentChartProcessor] Surgical history processing failed:`, surgicalHistoryResult.reason);
+          console.error(`❌ [AttachmentChartProcessor] SURGICAL HISTORY PROCESSING FAILED:`, surgicalHistoryResult.reason);
+          if (surgicalHistoryResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN SURGICAL HISTORY - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Surgical history error details:`, JSON.stringify(surgicalHistoryResult.reason, null, 2));
+          }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Surgical history processing completed successfully`);
         }
         
         if (familyHistoryResult.status === 'rejected') {
-          console.error(`❌ [AttachmentChartProcessor] Family history processing failed:`, familyHistoryResult.reason);
+          console.error(`❌ [AttachmentChartProcessor] FAMILY HISTORY PROCESSING FAILED:`, familyHistoryResult.reason);
+          if (familyHistoryResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN FAMILY HISTORY - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Family history error details:`, JSON.stringify(familyHistoryResult.reason, null, 2));
+          }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Family history processing completed successfully`);
         }
         
         if (socialHistoryResult.status === 'rejected') {
-          console.error(`❌ [AttachmentChartProcessor] Social history processing failed:`, socialHistoryResult.reason);
+          console.error(`❌ [AttachmentChartProcessor] SOCIAL HISTORY PROCESSING FAILED:`, socialHistoryResult.reason);
+          if (socialHistoryResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN SOCIAL HISTORY - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Social history error details:`, JSON.stringify(socialHistoryResult.reason, null, 2));
+          }
         } else {
           console.log(`✅ [AttachmentChartProcessor] Social history processing completed successfully`);
         }
