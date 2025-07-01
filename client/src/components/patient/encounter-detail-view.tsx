@@ -1147,7 +1147,7 @@ export function EncounterDetailView({
     if (hasBaseline && hasChanges && notRecording && notGenerating && soapLongEnough) {
       setIsChartUpdateAvailable(true);
       console.log("✅ [ChartUpdate] ALL CONDITIONS MET - SHOWING BUTTON");
-      console.log("✅ [ChartUpdate] Button will process: Medical Problems, Surgical History, Medications");
+      console.log("✅ [ChartUpdate] Button will process: Medical Problems, Surgical History, Medications, Allergies");
       console.log("✅ [ChartUpdate] Will exclude: Orders, Billing (transactional data)");
     } else {
       setIsChartUpdateAvailable(false);
@@ -1213,7 +1213,7 @@ export function EncounterDetailView({
       }, 50);
 
       // Process only chart sections in parallel (exclude orders & CPT)
-      const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse] = await Promise.all([
+      const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, allergyResponse] = await Promise.all([
         // Medical Problems Processing
         fetch("/api/medical-problems/process-unified", {
           method: "POST",
@@ -1280,6 +1280,7 @@ export function EncounterDetailView({
       console.log(`🔄 [ChartUpdate] Medical Problems: ${medicalProblemsResponse.status}`);
       console.log(`🔄 [ChartUpdate] Surgical History: ${surgicalHistoryResponse.status}`);  
       console.log(`🔄 [ChartUpdate] Medications: ${medicationsResponse.status}`);
+      console.log(`🔄 [ChartUpdate] Allergies: ${allergyResponse.status}`);
 
       // Handle responses and refresh UI
       let sectionsUpdated = 0;
@@ -1310,6 +1311,16 @@ export function EncounterDetailView({
         
         await queryClient.invalidateQueries({
           queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
+        });
+        sectionsUpdated++;
+      }
+
+      if (allergyResponse.ok) {
+        const result = await allergyResponse.json();
+        console.log(`✅ [ChartUpdate-Allergies] ${result.allergiesAffected || 0} allergies affected`);
+        
+        await queryClient.invalidateQueries({
+          queryKey: ['/api/allergies', patient.id],
         });
         sectionsUpdated++;
       }
@@ -4052,7 +4063,7 @@ Please provide medical suggestions based on this complete conversation context.`
                         ? 'bg-blue-100 text-blue-500 border-blue-300 cursor-not-allowed' 
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
-                    title="Update Medical Problems, Surgical History, and Medications from SOAP note changes"
+                    title="Update Medical Problems, Surgical History, Medications, and Allergies from SOAP note changes"
                   >
                     {/* Progress bar background */}
                     {isUpdatingChart && (

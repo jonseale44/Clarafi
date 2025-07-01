@@ -109,6 +109,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical Allergy Processing Fix COMPLETED (July 1, 2025)
+- **CRITICAL BUG FIXED**: Resolved missing allergy processing in encounter SOAP note workflows that was causing allergies to be misrouted to medical problems section
+- **ROOT CAUSE IDENTIFIED**: Both automatic (stop recording) and manual (update chart from note) encounter processing workflows were missing allergy API calls entirely
+- **COMPREHENSIVE PARALLEL PROCESSING FIX**: Added allergy processing to both Promise.all parallel workflows in encounter-detail-view.tsx
+- **STOP RECORDING ENHANCEMENT**: Added `/api/allergies/process-unified` API call to 5-service parallel processing (medical problems, medications, orders, CPT, allergies)
+- **MANUAL CHART UPDATE ENHANCEMENT**: Added allergy processing to 4-service manual chart update workflow (medical problems, surgical history, medications, allergies)
+- **PROPER RESPONSE HANDLING**: Added complete allergy response handling including success logging, error handling, and UI cache invalidation
+- **CONSISTENT ARCHITECTURE**: Allergy processing now uses same unified-allergy-parser.ts with GPT-4.1 intelligence across all three input sources (attachments, SOAP notes, manual entry)
+- **UI FEEDBACK IMPROVEMENTS**: Updated button tooltips and logging to reflect that allergies are now processed alongside other chart sections
+- **PRODUCTION READY**: All three allergy input sources now work consistently - attachments, encounter SOAP notes, and direct CRUD operations
+
 ### Medications Attachment Processing System Implementation COMPLETED (July 1, 2025)
 - **PRODUCTION-READY MEDICATION EXTRACTION**: Successfully implemented comprehensive medication processing from uploaded attachments alongside existing order-based medication parser
 - **ATTACHMENT PARALLEL PROCESSING INTEGRATION**: Added medications as 7th parallel processing section to attachment-chart-processor.ts (vitals + medical problems + surgical history + family history + social history + allergies + medications)
