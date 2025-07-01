@@ -409,33 +409,32 @@ ${patientChart.allergies
       changesMade: [`Created medication: ${change.medication_name}`]
     }] : [];
 
-    await db.insert(medicationsTable).values({
+    const [newMedication] = await db.insert(medicationsTable).values({
       patientId,
       encounterId: encounterId!,
       medicationName: change.medication_name,
-      genericName: change.generic_name || null,
-      brandName: change.brand_name || null,
-      dosage: change.strength || '',
-      strength: change.strength || null,
-      dosageForm: change.dosage_form || null,
+      genericName: change.generic_name,
+      brandName: change.brand_name,
+      dosage: change.strength || 'Unknown',
+      strength: change.strength,
+      dosageForm: change.dosage_form,
       route: change.route || 'oral',
-      frequency: change.frequency || '',
-      sig: change.sig || null,
-      clinicalIndication: change.clinical_indication || null,
+      frequency: change.frequency || 'Unknown',
+      sig: change.sig,
+      clinicalIndication: change.clinical_indication,
       startDate: change.start_date || new Date().toISOString().split('T')[0],
-      endDate: change.end_date || null,
+      endDate: change.end_date,
       status: change.status,
       prescriber: 'Extracted from Document',
-      prescriberId: providerId,
+      prescriberId: 1, // Fixed provider ID
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
       visitHistory: visitHistory,
       sourceType: change.source_type,
-      sourceConfidence: change.confidence || 0.85,
-      sourceNotes: change.consolidation_reasoning || null,
-      extractedFromAttachmentId: attachmentId,
-      enteredBy: providerId
-    });
+      sourceConfidence: (change.confidence || 0.85).toString(),
+      sourceNotes: change.consolidation_reasoning,
+      extractedFromAttachmentId: attachmentId
+    }).returning();
 
     console.log(`✅ [UnifiedMedicationParser] Created medication: ${change.medication_name}`);
   }
@@ -480,7 +479,8 @@ ${patientChart.allergies
     } : null;
 
     // Update existing visit history
-    const updatedVisitHistory = existingMed.visitHistory ? [...existingMed.visitHistory] : [];
+    const existingVisitHistory = Array.isArray(existingMed.visitHistory) ? existingMed.visitHistory : [];
+    const updatedVisitHistory = [...existingVisitHistory];
     if (newVisitEntry) {
       updatedVisitHistory.push(newVisitEntry);
     }
@@ -492,7 +492,7 @@ ${patientChart.allergies
         endDate: change.end_date || null,
         lastUpdatedEncounterId: encounterId,
         visitHistory: updatedVisitHistory,
-        sourceConfidence: change.confidence || 0.85,
+        sourceConfidence: (change.confidence || 0.85).toString(),
         updatedAt: new Date()
       })
       .where(eq(medicationsTable.id, change.medication_id));
@@ -558,7 +558,8 @@ ${patientChart.allergies
       changesMade: [`Discontinued medication: ${change.medication_name}`]
     };
 
-    const updatedVisitHistory = existingMed.visitHistory ? [...existingMed.visitHistory] : [];
+    const existingHistory = Array.isArray(existingMed.visitHistory) ? existingMed.visitHistory : [];
+    const updatedVisitHistory = [...existingHistory];
     updatedVisitHistory.push(newVisitEntry);
 
     await db.update(medicationsTable)
