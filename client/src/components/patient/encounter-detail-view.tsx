@@ -1543,37 +1543,62 @@ export function EncounterDetailView({
     );
   };
 
-  // Cleanup auto-save timer on unmount
+  // Cleanup auto-save timers on unmount
   useEffect(() => {
     return () => {
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current);
       }
+      if (transcriptionAutoSaveTimer.current) {
+        clearTimeout(transcriptionAutoSaveTimer.current);
+      }
     };
   }, []);
 
-  // Effect to load existing SOAP note from encounter data
+  // Effect to load existing SOAP note and transcription from encounter data
   useEffect(() => {
-    if (encounter?.note && editor && !editor.isDestroyed) {
+    if (encounter && editor && !editor.isDestroyed) {
       // Load existing SOAP note from database
-      const existingNote = encounter.note;
+      if (encounter.note) {
+        const existingNote = encounter.note;
 
-      // Only update if the content is different from what's currently loaded
-      const currentContent = editor.getHTML();
-      if (currentContent !== existingNote && existingNote.trim() !== "") {
-        setSoapNote(existingNote);
-        setLastSaved(existingNote); // Set initial saved state
-        setAutoSaveStatus("saved");
+        // Only update if the content is different from what's currently loaded
+        const currentContent = editor.getHTML();
+        if (currentContent !== existingNote && existingNote.trim() !== "") {
+          setSoapNote(existingNote);
+          setLastSaved(existingNote); // Set initial saved state
+          setAutoSaveStatus("saved");
 
-        // Format the existing note for proper display
-        const formattedContent = formatSoapNoteContent(existingNote);
-        editor.commands.setContent(formattedContent);
-        console.log(
-          "📄 [EncounterView] Loaded existing SOAP note from encounter data",
-        );
+          // Format the existing note for proper display
+          const formattedContent = formatSoapNoteContent(existingNote);
+          editor.commands.setContent(formattedContent);
+          console.log(
+            "📄 [EncounterView] Loaded existing SOAP note from encounter data",
+          );
+        }
+      }
+
+      // Load existing transcription from database
+      if (encounter.transcriptionRaw || encounter.transcriptionProcessed) {
+        const savedRawTranscription = encounter.transcriptionRaw || "";
+        const savedProcessedTranscription = encounter.transcriptionProcessed || "";
+
+        if (savedRawTranscription.trim()) {
+          setTranscription(savedRawTranscription);
+          setLastSavedTranscription(savedRawTranscription);
+          setTranscriptionSaveStatus("saved");
+          console.log(
+            "🎤 [EncounterView] Restored transcription from database:",
+            `Raw: ${savedRawTranscription.length} chars, Processed: ${savedProcessedTranscription.length} chars`
+          );
+        }
+
+        if (savedProcessedTranscription.trim()) {
+          setLiveTranscriptionContent(savedProcessedTranscription);
+        }
       }
     }
-  }, [encounter?.note, editor]);
+  }, [encounter?.note, encounter?.transcriptionRaw, encounter?.transcriptionProcessed, editor]);
 
   // Effect to load new SOAP note content only when it's generated
   useEffect(() => {
@@ -2181,6 +2206,9 @@ Please provide medical suggestions based on what the provider is saying in this 
                   setTranscription((current) => current);
                 }, 500);
               }
+
+              // Trigger transcription auto-save after each delta update
+              triggerTranscriptionAutoSave(newTranscription, liveTranscriptionContent + deltaText);
 
               return newTranscription;
             });
@@ -2822,8 +2850,15 @@ Please provide medical suggestions based on this complete conversation context.`
       setLastProcessedSOAPContent(soapNote);
 
       try {
-        // Save SOAP note first
-        console.log("🔄 [StopRecording] Saving SOAP note...");
+        // Save SOAP note and final transcription
+        console.log("🔄 [StopRecording] Saving SOAP note and final transcription...");
+        
+        // Save final transcription state
+        if (transcription && transcription.trim()) {
+          await autoSaveTranscription(transcription, liveTranscriptionContent);
+          console.log("✅ [StopRecording] Final transcription auto-saved");
+        }
+
         const soapSaveResponse = await fetch(
           `/api/patients/${patient.id}/encounters/${encounterId}/soap-note`,
           {
