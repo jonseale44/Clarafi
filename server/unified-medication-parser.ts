@@ -45,7 +45,7 @@ export interface UnifiedMedicationChange {
   clinical_indication?: string;
   status: "active" | "discontinued" | "held" | "historical" | "pending";
   start_date?: string;
-  end_date?: string;
+  end_date?: string | null;
   visit_notes?: string;
   source_type: "encounter" | "attachment";
   consolidation_reasoning?: string;
@@ -409,9 +409,9 @@ ${patientChart.allergies
       changesMade: [`Created medication: ${change.medication_name}`]
     }] : [];
 
-    await db.insert(medications).values({
+    await db.insert(medicationsTable).values({
       patientId,
-      encounterId: encounterId || null,
+      encounterId: encounterId!,
       medicationName: change.medication_name,
       genericName: change.generic_name || null,
       brandName: change.brand_name || null,
@@ -459,8 +459,8 @@ ${patientChart.allergies
 
     // Get existing medication for visit history
     const [existingMed] = await db.select()
-      .from(medications)
-      .where(eq(medications.id, change.medication_id));
+      .from(medicationsTable)
+      .where(eq(medicationsTable.id, change.medication_id));
 
     if (!existingMed) {
       console.error(`❌ [UnifiedMedicationParser] Medication ${change.medication_id} not found for update`);
@@ -486,7 +486,7 @@ ${patientChart.allergies
     }
 
     // Update medication
-    await db.update(medications)
+    await db.update(medicationsTable)
       .set({
         status: change.status,
         endDate: change.end_date || null,
@@ -495,7 +495,7 @@ ${patientChart.allergies
         sourceConfidence: change.confidence || 0.85,
         updatedAt: new Date()
       })
-      .where(eq(medications.id, change.medication_id));
+      .where(eq(medicationsTable.id, change.medication_id));
 
     console.log(`✅ [UnifiedMedicationParser] Updated medication ID ${change.medication_id}`);
   }
@@ -538,8 +538,8 @@ ${patientChart.allergies
     
     // Get existing medication for visit history
     const [existingMed] = await db.select()
-      .from(medications)
-      .where(eq(medications.id, change.medication_id));
+      .from(medicationsTable)
+      .where(eq(medicationsTable.id, change.medication_id));
 
     if (!existingMed) {
       console.error(`❌ [UnifiedMedicationParser] Medication ${change.medication_id} not found for discontinuation`);
@@ -561,7 +561,7 @@ ${patientChart.allergies
     const updatedVisitHistory = existingMed.visitHistory ? [...existingMed.visitHistory] : [];
     updatedVisitHistory.push(newVisitEntry);
 
-    await db.update(medications)
+    await db.update(medicationsTable)
       .set({
         status: 'discontinued',
         endDate: discontinueDate,
@@ -570,7 +570,7 @@ ${patientChart.allergies
         visitHistory: updatedVisitHistory,
         updatedAt: new Date()
       })
-      .where(eq(medications.id, change.medication_id));
+      .where(eq(medicationsTable.id, change.medication_id));
 
     console.log(`✅ [UnifiedMedicationParser] Discontinued medication ID ${change.medication_id}`);
   }
