@@ -14,11 +14,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Tooltip,
   TooltipContent,
@@ -113,7 +112,10 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
 }) => {
   const [editingEntry, setEditingEntry] = useState<SocialHistoryEntry | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [expandedEntries, setExpandedEntries] = useState<string[]>([]);
+  const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
+  const [editingVisitHistory, setEditingVisitHistory] = useState<VisitHistoryEntry[]>([]);
+  const [newVisitNote, setNewVisitNote] = useState({ date: "", notes: "" });
+  const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -471,6 +473,99 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
     }
   };
 
+  // Toggle function for expanding/collapsing entries
+  const toggleEntryExpansion = (entryId: number) => {
+    setExpandedEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Visit History Management Functions (like surgical history)
+  const addVisitNote = () => {
+    if (!newVisitNote.date || !newVisitNote.notes) {
+      toast({ title: "Error", description: "Date and notes are required", variant: "destructive" });
+      return;
+    }
+
+    const visitNote = {
+      id: Date.now().toString(),
+      date: newVisitNote.date,
+      notes: newVisitNote.notes,
+      source: "manual" as const,
+    };
+
+    setEditingVisitHistory(prev => [...prev, visitNote].sort((a, b) => {
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateComparison !== 0) return dateComparison;
+      
+      const aEncounterId = a.encounterId || 0;
+      const bEncounterId = b.encounterId || 0;
+      return bEncounterId - aEncounterId;
+    }));
+
+    setNewVisitNote({ date: "", notes: "" });
+  };
+
+  const editVisitNote = (visitId: string) => {
+    setEditingVisitId(visitId);
+  };
+
+  const saveVisitEdit = (visitId: string, updatedVisit: any) => {
+    setEditingVisitHistory(prev => 
+      prev.map(visit => 
+        visit.id === visitId ? { ...visit, ...updatedVisit } : visit
+      )
+    );
+    setEditingVisitId(null);
+  };
+
+  const deleteVisitNote = (visitId: string) => {
+    setEditingVisitHistory(prev => prev.filter(visit => visit.id !== visitId));
+  };
+
+  // Helper component for editing visit notes
+  const EditableVisitNote = ({ visit, onSave, onCancel }: {
+    visit: any;
+    onSave: (updatedVisit: any) => void;
+    onCancel: () => void;
+  }) => {
+    const [editDate, setEditDate] = useState(visit.date);
+    const [editNotes, setEditNotes] = useState(visit.notes);
+
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-4 gap-3">
+          <Input
+            type="date"
+            value={editDate}
+            onChange={(e) => setEditDate(e.target.value)}
+          />
+          <div className="col-span-3">
+            <Textarea
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              rows={2}
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => onSave({ date: editDate, notes: editNotes })}>
+            Save
+          </Button>
+          <Button size="sm" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className={`emr-tight-spacing ${className}`}>
@@ -589,76 +684,95 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
               <p className="text-sm">Add social history using the button above</p>
             </div>
           ) : (
-            <Accordion type="multiple" value={expandedEntries} onValueChange={setExpandedEntries}>
+            <div className="space-y-3">
               {socialHistory.map((entry: SocialHistoryEntry) => (
-                <AccordionItem key={entry.id} value={entry.id.toString()}>
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4 group">
-                      <div className="flex items-center gap-3">
-                        <div className="text-left">
-                          <div className="font-medium emr-ultra-compact-content flex items-center gap-2">
-                            <span className="text-lg">{getCategoryIcon(entry.category)}</span>
-                            {formatCategory(entry.category)}
+                <Card 
+                  key={entry.id} 
+                  className="relative social-card border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200 group"
+                >
+                  <Collapsible
+                    open={expandedEntries.has(entry.id)}
+                    onOpenChange={() => toggleEntryExpansion(entry.id)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-opacity-80 social-header transition-colors emr-compact-header">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            {expandedEntries.has(entry.id) ? (
+                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-lg">{getCategoryIcon(entry.category)}</span>
+                                  <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">
+                                    {formatCategory(entry.category)}
+                                  </CardTitle>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {(() => {
+                                    // Extract attachment ID from visit history OR fall back to extractedFromAttachmentId
+                                    const attachmentIdFromVisit = entry.visitHistory?.find(visit => visit.attachmentId)?.attachmentId;
+                                    const finalAttachmentId = attachmentIdFromVisit || 
+                                      (entry.sourceType === "attachment" ? entry.extractedFromAttachmentId : undefined);
+                                    
+                                    // Extract encounter ID from visit history OR fall back to extractedFromEncounterId
+                                    const encounterIdFromVisit = entry.visitHistory?.find(visit => visit.encounterId)?.encounterId;
+                                    const finalEncounterId = encounterIdFromVisit || 
+                                      (entry.sourceType === "encounter" ? entry.extractedFromEncounterId : undefined);
+                                    
+                                    // Use sourceConfidence from the entry OR visit history
+                                    const finalConfidence = entry.sourceConfidence || 
+                                      entry.visitHistory?.find(visit => visit.confidence)?.confidence;
+                                    
+                                    return getSourceBadge(
+                                      entry.sourceType, 
+                                      finalConfidence, 
+                                      finalAttachmentId, 
+                                      finalEncounterId
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 emr-ultra-compact-content">
+                                {entry.currentStatus}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-600 emr-ultra-compact-content">
-                            {entry.currentStatus}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(entry);
+                                setEditingVisitHistory(entry.visitHistory || []);
+                                setIsAddDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm("Are you sure you want to delete this social history entry?")) {
+                                  deleteMutation.mutate(entry.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          // Extract attachment ID from visit history OR fall back to extractedFromAttachmentId
-                          const attachmentIdFromVisit = entry.visitHistory?.find(visit => visit.attachmentId)?.attachmentId;
-                          const finalAttachmentId = attachmentIdFromVisit || 
-                            (entry.sourceType === "attachment" ? entry.extractedFromAttachmentId : undefined);
-                          
-                          // Extract encounter ID from visit history OR fall back to extractedFromEncounterId
-                          const encounterIdFromVisit = entry.visitHistory?.find(visit => visit.encounterId)?.encounterId;
-                          const finalEncounterId = encounterIdFromVisit || 
-                            (entry.sourceType === "encounter" ? entry.extractedFromEncounterId : undefined);
-                          
-                          // Use sourceConfidence from the entry OR visit history
-                          const finalConfidence = entry.sourceConfidence || 
-                            entry.visitHistory?.find(visit => visit.confidence)?.confidence;
-                          
-                          return getSourceBadge(
-                            entry.sourceType, 
-                            finalConfidence, 
-                            finalAttachmentId, 
-                            finalEncounterId
-                          );
-                        })()}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(entry);
-                              setIsAddDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("Are you sure you want to delete this social history entry?")) {
-                                deleteMutation.mutate(entry.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-2">
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
                     <div className="space-y-4">
                       {/* Entry Details */}
                       <div className="grid grid-cols-2 gap-4 text-sm">
