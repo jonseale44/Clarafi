@@ -124,7 +124,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
 
   // Create allergy mutation
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/allergies', data),
+    mutationFn: (data: any) => apiRequest('POST', '/api/allergies', data),
     onMutate: async (newAllergy) => {
       await queryClient.cancelQueries({ queryKey: [`/api/allergies/${patientId}`] });
       const previousAllergies = queryClient.getQueryData([`/api/allergies/${patientId}`]);
@@ -170,7 +170,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
 
   // Update allergy mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/allergies/${id}`, data, 'PUT'),
+    mutationFn: ({ id, ...data }: any) => apiRequest('PUT', `/api/allergies/${id}`, data),
     onMutate: async (updatedAllergy) => {
       await queryClient.cancelQueries({ queryKey: [`/api/allergies/${patientId}`] });
       const previousAllergies = queryClient.getQueryData([`/api/allergies/${patientId}`]);
@@ -206,7 +206,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
 
   // Delete allergy mutation
   const deleteMutation = useMutation({
-    mutationFn: (allergyId: number) => apiRequest(`/api/allergies/${allergyId}`, undefined, 'DELETE'),
+    mutationFn: (allergyId: number) => apiRequest('DELETE', `/api/allergies/${allergyId}`),
     onMutate: async (allergyId) => {
       await queryClient.cancelQueries({ queryKey: [`/api/allergies/${patientId}`] });
       const previousAllergies = queryClient.getQueryData([`/api/allergies/${patientId}`]);
