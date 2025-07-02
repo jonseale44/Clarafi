@@ -263,11 +263,14 @@ CRITICAL INSTRUCTIONS:
 
 2. **HISTORICAL IMAGING ONLY**: Extract only completed imaging studies with results. Do NOT extract future recommendations, planned studies, or "patient should get MRI" type content.
 
-3. **INTELLIGENT CONSOLIDATION**: 
-   - Match studies by modality + body part + approximate date
-   - Consolidate "Chest X-ray normal" with existing "CXR WNL" entries
-   - Update clinical summaries when new interpretations are provided
-   - Preserve visit history when consolidating studies
+3. **MANDATORY CONSOLIDATION FIRST**: 
+   - BEFORE creating any new imaging study, systematically check existing studies
+   - Match by: modality + body part + study date (±7 days tolerance)
+   - Consolidate when confidence ≥70% that studies are the same
+   - For exact matches (same date/modality/body part): ALWAYS consolidate unless findings dramatically different
+   - Use action "ADD_VISIT" to add new interpretations to existing studies
+   - Only use "NEW_IMAGING" when no reasonable match exists
+   - Apply clinical intelligence: "CXR" = "Chest X-ray" = "chest radiograph"
 
 4. **COMMERCIAL EMR STATUS WORKFLOW**:
    - "preliminary" = preliminary read by resident/AI
@@ -289,6 +292,28 @@ CRITICAL INSTRUCTIONS:
 
 CONTENT TO ANALYZE:
 ${content}
+
+MANDATORY CONSOLIDATION EXAMPLES:
+
+1. **EXACT MATCH - ALWAYS CONSOLIDATE**:
+   Existing: XR chest 2010-06-12 "Cardiomegaly with pulmonary congestion"
+   New Content: "Chest X-ray 6/12/2010 shows cardiomegaly, bilateral pulmonary congestion, mild pleural effusions"
+   Action: {"action": "ADD_VISIT", "imaging_id": 8, "consolidation_reasoning": "Exact match - same modality, body part, and date. Adding new interpretation to existing study."}
+
+2. **NEAR-MATCH - CONSOLIDATE WITH TOLERANCE**:
+   Existing: CT head 2023-01-15 
+   New Content: "Head CT from January 16, 2023"
+   Action: {"action": "ADD_VISIT", "imaging_id": 12, "consolidation_reasoning": "Same study within ±7 day tolerance, likely same CT with different documentation dates"}
+
+3. **DIFFERENT FINDINGS - STILL CONSOLIDATE SAME STUDY**:
+   Existing: XR chest 2010-06-12 "Normal"
+   New Content: "Chest radiograph 6/12/2010 cardiomegaly and congestion"
+   Action: {"action": "ADD_VISIT", "imaging_id": 8, "consolidation_reasoning": "Same study date/modality - likely re-read or addendum with new findings"}
+
+4. **CREATE NEW ONLY WHEN CLEARLY DIFFERENT**:
+   Existing: XR chest 2010-06-12
+   New Content: "Chest X-ray 2010-06-20" 
+   Action: {"action": "NEW_IMAGING", "consolidation_reasoning": "Different study date (8 days apart) suggests follow-up study, not same exam"}
 
 Return a JSON object with this exact structure:
 {

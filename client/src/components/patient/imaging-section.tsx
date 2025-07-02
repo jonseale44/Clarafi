@@ -106,24 +106,37 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
   };
 
   const getSourceBadge = (result: ImagingResult) => {
-    if (result.sourceType === "attachment" && result.sourceConfidence) {
+    // Check for PDF attachment extraction (backend stores as "pdf_extract")
+    if (result.sourceType === "pdf_extract" && result.sourceConfidence) {
+      const confidencePercent = Math.round(parseFloat(result.sourceConfidence) * 100);
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                Doc Extract {Math.round(result.sourceConfidence * 100)}%
+              <Badge 
+                variant="outline" 
+                className="text-xs bg-blue-50 border-blue-200 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
+                onClick={() => {
+                  if (result.extractedFromAttachmentId) {
+                    // Navigate to attachment
+                    console.log("🔗 [Imaging] Navigating to attachment:", result.extractedFromAttachmentId);
+                  }
+                }}
+                title={`Click to view source document (Attachment #${result.extractedFromAttachmentId})`}
+              >
+                Doc Extract {confidencePercent}%
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Extracted from uploaded document with {Math.round(result.sourceConfidence * 100)}% confidence</p>
+              <p>Extracted from attachment #{result.extractedFromAttachmentId} with {confidencePercent}% confidence</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       );
     }
     
-    if (result.sourceType === "encounter") {
+    // Check for encounter note extraction
+    if (result.sourceType === "encounter_note") {
       return (
         <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700">
           Note Entry
@@ -131,6 +144,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
       );
     }
     
+    // Fallback for true manual entries
     return (
       <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
         Manual Entry
