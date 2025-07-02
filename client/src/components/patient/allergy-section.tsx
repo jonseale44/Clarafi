@@ -32,6 +32,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useDenseView } from '@/hooks/use-dense-view';
+import { useLocation } from 'wouter';
+import { useNavigationContext } from '@/hooks/use-navigation-context';
 
 interface AllergyEntry {
   id: number;
@@ -98,6 +100,8 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isDenseView } = useDenseView();
+  const [location, setLocation] = useLocation();
+  const { navigateWithContext } = useNavigationContext();
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
   const [editingAllergy, setEditingAllergy] = useState<AllergyEntry | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -279,11 +283,22 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
         );
       }
       case 'soap_derived': {
+        // Find encounter ID from visit history
+        const encounterEntry = allergy.visitHistory?.find(visit => visit.source === 'encounter' && visit.encounterId);
+        const encounterId = encounterEntry?.encounterId;
+        
+        const handleEncounterClick = () => {
+          if (encounterId) {
+            navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "allergies", mode || "patient-chart");
+          }
+        };
+        
         return (
           <Badge 
             variant="default" 
-            className="text-xs bg-blue-100 text-blue-800 border-blue-200"
-            title="Extracted from clinical note"
+            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            onClick={handleEncounterClick}
+            title="Click to view encounter details"
           >
             Note {confidencePercent}%
           </Badge>
