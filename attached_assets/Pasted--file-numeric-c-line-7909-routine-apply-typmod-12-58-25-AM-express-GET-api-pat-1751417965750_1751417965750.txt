@@ -1,0 +1,107 @@
+
+  file: 'numeric.c',
+  line: '7909',
+  routine: 'apply_typmod'
+}
+12:58:25 AM [express] GET /api/patients/22/imaging-results 200 in 125ms :: [{"id":8,"imagingOrderId":…
+⚗️ [LabParser] Error saving lab result Creatinine: error: numeric field overflow
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedLabParser.processLabResults (/home/runner/workspace/server/unified-lab-parser.ts:333:9)
+    at async AttachmentChartProcessor.processDocumentForLabs (/home/runner/workspace/server/attachment-chart-processor.ts:1008:22)
+    at async Promise.allSettled (index 8)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22003',
+  detail: 'A field with precision 3, scale 2 must round to an absolute value less than 10^1.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numeric.c',
+  line: '7909',
+  routine: 'apply_typmod'
+}
+⚗️ [LabParser] Error saving lab result Blood Urea Nitrogen: error: numeric field overflow
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedLabParser.processLabResults (/home/runner/workspace/server/unified-lab-parser.ts:333:9)
+    at async AttachmentChartProcessor.processDocumentForLabs (/home/runner/workspace/server/attachment-chart-processor.ts:1008:22)
+    at async Promise.allSettled (index 8)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22003',
+  detail: 'A field with precision 3, scale 2 must round to an absolute value less than 10^1.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numeric.c',
+  line: '7909',
+  routine: 'apply_typmod'
+}
+⚗️ [LabParser] Error saving lab result Potassium: error: numeric field overflow
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedLabParser.processLabResults (/home/runner/workspace/server/unified-lab-parser.ts:333:9)
+    at async AttachmentChartProcessor.processDocumentForLabs (/home/runner/workspace/server/attachment-chart-processor.ts:1008:22)
+    at async Promise.allSettled (index 8)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22003',
+  detail: 'A field with precision 3, scale 2 must round to an absolute value less than 10^1.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numeric.c',
+  line: '7909',
+  routine: 'apply_typmod'
+}
+⚗️ [LabParser] Error saving lab result Sodium: error: numeric field overflow
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedLabParser.processLabResults (/home/runner/workspace/server/unified-lab-parser.ts:333:9)
+    at async AttachmentChartProcessor.processDocumentForLabs (/home/runner/workspace/server/attachment-chart-processor.ts:1008:22)
+    at async Promise.allSettled (index 8)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9) {
+  length: 164,
+  severity: 'ERROR',
+  code: '22003',
+  detail: 'A field with precision 3, scale 2 must round to an absolute value less than 10^1.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,

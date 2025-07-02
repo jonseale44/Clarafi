@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import { db } from "./db.js";
-import { labResults, labOrders, externalLabs, patientAttachments } from "@shared/schema";
+import {
+  labResults,
+  labOrders,
+  externalLabs,
+  patientAttachments,
+} from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 interface ParsedLabResult {
@@ -46,7 +51,7 @@ export class UnifiedLabParser {
   async parseLabText(
     labText: string,
     patientId: number,
-    patientContext?: { age?: number; gender?: string; existingResults?: any[] }
+    patientContext?: { age?: number; gender?: string; existingResults?: any[] },
   ): Promise<LabParsingResult> {
     if (!labText || labText.trim().length === 0) {
       return {
@@ -57,15 +62,28 @@ export class UnifiedLabParser {
       };
     }
 
-    console.log("🧪 [LAB PARSING] ============= STARTING GPT-4.1 LAB RESULTS PARSING =============");
-    console.log("⚗️ [LabParser] Input text length:", labText.length, "characters");
+    console.log(
+      "🧪 [LAB PARSING] ============= STARTING GPT-4.1 LAB RESULTS PARSING =============",
+    );
+    console.log(
+      "⚗️ [LabParser] Input text length:",
+      labText.length,
+      "characters",
+    );
     console.log("⚗️ [LabParser] Patient context:", patientContext);
-    console.log("⚗️ [LabParser] Parsing lab text preview:", labText.substring(0, 200) + (labText.length > 200 ? '...' : ''));
+    console.log(
+      "⚗️ [LabParser] Parsing lab text preview:",
+      labText.substring(0, 200) + (labText.length > 200 ? "..." : ""),
+    );
 
     try {
       // Get existing lab results for consolidation
       const existingResults = await this.getExistingLabResults(patientId);
-      console.log("⚗️ [LabParser] Found", existingResults.length, "existing lab results for consolidation analysis");
+      console.log(
+        "⚗️ [LabParser] Found",
+        existingResults.length,
+        "existing lab results for consolidation analysis",
+      );
 
       // Enhanced GPT prompt for comprehensive lab results extraction
       const prompt = `You are an expert clinical laboratory technologist with 20+ years of experience analyzing lab reports and integrating results into EMR systems.
@@ -122,18 +140,28 @@ CONSOLIDATION LOGIC:
 Input: "${labText}"`;
 
       console.log("⚗️ [LabParser] 🤖 Calling OpenAI GPT-4.1...");
-      console.log("⚗️ [LabParser] 🤖 Model: gpt-4.1-mini, Temperature: 0.1, Max tokens: 2000");
+      console.log(
+        "⚗️ [LabParser] 🤖 Model: gpt-4.1, Temperature: 0.1, Max tokens: 30000",
+      );
 
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4.1",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 2000,
+        max_tokens: 30000,
       });
 
       const aiResponseText = response.choices[0]?.message?.content?.trim();
-      console.log("⚗️ [LabParser] 🤖 GPT Response length:", aiResponseText?.length || 0, "characters");
-      console.log("⚗️ [LabParser] 🤖 GPT Response preview:", aiResponseText?.substring(0, 300) + (aiResponseText && aiResponseText.length > 300 ? '...' : ''));
+      console.log(
+        "⚗️ [LabParser] 🤖 GPT Response length:",
+        aiResponseText?.length || 0,
+        "characters",
+      );
+      console.log(
+        "⚗️ [LabParser] 🤖 GPT Response preview:",
+        aiResponseText?.substring(0, 300) +
+          (aiResponseText && aiResponseText.length > 300 ? "..." : ""),
+      );
 
       if (!aiResponseText) {
         throw new Error("No response from OpenAI");
@@ -144,34 +172,59 @@ Input: "${labText}"`;
       try {
         // Strip markdown code blocks if present
         let cleanedResponse = aiResponseText.trim();
-        if (cleanedResponse.startsWith('```json')) {
-          cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-        } else if (cleanedResponse.startsWith('```')) {
-          cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        if (cleanedResponse.startsWith("```json")) {
+          cleanedResponse = cleanedResponse
+            .replace(/^```json\s*/, "")
+            .replace(/\s*```$/, "");
+        } else if (cleanedResponse.startsWith("```")) {
+          cleanedResponse = cleanedResponse
+            .replace(/^```\s*/, "")
+            .replace(/\s*```$/, "");
         }
-        
+
         parsedResults = JSON.parse(cleanedResponse);
         if (!Array.isArray(parsedResults)) {
           throw new Error("Response is not an array");
         }
-        console.log("⚗️ [LabParser] ✅ Successfully parsed", parsedResults.length, "lab results from GPT response");
+        console.log(
+          "⚗️ [LabParser] ✅ Successfully parsed",
+          parsedResults.length,
+          "lab results from GPT response",
+        );
       } catch (parseError) {
-        console.error("⚗️ [LabParser] ❌ Failed to parse GPT response as JSON:", parseError);
+        console.error(
+          "⚗️ [LabParser] ❌ Failed to parse GPT response as JSON:",
+          parseError,
+        );
         console.error("⚗️ [LabParser] ❌ Raw response:", aiResponseText);
         throw new Error(`Invalid JSON response from AI: ${parseError}`);
       }
 
       // Validate and enhance results
       const validatedResults = this.validateAndEnhanceResults(parsedResults);
-      console.log("⚗️ [LabParser] ✅ Validated", validatedResults.length, "lab results");
+      console.log(
+        "⚗️ [LabParser] ✅ Validated",
+        validatedResults.length,
+        "lab results",
+      );
 
       // Calculate overall confidence
-      const avgConfidence = validatedResults.length > 0 
-        ? validatedResults.reduce((sum, result) => sum + (result.confidence || 0), 0) / validatedResults.length
-        : 0;
+      const avgConfidence =
+        validatedResults.length > 0
+          ? validatedResults.reduce(
+              (sum, result) => sum + (result.confidence || 0),
+              0,
+            ) / validatedResults.length
+          : 0;
 
-      console.log("⚗️ [LabParser] ✅ PARSING COMPLETE - Average confidence:", avgConfidence.toFixed(1) + "%");
-      console.log("⚗️ [LabParser] ✅ Total results extracted:", validatedResults.length);
+      console.log(
+        "⚗️ [LabParser] ✅ PARSING COMPLETE - Average confidence:",
+        avgConfidence.toFixed(1) + "%",
+      );
+      console.log(
+        "⚗️ [LabParser] ✅ Total results extracted:",
+        validatedResults.length,
+      );
 
       return {
         success: true,
@@ -179,14 +232,17 @@ Input: "${labText}"`;
         confidence: Math.round(avgConfidence),
         originalText: labText,
         totalResultsFound: validatedResults.length,
-        consolidatedCount: validatedResults.filter(r => r.consolidationReasoning?.includes('consolidat')).length
+        consolidatedCount: validatedResults.filter((r) =>
+          r.consolidationReasoning?.includes("consolidat"),
+        ).length,
       };
-
     } catch (error) {
       console.error("⚗️ [LabParser] ❌ Error during lab parsing:", error);
       return {
         success: false,
-        errors: [error instanceof Error ? error.message : "Unknown parsing error"],
+        errors: [
+          error instanceof Error ? error.message : "Unknown parsing error",
+        ],
         confidence: 0,
         originalText: labText,
       };
@@ -202,7 +258,7 @@ Input: "${labText}"`;
           resultUnits: labResults.resultUnits,
           specimenCollectedAt: labResults.specimenCollectedAt,
           resultAvailableAt: labResults.resultAvailableAt,
-          testCategory: labResults.testCategory
+          testCategory: labResults.testCategory,
         })
         .from(labResults)
         .where(eq(labResults.patientId, patientId))
@@ -221,21 +277,26 @@ Input: "${labText}"`;
       return "No existing lab results found.";
     }
 
-    return results.map(result => 
-      `${result.testName}: ${result.resultValue} ${result.resultUnits || ''} (${result.specimenCollectedAt || 'Unknown date'})`
-    ).join('\n');
+    return results
+      .map(
+        (result) =>
+          `${result.testName}: ${result.resultValue} ${result.resultUnits || ""} (${result.specimenCollectedAt || "Unknown date"})`,
+      )
+      .join("\n");
   }
 
-  private validateAndEnhanceResults(results: ParsedLabResult[]): ParsedLabResult[] {
+  private validateAndEnhanceResults(
+    results: ParsedLabResult[],
+  ): ParsedLabResult[] {
     return results
-      .filter(result => result.testName && result.resultValue) // Must have basic data
-      .map(result => ({
+      .filter((result) => result.testName && result.resultValue) // Must have basic data
+      .map((result) => ({
         ...result,
         confidence: Math.min(100, Math.max(0, result.confidence || 75)), // Ensure 0-100 range
         criticalFlag: result.criticalFlag || false,
-        resultStatus: result.resultStatus || 'final',
-        testCategory: result.testCategory || 'chemistry',
-        warnings: result.warnings || []
+        resultStatus: result.resultStatus || "final",
+        testCategory: result.testCategory || "chemistry",
+        warnings: result.warnings || [],
       }));
   }
 
@@ -244,13 +305,22 @@ Input: "${labText}"`;
     extractedText: string,
     patientId: number,
     attachmentId: number,
-    sourceType: 'attachment' = 'attachment'
+    sourceType: "attachment" = "attachment",
   ): Promise<{ resultsCount: number; confidence: number }> {
-    console.log("⚗️ [LabParser] Processing lab results for patient", patientId, "from attachment", attachmentId);
+    console.log(
+      "⚗️ [LabParser] Processing lab results for patient",
+      patientId,
+      "from attachment",
+      attachmentId,
+    );
 
     const parseResult = await this.parseLabText(extractedText, patientId);
-    
-    if (!parseResult.success || !parseResult.data || parseResult.data.length === 0) {
+
+    if (
+      !parseResult.success ||
+      !parseResult.data ||
+      parseResult.data.length === 0
+    ) {
       console.log("⚗️ [LabParser] No lab results found in attachment");
       return { resultsCount: 0, confidence: 0 };
     }
@@ -260,47 +330,96 @@ Input: "${labText}"`;
     // Save each lab result to database
     for (const labResult of parseResult.data) {
       try {
+        console.log(`⚗️ [LabParser] 🔍 Processing lab result for database insertion:`, {
+          testName: labResult.testName,
+          resultValue: labResult.resultValue,
+          resultNumeric: labResult.resultNumeric,
+          resultNumericType: typeof labResult.resultNumeric,
+          sourceConfidence: parseResult.confidence,
+          maxConfidenceAllowed: 9.99
+        });
+
+        // Ensure confidence doesn't exceed database precision limits (3,2 = max 9.99)
+        const safeConfidence = Math.min(parseResult.confidence || 0, 9.99);
+        
+        // Safely handle resultNumeric to prevent overflow
+        let safeResultNumeric = null;
+        if (labResult.resultNumeric !== null && labResult.resultNumeric !== undefined) {
+          // Convert to number and check bounds
+          const numericValue = Number(labResult.resultNumeric);
+          if (!isNaN(numericValue) && isFinite(numericValue)) {
+            // Database precision: decimal(15, 6) means max 999999999.999999
+            if (Math.abs(numericValue) < 999999999.999999) {
+              safeResultNumeric = numericValue.toString();
+            } else {
+              console.warn(`⚗️ [LabParser] ⚠️ Numeric value too large for database, skipping: ${numericValue}`);
+            }
+          } else {
+            console.warn(`⚗️ [LabParser] ⚠️ Invalid numeric value, skipping: ${labResult.resultNumeric}`);
+          }
+        }
+        
+        console.log(`⚗️ [LabParser] 🛡️ Safe values for insertion:`, {
+          testName: labResult.testName,
+          safeConfidence,
+          safeResultNumeric,
+          originalResultNumeric: labResult.resultNumeric
+        });
+        
         await db.insert(labResults).values({
           patientId: patientId,
           labOrderId: null, // Attachment results don't have associated orders
-          loincCode: labResult.loincCode || `EXTRACT_${labResult.testCode || 'UNKNOWN'}`,
-          testCode: labResult.testCode || `EXT_${labResult.testName.replace(/\s+/g, '_').toUpperCase()}`,
+          loincCode:
+            labResult.loincCode || `EXTRACT_${labResult.testCode || "UNKNOWN"}`,
+          testCode:
+            labResult.testCode ||
+            `EXT_${labResult.testName.replace(/\s+/g, "_").toUpperCase()}`,
           testName: labResult.testName,
-          testCategory: labResult.testCategory || 'chemistry',
+          testCategory: labResult.testCategory || "chemistry",
           resultValue: labResult.resultValue,
-          resultNumeric: labResult.resultNumeric?.toString(),
+          resultNumeric: safeResultNumeric,
           resultUnits: labResult.resultUnits,
           referenceRange: labResult.referenceRange,
           abnormalFlag: labResult.abnormalFlag,
           criticalFlag: labResult.criticalFlag || false,
-          resultStatus: labResult.resultStatus || 'final',
-          verificationStatus: 'verified',
-          specimenCollectedAt: labResult.specimenCollectedAt ? new Date(labResult.specimenCollectedAt) : null,
-          resultAvailableAt: labResult.resultAvailableAt ? new Date(labResult.resultAvailableAt) : new Date(),
+          resultStatus: labResult.resultStatus || "final",
+          verificationStatus: "verified",
+          specimenCollectedAt: labResult.specimenCollectedAt
+            ? new Date(labResult.specimenCollectedAt)
+            : null,
+          resultAvailableAt: labResult.resultAvailableAt
+            ? new Date(labResult.resultAvailableAt)
+            : new Date(),
           resultFinalizedAt: new Date(),
           receivedAt: new Date(),
-          externalLabId: '3', // Hospital Lab for attachment results
+          externalLabId: "3", // Hospital Lab for attachment results
           externalResultId: `ATT_${attachmentId}_${savedCount + 1}`,
           sourceType: sourceType,
-          sourceConfidence: labResult.confidence,
+          sourceConfidence: safeConfidence,
           extractedFromAttachmentId: attachmentId,
           needsReview: labResult.criticalFlag || false,
-          reviewStatus: labResult.criticalFlag ? 'pending' : 'reviewed'
+          reviewStatus: labResult.criticalFlag ? "pending" : "reviewed",
         });
 
         savedCount++;
-        console.log(`⚗️ [LabParser] Saved lab result: ${labResult.testName} = ${labResult.resultValue} ${labResult.resultUnits || ''}`);
-
+        console.log(
+          `⚗️ [LabParser] Saved lab result: ${labResult.testName} = ${labResult.resultValue} ${labResult.resultUnits || ""}`,
+        );
       } catch (error) {
-        console.error(`⚗️ [LabParser] Error saving lab result ${labResult.testName}:`, error);
+        console.error(
+          `⚗️ [LabParser] Error saving lab result ${labResult.testName}:`,
+          error,
+        );
       }
     }
 
-    console.log(`⚗️ [LabParser] Successfully saved ${savedCount}/${parseResult.data.length} lab results`);
-    
+    console.log(
+      `⚗️ [LabParser] Successfully saved ${savedCount}/${parseResult.data.length} lab results`,
+    );
+
     return {
       resultsCount: savedCount,
-      confidence: parseResult.confidence
+      confidence: parseResult.confidence,
     };
   }
 }
