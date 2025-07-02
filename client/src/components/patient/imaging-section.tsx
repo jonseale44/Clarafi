@@ -19,6 +19,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useNavigationContext } from "@/hooks/use-navigation-context";
+import { useDenseView } from "@/hooks/use-dense-view";
 import { apiRequest } from "@/lib/queryClient";
 
 interface ImagingResult {
@@ -33,7 +34,7 @@ interface ImagingResult {
   radiologistName?: string;
   facilityName?: string;
   resultStatus: string;
-  sourceType: "encounter" | "attachment" | "manual_entry";
+  sourceType: "pdf_extract" | "hl7_message" | "manual_entry" | "encounter_note";
   sourceConfidence?: number;
   visitHistory?: Array<{
     date: string;
@@ -59,6 +60,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { navigateWithContext } = useNavigationContext();
+  const { isDenseView } = useDenseView();
 
   const formatDate = (dateString: string) => {
     try {
@@ -111,7 +113,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
     // Document Extract badge with confidence score, tooltip, and click navigation
     // Backend stores as "pdf_extract" but this maps to attachment extraction
     if (result.sourceType === "pdf_extract" && result.sourceConfidence && result.extractedFromAttachmentId) {
-      const confidencePercent = Math.round(parseFloat(result.sourceConfidence) * 100);
+      const confidencePercent = Math.round(result.sourceConfidence * 100);
       const handleDocumentClick = () => {
         console.log("🔗 [Imaging] Document badge clicked!");
         console.log("🔗 [Imaging] attachmentId:", result.extractedFromAttachmentId);
@@ -119,7 +121,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
         console.log("🔗 [Imaging] mode:", mode);
         
         if (result.extractedFromAttachmentId) {
-          const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId}`;
+          const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId.toString()}`;
           navigateWithContext(targetUrl, "imaging", mode);
         }
       };
@@ -174,6 +176,123 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
     );
   };
 
+  // Dense view render function
+  const renderImagingDenseList = (result: ImagingResult) => {
+    return (
+      <div
+        key={result.id}
+        className="dense-list-item group"
+        onClick={() => {
+          const newExpanded = [...expandedItems];
+          const itemId = result.id.toString();
+          if (newExpanded.includes(itemId)) {
+            setExpandedItems(newExpanded.filter(id => id !== itemId));
+          } else {
+            setExpandedItems([...newExpanded, itemId]);
+          }
+        }}
+      >
+        <div className="dense-list-content">
+          {expandedItems.includes(result.id.toString()) ? (
+            <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+          ) : (
+            <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+          )}
+          
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {getModalityIcon(result.modality)}
+            <span className="dense-list-primary">
+              {result.modality} - {result.bodyPart}
+            </span>
+            
+            <Badge className={`dense-list-badge ${getStatusColor(result.resultStatus)}`}>
+              {result.resultStatus}
+            </Badge>
+            
+            {getSourceBadge(result)}
+          </div>
+          
+          <div className="dense-list-secondary">
+            <span>{formatDate(result.studyDate)}</span>
+            {result.facilityName && (
+              <span>• {result.facilityName}</span>
+            )}
+            {result.radiologistName && (
+              <span>• Dr. {result.radiologistName}</span>
+            )}
+          </div>
+        </div>
+        
+        {!isReadOnly && (
+          <div className="dense-list-actions" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Eye className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Edit className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+        
+        {/* Expanded content for dense view */}
+        {expandedItems.includes(result.id.toString()) && (
+          <div className="dense-list-expanded">
+            <div className="space-y-3">
+              {/* Clinical Summary */}
+              <div>
+                <h4 className="font-medium text-sm mb-1">Clinical Summary</h4>
+                <p className="text-sm text-gray-700">{result.clinicalSummary}</p>
+              </div>
+
+              {/* Findings and Impression */}
+              {(result.findings || result.impression) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {result.findings && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-1">Findings</h4>
+                      <p className="text-sm text-gray-700">{result.findings}</p>
+                    </div>
+                  )}
+                  {result.impression && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-1">Impression</h4>
+                      <p className="text-sm text-gray-700">{result.impression}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Visit History */}
+              {result.visitHistory && result.visitHistory.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-sm mb-1">Visit History</h4>
+                  <div className="space-y-2">
+                    {result.visitHistory.map((visit, index) => (
+                      <div key={index} className="text-sm">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-gray-600">{formatDate(visit.date)}</span>
+                          {visit.confidence && (
+                            <Badge variant="outline" className="text-xs">
+                              {Math.round(visit.confidence * 100)}% confidence
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-700">{visit.notes}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="emr-tight-spacing">
@@ -206,15 +325,20 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
 
   return (
     <div className="emr-tight-spacing">
-      <Card>
-        <CardContent className="pt-3 emr-card-content-tight">
-          <Accordion 
-            type="multiple" 
-            value={expandedItems} 
-            onValueChange={setExpandedItems}
-            className="space-y-2"
-          >
-            {imagingResults.map((result: ImagingResult) => (
+      {isDenseView ? (
+        <div className={isDenseView ? "dense-list-container" : "space-y-3"}>
+          {imagingResults.map(renderImagingDenseList)}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="pt-3 emr-card-content-tight">
+            <Accordion 
+              type="multiple" 
+              value={expandedItems} 
+              onValueChange={setExpandedItems}
+              className="space-y-2"
+            >
+              {imagingResults.map((result: ImagingResult) => (
               <AccordionItem 
                 key={result.id} 
                 value={result.id.toString()}
@@ -343,10 +467,11 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
                   </div>
                 </AccordionContent>
               </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
