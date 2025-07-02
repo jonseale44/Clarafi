@@ -93,6 +93,21 @@ CRITICAL INTELLIGENCE RULES:
 - Return empty array if no vitals found
 - No explanatory text, ONLY the JSON array
 
+STRICT NO-EMPTY-VITALS RULES:
+- NEVER create a vitals entry just because a date is mentioned in the document
+- ONLY create vitals entries where actual vital signs measurements are documented
+- Do NOT create entries for dates with no corresponding vital signs
+- Do NOT create placeholder entries with all null values
+- Each vitals entry must have AT LEAST ONE non-null vital sign measurement
+- If a date is mentioned but no vitals are recorded for that date, ignore that date completely
+- Examples of what NOT to extract:
+  * "Patient seen on 01/15/2024" (date only, no vitals)
+  * "Follow-up scheduled for next week" (future date, no current vitals)
+  * "Previous visit on 12/10/2023 showed improvement" (historical reference without specific vitals)
+- Examples of what TO extract:
+  * "01/15/2024: BP 120/80, HR 72" (date with actual vitals)
+  * "On admission: Temperature 98.6°F, pulse 85" (context with measurements)
+
 Input: "${vitalsText}"`;
 
       console.log("🩺 [VitalsParser] 🤖 Calling OpenAI GPT-4.1-nano...");

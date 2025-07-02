@@ -145,6 +145,14 @@ Preferred communication style: Simple, everyday language.
 - **VERIFIED WORKING**: Badge navigation successfully tested - clicking "Doc Extract 100%" properly navigates to attachments section with source document highlighted
 - **COMMERCIAL EMR STANDARDS**: Imaging system now meets/exceeds Athena and Epic deduplication sophistication with sophisticated consolidation logic
 
+### Vitals Empty Set Prevention Enhancement (July 2, 2025)
+- **CRITICAL GPT PROMPT FIX**: Enhanced VitalsParserService GPT prompt to prevent creation of empty vitals sets for documents with date references but no actual vital signs
+- **STRICT NO-EMPTY-VITALS RULES**: Added explicit instructions to GPT to only create vitals entries where actual measurements are documented, not just because dates are mentioned
+- **ELIMINATED FALSE POSITIVES**: Fixed issue where documents would generate empty vitals sets dated for today's encounter when only historical dates were referenced
+- **CLEAR EXTRACTION EXAMPLES**: Added specific examples of what NOT to extract (date-only references) vs what TO extract (dates with actual measurements)
+- **ROOT CAUSE RESOLUTION**: Addressed GPT misinterpreting "extract dates from context" as "create vitals for every date" rather than "only extract vitals where measurements exist"
+- **PRODUCTION READY**: Vitals extraction now prevents spurious empty entries while maintaining legitimate multi-vitals-set extraction from medical documents
+
 ### Critical Lab Processing Database Constraints Fixed (July 2, 2025)
 - **FIXED NUMERIC PRECISION OVERFLOW**: Resolved critical database error code 22003 where sourceConfidence field with precision (3,2) was receiving values exceeding max 9.99
 - **ENHANCED LOGGING SYSTEM**: Added comprehensive debugging to track lab result processing including data types, numeric bounds checking, and safe value conversion
