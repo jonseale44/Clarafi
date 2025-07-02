@@ -499,7 +499,7 @@ Return a JSON object with this exact structure:
       .slice(0, 10)
       .map((study) => {
         const date = new Date(study.studyDate).toLocaleDateString();
-        return `${date}: ${study.modality} ${study.bodyPart} - ${study.clinicalSummary || study.impression || "No summary"}`;
+        return `ID: ${study.id}, ${date}: ${study.modality} ${study.bodyPart} - ${study.clinicalSummary || study.impression || "No summary"}`;
       })
       .join("\n");
   }
