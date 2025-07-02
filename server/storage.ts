@@ -634,7 +634,20 @@ export class DatabaseStorage implements IStorage {
    * For comprehensive clinical review, use /api/patients/:patientId/lab-results-enhanced
    */
   async getPatientLabResults(patientId: number): Promise<any[]> {
-    return await db
+    console.log(`🔍 [Storage] getPatientLabResults called for patient ${patientId}`);
+    
+    // First, let's check if any lab results exist at all in the database
+    const allLabResults = await db.select({ count: sql<number>`count(*)` }).from(labResults);
+    console.log(`🔍 [Storage] Total lab results in database: ${allLabResults[0]?.count || 0}`);
+    
+    // Check if any results exist for this specific patient
+    const patientResultsCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(labResults)
+      .where(eq(labResults.patientId, patientId));
+    console.log(`🔍 [Storage] Lab results for patient ${patientId}: ${patientResultsCount[0]?.count || 0}`);
+    
+    const results = await db
       .select({
         id: labResults.id,
         labOrderId: labResults.labOrderId,
@@ -656,17 +669,34 @@ export class DatabaseStorage implements IStorage {
         reviewedAt: labResults.reviewedAt,
         providerNotes: labResults.providerNotes,
         
-        // Order context
+        // Order context (null for attachment-extracted results)
         orderPriority: labOrders.priority,
         clinicalIndication: labOrders.clinicalIndication,
         orderedAt: labOrders.orderedAt,
         orderedByName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+        
+        // Attachment source tracking
+        extractedFromAttachmentId: labResults.extractedFromAttachmentId,
+        sourceType: labResults.sourceType,
+        sourceConfidence: labResults.sourceConfidence,
       })
       .from(labResults)
-      .innerJoin(labOrders, eq(labResults.labOrderId, labOrders.id))
+      .leftJoin(labOrders, eq(labResults.labOrderId, labOrders.id)) // FIXED: leftJoin to include attachment results
       .leftJoin(users, eq(labOrders.orderedBy, users.id))
       .where(eq(labResults.patientId, patientId))
       .orderBy(desc(labResults.resultAvailableAt));
+    
+    console.log(`🔍 [Storage] Query returned ${results.length} lab results`);
+    console.log(`🔍 [Storage] Sample result:`, results[0] ? {
+      testName: results[0].testName,
+      resultValue: results[0].resultValue,
+      labOrderId: results[0].labOrderId,
+      extractedFromAttachmentId: results[0].extractedFromAttachmentId,
+      sourceType: results[0].sourceType,
+      sourceConfidence: results[0].sourceConfidence
+    } : 'No results found');
+    
+    return results;
   }
 
   // Imaging orders and results
