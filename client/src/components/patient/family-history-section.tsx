@@ -16,6 +16,9 @@ import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { useNavigationContext } from "@/hooks/use-navigation-context";
+import { useDenseView } from "@/hooks/use-dense-view";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronRight, ChevronDown } from "lucide-react";
 
 interface FamilyHistoryEntry {
   id: number;
@@ -55,10 +58,12 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
   const [editingEntry, setEditingEntry] = useState<FamilyHistoryEntry | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<string[]>([]);
+  const [expandedDenseEntries, setExpandedDenseEntries] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { navigateWithContext } = useNavigationContext();
+  const { isDenseView } = useDenseView();
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
@@ -354,6 +359,151 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
     return member.charAt(0).toUpperCase() + member.slice(1);
   };
 
+  // Toggle expansion for dense view entries
+  const toggleDenseEntryExpansion = (entryId: number) => {
+    setExpandedDenseEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Dense list rendering for compact view
+  const renderFamilyHistoryDenseList = (entry: FamilyHistoryEntry) => {
+    const isExpanded = expandedDenseEntries.has(entry.id);
+    const mostRecentVisit = entry.visitHistory?.[0];
+    
+    return (
+      <Collapsible
+        key={entry.id}
+        open={isExpanded}
+        onOpenChange={() => toggleDenseEntryExpansion(entry.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <div className="dense-list-item group">
+            <div className="dense-list-content">
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              )}
+              
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="dense-list-primary">{formatFamilyMember(entry.familyMember)}</span>
+                <span className="dense-list-secondary">{entry.medicalHistory}</span>
+              </div>
+              
+              {mostRecentVisit && (
+                <div className="flex items-center gap-2">
+                  {getSourceBadge(
+                    mostRecentVisit.source,
+                    mostRecentVisit.confidence,
+                    mostRecentVisit.attachmentId,
+                    mostRecentVisit.encounterId
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="dense-list-actions">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(entry);
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm("Are you sure you want to delete this family history entry?")) {
+                    deleteMutation.mutate(entry.id);
+                  }
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="dense-list-expanded">
+            {/* Visit History */}
+            {entry.visitHistory && entry.visitHistory.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Clock className="h-3 w-3" />
+                  Visit History
+                </h4>
+                <div className="space-y-2">
+                  {entry.visitHistory.map((visit, index) => (
+                    <div key={index} className="border rounded-lg p-2 bg-gray-50 dark:bg-gray-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {format(new Date(visit.date + 'T12:00:00'), "MMM d, yyyy")}
+                          </Badge>
+                          {getSourceBadge(
+                            visit.source,
+                            visit.confidence,
+                            visit.attachmentId,
+                            visit.encounterId
+                          )}
+                        </div>
+                        {visit.providerName && (
+                          <span className="text-xs text-gray-500">
+                            by {visit.providerName}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 mb-2">{visit.notes}</p>
+                      {visit.changesMade && visit.changesMade.length > 0 && (
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Changes:</span> {visit.changesMade.join(", ")}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Source Information */}
+            <div className="pt-2 border-t">
+              <div className="text-xs text-gray-600 space-y-1">
+                <div>
+                  <span className="font-medium">Source:</span> {entry.sourceType} 
+                  <span className="ml-2">
+                    <span className="font-medium">Confidence:</span> {Math.round(parseFloat(entry.sourceConfidence) * 100)}%
+                  </span>
+                </div>
+                {entry.sourceNotes && (
+                  <div>
+                    <span className="font-medium">Notes:</span> {entry.sourceNotes}
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium">Last updated:</span> {format(new Date(entry.updatedAt), "MMM d, yyyy 'at' h:mm a")}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className={`emr-tight-spacing ${className}`}>
@@ -451,6 +601,10 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-sm">No family history documented</p>
               <p className="text-sm">Add family medical history using the button above</p>
+            </div>
+          ) : isDenseView ? (
+            <div className="dense-list-container">
+              {familyHistory.map(renderFamilyHistoryDenseList)}
             </div>
           ) : (
             <Accordion type="multiple" value={expandedEntries} onValueChange={setExpandedEntries}>
