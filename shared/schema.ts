@@ -847,7 +847,7 @@ export const labOrders = pgTable("lab_orders", {
 // Lab Results - Enhanced with AI Intelligence and Clinical Context
 export const labResults = pgTable("lab_results", {
   id: serial("id").primaryKey(),
-  labOrderId: integer("lab_order_id").references(() => labOrders.id).notNull(),
+  labOrderId: integer("lab_order_id").references(() => labOrders.id), // Nullable for attachment-extracted labs
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   
   // Result identification
@@ -956,9 +956,10 @@ export const labResults = pgTable("lab_results", {
   interfaceVersion: text("interface_version"),
   
   // Source classification for multi-source lab data
-  sourceType: text("source_type").default("lab_order"), // 'lab_order', 'patient_reported', 'external_upload', 'provider_entered', 'imported_records'
+  sourceType: text("source_type").default("lab_order"), // 'lab_order', 'patient_reported', 'external_upload', 'provider_entered', 'imported_records', 'attachment'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
   sourceNotes: text("source_notes"), // Additional context about data source
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id, { onDelete: "set null" }), // Source attachment for extracted labs
   enteredBy: integer("entered_by").references(() => users.id), // Who entered non-standard results
   
   createdAt: timestamp("created_at").defaultNow(),

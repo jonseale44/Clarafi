@@ -7,6 +7,7 @@ import { unifiedSocialHistoryParser } from "./unified-social-history-parser.js";
 import { UnifiedAllergyParser } from "./unified-allergy-parser.js";
 import { MedicationDeltaService } from "./medication-delta-service.js";
 import { UnifiedImagingParser } from "./unified-imaging-parser.js";
+import { UnifiedLabParser } from "./unified-lab-parser.js";
 import { 
   attachmentExtractedContent, 
   patientAttachments, 

@@ -260,7 +260,7 @@ Input: "${labText}"`;
           testName: labResult.testName,
           testCategory: labResult.testCategory || 'chemistry',
           resultValue: labResult.resultValue,
-          resultNumeric: labResult.resultNumeric,
+          resultNumeric: labResult.resultNumeric?.toString(),
           resultUnits: labResult.resultUnits,
           referenceRange: labResult.referenceRange,
           abnormalFlag: labResult.abnormalFlag,
@@ -271,7 +271,7 @@ Input: "${labText}"`;
           resultAvailableAt: labResult.resultAvailableAt ? new Date(labResult.resultAvailableAt) : new Date(),
           resultFinalizedAt: new Date(),
           receivedAt: new Date(),
-          externalLabId: 3, // Hospital Lab for attachment results
+          externalLabId: '3', // Hospital Lab for attachment results
           externalResultId: `ATT_${attachmentId}_${savedCount + 1}`,
           sourceType: sourceType,
           sourceConfidence: labResult.confidence,
