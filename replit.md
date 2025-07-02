@@ -145,6 +145,16 @@ Preferred communication style: Simple, everyday language.
 - **VERIFIED WORKING**: Badge navigation successfully tested - clicking "Doc Extract 100%" properly navigates to attachments section with source document highlighted
 - **COMMERCIAL EMR STANDARDS**: Imaging system now meets/exceeds Athena and Epic deduplication sophistication with sophisticated consolidation logic
 
+### Social History UI/UX Redesign & API Parameter Fix COMPLETED (July 2, 2025)
+- **MEDICAL PROBLEMS PATTERN IMPLEMENTATION**: Successfully redesigned social history UI to match elegant medical problems section design with concise display format
+- **ELIMINATED REDUNDANT VERBOSE TEXT**: Removed duplicate information sections that showed same content multiple times (History Notes, Source Notes, Consolidation Notes)
+- **CONCISE CLINICAL DISPLAY**: Implemented intelligent text condensation (e.g., "Diet: ↑ salt intake recently" instead of full verbose status)
+- **PROPER VISIT HISTORY ORDERING**: Fixed visit history to display in descending chronological order (most recent first) matching other chart sections
+- **CRITICAL API PARAMETER FIX**: Resolved HTTP method error where apiRequest parameters were in wrong order (url, method, data) → (method, url, data)
+- **VISIT HISTORY UPDATE FUNCTIONALITY**: Fixed create, update, and delete mutations to use correct apiRequest parameter order enabling proper visit history editing
+- **CLEAN ACCORDION INTERFACE**: Maintained accordion expansion pattern while eliminating redundant text sections for streamlined clinical workflow
+- **PRODUCTION READY**: Social history section now displays with same elegance and functionality as medical problems section
+
 ### Comprehensive Medications Dense View & Medical Abbreviations Implementation COMPLETED (July 2, 2025)
 - **PRODUCTION-READY DENSE VIEW**: Successfully implemented complete dense view system for medications section with side-positioned category labels using physician abbreviations
 - **ACCURATE MEDICAL ABBREVIATIONS**: Enhanced abbreviation system with proper physician-friendly terms (CAD for coronary artery disease, AFib for atrial fibrillation, h/o for history of)

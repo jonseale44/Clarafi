@@ -164,7 +164,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
 
   // Create social history mutation with optimistic updates
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/social-history/${patientId}`, "POST", data),
+    mutationFn: (data: any) => apiRequest("POST", `/api/social-history/${patientId}`, data),
     onMutate: async (newData) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["/api/social-history", patientId] });
@@ -221,7 +221,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
   // Update social history mutation with optimistic updates
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => 
-      apiRequest(`/api/social-history/${id}`, "PUT", { ...data, patientId }),
+      apiRequest("PUT", `/api/social-history/${id}`, { ...data, patientId }),
     onMutate: async ({ id, data }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["/api/social-history", patientId] });
@@ -275,7 +275,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
 
   // Delete social history mutation with optimistic updates
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/social-history/${id}`, "DELETE"),
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/social-history/${id}`),
     onMutate: async (id: number) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["/api/social-history", patientId] });
