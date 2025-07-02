@@ -189,8 +189,8 @@ export class AttachmentChartProcessor {
         } else {
           console.log(`✅ [AttachmentChartProcessor] Imaging processing completed successfully`);
           console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULT VALUE:`, imagingResult.value);
-          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING EXTRACTION COUNT:`, imagingResult.value?.imagingCount || 0);
-          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULTS CREATED:`, imagingResult.value?.results?.length || 0);
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING EXTRACTION COUNT:`, imagingResult.value?.total_imaging_affected || 0);
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULTS CREATED:`, imagingResult.value?.changes?.length || 0);
         }
         
         if (labsResult.status === 'rejected') {
@@ -922,7 +922,7 @@ export class AttachmentChartProcessor {
   private async processDocumentForImaging(
     attachment: any,
     extractedContent: any
-  ): Promise<void> {
+  ): Promise<any> {
     console.log(`🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION =============`);
     console.log(`📸 [ImagingExtraction] Starting imaging analysis for attachment ${attachment.id}`);
     console.log(`📸 [ImagingExtraction] Processing content for patient ${attachment.patientId}`);
@@ -971,10 +971,26 @@ export class AttachmentChartProcessor {
 
       console.log(`🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION COMPLETE =============`);
 
+      // Return structured result for logging
+      return {
+        total_imaging_affected: result.total_imaging_affected,
+        changes: result.changes,
+        extraction_confidence: result.extraction_confidence,
+        processing_notes: result.processing_notes
+      };
+
     } catch (error) {
       console.error(`❌ [ImagingExtraction] Error processing imaging from attachment ${attachment.id}:`, error);
       console.error(`❌ [ImagingExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
       console.log(`🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION FAILED =============`);
+      
+      // Return empty result on error
+      return {
+        total_imaging_affected: 0,
+        changes: [],
+        extraction_confidence: 0,
+        processing_notes: 'Processing failed due to error'
+      };
     }
   }
 
