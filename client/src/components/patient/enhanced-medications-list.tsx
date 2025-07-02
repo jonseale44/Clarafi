@@ -375,8 +375,37 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
     });
   };
 
-  // Dense list rendering for compact view
-  const renderMedicationDenseList = (medication: Medication) => {
+  // Convert medical conditions to physician-friendly abbreviations
+  const getPhysicianAbbreviation = (condition: string): string => {
+    const abbreviations: Record<string, string> = {
+      'hypertension': 'HTN',
+      'diabetes': 'DM2',
+      'type 2 diabetes': 'DM2',
+      'type 2 diabetes mellitus': 'DM2',
+      'diabetes mellitus type 2': 'DM2',
+      'hyperlipidemia': 'HLD',
+      'dyslipidemia': 'HLD',
+      'coronary artery disease': 'CAD',
+      'congestive heart failure': 'CHF',
+      'heart failure': 'CHF',
+      'atrial fibrillation': 'AFib',
+      'chronic kidney disease': 'CKD',
+      'chronic obstructive pulmonary disease': 'COPD',
+      'gastroesophageal reflux disease': 'GERD',
+      'deep vein thrombosis': 'DVT',
+      'pulmonary embolism': 'PE',
+      'myocardial infarction': 'MI',
+      'stroke': 'CVA',
+      'transient ischemic attack': 'TIA',
+      'peripheral artery disease': 'PAD'
+    };
+    
+    const lowerCondition = condition.toLowerCase();
+    return abbreviations[lowerCondition] || condition;
+  };
+
+  // Dense list rendering for compact view with side category
+  const renderMedicationDenseList = (medication: Medication, categoryAbbr: string, isFirstInGroup: boolean) => {
     const statusColor = medication.status === 'active' ? 'border-green-300' : 
                        medication.status === 'pending' ? 'border-blue-300' :
                        medication.status === 'held' ? 'border-amber-300' :
@@ -389,8 +418,17 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
         onOpenChange={() => toggleMedicationExpanded(medication.id)}
       >
         <CollapsibleTrigger asChild>
-          <div className={`dense-list-item group ${statusColor} dense-view-transition`}>
-            <div className="dense-list-content">
+          <div className={`dense-list-item group ${statusColor} dense-view-transition flex`}>
+            {/* Side category label */}
+            <div className="w-12 flex-shrink-0 flex items-center justify-center">
+              {isFirstInGroup && (
+                <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                  {categoryAbbr}
+                </span>
+              )}
+            </div>
+            
+            <div className="dense-list-content flex-1">
               {expandedMedications.has(medication.id) ? (
                 <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
               ) : (
@@ -438,7 +476,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
         </CollapsibleTrigger>
         
         <CollapsibleContent>
-          <div className="dense-list-expanded">
+          <div className="dense-list-expanded ml-12">
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
                 <strong>Frequency:</strong> {medication.frequency}
@@ -600,41 +638,63 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
               </div>
             ) : (
               <div className={isDenseView ? "space-y-1" : "emr-ultra-tight-spacing"}>
-                {Object.entries(groupedMedications).map(([groupName, medications]) => (
-                  <div key={groupName}>
-                    {groupingMode === 'medical_problem' && (
-                      <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 emr-ultra-tight-spacing flex items-center emr-ultra-tight-gap">
-                        <Zap className="h-3 w-3" />
-                        {groupName}
-                      </h3>
-                    )}
-                    <div className={isDenseView ? "dense-list-container" : "emr-ultra-tight-spacing"}>
-                      {medications.map((medication: Medication) => 
-                        isDenseView ? 
-                          renderMedicationDenseList(medication) :
-                          <MedicationCard
-                            key={medication.id}
-                            medication={medication}
-                            isExpanded={expandedMedications.has(medication.id)}
-                            onToggleExpanded={() => toggleMedicationExpanded(medication.id)}
-                            onDiscontinue={readOnly ? undefined : (reason: string) => 
-                              discontinueMedication.mutate({ medicationId: medication.id, reason })
-                            }
-                            onEdit={readOnly ? undefined : (medicationData) => 
-                              updateMedication.mutate(medicationData)
-                            }
-                            onMoveToOrders={readOnly || !encounterId ? undefined : (medicationId: number) => 
-                              moveToOrders.mutate({ medicationId, encounterId })
-                            }
-                            canMoveToOrders={!readOnly && !!encounterId}
-                          />
+                {Object.entries(groupedMedications).map(([groupName, medications]) => {
+                  const categoryAbbr = getPhysicianAbbreviation(groupName);
+                  
+                  return (
+                    <div key={groupName}>
+                      {/* Only show traditional header for non-medical problem grouping or when not using side labels */}
+                      {groupingMode !== 'medical_problem' && (
+                        <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 emr-ultra-tight-spacing flex items-center emr-ultra-tight-gap">
+                          <Zap className="h-3 w-3" />
+                          {groupName}
+                        </h3>
+                      )}
+                      
+                      <div className={isDenseView ? "dense-list-container" : "emr-ultra-tight-spacing"}>
+                        {medications.map((medication: Medication, index: number) => 
+                          isDenseView ? 
+                            renderMedicationDenseList(medication, categoryAbbr, index === 0) :
+                            <div key={medication.id} className="flex">
+                              {/* Side category label for regular view */}
+                              {groupingMode === 'medical_problem' && (
+                                <div className="w-12 flex-shrink-0 flex items-center justify-center">
+                                  {index === 0 && (
+                                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                                      {categoryAbbr}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              <div className="flex-1">
+                                <MedicationCard
+                                  key={medication.id}
+                                  medication={medication}
+                                  isExpanded={expandedMedications.has(medication.id)}
+                                  onToggleExpanded={() => toggleMedicationExpanded(medication.id)}
+                                  onDiscontinue={readOnly ? undefined : (reason: string) => 
+                                    discontinueMedication.mutate({ medicationId: medication.id, reason })
+                                  }
+                                  onEdit={readOnly ? undefined : (medicationData) => 
+                                    updateMedication.mutate(medicationData)
+                                  }
+                                  onMoveToOrders={readOnly || !encounterId ? undefined : (medicationId: number) => 
+                                    moveToOrders.mutate({ medicationId, encounterId })
+                                  }
+                                  canMoveToOrders={!readOnly && !!encounterId}
+                                />
+                              </div>
+                            </div>
+                        )}
+                      </div>
+                      
+                      {groupingMode === 'medical_problem' && Object.keys(groupedMedications).length > 1 && (
+                        <Separator className={isDenseView ? "my-2" : "emr-ultra-tight-spacing"} />
                       )}
                     </div>
-                    {groupingMode === 'medical_problem' && Object.keys(groupedMedications).length > 1 && (
-                      <Separator className={isDenseView ? "my-2" : "emr-ultra-tight-spacing"} />
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
