@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { db } from "./db.js";
-import { labResults, labOrders, externalLabs } from "@shared/schema";
+import { labResults, labOrders, externalLabs, patientAttachments } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 interface ParsedLabResult {

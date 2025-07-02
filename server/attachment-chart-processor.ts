@@ -92,12 +92,12 @@ export class AttachmentChartProcessor {
       console.log(`📋 [AttachmentChartProcessor] 🩺 Starting universal vitals extraction from document type: ${extractedContent.documentType || 'unknown'}`);
       
       // Process vitals, medical problems, surgical history, family history, social history, allergies, medications, and imaging in parallel for efficiency
-      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies + medications + imaging`);
+      console.log(`📋 [AttachmentChartProcessor] 🔄 Starting parallel processing: vitals + medical problems + surgical history + family history + social history + allergies + medications + imaging + labs`);
       const parallelStartTime = Date.now();
       
-      // Process all eight chart sections in parallel for efficiency
+      // Process all nine chart sections in parallel for efficiency
       try {
-        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult, medicationsResult, imagingResult] = await Promise.allSettled([
+        const [vitalsResult, medicalProblemsResult, surgicalHistoryResult, familyHistoryResult, socialHistoryResult, allergiesResult, medicationsResult, imagingResult, labsResult] = await Promise.allSettled([
           this.processDocumentForVitals(attachment, extractedContent),
           this.processDocumentForMedicalProblems(attachment, extractedContent),
           this.processDocumentForSurgicalHistory(attachment, extractedContent),
@@ -105,7 +105,8 @@ export class AttachmentChartProcessor {
           this.processDocumentForSocialHistory(attachment, extractedContent),
           this.processDocumentForAllergies(attachment, extractedContent),
           this.processDocumentForMedications(attachment, extractedContent),
-          this.processDocumentForImaging(attachment, extractedContent)
+          this.processDocumentForImaging(attachment, extractedContent),
+          this.processDocumentForLabs(attachment, extractedContent)
         ]);
         
         // Check results and log any failures
@@ -190,6 +191,18 @@ export class AttachmentChartProcessor {
           console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULT VALUE:`, imagingResult.value);
           console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING EXTRACTION COUNT:`, imagingResult.value?.imagingCount || 0);
           console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULTS CREATED:`, imagingResult.value?.results?.length || 0);
+        }
+        
+        if (labsResult.status === 'rejected') {
+          console.error(`❌ [AttachmentChartProcessor] LABS PROCESSING FAILED:`, labsResult.reason);
+          if (labsResult.reason?.code === '22003') {
+            console.error(`🔢 [AttachmentChartProcessor] NUMERIC PRECISION ERROR IN LABS - Field with precision 3, scale 2 exceeded limit`);
+            console.error(`🔢 [AttachmentChartProcessor] Labs error details:`, JSON.stringify(labsResult.reason, null, 2));
+          }
+        } else {
+          console.log(`✅ [AttachmentChartProcessor] Labs processing completed successfully`);
+          console.log(`⚗️ [LabParser] LAB RESULT VALUE:`, labsResult.value);
+          console.log(`⚗️ [LabParser] LAB EXTRACTION COUNT:`, labsResult.value?.resultsCount || 0);
         }
         
       } catch (error) {
@@ -962,6 +975,101 @@ export class AttachmentChartProcessor {
       console.error(`❌ [ImagingExtraction] Error processing imaging from attachment ${attachment.id}:`, error);
       console.error(`❌ [ImagingExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
       console.log(`🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION FAILED =============`);
+    }
+  }
+
+  /**
+   * Process document for lab results extraction and consolidation
+   */
+  private async processDocumentForLabs(
+    attachment: any,
+    extractedContent: any
+  ): Promise<void> {
+    console.log(`🔥 [LAB WORKFLOW] ============= LAB EXTRACTION =============`);
+    console.log(`⚗️ [LabExtraction] Starting lab analysis for attachment ${attachment.id}`);
+    console.log(`⚗️ [LabExtraction] Processing content for patient ${attachment.patientId}`);
+
+    if (!extractedContent.extractedText || extractedContent.extractedText.length < 50) {
+      console.log(`⚗️ [LabExtraction] ℹ️ Insufficient text content for lab analysis, skipping`);
+      return;
+    }
+
+    try {
+      console.log(`⚗️ [LabExtraction] 🔍 Starting unified lab extraction for patient ${attachment.patientId}`);
+      console.log(`⚗️ [LabExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+
+      const startTime = Date.now();
+
+      // Use the unified lab parser for attachment processing
+      console.log(`⚗️ [LabExtraction] 🔧 Document type: ${extractedContent.documentType || 'unknown'}`);
+      console.log(`⚗️ [LabExtraction] 🔧 Calling processLabResults with attachmentId=${attachment.id}, text length=${extractedContent.extractedText.length}`);
+      
+      // CRITICAL BUG FIX: Pass null for encounterId when processing attachment labs
+      // This prevents the vitals date bug where attachment.encounterId was incorrectly passed
+      const result = await this.labParser.processLabResults(
+        attachment.patientId, // Patient ID
+        null, // encounterId - MUST be null for historical attachment data
+        extractedContent.extractedText, // Lab content text
+        'attachment', // Source type
+        {
+          attachmentId: attachment.id, // Attachment source tracking
+          documentType: extractedContent.documentType || 'unknown'
+        }
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      console.log(`⚗️ [LabExtraction] ✅ Successfully processed labs in ${processingTime}ms`);
+      console.log(`⚗️ [LabExtraction] ✅ Processing success: ${result.success}`);
+      console.log(`⚗️ [LabExtraction] ✅ Total results found: ${result.totalResultsFound || 0}`);
+      console.log(`⚗️ [LabExtraction] ✅ Consolidated results: ${result.consolidatedCount || 0}`);
+      console.log(`⚗️ [LabExtraction] ✅ Overall confidence: ${result.confidence}`);
+
+      // Log individual lab results for debugging
+      if (result.data && result.data.length > 0) {
+        console.log(`⚗️ [LabExtraction] ✅ Lab results processed (${result.data.length} total):`);
+        result.data.forEach((labResult, index) => {
+          console.log(`⚗️ [LabExtraction]   ${index + 1}. ${labResult.testName}: ${labResult.resultValue}`);
+          console.log(`⚗️ [LabExtraction]      Confidence: ${labResult.confidence}`);
+          if (labResult.abnormalFlag) {
+            console.log(`⚗️ [LabExtraction]      Abnormal: ${labResult.abnormalFlag}`);
+          }
+          if (labResult.referenceRange) {
+            console.log(`⚗️ [LabExtraction]      Reference: ${labResult.referenceRange}`);
+          }
+        });
+      } else {
+        console.log(`⚗️ [LabExtraction] ℹ️ No lab results extracted - may be no lab content or all information already documented`);
+      }
+
+      // Log any errors encountered
+      if (result.errors && result.errors.length > 0) {
+        console.log(`⚗️ [LabExtraction] ⚠️ Processing errors encountered:`);
+        result.errors.forEach((error, index) => {
+          console.log(`⚗️ [LabExtraction]   ${index + 1}. ${error}`);
+        });
+      }
+
+      console.log(`🔥 [LAB WORKFLOW] ============= LAB EXTRACTION COMPLETE =============`);
+
+      return {
+        success: result.success,
+        resultsCount: result.totalResultsFound || 0,
+        consolidatedCount: result.consolidatedCount || 0,
+        confidence: result.confidence
+      };
+
+    } catch (error) {
+      console.error(`❌ [LabExtraction] Error processing labs from attachment ${attachment.id}:`, error);
+      console.error(`❌ [LabExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      console.log(`🔥 [LAB WORKFLOW] ============= LAB EXTRACTION FAILED =============`);
+      
+      return {
+        success: false,
+        resultsCount: 0,
+        consolidatedCount: 0,
+        confidence: 0
+      };
     }
   }
 }
