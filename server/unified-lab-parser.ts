@@ -139,10 +139,18 @@ Input: "${labText}"`;
         throw new Error("No response from OpenAI");
       }
 
-      // Parse the JSON response
+      // Parse the JSON response - strip markdown formatting if present
       let parsedResults: ParsedLabResult[];
       try {
-        parsedResults = JSON.parse(aiResponseText);
+        // Strip markdown code blocks if present
+        let cleanedResponse = aiResponseText.trim();
+        if (cleanedResponse.startsWith('```json')) {
+          cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        } else if (cleanedResponse.startsWith('```')) {
+          cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+        
+        parsedResults = JSON.parse(cleanedResponse);
         if (!Array.isArray(parsedResults)) {
           throw new Error("Response is not an array");
         }
