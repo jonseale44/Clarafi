@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useDenseView } from '@/hooks/use-dense-view';
 
 interface AllergyEntry {
   id: number;
@@ -96,6 +97,7 @@ const STATUS_OPTIONS = [
 export function AllergySection({ patientId, className = "", mode }: AllergySectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isDenseView } = useDenseView();
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
   const [editingAllergy, setEditingAllergy] = useState<AllergyEntry | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -270,6 +272,126 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
     }
   };
 
+  // Dense list rendering for compact view
+  const renderAllergyDenseList = (allergy: AllergyEntry) => {
+    const severityColor = allergy.severity === 'life-threatening' ? 'border-l-red-600' :
+                         allergy.severity === 'severe' ? 'border-l-red-500' :
+                         allergy.severity === 'moderate' ? 'border-l-orange-500' :
+                         allergy.severity === 'mild' ? 'border-l-yellow-500' : 'border-l-gray-300';
+    
+    return (
+      <Collapsible
+        key={allergy.id}
+        open={openCards[allergy.id]}
+        onOpenChange={() => toggleCard(allergy.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <div className={`dense-list-item group ${severityColor}`}>
+            <div className="dense-list-content">
+              {openCards[allergy.id] ? (
+                <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              )}
+              
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {getAllergyTypeIcon(allergy.allergyType)}
+                <span className="dense-list-primary">{allergy.allergen}</span>
+                
+                {allergy.severity && (
+                  <Badge className={`dense-list-badge ${getSeverityBadgeColor(allergy.severity)}`}>
+                    {allergy.severity}
+                  </Badge>
+                )}
+                
+                {allergy.reaction && (
+                  <span className="dense-list-secondary">• {allergy.reaction}</span>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <Badge 
+                  variant="secondary" 
+                  className={`dense-list-badge ${getSourceBadgeColor(allergy.sourceType)}`}
+                >
+                  {allergy.sourceConfidence && `${Math.round(parseFloat(allergy.sourceConfidence) * 100)}%`}
+                </Badge>
+                
+                <div className="dense-list-actions">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingAllergy(allergy);
+                    }}
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Delete allergy to ${allergy.allergen}?`)) {
+                        deleteMutation.mutate(allergy.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="dense-list-expanded">
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="font-medium text-gray-700">Type:</span>{' '}
+                <span className="text-gray-900">{allergy.allergyType || 'Not specified'}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Status:</span>{' '}
+                <span className="text-gray-900">{allergy.status}</span>
+              </div>
+              {allergy.onsetDate && (
+                <div>
+                  <span className="font-medium text-gray-700">Onset:</span>{' '}
+                  <span className="text-gray-900">{new Date(allergy.onsetDate).toLocaleDateString()}</span>
+                </div>
+              )}
+              {allergy.lastReactionDate && (
+                <div>
+                  <span className="font-medium text-gray-700">Last Reaction:</span>{' '}
+                  <span className="text-gray-900">{new Date(allergy.lastReactionDate).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Source Information */}
+            <div className="text-xs text-gray-500 pt-2 border-t mt-2">
+              <div className="flex items-center gap-2">
+                <FileText className="h-3 w-3" />
+                <span>
+                  Source: {allergy.sourceType.replace(/_/g, ' ')} 
+                  ({Math.round(parseFloat(allergy.sourceConfidence) * 100)}% confidence)
+                </span>
+              </div>
+              {allergy.sourceNotes && (
+                <p className="mt-1 text-gray-600">{allergy.sourceNotes}</p>
+              )}
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
   if (isLoading) {
     return (
       <Card className={`emr-card ${className}`}>
@@ -320,7 +442,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent className="emr-card-content space-y-3">
+      <CardContent className={isDenseView ? "emr-card-content" : "emr-card-content space-y-3"}>
         {allergies.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             <Shield className="h-12 w-12 mx-auto mb-3 text-gray-300" />
@@ -330,202 +452,208 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
             </p>
           </div>
         ) : (
-          allergies.map((allergy: AllergyEntry) => (
-            <Collapsible
-              key={allergy.id}
-              open={openCards[allergy.id]}
-              onOpenChange={() => toggleCard(allergy.id)}
-            >
-              <Card className="emr-nested-card group hover:shadow-sm transition-shadow">
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="emr-card-header-nested cursor-pointer">
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-3">
-                        {openCards[allergy.id] ? (
-                          <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        )}
-                        <div className="flex items-center gap-2">
-                          {getAllergyTypeIcon(allergy.allergyType)}
-                          <span className="font-medium text-sm">{allergy.allergen}</span>
-                          {allergy.severity && (
-                            <Badge className={`text-xs ${getSeverityBadgeColor(allergy.severity)}`}>
-                              {allergy.severity}
+          <div className={isDenseView ? "dense-list-container" : "space-y-3"}>
+            {isDenseView ? (
+              allergies.map(renderAllergyDenseList)
+            ) : (
+              allergies.map((allergy: AllergyEntry) => (
+                <Collapsible
+                  key={allergy.id}
+                  open={openCards[allergy.id]}
+                  onOpenChange={() => toggleCard(allergy.id)}
+                >
+                  <Card className="emr-nested-card group hover:shadow-sm transition-shadow">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="emr-card-header-nested cursor-pointer">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            {openCards[allergy.id] ? (
+                              <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            )}
+                            <div className="flex items-center gap-2">
+                              {getAllergyTypeIcon(allergy.allergyType)}
+                              <span className="font-medium text-sm">{allergy.allergen}</span>
+                              {allergy.severity && (
+                                <Badge className={`text-xs ${getSeverityBadgeColor(allergy.severity)}`}>
+                                  {allergy.severity}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${getSourceBadgeColor(allergy.sourceType)}`}
+                            >
+                              {allergy.sourceConfidence && `${Math.round(parseFloat(allergy.sourceConfidence) * 100)}%`}
                             </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-xs ${getSourceBadgeColor(allergy.sourceType)}`}
-                        >
-                          {allergy.sourceConfidence && `${Math.round(parseFloat(allergy.sourceConfidence) * 100)}%`}
-                        </Badge>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          <Dialog>
-                            <DialogTrigger asChild>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-6 w-6 p-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingAllergy(allergy);
+                                    }}
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Allergy</DialogTitle>
+                                  </DialogHeader>
+                                  {editingAllergy && (
+                                    <AllergyForm
+                                      allergy={editingAllergy}
+                                      onSubmit={(data) => updateMutation.mutate({ id: editingAllergy.id, ...data })}
+                                      onCancel={() => setEditingAllergy(null)}
+                                      isLoading={updateMutation.isPending}
+                                    />
+                                  )}
+                                </DialogContent>
+                              </Dialog>
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="h-6 w-6 p-0"
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setEditingAllergy(allergy);
+                                  if (window.confirm(`Delete allergy to ${allergy.allergen}?`)) {
+                                    deleteMutation.mutate(allergy.id);
+                                  }
                                 }}
                               >
-                                <Edit2 className="h-3 w-3" />
+                                <Trash2 className="h-3 w-3" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>Edit Allergy</DialogTitle>
-                              </DialogHeader>
-                              {editingAllergy && (
-                                <AllergyForm
-                                  allergy={editingAllergy}
-                                  onSubmit={(data) => updateMutation.mutate({ id: editingAllergy.id, ...data })}
-                                  onCancel={() => setEditingAllergy(null)}
-                                  isLoading={updateMutation.isPending}
-                                />
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (window.confirm(`Delete allergy to ${allergy.allergen}?`)) {
-                                deleteMutation.mutate(allergy.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    {allergy.reaction && (
-                      <div className="ml-7 text-xs text-gray-600 mt-1">
-                        {allergy.reaction}
-                      </div>
-                    )}
-                  </CardHeader>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <CardContent className="emr-card-content-nested pt-0">
-                    <div className="space-y-4">
-                      {/* Allergy Details */}
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <span className="font-medium text-gray-700">Type:</span>{' '}
-                          <span className="text-gray-900">{allergy.allergyType || 'Not specified'}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-700">Status:</span>{' '}
-                          <span className="text-gray-900">{allergy.status}</span>
-                        </div>
-                        {allergy.onsetDate && (
-                          <div>
-                            <span className="font-medium text-gray-700">Onset:</span>{' '}
-                            <span className="text-gray-900">{new Date(allergy.onsetDate).toLocaleDateString()}</span>
+                        {allergy.reaction && (
+                          <div className="ml-7 text-xs text-gray-600 mt-1">
+                            {allergy.reaction}
                           </div>
                         )}
-                        {allergy.lastReactionDate && (
-                          <div>
-                            <span className="font-medium text-gray-700">Last Reaction:</span>{' '}
-                            <span className="text-gray-900">{new Date(allergy.lastReactionDate).toLocaleDateString()}</span>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <CardContent className="emr-card-content-nested pt-0">
+                        <div className="space-y-4">
+                          {/* Allergy Details */}
+                          <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                              <span className="font-medium text-gray-700">Type:</span>{' '}
+                              <span className="text-gray-900">{allergy.allergyType || 'Not specified'}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Status:</span>{' '}
+                              <span className="text-gray-900">{allergy.status}</span>
+                            </div>
+                            {allergy.onsetDate && (
+                              <div>
+                                <span className="font-medium text-gray-700">Onset:</span>{' '}
+                                <span className="text-gray-900">{new Date(allergy.onsetDate).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                            {allergy.lastReactionDate && (
+                              <div>
+                                <span className="font-medium text-gray-700">Last Reaction:</span>{' '}
+                                <span className="text-gray-900">{new Date(allergy.lastReactionDate).toLocaleDateString()}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Drug Class and Cross-Reactivity */}
-                      {(allergy.drugClass || (allergy.crossReactivity && allergy.crossReactivity.length > 0)) && (
-                        <div className="space-y-2">
-                          {allergy.drugClass && (
-                            <div className="text-xs">
-                              <span className="font-medium text-gray-700">Drug Class:</span>{' '}
-                              <Badge variant="outline" className="text-xs">{allergy.drugClass}</Badge>
+                          {/* Drug Class and Cross-Reactivity */}
+                          {(allergy.drugClass || (allergy.crossReactivity && allergy.crossReactivity.length > 0)) && (
+                            <div className="space-y-2">
+                              {allergy.drugClass && (
+                                <div className="text-xs">
+                                  <span className="font-medium text-gray-700">Drug Class:</span>{' '}
+                                  <Badge variant="outline" className="text-xs">{allergy.drugClass}</Badge>
+                                </div>
+                              )}
+                              {allergy.crossReactivity && allergy.crossReactivity.length > 0 && (
+                                <div className="text-xs">
+                                  <span className="font-medium text-gray-700">Cross-Reactivity:</span>{' '}
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {allergy.crossReactivity.map((item, index) => (
+                                      <Badge key={index} variant="secondary" className="text-xs">{item}</Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
-                          {allergy.crossReactivity && allergy.crossReactivity.length > 0 && (
-                            <div className="text-xs">
-                              <span className="font-medium text-gray-700">Cross-Reactivity:</span>{' '}
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {allergy.crossReactivity.map((item, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">{item}</Badge>
+
+                          {/* Visit History */}
+                          {allergy.visitHistory && allergy.visitHistory.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-medium text-gray-700 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Visit History ({allergy.visitHistory.length})
+                              </h4>
+                              <div className="space-y-2 max-h-40 overflow-y-auto">
+                                {allergy.visitHistory.map((visit, index) => (
+                                  <div key={index} className="emr-nested-item text-xs border-l-2 border-gray-200 pl-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium">{visit.date}</span>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          {visit.source}
+                                        </Badge>
+                                        {visit.confidence && (
+                                          <span className="text-gray-500">{Math.round(visit.confidence * 100)}%</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <p className="text-gray-600 mt-1">{visit.notes}</p>
+                                    {visit.changesMade && visit.changesMade.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {visit.changesMade.map((change, changeIndex) => (
+                                          <Badge key={changeIndex} variant="secondary" className="text-xs">
+                                            {change.replace(/_/g, ' ')}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {visit.conflictResolution && (
+                                      <div className="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                                        <strong>Conflict Resolution:</strong> {visit.conflictResolution}
+                                      </div>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>
                           )}
-                        </div>
-                      )}
 
-                      {/* Visit History */}
-                      {allergy.visitHistory && allergy.visitHistory.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-xs font-medium text-gray-700 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Visit History ({allergy.visitHistory.length})
-                          </h4>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {allergy.visitHistory.map((visit, index) => (
-                              <div key={index} className="emr-nested-item text-xs border-l-2 border-gray-200 pl-3">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium">{visit.date}</span>
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      {visit.source}
-                                    </Badge>
-                                    {visit.confidence && (
-                                      <span className="text-gray-500">{Math.round(visit.confidence * 100)}%</span>
-                                    )}
-                                  </div>
-                                </div>
-                                <p className="text-gray-600 mt-1">{visit.notes}</p>
-                                {visit.changesMade && visit.changesMade.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {visit.changesMade.map((change, changeIndex) => (
-                                      <Badge key={changeIndex} variant="secondary" className="text-xs">
-                                        {change.replace(/_/g, ' ')}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
-                                {visit.conflictResolution && (
-                                  <div className="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                                    <strong>Conflict Resolution:</strong> {visit.conflictResolution}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                          {/* Source Information */}
+                          <div className="text-xs text-gray-500 pt-2 border-t">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-3 w-3" />
+                              <span>
+                                Source: {allergy.sourceType.replace(/_/g, ' ')} 
+                                ({Math.round(parseFloat(allergy.sourceConfidence) * 100)}% confidence)
+                              </span>
+                            </div>
+                            {allergy.sourceNotes && (
+                              <p className="mt-1 text-gray-600">{allergy.sourceNotes}</p>
+                            )}
                           </div>
                         </div>
-                      )}
-
-                      {/* Source Information */}
-                      <div className="text-xs text-gray-500 pt-2 border-t">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-3 w-3" />
-                          <span>
-                            Source: {allergy.sourceType.replace(/_/g, ' ')} 
-                            ({Math.round(parseFloat(allergy.sourceConfidence) * 100)}% confidence)
-                          </span>
-                        </div>
-                        {allergy.sourceNotes && (
-                          <p className="mt-1 text-gray-600">{allergy.sourceNotes}</p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          ))
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              ))
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
