@@ -1004,72 +1004,26 @@ export class AttachmentChartProcessor {
       console.log(`⚗️ [LabExtraction] 🔧 Document type: ${extractedContent.documentType || 'unknown'}`);
       console.log(`⚗️ [LabExtraction] 🔧 Calling processLabResults with attachmentId=${attachment.id}, text length=${extractedContent.extractedText.length}`);
       
-      // CRITICAL BUG FIX: Pass null for encounterId when processing attachment labs
-      // This prevents the vitals date bug where attachment.encounterId was incorrectly passed
+      // CRITICAL BUG FIX: Use correct method signature for attachment lab processing
       const result = await this.labParser.processLabResults(
-        attachment.patientId, // Patient ID
-        null, // encounterId - MUST be null for historical attachment data
         extractedContent.extractedText, // Lab content text
-        'attachment', // Source type
-        {
-          attachmentId: attachment.id, // Attachment source tracking
-          documentType: extractedContent.documentType || 'unknown'
-        }
+        attachment.patientId, // Patient ID
+        attachment.id, // Attachment ID for source tracking
+        'attachment' // Source type
       );
 
       const processingTime = Date.now() - startTime;
 
       console.log(`⚗️ [LabExtraction] ✅ Successfully processed labs in ${processingTime}ms`);
-      console.log(`⚗️ [LabExtraction] ✅ Processing success: ${result.success}`);
-      console.log(`⚗️ [LabExtraction] ✅ Total results found: ${result.totalResultsFound || 0}`);
-      console.log(`⚗️ [LabExtraction] ✅ Consolidated results: ${result.consolidatedCount || 0}`);
+      console.log(`⚗️ [LabExtraction] ✅ Results saved: ${result.resultsCount}`);
       console.log(`⚗️ [LabExtraction] ✅ Overall confidence: ${result.confidence}`);
 
-      // Log individual lab results for debugging
-      if (result.data && result.data.length > 0) {
-        console.log(`⚗️ [LabExtraction] ✅ Lab results processed (${result.data.length} total):`);
-        result.data.forEach((labResult, index) => {
-          console.log(`⚗️ [LabExtraction]   ${index + 1}. ${labResult.testName}: ${labResult.resultValue}`);
-          console.log(`⚗️ [LabExtraction]      Confidence: ${labResult.confidence}`);
-          if (labResult.abnormalFlag) {
-            console.log(`⚗️ [LabExtraction]      Abnormal: ${labResult.abnormalFlag}`);
-          }
-          if (labResult.referenceRange) {
-            console.log(`⚗️ [LabExtraction]      Reference: ${labResult.referenceRange}`);
-          }
-        });
-      } else {
-        console.log(`⚗️ [LabExtraction] ℹ️ No lab results extracted - may be no lab content or all information already documented`);
-      }
-
-      // Log any errors encountered
-      if (result.errors && result.errors.length > 0) {
-        console.log(`⚗️ [LabExtraction] ⚠️ Processing errors encountered:`);
-        result.errors.forEach((error, index) => {
-          console.log(`⚗️ [LabExtraction]   ${index + 1}. ${error}`);
-        });
-      }
-
       console.log(`🔥 [LAB WORKFLOW] ============= LAB EXTRACTION COMPLETE =============`);
-
-      return {
-        success: result.success,
-        resultsCount: result.totalResultsFound || 0,
-        consolidatedCount: result.consolidatedCount || 0,
-        confidence: result.confidence
-      };
 
     } catch (error) {
       console.error(`❌ [LabExtraction] Error processing labs from attachment ${attachment.id}:`, error);
       console.error(`❌ [LabExtraction] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
       console.log(`🔥 [LAB WORKFLOW] ============= LAB EXTRACTION FAILED =============`);
-      
-      return {
-        success: false,
-        resultsCount: 0,
-        consolidatedCount: 0,
-        confidence: 0
-      };
     }
   }
 }
