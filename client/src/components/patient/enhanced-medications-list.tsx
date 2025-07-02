@@ -32,6 +32,7 @@ import {
   Zap,
   ArrowRight
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { FastMedicationIntelligence } from './fast-medication-intelligence';
@@ -476,12 +477,21 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
           >
             <CollapsibleTrigger asChild>
               <div className={`dense-list-item group ${statusColor} dense-view-transition flex`}>
-                {/* Side category label */}
+                {/* Side category label with tooltip */}
                 <div className="w-12 flex-shrink-0 flex items-center justify-center">
                   {isFirstInGroup && (
-                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
-                      {categoryAbbr}
-                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200 cursor-help">
+                            {categoryAbbr}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">{medication.clinicalIndication}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
                 
@@ -496,12 +506,6 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                     <Pill className="h-3 w-3 text-blue-500 flex-shrink-0" />
                     <span className="dense-list-primary">{medication.medicationName}</span>
                     <span className="dense-list-secondary">{medication.dosage}</span>
-                    
-                    {medication.clinicalIndication && (
-                      <Badge variant="outline" className="dense-list-badge text-blue-600 bg-blue-50">
-                        {medication.clinicalIndication}
-                      </Badge>
-                    )}
                     
                     <Badge variant="outline" className={`dense-list-badge ${
                       medication.status === 'active' ? 'text-green-700 bg-green-50' :
@@ -732,9 +736,18 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                               {groupingMode === 'medical_problem' && (
                                 <div className="w-12 flex-shrink-0 flex items-center justify-center">
                                   {index === 0 && (
-                                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
-                                      {categoryAbbr}
-                                    </span>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200 cursor-help">
+                                            {categoryAbbr}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="text-xs">{medication.clinicalIndication}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   )}
                                 </div>
                               )}
@@ -900,9 +913,6 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                 <span className="font-medium">
                   {medication.sig || `${medication.dosage} ${medication.frequency}`}
                 </span>
-                {medication.clinicalIndication && (
-                  <span className="text-gray-500">for {medication.clinicalIndication}</span>
-                )}
                 {medication.startDate && (
                   <span className="flex items-center emr-element-gap-tight">
                     <Calendar className="h-3 w-3" />
