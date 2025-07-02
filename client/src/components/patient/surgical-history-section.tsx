@@ -758,7 +758,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                             }}
                                             title={`Click to view source document (Confidence: ${confidence}%)`}
                                           >
-                                            Doc Extract {confidence}%
+                                            MR {confidence}%
                                           </Badge>
                                         );
                                       case "encounter":
@@ -1085,7 +1085,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                               <div className="flex items-center gap-2 mb-2">
                                 <Calendar className="h-4 w-4 text-gray-500" />
                                 <span className="font-medium">{formatDate(visit.date)}</span>
-                                {getSourceBadge(visit.source)}
+                                {getSourceBadge(visit.source, visit.confidence, visit.attachmentId, visit.encounterId)}
                                 {visit.providerName && (
                                   <span className="text-sm text-gray-500">by {visit.providerName}</span>
                                 )}

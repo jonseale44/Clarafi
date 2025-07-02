@@ -37,6 +37,8 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { FastMedicationIntelligence } from './fast-medication-intelligence';
 import { useDenseView } from '@/hooks/use-dense-view';
+import { useLocation } from 'wouter';
+import { useNavigationContext } from '@/hooks/use-navigation-context';
 
 interface Medication {
   id: number;
@@ -68,6 +70,11 @@ interface Medication {
   drugInteractions: any[];
   priorAuthRequired?: boolean;
   insuranceAuthStatus?: string;
+  // Source tracking fields
+  sourceType?: string;
+  sourceConfidence?: string;
+  visitHistory?: any[];
+  extractedFromAttachmentId?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -237,6 +244,72 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const { toast } = useToast();
   const { isDenseView } = useDenseView();
+  
+  // Navigation context for source badge navigation
+  const [location] = useLocation();
+  const { navigateWithContext } = useNavigationContext();
+  const mode = location.includes('/nurses/chart') ? 'nursing-chart' : 'patient-chart';
+
+  // Standardized source badge function matching other chart sections
+  const getSourceBadge = (sourceType?: string, sourceConfidence?: string, attachmentId?: number, encounterId?: number) => {
+    if (!sourceType) return null;
+    
+    switch (sourceType) {
+      case "encounter":
+      case "soap_derived": {
+        const confidencePercent = sourceConfidence ? Math.round(parseFloat(sourceConfidence) * 100) : 0;
+        const handleEncounterClick = () => {
+          if (encounterId) {
+            navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "medications", mode);
+          }
+        };
+        return (
+          <Badge 
+            variant="default" 
+            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            onClick={handleEncounterClick}
+            title={`Click to view encounter details (Encounter #${encounterId})`}
+          >
+            Note {confidencePercent}%
+          </Badge>
+        );
+      }
+      case "attachment":
+      case "attachment_extracted":
+      case "pdf_extract": {
+        const confidencePercent = sourceConfidence ? Math.round(parseFloat(sourceConfidence) * 100) : 0;
+        const handleAttachmentClick = () => {
+          if (attachmentId) {
+            navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "medications", mode);
+          }
+        };
+        return (
+          <Badge 
+            variant="secondary" 
+            className="text-xs cursor-pointer hover:bg-amber-600 dark:hover:bg-amber-400 transition-colors bg-amber-100 text-amber-800 border-amber-200"
+            onClick={handleAttachmentClick}
+            title={`Click to view source document (${confidencePercent}% confidence)`}
+          >
+            MR {confidencePercent}%
+          </Badge>
+        );
+      }
+      case "manual":
+      case "manual_entry": {
+        return (
+          <Badge 
+            variant="outline" 
+            className="text-xs bg-gray-50 text-gray-700 border-gray-300"
+            title="Manually entered"
+          >
+            Manual
+          </Badge>
+        );
+      }
+      default:
+        return null;
+    }
+  };
 
   // Fetch medications with enhanced data - with aggressive refetching for real-time updates
   const { data: medicationData, isLoading, error } = useQuery({
@@ -515,6 +588,14 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                     }`}>
                       {medication.status}
                     </Badge>
+                    
+                    {/* Source badge for dense view */}
+                    {getSourceBadge(
+                      medication.sourceType, 
+                      medication.sourceConfidence, 
+                      medication.extractedFromAttachmentId,
+                      medication.visitHistory && medication.visitHistory[0]?.encounterId
+                    )}
                   </div>
 
                   {!readOnly && (
@@ -766,6 +847,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                                   }
                                   onMoveToOrders={undefined}
                                   canMoveToOrders={false}
+                                  getSourceBadge={getSourceBadge}
                                 />
                               </div>
 
@@ -817,9 +899,10 @@ interface MedicationCardProps {
   onEdit?: (medicationData: any) => void;
   onMoveToOrders?: (medicationId: number) => void;
   canMoveToOrders?: boolean;
+  getSourceBadge: (sourceType?: string, sourceConfidence?: string, attachmentId?: number, encounterId?: number) => JSX.Element | null;
 }
 
-function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinue, onEdit, onMoveToOrders, canMoveToOrders }: MedicationCardProps) {
+function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinue, onEdit, onMoveToOrders, canMoveToOrders, getSourceBadge }: MedicationCardProps) {
   const [discontinueReason, setDiscontinueReason] = useState('');
   const [showDiscontinueForm, setShowDiscontinueForm] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -875,11 +958,19 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
               <div className="flex items-start justify-between emr-ultra-tight-gap">
                 <div className="flex-1 min-w-0 pr-1">
                   <div className="emr-ultra-tight-spacing">
-                    <h3 className="text-sm font-medium leading-tight">
-                      {medication.medicationName}
-                      {medication.dosage && ` ${medication.dosage}`}
-                      {medication.strength && medication.strength !== medication.dosage && ` ${medication.strength}`}
-                    </h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-medium leading-tight flex-1">
+                        {medication.medicationName}
+                        {medication.dosage && ` ${medication.dosage}`}
+                        {medication.strength && medication.strength !== medication.dosage && ` ${medication.strength}`}
+                      </h3>
+                      {getSourceBadge(
+                        medication.sourceType, 
+                        medication.sourceConfidence, 
+                        medication.extractedFromAttachmentId,
+                        medication.visitHistory && medication.visitHistory[0]?.encounterId
+                      )}
+                    </div>
                     <div className="flex items-center emr-ultra-tight-gap flex-wrap">
                       {medication.brandName && medication.brandName !== medication.medicationName && (
                         <span className="text-sm text-gray-500">({medication.brandName})</span>

@@ -603,18 +603,18 @@ export function VitalsFlowsheet({
                           {entry.extractedFromAttachmentId ? (
                             <Badge 
                               variant="outline" 
-                              className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
+                              className="text-xs bg-amber-100 text-amber-800 border-amber-200 cursor-pointer hover:bg-amber-200 transition-colors"
                               onClick={() => navigateToAttachment(entry.extractedFromAttachmentId!)}
                               title="Click to view source document"
                             >
                               <FileText className="h-3 w-3 mr-1" />
-                              {entry.sourceType === 'attachment_extracted' ? 'Doc Extract' : entry.sourceType}
+                              {entry.sourceType === 'attachment_extracted' ? 'MR' : entry.sourceType}
                               {entry.sourceConfidence && ` ${Math.round(parseFloat(entry.sourceConfidence) * 100)}%`}
                               <ExternalLink className="h-2 w-2 ml-1" />
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                              {entry.sourceType === 'attachment_extracted' ? 'Doc Extract' : entry.sourceType}
+                            <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+                              {entry.sourceType === 'attachment_extracted' ? 'MR' : entry.sourceType}
                               {entry.sourceConfidence && ` ${Math.round(parseFloat(entry.sourceConfidence) * 100)}%`}
                             </Badge>
                           )}
