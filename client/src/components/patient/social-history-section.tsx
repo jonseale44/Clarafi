@@ -511,7 +511,43 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
     });
   };
 
-  // Dense list rendering for compact view
+  // Helper function to create concise social history display like medical problems
+  const getConcisSocialHistoryDisplay = (entry: SocialHistoryEntry) => {
+    const category = formatCategory(entry.category);
+    const status = entry.currentStatus;
+    
+    // Extract key information concisely like "Diet: ↑ salt intake recently"
+    if (entry.category === "diet") {
+      if (status.toLowerCase().includes("increased") || status.toLowerCase().includes("more")) {
+        return `${category}: ↑ salt intake recently`;
+      } else if (status.toLowerCase().includes("decreased") || status.toLowerCase().includes("less")) {
+        return `${category}: ↓ improved recently`;
+      } else {
+        return `${category}: ${status.substring(0, 50)}${status.length > 50 ? '...' : ''}`;
+      }
+    } else if (entry.category === "tobacco") {
+      if (status.toLowerCase().includes("quit") || status.toLowerCase().includes("stopped")) {
+        return `${category}: quit smoking`;
+      } else if (status.toLowerCase().includes("active") || status.toLowerCase().includes("current")) {
+        return `${category}: current smoker`;
+      } else {
+        return `${category}: ${status.substring(0, 50)}${status.length > 50 ? '...' : ''}`;
+      }
+    } else if (entry.category === "alcohol") {
+      if (status.toLowerCase().includes("social")) {
+        return `${category}: social use`;
+      } else if (status.toLowerCase().includes("none") || status.toLowerCase().includes("quit")) {
+        return `${category}: none`;
+      } else {
+        return `${category}: ${status.substring(0, 50)}${status.length > 50 ? '...' : ''}`;
+      }
+    } else {
+      // Generic truncation for other categories
+      return `${category}: ${status.substring(0, 50)}${status.length > 50 ? '...' : ''}`;
+    }
+  };
+
+  // Dense list rendering for compact view - matches medical problems pattern
   const renderSocialHistoryDenseList = (entry: SocialHistoryEntry) => {
     const isExpanded = expandedDenseEntries.has(entry.id);
     const mostRecentVisit = entry.visitHistory?.[0];
@@ -533,8 +569,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
               
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="text-lg">{getCategoryIcon(entry.category)}</span>
-                <span className="dense-list-primary">{formatCategory(entry.category)}</span>
-                <span className="dense-list-secondary">{entry.currentStatus}</span>
+                <span className="dense-list-primary">{getConcisSocialHistoryDisplay(entry)}</span>
               </div>
               
               {mostRecentVisit && (
@@ -580,84 +615,57 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
           </div>
         </CollapsibleTrigger>
         
-        {/* Expanded content for dense view */}
+        {/* Expanded content for dense view - only show visit history */}
         {isExpanded && (
           <CollapsibleContent>
             <div className="dense-list-expanded">
-              <div className="space-y-3">
-                {/* Entry Details */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {entry.historyNotes && (
-                    <div>
-                      <Label className="text-xs font-medium text-gray-600">History Notes</Label>
-                      <p className="text-sm">{entry.historyNotes}</p>
-                    </div>
-                  )}
-                  {entry.extractionNotes && (
-                    <div>
-                      <Label className="text-xs font-medium text-gray-600">Source Notes</Label>
-                      <p className="text-sm">{entry.extractionNotes}</p>
-                    </div>
-                  )}
-                  {entry.consolidationReasoning && (
-                    <div className="col-span-2">
-                      <Label className="text-xs font-medium text-gray-600">Consolidation Notes</Label>
-                      <p className="text-sm italic text-gray-700">{entry.consolidationReasoning}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Visit History */}
-                {entry.visitHistory && entry.visitHistory.length > 0 && (
-                  <div>
-                    <Label className="text-xs font-medium text-gray-600 mb-2 block">Visit History</Label>
-                    <div className="space-y-2">
-                      {entry.visitHistory
-                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                        .map((visit, index) => (
-                          <div 
-                            key={visit.id || index} 
-                            className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg text-sm"
-                          >
-                            <div className="flex flex-col items-center text-gray-400">
-                              <Calendar className="h-4 w-4" />
-                              <div className="w-px h-full bg-gray-300 mt-1"></div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-gray-900">
-                                  {formatDate(visit.date)}
-                                </span>
-                                {visit.source && getSourceBadge(
-                                  visit.source, 
-                                  visit.confidence, 
-                                  visit.attachmentId, 
-                                  visit.encounterId
-                                )}
-                              </div>
-                              <p className="text-gray-700 leading-relaxed">{visit.notes}</p>
-                              {visit.changesMade && visit.changesMade.length > 0 && (
-                                <div className="mt-2">
-                                  <Label className="text-xs text-gray-500">Changes:</Label>
-                                  <ul className="list-disc list-inside text-xs text-gray-600 mt-1">
-                                    {visit.changesMade.map((change, idx) => (
-                                      <li key={idx}>{change}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {visit.providerName && (
-                                <div className="mt-1 text-xs text-gray-500">
-                                  Provider: {visit.providerName}
-                                </div>
-                              )}
-                            </div>
+              {/* Visit History Only - sorted by date descending (most recent first) */}
+              {entry.visitHistory && entry.visitHistory.length > 0 && (
+                <div className="space-y-2">
+                  {entry.visitHistory
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((visit, index) => (
+                      <div 
+                        key={visit.id || index} 
+                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg text-sm"
+                      >
+                        <div className="flex flex-col items-center text-gray-400">
+                          <Calendar className="h-4 w-4" />
+                          <div className="w-px h-full bg-gray-300 mt-1"></div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">
+                              {formatDate(visit.date)}
+                            </span>
+                            {visit.source && getSourceBadge(
+                              visit.source, 
+                              visit.confidence, 
+                              visit.attachmentId, 
+                              visit.encounterId
+                            )}
                           </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                          <p className="text-gray-700 leading-relaxed">{visit.notes}</p>
+                          {visit.changesMade && visit.changesMade.length > 0 && (
+                            <div className="mt-2">
+                              <Label className="text-xs text-gray-500">Changes:</Label>
+                              <ul className="list-disc list-inside text-xs text-gray-600 mt-1">
+                                {visit.changesMade.map((change, idx) => (
+                                  <li key={idx}>{change}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {visit.providerName && (
+                            <div className="mt-1 text-xs text-gray-500">
+                              Provider: {visit.providerName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </CollapsibleContent>
         )}
@@ -1000,10 +1008,10 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                             )}
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-1">
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-2">
                                   <span className="text-lg">{getCategoryIcon(entry.category)}</span>
-                                  <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-                                    {formatCategory(entry.category)}
+                                  <CardTitle className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight">
+                                    {getConcisSocialHistoryDisplay(entry)}
                                   </CardTitle>
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -1026,9 +1034,11 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                   })()}
                                 </div>
                               </div>
-                              <p className="text-sm text-gray-600 emr-ultra-compact-content">
-                                {entry.currentStatus}
-                              </p>
+                              {entry.visitHistory && entry.visitHistory.length > 0 && (
+                                <p className="text-sm text-gray-500 emr-ultra-compact-content">
+                                  Since {formatDate(entry.visitHistory[entry.visitHistory.length - 1].date)} • {entry.visitHistory.length} visit{entry.visitHistory.length > 1 ? 's' : ''}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -1063,33 +1073,9 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                       </CardHeader>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                    <div className="space-y-4">
-                      {/* Entry Details */}
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        {entry.historyNotes && (
-                          <div>
-                            <Label className="text-xs font-medium text-gray-600">History Notes</Label>
-                            <p className="text-sm">{entry.historyNotes}</p>
-                          </div>
-                        )}
-                        {entry.extractionNotes && (
-                          <div>
-                            <Label className="text-xs font-medium text-gray-600">Source Notes</Label>
-                            <p className="text-sm">{entry.extractionNotes}</p>
-                          </div>
-                        )}
-                        {entry.consolidationReasoning && (
-                          <div className="col-span-2">
-                            <Label className="text-xs font-medium text-gray-600">Consolidation Notes</Label>
-                            <p className="text-sm italic text-gray-700">{entry.consolidationReasoning}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Visit History */}
-                      {entry.visitHistory && entry.visitHistory.length > 0 && (
-                        <div>
-                          <Label className="text-xs font-medium text-gray-600 mb-2 block">Visit History</Label>
+                      <CardContent className="pt-0">
+                        {/* Visit History Only - sorted by date descending (most recent first) */}
+                        {entry.visitHistory && entry.visitHistory.length > 0 && (
                           <div className="space-y-2">
                             {entry.visitHistory
                               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -1113,7 +1099,6 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                         visit.attachmentId, 
                                         visit.encounterId
                                       )}
-
                                     </div>
                                     <p className="text-gray-700 leading-relaxed">{visit.notes}</p>
                                     {visit.changesMade && visit.changesMade.length > 0 && (
@@ -1135,9 +1120,8 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                 </div>
                               ))}
                           </div>
-                        </div>
-                      )}
-                      </div>
+                        )}
+                      </CardContent>
                     </CollapsibleContent>
                   </Collapsible>
                 </Card>
