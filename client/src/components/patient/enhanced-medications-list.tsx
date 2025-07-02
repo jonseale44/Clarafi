@@ -418,6 +418,19 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
       return abbreviations[lowerCondition];
     }
     
+    // Handle complex conditions with multiple parts
+    if (lowerCondition.includes('atrial fibrillation')) {
+      return 'AFib';
+    }
+    
+    if (lowerCondition.includes('coronary artery disease')) {
+      return 'CAD';
+    }
+    
+    if (lowerCondition.includes('congestive heart failure')) {
+      return 'CHF';
+    }
+    
     // Check for partial matches with "history of"
     if (lowerCondition.includes('history of')) {
       const baseCondition = lowerCondition.replace(/history of\s*/, '').replace(/\s*\(\d{4}\)/, '').trim();
