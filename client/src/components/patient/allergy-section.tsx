@@ -254,12 +254,60 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
     }
   };
 
-  const getSourceBadgeColor = (sourceType: string) => {
+  const getSourceBadge = (allergy: AllergyEntry) => {
+    const sourceType = allergy.sourceType;
+    const confidence = allergy.sourceConfidence ? parseFloat(allergy.sourceConfidence) : 0;
+    const confidencePercent = Math.round(confidence * 100);
+    
     switch (sourceType) {
-      case 'attachment_extracted': return 'bg-blue-100 text-blue-800';
-      case 'soap_derived': return 'bg-green-100 text-green-800';
-      case 'manual_entry': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'attachment_extracted': {
+        const handleDocumentClick = () => {
+          if (allergy.extractedFromAttachmentId) {
+            // Navigate to attachment section - implement navigation logic
+            console.log("Navigate to attachment:", allergy.extractedFromAttachmentId);
+          }
+        };
+        return (
+          <Badge 
+            variant="secondary" 
+            className="text-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors bg-amber-100 text-amber-800 border-amber-200"
+            onClick={handleDocumentClick}
+            title={`Click to view source document (Attachment #${allergy.extractedFromAttachmentId})`}
+          >
+            MR {confidencePercent}%
+          </Badge>
+        );
+      }
+      case 'soap_derived': {
+        return (
+          <Badge 
+            variant="default" 
+            className="text-xs bg-blue-100 text-blue-800 border-blue-200"
+            title="Extracted from clinical note"
+          >
+            Note {confidencePercent}%
+          </Badge>
+        );
+      }
+      case 'manual_entry':
+        return (
+          <Badge 
+            variant="secondary" 
+            className="text-xs bg-gray-100 text-gray-800 border-gray-200"
+            title="Manually entered"
+          >
+            Manual
+          </Badge>
+        );
+      default:
+        return (
+          <Badge 
+            variant="outline" 
+            className="text-xs bg-gray-100 text-gray-800 border-gray-300"
+          >
+            Unknown
+          </Badge>
+        );
     }
   };
 
@@ -310,12 +358,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
               </div>
               
               <div className="flex items-center gap-1">
-                <Badge 
-                  variant="secondary" 
-                  className={`dense-list-badge ${getSourceBadgeColor(allergy.sourceType)}`}
-                >
-                  {allergy.sourceConfidence && `${Math.round(parseFloat(allergy.sourceConfidence) * 100)}%`}
-                </Badge>
+                {getSourceBadge(allergy)}
                 
                 <div className="dense-list-actions">
                   <Button 
@@ -483,12 +526,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${getSourceBadgeColor(allergy.sourceType)}`}
-                            >
-                              {allergy.sourceConfidence && `${Math.round(parseFloat(allergy.sourceConfidence) * 100)}%`}
-                            </Badge>
+                            {getSourceBadge(allergy)}
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                               <Dialog>
                                 <DialogTrigger asChild>

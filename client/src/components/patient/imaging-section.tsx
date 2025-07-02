@@ -131,12 +131,12 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
           <Tooltip>
             <TooltipTrigger>
               <Badge 
-                variant="outline" 
-                className="text-xs bg-blue-50 border-blue-200 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
+                variant="secondary" 
+                className="text-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors bg-amber-100 text-amber-800 border-amber-200"
                 onClick={handleDocumentClick}
                 title={`Click to view source document (Attachment #${result.extractedFromAttachmentId})`}
               >
-                Doc Extract {confidencePercent}%
+                MR {confidencePercent}%
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
@@ -159,19 +159,19 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
       return (
         <Badge 
           variant="default" 
-          className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors"
+          className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
           onClick={handleEncounterClick}
           title="Click to view encounter details"
         >
-          Note Entry
+          Note
         </Badge>
       );
     }
     
     // Fallback for true manual entries
     return (
-      <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
-        Manual Entry
+      <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border-gray-200">
+        Manual
       </Badge>
     );
   };

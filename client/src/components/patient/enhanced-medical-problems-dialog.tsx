@@ -338,16 +338,26 @@ export function EnhancedMedicalProblemsDialog({
     });
   };
 
-  const getSourceBadge = (source: string) => {
+  const getSourceBadge = (source: string, confidence?: number) => {
+    const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+    
     switch (source) {
       case "encounter":
-        return <Badge variant="default" className="text-xs">Encounter</Badge>;
+        return (
+          <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+            Note {confidencePercent > 0 ? `${confidencePercent}%` : ''}
+          </Badge>
+        );
       case "attachment":
-        return <Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 mr-1" />Doc Extract</Badge>;
+        return (
+          <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+            MR {confidencePercent > 0 ? `${confidencePercent}%` : ''}
+          </Badge>
+        );
       case "manual":
-        return <Badge variant="secondary" className="text-xs">Manual</Badge>;
+        return <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border-gray-200">Manual</Badge>;
       case "imported_record":
-        return <Badge variant="outline" className="text-xs">Imported</Badge>;
+        return <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800 border-gray-300">MR</Badge>;
       default:
         return null;
     }

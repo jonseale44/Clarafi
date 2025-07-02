@@ -270,8 +270,9 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
   // Source badge with navigation - matches medical problems pattern exactly
   const getSourceBadge = (source: string, confidence?: number, attachmentId?: number, encounterId?: number) => {
     switch (source) {
-      case "encounter":
+      case "encounter": {
         // Clickable encounter badge that navigates to encounter detail
+        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleEncounterClick = () => {
           if (encounterId) {
             navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "family-history", mode);
@@ -280,14 +281,15 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
         return (
           <Badge 
             variant="default" 
-            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors"
+            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
             onClick={handleEncounterClick}
             title={`Click to view encounter details (Encounter #${encounterId})`}
           >
-            Encounter
+            Note {confidencePercent}%
           </Badge>
         );
-      case "attachment":
+      }
+      case "attachment": {
         // Document Extract badge with confidence score, tooltip, and click navigation
         const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleDocumentClick = () => {
@@ -330,11 +332,10 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                 <div>
                   <Badge 
                     variant="secondary" 
-                    className="text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                    className="text-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors bg-amber-100 text-amber-800 border-amber-200"
                     onClick={handleDocumentClick}
                   >
-                    <FileText className="h-3 w-3 mr-1" />
-                    Doc Extract {confidencePercent}%
+                    MR {confidencePercent}%
                   </Badge>
                 </div>
               </TooltipTrigger>
@@ -346,10 +347,11 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
             </Tooltip>
           </TooltipProvider>
         );
+      }
       case "manual":
-        return <Badge variant="secondary" className="text-xs">Manual</Badge>;
+        return <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border-gray-200">Manual</Badge>;
       case "imported_record":
-        return <Badge variant="outline" className="text-xs">Imported</Badge>;
+        return <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800 border-gray-300">MR</Badge>;
       default:
         return null;
     }

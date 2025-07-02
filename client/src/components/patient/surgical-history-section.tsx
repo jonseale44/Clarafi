@@ -307,14 +307,46 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
     }
   };
 
-  const getSourceBadge = (source: string) => {
+  const getSourceBadge = (source: string, confidence?: number, attachmentId?: number, encounterId?: number) => {
     switch (source) {
-      case "encounter":
-        return <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">Encounter</Badge>;
-      case "attachment":
-        return <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">Document</Badge>;
+      case "encounter": {
+        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+        const handleEncounterClick = () => {
+          if (encounterId) {
+            navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "surgical-history", mode);
+          }
+        };
+        return (
+          <Badge 
+            variant="default" 
+            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            onClick={handleEncounterClick}
+            title={`Click to view encounter details (Encounter #${encounterId})`}
+          >
+            Note {confidencePercent}%
+          </Badge>
+        );
+      }
+      case "attachment": {
+        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+        const handleDocumentClick = () => {
+          if (attachmentId) {
+            navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "surgical-history", mode);
+          }
+        };
+        return (
+          <Badge 
+            variant="secondary" 
+            className="text-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors bg-amber-100 text-amber-800 border-amber-200"
+            onClick={handleDocumentClick}
+            title={`Click to view source document (Attachment #${attachmentId})`}
+          >
+            MR {confidencePercent}%
+          </Badge>
+        );
+      }
       case "manual":
-        return <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">Manual</Badge>;
+        return <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border-gray-200">Manual</Badge>;
       default:
         return null;
     }
