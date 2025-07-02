@@ -263,14 +263,18 @@ CRITICAL INSTRUCTIONS:
 
 2. **HISTORICAL IMAGING ONLY**: Extract only completed imaging studies with results. Do NOT extract future recommendations, planned studies, or "patient should get MRI" type content.
 
-3. **MANDATORY CONSOLIDATION FIRST**: 
-   - BEFORE creating any new imaging study, systematically check existing studies
-   - Match by: modality + body part + study date (±7 days tolerance)
-   - Consolidate when confidence ≥70% that studies are the same
-   - For exact matches (same date/modality/body part): ALWAYS consolidate unless findings dramatically different
-   - Use action "ADD_VISIT" to add new interpretations to existing studies
-   - Only use "NEW_IMAGING" when no reasonable match exists
-   - Apply clinical intelligence: "CXR" = "Chest X-ray" = "chest radiograph"
+3. **PRODUCTION-LEVEL PRE-INSERT VALIDATION**: 
+   - **EPIC/ATHENA STANDARDS**: Use commercial EMR-grade deduplication logic
+   - **MANDATORY CONSOLIDATION**: BEFORE creating any new imaging study, systematically check ALL existing studies
+   - **INTELLIGENT MATCHING**: Apply clinical intelligence - "CXR" = "Chest X-ray" = "chest radiograph" = "PA/lateral chest"
+   - **CONFIDENCE THRESHOLDS**: 
+     * ≥95% confidence: MUST consolidate (exact matches)
+     * ≥70% confidence: SHOULD consolidate (high probability same study)
+     * <70% confidence: Evaluate additional context (dates, facility, ordering provider)
+   - **EXACT MATCH RULE**: Same date + modality + body part = ALWAYS consolidate, no exceptions
+   - **DATE TOLERANCE**: ±7 days for same study (documentation date variations)
+   - **SYNONYM MATCHING**: Chest/thoracic, abdomen/abdominal, brain/head, spine/lumbar/cervical
+   - **DEFAULT TO CONSOLIDATION**: When in doubt, consolidate rather than duplicate
 
 4. **COMMERCIAL EMR STATUS WORKFLOW**:
    - "preliminary" = preliminary read by resident/AI
@@ -293,27 +297,47 @@ CRITICAL INSTRUCTIONS:
 CONTENT TO ANALYZE:
 ${content}
 
-MANDATORY CONSOLIDATION EXAMPLES:
+PRODUCTION-LEVEL CONSOLIDATION EXAMPLES (EPIC/ATHENA STANDARDS):
 
-1. **EXACT MATCH - ALWAYS CONSOLIDATE**:
+1. **EXACT MATCH - MUST CONSOLIDATE (95%+ confidence)**:
    Existing: XR chest 2010-06-12 "Cardiomegaly with pulmonary congestion"
    New Content: "Chest X-ray 6/12/2010 shows cardiomegaly, bilateral pulmonary congestion, mild pleural effusions"
-   Action: {"action": "ADD_VISIT", "imaging_id": 8, "consolidation_reasoning": "Exact match - same modality, body part, and date. Adding new interpretation to existing study."}
+   Action: {"action": "ADD_VISIT", "imaging_id": 8, "confidence": 0.99, "consolidation_reasoning": "Exact match - same modality, body part, and date. Adding enhanced interpretation to existing study."}
 
-2. **NEAR-MATCH - CONSOLIDATE WITH TOLERANCE**:
-   Existing: CT head 2023-01-15 
-   New Content: "Head CT from January 16, 2023"
-   Action: {"action": "ADD_VISIT", "imaging_id": 12, "consolidation_reasoning": "Same study within ±7 day tolerance, likely same CT with different documentation dates"}
+2. **SYNONYM MATCHING - INTELLIGENT CONSOLIDATION**:
+   Existing: CT abdomen/pelvis 2023-03-15 "Normal bowel, kidneys"
+   New Content: "Abdominal CT with contrast 3/15/23 - no abnormalities identified"
+   Action: {"action": "ADD_VISIT", "imaging_id": 15, "confidence": 0.96, "consolidation_reasoning": "Same study - abdomen/pelvis = abdominal CT. Different interpretation phrasing but same findings."}
 
-3. **DIFFERENT FINDINGS - STILL CONSOLIDATE SAME STUDY**:
-   Existing: XR chest 2010-06-12 "Normal"
-   New Content: "Chest radiograph 6/12/2010 cardiomegaly and congestion"
-   Action: {"action": "ADD_VISIT", "imaging_id": 8, "consolidation_reasoning": "Same study date/modality - likely re-read or addendum with new findings"}
+3. **DATE TOLERANCE - DOCUMENTATION VARIATIONS**:
+   Existing: MR brain 2023-01-15 "Small vessel disease"
+   New Content: "Brain MRI performed January 16, 2023 - chronic microvascular changes"
+   Action: {"action": "ADD_VISIT", "imaging_id": 12, "confidence": 0.92, "consolidation_reasoning": "Same study within ±7 day tolerance. Date variation likely due to read date vs. study date documentation."}
 
-4. **CREATE NEW ONLY WHEN CLEARLY DIFFERENT**:
-   Existing: XR chest 2010-06-12
-   New Content: "Chest X-ray 2010-06-20" 
-   Action: {"action": "NEW_IMAGING", "consolidation_reasoning": "Different study date (8 days apart) suggests follow-up study, not same exam"}
+4. **STATUS PROGRESSION - PRELIMINARY TO FINAL**:
+   Existing: CT chest 2023-06-10 "Preliminary: possible pneumonia" (status: preliminary)
+   New Content: "Final read CT chest 6/10/23: confirmed RLL pneumonia with parapneumonic effusion"
+   Action: {"action": "STATUS_CHANGE", "imaging_id": 20, "confidence": 0.98, "result_status": "final", "consolidation_reasoning": "Same study progressing from preliminary to final read with attending radiologist interpretation."}
+
+5. **ADDENDUM WORKFLOW - ADDITIONAL FINDINGS**:
+   Existing: XR chest 2023-08-20 "Normal heart and lungs"
+   New Content: "Addendum to chest X-ray 8/20/23: small nodule noted in RUL on closer inspection"
+   Action: {"action": "ADDENDUM", "imaging_id": 25, "confidence": 0.97, "consolidation_reasoning": "Addendum to existing study - additional findings identified on secondary review."}
+
+6. **MODALITY PRECISION - AVOID FALSE MATCHES**:
+   Existing: Echo 2023-05-10 "Normal ejection fraction"
+   New Content: "EKG on 5/10/23 shows normal sinus rhythm"
+   Action: {"action": "NEW_IMAGING", "confidence": 0.25, "consolidation_reasoning": "Different modalities - Echo (ultrasound) vs EKG (electrical study). Do not consolidate despite same date."}
+
+7. **BODY PART SPECIFICITY - GRANULAR MATCHING**:
+   Existing: MR lumbar spine 2023-04-01 "Degenerative changes L4-L5"
+   New Content: "Cervical spine MRI 4/1/23: normal alignment"
+   Action: {"action": "NEW_IMAGING", "confidence": 0.15, "consolidation_reasoning": "Different anatomical regions - lumbar vs cervical spine. Separate studies despite same modality and date."}
+
+8. **FOLLOW-UP STUDIES - DO NOT CONSOLIDATE**:
+   Existing: CT chest 2023-02-01 "Small pulmonary nodule RUL"
+   New Content: "Follow-up chest CT 2/15/23: nodule unchanged in size"
+   Action: {"action": "NEW_IMAGING", "confidence": 0.30, "consolidation_reasoning": "Follow-up study 14 days later. Different study despite similar findings - tracking nodule over time."}
 
 Return a JSON object with this exact structure:
 {
@@ -341,6 +365,32 @@ Return a JSON object with this exact structure:
   "extraction_confidence": 0.0-1.0,
   "processing_notes": "string describing what was processed"
 }
+
+**CRITICAL PRE-INSERT VALIDATION RULES**:
+
+1. **CONFIDENCE THRESHOLD ENFORCEMENT**:
+   - NEW_IMAGING: Minimum 70% confidence required
+   - ADD_VISIT: Minimum 60% confidence for consolidation
+   - Reject extractions below minimum thresholds
+   - Log reasoning for all confidence decisions
+
+2. **MANDATORY DUPLICATE PREVENTION**:
+   - Check ALL existing imaging before any creation
+   - Apply ±7 day date tolerance for same study
+   - Use medical synonym intelligence (chest/thoracic, brain/head)
+   - Default to consolidation when clinical match likely
+
+3. **QUALITY GATES**:
+   - Require meaningful clinical summaries (not "imaging performed")
+   - Enforce modality standardization (XR, CT, MR, US, Echo, PET)
+   - Validate study dates are realistic (not future dates)
+   - Ensure body part specificity (chest vs lung vs heart)
+
+4. **PRODUCTION-LEVEL LOGGING**:
+   - Document all consolidation decisions with reasoning
+   - Track confidence scores for quality monitoring
+   - Log rejected extractions for audit trail
+   - Maintain EMR-grade documentation standards
 
 **IMPORTANT**: Only extract actual imaging RESULTS, not orders or recommendations. Focus on clean clinical summaries suitable for provider chart review.`;
 

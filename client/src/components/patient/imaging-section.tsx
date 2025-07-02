@@ -109,7 +109,8 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
 
   const getSourceBadge = (result: ImagingResult) => {
     // Document Extract badge with confidence score, tooltip, and click navigation
-    if (result.sourceType === "attachment" && result.sourceConfidence && result.extractedFromAttachmentId) {
+    // Backend stores as "pdf_extract" but this maps to attachment extraction
+    if (result.sourceType === "pdf_extract" && result.sourceConfidence && result.extractedFromAttachmentId) {
       const confidencePercent = Math.round(parseFloat(result.sourceConfidence) * 100);
       const handleDocumentClick = () => {
         console.log("🔗 [Imaging] Document badge clicked!");
@@ -145,10 +146,12 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
     }
     
     // Clickable encounter badge that navigates to encounter detail
-    if (result.sourceType === "encounter" && result.encounterId) {
+    if (result.sourceType === "encounter_note") {
       const handleEncounterClick = () => {
-        if (result.encounterId) {
-          navigateWithContext(`/patients/${patientId}/encounters/${result.encounterId}`, "imaging", mode);
+        // Find encounter ID from visit history or use current encounterId
+        const encounterId = result.visitHistory?.find(visit => visit.sourceType === "encounter")?.encounterId;
+        if (encounterId) {
+          navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "imaging", mode);
         }
       };
       return (
@@ -156,9 +159,9 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
           variant="default" 
           className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors"
           onClick={handleEncounterClick}
-          title={`Click to view encounter details (Encounter #${result.encounterId})`}
+          title="Click to view encounter details"
         >
-          Encounter
+          Note Entry
         </Badge>
       );
     }
