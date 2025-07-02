@@ -35,6 +35,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { FastMedicationIntelligence } from './fast-medication-intelligence';
+import { useDenseView } from '@/hooks/use-dense-view';
 
 interface Medication {
   id: number;
@@ -234,6 +235,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   const [activeStatusTab, setActiveStatusTab] = useState<'current' | 'discontinued' | 'held' | 'historical'>('current');
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const { toast } = useToast();
+  const { isDenseView } = useDenseView();
 
   // Fetch medications with enhanced data - with aggressive refetching for real-time updates
   const { data: medicationData, isLoading, error } = useQuery({
@@ -373,6 +375,101 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
     });
   };
 
+  // Dense list rendering for compact view
+  const renderMedicationDenseList = (medication: Medication) => {
+    const statusColor = medication.status === 'active' ? 'border-green-300' : 
+                       medication.status === 'pending' ? 'border-blue-300' :
+                       medication.status === 'held' ? 'border-amber-300' :
+                       medication.status === 'discontinued' ? 'border-gray-300' : 'border-gray-300';
+    
+    return (
+      <Collapsible
+        key={medication.id}
+        open={expandedMedications.has(medication.id)}
+        onOpenChange={() => toggleMedicationExpanded(medication.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <div className={`dense-list-item group ${statusColor} dense-view-transition`}>
+            <div className="dense-list-content">
+              {expandedMedications.has(medication.id) ? (
+                <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              )}
+              
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Pill className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                <span className="dense-list-primary">{medication.medicationName}</span>
+                <span className="dense-list-secondary">{medication.dosage}</span>
+                
+                {medication.clinicalIndication && (
+                  <Badge variant="outline" className="dense-list-badge text-blue-600 bg-blue-50">
+                    {medication.clinicalIndication}
+                  </Badge>
+                )}
+                
+                <Badge variant="outline" className={`dense-list-badge ${
+                  medication.status === 'active' ? 'text-green-700 bg-green-50' :
+                  medication.status === 'pending' ? 'text-blue-700 bg-blue-50' :
+                  medication.status === 'held' ? 'text-amber-700 bg-amber-50' :
+                  'text-gray-700 bg-gray-50'
+                }`}>
+                  {medication.status}
+                </Badge>
+              </div>
+
+              {!readOnly && (
+                <div className="dense-list-actions">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Add edit functionality here
+                    }}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="dense-list-expanded">
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <strong>Frequency:</strong> {medication.frequency}
+              </div>
+              {medication.strength && (
+                <div>
+                  <strong>Strength:</strong> {medication.strength}
+                </div>
+              )}
+              {medication.prescriber && (
+                <div>
+                  <strong>Prescriber:</strong> {medication.prescriber}
+                </div>
+              )}
+              {medication.startDate && (
+                <div>
+                  <strong>Start Date:</strong> {new Date(medication.startDate).toLocaleDateString()}
+                </div>
+              )}
+              {medication.sig && (
+                <div className="col-span-2">
+                  <strong>Instructions:</strong> {medication.sig}
+                </div>
+              )}
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
   // Filter medications by active status tab
   const currentMedications = activeStatusTab === 'current' 
     ? [
@@ -502,7 +599,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                 )}
               </div>
             ) : (
-              <div className="emr-ultra-tight-spacing">
+              <div className={isDenseView ? "space-y-1" : "emr-ultra-tight-spacing"}>
                 {Object.entries(groupedMedications).map(([groupName, medications]) => (
                   <div key={groupName}>
                     {groupingMode === 'medical_problem' && (
@@ -511,28 +608,30 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                         {groupName}
                       </h3>
                     )}
-                    <div className="emr-ultra-tight-spacing">
-                      {medications.map((medication: Medication) => (
-                        <MedicationCard
-                          key={medication.id}
-                          medication={medication}
-                          isExpanded={expandedMedications.has(medication.id)}
-                          onToggleExpanded={() => toggleMedicationExpanded(medication.id)}
-                          onDiscontinue={readOnly ? undefined : (reason: string) => 
-                            discontinueMedication.mutate({ medicationId: medication.id, reason })
-                          }
-                          onEdit={readOnly ? undefined : (medicationData) => 
-                            updateMedication.mutate(medicationData)
-                          }
-                          onMoveToOrders={readOnly || !encounterId ? undefined : (medicationId: number) => 
-                            moveToOrders.mutate({ medicationId, encounterId })
-                          }
-                          canMoveToOrders={!readOnly && !!encounterId}
-                        />
-                      ))}
+                    <div className={isDenseView ? "dense-list-container" : "emr-ultra-tight-spacing"}>
+                      {medications.map((medication: Medication) => 
+                        isDenseView ? 
+                          renderMedicationDenseList(medication) :
+                          <MedicationCard
+                            key={medication.id}
+                            medication={medication}
+                            isExpanded={expandedMedications.has(medication.id)}
+                            onToggleExpanded={() => toggleMedicationExpanded(medication.id)}
+                            onDiscontinue={readOnly ? undefined : (reason: string) => 
+                              discontinueMedication.mutate({ medicationId: medication.id, reason })
+                            }
+                            onEdit={readOnly ? undefined : (medicationData) => 
+                              updateMedication.mutate(medicationData)
+                            }
+                            onMoveToOrders={readOnly || !encounterId ? undefined : (medicationId: number) => 
+                              moveToOrders.mutate({ medicationId, encounterId })
+                            }
+                            canMoveToOrders={!readOnly && !!encounterId}
+                          />
+                      )}
                     </div>
                     {groupingMode === 'medical_problem' && Object.keys(groupedMedications).length > 1 && (
-                      <Separator className="emr-ultra-tight-spacing" />
+                      <Separator className={isDenseView ? "my-2" : "emr-ultra-tight-spacing"} />
                     )}
                   </div>
                 ))}
