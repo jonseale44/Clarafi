@@ -302,6 +302,18 @@ CRITICAL GUIDELINES:
 Process the content and return ONLY the JSON response with social history findings.`;
 
     try {
+      // Log the full prompt being sent to GPT for debugging
+      console.log(`🚬 [UnifiedSocialHistory] ============= GPT PROMPT DEBUG =============`);
+      console.log(`🚬 [UnifiedSocialHistory] SYSTEM PROMPT (first 500 chars):`);
+      console.log(systemPrompt.substring(0, 500) + "...");
+      console.log(`🚬 [UnifiedSocialHistory] USER CONTENT (first 1000 chars):`);
+      console.log(content.substring(0, 1000) + "...");
+      console.log(`🚬 [UnifiedSocialHistory] EXISTING SOCIAL HISTORY ENTRIES:`);
+      existingSocialHistory.forEach((entry, index) => {
+        console.log(`🚬 [UnifiedSocialHistory]   ${index + 1}. ${entry.category}: "${entry.currentStatus}"`);
+      });
+      console.log(`🚬 [UnifiedSocialHistory] ============= END PROMPT DEBUG =============`);
+
       const response = await this.openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -313,7 +325,11 @@ Process the content and return ONLY the JSON response with social history findin
       });
 
       const gptContent = response.choices[0]?.message?.content?.trim();
+      console.log(`🚬 [UnifiedSocialHistory] ============= GPT RESPONSE DEBUG =============`);
       console.log(`🚬 [UnifiedSocialHistory] GPT response length: ${gptContent?.length || 0} characters`);
+      console.log(`🚬 [UnifiedSocialHistory] FULL GPT RESPONSE:`);
+      console.log(gptContent);
+      console.log(`🚬 [UnifiedSocialHistory] ============= END RESPONSE DEBUG =============`);
 
       if (!gptContent) {
         console.log(`🚬 [UnifiedSocialHistory] No GPT response received`);
@@ -329,6 +345,11 @@ Process the content and return ONLY the JSON response with social history findin
 
       const parsedResponse = JSON.parse(jsonMatch[0]);
       console.log(`🚬 [UnifiedSocialHistory] Successfully parsed ${parsedResponse.changes?.length || 0} social history changes`);
+      console.log(`🚬 [UnifiedSocialHistory] PARSED CHANGES:`);
+      parsedResponse.changes?.forEach((change, index) => {
+        console.log(`🚬 [UnifiedSocialHistory]   ${index + 1}. ${change.action} ${change.category}: "${change.currentStatus}"`);
+        console.log(`🚬 [UnifiedSocialHistory]      Confidence: ${change.confidence}, Reason: ${change.consolidationReason || 'N/A'}`);
+      });
 
       return parsedResponse;
 
