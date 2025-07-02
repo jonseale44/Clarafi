@@ -957,7 +957,7 @@ export const labResults = pgTable("lab_results", {
   
   // Source classification for multi-source lab data
   sourceType: text("source_type").default("lab_order"), // 'lab_order', 'patient_reported', 'external_upload', 'provider_entered', 'imported_records', 'attachment'
-  sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceConfidence: decimal("source_confidence", { precision: 5, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
   sourceNotes: text("source_notes"), // Additional context about data source
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id, { onDelete: "set null" }), // Source attachment for extracted labs
   enteredBy: integer("entered_by").references(() => users.id), // Who entered non-standard results

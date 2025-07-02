@@ -27,6 +27,7 @@ export class AttachmentChartProcessor {
   private allergyParser: UnifiedAllergyParser;
   private medicationDeltaService: MedicationDeltaService;
   private imagingParser: UnifiedImagingParser;
+  private labParser!: UnifiedLabParser;
 
   constructor() {
     console.log(`🔥 [IMAGING WORKFLOW DEBUG] AttachmentChartProcessor constructor - initializing all parsers including imaging`);
@@ -35,7 +36,8 @@ export class AttachmentChartProcessor {
     this.allergyParser = new UnifiedAllergyParser();
     this.medicationDeltaService = new MedicationDeltaService();
     this.imagingParser = new UnifiedImagingParser();
-    console.log(`🔥 [IMAGING WORKFLOW DEBUG] All 8 chart processors initialized successfully: vitals, medical problems, surgical history, family history, social history, allergies, medications, imaging`);
+    this.labParser = new UnifiedLabParser();
+    console.log(`🔥 [IMAGING WORKFLOW DEBUG] All 9 chart processors initialized successfully: vitals, medical problems, surgical history, family history, social history, allergies, medications, imaging, labs`);
   }
 
   /**
