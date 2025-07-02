@@ -52,6 +52,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { useNavigationContext } from "@/hooks/use-navigation-context";
+import { useDenseView } from "@/hooks/use-dense-view";
 
 // Social history categories based on the unified parser
 const SOCIAL_HISTORY_CATEGORIES = [
@@ -116,10 +117,12 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
   const [editingVisitHistory, setEditingVisitHistory] = useState<VisitHistoryEntry[]>([]);
   const [newVisitNote, setNewVisitNote] = useState({ date: "", notes: "" });
   const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
+  const [expandedDenseEntries, setExpandedDenseEntries] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { navigateWithContext } = useNavigationContext();
+  const { isDenseView } = useDenseView();
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
@@ -495,6 +498,173 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
     });
   };
 
+  // Toggle function for expanding/collapsing dense entries  
+  const toggleDenseEntryExpansion = (entryId: number) => {
+    setExpandedDenseEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Dense list rendering for compact view
+  const renderSocialHistoryDenseList = (entry: SocialHistoryEntry) => {
+    const isExpanded = expandedDenseEntries.has(entry.id);
+    const mostRecentVisit = entry.visitHistory?.[0];
+    
+    return (
+      <Collapsible
+        key={entry.id}
+        open={isExpanded}
+        onOpenChange={() => toggleDenseEntryExpansion(entry.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <div className="dense-list-item group">
+            <div className="dense-list-content">
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              )}
+              
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-lg">{getCategoryIcon(entry.category)}</span>
+                <span className="dense-list-primary">{formatCategory(entry.category)}</span>
+                <span className="dense-list-secondary">{entry.currentStatus}</span>
+              </div>
+              
+              {mostRecentVisit && (
+                <div className="flex items-center gap-2">
+                  {getSourceBadge(
+                    mostRecentVisit.source,
+                    mostRecentVisit.confidence,
+                    mostRecentVisit.attachmentId,
+                    mostRecentVisit.encounterId
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="dense-list-actions" onClick={(e) => e.stopPropagation()}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(entry);
+                  setEditingVisitHistory(entry.visitHistory || []);
+                  setIsAddDialogOpen(true);
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm("Are you sure you want to delete this social history entry?")) {
+                    deleteMutation.mutate(entry.id);
+                  }
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </CollapsibleTrigger>
+        
+        {/* Expanded content for dense view */}
+        {isExpanded && (
+          <CollapsibleContent>
+            <div className="dense-list-expanded">
+              <div className="space-y-3">
+                {/* Entry Details */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {entry.historyNotes && (
+                    <div>
+                      <Label className="text-xs font-medium text-gray-600">History Notes</Label>
+                      <p className="text-sm">{entry.historyNotes}</p>
+                    </div>
+                  )}
+                  {entry.extractionNotes && (
+                    <div>
+                      <Label className="text-xs font-medium text-gray-600">Source Notes</Label>
+                      <p className="text-sm">{entry.extractionNotes}</p>
+                    </div>
+                  )}
+                  {entry.consolidationReasoning && (
+                    <div className="col-span-2">
+                      <Label className="text-xs font-medium text-gray-600">Consolidation Notes</Label>
+                      <p className="text-sm italic text-gray-700">{entry.consolidationReasoning}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Visit History */}
+                {entry.visitHistory && entry.visitHistory.length > 0 && (
+                  <div>
+                    <Label className="text-xs font-medium text-gray-600 mb-2 block">Visit History</Label>
+                    <div className="space-y-2">
+                      {entry.visitHistory
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map((visit, index) => (
+                          <div 
+                            key={visit.id || index} 
+                            className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg text-sm"
+                          >
+                            <div className="flex flex-col items-center text-gray-400">
+                              <Calendar className="h-4 w-4" />
+                              <div className="w-px h-full bg-gray-300 mt-1"></div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-900">
+                                  {formatDate(visit.date)}
+                                </span>
+                                {visit.source && getSourceBadge(
+                                  visit.source, 
+                                  visit.confidence, 
+                                  visit.attachmentId, 
+                                  visit.encounterId
+                                )}
+                              </div>
+                              <p className="text-gray-700 leading-relaxed">{visit.notes}</p>
+                              {visit.changesMade && visit.changesMade.length > 0 && (
+                                <div className="mt-2">
+                                  <Label className="text-xs text-gray-500">Changes:</Label>
+                                  <ul className="list-disc list-inside text-xs text-gray-600 mt-1">
+                                    {visit.changesMade.map((change, idx) => (
+                                      <li key={idx}>{change}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {visit.providerName && (
+                                <div className="mt-1 text-xs text-gray-500">
+                                  Provider: {visit.providerName}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    );
+  };
+
   // Visit History Management Functions (like surgical history)
   const addVisitNote = () => {
     if (!newVisitNote.date || !newVisitNote.notes) {
@@ -806,8 +976,11 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
               <p className="text-sm">Add social history using the button above</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {socialHistory.map((entry: SocialHistoryEntry) => (
+            <div className={isDenseView ? "dense-list-container" : "space-y-3"}>
+              {isDenseView ? (
+                socialHistory.map(renderSocialHistoryDenseList)
+              ) : (
+                socialHistory.map((entry: SocialHistoryEntry) => (
                 <Card 
                   key={entry.id} 
                   className="relative social-card border-l-gray-200 dark:border-l-gray-700 hover:shadow-md transition-all duration-200 group"
@@ -968,7 +1141,8 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                     </CollapsibleContent>
                   </Collapsible>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
           )}
         </CardContent>
