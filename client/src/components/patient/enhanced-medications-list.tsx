@@ -382,26 +382,68 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
       'diabetes': 'DM2',
       'type 2 diabetes': 'DM2',
       'type 2 diabetes mellitus': 'DM2',
+      'type 2 diabetes mellitus, poorly controlled': 'DM2',
       'diabetes mellitus type 2': 'DM2',
+      'type 1 diabetes': 'DM1',
       'hyperlipidemia': 'HLD',
       'dyslipidemia': 'HLD',
       'coronary artery disease': 'CAD',
+      'coronary artery disease with prior myocardial infarction': 'CAD',
       'congestive heart failure': 'CHF',
+      'congestive heart failure with reduced ejection fraction': 'CHF',
       'heart failure': 'CHF',
       'atrial fibrillation': 'AFib',
+      'atrial fibrillation on chronic anticoagulation': 'AFib',
       'chronic kidney disease': 'CKD',
+      'chronic kidney disease stage 3': 'CKD3',
       'chronic obstructive pulmonary disease': 'COPD',
       'gastroesophageal reflux disease': 'GERD',
       'deep vein thrombosis': 'DVT',
+      'history of deep vein thrombosis': 'h/o DVT',
+      'history of deep vein thrombosis (2006)': 'h/o DVT',
       'pulmonary embolism': 'PE',
       'myocardial infarction': 'MI',
       'stroke': 'CVA',
       'transient ischemic attack': 'TIA',
-      'peripheral artery disease': 'PAD'
+      'peripheral artery disease': 'PAD',
+      'secondary prevention': 'prev',
+      'anticoagulation': 'AC',
+      'history of': 'h/o'
     };
     
     const lowerCondition = condition.toLowerCase();
-    return abbreviations[lowerCondition] || condition;
+    
+    // Check for exact matches first
+    if (abbreviations[lowerCondition]) {
+      return abbreviations[lowerCondition];
+    }
+    
+    // Check for partial matches with "history of"
+    if (lowerCondition.includes('history of')) {
+      const baseCondition = lowerCondition.replace(/history of\s*/, '').replace(/\s*\(\d{4}\)/, '').trim();
+      if (abbreviations[baseCondition]) {
+        return `h/o ${abbreviations[baseCondition]}`;
+      }
+      return 'h/o';
+    }
+    
+    // Check for stage indicators
+    if (lowerCondition.includes('stage 3') && (lowerCondition.includes('kidney') || lowerCondition.includes('ckd'))) {
+      return 'CKD3';
+    }
+    
+    // Check for poorly controlled diabetes
+    if (lowerCondition.includes('diabetes') && lowerCondition.includes('poorly controlled')) {
+      return 'DM2';
+    }
+    
+    // Check for anticoagulation mentions
+    if (lowerCondition.includes('anticoagulation')) {
+      return 'AC';
+    }
+    
+    // Fallback to original condition if no abbreviation found
+    return condition;
   };
 
   // Dense list rendering for compact view with side category
@@ -412,99 +454,116 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                        medication.status === 'discontinued' ? 'border-gray-300' : 'border-gray-300';
     
     return (
-      <Collapsible
-        key={medication.id}
-        open={expandedMedications.has(medication.id)}
-        onOpenChange={() => toggleMedicationExpanded(medication.id)}
-      >
-        <CollapsibleTrigger asChild>
-          <div className={`dense-list-item group ${statusColor} dense-view-transition flex`}>
-            {/* Side category label */}
-            <div className="w-12 flex-shrink-0 flex items-center justify-center">
-              {isFirstInGroup && (
-                <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
-                  {categoryAbbr}
-                </span>
-              )}
-            </div>
-            
-            <div className="dense-list-content flex-1">
-              {expandedMedications.has(medication.id) ? (
-                <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
-              ) : (
-                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
-              )}
-              
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Pill className="h-3 w-3 text-blue-500 flex-shrink-0" />
-                <span className="dense-list-primary">{medication.medicationName}</span>
-                <span className="dense-list-secondary">{medication.dosage}</span>
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <Collapsible
+            key={medication.id}
+            open={expandedMedications.has(medication.id)}
+            onOpenChange={() => toggleMedicationExpanded(medication.id)}
+          >
+            <CollapsibleTrigger asChild>
+              <div className={`dense-list-item group ${statusColor} dense-view-transition flex`}>
+                {/* Side category label */}
+                <div className="w-12 flex-shrink-0 flex items-center justify-center">
+                  {isFirstInGroup && (
+                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                      {categoryAbbr}
+                    </span>
+                  )}
+                </div>
                 
-                {medication.clinicalIndication && (
-                  <Badge variant="outline" className="dense-list-badge text-blue-600 bg-blue-50">
-                    {medication.clinicalIndication}
-                  </Badge>
-                )}
-                
-                <Badge variant="outline" className={`dense-list-badge ${
-                  medication.status === 'active' ? 'text-green-700 bg-green-50' :
-                  medication.status === 'pending' ? 'text-blue-700 bg-blue-50' :
-                  medication.status === 'held' ? 'text-amber-700 bg-amber-50' :
-                  'text-gray-700 bg-gray-50'
-                }`}>
-                  {medication.status}
-                </Badge>
-              </div>
+                <div className="dense-list-content flex-1">
+                  {expandedMedications.has(medication.id) ? (
+                    <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                  )}
+                  
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Pill className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                    <span className="dense-list-primary">{medication.medicationName}</span>
+                    <span className="dense-list-secondary">{medication.dosage}</span>
+                    
+                    {medication.clinicalIndication && (
+                      <Badge variant="outline" className="dense-list-badge text-blue-600 bg-blue-50">
+                        {medication.clinicalIndication}
+                      </Badge>
+                    )}
+                    
+                    <Badge variant="outline" className={`dense-list-badge ${
+                      medication.status === 'active' ? 'text-green-700 bg-green-50' :
+                      medication.status === 'pending' ? 'text-blue-700 bg-blue-50' :
+                      medication.status === 'held' ? 'text-amber-700 bg-amber-50' :
+                      'text-gray-700 bg-gray-50'
+                    }`}>
+                      {medication.status}
+                    </Badge>
+                  </div>
 
-              {!readOnly && (
-                <div className="dense-list-actions">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Add edit functionality here
-                    }}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
+                  {!readOnly && (
+                    <div className="dense-list-actions">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Add edit functionality here
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </CollapsibleTrigger>
-        
-        <CollapsibleContent>
-          <div className="dense-list-expanded ml-12">
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <strong>Frequency:</strong> {medication.frequency}
               </div>
-              {medication.strength && (
-                <div>
-                  <strong>Strength:</strong> {medication.strength}
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <div className="dense-list-expanded ml-12">
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <strong>Frequency:</strong> {medication.frequency}
+                  </div>
+                  {medication.strength && (
+                    <div>
+                      <strong>Strength:</strong> {medication.strength}
+                    </div>
+                  )}
+                  {medication.prescriber && (
+                    <div>
+                      <strong>Prescriber:</strong> {medication.prescriber}
+                    </div>
+                  )}
+                  {medication.startDate && (
+                    <div>
+                      <strong>Start Date:</strong> {new Date(medication.startDate).toLocaleDateString()}
+                    </div>
+                  )}
+                  {medication.sig && (
+                    <div className="col-span-2">
+                      <strong>Instructions:</strong> {medication.sig}
+                    </div>
+                  )}
                 </div>
-              )}
-              {medication.prescriber && (
-                <div>
-                  <strong>Prescriber:</strong> {medication.prescriber}
-                </div>
-              )}
-              {medication.startDate && (
-                <div>
-                  <strong>Start Date:</strong> {new Date(medication.startDate).toLocaleDateString()}
-                </div>
-              )}
-              {medication.sig && (
-                <div className="col-span-2">
-                  <strong>Instructions:</strong> {medication.sig}
-                </div>
-              )}
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* Move to Orders button outside accordion */}
+        {!readOnly && !!encounterId && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0 bg-blue-50 border-blue-200 hover:bg-blue-100 flex-shrink-0"
+            onClick={() => moveToOrders.mutate({ medicationId: medication.id, encounterId })}
+            title="Move to Orders"
+          >
+            <ArrowRight className="h-3 w-3 text-blue-600" />
+          </Button>
+        )}
+      </div>
     );
   };
 
@@ -655,7 +714,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                         {medications.map((medication: Medication, index: number) => 
                           isDenseView ? 
                             renderMedicationDenseList(medication, categoryAbbr, index === 0) :
-                            <div key={medication.id} className="flex">
+                            <div key={medication.id} className="flex items-start gap-2">
                               {/* Side category label for regular view */}
                               {groupingMode === 'medical_problem' && (
                                 <div className="w-12 flex-shrink-0 flex items-center justify-center">
@@ -679,12 +738,23 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                                   onEdit={readOnly ? undefined : (medicationData) => 
                                     updateMedication.mutate(medicationData)
                                   }
-                                  onMoveToOrders={readOnly || !encounterId ? undefined : (medicationId: number) => 
-                                    moveToOrders.mutate({ medicationId, encounterId })
-                                  }
-                                  canMoveToOrders={!readOnly && !!encounterId}
+                                  onMoveToOrders={undefined}
+                                  canMoveToOrders={false}
                                 />
                               </div>
+
+                              {/* Move to Orders button outside accordion for regular view */}
+                              {!readOnly && !!encounterId && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 bg-blue-50 border-blue-200 hover:bg-blue-100 flex-shrink-0"
+                                  onClick={() => moveToOrders.mutate({ medicationId: medication.id, encounterId })}
+                                  title="Move to Orders"
+                                >
+                                  <ArrowRight className="h-3 w-3 text-blue-600" />
+                                </Button>
+                              )}
                             </div>
                         )}
                       </div>
