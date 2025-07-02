@@ -569,11 +569,15 @@ Return a JSON object with this exact structure:
           );
         } else if (change.action === "ADD_VISIT" && change.imaging_id) {
           // Add visit history to existing imaging
+          console.log(`🔍 [UnifiedImagingParser] Looking for existing imaging result with ID: ${change.imaging_id}`);
+          
           const existing = await db
             .select()
             .from(imagingResults)
             .where(eq(imagingResults.id, change.imaging_id))
             .limit(1);
+
+          console.log(`🔍 [UnifiedImagingParser] Found ${existing.length} existing records for ID: ${change.imaging_id}`);
 
           if (existing.length) {
             const currentHistory = existing[0].visitHistory || [];
@@ -598,6 +602,43 @@ Return a JSON object with this exact structure:
             console.log(
               `✅ [UnifiedImagingParser] Added visit history to imaging ID: ${change.imaging_id}`,
             );
+          } else {
+            console.error(`❌ [UnifiedImagingParser] CRITICAL: GPT referenced non-existent imaging_id: ${change.imaging_id}`);
+            console.error(`❌ [UnifiedImagingParser] This means GPT consolidation logic failed - should create NEW_IMAGING instead`);
+            console.error(`❌ [UnifiedImagingParser] Converting ADD_VISIT to NEW_IMAGING to recover from GPT error`);
+            
+            // Convert to NEW_IMAGING since the referenced ID doesn't exist
+            const visitHistoryEntry: UnifiedImagingVisitHistoryEntry = {
+              date: new Date().toISOString().split("T")[0],
+              notes: change.visit_notes || `Initial ${change.modality} ${change.body_part} study`,
+              source: sourceType,
+              encounterId: encounterId || undefined,
+              attachmentId: attachmentId || undefined,
+              confidence: change.confidence,
+            };
+
+            await db.insert(imagingResults).values({
+              patientId,
+              imagingOrderId: null,
+              studyDate: new Date(change.study_date!),
+              modality: change.modality!,
+              bodyPart: change.body_part!,
+              laterality: change.laterality || null,
+              clinicalSummary: change.clinical_summary!,
+              findings: change.findings || null,
+              impression: change.impression || null,
+              radiologistName: change.radiologist_name || null,
+              facilityName: change.facility_name || null,
+              resultStatus: change.result_status || "final",
+              sourceType: sourceType === "encounter" ? "encounter_note" : "pdf_extract",
+              sourceConfidence: change.confidence.toString(),
+              extractedFromAttachmentId: attachmentId || null,
+              enteredBy: 1,
+              visitHistory: [visitHistoryEntry],
+            });
+
+            totalAffected++;
+            console.log(`✅ [UnifiedImagingParser] Created NEW imaging result (recovered from GPT error): ${change.modality} ${change.body_part}`);
           }
         }
       } catch (error) {
