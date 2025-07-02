@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronRight
 } from "lucide-react";
+import { useNavigationContext } from "@/hooks/use-navigation-context";
 import { apiRequest } from "@/lib/queryClient";
 
 interface ImagingResult {
@@ -57,6 +58,7 @@ interface ImagingSectionProps {
 export default function ImagingSection({ patientId, encounterId, mode, isReadOnly }: ImagingSectionProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const queryClient = useQueryClient();
+  const { navigateWithContext } = useNavigationContext();
 
   const formatDate = (dateString: string) => {
     try {
@@ -106,9 +108,21 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
   };
 
   const getSourceBadge = (result: ImagingResult) => {
-    // Check for PDF attachment extraction (backend stores as "pdf_extract")
-    if (result.sourceType === "pdf_extract" && result.sourceConfidence) {
+    // Document Extract badge with confidence score, tooltip, and click navigation
+    if (result.sourceType === "attachment" && result.sourceConfidence && result.extractedFromAttachmentId) {
       const confidencePercent = Math.round(parseFloat(result.sourceConfidence) * 100);
+      const handleDocumentClick = () => {
+        console.log("🔗 [Imaging] Document badge clicked!");
+        console.log("🔗 [Imaging] attachmentId:", result.extractedFromAttachmentId);
+        console.log("🔗 [Imaging] patientId:", patientId);
+        console.log("🔗 [Imaging] mode:", mode);
+        
+        if (result.extractedFromAttachmentId) {
+          const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId}`;
+          navigateWithContext(targetUrl, "imaging", mode);
+        }
+      };
+      
       return (
         <TooltipProvider>
           <Tooltip>
@@ -116,12 +130,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
               <Badge 
                 variant="outline" 
                 className="text-xs bg-blue-50 border-blue-200 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors"
-                onClick={() => {
-                  if (result.extractedFromAttachmentId) {
-                    // Navigate to attachment
-                    console.log("🔗 [Imaging] Navigating to attachment:", result.extractedFromAttachmentId);
-                  }
-                }}
+                onClick={handleDocumentClick}
                 title={`Click to view source document (Attachment #${result.extractedFromAttachmentId})`}
               >
                 Doc Extract {confidencePercent}%
@@ -135,11 +144,21 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
       );
     }
     
-    // Check for encounter note extraction
-    if (result.sourceType === "encounter_note") {
+    // Clickable encounter badge that navigates to encounter detail
+    if (result.sourceType === "encounter" && result.encounterId) {
+      const handleEncounterClick = () => {
+        if (result.encounterId) {
+          navigateWithContext(`/patients/${patientId}/encounters/${result.encounterId}`, "imaging", mode);
+        }
+      };
       return (
-        <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700">
-          Note Entry
+        <Badge 
+          variant="default" 
+          className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors"
+          onClick={handleEncounterClick}
+          title={`Click to view encounter details (Encounter #${result.encounterId})`}
+        >
+          Encounter
         </Badge>
       );
     }
