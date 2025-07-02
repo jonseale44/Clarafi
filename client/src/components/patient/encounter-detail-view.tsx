@@ -1304,7 +1304,7 @@ export function EncounterDetailView({
     if (!patient || !encounter || !soapNote || isUpdatingChart) return;
 
     console.log("🔄 [ChartUpdate] === SELECTIVE CHART UPDATE START ===");
-    console.log("🔄 [ChartUpdate] Processing: Medical Problems + Surgical History + Medications + Allergies");
+    console.log("🔄 [ChartUpdate] Processing: Medical Problems + Surgical History + Medications + Allergies + Social History");
     
     setIsUpdatingChart(true);
     setChartUpdateProgress(0);
@@ -1320,7 +1320,7 @@ export function EncounterDetailView({
       }, 50);
 
       // Process only chart sections in parallel (exclude orders & CPT)
-      const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, allergyResponse] = await Promise.all([
+      const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, allergyResponse, socialHistoryResponse] = await Promise.all([
         // Medical Problems Processing
         fetch("/api/medical-problems/process-unified", {
           method: "POST",
@@ -1378,6 +1378,22 @@ export function EncounterDetailView({
             triggerType: "manual_chart_update",
           }),
         }),
+
+        // Social History Processing
+        fetch(`/api/social-history/process-unified`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            patientId: patient.id,
+            encounterId: encounter.id,
+            soapNote: soapNote,
+            attachmentContent: null,
+            attachmentId: null,
+            providerId: currentUser?.id || 1,
+            triggerType: "manual_chart_update",
+          }),
+        }),
       ]);
 
       clearInterval(progressInterval);
@@ -1388,6 +1404,7 @@ export function EncounterDetailView({
       console.log(`🔄 [ChartUpdate] Surgical History: ${surgicalHistoryResponse.status}`);  
       console.log(`🔄 [ChartUpdate] Medications: ${medicationsResponse.status}`);
       console.log(`🔄 [ChartUpdate] Allergies: ${allergyResponse.status}`);
+      console.log(`🔄 [ChartUpdate] Social History: ${socialHistoryResponse.status}`);
 
       // Handle responses and refresh UI
       let sectionsUpdated = 0;
@@ -1428,6 +1445,16 @@ export function EncounterDetailView({
         
         await queryClient.invalidateQueries({
           queryKey: ['/api/allergies', patient.id],
+        });
+        sectionsUpdated++;
+      }
+
+      if (socialHistoryResponse.ok) {
+        const result = await socialHistoryResponse.json();
+        console.log(`✅ [ChartUpdate-SocialHistory] ${result.socialHistoryAffected || 0} social history items affected`);
+        
+        await queryClient.invalidateQueries({
+          queryKey: [`/api/social-history`, patient.id],
         });
         sectionsUpdated++;
       }
@@ -2932,7 +2959,7 @@ Please provide medical suggestions based on this complete conversation context.`
 
         // Process ALL services in parallel for maximum speed optimization
         console.log(
-          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, CPT codes, allergies, and family history...",
+          "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, CPT codes, allergies, family history, and social history...",
         );
         console.log(
           "🏥 [StopRecording] CPT extraction URL:",
@@ -2947,7 +2974,7 @@ Please provide medical suggestions based on this complete conversation context.`
         startOrdersAnimation();
         startBillingAnimation();
 
-        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse, allergyResponse, familyHistoryResponse] =
+        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse, allergyResponse, familyHistoryResponse, socialHistoryResponse] =
           await Promise.all([
             fetch(`/api/medical-problems/process-unified`, {
               method: "POST",
@@ -3156,6 +3183,37 @@ Please provide medical suggestions based on this complete conversation context.`
                 headers: response.headers,
               });
             }),
+            fetch(`/api/social-history/process-unified`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                patientId: patient.id,
+                encounterId: encounterId,
+                soapNote: soapNote,
+                attachmentContent: null,
+                attachmentId: null,
+                triggerType: "recording_complete",
+              }),
+            }).then(async (response) => {
+              console.log("🚬 [StopRecording] Social history API response status:", response.status);
+              console.log("🚬 [StopRecording] Social history API response headers:", Object.fromEntries(response.headers.entries()));
+              
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error("❌ [StopRecording] Social history processing failed:", errorText.substring(0, 500));
+                return response;
+              }
+
+              const socialHistoryData = await response.json();
+              console.log("✅ [StopRecording] Social history processing successful:", socialHistoryData);
+
+              return new Response(JSON.stringify(socialHistoryData), {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+              });
+            }),
           ]);
 
         // Handle parallel responses and invalidate caches
@@ -3252,6 +3310,14 @@ Please provide medical suggestions based on this complete conversation context.`
           "Family history",
           "familyHistoryAffected",
           () => queryClient.invalidateQueries({ queryKey: [`/api/family-history/${patient.id}`] })
+        );
+
+        // Handle social history response
+        await handleServiceResponse(
+          socialHistoryResponse,
+          "Social history",
+          "socialHistoryAffected",
+          () => queryClient.invalidateQueries({ queryKey: [`/api/social-history`, patient.id] })
         );
 
         toast({

@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Social History Parallel Processing Integration COMPLETED (July 2, 2025)
+- **COMPLETE PARALLEL PROCESSING ENHANCEMENT**: Successfully added social history processing to both "stop recording" and "Update Chart from Note" functions for comprehensive chart coverage
+- **STOP RECORDING UPGRADE**: Enhanced from 7 to 8 chart sections by adding `/api/social-history/process-unified` endpoint to parallel processing pipeline
+- **UPDATE CHART BUTTON UPGRADE**: Enhanced from 4 to 5 chart sections by adding social history processing to maintain consistency across all chart update workflows
+- **UNIFIED PARSER ARCHITECTURE**: Social history processing uses existing unified parser with proper GPT-4.1 intelligence, source attribution, and visit history tracking
+- **COMPREHENSIVE ERROR HANDLING**: Added detailed logging, response handling, and cache invalidation for social history alongside other chart sections
+- **PARALLEL PROCESSING OPTIMIZATION**: All functions maintain true parallel processing with Promise.all arrays for maximum efficiency
+- **PRODUCTION READY**: Social history now processed automatically during recording completion and manual chart updates from SOAP note content
+
 ### Medical Record Section Title Consistency Enhancement COMPLETED (July 1, 2025)
 - **DUPLICATE TITLE REMOVAL**: Successfully removed duplicate CardTitle components from Allergies, Family History, and Social History sections to achieve visual consistency
 - **UNIFIED DESIGN PATTERN**: All medical record sections now display only one title per section, matching the Medical Problems section design
