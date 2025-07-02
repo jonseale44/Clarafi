@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { IntegratedLabView } from "./integrated-lab-view";
+import { useDenseView } from "@/hooks/use-dense-view";
 
 interface EncounterLabResultsProps {
   patientId: number;
@@ -30,6 +31,7 @@ interface EncounterLabResultsProps {
 export function EncounterLabResults({ patientId, encounterDate }: EncounterLabResultsProps) {
   const [activeTab, setActiveTab] = useState("results");
   const [isFullViewOpen, setIsFullViewOpen] = useState(false);
+  const { isDenseView } = useDenseView();
 
   // Fetch lab orders and results
   const { data: labOrders = [], isLoading: ordersLoading } = useQuery({
@@ -171,6 +173,54 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
     return testName.substring(0, 8).toUpperCase();
   }
 
+  // Dense view rendering for compact lab results
+  const renderLabResultDenseList = (result: any) => {
+    const borderColor = result.criticalFlag ? 'border-l-red-600' :
+                       result.abnormalFlag && result.abnormalFlag !== 'N' ? 'border-l-orange-500' :
+                       'border-l-green-500';
+    
+    return (
+      <div key={result.id} className={`dense-list-item group ${borderColor}`}>
+        <div className="dense-list-content">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <FlaskConical className="h-3 w-3 text-gray-400 flex-shrink-0" />
+            
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="dense-list-primary">{getTestAbbreviation(result.testName)}</span>
+              
+              <div className="flex items-center gap-1">
+                <span className={`text-sm font-mono ${getFlagColor(result.abnormalFlag)}`}>
+                  {result.resultValue}
+                </span>
+                {result.resultUnits && (
+                  <span className="text-xs text-gray-500">{result.resultUnits}</span>
+                )}
+              </div>
+              
+              {result.criticalFlag && (
+                <Badge className="dense-list-badge bg-red-600 text-white">
+                  CRIT
+                </Badge>
+              )}
+              
+              {!result.criticalFlag && result.abnormalFlag && result.abnormalFlag !== 'N' && (
+                <Badge className={`dense-list-badge ${
+                  result.abnormalFlag.includes('H') ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
+                }`}>
+                  {result.abnormalFlag}
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          <div className="dense-list-secondary">
+            {result.resultAvailableAt && format(new Date(result.resultAvailableAt), 'MMM dd')}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -224,7 +274,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className={isDenseView ? "emr-card-content" : "emr-card-content"}>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 h-10">
             <TabsTrigger value="results" className="text-xs px-2">
@@ -268,7 +318,13 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                   </Button>
                 </div>
               </div>
+            ) : isDenseView ? (
+              // Dense view: Show all individual results in compact list format
+              <div className={`${isDenseView ? "dense-list-container" : "space-y-3"} max-h-[400px] overflow-y-auto`}>
+                {recentResults.map(renderLabResultDenseList)}
+              </div>
             ) : (
+              // Regular view: Group results by panel/order
               <div className="max-h-[400px] overflow-y-auto">
                 <div className="space-y-4">
                   {groupedResults.map((group: any) => (
