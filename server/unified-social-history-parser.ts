@@ -458,7 +458,7 @@ Process the content and return ONLY the JSON response with social history findin
                 historyNotes: change.historyNotes || current.historyNotes,
                 lastUpdatedEncounter: encounterId || current.lastUpdatedEncounter,
                 sourceType: attachmentId ? "attachment_extracted" : "soap_derived",
-                sourceConfidence: (change.confidence / 100).toFixed(2),
+                sourceConfidence: Math.min(change.confidence * 10, 9.99).toString(),
                 consolidationReasoning: change.consolidation_reasoning || current.consolidationReasoning,
                 visitHistory: updatedVisitHistory,
                 updatedAt: new Date(),
