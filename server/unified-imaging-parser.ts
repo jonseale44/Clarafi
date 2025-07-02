@@ -516,6 +516,13 @@ Return a JSON object with this exact structure:
   ): Promise<UnifiedImagingProcessingResult> {
     let totalAffected = 0;
 
+    console.log(`💾 [UnifiedImagingParser] === DATABASE APPLICATION START ===`);
+    console.log(`💾 [UnifiedImagingParser] Patient ID: ${patientId}`);
+    console.log(`💾 [UnifiedImagingParser] Source Type: ${sourceType}`);
+    console.log(`💾 [UnifiedImagingParser] Attachment ID: ${attachmentId}`);
+    console.log(`💾 [UnifiedImagingParser] Total changes to apply: ${result.changes.length}`);
+    console.log(`💾 [UnifiedImagingParser] Changes:`, JSON.stringify(result.changes, null, 2));
+
     for (const change of result.changes) {
       try {
         console.log(
