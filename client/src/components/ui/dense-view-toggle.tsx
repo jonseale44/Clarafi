@@ -43,7 +43,7 @@ export function DenseViewToggle({
         checked={isDenseView}
         onCheckedChange={toggleDenseView}
         disabled={isToggling}
-        className="data-[state=checked]:bg-navy-blue-600"
+        className="data-[state=checked]:bg-primary"
       />
       
       <TooltipProvider>

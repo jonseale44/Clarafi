@@ -7,7 +7,12 @@
 
 import OpenAI from "openai";
 import { db } from "./db";
-import { medications, encounters, patients, medicationFormulary } from "@shared/schema";
+import {
+  medications,
+  encounters,
+  patients,
+  medicationFormulary,
+} from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { storage } from "./storage";
 import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
@@ -15,7 +20,13 @@ import { MedicationStandardizationService } from "./medication-standardization-s
 
 export interface MedicationHistoryEntry {
   date: string; // Authoritative medical event date (encounter date)
-  action: "started" | "continued" | "modified" | "discontinued" | "held" | "resumed";
+  action:
+    | "started"
+    | "continued"
+    | "modified"
+    | "discontinued"
+    | "held"
+    | "resumed";
   notes: string;
   dosage?: string;
   frequency?: string;
@@ -34,7 +45,12 @@ export interface MedicationHistoryEntry {
 export interface MedicationChangeLogEntry {
   encounter_id: number;
   timestamp: string;
-  change_type: "medication_started" | "medication_modified" | "medication_discontinued" | "dosage_changed" | "frequency_changed";
+  change_type:
+    | "medication_started"
+    | "medication_modified"
+    | "medication_discontinued"
+    | "dosage_changed"
+    | "frequency_changed";
   old_dosage?: string;
   new_dosage?: string;
   old_frequency?: string;
@@ -44,7 +60,13 @@ export interface MedicationChangeLogEntry {
 
 export interface MedicationChange {
   medication_id?: number; // null if new medication
-  action: "ADD_HISTORY" | "UPDATE_DOSAGE" | "NEW_MEDICATION" | "DISCONTINUE" | "MODIFY_FREQUENCY" | "CHANGE_INDICATION";
+  action:
+    | "ADD_HISTORY"
+    | "UPDATE_DOSAGE"
+    | "NEW_MEDICATION"
+    | "DISCONTINUE"
+    | "MODIFY_FREQUENCY"
+    | "CHANGE_INDICATION";
   medication_name?: string;
   history_notes?: string;
   dosage_change?: { from: string; to: string };
@@ -75,53 +97,60 @@ export class MedicationDeltaService {
   async processOrderDelta(
     patientId: number,
     encounterId: number,
-    providerId: number
+    providerId: number,
   ): Promise<MedicationDeltaResult> {
     const startTime = Date.now();
 
     try {
       // Get medication orders for this encounter
       const medicationOrders = await this.getMedicationOrders(encounterId);
-      
+
       // Get existing medications for context
       const existingMedications = await this.getExistingMedications(patientId);
-      
+
       // Process each medication order
       const changes: MedicationChange[] = [];
       for (const order of medicationOrders) {
-        
         const change = await this.processIndividualMedicationOrder(
           order,
           existingMedications,
           patientId,
           encounterId,
-          providerId
+          providerId,
         );
-        
+
         if (change) {
           changes.push(change);
         }
       }
 
-      changes.forEach((change, index) => {
-      });
+      changes.forEach((change, index) => {});
 
       // Apply changes to database
-      await this.applyChangesToDatabase(changes, patientId, encounterId, providerId);
+      await this.applyChangesToDatabase(
+        changes,
+        patientId,
+        encounterId,
+        providerId,
+      );
 
       const processingTime = Date.now() - startTime;
       console.log(`✅ [MedicationDelta] === ORDER PROCESSING COMPLETE ===`);
-      console.log(`✅ [MedicationDelta] Total time: ${processingTime}ms, Medications affected: ${changes.length}`);
+      console.log(
+        `✅ [MedicationDelta] Total time: ${processingTime}ms, Medications affected: ${changes.length}`,
+      );
 
       return {
         changes,
         processing_time_ms: processingTime,
-        total_medications_affected: changes.length
+        total_medications_affected: changes.length,
       };
-
     } catch (error) {
       console.error(`❌ [MedicationDelta] Error in processOrderDelta:`, error);
-      console.error(`❌ [MedicationDelta] Stack trace:`, (error as Error).stack);
+      console.error(
+        `❌ [MedicationDelta] Stack trace:`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -131,33 +160,44 @@ export class MedicationDeltaService {
    * Called when orders are directly updated (not via SOAP processing)
    */
   async syncMedicationWithOrder(orderId: number): Promise<void> {
-    console.log(`🔄 [MedicationSync] === SYNCING MEDICATION WITH ORDER ${orderId} ===`);
-    
+    console.log(
+      `🔄 [MedicationSync] === SYNCING MEDICATION WITH ORDER ${orderId} ===`,
+    );
+
     try {
       // Get the updated order
       const order = await storage.getOrder(orderId);
-      if (!order || order.orderType !== 'medication') {
-        console.log(`🔄 [MedicationSync] Order ${orderId} not found or not a medication order - skipping sync`);
+      if (!order || order.orderType !== "medication") {
+        console.log(
+          `🔄 [MedicationSync] Order ${orderId} not found or not a medication order - skipping sync`,
+        );
         return;
       }
 
       // Find medication records linked to this order
       const linkedMedications = await storage.getMedicationsByOrderId(orderId);
-      
+
       if (linkedMedications.length === 0) {
-        console.log(`🔄 [MedicationSync] No medications linked to order ${orderId} - skipping sync`);
+        console.log(
+          `🔄 [MedicationSync] No medications linked to order ${orderId} - skipping sync`,
+        );
         return;
       }
 
       // Update each linked medication with current order data
       for (const medication of linkedMedications) {
-        console.log(`🔄 [MedicationSync] Updating medication ${medication.id} with order ${orderId} data`);
-        
+        console.log(
+          `🔄 [MedicationSync] Updating medication ${medication.id} with order ${orderId} data`,
+        );
+
         // Map order status to medication status
-        const orderStatus = order.orderStatus || 'pending';
-        const medicationStatus = this.mapOrderStatusToMedicationStatus(orderStatus);
-        console.log(`🔄 [MedicationSync] Order status: ${orderStatus} -> Medication status: ${medicationStatus}`);
-        
+        const orderStatus = order.orderStatus || "pending";
+        const medicationStatus =
+          this.mapOrderStatusToMedicationStatus(orderStatus);
+        console.log(
+          `🔄 [MedicationSync] Order status: ${orderStatus} -> Medication status: ${medicationStatus}`,
+        );
+
         const updatedMedicationData = {
           medicationName: order.medicationName || medication.medicationName,
           dosage: order.dosage || medication.dosage,
@@ -168,20 +208,27 @@ export class MedicationDeltaService {
           daysSupply: order.daysSupply || medication.daysSupply,
           dosageForm: order.form || medication.dosageForm,
           route: order.routeOfAdministration || medication.route,
-          clinicalIndication: order.clinicalIndication || medication.clinicalIndication,
+          clinicalIndication:
+            order.clinicalIndication || medication.clinicalIndication,
           status: medicationStatus,
           updatedAt: new Date(),
-          lastUpdatedEncounterId: order.encounterId
+          lastUpdatedEncounterId: order.encounterId,
         };
 
         await storage.updateMedication(medication.id, updatedMedicationData);
-        console.log(`✅ [MedicationSync] Updated medication ${medication.id} with current order data`);
+        console.log(
+          `✅ [MedicationSync] Updated medication ${medication.id} with current order data`,
+        );
       }
 
-      console.log(`✅ [MedicationSync] Completed sync for order ${orderId} - updated ${linkedMedications.length} medications`);
-      
+      console.log(
+        `✅ [MedicationSync] Completed sync for order ${orderId} - updated ${linkedMedications.length} medications`,
+      );
     } catch (error) {
-      console.error(`❌ [MedicationSync] Error syncing medication with order ${orderId}:`, error);
+      console.error(
+        `❌ [MedicationSync] Error syncing medication with order ${orderId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -194,7 +241,7 @@ export class MedicationDeltaService {
     patientId: number,
     encounterId: number,
     soapNote: string,
-    providerId: number
+    providerId: number,
   ): Promise<MedicationDeltaResult> {
     return this.processOrderDelta(patientId, encounterId, providerId);
   }
@@ -207,26 +254,41 @@ export class MedicationDeltaService {
     soapNote: string,
     encounter: any,
     patient: any,
-    providerId: number
+    providerId: number,
   ): Promise<MedicationChange[]> {
     const gptStartTime = Date.now();
     console.log(`💊 [GPT] === MEDICATION GPT ANALYSIS START ===`);
     console.log(`💊 [GPT] Timestamp: ${new Date().toISOString()}`);
     console.log(`💊 [GPT] Provider ID: ${providerId}`);
-    console.log(`💊 [GPT] Patient: ${patient?.firstName} ${patient?.lastName} (Age: ${this.calculateAge(patient?.dateOfBirth)})`);
-    console.log(`💊 [GPT] Existing medications count: ${existingMedications.length}`);
-    
+    console.log(
+      `💊 [GPT] Patient: ${patient?.firstName} ${patient?.lastName} (Age: ${this.calculateAge(patient?.dateOfBirth)})`,
+    );
+    console.log(
+      `💊 [GPT] Existing medications count: ${existingMedications.length}`,
+    );
+
     // Log existing medications for context
     existingMedications.forEach((med, index) => {
-      console.log(`💊 [GPT] Existing Med ${index + 1}: ${med.medicationName} - ${med.dosage || 'no dosage'} - Status: ${med.status} - Last updated: ${med.lastUpdatedEncounterId || 'never'}`);
+      console.log(
+        `💊 [GPT] Existing Med ${index + 1}: ${med.medicationName} - ${med.dosage || "no dosage"} - Status: ${med.status} - Last updated: ${med.lastUpdatedEncounterId || "never"}`,
+      );
     });
 
     const systemPrompt = this.buildMedicationDeltaPrompt();
-    const userPrompt = this.buildUserPrompt(existingMedications, soapNote, encounter, patient);
+    const userPrompt = this.buildUserPrompt(
+      existingMedications,
+      soapNote,
+      encounter,
+      patient,
+    );
 
-    console.log(`💊 [GPT] System prompt length: ${systemPrompt.length} characters`);
+    console.log(
+      `💊 [GPT] System prompt length: ${systemPrompt.length} characters`,
+    );
     console.log(`💊 [GPT] User prompt length: ${userPrompt.length} characters`);
-    console.log(`💊 [GPT] SOAP note segment for analysis: "${soapNote.substring(0, 200)}..."`);
+    console.log(
+      `💊 [GPT] SOAP note segment for analysis: "${soapNote.substring(0, 200)}..."`,
+    );
 
     try {
       console.log(`💊 [GPT] Calling OpenAI GPT-4.1 model...`);
@@ -237,44 +299,67 @@ export class MedicationDeltaService {
         model: "gpt-4.1",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          { role: "user", content: userPrompt },
         ],
         temperature: 0.1,
-        response_format: { type: "json_object" }
+        max_tokens: 30000,
+        response_format: { type: "json_object" },
       });
 
       const gptCallTime = Date.now() - gptStartTime;
       console.log(`💊 [GPT] OpenAI API call completed in ${gptCallTime}ms`);
 
       const response = completion.choices[0].message.content;
-      console.log(`💊 [GPT] Raw response length: ${response?.length || 0} characters`);
-      console.log(`💊 [GPT] Raw GPT response: ${response?.substring(0, 500)}...`);
+      console.log(
+        `💊 [GPT] Raw response length: ${response?.length || 0} characters`,
+      );
+      console.log(
+        `💊 [GPT] Raw GPT response: ${response?.substring(0, 500)}...`,
+      );
 
       const parsedResponse = JSON.parse(response || "{}");
-      
+
       console.log(`💊 [GPT] Response parsed successfully`);
-      console.log(`💊 [GPT] Changes identified: ${parsedResponse.changes?.length || 0}`);
-      
+      console.log(
+        `💊 [GPT] Changes identified: ${parsedResponse.changes?.length || 0}`,
+      );
+
       // Log each identified change in detail
       if (parsedResponse.changes) {
-        parsedResponse.changes.forEach((change: MedicationChange, index: number) => {
-          console.log(`💊 [GPT] Change ${index + 1}:`);
-          console.log(`💊 [GPT]   - Action: ${change.action}`);
-          console.log(`💊 [GPT]   - Medication: ${change.medication_name || 'N/A'}`);
-          console.log(`💊 [GPT]   - Medication ID: ${change.medication_id || 'NEW'}`);
-          console.log(`💊 [GPT]   - Confidence: ${change.confidence}`);
-          console.log(`💊 [GPT]   - Reasoning: ${change.reasoning || 'No reasoning provided'}`);
-          console.log(`💊 [GPT]   - History Notes: ${change.history_notes || 'No notes'}`);
-          if (change.dosage_change) {
-            console.log(`💊 [GPT]   - Dosage Change: ${change.dosage_change.from} → ${change.dosage_change.to}`);
-          }
-          if (change.frequency_change) {
-            console.log(`💊 [GPT]   - Frequency Change: ${change.frequency_change.from} → ${change.frequency_change.to}`);
-          }
-          if (change.indication_change) {
-            console.log(`💊 [GPT]   - Indication Change: ${change.indication_change.from} → ${change.indication_change.to}`);
-          }
-        });
+        parsedResponse.changes.forEach(
+          (change: MedicationChange, index: number) => {
+            console.log(`💊 [GPT] Change ${index + 1}:`);
+            console.log(`💊 [GPT]   - Action: ${change.action}`);
+            console.log(
+              `💊 [GPT]   - Medication: ${change.medication_name || "N/A"}`,
+            );
+            console.log(
+              `💊 [GPT]   - Medication ID: ${change.medication_id || "NEW"}`,
+            );
+            console.log(`💊 [GPT]   - Confidence: ${change.confidence}`);
+            console.log(
+              `💊 [GPT]   - Reasoning: ${change.reasoning || "No reasoning provided"}`,
+            );
+            console.log(
+              `💊 [GPT]   - History Notes: ${change.history_notes || "No notes"}`,
+            );
+            if (change.dosage_change) {
+              console.log(
+                `💊 [GPT]   - Dosage Change: ${change.dosage_change.from} → ${change.dosage_change.to}`,
+              );
+            }
+            if (change.frequency_change) {
+              console.log(
+                `💊 [GPT]   - Frequency Change: ${change.frequency_change.from} → ${change.frequency_change.to}`,
+              );
+            }
+            if (change.indication_change) {
+              console.log(
+                `💊 [GPT]   - Indication Change: ${change.indication_change.from} → ${change.indication_change.to}`,
+              );
+            }
+          },
+        );
       }
 
       const totalGptTime = Date.now() - gptStartTime;
@@ -282,13 +367,21 @@ export class MedicationDeltaService {
       console.log(`💊 [GPT] Total GPT processing time: ${totalGptTime}ms`);
 
       return parsedResponse.changes || [];
-
     } catch (error) {
       const errorTime = Date.now() - gptStartTime;
-      console.error(`❌ [GPT] Error in GPT analysis after ${errorTime}ms:`, error);
+      console.error(
+        `❌ [GPT] Error in GPT analysis after ${errorTime}ms:`,
+        error,
+      );
       console.error(`❌ [GPT] Error stack trace:`, (error as Error).stack);
-      console.error(`❌ [GPT] System prompt preview:`, systemPrompt.substring(0, 200));
-      console.error(`❌ [GPT] User prompt preview:`, userPrompt.substring(0, 200));
+      console.error(
+        `❌ [GPT] System prompt preview:`,
+        systemPrompt.substring(0, 200),
+      );
+      console.error(
+        `❌ [GPT] User prompt preview:`,
+        userPrompt.substring(0, 200),
+      );
       return [];
     }
   }
@@ -358,13 +451,16 @@ You must return a JSON object with this structure:
     existingMedications: any[],
     soapNote: string,
     encounter: any,
-    patient: any
+    patient: any,
   ): string {
     const patientAge = this.calculateAge(patient.dateOfBirth);
-    
-    const medicationsList = existingMedications.map(med => 
-      `- ID: ${med.id}, Name: ${med.medicationName}, Dosage: ${med.dosage || 'not specified'}, Frequency: ${med.frequency || 'not specified'}, Status: ${med.status}, Indication: ${med.clinicalIndication || 'not specified'}`
-    ).join('\n');
+
+    const medicationsList = existingMedications
+      .map(
+        (med) =>
+          `- ID: ${med.id}, Name: ${med.medicationName}, Dosage: ${med.dosage || "not specified"}, Frequency: ${med.frequency || "not specified"}, Status: ${med.status}, Indication: ${med.clinicalIndication || "not specified"}`,
+      )
+      .join("\n");
 
     return `PATIENT CONTEXT:
 - Age: ${patientAge} years
@@ -373,7 +469,7 @@ You must return a JSON object with this structure:
 - Encounter Date: ${encounter.startTime}
 
 CURRENT MEDICATIONS:
-${medicationsList || 'No current medications on file'}
+${medicationsList || "No current medications on file"}
 
 SOAP NOTE TO ANALYZE:
 ${soapNote}
@@ -388,40 +484,58 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     changes: MedicationChange[],
     patientId: number,
     encounterId: number,
-    providerId: number
+    providerId: number,
   ): Promise<void> {
     console.log(`💊 [DB] === DATABASE CHANGES APPLICATION START ===`);
     console.log(`💊 [DB] Total changes to apply: ${changes.length}`);
-    console.log(`💊 [DB] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
-    
+    console.log(
+      `💊 [DB] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`,
+    );
+
     for (let i = 0; i < changes.length; i++) {
       const change = changes[i];
       const changeStartTime = Date.now();
-      
-      console.log(`💊 [DB] --- Processing Change ${i + 1}/${changes.length} ---`);
+
+      console.log(
+        `💊 [DB] --- Processing Change ${i + 1}/${changes.length} ---`,
+      );
       console.log(`💊 [DB] Change action: ${change.action}`);
-      console.log(`💊 [DB] Medication name: ${change.medication_name || 'N/A'}`);
-      console.log(`💊 [DB] Medication ID: ${change.medication_id || 'NEW'}`);
+      console.log(
+        `💊 [DB] Medication name: ${change.medication_name || "N/A"}`,
+      );
+      console.log(`💊 [DB] Medication ID: ${change.medication_id || "NEW"}`);
       console.log(`💊 [DB] Confidence level: ${change.confidence}`);
-      
+
       try {
-        await this.applyIndividualChange(change, patientId, encounterId, providerId);
-        
+        await this.applyIndividualChange(
+          change,
+          patientId,
+          encounterId,
+          providerId,
+        );
+
         const changeTime = Date.now() - changeStartTime;
-        console.log(`✅ [DB] Successfully applied change ${i + 1} in ${changeTime}ms`);
-        console.log(`✅ [DB] Change details: ${change.action} for ${change.medication_name}`);
-        
+        console.log(
+          `✅ [DB] Successfully applied change ${i + 1} in ${changeTime}ms`,
+        );
+        console.log(
+          `✅ [DB] Change details: ${change.action} for ${change.medication_name}`,
+        );
       } catch (error) {
         const changeTime = Date.now() - changeStartTime;
-        console.error(`❌ [DB] Failed to apply change ${i + 1} after ${changeTime}ms`);
-        console.error(`❌ [DB] Failed change: ${change.action} for ${change.medication_name}`);
+        console.error(
+          `❌ [DB] Failed to apply change ${i + 1} after ${changeTime}ms`,
+        );
+        console.error(
+          `❌ [DB] Failed change: ${change.action} for ${change.medication_name}`,
+        );
         console.error(`❌ [DB] Error details:`, error);
         console.error(`❌ [DB] Error stack:`, (error as Error).stack);
-        
+
         // Continue with other changes even if one fails
       }
     }
-    
+
     console.log(`💊 [DB] === DATABASE CHANGES APPLICATION COMPLETE ===`);
   }
 
@@ -432,51 +546,68 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     change: MedicationChange,
     patientId: number,
     encounterId: number,
-    providerId: number
+    providerId: number,
   ): Promise<void> {
     const encounter = await this.getEncounterInfo(encounterId);
     const encounterDate = encounter?.startTime;
     const historyEntry: MedicationHistoryEntry = {
-      date: typeof encounterDate === 'string' ? encounterDate : new Date().toISOString(),
+      date:
+        typeof encounterDate === "string"
+          ? encounterDate
+          : new Date().toISOString(),
       action: this.mapActionToHistoryAction(change.action),
-      notes: change.history_notes || change.reasoning || `${change.action} - ${change.medication_name}`,
+      notes:
+        change.history_notes ||
+        change.reasoning ||
+        `${change.action} - ${change.medication_name}`,
       encounterId,
       providerId,
       source: "encounter",
       confidence: change.confidence,
-      isSigned: false
+      isSigned: false,
     };
 
     if (change.dosage_change) {
       historyEntry.dosage = change.dosage_change.to;
       historyEntry.changesMade = historyEntry.changesMade || [];
-      historyEntry.changesMade.push(`Dosage changed from ${change.dosage_change.from} to ${change.dosage_change.to}`);
+      historyEntry.changesMade.push(
+        `Dosage changed from ${change.dosage_change.from} to ${change.dosage_change.to}`,
+      );
     }
 
     if (change.frequency_change) {
       historyEntry.frequency = change.frequency_change.to;
       historyEntry.changesMade = historyEntry.changesMade || [];
-      historyEntry.changesMade.push(`Frequency changed from ${change.frequency_change.from} to ${change.frequency_change.to}`);
+      historyEntry.changesMade.push(
+        `Frequency changed from ${change.frequency_change.from} to ${change.frequency_change.to}`,
+      );
     }
 
     if (change.indication_change) {
       historyEntry.indication = change.indication_change.to;
       historyEntry.changesMade = historyEntry.changesMade || [];
-      historyEntry.changesMade.push(`Indication changed from ${change.indication_change.from} to ${change.indication_change.to}`);
+      historyEntry.changesMade.push(
+        `Indication changed from ${change.indication_change.from} to ${change.indication_change.to}`,
+      );
     }
 
     switch (change.action) {
       case "NEW_MEDICATION":
-        await this.createNewMedication(change, patientId, encounterId, historyEntry);
+        await this.createNewMedication(
+          change,
+          patientId,
+          encounterId,
+          historyEntry,
+        );
         break;
-      
+
       case "ADD_HISTORY":
       case "UPDATE_DOSAGE":
       case "MODIFY_FREQUENCY":
       case "CHANGE_INDICATION":
         await this.updateExistingMedication(change, historyEntry);
         break;
-      
+
       case "DISCONTINUE":
         await this.discontinueMedication(change, historyEntry);
         break;
@@ -490,21 +621,34 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     change: MedicationChange,
     patientId: number,
     encounterId: number,
-    historyEntry: MedicationHistoryEntry
+    historyEntry: MedicationHistoryEntry,
   ): Promise<void> {
     const createStartTime = Date.now();
     console.log(`💊 [CreateMedication] === CREATING NEW MEDICATION ===`);
-    console.log(`💊 [CreateMedication] Medication name: ${change.medication_name}`);
-    console.log(`💊 [CreateMedication] Patient ID: ${patientId}, Encounter ID: ${encounterId}`);
+    console.log(
+      `💊 [CreateMedication] Medication name: ${change.medication_name}`,
+    );
+    console.log(
+      `💊 [CreateMedication] Patient ID: ${patientId}, Encounter ID: ${encounterId}`,
+    );
 
     // Look for matching medication order to get complete prescription details
-    const relatedOrder = await this.findMatchingMedicationOrder(change.medication_name!, encounterId);
-    
+    const relatedOrder = await this.findMatchingMedicationOrder(
+      change.medication_name!,
+      encounterId,
+    );
+
     if (relatedOrder) {
-      console.log(`💊 [CreateMedication] ✅ Found matching order ID ${relatedOrder.id} with complete prescription details`);
-      console.log(`💊 [CreateMedication] Order details: ${relatedOrder.sig}, Qty: ${relatedOrder.quantity}, Refills: ${relatedOrder.refills}, Days: ${relatedOrder.daysSupply}`);
+      console.log(
+        `💊 [CreateMedication] ✅ Found matching order ID ${relatedOrder.id} with complete prescription details`,
+      );
+      console.log(
+        `💊 [CreateMedication] Order details: ${relatedOrder.sig}, Qty: ${relatedOrder.quantity}, Refills: ${relatedOrder.refills}, Days: ${relatedOrder.daysSupply}`,
+      );
     } else {
-      console.log(`💊 [CreateMedication] ⚠️ No matching order found for ${change.medication_name} - using SOAP note data only`);
+      console.log(
+        `💊 [CreateMedication] ⚠️ No matching order found for ${change.medication_name} - using SOAP note data only`,
+      );
     }
 
     // Build comprehensive medication data with prescription details
@@ -512,8 +656,12 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       patientId,
       encounterId,
       medicationName: change.medication_name!,
-      genericName: relatedOrder?.medicationName?.includes('(') ? relatedOrder.medicationName.split('(')[0].trim() : null,
-      brandName: relatedOrder?.medicationName?.includes('(') ? relatedOrder.medicationName.match(/\(([^)]+)\)/)?.[1] : null,
+      genericName: relatedOrder?.medicationName?.includes("(")
+        ? relatedOrder.medicationName.split("(")[0].trim()
+        : null,
+      brandName: relatedOrder?.medicationName?.includes("(")
+        ? relatedOrder.medicationName.match(/\(([^)]+)\)/)?.[1]
+        : null,
       dosage: relatedOrder?.dosage || change.dosage_change?.to || "As directed",
       route: relatedOrder?.routeOfAdministration || "oral",
       frequency: change.frequency_change?.to || "daily",
@@ -525,45 +673,68 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       dosageForm: relatedOrder?.form || null,
       rxNormCode: null,
       ndcCode: null,
-      clinicalIndication: relatedOrder?.clinicalIndication || change.indication_change?.to || null,
-      startDate: new Date().toISOString().split('T')[0],
+      clinicalIndication:
+        relatedOrder?.clinicalIndication ||
+        change.indication_change?.to ||
+        null,
+      startDate: new Date().toISOString().split("T")[0],
       status: "pending", // Start as pending until order is signed
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
       sourceOrderId: relatedOrder?.id || null, // Link to source order
       medicationHistory: [historyEntry],
-      changeLog: [{
-        encounter_id: encounterId,
-        timestamp: new Date().toISOString(),
-        change_type: "medication_pending",
-        processing_time_ms: 0
-      }],
+      changeLog: [
+        {
+          encounter_id: encounterId,
+          timestamp: new Date().toISOString(),
+          change_type: "medication_pending",
+          processing_time_ms: 0,
+        },
+      ],
       groupingStrategy: "medical_problem",
       relatedMedications: [],
-      drugInteractions: []
+      drugInteractions: [],
     };
 
     console.log(`💊 [CreateMedication] Medication data prepared:`);
-    console.log(`💊 [CreateMedication]   - Name: ${medicationData.medicationName}`);
+    console.log(
+      `💊 [CreateMedication]   - Name: ${medicationData.medicationName}`,
+    );
     console.log(`💊 [CreateMedication]   - Status: ${medicationData.status}`);
-    console.log(`💊 [CreateMedication]   - Start Date: ${medicationData.startDate}`);
+    console.log(
+      `💊 [CreateMedication]   - Start Date: ${medicationData.startDate}`,
+    );
     console.log(`💊 [CreateMedication]   - Route: ${medicationData.route}`);
-    console.log(`💊 [CreateMedication]   - History entries: ${medicationData.medicationHistory.length}`);
-    console.log(`💊 [CreateMedication]   - Change log entries: ${medicationData.changeLog.length}`);
+    console.log(
+      `💊 [CreateMedication]   - History entries: ${medicationData.medicationHistory.length}`,
+    );
+    console.log(
+      `💊 [CreateMedication]   - Change log entries: ${medicationData.changeLog.length}`,
+    );
 
     try {
-      console.log(`💊 [CreateMedication] Calling storage.createMedication()...`);
+      console.log(
+        `💊 [CreateMedication] Calling storage.createMedication()...`,
+      );
       await storage.createMedication(medicationData);
-      
+
       const createTime = Date.now() - createStartTime;
-      console.log(`💊 [CreateMedication] ✅ Medication created successfully in ${createTime}ms`);
-      console.log(`💊 [CreateMedication] ✅ New medication "${change.medication_name}" added to patient ${patientId}`);
-      
+      console.log(
+        `💊 [CreateMedication] ✅ Medication created successfully in ${createTime}ms`,
+      );
+      console.log(
+        `💊 [CreateMedication] ✅ New medication "${change.medication_name}" added to patient ${patientId}`,
+      );
     } catch (error) {
       const errorTime = Date.now() - createStartTime;
-      console.error(`💊 [CreateMedication] ❌ Failed to create medication after ${errorTime}ms`);
+      console.error(
+        `💊 [CreateMedication] ❌ Failed to create medication after ${errorTime}ms`,
+      );
       console.error(`💊 [CreateMedication] ❌ Error details:`, error);
-      console.error(`💊 [CreateMedication] ❌ Medication data that failed:`, JSON.stringify(medicationData, null, 2));
+      console.error(
+        `💊 [CreateMedication] ❌ Medication data that failed:`,
+        JSON.stringify(medicationData, null, 2),
+      );
       throw error;
     }
   }
@@ -573,32 +744,35 @@ Please analyze this SOAP note and identify medication changes that occurred duri
    */
   private async updateExistingMedication(
     change: MedicationChange,
-    historyEntry: MedicationHistoryEntry
+    historyEntry: MedicationHistoryEntry,
   ): Promise<void> {
     if (!change.medication_id) return;
 
     const medication = await storage.getMedicationById(change.medication_id);
     if (!medication) return;
 
-    const existingHistory = medication.medicationHistory as any[] || [];
-    const existingChangeLog = medication.changeLog as any[] || [];
-    
+    const existingHistory = (medication.medicationHistory as any[]) || [];
+    const existingChangeLog = (medication.changeLog as any[]) || [];
+
     const updatedHistory = [...existingHistory, historyEntry];
-    const updatedChangeLog = [...existingChangeLog, {
-      encounter_id: historyEntry.encounterId!,
-      timestamp: new Date().toISOString(),
-      change_type: this.mapActionToChangeType(change.action),
-      old_dosage: change.dosage_change?.from,
-      new_dosage: change.dosage_change?.to,
-      old_frequency: change.frequency_change?.from,
-      new_frequency: change.frequency_change?.to,
-      processing_time_ms: 0
-    }];
+    const updatedChangeLog = [
+      ...existingChangeLog,
+      {
+        encounter_id: historyEntry.encounterId!,
+        timestamp: new Date().toISOString(),
+        change_type: this.mapActionToChangeType(change.action),
+        old_dosage: change.dosage_change?.from,
+        new_dosage: change.dosage_change?.to,
+        old_frequency: change.frequency_change?.from,
+        new_frequency: change.frequency_change?.to,
+        processing_time_ms: 0,
+      },
+    ];
 
     const updateData: any = {
       medicationHistory: updatedHistory,
       changeLog: updatedChangeLog,
-      lastUpdatedEncounterId: historyEntry.encounterId
+      lastUpdatedEncounterId: historyEntry.encounterId,
     };
 
     if (change.dosage_change) {
@@ -621,73 +795,92 @@ Please analyze this SOAP note and identify medication changes that occurred duri
    */
   private async discontinueMedication(
     change: MedicationChange,
-    historyEntry: MedicationHistoryEntry
+    historyEntry: MedicationHistoryEntry,
   ): Promise<void> {
     if (!change.medication_id) return;
 
     const medication = await storage.getMedicationById(change.medication_id);
     if (!medication) return;
 
-    const existingHistory = medication.medicationHistory as any[] || [];
-    const existingChangeLog = medication.changeLog as any[] || [];
+    const existingHistory = (medication.medicationHistory as any[]) || [];
+    const existingChangeLog = (medication.changeLog as any[]) || [];
 
     const updatedHistory = [...existingHistory, historyEntry];
-    const updatedChangeLog = [...existingChangeLog, {
-      encounter_id: historyEntry.encounterId!,
-      timestamp: new Date().toISOString(),
-      change_type: "medication_discontinued",
-      processing_time_ms: 0
-    }];
+    const updatedChangeLog = [
+      ...existingChangeLog,
+      {
+        encounter_id: historyEntry.encounterId!,
+        timestamp: new Date().toISOString(),
+        change_type: "medication_discontinued",
+        processing_time_ms: 0,
+      },
+    ];
 
     await storage.updateMedication(change.medication_id, {
       status: "discontinued",
-      endDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split("T")[0],
       medicationHistory: updatedHistory,
       changeLog: updatedChangeLog,
-      lastUpdatedEncounterId: historyEntry.encounterId
+      lastUpdatedEncounterId: historyEntry.encounterId,
     });
   }
 
   /**
    * Find matching medication order to get complete prescription details
    */
-  private async findMatchingMedicationOrder(medicationName: string, encounterId: number): Promise<any | null> {
+  private async findMatchingMedicationOrder(
+    medicationName: string,
+    encounterId: number,
+  ): Promise<any | null> {
     try {
       // Get all medication orders for this encounter
       const orders = await storage.getDraftOrdersByEncounter(encounterId);
-      const medicationOrders = orders.filter((order: any) => order.orderType === 'medication');
-      
+      const medicationOrders = orders.filter(
+        (order: any) => order.orderType === "medication",
+      );
+
       if (medicationOrders.length === 0) {
         return null;
       }
-      
+
       // Smart matching - look for exact matches, partial matches, generic/brand equivalents
       for (const order of medicationOrders) {
-        const orderMedName = (order as any).medicationName?.toLowerCase() || '';
+        const orderMedName = (order as any).medicationName?.toLowerCase() || "";
         const targetMedName = medicationName.toLowerCase();
-        
-        
+
         // Exact match
         if (orderMedName === targetMedName) {
           return order;
         }
-        
+
         // Partial match (contains)
-        if (orderMedName.includes(targetMedName) || targetMedName.includes(orderMedName)) {
+        if (
+          orderMedName.includes(targetMedName) ||
+          targetMedName.includes(orderMedName)
+        ) {
           return order;
         }
-        
+
         // Remove common suffixes/prefixes for better matching
-        const cleanOrderName = orderMedName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
-        const cleanTargetName = targetMedName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
-        
+        const cleanOrderName = orderMedName
+          .replace(
+            /\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi,
+            "",
+          )
+          .trim();
+        const cleanTargetName = targetMedName
+          .replace(
+            /\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi,
+            "",
+          )
+          .trim();
+
         if (cleanOrderName === cleanTargetName) {
           return order;
         }
       }
-      
+
       return null;
-      
     } catch (error) {
       console.error(`💊 [OrderMatch] Error finding matching order:`, error);
       return null;
@@ -700,19 +893,31 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   private async getMedicationOrders(encounterId: number) {
     console.log(`💊 [GetOrders] === FETCHING MEDICATION ORDERS ===`);
     console.log(`💊 [GetOrders] Encounter ID: ${encounterId}`);
-    
+
     // Get ALL orders for the encounter (not just draft)
     const allOrders = await storage.getOrdersByEncounter(encounterId);
     console.log(`💊 [GetOrders] Total orders found: ${allOrders.length}`);
-    console.log(`💊 [GetOrders] All orders:`, allOrders.map(o => `${o.id}: ${o.orderType} - ${o.medicationName || o.labName || o.studyType} (${o.orderStatus})`));
-    
+    console.log(
+      `💊 [GetOrders] All orders:`,
+      allOrders.map(
+        (o) =>
+          `${o.id}: ${o.orderType} - ${o.medicationName || o.labName || o.studyType} (${o.orderStatus})`,
+      ),
+    );
+
     // Filter for medication orders regardless of status
-    const medicationOrders = allOrders.filter((order: any) => order.orderType === 'medication');
-    console.log(`💊 [GetOrders] Medication orders found: ${medicationOrders.length}`);
+    const medicationOrders = allOrders.filter(
+      (order: any) => order.orderType === "medication",
+    );
+    console.log(
+      `💊 [GetOrders] Medication orders found: ${medicationOrders.length}`,
+    );
     medicationOrders.forEach((order, index) => {
-      console.log(`💊 [GetOrders] Medication ${index + 1}: ID ${order.id}, Name: ${order.medicationName}, Status: ${order.orderStatus}`);
+      console.log(
+        `💊 [GetOrders] Medication ${index + 1}: ID ${order.id}, Name: ${order.medicationName}, Status: ${order.orderStatus}`,
+      );
     });
-    
+
     return medicationOrders;
   }
 
@@ -724,16 +929,23 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     existingMedications: any[],
     patientId: number,
     encounterId: number,
-    providerId: number
+    providerId: number,
   ): Promise<MedicationChange | null> {
-    console.log(`💊 [ProcessOrder] Processing order ${order.id}: ${order.medicationName}`);
-    
+    console.log(
+      `💊 [ProcessOrder] Processing order ${order.id}: ${order.medicationName}`,
+    );
+
     // Find existing medication that matches this order
-    const existingMedication = this.findMatchingExistingMedication(order, existingMedications);
-    
+    const existingMedication = this.findMatchingExistingMedication(
+      order,
+      existingMedications,
+    );
+
     if (existingMedication) {
-      console.log(`💊 [ProcessOrder] Found existing medication ID ${existingMedication.id}`);
-      
+      console.log(
+        `💊 [ProcessOrder] Found existing medication ID ${existingMedication.id}`,
+      );
+
       // Check if this is an update to existing medication
       if (this.hasSignificantChanges(order, existingMedication)) {
         return this.createUpdateChange(order, existingMedication);
@@ -749,30 +961,48 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   /**
    * Find existing medication that matches the order
    */
-  private findMatchingExistingMedication(order: any, existingMedications: any[]) {
-    const orderMedName = order.medicationName?.toLowerCase() || '';
-    
+  private findMatchingExistingMedication(
+    order: any,
+    existingMedications: any[],
+  ) {
+    const orderMedName = order.medicationName?.toLowerCase() || "";
+
     // First, check for exact order ID match to prevent duplicates
-    const exactOrderMatch = existingMedications.find(med => med.sourceOrderId === order.id);
+    const exactOrderMatch = existingMedications.find(
+      (med) => med.sourceOrderId === order.id,
+    );
     if (exactOrderMatch) {
-      console.log(`💊 [FindMatch] Found exact order ID match: medication ${exactOrderMatch.id} for order ${order.id}`);
+      console.log(
+        `💊 [FindMatch] Found exact order ID match: medication ${exactOrderMatch.id} for order ${order.id}`,
+      );
       return exactOrderMatch;
     }
-    
+
     // Then check for medication name matches
-    return existingMedications.find(med => {
-      const medName = med.medicationName?.toLowerCase() || '';
-      
+    return existingMedications.find((med) => {
+      const medName = med.medicationName?.toLowerCase() || "";
+
       // Exact match
       if (medName === orderMedName) return true;
-      
+
       // Partial match
-      if (medName.includes(orderMedName) || orderMedName.includes(medName)) return true;
-      
+      if (medName.includes(orderMedName) || orderMedName.includes(medName))
+        return true;
+
       // Clean name match (remove common suffixes)
-      const cleanMedName = medName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
-      const cleanOrderName = orderMedName.replace(/\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi, '').trim();
-      
+      const cleanMedName = medName
+        .replace(
+          /\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi,
+          "",
+        )
+        .trim();
+      const cleanOrderName = orderMedName
+        .replace(
+          /\s+(tablet|capsule|mg|mcg|sulfate|hydrochloride|sodium)\b/gi,
+          "",
+        )
+        .trim();
+
       return cleanMedName === cleanOrderName;
     });
   }
@@ -785,36 +1015,42 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     if (order.dosage && order.dosage !== existingMedication.dosage) {
       return true;
     }
-    
+
     // Check frequency changes (if available)
     if (order.frequency && order.frequency !== existingMedication.frequency) {
       return true;
     }
-    
+
     // Check clinical indication changes
-    if (order.clinicalIndication && order.clinicalIndication !== existingMedication.clinicalIndication) {
+    if (
+      order.clinicalIndication &&
+      order.clinicalIndication !== existingMedication.clinicalIndication
+    ) {
       return true;
     }
-    
+
     return false;
   }
 
   /**
    * Create update change for existing medication
    */
-  private createUpdateChange(order: any, existingMedication: any): MedicationChange {
+  private createUpdateChange(
+    order: any,
+    existingMedication: any,
+  ): MedicationChange {
     const change: MedicationChange = {
       medication_id: existingMedication.id,
       action: "UPDATE_DOSAGE",
       medication_name: order.medicationName,
       confidence: 0.95,
-      reasoning: `Order ${order.id} updates existing medication`
+      reasoning: `Order ${order.id} updates existing medication`,
     };
 
     if (order.dosage !== existingMedication.dosage) {
       change.dosage_change = {
         from: existingMedication.dosage || "unknown",
-        to: order.dosage
+        to: order.dosage,
       };
     }
 
@@ -822,7 +1058,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       change.action = "MODIFY_FREQUENCY";
       change.frequency_change = {
         from: existingMedication.frequency || "unknown",
-        to: order.frequency
+        to: order.frequency,
       };
     }
 
@@ -830,7 +1066,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       change.action = "CHANGE_INDICATION";
       change.indication_change = {
         from: existingMedication.clinicalIndication || "unknown",
-        to: order.clinicalIndication
+        to: order.clinicalIndication,
       };
     }
 
@@ -840,14 +1076,17 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   /**
    * Create history entry for continuing medication
    */
-  private createHistoryChange(order: any, existingMedication: any): MedicationChange {
+  private createHistoryChange(
+    order: any,
+    existingMedication: any,
+  ): MedicationChange {
     return {
       medication_id: existingMedication.id,
       action: "ADD_HISTORY",
       medication_name: order.medicationName,
       history_notes: `Order ${order.id} continues existing medication`,
       confidence: 0.9,
-      reasoning: "Medication continues from previous encounters"
+      reasoning: "Medication continues from previous encounters",
     };
   }
 
@@ -861,69 +1100,99 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       medication_name: order.medicationName,
       history_notes: `New medication prescribed via order ${order.id}`,
       confidence: 0.95,
-      reasoning: "New medication order"
+      reasoning: "New medication order",
     };
   }
 
   /**
    * Sign orders and activate pending medications
    */
-  async signMedicationOrders(encounterId: number, orderIds: number[], providerId: number): Promise<void> {
+  async signMedicationOrders(
+    encounterId: number,
+    orderIds: number[],
+    providerId: number,
+  ): Promise<void> {
     console.log(`💊 [SignOrders] === MEDICATION ACTIVATION STARTING ===`);
     console.log(`💊 [SignOrders] Encounter ID: ${encounterId}`);
-    console.log(`💊 [SignOrders] Order IDs to sign: [${orderIds.join(', ')}]`);
+    console.log(`💊 [SignOrders] Order IDs to sign: [${orderIds.join(", ")}]`);
     console.log(`💊 [SignOrders] Provider ID: ${providerId}`);
-    
+
     try {
       // Get medications that are linked to these orders
-      const medications = await storage.getPatientMedicationsByEncounter(encounterId);
-      console.log(`💊 [SignOrders] Found ${medications.length} medications for encounter ${encounterId}`);
-      
+      const medications =
+        await storage.getPatientMedicationsByEncounter(encounterId);
+      console.log(
+        `💊 [SignOrders] Found ${medications.length} medications for encounter ${encounterId}`,
+      );
+
       for (const medication of medications) {
         console.log(`💊 [SignOrders] Checking medication ${medication.id}:`);
         console.log(`💊 [SignOrders] - Name: ${medication.medicationName}`);
         console.log(`💊 [SignOrders] - Status: ${medication.status}`);
-        console.log(`💊 [SignOrders] - Source Order ID: ${medication.sourceOrderId}`);
-        console.log(`💊 [SignOrders] - Order IDs to activate: [${orderIds.join(', ')}]`);
-        
-        if (medication.status === 'pending' && medication.sourceOrderId && orderIds.includes(medication.sourceOrderId)) {
-          console.log(`💊 [SignOrders] ✅ ACTIVATING medication ${medication.id}: ${medication.medicationName}`);
-          
+        console.log(
+          `💊 [SignOrders] - Source Order ID: ${medication.sourceOrderId}`,
+        );
+        console.log(
+          `💊 [SignOrders] - Order IDs to activate: [${orderIds.join(", ")}]`,
+        );
+
+        if (
+          medication.status === "pending" &&
+          medication.sourceOrderId &&
+          orderIds.includes(medication.sourceOrderId)
+        ) {
+          console.log(
+            `💊 [SignOrders] ✅ ACTIVATING medication ${medication.id}: ${medication.medicationName}`,
+          );
+
           // Update medication to active status
-          const existingHistory = medication.medicationHistory as any[] || [];
+          const existingHistory = (medication.medicationHistory as any[]) || [];
           const updatedHistory = existingHistory.map((entry: any) => {
             if (entry.encounterId === encounterId && !entry.isSigned) {
               return {
                 ...entry,
                 isSigned: true,
                 signedAt: new Date().toISOString(),
-                signedBy: providerId
+                signedBy: providerId,
               };
             }
             return entry;
           });
 
           await storage.updateMedication(medication.id, {
-            status: 'active',
-            medicationHistory: updatedHistory
+            status: "active",
+            medicationHistory: updatedHistory,
           });
-          
-          console.log(`💊 [SignOrders] ✅ Successfully activated medication ${medication.id}`);
+
+          console.log(
+            `💊 [SignOrders] ✅ Successfully activated medication ${medication.id}`,
+          );
         } else {
-          console.log(`💊 [SignOrders] ❌ Skipping medication ${medication.id} - not eligible for activation`);
-          if (medication.status !== 'pending') {
-            console.log(`💊 [SignOrders] - Reason: Status is '${medication.status}', not 'pending'`);
+          console.log(
+            `💊 [SignOrders] ❌ Skipping medication ${medication.id} - not eligible for activation`,
+          );
+          if (medication.status !== "pending") {
+            console.log(
+              `💊 [SignOrders] - Reason: Status is '${medication.status}', not 'pending'`,
+            );
           }
           if (!medication.sourceOrderId) {
             console.log(`💊 [SignOrders] - Reason: No source order ID`);
           }
-          if (medication.sourceOrderId && !orderIds.includes(medication.sourceOrderId)) {
-            console.log(`💊 [SignOrders] - Reason: Source order ${medication.sourceOrderId} not in sign list`);
+          if (
+            medication.sourceOrderId &&
+            !orderIds.includes(medication.sourceOrderId)
+          ) {
+            console.log(
+              `💊 [SignOrders] - Reason: Source order ${medication.sourceOrderId} not in sign list`,
+            );
           }
         }
       }
-      
-      console.log(`✅ [SignOrders] Successfully activated medications for signed orders`);
+
+      console.log(
+        `✅ [SignOrders] Successfully activated medications for signed orders`,
+      );
     } catch (error) {
       console.error(`❌ [SignOrders] Error activating medications:`, error);
       throw error;
@@ -938,14 +1207,16 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   private async getEncounterInfo(encounterId: number) {
-    const [encounter] = await db.select()
+    const [encounter] = await db
+      .select()
       .from(encounters)
       .where(eq(encounters.id, encounterId));
     return encounter;
   }
 
   private async getPatientInfo(patientId: number) {
-    const [patient] = await db.select()
+    const [patient] = await db
+      .select()
       .from(patients)
       .where(eq(patients.id, patientId));
     return patient;
@@ -956,31 +1227,46 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
-    
+
     return age;
   }
 
-  private mapActionToHistoryAction(action: string): MedicationHistoryEntry["action"] {
+  private mapActionToHistoryAction(
+    action: string,
+  ): MedicationHistoryEntry["action"] {
     switch (action) {
-      case "NEW_MEDICATION": return "started";
-      case "DISCONTINUE": return "discontinued";
+      case "NEW_MEDICATION":
+        return "started";
+      case "DISCONTINUE":
+        return "discontinued";
       case "UPDATE_DOSAGE":
-      case "MODIFY_FREQUENCY": 
-      case "CHANGE_INDICATION": return "modified";
-      default: return "continued";
+      case "MODIFY_FREQUENCY":
+      case "CHANGE_INDICATION":
+        return "modified";
+      default:
+        return "continued";
     }
   }
 
-  private mapActionToChangeType(action: string): MedicationChangeLogEntry["change_type"] {
+  private mapActionToChangeType(
+    action: string,
+  ): MedicationChangeLogEntry["change_type"] {
     switch (action) {
-      case "UPDATE_DOSAGE": return "dosage_changed";
-      case "MODIFY_FREQUENCY": return "frequency_changed";
-      case "DISCONTINUE": return "medication_discontinued";
-      default: return "medication_modified";
+      case "UPDATE_DOSAGE":
+        return "dosage_changed";
+      case "MODIFY_FREQUENCY":
+        return "frequency_changed";
+      case "DISCONTINUE":
+        return "medication_discontinued";
+      default:
+        return "medication_modified";
     }
   }
 
@@ -993,15 +1279,21 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     patientId: number,
     encounterId: number,
     extractedText: string,
-    providerId: number
+    providerId: number,
   ): Promise<{ medicationsProcessed: number; changes: any[] }> {
-    console.log(`💊 [AttachmentMedications] === PROCESSING MEDICATIONS FROM ATTACHMENT ${attachmentId} ===`);
-    console.log(`💊 [AttachmentMedications] Patient ID: ${patientId}, Text length: ${extractedText.length} characters`);
+    console.log(
+      `💊 [AttachmentMedications] === PROCESSING MEDICATIONS FROM ATTACHMENT ${attachmentId} ===`,
+    );
+    console.log(
+      `💊 [AttachmentMedications] Patient ID: ${patientId}, Text length: ${extractedText.length} characters`,
+    );
 
     try {
       // Get existing medications for consolidation analysis
       const existingMedications = await this.getExistingMedications(patientId);
-      console.log(`💊 [AttachmentMedications] Found ${existingMedications.length} existing medications for consolidation`);
+      console.log(
+        `💊 [AttachmentMedications] Found ${existingMedications.length} existing medications for consolidation`,
+      );
 
       // Get patient context for intelligent processing
       const patient = await this.getPatientInfo(patientId);
@@ -1015,10 +1307,12 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         extractedText,
         existingMedications,
         patientContext,
-        attachmentId
+        attachmentId,
       );
 
-      console.log(`💊 [AttachmentMedications] GPT extracted ${gptResponse.medications?.length || 0} medications`);
+      console.log(
+        `💊 [AttachmentMedications] GPT extracted ${gptResponse.medications?.length || 0} medications`,
+      );
 
       // Apply changes with attachment source attribution
       const changes = [];
@@ -1030,7 +1324,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
             encounterId,
             attachmentId,
             providerId,
-            existingMedications
+            existingMedications,
           );
           if (change) {
             changes.push(change);
@@ -1038,15 +1332,19 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         }
       }
 
-      console.log(`💊 [AttachmentMedications] ✅ Successfully processed ${changes.length} medication changes from attachment`);
-      
+      console.log(
+        `💊 [AttachmentMedications] ✅ Successfully processed ${changes.length} medication changes from attachment`,
+      );
+
       return {
         medicationsProcessed: changes.length,
-        changes: changes
+        changes: changes,
       };
-
     } catch (error) {
-      console.error(`💊 [AttachmentMedications] ❌ Error processing attachment medications:`, error);
+      console.error(
+        `💊 [AttachmentMedications] ❌ Error processing attachment medications:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1060,38 +1358,64 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     encounterId: number,
     attachmentId: number,
     providerId: number,
-    existingMedications: any[]
+    existingMedications: any[],
   ): Promise<any> {
-    console.log(`💊 [AttachmentMed] Processing medication: ${medicationData.medication_name}`);
+    console.log(
+      `💊 [AttachmentMed] Processing medication: ${medicationData.medication_name}`,
+    );
 
     // Check for existing medication to consolidate with
-    const existingMedication = this.findMatchingMedicationForAttachment(medicationData, existingMedications);
+    const existingMedication = this.findMatchingMedicationForAttachment(
+      medicationData,
+      existingMedications,
+    );
 
     if (existingMedication && medicationData.should_consolidate) {
-      console.log(`💊 [AttachmentMed] Consolidating with existing medication ID ${existingMedication.id}`);
-      return this.addAttachmentVisitHistory(existingMedication, medicationData, attachmentId, encounterId);
+      console.log(
+        `💊 [AttachmentMed] Consolidating with existing medication ID ${existingMedication.id}`,
+      );
+      return this.addAttachmentVisitHistory(
+        existingMedication,
+        medicationData,
+        attachmentId,
+        encounterId,
+      );
     } else {
       console.log(`💊 [AttachmentMed] Creating new medication from attachment`);
-      return this.createMedicationFromAttachment(medicationData, patientId, encounterId, attachmentId, providerId);
+      return this.createMedicationFromAttachment(
+        medicationData,
+        patientId,
+        encounterId,
+        attachmentId,
+        providerId,
+      );
     }
   }
 
   /**
    * Find matching medication for attachment consolidation
    */
-  private findMatchingMedicationForAttachment(medicationData: any, existingMedications: any[]): any {
-    const medName = medicationData.medication_name?.toLowerCase() || '';
-    
-    return existingMedications.find(med => {
-      const existingName = med.medicationName?.toLowerCase() || '';
-      
+  private findMatchingMedicationForAttachment(
+    medicationData: any,
+    existingMedications: any[],
+  ): any {
+    const medName = medicationData.medication_name?.toLowerCase() || "";
+
+    return existingMedications.find((med) => {
+      const existingName = med.medicationName?.toLowerCase() || "";
+
       // Check for exact match or close variations
       if (existingName === medName) return true;
-      if (existingName.includes(medName) || medName.includes(existingName)) return true;
-      
+      if (existingName.includes(medName) || medName.includes(existingName))
+        return true;
+
       // Check brand/generic name matches
-      if (med.brandName?.toLowerCase().includes(medName) || med.genericName?.toLowerCase().includes(medName)) return true;
-      
+      if (
+        med.brandName?.toLowerCase().includes(medName) ||
+        med.genericName?.toLowerCase().includes(medName)
+      )
+        return true;
+
       return false;
     });
   }
@@ -1103,15 +1427,17 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     existingMedication: any,
     medicationData: any,
     attachmentId: number,
-    encounterId: number
+    encounterId: number,
   ): Promise<any> {
-    console.log(`💊 [AttachmentVisitHistory] Adding visit history to medication ${existingMedication.id}`);
+    console.log(
+      `💊 [AttachmentVisitHistory] Adding visit history to medication ${existingMedication.id}`,
+    );
 
     const visitEntry = {
-      encounterDate: new Date().toISOString().split('T')[0],
+      encounterDate: new Date().toISOString().split("T")[0],
       changes: medicationData.changes || [],
       notes: medicationData.notes || `Referenced in document`,
-      source: 'attachment',
+      source: "attachment",
       sourceId: attachmentId,
       encounterId: encounterId,
       confidence: medicationData.confidence || 0.85,
@@ -1119,25 +1445,26 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         dosage: medicationData.dosage,
         frequency: medicationData.frequency,
         indication: medicationData.indication,
-        status: medicationData.status
-      }
+        status: medicationData.status,
+      },
     };
 
     // Get current visit history and add new entry
-    const currentVisitHistory = (existingMedication.visitHistory as any[]) || [];
+    const currentVisitHistory =
+      (existingMedication.visitHistory as any[]) || [];
     const updatedVisitHistory = [...currentVisitHistory, visitEntry];
 
     // Update medication with new visit history
     await storage.updateMedication(existingMedication.id, {
       visitHistory: updatedVisitHistory,
-      lastUpdatedEncounterId: encounterId
+      lastUpdatedEncounterId: encounterId,
     });
 
     return {
-      action: 'VISIT_HISTORY_ADDED',
+      action: "VISIT_HISTORY_ADDED",
       medicationId: existingMedication.id,
       medicationName: existingMedication.medicationName,
-      visitEntry: visitEntry
+      visitEntry: visitEntry,
     };
   }
 
@@ -1149,40 +1476,47 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     patientId: number,
     encounterId: number,
     attachmentId: number,
-    providerId: number
+    providerId: number,
   ): Promise<any> {
-    console.log(`💊 [AttachmentCreate] Creating new medication: ${medicationData.medication_name}`);
-
-    // Standardize medication data
-    const standardized = MedicationStandardizationService.standardizeMedicationFromAI(
-      medicationData.medication_name,
-      medicationData.dosage,
-      medicationData.form,
-      medicationData.route
+    console.log(
+      `💊 [AttachmentCreate] Creating new medication: ${medicationData.medication_name}`,
     );
 
+    // Standardize medication data
+    const standardized =
+      MedicationStandardizationService.standardizeMedicationFromAI(
+        medicationData.medication_name,
+        medicationData.dosage,
+        medicationData.form,
+        medicationData.route,
+      );
+
     // Create initial visit history entry
-    const initialVisitHistory = [{
-      encounterDate: new Date().toISOString().split('T')[0],
-      changes: ['Extracted from document'],
-      notes: medicationData.notes || `Medication extracted from uploaded document`,
-      source: 'attachment',
-      sourceId: attachmentId,
-      encounterId: encounterId,
-      confidence: medicationData.confidence || 0.85,
-      extractedData: {
-        dosage: medicationData.dosage,
-        frequency: medicationData.frequency,
-        indication: medicationData.indication,
-        status: medicationData.status
-      }
-    }];
+    const initialVisitHistory = [
+      {
+        encounterDate: new Date().toISOString().split("T")[0],
+        changes: ["Extracted from document"],
+        notes:
+          medicationData.notes || `Medication extracted from uploaded document`,
+        source: "attachment",
+        sourceId: attachmentId,
+        encounterId: encounterId,
+        confidence: medicationData.confidence || 0.85,
+        extractedData: {
+          dosage: medicationData.dosage,
+          frequency: medicationData.frequency,
+          indication: medicationData.indication,
+          status: medicationData.status,
+        },
+      },
+    ];
 
     // Create medication record with attachment source attribution
     const medicationRecord = {
       patientId,
       encounterId,
-      medicationName: standardized.medicationName || medicationData.medication_name,
+      medicationName:
+        standardized.medicationName || medicationData.medication_name,
       brandName: standardized.brandName,
       genericName: standardized.genericName,
       dosage: standardized.strength || medicationData.dosage || "As directed",
@@ -1192,36 +1526,44 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       frequency: medicationData.frequency || "daily",
       sig: medicationData.sig || null,
       clinicalIndication: medicationData.indication,
-      startDate: new Date().toISOString().split('T')[0],
-      status: medicationData.status === 'discontinued' ? 'historical' : 'active',
+      startDate: new Date().toISOString().split("T")[0],
+      status:
+        medicationData.status === "discontinued" ? "historical" : "active",
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
       enteredBy: providerId,
       // Attachment source attribution
-      sourceType: 'attachment',
+      sourceType: "attachment",
       sourceConfidence: medicationData.confidence || 0.85,
       extractedFromAttachmentId: attachmentId,
       sourceNotes: `Extracted from uploaded document`,
       visitHistory: initialVisitHistory,
       medicationHistory: initialVisitHistory,
-      changeLog: [{
-        timestamp: new Date().toISOString(),
-        change_type: 'medication_started',
-        encounter_id: encounterId,
-        processing_time_ms: 0
-      }]
+      changeLog: [
+        {
+          timestamp: new Date().toISOString(),
+          change_type: "medication_started",
+          encounter_id: encounterId,
+          processing_time_ms: 0,
+        },
+      ],
     };
 
-    const [newMedication] = await db.insert(medications).values(medicationRecord).returning();
-    
-    console.log(`💊 [AttachmentCreate] ✅ Created medication ${newMedication.id}: ${medicationRecord.medicationName}`);
+    const [newMedication] = await db
+      .insert(medications)
+      .values(medicationRecord)
+      .returning();
+
+    console.log(
+      `💊 [AttachmentCreate] ✅ Created medication ${newMedication.id}: ${medicationRecord.medicationName}`,
+    );
 
     return {
-      action: 'NEW_MEDICATION_FROM_ATTACHMENT',
+      action: "NEW_MEDICATION_FROM_ATTACHMENT",
       medicationId: newMedication.id,
       medicationName: medicationRecord.medicationName,
-      sourceType: 'attachment',
-      attachmentId: attachmentId
+      sourceType: "attachment",
+      attachmentId: attachmentId,
     };
   }
 
@@ -1232,9 +1574,11 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     extractedText: string,
     existingMedications: any[],
     patientContext: any,
-    attachmentId: number
+    attachmentId: number,
   ): Promise<any> {
-    console.log(`💊 [GPT] Calling GPT for medication extraction (attachment ${attachmentId})`);
+    console.log(
+      `💊 [GPT] Calling GPT for medication extraction (attachment ${attachmentId})`,
+    );
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -1284,7 +1628,7 @@ Age: ${patientContext.age} years
 Gender: ${patientContext.gender}
 
 EXISTING MEDICATIONS (${existingMedications.length}):
-${existingMedications.map(med => `- ${med.medicationName} ${med.dosage} ${med.frequency} (${med.status})`).join('\n')}
+${existingMedications.map((med) => `- ${med.medicationName} ${med.dosage} ${med.frequency} (${med.status})`).join("\n")}
 
 DOCUMENT TO ANALYZE:
 ${extractedText}
@@ -1297,25 +1641,26 @@ Extract all medications from this document. For each medication, determine if it
         model: "gpt-4.1-mini",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          { role: "user", content: userPrompt },
         ],
         temperature: 0.1,
-        max_tokens: 2000
+        max_tokens: 2000,
       });
 
       const processingTime = Date.now() - startTime;
       const responseText = response.choices[0]?.message?.content || "{}";
-      
+
       console.log(`💊 [GPT] Response received in ${processingTime}ms`);
-      console.log(`💊 [GPT] Raw response: ${responseText.substring(0, 500)}...`);
+      console.log(
+        `💊 [GPT] Raw response: ${responseText.substring(0, 500)}...`,
+      );
 
       // Parse JSON response
       const gptResponse = JSON.parse(responseText);
-      
+
       // Log token costs would go here if TokenCostAnalyzer was available
 
       return gptResponse;
-
     } catch (error) {
       console.error(`💊 [GPT] Error calling GPT:`, error);
       throw error;
@@ -1327,11 +1672,13 @@ Extract all medications from this document. For each medication, determine if it
    */
   private async buildPatientContext(patientId: number): Promise<any> {
     const patient = await this.getPatientInfo(patientId);
-    
+
     return {
-      age: patient?.dateOfBirth ? this.calculateAge(patient.dateOfBirth) : 'Unknown',
-      gender: patient?.gender || 'Unknown',
-      mrn: patient?.mrn || 'Unknown'
+      age: patient?.dateOfBirth
+        ? this.calculateAge(patient.dateOfBirth)
+        : "Unknown",
+      gender: patient?.gender || "Unknown",
+      mrn: patient?.mrn || "Unknown",
     };
   }
 
@@ -1339,30 +1686,37 @@ Extract all medications from this document. For each medication, determine if it
    * Sign encounter - finalize all medication visit entries
    */
   async signEncounter(encounterId: number, providerId: number): Promise<void> {
-    console.log(`🔏 [MedicationDelta] Signing medications for encounter ${encounterId}`);
-    
+    console.log(
+      `🔏 [MedicationDelta] Signing medications for encounter ${encounterId}`,
+    );
+
     try {
-      const medications = await storage.getPatientMedicationsByEncounter(encounterId);
-      
+      const medications =
+        await storage.getPatientMedicationsByEncounter(encounterId);
+
       for (const medication of medications) {
-        const existingHistory = medication.medicationHistory as any[] || [];
-        const updatedHistory = existingHistory.map((entry: MedicationHistoryEntry) => {
-          if (entry.encounterId === encounterId && !entry.isSigned) {
-            return {
-              ...entry,
-              isSigned: true,
-              signedAt: new Date().toISOString()
-            };
-          }
-          return entry;
-        });
+        const existingHistory = (medication.medicationHistory as any[]) || [];
+        const updatedHistory = existingHistory.map(
+          (entry: MedicationHistoryEntry) => {
+            if (entry.encounterId === encounterId && !entry.isSigned) {
+              return {
+                ...entry,
+                isSigned: true,
+                signedAt: new Date().toISOString(),
+              };
+            }
+            return entry;
+          },
+        );
 
         await storage.updateMedication(medication.id, {
-          medicationHistory: updatedHistory
+          medicationHistory: updatedHistory,
         });
       }
 
-      console.log(`✅ [MedicationDelta] Signed ${medications.length} medications for encounter ${encounterId}`);
+      console.log(
+        `✅ [MedicationDelta] Signed ${medications.length} medications for encounter ${encounterId}`,
+      );
     } catch (error) {
       console.error(`❌ [MedicationDelta] Error signing encounter:`, error);
       throw error;
@@ -1374,23 +1728,25 @@ Extract all medications from this document. For each medication, determine if it
    */
   private mapOrderStatusToMedicationStatus(orderStatus: string): string {
     switch (orderStatus?.toLowerCase()) {
-      case 'draft':
-      case 'pending':
-        return 'pending';
-      case 'approved':
-      case 'signed':
-      case 'active':
-        return 'active';
-      case 'discontinued':
-      case 'cancelled':
-      case 'canceled':
-        return 'discontinued';
-      case 'on_hold':
-      case 'paused':
-        return 'on_hold';
+      case "draft":
+      case "pending":
+        return "pending";
+      case "approved":
+      case "signed":
+      case "active":
+        return "active";
+      case "discontinued":
+      case "cancelled":
+      case "canceled":
+        return "discontinued";
+      case "on_hold":
+      case "paused":
+        return "on_hold";
       default:
-        console.log(`🔄 [MedicationSync] Unknown order status: ${orderStatus}, defaulting to pending`);
-        return 'pending';
+        console.log(
+          `🔄 [MedicationSync] Unknown order status: ${orderStatus}, defaulting to pending`,
+        );
+        return "pending";
     }
   }
 
@@ -1415,12 +1771,17 @@ Extract all medications from this document. For each medication, determine if it
     strength?: string;
     dosageForm?: string;
   }): Promise<any> {
-    console.log(`💊 [ChartMedication] Adding medication directly to chart for patient ${input.patientId}`);
-    console.log(`💊 [ChartMedication] Medication: ${input.medicationName} ${input.dosage} ${input.frequency}`);
+    console.log(
+      `💊 [ChartMedication] Adding medication directly to chart for patient ${input.patientId}`,
+    );
+    console.log(
+      `💊 [ChartMedication] Medication: ${input.medicationName} ${input.dosage} ${input.frequency}`,
+    );
 
     try {
       // Validate patient exists
-      const [patient] = await db.select()
+      const [patient] = await db
+        .select()
         .from(patients)
         .where(eq(patients.id, input.patientId))
         .limit(1);
@@ -1430,89 +1791,111 @@ Extract all medications from this document. For each medication, determine if it
       }
 
       // Create virtual encounter for chart-based medication
-      const chartEncounter = await this.getOrCreateChartEncounter(input.patientId, input.prescriberId);
-
-      // Standardize medication using existing service
-      const standardizedMedication = MedicationStandardizationService.standardizeMedicationFromAI(
-        input.medicationName,
-        input.dosage,
-        input.dosageForm,
-        input.route
+      const chartEncounter = await this.getOrCreateChartEncounter(
+        input.patientId,
+        input.prescriberId,
       );
 
+      // Standardize medication using existing service
+      const standardizedMedication =
+        MedicationStandardizationService.standardizeMedicationFromAI(
+          input.medicationName,
+          input.dosage,
+          input.dosageForm,
+          input.route,
+        );
+
       // Get all existing active medications for GPT analysis
-      const existingMedications = await this.getAllActiveMedications(input.patientId);
+      const existingMedications = await this.getAllActiveMedications(
+        input.patientId,
+      );
 
       // Use GPT to intelligently detect duplicates vs. different dosages
       const duplicateAnalysis = await this.analyzeForDuplicatesWithGPT(
         {
-          medicationName: standardizedMedication.medicationName || input.medicationName,
+          medicationName:
+            standardizedMedication.medicationName || input.medicationName,
           dosage: input.dosage,
           frequency: input.frequency,
-          route: input.route || 'oral',
-          clinicalIndication: input.clinicalIndication
+          route: input.route || "oral",
+          clinicalIndication: input.clinicalIndication,
         },
-        existingMedications
+        existingMedications,
       );
 
       if (duplicateAnalysis.isDuplicate) {
-        console.log(`⚠️ [ChartMedication] GPT detected true duplicate:`, duplicateAnalysis.reasoning);
+        console.log(
+          `⚠️ [ChartMedication] GPT detected true duplicate:`,
+          duplicateAnalysis.reasoning,
+        );
         return {
           success: false,
           duplicateDetected: true,
           duplicateReasoning: duplicateAnalysis.reasoning,
           conflictingMedications: duplicateAnalysis.conflictingMedications,
-          recommendations: duplicateAnalysis.recommendations
+          recommendations: duplicateAnalysis.recommendations,
         };
       }
 
       // Insert medication with chart source attribution
-      const [newMedication] = await db.insert(medications).values({
-        patientId: input.patientId,
-        encounterId: chartEncounter.id,
-        medicationName: standardizedMedication.medicationName || input.medicationName,
-        genericName: standardizedMedication.genericName,
-        brandName: standardizedMedication.brandName,
-        dosage: input.dosage,
-        strength: standardizedMedication.strength || input.strength,
-        dosageForm: standardizedMedication.dosageForm || input.dosageForm,
-        route: standardizedMedication.route || input.route || 'oral',
-        frequency: input.frequency,
-        quantity: input.quantity,
-        daysSupply: input.daysSupply,
-        refillsRemaining: input.refills || 0,
-        totalRefills: input.refills || 0,
-        sig: input.sig || standardizedMedication.sig,
-        clinicalIndication: input.clinicalIndication,
-        startDate: input.startDate,
-        status: 'active',
-        prescriber: 'Chart Entry',
-        prescriberId: input.prescriberId,
-        firstEncounterId: chartEncounter.id,
-        lastUpdatedEncounterId: chartEncounter.id,
-        rxNormCode: standardizedMedication.rxNormCode,
-        ndcCode: standardizedMedication.ndcCode,
-        reasonForChange: 'Direct chart entry',
-        changeLog: [{
-          action: 'chart_added',
-          timestamp: new Date().toISOString(),
-          userId: input.prescriberId,
-          details: 'Added directly to patient chart'
-        }]
-      }).returning();
+      const [newMedication] = await db
+        .insert(medications)
+        .values({
+          patientId: input.patientId,
+          encounterId: chartEncounter.id,
+          medicationName:
+            standardizedMedication.medicationName || input.medicationName,
+          genericName: standardizedMedication.genericName,
+          brandName: standardizedMedication.brandName,
+          dosage: input.dosage,
+          strength: standardizedMedication.strength || input.strength,
+          dosageForm: standardizedMedication.dosageForm || input.dosageForm,
+          route: standardizedMedication.route || input.route || "oral",
+          frequency: input.frequency,
+          quantity: input.quantity,
+          daysSupply: input.daysSupply,
+          refillsRemaining: input.refills || 0,
+          totalRefills: input.refills || 0,
+          sig: input.sig || standardizedMedication.sig,
+          clinicalIndication: input.clinicalIndication,
+          startDate: input.startDate,
+          status: "active",
+          prescriber: "Chart Entry",
+          prescriberId: input.prescriberId,
+          firstEncounterId: chartEncounter.id,
+          lastUpdatedEncounterId: chartEncounter.id,
+          rxNormCode: standardizedMedication.rxNormCode,
+          ndcCode: standardizedMedication.ndcCode,
+          reasonForChange: "Direct chart entry",
+          changeLog: [
+            {
+              action: "chart_added",
+              timestamp: new Date().toISOString(),
+              userId: input.prescriberId,
+              details: "Added directly to patient chart",
+            },
+          ],
+        })
+        .returning();
 
-      console.log(`✅ [ChartMedication] Successfully added medication ${newMedication.id} to chart`);
-      console.log(`✅ [ChartMedication] GPT Analysis: ${duplicateAnalysis.reasoning}`);
+      console.log(
+        `✅ [ChartMedication] Successfully added medication ${newMedication.id} to chart`,
+      );
+      console.log(
+        `✅ [ChartMedication] GPT Analysis: ${duplicateAnalysis.reasoning}`,
+      );
 
       return {
         success: true,
         medication: newMedication,
         standardizedData: standardizedMedication,
-        gptAnalysis: duplicateAnalysis
+        gptAnalysis: duplicateAnalysis,
       };
-
     } catch (error) {
-      console.error(`❌ [ChartMedication] Error adding medication to chart:`, error);
+      console.error(
+        `❌ [ChartMedication] Error adding medication to chart:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1529,11 +1912,14 @@ Extract all medications from this document. For each medication, determine if it
     clinicalIndication?: string;
     requestedBy: number;
   }): Promise<any> {
-    console.log(`🔄 [MoveToOrders] Converting medication ${input.medicationId} to refill order`);
+    console.log(
+      `🔄 [MoveToOrders] Converting medication ${input.medicationId} to refill order`,
+    );
 
     try {
       // Get existing medication
-      const [existingMedication] = await db.select()
+      const [existingMedication] = await db
+        .select()
         .from(medications)
         .where(eq(medications.id, input.medicationId))
         .limit(1);
@@ -1543,54 +1929,68 @@ Extract all medications from this document. For each medication, determine if it
       }
 
       // Calculate intelligent refill quantities
-      const refillData = this.calculateRefillQuantities(existingMedication, input);
+      const refillData = this.calculateRefillQuantities(
+        existingMedication,
+        input,
+      );
 
       // Create draft order
       const { orders } = await import("../shared/schema.js");
-      
-      const [draftOrder] = await db.insert(orders).values({
-        patientId: existingMedication.patientId,
-        encounterId: input.encounterId,
-        orderType: 'medication',
-        orderStatus: 'draft',
-        medicationName: existingMedication.medicationName,
-        dosage: existingMedication.dosage,
-        quantity: refillData.quantity,
-        sig: existingMedication.sig,
-        refills: refillData.refills,
-        form: existingMedication.dosageForm,
-        routeOfAdministration: existingMedication.route,
-        daysSupply: refillData.daysSupply,
-        clinicalIndication: input.clinicalIndication || existingMedication.clinicalIndication,
-        priority: 'routine',
-        orderedBy: input.requestedBy,
-        providerNotes: `Refill for existing medication ID ${input.medicationId}`
-      }).returning();
+
+      const [draftOrder] = await db
+        .insert(orders)
+        .values({
+          patientId: existingMedication.patientId,
+          encounterId: input.encounterId,
+          orderType: "medication",
+          orderStatus: "draft",
+          medicationName: existingMedication.medicationName,
+          dosage: existingMedication.dosage,
+          quantity: refillData.quantity,
+          sig: existingMedication.sig,
+          refills: refillData.refills,
+          form: existingMedication.dosageForm,
+          routeOfAdministration: existingMedication.route,
+          daysSupply: refillData.daysSupply,
+          clinicalIndication:
+            input.clinicalIndication || existingMedication.clinicalIndication,
+          priority: "routine",
+          orderedBy: input.requestedBy,
+          providerNotes: `Refill for existing medication ID ${input.medicationId}`,
+        })
+        .returning();
 
       // Update medication with refill reference
-      await db.update(medications)
+      await db
+        .update(medications)
         .set({
-          changeLog: sql`COALESCE(change_log, '[]'::jsonb) || ${JSON.stringify([{
-            action: 'moved_to_orders',
-            timestamp: new Date().toISOString(),
-            userId: input.requestedBy,
-            orderId: draftOrder.id,
-            details: 'Converted to refill order'
-          }])}`
+          changeLog: sql`COALESCE(change_log, '[]'::jsonb) || ${JSON.stringify([
+            {
+              action: "moved_to_orders",
+              timestamp: new Date().toISOString(),
+              userId: input.requestedBy,
+              orderId: draftOrder.id,
+              details: "Converted to refill order",
+            },
+          ])}`,
         })
         .where(eq(medications.id, input.medicationId));
 
-      console.log(`✅ [MoveToOrders] Created draft order ${draftOrder.id} for medication refill`);
+      console.log(
+        `✅ [MoveToOrders] Created draft order ${draftOrder.id} for medication refill`,
+      );
 
       return {
         success: true,
         draftOrder,
         refillData,
-        originalMedication: existingMedication
+        originalMedication: existingMedication,
       };
-
     } catch (error) {
-      console.error(`❌ [MoveToOrders] Error converting medication to order:`, error);
+      console.error(
+        `❌ [MoveToOrders] Error converting medication to order:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1602,9 +2002,11 @@ Extract all medications from this document. For each medication, determine if it
     console.log(`🔍 [Formulary] Searching for: "${query}"`);
 
     try {
-      const results = await db.select()
+      const results = await db
+        .select()
         .from(medicationFormulary)
-        .where(sql`
+        .where(
+          sql`
           LOWER(${medicationFormulary.genericName}) LIKE ${`%${query.toLowerCase()}%`} OR
           EXISTS (
             SELECT 1 FROM unnest(${medicationFormulary.brandNames}) AS brand_name
@@ -1614,13 +2016,13 @@ Extract all medications from this document. For each medication, determine if it
             SELECT 1 FROM unnest(${medicationFormulary.commonNames}) AS common_name
             WHERE LOWER(common_name) LIKE ${`%${query.toLowerCase()}%`}
           )
-        `)
+        `,
+        )
         .orderBy(medicationFormulary.popularityRank)
         .limit(limit);
 
       console.log(`✅ [Formulary] Found ${results.length} matches`);
       return results;
-
     } catch (error) {
       console.error(`❌ [Formulary] Search error:`, error);
       return [];
@@ -1631,12 +2033,15 @@ Extract all medications from this document. For each medication, determine if it
    * Get all active medications for GPT analysis
    */
   private async getAllActiveMedications(patientId: number): Promise<any[]> {
-    return db.select()
+    return db
+      .select()
       .from(medications)
-      .where(and(
-        eq(medications.patientId, patientId),
-        eq(medications.status, 'active')
-      ))
+      .where(
+        and(
+          eq(medications.patientId, patientId),
+          eq(medications.status, "active"),
+        ),
+      )
       .orderBy(medications.medicationName);
   }
 
@@ -1652,7 +2057,7 @@ Extract all medications from this document. For each medication, determine if it
       route: string;
       clinicalIndication?: string;
     },
-    existingMedications: any[]
+    existingMedications: any[],
   ): Promise<{
     isDuplicate: boolean;
     reasoning: string;
@@ -1662,11 +2067,13 @@ Extract all medications from this document. For each medication, determine if it
     if (existingMedications.length === 0) {
       return {
         isDuplicate: false,
-        reasoning: "No existing medications to compare against"
+        reasoning: "No existing medications to compare against",
       };
     }
 
-    console.log(`🤖 [GPT-DuplicateAnalysis] Analyzing ${proposedMedication.medicationName} against ${existingMedications.length} existing medications`);
+    console.log(
+      `🤖 [GPT-DuplicateAnalysis] Analyzing ${proposedMedication.medicationName} against ${existingMedications.length} existing medications`,
+    );
 
     try {
       const completion = await this.openai.chat.completions.create({
@@ -1700,7 +2107,7 @@ Respond with a JSON object containing:
   "reasoning": "Detailed clinical explanation of your decision",
   "conflictingMedications": [array of medication IDs that conflict],
   "recommendations": [array of clinical recommendations if applicable]
-}`
+}`,
           },
           {
             role: "user",
@@ -1709,26 +2116,30 @@ Name: ${proposedMedication.medicationName}
 Dosage: ${proposedMedication.dosage}
 Frequency: ${proposedMedication.frequency}
 Route: ${proposedMedication.route}
-Clinical Indication: ${proposedMedication.clinicalIndication || 'Not specified'}
+Clinical Indication: ${proposedMedication.clinicalIndication || "Not specified"}
 
 EXISTING MEDICATIONS:
-${existingMedications.map((med, index) => `
+${existingMedications
+  .map(
+    (med, index) => `
 ${index + 1}. ID: ${med.id}
-   Name: ${med.medicationName} (Generic: ${med.genericName || 'Not specified'})
+   Name: ${med.medicationName} (Generic: ${med.genericName || "Not specified"})
    Dosage: ${med.dosage}
-   Strength: ${med.strength || 'Not specified'}
-   Form: ${med.dosageForm || 'Not specified'}
-   Route: ${med.route || 'Not specified'}
+   Strength: ${med.strength || "Not specified"}
+   Form: ${med.dosageForm || "Not specified"}
+   Route: ${med.route || "Not specified"}
    Frequency: ${med.frequency}
-   Indication: ${med.clinicalIndication || 'Not specified'}
+   Indication: ${med.clinicalIndication || "Not specified"}
    Status: ${med.status}
-`).join('')}
+`,
+  )
+  .join("")}
 
-Please analyze whether this proposed medication represents a true duplicate that should be prevented.`
-          }
+Please analyze whether this proposed medication represents a true duplicate that should be prevented.`,
+          },
         ],
         temperature: 0.1,
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       const response = completion.choices[0]?.message?.content;
@@ -1738,27 +2149,35 @@ Please analyze whether this proposed medication represents a true duplicate that
 
       // Parse GPT response
       const analysis = JSON.parse(response);
-      
-      console.log(`✅ [GPT-DuplicateAnalysis] Decision: ${analysis.isDuplicate ? 'DUPLICATE DETECTED' : 'NO DUPLICATE'}`);
-      console.log(`✅ [GPT-DuplicateAnalysis] Reasoning: ${analysis.reasoning}`);
+
+      console.log(
+        `✅ [GPT-DuplicateAnalysis] Decision: ${analysis.isDuplicate ? "DUPLICATE DETECTED" : "NO DUPLICATE"}`,
+      );
+      console.log(
+        `✅ [GPT-DuplicateAnalysis] Reasoning: ${analysis.reasoning}`,
+      );
 
       return analysis;
-
     } catch (error) {
       console.error(`❌ [GPT-DuplicateAnalysis] Error:`, error);
-      
+
       // Fallback to conservative approach if GPT fails
-      const simpleNameMatch = existingMedications.find(med => 
-        med.medicationName?.toLowerCase().includes(proposedMedication.medicationName.toLowerCase()) ||
-        proposedMedication.medicationName.toLowerCase().includes(med.medicationName?.toLowerCase() || '')
+      const simpleNameMatch = existingMedications.find(
+        (med) =>
+          med.medicationName
+            ?.toLowerCase()
+            .includes(proposedMedication.medicationName.toLowerCase()) ||
+          proposedMedication.medicationName
+            .toLowerCase()
+            .includes(med.medicationName?.toLowerCase() || ""),
       );
 
       return {
         isDuplicate: !!simpleNameMatch,
-        reasoning: simpleNameMatch ? 
-          `GPT analysis failed, but found potential name match with existing medication: ${simpleNameMatch.medicationName}. Manual review recommended.` :
-          "GPT analysis failed, no obvious name matches found. Manual review recommended.",
-        conflictingMedications: simpleNameMatch ? [simpleNameMatch] : []
+        reasoning: simpleNameMatch
+          ? `GPT analysis failed, but found potential name match with existing medication: ${simpleNameMatch.medicationName}. Manual review recommended.`
+          : "GPT analysis failed, no obvious name matches found. Manual review recommended.",
+        conflictingMedications: simpleNameMatch ? [simpleNameMatch] : [],
       };
     }
   }
@@ -1766,14 +2185,20 @@ Please analyze whether this proposed medication represents a true duplicate that
   /**
    * Get or create a virtual "Chart Management" encounter for direct medication management
    */
-  private async getOrCreateChartEncounter(patientId: number, providerId: number): Promise<any> {
+  private async getOrCreateChartEncounter(
+    patientId: number,
+    providerId: number,
+  ): Promise<any> {
     // Look for existing chart management encounter
-    const existingChartEncounter = await db.select()
+    const existingChartEncounter = await db
+      .select()
       .from(encounters)
-      .where(and(
-        eq(encounters.patientId, patientId),
-        eq(encounters.encounterType, 'Chart Management')
-      ))
+      .where(
+        and(
+          eq(encounters.patientId, patientId),
+          eq(encounters.encounterType, "Chart Management"),
+        ),
+      )
       .limit(1);
 
     if (existingChartEncounter.length > 0) {
@@ -1781,18 +2206,23 @@ Please analyze whether this proposed medication represents a true duplicate that
     }
 
     // Create new chart management encounter
-    const [chartEncounter] = await db.insert(encounters).values({
-      patientId,
-      providerId,
-      encounterType: 'Chart Management',
-      encounterSubtype: 'Direct Chart Entry',
-      startTime: new Date(),
-      encounterStatus: 'active',
-      chiefComplaint: 'Chart medication management',
-      note: 'Virtual encounter for direct chart medication management'
-    }).returning();
+    const [chartEncounter] = await db
+      .insert(encounters)
+      .values({
+        patientId,
+        providerId,
+        encounterType: "Chart Management",
+        encounterSubtype: "Direct Chart Entry",
+        startTime: new Date(),
+        encounterStatus: "active",
+        chiefComplaint: "Chart medication management",
+        note: "Virtual encounter for direct chart medication management",
+      })
+      .returning();
 
-    console.log(`📋 [ChartEncounter] Created chart management encounter ${chartEncounter.id}`);
+    console.log(
+      `📋 [ChartEncounter] Created chart management encounter ${chartEncounter.id}`,
+    );
     return chartEncounter;
   }
 
@@ -1801,10 +2231,17 @@ Please analyze whether this proposed medication represents a true duplicate that
    */
   private calculateRefillQuantities(medication: any, input: any) {
     // Use provided values or intelligent defaults
-    const quantity = input.quantity || medication.quantity || this.calculateDefaultQuantity(medication);
+    const quantity =
+      input.quantity ||
+      medication.quantity ||
+      this.calculateDefaultQuantity(medication);
     const daysSupply = input.daysSupply || medication.daysSupply || 30; // Default 30-day supply
-    const refills = input.refills !== undefined ? input.refills : 
-                   medication.refillsRemaining > 0 ? medication.refillsRemaining : 5; // Default 5 refills
+    const refills =
+      input.refills !== undefined
+        ? input.refills
+        : medication.refillsRemaining > 0
+          ? medication.refillsRemaining
+          : 5; // Default 5 refills
 
     return { quantity, daysSupply, refills };
   }
@@ -1814,15 +2251,27 @@ Please analyze whether this proposed medication represents a true duplicate that
    */
   private calculateDefaultQuantity(medication: any): number {
     const daysSupply = medication.daysSupply || 30;
-    const frequency = medication.frequency?.toLowerCase() || '';
+    const frequency = medication.frequency?.toLowerCase() || "";
 
     // Parse frequency to daily count
     let dailyCount = 1; // Default
-    if (frequency.includes('twice') || frequency.includes('bid') || frequency.includes('2')) {
+    if (
+      frequency.includes("twice") ||
+      frequency.includes("bid") ||
+      frequency.includes("2")
+    ) {
       dailyCount = 2;
-    } else if (frequency.includes('three') || frequency.includes('tid') || frequency.includes('3')) {
+    } else if (
+      frequency.includes("three") ||
+      frequency.includes("tid") ||
+      frequency.includes("3")
+    ) {
       dailyCount = 3;
-    } else if (frequency.includes('four') || frequency.includes('qid') || frequency.includes('4')) {
+    } else if (
+      frequency.includes("four") ||
+      frequency.includes("qid") ||
+      frequency.includes("4")
+    ) {
       dailyCount = 4;
     }
 
