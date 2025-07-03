@@ -22,7 +22,25 @@ router.get("/social-history/:patientId", APIResponseHandler.asyncHandler(async (
     const socialHistoryData = await storage.getSocialHistory(patientId);
     console.log(`🚬 [SocialHistoryAPI] Retrieved ${socialHistoryData.length} social history entries`);
     
-    res.json(socialHistoryData);
+    // Sort visit history by creation order (most recent first) for each entry
+    const sortedData = socialHistoryData.map(entry => ({
+      ...entry,
+      visitHistory: entry.visitHistory ? 
+        (typeof entry.visitHistory === 'string' ? JSON.parse(entry.visitHistory) : entry.visitHistory)
+          .sort((a: any, b: any) => {
+            // Primary sort: date descending
+            const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+            if (dateComparison !== 0) return dateComparison;
+            
+            // Secondary sort: attachment/encounter ID descending (higher ID = more recent)
+            const aId = a.attachmentId || a.encounterId || 0;
+            const bId = b.attachmentId || b.encounterId || 0;
+            return bId - aId;
+          })
+        : []
+    }));
+    
+    res.json(sortedData);
   } catch (error: any) {
     console.error(`🚬 [SocialHistoryAPI] Error fetching social history:`, error);
     console.error(`🚬 [SocialHistoryAPI] Error details:`, {
