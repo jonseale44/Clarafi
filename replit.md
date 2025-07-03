@@ -109,19 +109,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Comprehensive Pharmacy Validation Enforcement COMPLETED (July 3, 2025)
-- **CRITICAL VALIDATION GAP FIXED**: Implemented pharmacy validation across all three medication order creation pathways in the EMR system
-- **MANUAL ORDER CREATION**: Enhanced POST /api/orders endpoint with PharmacyValidationService integration, preventing creation of orders without required patient instructions (sig)
-- **MEDICATIONS LIST ARROW BUTTON**: Added validation to moveToOrders method in medication-delta-service.ts, ensuring refill orders meet pharmacy compliance requirements
-- **DEFAULT SIG GENERATION**: Created generateDefaultSig method in PharmacyValidationService that intelligently generates patient instructions when missing:
-  - Handles common frequency patterns (daily, bid, tid, qid, bedtime, prn)
-  - Processes standard routes (oral, topical, ophthalmic, otic, nasal, inhalation)
-  - Generates pharmacy-compliant instructions like "Take 1 by mouth twice daily"
-- **SOAP NOTE AUTO-CREATION**: Previously implemented validation in soap-orders-extractor.ts ensures all auto-generated orders have proper sig instructions
-- **PRODUCTION COMPLIANCE**: All medication orders now require proper patient instructions before being saved to database, meeting production EMR pharmacy standards
-- **ERROR PREVENTION**: System prevents creation of prescriptions that would be rejected by pharmacies due to missing patient instructions
-- **UNIFIED VALIDATION ARCHITECTURE**: All three order creation pathways now use consistent PharmacyValidationService validation logic
-
 ### Medications Section Timezone Translation Fix COMPLETED (July 3, 2025)
 - **CRITICAL BUG FIXED**: Resolved timezone issue where attachment dates (7/3/25) were displaying as different dates (7/2/25) in medications section
 - **ROOT CAUSE**: Using `new Date(dateString).toLocaleDateString()` caused UTC-to-local timezone conversions, shifting dates by one day

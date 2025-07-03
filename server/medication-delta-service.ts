@@ -1970,81 +1970,30 @@ Extract all medications from this document. For each medication, determine if it
         input,
       );
 
-      // Import pharmacy validation service
-      const { PharmacyValidationService } = await import(
-        "./pharmacy-validation-service.js"
-      );
-      const pharmacyService = new PharmacyValidationService();
-
-      // Build order data for storage
-      const orderData = {
-        patientId: existingMedication.patientId,
-        encounterId: input.encounterId,
-        orderType: "medication",
-        orderStatus: "draft",
-        medicationName: existingMedication.medicationName,
-        dosage: existingMedication.dosage,
-        quantity: refillData.quantity,
-        sig: existingMedication.sig,
-        refills: refillData.refills,
-        form: existingMedication.dosageForm,
-        routeOfAdministration: existingMedication.route,
-        daysSupply: refillData.daysSupply,
-        clinicalIndication:
-          input.clinicalIndication || existingMedication.clinicalIndication,
-        priority: "routine",
-        orderedBy: input.requestedBy,
-        providerNotes: `Refill for existing medication ID ${input.medicationId}`,
-      };
-
-      // Build validation data with required fields
-      const validationData = {
-        medicationName: existingMedication.medicationName || "",
-        strength: existingMedication.strength || existingMedication.dosage || "",
-        dosageForm: existingMedication.dosageForm || "tablet",
-        sig: existingMedication.sig || "",
-        quantity: refillData.quantity,
-        refills: refillData.refills,
-        daysSupply: refillData.daysSupply,
-        route: existingMedication.route || "oral",
-        clinicalIndication: input.clinicalIndication || existingMedication.clinicalIndication
-      };
-
-      // Check if sig is missing and generate default if needed
-      if (!orderData.sig || orderData.sig.trim() === "") {
-        const generatedSig = pharmacyService.generateDefaultSig(
-          existingMedication.dosage || "1",
-          existingMedication.frequency || "once daily",
-          existingMedication.route || "by mouth"
-        );
-        
-        console.log(
-          `💊 [MoveToOrders] No sig found, generated default: "${generatedSig}"`,
-        );
-        
-        orderData.sig = generatedSig;
-        validationData.sig = generatedSig;
-      }
-      
-      // Validate pharmacy requirements - but don't block order creation
-      const validationResult = await pharmacyService.validateMedicationOrder(validationData);
-      
-      if (!validationResult.isValid) {
-        console.warn(
-          `⚠️ [MoveToOrders] Pharmacy validation warnings:`,
-          validationResult.errors,
-        );
-        console.warn(
-          `⚠️ [MoveToOrders] Order will be created but may require review before signing`,
-        );
-      }
-
       // Create draft order
       const { orders } = await import("../shared/schema.js");
 
       const [draftOrder] = await db
         .insert(orders)
-        .values(orderData)
+        .values({
+          patientId: existingMedication.patientId,
+          encounterId: input.encounterId,
+          orderType: "medication",
+          orderStatus: "draft",
+          medicationName: existingMedication.medicationName,
+          dosage: existingMedication.dosage,
+          quantity: refillData.quantity,
+          sig: existingMedication.sig,
+          refills: refillData.refills,
+          form: existingMedication.dosageForm,
+          routeOfAdministration: existingMedication.route,
+          daysSupply: refillData.daysSupply,
+          clinicalIndication:
+            input.clinicalIndication || existingMedication.clinicalIndication,
+          priority: "routine",
+          orderedBy: input.requestedBy,
+          providerNotes: `Refill for existing medication ID ${input.medicationId}`,
+        })
         .returning();
 
       // Update medication with refill reference
