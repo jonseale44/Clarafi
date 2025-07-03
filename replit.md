@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Social History Visit History Format Consistency Fix COMPLETED (July 3, 2025)
+- **CRITICAL FORMAT ALIGNMENT**: Successfully identified and fixed social history visit history formatting to match medical problems display pattern exactly
+- **ROOT CAUSE RESOLUTION**: Fixed issue where social history expanded visit history used old gray box styling instead of medical problems clean format
+- **VISIT HISTORY CONSISTENCY**: Social history visit history now uses identical structure as medical problems: clean layout without gray boxes or excessive padding
+- **UI/UX PARITY ACHIEVED**: All chart sections now display visit history with consistent formatting, typography, and visual hierarchy
+- **LEGACY CODE IDENTIFICATION**: Resolved confusion between main social history items (correct format) and expanded visit history (needed fixing)
+- **PRODUCTION READY**: Social history visit history display now matches medical problems pattern with proper date formatting, badge alignment, and notes display
+
 ### Simplified 7-Category Social History System Implementation COMPLETED (July 3, 2025)
 - **PRODUCTION-READY 7-CATEGORY ARCHITECTURE**: Successfully redesigned social history system with exactly 7 standardized categories in fixed order: tobacco, alcohol, drugs, occupation, living_situation, activity, diet
 - **SMART CATEGORY CONSOLIDATION**: GPT-4.1 now properly consolidates inconsistent categories (substance_use/recreational_drugs → drugs, smoking → tobacco) using intelligent synonym matching
