@@ -297,7 +297,7 @@ export default function AuthPage() {
       </div>
       
       {/* Right side - Hero Section */}
-      <div className="flex-1 bg-gradient-to-br from-primary to-blue-600 p-8 text-white flex items-center justify-center">
+      <div className="flex-1 bg-gradient-to-br from-primary to-navy-blue-700 p-8 text-white flex items-center justify-center">
         <div className="max-w-lg text-center">
           <h2 className="text-4xl font-bold mb-6">
             Next-Generation EMR System

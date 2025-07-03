@@ -13,7 +13,7 @@
   --card-foreground: 220 14% 4%; /* #0F172A */
   --border: 220 13% 91%; /* #E2E8F0 */
   --input: 220 13% 91%; /* #E2E8F0 */
-  --primary: 207 90% 54%; /* #1976D2 */
+  --primary: 220 100% 20%; /* #003366 - Navy Blue */
   --primary-foreground: 210 40% 98%; /* #F8FAFC */
   --secondary: 220 14% 96%; /* #F8FAFC */
   --secondary-foreground: 220 9% 10%; /* #1E293B */
@@ -21,21 +21,21 @@
   --accent-foreground: 220 9% 10%; /* #1E293B */
   --destructive: 0 84% 60%; /* #EF4444 */
   --destructive-foreground: 0 0% 98%; /* #FEFEFE */
-  --ring: 207 90% 54%; /* #1976D2 */
+  --ring: 220 100% 20%; /* #003366 - Navy Blue */
   --radius: 0.5rem;
-  --chart-1: 207 90% 54%; /* #1976D2 */
+  --chart-1: 220 100% 20%; /* #003366 - Navy Blue */
   --chart-2: 142 76% 36%; /* #16A34A */
   --chart-3: 25 95% 53%; /* #F97316 */
   --chart-4: 270 95% 75%; /* #A855F7 */
   --chart-5: 340 75% 55%; /* #EC4899 */
   --sidebar-background: 0 0% 100%; /* #FFFFFF */
   --sidebar-foreground: 220 14% 4%; /* #0F172A */
-  --sidebar-primary: 207 90% 54%; /* #1976D2 */
+  --sidebar-primary: 220 100% 20%; /* #003366 - Navy Blue */
   --sidebar-primary-foreground: 210 40% 98%; /* #F8FAFC */
   --sidebar-accent: 220 14% 96%; /* #F8FAFC */
   --sidebar-accent-foreground: 220 9% 10%; /* #1E293B */
   --sidebar-border: 220 13% 91%; /* #E2E8F0 */
-  --sidebar-ring: 207 90% 54%; /* #1976D2 */
+  --sidebar-ring: 220 100% 20%; /* #003366 - Navy Blue */
   
   /* Clarafi Brand Colors */
   --navy-blue: 220 100% 20%; /* #003366 */
@@ -53,7 +53,7 @@
   --card-foreground: 0 0% 98%; /* #FAFAFA */
   --border: 215 28% 17%; /* #1E293B */
   --input: 215 28% 17%; /* #1E293B */
-  --primary: 207 90% 54%; /* #1976D2 */
+  --primary: 220 100% 25%; /* #004080 - Lighter Navy Blue for dark mode */
   --primary-foreground: 210 40% 98%; /* #F8FAFC */
   --secondary: 215 28% 17%; /* #1E293B */
   --secondary-foreground: 0 0% 98%; /* #FAFAFA */
@@ -61,21 +61,21 @@
   --accent-foreground: 0 0% 98%; /* #FAFAFA */
   --destructive: 0 63% 31%; /* #7F1D1D */
   --destructive-foreground: 0 0% 98%; /* #FAFAFA */
-  --ring: 207 90% 54%; /* #1976D2 */
+  --ring: 220 100% 25%; /* #004080 - Lighter Navy Blue for dark mode */
   --radius: 0.5rem;
-  --chart-1: 207 90% 54%; /* #1976D2 */
+  --chart-1: 220 100% 25%; /* #004080 - Lighter Navy Blue for dark mode */
   --chart-2: 142 76% 36%; /* #16A34A */
   --chart-3: 25 95% 53%; /* #F97316 */
   --chart-4: 270 95% 75%; /* #A855F7 */
   --chart-5: 340 75% 55%; /* #EC4899 */
   --sidebar-background: 220 14% 4%; /* #0F172A */
   --sidebar-foreground: 0 0% 98%; /* #FAFAFA */
-  --sidebar-primary: 207 90% 54%; /* #1976D2 */
+  --sidebar-primary: 220 100% 25%; /* #004080 - Lighter Navy Blue for dark mode */
   --sidebar-primary-foreground: 210 40% 98%; /* #F8FAFC */
   --sidebar-accent: 215 28% 17%; /* #1E293B */
   --sidebar-accent-foreground: 0 0% 98%; /* #FAFAFA */
   --sidebar-border: 215 28% 17%; /* #1E293B */
-  --sidebar-ring: 207 90% 54%; /* #1976D2 */
+  --sidebar-ring: 220 100% 25%; /* #004080 - Lighter Navy Blue for dark mode */
 }
 
 @layer base {
