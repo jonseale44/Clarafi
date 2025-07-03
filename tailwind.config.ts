@@ -61,6 +61,9 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Clarafi Brand Colors
+        "navy-blue": "hsl(var(--navy-blue))",
+        "gold": "hsl(var(--gold))",
       },
       keyframes: {
         "accordion-down": {

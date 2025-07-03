@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registration successful",
-        description: "Welcome to MediFlow!",
+        description: "Welcome to Clarafi!",
         variant: "default",
       });
     },

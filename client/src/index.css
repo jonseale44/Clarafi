@@ -36,6 +36,10 @@
   --sidebar-accent-foreground: 220 9% 10%; /* #1E293B */
   --sidebar-border: 220 13% 91%; /* #E2E8F0 */
   --sidebar-ring: 207 90% 54%; /* #1976D2 */
+  
+  /* Clarafi Brand Colors */
+  --navy-blue: 220 100% 20%; /* #003366 */
+  --gold: 45 100% 50%; /* #FFD700 */
 }
 
 .dark {

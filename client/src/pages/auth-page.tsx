@@ -108,11 +108,13 @@ export default function AuthPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                <Hospital className="h-6 w-6 text-white" />
+              <div className="w-12 h-12 bg-navy-blue rounded-lg flex items-center justify-center">
+                <Hospital className="h-6 w-6 text-gold" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">MediFlow</h1>
+                <h1 className="text-2xl font-bold">
+                  <span className="text-navy-blue">CLAR</span><span className="text-gold">AFI</span>
+                </h1>
                 <p className="text-sm text-gray-500">EMR System</p>
               </div>
             </div>

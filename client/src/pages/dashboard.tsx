@@ -279,10 +279,12 @@ export default function Dashboard() {
           {/* Left side - Brand and Navigation */}
           <div className="flex items-center space-x-8">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
+              <div className="w-8 h-8 bg-navy-blue rounded-lg flex items-center justify-center">
+                <span className="text-gold font-bold text-sm">C</span>
               </div>
-              <span className="font-bold text-xl text-primary">MediFlow</span>
+              <span className="font-bold text-xl">
+                <span className="text-navy-blue">CLAR</span><span className="text-gold">AFI</span>
+              </span>
             </div>
             
             {/* Main Navigation */}
