@@ -197,7 +197,7 @@ export class DatabaseStorage implements IStorage {
       .set({ isActive: false })
       .where(eq(userSessionLocations.userId, userId));
 
-    // Create new session location
+    // Create new session location (no conflict handling needed since we cleared previous)
     await db
       .insert(userSessionLocations)
       .values({
@@ -206,14 +206,6 @@ export class DatabaseStorage implements IStorage {
         selectedAt: new Date(),
         isActive: true,
         rememberSelection
-      })
-      .onConflictDoUpdate({
-        target: [userSessionLocations.userId, userSessionLocations.locationId],
-        set: {
-          selectedAt: new Date(),
-          isActive: true,
-          rememberSelection
-        }
       });
   }
 
