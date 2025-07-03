@@ -5,6 +5,161 @@ import { relations } from "drizzle-orm";
 
 // Core Tables
 
+// Organizational Hierarchy - Scalable Healthcare System Architecture
+// Supports everything from single-provider clinics to large health systems
+
+// Health Systems (Top Level) - e.g., "Ascension", "Scott & White", "Mayo Clinic"
+export const healthSystems = pgTable("health_systems", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "Ascension Health System"
+  shortName: text("short_name"), // "Ascension"
+  systemType: text("system_type").notNull(), // 'health_system', 'hospital_network', 'clinic_group', 'independent'
+  
+  // Contact and administrative info
+  primaryContact: text("primary_contact"),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  
+  // Regulatory
+  npi: text("npi"),
+  taxId: text("tax_id"),
+  
+  // Branding
+  logoUrl: text("logo_url"),
+  brandColors: jsonb("brand_colors").$type<{
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+  }>(),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Regional/Area Organizations - e.g., "Ascension Waco", "Mayo Clinic Arizona"
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id), // Nullable for independent clinics
+  
+  name: text("name").notNull(), // "Ascension Waco"
+  shortName: text("short_name"), // "Waco"
+  organizationType: text("organization_type").notNull(), // 'regional_health', 'hospital', 'clinic_group', 'department'
+  
+  // Geographic info
+  region: text("region"), // "Central Texas", "Greater Phoenix"
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  
+  // Contact info
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  
+  // Administrative
+  npi: text("npi"),
+  taxId: text("tax_id"),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Physical Locations - e.g., "Ascension Waco-Hillsboro", "Mayo Clinic Scottsdale-Main"
+export const locations = pgTable("locations", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id), // Nullable for direct health system locations
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id), // Can bypass organization
+  
+  name: text("name").notNull(), // "Hillsboro Family Medicine"
+  shortName: text("short_name"), // "Hillsboro"
+  locationType: text("location_type").notNull(), // 'clinic', 'hospital', 'urgent_care', 'specialty_center', 'outpatient_center'
+  
+  // Physical address
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code").notNull(),
+  
+  // Contact
+  phone: text("phone"),
+  fax: text("fax"),
+  email: text("email"),
+  
+  // Facility details
+  facilityCode: text("facility_code"), // Internal code for billing/reporting
+  npi: text("npi"),
+  
+  // Scheduling and capacity
+  operatingHours: jsonb("operating_hours").$type<{
+    monday?: { open: string; close: string; closed?: boolean };
+    tuesday?: { open: string; close: string; closed?: boolean };
+    wednesday?: { open: string; close: string; closed?: boolean };
+    thursday?: { open: string; close: string; closed?: boolean };
+    friday?: { open: string; close: string; closed?: boolean };
+    saturday?: { open: string; close: string; closed?: boolean };
+    sunday?: { open: string; close: string; closed?: boolean };
+  }>(),
+  
+  // Features and capabilities
+  services: text("services").array(), // ['primary_care', 'cardiology', 'lab', 'imaging']
+  hasLab: boolean("has_lab").default(false),
+  hasImaging: boolean("has_imaging").default(false),
+  hasPharmacy: boolean("has_pharmacy").default(false),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User-Location Associations - Which providers work at which locations
+export const userLocations = pgTable("user_locations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  locationId: integer("location_id").notNull().references(() => locations.id, { onDelete: "cascade" }),
+  
+  // Role at this location
+  roleAtLocation: text("role_at_location").notNull(), // 'primary_provider', 'covering_provider', 'specialist', 'nurse', 'staff'
+  isPrimary: boolean("is_primary").default(false), // User's primary/home location
+  
+  // Schedule and availability
+  workSchedule: jsonb("work_schedule").$type<{
+    monday?: { start: string; end: string; unavailable?: boolean };
+    tuesday?: { start: string; end: string; unavailable?: boolean };
+    wednesday?: { start: string; end: string; unavailable?: boolean };
+    thursday?: { start: string; end: string; unavailable?: boolean };
+    friday?: { start: string; end: string; unavailable?: boolean };
+    saturday?: { start: string; end: string; unavailable?: boolean };
+    sunday?: { start: string; end: string; unavailable?: boolean };
+  }>(),
+  
+  // Permissions at this location
+  canSchedule: boolean("can_schedule").default(true),
+  canViewAllPatients: boolean("can_view_all_patients").default(true), // vs only assigned patients
+  canCreateOrders: boolean("can_create_orders").default(true),
+  
+  active: boolean("active").default(true),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Session Locations - Track which location user is "logged into"
+export const userSessionLocations = pgTable("user_session_locations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  
+  // Session info
+  sessionId: text("session_id"), // If we want to track specific sessions
+  selectedAt: timestamp("selected_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+  
+  // Remember preference
+  rememberSelection: boolean("remember_selection").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Users (Healthcare professionals)
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -235,6 +390,16 @@ export const patients = pgTable("patients", {
   address: text("address"),
   emergencyContact: text("emergency_contact"),
   
+  // Location Associations
+  preferredLocationId: integer("preferred_location_id").references(() => locations.id), // Patient's home/primary location
+  primaryProviderId: integer("primary_provider_id").references(() => users.id), // PCP assignment
+  
+  // Insurance and Registration
+  insurancePrimary: text("insurance_primary"),
+  insuranceSecondary: text("insurance_secondary"),
+  policyNumber: text("policy_number"),
+  groupNumber: text("group_number"),
+  
   // Voice workflow optimization
   assistantId: text("assistant_id"), // Patient-specific OpenAI assistant ID
   assistantThreadId: text("assistant_thread_id"),
@@ -250,18 +415,144 @@ export const patients = pgTable("patients", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Appointments
+// Intelligent Scheduling System with GPT Integration
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
-  patientId: integer("patient_id").references(() => patients.id).notNull(),
-  providerId: integer("provider_id").references(() => users.id).notNull(),
-  appointmentDate: timestamp("appointment_date").notNull(),
-  duration: integer("duration"), // in minutes
-  status: text("status").default("scheduled"),
-  appointmentType: text("appointment_type"),
-  notes: text("notes"),
+  patientId: integer("patient_id").notNull().references(() => patients.id, { onDelete: "cascade" }),
+  providerId: integer("provider_id").notNull().references(() => users.id),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  
+  // Appointment timing
+  appointmentDate: date("appointment_date").notNull(),
+  startTime: text("start_time").notNull(), // "09:00"
+  endTime: text("end_time").notNull(), // "09:30"
+  duration: integer("duration").notNull(), // minutes
+  
+  // Appointment details
+  appointmentType: text("appointment_type").notNull(), // 'new_patient', 'follow_up', 'annual_physical', 'urgent', 'telehealth'
+  chiefComplaint: text("chief_complaint"),
+  visitReason: text("visit_reason"),
+  
+  // Status and workflow
+  status: text("status").default("scheduled"), // 'scheduled', 'confirmed', 'checked_in', 'in_progress', 'completed', 'no_show', 'cancelled'
+  confirmationStatus: text("confirmation_status").default("pending"), // 'pending', 'confirmed', 'declined'
+  
+  // Check-in and workflow
+  checkedInAt: timestamp("checked_in_at"),
+  checkedInBy: integer("checked_in_by").references(() => users.id),
+  roomAssignment: text("room_assignment"),
+  
+  // Scheduling intelligence
+  urgencyLevel: text("urgency_level").default("routine"), // 'stat', 'urgent', 'routine', 'elective'
+  schedulingNotes: text("scheduling_notes"),
+  patientPreferences: jsonb("patient_preferences").$type<{
+    preferredTimes?: string[];
+    avoidTimes?: string[];
+    specialRequests?: string;
+    languageNeeds?: string;
+    accessibilityNeeds?: string;
+  }>(),
+  
+  // GPT Scheduling Intelligence
+  aiSchedulingData: jsonb("ai_scheduling_data").$type<{
+    recommendedDuration?: number;
+    suggestedPrep?: string[];
+    anticipatedNeeds?: string[];
+    complexityScore?: number;
+    followUpSuggestions?: string[];
+    riskFactors?: string[];
+  }>(),
+  
+  // Communication and reminders
+  remindersSent: integer("reminders_sent").default(0),
+  lastReminderSent: timestamp("last_reminder_sent"),
+  communicationPreferences: jsonb("communication_preferences").$type<{
+    reminders?: boolean;
+    smsReminders?: boolean;
+    emailReminders?: boolean;
+    callReminders?: boolean;
+    portalNotifications?: boolean;
+  }>(),
+  
+  // External integration
+  externalAppointmentId: text("external_appointment_id"), // For EMR integrations
+  syncedAt: timestamp("synced_at"),
+  
+  // Billing and insurance
+  insuranceVerified: boolean("insurance_verified").default(false),
+  verifiedBy: integer("verified_by").references(() => users.id),
+  copayAmount: decimal("copay_amount", { precision: 10, scale: 2 }),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+});
+
+// Provider Schedules and Availability
+export const providerSchedules = pgTable("provider_schedules", {
+  id: serial("id").primaryKey(),
+  providerId: integer("provider_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  
+  // Schedule pattern
+  dayOfWeek: integer("day_of_week").notNull(), // 0=Sunday, 1=Monday, etc.
+  startTime: text("start_time").notNull(), // "08:00"
+  endTime: text("end_time").notNull(), // "17:00"
+  
+  // Schedule type and rules
+  scheduleType: text("schedule_type").notNull(), // 'regular', 'block', 'on_call', 'vacation', 'conference'
+  appointmentTypes: text("appointment_types").array(), // Types of appointments this schedule supports
+  
+  // Availability settings
+  slotDuration: integer("slot_duration").default(30), // Default appointment duration in minutes
+  bufferTime: integer("buffer_time").default(0), // Minutes between appointments
+  maxConcurrentAppts: integer("max_concurrent_appts").default(1),
+  
+  // Booking rules
+  advanceBookingDays: integer("advance_booking_days").default(365), // How far in advance patients can book
+  cancelationPolicyHours: integer("cancelation_policy_hours").default(24),
+  
+  // Special considerations
+  isAvailableForUrgent: boolean("is_available_for_urgent").default(true),
+  allowDoubleBooking: boolean("allow_double_booking").default(false),
+  requiresReferral: boolean("requires_referral").default(false),
+  
+  // Date range (for temporary schedules)
+  effectiveFrom: date("effective_from"),
+  effectiveUntil: date("effective_until"),
+  
+  active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Schedule Exceptions (holidays, time off, blocks)
+export const scheduleExceptions = pgTable("schedule_exceptions", {
+  id: serial("id").primaryKey(),
+  providerId: integer("provider_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  locationId: integer("location_id").references(() => locations.id), // Nullable for system-wide exceptions
+  
+  // Exception timing
+  exceptionDate: date("exception_date").notNull(),
+  startTime: text("start_time"), // Nullable for all-day exceptions
+  endTime: text("end_time"),
+  
+  // Exception details
+  exceptionType: text("exception_type").notNull(), // 'vacation', 'conference', 'holiday', 'block', 'emergency', 'sick'
+  reason: text("reason"),
+  
+  // Impact on appointments
+  cancelsExistingAppts: boolean("cancels_existing_appts").default(false),
+  allowsEmergencyOverride: boolean("allows_emergency_override").default(true),
+  
+  // Recurring exceptions (yearly holidays, etc.)
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: text("recurrence_pattern"), // 'yearly', 'monthly', 'weekly'
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+});
+
+// Appointments table moved to enhanced scheduling section above
 
 // Signatures
 export const signatures = pgTable("signatures", {
@@ -2205,6 +2496,285 @@ export type ProblemRankOverride = typeof problemRankOverrides.$inferSelect;
 export type InsertProblemRankOverride = z.infer<typeof insertProblemRankOverrideSchema>;
 export type UserProblemListPreferences = typeof userProblemListPreferences.$inferSelect;
 export type InsertUserProblemListPreferences = z.infer<typeof insertUserProblemListPreferencesSchema>;
+
+// Organizational Structure Relations
+export const healthSystemsRelations = relations(healthSystems, ({ many }) => ({
+  organizations: many(organizations),
+  locations: many(locations), // Direct health system locations
+}));
+
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+  healthSystem: one(healthSystems, {
+    fields: [organizations.healthSystemId],
+    references: [healthSystems.id],
+  }),
+  locations: many(locations),
+}));
+
+export const locationsRelations = relations(locations, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [locations.organizationId],
+    references: [organizations.id],
+  }),
+  healthSystem: one(healthSystems, {
+    fields: [locations.healthSystemId],
+    references: [healthSystems.id],
+  }),
+  userLocations: many(userLocations),
+  appointments: many(appointments),
+  providerSchedules: many(providerSchedules),
+}));
+
+export const userLocationsRelations = relations(userLocations, ({ one }) => ({
+  user: one(users, {
+    fields: [userLocations.userId],
+    references: [users.id],
+  }),
+  location: one(locations, {
+    fields: [userLocations.locationId],
+    references: [locations.id],
+  }),
+}));
+
+export const userSessionLocationsRelations = relations(userSessionLocations, ({ one }) => ({
+  user: one(users, {
+    fields: [userSessionLocations.userId],
+    references: [users.id],
+  }),
+  location: one(locations, {
+    fields: [userSessionLocations.locationId],
+    references: [locations.id],
+  }),
+}));
+
+export const providerSchedulesRelations = relations(providerSchedules, ({ one, many }) => ({
+  provider: one(users, {
+    fields: [providerSchedules.providerId],
+    references: [users.id],
+  }),
+  location: one(locations, {
+    fields: [providerSchedules.locationId],
+    references: [locations.id],
+  }),
+  exceptions: many(scheduleExceptions),
+}));
+
+export const scheduleExceptionsRelations = relations(scheduleExceptions, ({ one }) => ({
+  provider: one(users, {
+    fields: [scheduleExceptions.providerId],
+    references: [users.id],
+  }),
+  location: one(locations, {
+    fields: [scheduleExceptions.locationId],
+    references: [locations.id],
+  }),
+  createdByUser: one(users, {
+    fields: [scheduleExceptions.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Enhanced Relations for Existing Tables
+export const appointmentsRelationsEnhanced = relations(appointments, ({ one }) => ({
+  patient: one(patients, {
+    fields: [appointments.patientId],
+    references: [patients.id],
+  }),
+  provider: one(users, {
+    fields: [appointments.providerId],
+    references: [users.id],
+  }),
+  location: one(locations, {
+    fields: [appointments.locationId],
+    references: [locations.id],
+  }),
+  checkedInByUser: one(users, {
+    fields: [appointments.checkedInBy],
+    references: [users.id],
+  }),
+  verifiedByUser: one(users, {
+    fields: [appointments.verifiedBy],
+    references: [users.id],
+  }),
+  createdByUser: one(users, {
+    fields: [appointments.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const patientsRelationsEnhanced = relations(patients, ({ one, many }) => ({
+  preferredLocation: one(locations, {
+    fields: [patients.preferredLocationId],
+    references: [locations.id],
+  }),
+  primaryProvider: one(users, {
+    fields: [patients.primaryProviderId],
+    references: [users.id],
+  }),
+  encounters: many(encounters),
+  appointments: many(appointments),
+  familyHistory: many(familyHistory),
+  medicalHistory: many(medicalHistory),
+  socialHistory: many(socialHistory),
+  surgicalHistory: many(surgicalHistory),
+  allergies: many(allergies),
+  vitals: many(vitals),
+  medications: many(medications),
+  diagnoses: many(diagnoses),
+  medicalProblems: many(medicalProblems),
+  labOrders: many(labOrders),
+  labResults: many(labResults),
+  imagingOrders: many(imagingOrders),
+  imagingResults: many(imagingResults),
+  orders: many(orders),
+  attachments: many(patientAttachments),
+}));
+
+// Insert Schemas for Organizational Structure
+export const insertHealthSystemSchema = createInsertSchema(healthSystems).pick({
+  name: true,
+  shortName: true,
+  systemType: true,
+  primaryContact: true,
+  phone: true,
+  email: true,
+  website: true,
+  npi: true,
+  taxId: true,
+  logoUrl: true,
+  brandColors: true,
+});
+
+export const insertOrganizationSchema = createInsertSchema(organizations).pick({
+  healthSystemId: true,
+  name: true,
+  shortName: true,
+  organizationType: true,
+  region: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  phone: true,
+  email: true,
+  address: true,
+  npi: true,
+  taxId: true,
+});
+
+export const insertLocationSchema = createInsertSchema(locations).pick({
+  organizationId: true,
+  healthSystemId: true,
+  name: true,
+  shortName: true,
+  locationType: true,
+  address: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  phone: true,
+  fax: true,
+  email: true,
+  facilityCode: true,
+  npi: true,
+  operatingHours: true,
+  services: true,
+  hasLab: true,
+  hasImaging: true,
+  hasPharmacy: true,
+});
+
+export const insertUserLocationSchema = createInsertSchema(userLocations).pick({
+  userId: true,
+  locationId: true,
+  roleAtLocation: true,
+  isPrimary: true,
+  workSchedule: true,
+  canSchedule: true,
+  canViewAllPatients: true,
+  canCreateOrders: true,
+  startDate: true,
+  endDate: true,
+});
+
+export const insertUserSessionLocationSchema = createInsertSchema(userSessionLocations).pick({
+  userId: true,
+  locationId: true,
+  sessionId: true,
+  rememberSelection: true,
+});
+
+export const insertAppointmentSchema = createInsertSchema(appointments).pick({
+  patientId: true,
+  providerId: true,
+  locationId: true,
+  appointmentDate: true,
+  startTime: true,
+  endTime: true,
+  duration: true,
+  appointmentType: true,
+  chiefComplaint: true,
+  visitReason: true,
+  urgencyLevel: true,
+  schedulingNotes: true,
+  patientPreferences: true,
+  aiSchedulingData: true,
+  communicationPreferences: true,
+  copayAmount: true,
+  createdBy: true,
+});
+
+export const insertProviderScheduleSchema = createInsertSchema(providerSchedules).pick({
+  providerId: true,
+  locationId: true,
+  dayOfWeek: true,
+  startTime: true,
+  endTime: true,
+  scheduleType: true,
+  appointmentTypes: true,
+  slotDuration: true,
+  bufferTime: true,
+  maxConcurrentAppts: true,
+  advanceBookingDays: true,
+  cancelationPolicyHours: true,
+  isAvailableForUrgent: true,
+  allowDoubleBooking: true,
+  requiresReferral: true,
+  effectiveFrom: true,
+  effectiveUntil: true,
+});
+
+export const insertScheduleExceptionSchema = createInsertSchema(scheduleExceptions).pick({
+  providerId: true,
+  locationId: true,
+  exceptionDate: true,
+  startTime: true,
+  endTime: true,
+  exceptionType: true,
+  reason: true,
+  cancelsExistingAppts: true,
+  allowsEmergencyOverride: true,
+  isRecurring: true,
+  recurrencePattern: true,
+  createdBy: true,
+});
+
+// Types for Organizational Structure
+export type HealthSystem = typeof healthSystems.$inferSelect;
+export type InsertHealthSystem = z.infer<typeof insertHealthSystemSchema>;
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type Location = typeof locations.$inferSelect;
+export type InsertLocation = z.infer<typeof insertLocationSchema>;
+export type UserLocation = typeof userLocations.$inferSelect;
+export type InsertUserLocation = z.infer<typeof insertUserLocationSchema>;
+export type UserSessionLocation = typeof userSessionLocations.$inferSelect;
+export type InsertUserSessionLocation = z.infer<typeof insertUserSessionLocationSchema>;
+export type Appointment = typeof appointments.$inferSelect;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+export type ProviderSchedule = typeof providerSchedules.$inferSelect;
+export type InsertProviderSchedule = z.infer<typeof insertProviderScheduleSchema>;
+export type ScheduleException = typeof scheduleExceptions.$inferSelect;
+export type InsertScheduleException = z.infer<typeof insertScheduleExceptionSchema>;
 
 // User Preferences Types
 // Removed orphaned UserPreferences types - chartPanelWidth moved to userNotePreferences
