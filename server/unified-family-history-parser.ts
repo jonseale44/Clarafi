@@ -367,7 +367,7 @@ Only extract family history information that is explicitly mentioned. Do not inf
         model: "gpt-4.1-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
-        max_tokens: 2000,
+        max_tokens: 30000,
       });
 
       const content = response.choices[0]?.message?.content;
