@@ -857,6 +857,14 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
   } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout>();
+  
+  // Show immediate validation for missing sig
+  const missingRequiredFields = [];
+  if (!order.medicationName) missingRequiredFields.push("Medication name is required");
+  if (!order.dosage) missingRequiredFields.push("Dosage/strength is required");
+  if (!order.sig) missingRequiredFields.push("Sig (patient instructions) is required - pharmacies cannot dispense without instructions");
+  if (!order.quantity) missingRequiredFields.push("Quantity is required");
+  if (!order.daysSupply) missingRequiredFields.push("Days supply is required");
 
   // Validate medication order
   const validateOrder = useCallback(async () => {
@@ -935,7 +943,7 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           onChange={(e) => onChange("medicationName", e.target.value)}
           placeholder="e.g., Hydrochlorothiazide"
           required
-          className={validationResult?.errors.some(e => e.includes("Medication name")) ? "border-red-500" : ""}
+          className={validationResult?.errors.some(e => e.includes("medication")) ? "border-red-500" : ""}
         />
         <div className="text-xs text-gray-500 mt-1">Enter generic name only - intelligent dosing will activate</div>
       </div>
@@ -953,6 +961,24 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           initialDaysSupply={order.daysSupply || 90}
           onChange={handleIntelligentUpdate}
         />
+      )}
+
+      {/* Required Fields Validation - Always Show */}
+      {missingRequiredFields.length > 0 && (
+        <div className="bg-red-50 border-2 border-red-400 rounded-md p-4 mb-4">
+          <h4 className="text-sm font-semibold text-red-800 mb-2 flex items-center">
+            <span className="text-lg mr-2">⚠️</span>
+            Required Fields Missing - Cannot Dispense
+          </h4>
+          <ul className="text-sm text-red-700 space-y-1">
+            {missingRequiredFields.map((error, i) => (
+              <li key={i} className="flex items-start">
+                <span className="mr-2 font-bold">•</span>
+                <span className="font-medium">{error}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Pharmacy Validation Results */}

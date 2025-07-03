@@ -267,6 +267,61 @@ Return ONLY a number representing the days supply.`;
     // Default
     return 2; // 3 months total
   }
+
+  /**
+   * Generate default patient instructions (sig) from medication details
+   */
+  generateDefaultSig(dosage: string, frequency: string, route: string): string {
+    // Clean up the inputs
+    const cleanDosage = dosage?.trim() || "1";
+    const cleanFrequency = frequency?.toLowerCase().trim() || "once daily";
+    const cleanRoute = route?.toLowerCase().trim() || "by mouth";
+    
+    // Handle common frequency patterns
+    let sigFrequency = cleanFrequency;
+    if (cleanFrequency.includes("daily") || cleanFrequency.includes("qd")) {
+      sigFrequency = "once daily";
+    } else if (cleanFrequency.includes("twice") || cleanFrequency.includes("bid")) {
+      sigFrequency = "twice daily";
+    } else if (cleanFrequency.includes("three") || cleanFrequency.includes("tid")) {
+      sigFrequency = "three times daily";
+    } else if (cleanFrequency.includes("four") || cleanFrequency.includes("qid")) {
+      sigFrequency = "four times daily";
+    } else if (cleanFrequency.includes("bedtime") || cleanFrequency.includes("hs")) {
+      sigFrequency = "at bedtime";
+    } else if (cleanFrequency.includes("prn") || cleanFrequency.includes("as needed")) {
+      sigFrequency = "as needed";
+    }
+    
+    // Handle common routes
+    let sigRoute = cleanRoute;
+    if (cleanRoute.includes("mouth") || cleanRoute.includes("oral") || cleanRoute.includes("po")) {
+      sigRoute = "by mouth";
+    } else if (cleanRoute.includes("skin") || cleanRoute.includes("topical")) {
+      sigRoute = "to affected area";
+    } else if (cleanRoute.includes("eye") || cleanRoute.includes("ophthalmic")) {
+      sigRoute = "to affected eye(s)";
+    } else if (cleanRoute.includes("ear") || cleanRoute.includes("otic")) {
+      sigRoute = "to affected ear(s)";
+    } else if (cleanRoute.includes("nose") || cleanRoute.includes("nasal")) {
+      sigRoute = "to each nostril";
+    } else if (cleanRoute.includes("inhale") || cleanRoute.includes("inhalation")) {
+      sigRoute = "by inhalation";
+    }
+    
+    // Build the sig
+    let sig = `Take ${cleanDosage}`;
+    
+    // Add route
+    if (sigRoute !== "by mouth") {
+      sig += ` ${sigRoute}`;
+    }
+    
+    // Add frequency
+    sig += ` ${sigFrequency}`;
+    
+    return sig;
+  }
 }
 
 // Export singleton instance

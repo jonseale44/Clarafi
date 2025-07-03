@@ -1970,30 +1970,90 @@ Extract all medications from this document. For each medication, determine if it
         input,
       );
 
+      // Import pharmacy validation service
+      const { PharmacyValidationService } = await import(
+        "./pharmacy-validation-service.js"
+      );
+      const pharmacyService = new PharmacyValidationService();
+
+      // Build order data for storage
+      const orderData = {
+        patientId: existingMedication.patientId,
+        encounterId: input.encounterId,
+        orderType: "medication",
+        orderStatus: "draft",
+        medicationName: existingMedication.medicationName,
+        dosage: existingMedication.dosage,
+        quantity: refillData.quantity,
+        sig: existingMedication.sig,
+        refills: refillData.refills,
+        form: existingMedication.dosageForm,
+        routeOfAdministration: existingMedication.route,
+        daysSupply: refillData.daysSupply,
+        clinicalIndication:
+          input.clinicalIndication || existingMedication.clinicalIndication,
+        priority: "routine",
+        orderedBy: input.requestedBy,
+        providerNotes: `Refill for existing medication ID ${input.medicationId}`,
+      };
+
+      // Build validation data with required fields
+      const validationData = {
+        medicationName: existingMedication.medicationName || "",
+        strength: existingMedication.strength || existingMedication.dosage || "",
+        dosageForm: existingMedication.dosageForm || "tablet",
+        sig: existingMedication.sig || "",
+        quantity: refillData.quantity,
+        refills: refillData.refills,
+        daysSupply: refillData.daysSupply,
+        route: existingMedication.route || "oral",
+        clinicalIndication: input.clinicalIndication || existingMedication.clinicalIndication
+      };
+
+      // Validate pharmacy requirements
+      const validationResult = await pharmacyService.validateMedicationOrder(validationData);
+      
+      if (!validationResult.isValid) {
+        console.error(
+          `❌ [MoveToOrders] Pharmacy validation failed:`,
+          validationResult.errors,
+        );
+        
+        // Generate sig if missing using existing medication data
+        if (validationResult.errors.includes("Patient instructions (sig) required")) {
+          const generatedSig = pharmacyService.generateDefaultSig(
+            existingMedication.dosage || "",
+            existingMedication.frequency || "daily",
+            existingMedication.route || "oral"
+          );
+          
+          console.log(
+            `💊 [MoveToOrders] Generated default sig for refill: "${generatedSig}"`,
+          );
+          
+          orderData.sig = generatedSig;
+          validationData.sig = generatedSig;
+          
+          // Re-validate with generated sig
+          const revalidation = await pharmacyService.validateMedicationOrder(validationData);
+          if (!revalidation.isValid) {
+            throw new Error(
+              `Medication order validation failed: ${revalidation.errors.join(", ")}`
+            );
+          }
+        } else {
+          throw new Error(
+            `Medication order validation failed: ${validationResult.errors.join(", ")}`
+          );
+        }
+      }
+
       // Create draft order
       const { orders } = await import("../shared/schema.js");
 
       const [draftOrder] = await db
         .insert(orders)
-        .values({
-          patientId: existingMedication.patientId,
-          encounterId: input.encounterId,
-          orderType: "medication",
-          orderStatus: "draft",
-          medicationName: existingMedication.medicationName,
-          dosage: existingMedication.dosage,
-          quantity: refillData.quantity,
-          sig: existingMedication.sig,
-          refills: refillData.refills,
-          form: existingMedication.dosageForm,
-          routeOfAdministration: existingMedication.route,
-          daysSupply: refillData.daysSupply,
-          clinicalIndication:
-            input.clinicalIndication || existingMedication.clinicalIndication,
-          priority: "routine",
-          orderedBy: input.requestedBy,
-          providerNotes: `Refill for existing medication ID ${input.medicationId}`,
-        })
+        .values(orderData)
         .returning();
 
       // Update medication with refill reference

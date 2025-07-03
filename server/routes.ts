@@ -2775,6 +2775,64 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         JSON.stringify(orderData, null, 2),
       );
 
+      // Validate medication orders before creation
+      if (orderData.orderType === "medication") {
+        const validationErrors = [];
+        
+        // Required fields for medication orders
+        if (!orderData.medicationName) {
+          validationErrors.push("Medication name is required");
+        }
+        if (!orderData.dosage) {
+          validationErrors.push("Dosage/strength is required");
+        }
+        if (!orderData.sig) {
+          validationErrors.push("Sig (patient instructions) is required - pharmacies cannot dispense without instructions");
+        }
+        if (!orderData.quantity || orderData.quantity <= 0) {
+          validationErrors.push("Quantity must be greater than 0");
+        }
+        if (!orderData.daysSupply || orderData.daysSupply <= 0) {
+          validationErrors.push("Days supply must be greater than 0");
+        }
+        
+        // If there are validation errors, return them
+        if (validationErrors.length > 0) {
+          console.log(
+            `[Orders API] Medication order validation failed:`,
+            validationErrors
+          );
+          return res.status(400).json({
+            message: "Medication order validation failed",
+            errors: validationErrors,
+            order: orderData
+          });
+        }
+
+        // Import and run pharmacy validation if needed
+        try {
+          const { PharmacyValidationService } = await import(
+            "./pharmacy-validation-service.js"
+          );
+          const validation = await PharmacyValidationService.validateMedicationOrder(orderData);
+          if (!validation.isValid && validation.errors.length > 0) {
+            console.log(
+              `[Orders API] Pharmacy validation failed:`,
+              validation.errors
+            );
+            return res.status(400).json({
+              message: "Pharmacy validation failed",
+              errors: validation.errors,
+              warnings: validation.warnings,
+              order: orderData
+            });
+          }
+        } catch (validationError) {
+          console.error("[Orders API] Pharmacy validation service error:", validationError);
+          // Continue with basic validation only
+        }
+      }
+
       const orderWithUser = {
         ...orderData,
         orderedBy: (req.user as any).id,
