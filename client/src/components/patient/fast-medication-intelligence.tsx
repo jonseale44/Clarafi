@@ -66,6 +66,12 @@ export function FastMedicationIntelligence({
   missingFields = {},
   gptRecommendations = {}
 }: FastMedicationIntelligenceProps) {
+  console.log('🔥 [FastMedicationIntelligence] Component loaded with props:', {
+    missingFields,
+    gptRecommendations,
+    initialSig
+  });
+  
   const [strength, setStrength] = useState(initialStrength);
   const [form, setForm] = useState(initialForm);
   const [route, setRoute] = useState(initialRoute);
@@ -109,7 +115,7 @@ export function FastMedicationIntelligence({
 
   // Apply GPT recommendations when field is missing and recommendation exists
   useEffect(() => {
-    if (missingFields?.sig && gptRecommendations?.sig && !sig) {
+    if (missingFields?.sig && gptRecommendations?.sig && (!sig || sig.trim() === '')) {
       console.log('🔥 [FastMedicationIntelligence] Applying GPT sig recommendation:', gptRecommendations.sig);
       setSig(gptRecommendations.sig);
       setManualSigEdit(false);

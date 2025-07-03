@@ -1030,11 +1030,11 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
             route: shouldShowRedBorder('route')
           }}
           gptRecommendations={{
-            sig: isGptRecommendation('sig', order.sig) ? validationResult?.missingFieldRecommendations?.sig : undefined,
-            quantity: isGptRecommendation('quantity', order.quantity) ? validationResult?.missingFieldRecommendations?.quantity : undefined,
-            refills: isGptRecommendation('refills', order.refills) ? validationResult?.missingFieldRecommendations?.refills : undefined,
-            daysSupply: isGptRecommendation('daysSupply', order.daysSupply) ? validationResult?.missingFieldRecommendations?.daysSupply : undefined,
-            route: isGptRecommendation('route', order.routeOfAdministration) ? validationResult?.missingFieldRecommendations?.route : undefined
+            sig: shouldShowRedBorder('sig') ? validationResult?.missingFieldRecommendations?.sig : undefined,
+            quantity: shouldShowRedBorder('quantity') ? validationResult?.missingFieldRecommendations?.quantity : undefined,
+            refills: shouldShowRedBorder('refills') ? validationResult?.missingFieldRecommendations?.refills : undefined,
+            daysSupply: shouldShowRedBorder('daysSupply') ? validationResult?.missingFieldRecommendations?.daysSupply : undefined,
+            route: shouldShowRedBorder('routeOfAdministration') ? validationResult?.missingFieldRecommendations?.route : undefined
           }}
         />
       )}
