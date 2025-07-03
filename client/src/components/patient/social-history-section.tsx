@@ -621,29 +621,32 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
         {/* Expanded content for dense view - only show visit history */}
         {isExpanded && (
           <CollapsibleContent>
-            <div className="dense-list-expanded">
-              {/* Visit History Only - sorted by date descending (most recent first) */}
-              {entry.visitHistory && entry.visitHistory.length > 0 && (
-                <div className="space-y-2">
-                  {entry.visitHistory
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .map((visit, index) => (
-                      <div key={visit.id || index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
-                          {visit.source && getSourceBadge(
-                            visit.source, 
-                            visit.confidence, 
-                            visit.attachmentId, 
-                            visit.encounterId
-                          )}
+            <CardContent className="pt-0 emr-card-content-tight">
+              <div className="emr-tight-spacing">
+                {entry.visitHistory && entry.visitHistory.length > 0 ? (
+                  <div className="emr-dense-list">
+                    {entry.visitHistory
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((visit, index) => (
+                        <div key={visit.id || index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
+                            {visit.source && getSourceBadge(
+                              visit.source, 
+                              visit.confidence, 
+                              visit.attachmentId, 
+                              visit.encounterId
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
                         </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">No visit history recorded</p>
+                )}
+              </div>
+            </CardContent>
           </CollapsibleContent>
         )}
       </Collapsible>
