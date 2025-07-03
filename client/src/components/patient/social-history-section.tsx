@@ -649,21 +649,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                             )}
                           </div>
                           <p className="text-gray-700 leading-relaxed">{visit.notes}</p>
-                          {visit.changesMade && visit.changesMade.length > 0 && (
-                            <div className="mt-2">
-                              <Label className="text-xs text-gray-500">Changes:</Label>
-                              <ul className="list-disc list-inside text-xs text-gray-600 mt-1">
-                                {visit.changesMade.map((change, idx) => (
-                                  <li key={idx}>{change}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          {visit.providerName && (
-                            <div className="mt-1 text-xs text-gray-500">
-                              Provider: {visit.providerName}
-                            </div>
-                          )}
+                          {/* REMOVED: Changes section and Provider section per user request */}
                         </div>
                       </div>
                     ))}
