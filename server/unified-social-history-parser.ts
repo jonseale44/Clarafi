@@ -385,12 +385,12 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
       );
 
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: content },
         ],
-        temperature: 0.3,
+        temperature: 0.1,
         max_tokens: 30000,
       });
 

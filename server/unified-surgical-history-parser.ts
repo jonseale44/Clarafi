@@ -448,7 +448,7 @@ Analyze the document and return appropriate surgical history changes:`;
           },
         ],
         temperature: 0.1,
-        max_tokens: 3000,
+        max_tokens: 30000,
       });
 
       const responseContent = response.choices[0]?.message?.content?.trim();
