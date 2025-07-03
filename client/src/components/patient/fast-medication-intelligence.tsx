@@ -37,6 +37,20 @@ interface FastMedicationIntelligenceProps {
     refills?: number;
     daysSupply?: number;
   }) => void;
+  missingFields?: {
+    sig?: boolean;
+    quantity?: boolean;
+    refills?: boolean;
+    daysSupply?: boolean;
+    route?: boolean;
+  };
+  gptRecommendations?: {
+    sig?: string;
+    quantity?: number;
+    refills?: number;
+    daysSupply?: number;
+    route?: string;
+  };
 }
 
 export function FastMedicationIntelligence({
@@ -48,7 +62,9 @@ export function FastMedicationIntelligence({
   initialQuantity = 30,
   initialRefills = 2,
   initialDaysSupply = 90,
-  onChange
+  onChange,
+  missingFields = {},
+  gptRecommendations = {}
 }: FastMedicationIntelligenceProps) {
   const [strength, setStrength] = useState(initialStrength);
   const [form, setForm] = useState(initialForm);
@@ -224,7 +240,7 @@ export function FastMedicationIntelligence({
         <div className="space-y-2">
           <Label htmlFor="route">Route</Label>
           <Select value={route} onValueChange={handleRouteChange}>
-            <SelectTrigger>
+            <SelectTrigger className={missingFields?.route ? "border-red-300" : gptRecommendations?.route === route ? "text-red-600" : ""}>
               <SelectValue placeholder="Select route" />
             </SelectTrigger>
             <SelectContent>
@@ -245,6 +261,7 @@ export function FastMedicationIntelligence({
             value={quantity}
             onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
             placeholder="30"
+            className={missingFields?.quantity ? "border-red-300" : gptRecommendations?.quantity === quantity ? "text-red-600" : ""}
           />
         </div>
 
@@ -257,6 +274,7 @@ export function FastMedicationIntelligence({
             onChange={(e) => handleRefillsChange(parseInt(e.target.value) || 0)}
             placeholder="2"
             max="11"
+            className={missingFields?.refills ? "border-red-300" : gptRecommendations?.refills === refills ? "text-red-600" : ""}
           />
         </div>
 
@@ -268,6 +286,7 @@ export function FastMedicationIntelligence({
             value={daysSupply}
             onChange={(e) => handleDaysSupplyChange(parseInt(e.target.value) || 0)}
             placeholder="90"
+            className={missingFields?.daysSupply ? "border-red-300" : gptRecommendations?.daysSupply === daysSupply ? "text-red-600" : ""}
           />
         </div>
       </div>
@@ -280,6 +299,7 @@ export function FastMedicationIntelligence({
           onChange={(e) => handleSigChange(e.target.value)}
           placeholder="Enter instructions for use..."
           rows={3}
+          className={missingFields?.sig ? "border-red-300" : gptRecommendations?.sig === sig ? "text-red-600" : ""}
         />
         {!manualSigEdit && medicationData && (
           <div className="flex items-center gap-2 text-sm text-navy-blue-600">

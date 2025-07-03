@@ -854,6 +854,14 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
     insuranceConsiderations?: string[];
     deaSchedule?: string;
     calculatedDaysSupply?: number;
+    missingFieldRecommendations?: {
+      sig?: string;
+      quantity?: number;
+      refills?: number;
+      daysSupply?: number;
+      route?: string;
+      clinicalIndication?: string;
+    };
   } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout>();
@@ -916,6 +924,33 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
     };
   }, [order.medicationName, order.dosage, order.sig, order.quantity, order.refills, order.daysSupply, validateOrder]);
 
+  // Apply GPT recommendations for missing fields
+  useEffect(() => {
+    if (validationResult?.missingFieldRecommendations) {
+      const recommendations = validationResult.missingFieldRecommendations;
+      
+      // Only apply recommendations if fields are truly missing
+      if (recommendations.sig && !order.sig) {
+        onChange("sig", recommendations.sig);
+      }
+      if (recommendations.quantity && (!order.quantity || order.quantity === 0)) {
+        onChange("quantity", recommendations.quantity);
+      }
+      if (recommendations.refills !== undefined && (order.refills === undefined || order.refills === null)) {
+        onChange("refills", recommendations.refills);
+      }
+      if (recommendations.daysSupply && (!order.daysSupply || order.daysSupply === 0)) {
+        onChange("daysSupply", recommendations.daysSupply);
+      }
+      if (recommendations.route && !order.routeOfAdministration) {
+        onChange("routeOfAdministration", recommendations.route);
+      }
+      if (recommendations.clinicalIndication && !order.clinicalIndication) {
+        onChange("clinicalIndication", recommendations.clinicalIndication);
+      }
+    }
+  }, [validationResult?.missingFieldRecommendations]);
+
   const handleIntelligentUpdate = (updates: any) => {
     // Apply intelligent medication updates
     Object.keys(updates).forEach(key => {
@@ -923,6 +958,32 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
         onChange(key, updates[key]);
       }
     });
+  };
+
+  // Helper to determine if a field should show red border (missing required field)
+  const shouldShowRedBorder = (fieldName: string): boolean => {
+    // Only show red border if field is truly missing AND it's a required field
+    if (fieldName === 'sig' && !order.sig) return true;
+    if (fieldName === 'quantity' && (!order.quantity || order.quantity === 0)) return true;
+    if (fieldName === 'refills' && (order.refills === undefined || order.refills === null)) return true;
+    if (fieldName === 'daysSupply' && (!order.daysSupply || order.daysSupply === 0)) return true;
+    if (fieldName === 'routeOfAdministration' && !order.routeOfAdministration) return true;
+    if (fieldName === 'clinicalIndication' && !order.clinicalIndication) return true;
+    return false;
+  };
+
+  // Helper to determine if a field value came from GPT recommendation
+  const isGptRecommendation = (fieldName: string, value: any): boolean => {
+    if (!validationResult?.missingFieldRecommendations) return false;
+    const recommendations = validationResult.missingFieldRecommendations;
+    
+    if (fieldName === 'sig' && value === recommendations.sig) return true;
+    if (fieldName === 'quantity' && value === recommendations.quantity) return true;
+    if (fieldName === 'refills' && value === recommendations.refills) return true;
+    if (fieldName === 'daysSupply' && value === recommendations.daysSupply) return true;
+    if (fieldName === 'routeOfAdministration' && value === recommendations.route) return true;
+    if (fieldName === 'clinicalIndication' && value === recommendations.clinicalIndication) return true;
+    return false;
   };
 
   return (
@@ -935,7 +996,7 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           onChange={(e) => onChange("medicationName", e.target.value)}
           placeholder="e.g., Hydrochlorothiazide"
           required
-          className={validationResult?.errors.some(e => e.includes("Medication name")) ? "border-red-500" : ""}
+          className={!order.medicationName ? "border-red-300" : ""}
         />
         <div className="text-xs text-gray-500 mt-1">Enter generic name only - intelligent dosing will activate</div>
       </div>
@@ -952,6 +1013,20 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           initialRefills={order.refills || 2}
           initialDaysSupply={order.daysSupply || 90}
           onChange={handleIntelligentUpdate}
+          missingFields={{
+            sig: shouldShowRedBorder('sig'),
+            quantity: shouldShowRedBorder('quantity'),
+            refills: shouldShowRedBorder('refills'),
+            daysSupply: shouldShowRedBorder('daysSupply'),
+            route: shouldShowRedBorder('route')
+          }}
+          gptRecommendations={{
+            sig: isGptRecommendation('sig', order.sig) ? validationResult?.missingFieldRecommendations?.sig : undefined,
+            quantity: isGptRecommendation('quantity', order.quantity) ? validationResult?.missingFieldRecommendations?.quantity : undefined,
+            refills: isGptRecommendation('refills', order.refills) ? validationResult?.missingFieldRecommendations?.refills : undefined,
+            daysSupply: isGptRecommendation('daysSupply', order.daysSupply) ? validationResult?.missingFieldRecommendations?.daysSupply : undefined,
+            route: isGptRecommendation('route', order.routeOfAdministration) ? validationResult?.missingFieldRecommendations?.route : undefined
+          }}
         />
       )}
 
@@ -1030,6 +1105,19 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
         </div>
       )}
       
+      <div>
+        <Label htmlFor="clinicalIndication">Clinical Indication *</Label>
+        <Input
+          id="clinicalIndication"
+          value={order.clinicalIndication || ""}
+          onChange={(e) => onChange("clinicalIndication", e.target.value)}
+          placeholder="e.g., HTN, T2DM, Neuropathy"
+          required
+          className={shouldShowRedBorder('clinicalIndication') ? "border-red-300" : isGptRecommendation('clinicalIndication', order.clinicalIndication) ? "text-red-600" : ""}
+        />
+        <div className="text-xs text-gray-500 mt-1">Required for pharmacy compliance</div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="diagnosisCode">Diagnosis Code (ICD-10)</Label>

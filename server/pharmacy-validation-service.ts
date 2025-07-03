@@ -21,6 +21,14 @@ export interface PharmacyValidationResult {
     medication: string;
     reason: string;
   }>;
+  missingFieldRecommendations?: {
+    sig?: string;
+    quantity?: number;
+    refills?: number;
+    daysSupply?: number;
+    route?: string;
+    clinicalIndication?: string;
+  };
 }
 
 export interface MedicationOrderForValidation {
@@ -82,18 +90,28 @@ export class PharmacyValidationService {
 
     try {
 
+      // Check for missing fields
+      const missingFields = {
+        sig: !order.sig,
+        quantity: !order.quantity || order.quantity === 0,
+        refills: order.refills === undefined || order.refills === null,
+        daysSupply: !order.daysSupply || order.daysSupply === 0,
+        route: !order.route,
+        clinicalIndication: !order.clinicalIndication
+      };
+
       // Use GPT for advanced validation
       const prompt = `You are an expert clinical pharmacist with 25 years experience reviewing prescriptions for pharmacy compliance, insurance requirements, and patient safety. Review this medication order:
 
 MEDICATION ORDER:
 - Medication: ${order.medicationName} ${order.strength}
 - Form: ${order.dosageForm}
-- Sig: ${order.sig}
-- Quantity: ${order.quantity}
-- Refills: ${order.refills}
-- Days Supply: ${order.daysSupply || 'Not specified'}
-- Route: ${order.route}
-- Clinical Indication: ${order.clinicalIndication || 'Not specified'}
+- Sig: ${order.sig || 'MISSING'}
+- Quantity: ${order.quantity || 'MISSING'}
+- Refills: ${order.refills !== undefined ? order.refills : 'MISSING'}
+- Days Supply: ${order.daysSupply || 'MISSING'}
+- Route: ${order.route || 'MISSING'}
+- Clinical Indication: ${order.clinicalIndication || 'MISSING'}
 
 PATIENT CONTEXT:
 - Age: ${order.patientAge || 'Unknown'}
@@ -102,6 +120,8 @@ PATIENT CONTEXT:
 - Hepatic Function: ${order.hepaticFunction || 'Unknown'}
 - Allergies: ${order.allergies?.join(', ') || 'None documented'}
 - Current Medications: ${order.currentMedications?.join(', ') || 'None documented'}
+
+IMPORTANT: For any field marked as 'MISSING', provide a recommended value in the missing_field_recommendations section based on the medication, indication, and patient context.
 
 Provide a comprehensive pharmacy validation analysis in JSON format:
 
@@ -130,6 +150,14 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
     "significant_interactions": ["List any concerning drug interactions"],
     "food_interactions": ["List any food interactions"],
     "disease_interactions": ["List any disease state interactions"]
+  },
+  "missing_field_recommendations": {
+    "sig": "Recommended sig if missing (e.g., 'Take 1 tablet by mouth once daily')",
+    "quantity": recommended quantity number if missing (e.g., 30),
+    "refills": recommended refills number if missing (e.g., 5),
+    "daysSupply": recommended days supply if missing (e.g., 30),
+    "route": "Recommended route if missing (e.g., 'oral')",
+    "clinicalIndication": "Recommended indication if missing (e.g., 'Hypertension')"
   },
   "pharmacy_notes": "Additional notes for the pharmacist"
 }`;
@@ -181,7 +209,8 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
         insuranceConsiderations: gptValidation.insurance_considerations || [],
         deaSchedule: gptValidation.dea_schedule !== 'None' ? gptValidation.dea_schedule : undefined,
         priorAuthRequired: gptValidation.prior_auth_likely || basicValidation.pharmacyRequirements.includes('Prior authorization likely required'),
-        alternativeSuggestions: gptValidation.alternative_suggestions || []
+        alternativeSuggestions: gptValidation.alternative_suggestions || [],
+        missingFieldRecommendations: gptValidation.missing_field_recommendations || {}
       };
 
       // Add dosing concerns to warnings if any
