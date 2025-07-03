@@ -868,8 +868,8 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
 
   // Validate medication order
   const validateOrder = useCallback(async () => {
-    if (!order.medicationName || !order.dosage || !order.sig) {
-      return; // Don't validate incomplete orders
+    if (!order.medicationName) {
+      return; // Only skip if no medication name at all
     }
 
     setIsValidating(true);
@@ -926,26 +926,35 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
 
   // Apply GPT recommendations for missing fields
   useEffect(() => {
+    console.log("📋 [MedicationEditFields] Validation result:", validationResult);
+    console.log("📋 [MedicationEditFields] Missing field recommendations:", validationResult?.missingFieldRecommendations);
+    
     if (validationResult?.missingFieldRecommendations) {
       const recommendations = validationResult.missingFieldRecommendations;
       
       // Only apply recommendations if fields are truly missing
       if (recommendations.sig && !order.sig) {
+        console.log("📋 [MedicationEditFields] Applying sig recommendation:", recommendations.sig);
         onChange("sig", recommendations.sig);
       }
       if (recommendations.quantity && (!order.quantity || order.quantity === 0)) {
+        console.log("📋 [MedicationEditFields] Applying quantity recommendation:", recommendations.quantity);
         onChange("quantity", recommendations.quantity);
       }
       if (recommendations.refills !== undefined && (order.refills === undefined || order.refills === null)) {
+        console.log("📋 [MedicationEditFields] Applying refills recommendation:", recommendations.refills);
         onChange("refills", recommendations.refills);
       }
       if (recommendations.daysSupply && (!order.daysSupply || order.daysSupply === 0)) {
+        console.log("📋 [MedicationEditFields] Applying daysSupply recommendation:", recommendations.daysSupply);
         onChange("daysSupply", recommendations.daysSupply);
       }
       if (recommendations.route && !order.routeOfAdministration) {
+        console.log("📋 [MedicationEditFields] Applying route recommendation:", recommendations.route);
         onChange("routeOfAdministration", recommendations.route);
       }
       if (recommendations.clinicalIndication && !order.clinicalIndication) {
+        console.log("📋 [MedicationEditFields] Applying clinicalIndication recommendation:", recommendations.clinicalIndication);
         onChange("clinicalIndication", recommendations.clinicalIndication);
       }
     }

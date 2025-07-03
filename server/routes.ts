@@ -3308,6 +3308,39 @@ Return only valid JSON without markdown formatting.`;
         return res.status(404).json({ error: "Order not found" });
       }
 
+      // Validate medication orders before signing
+      if (order.orderType === "medication") {
+        const { PharmacyValidationService } = await import(
+          "./pharmacy-validation-service.js"
+        );
+        const pharmacyValidator = new PharmacyValidationService();
+        
+        const validationResult = await pharmacyValidator.validateMedicationOrder({
+          medicationName: order.medicationName || "",
+          strength: order.dosage || "",
+          dosageForm: order.form || "",
+          sig: order.sig || "",
+          quantity: order.quantity || 0,
+          refills: order.refills || 0,
+          daysSupply: order.daysSupply || 0,
+          route: order.routeOfAdministration || "",
+          clinicalIndication: order.clinicalIndication || "",
+          patientId: order.patientId
+        });
+        
+        if (validationResult.errors.length > 0) {
+          console.log(
+            `❌ [Order Signing] Validation failed for medication order ${orderId}:`,
+            validationResult.errors
+          );
+          return res.status(400).json({ 
+            error: "Cannot sign order - validation errors exist",
+            validationErrors: validationResult.errors,
+            missingFields: validationResult.missingFieldRecommendations
+          });
+        }
+      }
+
       // Update order status and add approval
       const updatedOrder = await storage.updateOrder(orderId, {
         orderStatus: "approved",
