@@ -869,7 +869,11 @@ export class AttachmentChartProcessor {
     try {
       console.log(`💊 [MedicationExtraction] 🔥 ============= ATTACHMENT MEDICATION EXTRACTION START =============`);
       console.log(`💊 [MedicationExtraction] 🔍 Starting medication extraction for patient ${attachment.patientId}`);
+      console.log(`💊 [MedicationExtraction] 🔍 Attachment ID: ${attachment.id}, Encounter ID: ${attachment.encounterId}`);
+      console.log(`💊 [MedicationExtraction] 🔍 Document type: ${extractedContent.documentType}`);
+      console.log(`💊 [MedicationExtraction] 🔍 Extracted text length: ${extractedContent.extractedText.length} characters`);
       console.log(`💊 [MedicationExtraction] 🔍 Text preview (first 200 chars): "${extractedContent.extractedText.substring(0, 200)}..."`);
+      console.log(`💊 [MedicationExtraction] 🔍 Text ending (last 200 chars): "...${extractedContent.extractedText.substring(Math.max(0, extractedContent.extractedText.length - 200))}"`);
 
       const startTime = Date.now();
 

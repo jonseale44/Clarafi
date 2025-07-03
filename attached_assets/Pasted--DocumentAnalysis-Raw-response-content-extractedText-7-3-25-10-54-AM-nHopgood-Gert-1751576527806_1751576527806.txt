@@ -1,0 +1,46 @@
+
+}
+📄 [DocumentAnalysis] Raw response content: {
+  "extractedText": "7/3/25, 10:54 AM\nHopgood, Gertie (MRN 23109212)\n\nEssential hypertension [I10]\n\nPharmacy\nWAXAHACHIE PHARMACY - WAXAHACHIE, TX - 401 NORTH HIGHWAY 77 SUITE 23B\n\nAdditional Information\nAssociated Reports\nView Encounter\nPriority and Order Details\n\nTerbinafine HCl 250 MG Oral Tab (Order # 25152233)\nDate: 12/20/2024  Department: Waco Family Medicine - Hillsboro  Ordering: Boston, Joymoria, CMA\nMedication Discontinued\nAuthorizing: Seale, Jonathan, MD\n\nOrder Providers\nName: Seale, Jonathan, MD\nMPI ID: <1255714739>\nDEA: FS6346399\nPhone: 254-313-4000\n\nOutpatient Medication Detail\nTerbinafine HCl 250 MG Oral Tab (Discontinued)  90 tablet  0 refills\nSig - Route: Take 1 tablet by mouth daily. - Oral\nSent to pharmacy as: Terbinafine HCl 250 MG Oral Tablet\nReason for Discontinue: REORDER\nCosign for Ordering: Accepted by Seale, Jonathan, MD on 12/24/2024 11:06 AM\nE-Prescribing Status: Receipt confirmed by pharmacy (12/20/2024 1:32 PM CST)\n\nAssociated Diagnoses\nOnychomycosis [B35.1]\n\nPharmacy\nWAXAHACHIE PHARMACY - WAXAHACHIE, TX - 401 NORTH HIGHWAY 77 SUITE 23B\n\nAdditional Information\nAssociated Reports\nView Encounter\nPriority and Order Details\n\nAtorvastatin Calcium 20 MG Oral Tab (Order # 25152234)\nDate: 12/20/2024  Department: Waco Family Medicine - Hillsboro  Ordering: Boston, Joymoria, CMA\nMedication Discontinued\nAuthorizing: Seale, Jonathan, MD\n\nOrder Providers\nName: Seale, Jonathan, MD\nMPI ID: <1255714739>\nDEA: FS6346399\nPhone: 254-313-4000\n\nOutpatient Medication Detail\n\nPrinted by Soria, Nataly, LVN [4726] 7/3/2025 10:54 AM\n7/26",
+  "documentType": "prescription",
+  "title": "Discontinued Medications: Terbinafine HCl and Atorvastatin Calcium for Gertie Hopgood"
+}
+📄 [DocumentAnalysis] GPT-4.1 analysis complete
+📄 [DocumentAnalysis] Detected document type: prescription
+📄 [DocumentAnalysis] Generated title: Discontinued Medications: Terbinafine HCl and Atorvastatin Calcium for Gertie Hopgood
+📄 [DocumentAnalysis] OpenAI API response received
+📄 [DocumentAnalysis] Response usage: {
+  prompt_tokens: 952,
+  completion_tokens: 566,
+  total_tokens: 1518,
+  prompt_tokens_details: { cached_tokens: 0, audio_tokens: 0 },
+  completion_tokens_details: {
+    reasoning_tokens: 0,
+    audio_tokens: 0,
+    accepted_prediction_tokens: 0,
+    rejected_prediction_tokens: 0
+  }
+}
+📄 [DocumentAnalysis] Raw response content: {
+  "extractedText": "7/3/25, 10:54 AM\nHopgood, Gertie (MRN 23109212)\n\nAtorvastatin Calcium 20 MG Oral Tab (Discontinued)\nDisp  Refills  Start  End  DAW\n--   --      --     1/9/2024  --\nSig - Route: Take 1 tablet by mouth at bedtime. - Oral\nClass: HISTORICAL MED\nReason for Discontinue: NO LONGER INDICATED\n\nAdditional Information\nAssociated Reports\nView Encounter\nPriority and Order Details\n\nLisinopril 40 MG Oral Tab (Order # 22342434) Medication Discontinued\nDate: 1/8/2024  Department: Waco Family Medicine - Hillsboro\nDocumenting: Gonzalez, Julie, CMA (now Gonzalez, Julie, CMA/CCM)  Authorizing: Provider, Historical, MD\n\nOrder Providers\nName  MPI ID  DEA  Phone\nAuthorizing Provider  Provider, Historical, MD\n\nOutpatient Medication Detail\nDisp  Refills  Start  End  DAW\n--   --      --     1/9/2024  --\nLisinopril 40 MG Oral Tab (Discontinued)\nSig - Route: Take 1 tablet by mouth daily. - Oral\nClass: HISTORICAL MED\nReason for Discontinue: NO LONGER INDICATED\n\nAdditional Information\nAssociated Reports\nView Encounter\nPriority and Order Details\n\nMetFORMIN HCl 500 MG Oral TABLET SR 24 HR (Order # 22342435) Medication Discontinued\nDate: 1/8/2024  Department: Waco Family Medicine - Hillsboro\nDocumenting: Gonzalez, Julie, CMA (now Gonzalez, Julie, CMA/CCM)  Authorizing: Provider, Historical, MD\n\nOrder Providers\nName  MPI ID  DEA  Phone\nAuthorizing Provider  Provider, Historical, MD\n\nOutpatient Medication Detail\nDisp  Refills  Start  End  DAW\n--   --      --     2/20/2024  --\nMetFORMIN HCl 500 MG Oral TABLET SR 24 HR (Discontinued)\nSig - Route: Take 1 tablet by mouth daily. - Oral\n\nPrinted by Soria, Nataly, LVN [4726] 7/3/2025 10:54 AM  24/26",
+  "documentType": "prescription",
+  "title": "Discontinued Outpatient Medications for Gertie Hopgood (Atorvastatin, Lisinopril, Metformin)"
+}
+📄 [DocumentAnalysis] GPT-4.1 analysis complete
+📄 [DocumentAnalysis] Detected document type: prescription
+📄 [DocumentAnalysis] Generated title: Discontinued Outpatient Medications for Gertie Hopgood (Atorvastatin, Lisinopril, Metformin)
+📄 [DocumentAnalysis] OpenAI API response received
+📄 [DocumentAnalysis] Response usage: {
+  prompt_tokens: 952,
+  completion_tokens: 513,
+  total_tokens: 1465,
+  prompt_tokens_details: { cached_tokens: 0, audio_tokens: 0 },
+  completion_tokens_details: {
+    reasoning_tokens: 0,
+    audio_tokens: 0,
+    accepted_prediction_tokens: 0,
+    rejected_prediction_tokens: 0
+  }
+}
+📄 [DocumentAnalysis] Raw response content: {
+  "extractedText": "7/3/25, 10:54 AM\nHopgood, Gertie (MRN 23109212)\n\nOutpatient Medication Detail\n\nMultiple Vitamins-Minerals (Hair Skin and Nails Formula) Oral Tab (Discontinued)\n  Sig - Route: Take 1 tablet by mouth daily. - Oral\n  Class: HISTORICAL MED\n  Reason for Discontinue: NO LONGER INDICATED\n\nDisp: --\nRefills: --\nStart: --\nEnd: 1/9/2024\nDAW: --\n\nAdditional Informa

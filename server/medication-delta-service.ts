@@ -1579,6 +1579,24 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     console.log(
       `💊 [GPT] Calling GPT for medication extraction (attachment ${attachmentId})`,
     );
+    console.log(
+      `💊 [GPT] ===== MEDICATION PROCESSING DEBUG INFO =====`,
+    );
+    console.log(
+      `💊 [GPT] Extracted text length: ${extractedText.length} characters`,
+    );
+    console.log(
+      `💊 [GPT] Existing medications count: ${existingMedications.length}`,
+    );
+    console.log(
+      `💊 [GPT] Patient context: Age ${patientContext.age}, Gender ${patientContext.gender}`,
+    );
+    console.log(
+      `💊 [GPT] Text preview (first 500 chars): ${extractedText.substring(0, 500)}...`,
+    );
+    console.log(
+      `💊 [GPT] Text ending (last 500 chars): ...${extractedText.substring(Math.max(0, extractedText.length - 500))}`,
+    );
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -1652,13 +1670,31 @@ Extract all medications from this document. For each medication, determine if it
 
       console.log(`💊 [GPT] Response received in ${processingTime}ms`);
       console.log(
-        `💊 [GPT] Raw response: ${responseText.substring(0, 500)}...`,
+        `💊 [GPT] Response text length: ${responseText.length} characters`,
+      );
+      console.log(
+        `💊 [GPT] Raw response preview: ${responseText.substring(0, 500)}...`,
+      );
+      console.log(
+        `💊 [GPT] Response ending: ...${responseText.substring(Math.max(0, responseText.length - 500))}`,
+      );
+      console.log(
+        `💊 [GPT] Token usage: prompt=${response.usage?.prompt_tokens}, completion=${response.usage?.completion_tokens}, total=${response.usage?.total_tokens}`,
       );
 
       // Parse JSON response
-      const gptResponse = JSON.parse(responseText);
-
-      // Log token costs would go here if TokenCostAnalyzer was available
+      console.log(`💊 [GPT] Attempting to parse JSON response...`);
+      
+      let gptResponse;
+      try {
+        gptResponse = JSON.parse(responseText);
+        console.log(`💊 [GPT] JSON parsing successful`);
+        console.log(`💊 [GPT] Medications found in response: ${gptResponse.medications?.length || 0}`);
+      } catch (parseError) {
+        console.error(`💊 [GPT] JSON parsing failed:`, parseError);
+        console.error(`💊 [GPT] Raw response text that failed to parse:`, responseText);
+        throw new Error(`Failed to parse GPT response: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+      }
 
       return gptResponse;
     } catch (error) {
