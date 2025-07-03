@@ -20,7 +20,7 @@ interface ParsedVitalsData {
 
 interface VitalsParsingResult {
   success: boolean;
-  data?: ParsedVitalsData[];  // Changed to array for multiple vitals sets
+  data?: ParsedVitalsData[]; // Changed to array for multiple vitals sets
   errors?: string[];
   confidence: number;
   originalText: string;
@@ -49,10 +49,19 @@ export class VitalsParserService {
       };
     }
 
-    console.log("🔥 [VITALS PARSING] ============= STARTING GPT-4.1-NANO VITALS PARSING =============");
-    console.log("🩺 [VitalsParser] Input text length:", vitalsText.length, "characters");
+    console.log(
+      "🔥 [VITALS PARSING] ============= STARTING GPT-4.1-NANO VITALS PARSING =============",
+    );
+    console.log(
+      "🩺 [VitalsParser] Input text length:",
+      vitalsText.length,
+      "characters",
+    );
     console.log("🩺 [VitalsParser] Patient context:", patientContext);
-    console.log("🩺 [VitalsParser] Parsing vitals text preview:", vitalsText.substring(0, 200) + (vitalsText.length > 200 ? '...' : ''));
+    console.log(
+      "🩺 [VitalsParser] Parsing vitals text preview:",
+      vitalsText.substring(0, 200) + (vitalsText.length > 200 ? "..." : ""),
+    );
     console.log("🩺 [VitalsParser] Starting AI parsing process...");
 
     try {
@@ -111,19 +120,25 @@ STRICT NO-EMPTY-VITALS RULES:
 Input: "${vitalsText}"`;
 
       console.log("🩺 [VitalsParser] 🤖 Calling OpenAI GPT-4.1-nano...");
-      console.log("🩺 [VitalsParser] 🤖 Model: gpt-4.1-nano, Temperature: 0.1, Max tokens: 1500");
+      console.log(
+        "🩺 [VitalsParser] 🤖 Model: gpt-4.1-nano, Temperature: 0.1, Max tokens: 1500",
+      );
 
       const startTime = Date.now();
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 1500, // Increased to prevent truncation of multiple vitals sets
+        max_tokens: 30000, // Increased to prevent truncation of multiple vitals sets
       });
       const processingTime = Date.now() - startTime;
-      
-      console.log(`🩺 [VitalsParser] ✅ OpenAI response received in ${processingTime}ms`);
-      console.log(`🩺 [VitalsParser] ✅ Token usage: ${response.usage?.total_tokens || 'unknown'} tokens`);
+
+      console.log(
+        `🩺 [VitalsParser] ✅ OpenAI response received in ${processingTime}ms`,
+      );
+      console.log(
+        `🩺 [VitalsParser] ✅ Token usage: ${response.usage?.total_tokens || "unknown"} tokens`,
+      );
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
@@ -152,20 +167,37 @@ Input: "${vitalsText}"`;
 
       console.log("🩺 [VitalsParser] Cleaned content:", cleanedContent);
       console.log("🩺 [VitalsParser] Content length:", cleanedContent.length);
-      console.log("🩺 [VitalsParser] Starts with [:", cleanedContent.startsWith("["));
-      console.log("🩺 [VitalsParser] Starts with {:", cleanedContent.startsWith("{"));
+      console.log(
+        "🩺 [VitalsParser] Starts with [:",
+        cleanedContent.startsWith("["),
+      );
+      console.log(
+        "🩺 [VitalsParser] Starts with {:",
+        cleanedContent.startsWith("{"),
+      );
 
       let parsedData: ParsedVitalsData[];
       try {
         // Check if the content looks truncated
-        if (!cleanedContent.trim().endsWith(']') && !cleanedContent.trim().endsWith('}')) {
-          console.warn("⚠️ [VitalsParser] Response appears truncated, attempting to fix...");
+        if (
+          !cleanedContent.trim().endsWith("]") &&
+          !cleanedContent.trim().endsWith("}")
+        ) {
+          console.warn(
+            "⚠️ [VitalsParser] Response appears truncated, attempting to fix...",
+          );
           // Try to find the last complete vitals set
-          const lastCompleteObject = cleanedContent.lastIndexOf('}');
+          const lastCompleteObject = cleanedContent.lastIndexOf("}");
           if (lastCompleteObject > -1) {
-            cleanedContent = cleanedContent.substring(0, lastCompleteObject + 1);
-            if (cleanedContent.trim().startsWith('[') && !cleanedContent.trim().endsWith(']')) {
-              cleanedContent = cleanedContent + ']';
+            cleanedContent = cleanedContent.substring(
+              0,
+              lastCompleteObject + 1,
+            );
+            if (
+              cleanedContent.trim().startsWith("[") &&
+              !cleanedContent.trim().endsWith("]")
+            ) {
+              cleanedContent = cleanedContent + "]";
             }
             console.log("🩺 [VitalsParser] Attempted to fix truncated JSON");
           }
@@ -174,14 +206,23 @@ Input: "${vitalsText}"`;
         const parsed = JSON.parse(cleanedContent);
         console.log("🩺 [VitalsParser] Parsed JSON type:", typeof parsed);
         console.log("🩺 [VitalsParser] Is array:", Array.isArray(parsed));
-        console.log("🩺 [VitalsParser] Parsed data preview:", JSON.stringify(parsed).substring(0, 200));
-        
+        console.log(
+          "🩺 [VitalsParser] Parsed data preview:",
+          JSON.stringify(parsed).substring(0, 200),
+        );
+
         // Handle both array and single object responses from GPT
         parsedData = Array.isArray(parsed) ? parsed : [parsed];
-        console.log("🩺 [VitalsParser] Final parsedData length:", parsedData.length);
+        console.log(
+          "🩺 [VitalsParser] Final parsedData length:",
+          parsedData.length,
+        );
       } catch (parseError) {
         console.error("❌ [VitalsParser] JSON parse error:", parseError);
-        console.error("❌ [VitalsParser] Content that failed to parse:", cleanedContent.substring(0, 500) + "...");
+        console.error(
+          "❌ [VitalsParser] Content that failed to parse:",
+          cleanedContent.substring(0, 500) + "...",
+        );
         return {
           success: false,
           errors: [`Invalid JSON response: ${parseError}`],
@@ -193,7 +234,7 @@ Input: "${vitalsText}"`;
       // Calculate overall confidence based on how many vitals were extracted
       let totalExtracted = 0;
       let totalPossible = 0;
-      
+
       parsedData.forEach((vitalSet, index) => {
         const vitalFields = [
           vitalSet.systolicBp,
@@ -215,11 +256,18 @@ Input: "${vitalsText}"`;
         }
       });
 
-      const confidence = totalPossible > 0 ? Math.round((totalExtracted / totalPossible) * 100) : 0;
+      const confidence =
+        totalPossible > 0
+          ? Math.round((totalExtracted / totalPossible) * 100)
+          : 0;
 
-      console.log(`🔥 [VITALS PARSING] ============= VITALS PARSING COMPLETE =============`);
-      console.log(`✅ [VitalsParser] Successfully parsed ${parsedData.length} vitals sets with ${confidence}% confidence`);
-      
+      console.log(
+        `🔥 [VITALS PARSING] ============= VITALS PARSING COMPLETE =============`,
+      );
+      console.log(
+        `✅ [VitalsParser] Successfully parsed ${parsedData.length} vitals sets with ${confidence}% confidence`,
+      );
+
       parsedData.forEach((vitalSet, index) => {
         console.log(`✅ [VitalsParser] === VITALS SET ${index + 1} ===`);
         if (vitalSet.extractedDate) {
@@ -229,13 +277,19 @@ Input: "${vitalsText}"`;
           console.log(`✅ [VitalsParser] - Context: ${vitalSet.timeContext}`);
         }
         if (vitalSet.systolicBp && vitalSet.diastolicBp) {
-          console.log(`✅ [VitalsParser] - Blood Pressure: ${vitalSet.systolicBp}/${vitalSet.diastolicBp} mmHg`);
+          console.log(
+            `✅ [VitalsParser] - Blood Pressure: ${vitalSet.systolicBp}/${vitalSet.diastolicBp} mmHg`,
+          );
         }
         if (vitalSet.heartRate) {
-          console.log(`✅ [VitalsParser] - Heart Rate: ${vitalSet.heartRate} bpm`);
+          console.log(
+            `✅ [VitalsParser] - Heart Rate: ${vitalSet.heartRate} bpm`,
+          );
         }
         if (vitalSet.temperature) {
-          console.log(`✅ [VitalsParser] - Temperature: ${vitalSet.temperature}°F`);
+          console.log(
+            `✅ [VitalsParser] - Temperature: ${vitalSet.temperature}°F`,
+          );
         }
         if (vitalSet.weight) {
           console.log(`✅ [VitalsParser] - Weight: ${vitalSet.weight} lbs`);
@@ -244,20 +298,30 @@ Input: "${vitalsText}"`;
           console.log(`✅ [VitalsParser] - Height: ${vitalSet.height} inches`);
         }
         if (vitalSet.oxygenSaturation) {
-          console.log(`✅ [VitalsParser] - O2 Saturation: ${vitalSet.oxygenSaturation}%`);
+          console.log(
+            `✅ [VitalsParser] - O2 Saturation: ${vitalSet.oxygenSaturation}%`,
+          );
         }
         if (vitalSet.respiratoryRate) {
-          console.log(`✅ [VitalsParser] - Respiratory Rate: ${vitalSet.respiratoryRate} breaths/min`);
+          console.log(
+            `✅ [VitalsParser] - Respiratory Rate: ${vitalSet.respiratoryRate} breaths/min`,
+          );
         }
         if (vitalSet.painScale !== null && vitalSet.painScale !== undefined) {
-          console.log(`✅ [VitalsParser] - Pain Scale: ${vitalSet.painScale}/10`);
+          console.log(
+            `✅ [VitalsParser] - Pain Scale: ${vitalSet.painScale}/10`,
+          );
         }
         if (vitalSet.warnings && vitalSet.warnings.length > 0) {
-          console.log(`⚠️ [VitalsParser] - Warnings: ${vitalSet.warnings.join(', ')}`);
+          console.log(
+            `⚠️ [VitalsParser] - Warnings: ${vitalSet.warnings.join(", ")}`,
+          );
         }
       });
-      
-      console.log(`🔥 [VITALS PARSING] ============= PARSING SUCCESS =============`);
+
+      console.log(
+        `🔥 [VITALS PARSING] ============= PARSING SUCCESS =============`,
+      );
 
       return {
         success: true,
