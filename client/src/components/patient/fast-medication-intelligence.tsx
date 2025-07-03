@@ -107,6 +107,16 @@ export function FastMedicationIntelligence({
     }
   }, [initialRoute]); // Only depend on initialRoute
 
+  // Apply GPT recommendations when field is missing and recommendation exists
+  useEffect(() => {
+    if (missingFields?.sig && gptRecommendations?.sig && !sig) {
+      console.log('🔥 [FastMedicationIntelligence] Applying GPT sig recommendation:', gptRecommendations.sig);
+      setSig(gptRecommendations.sig);
+      setManualSigEdit(false);
+      onChange({ sig: gptRecommendations.sig });
+    }
+  }, [gptRecommendations?.sig, missingFields?.sig]); // Apply when GPT recommendations change
+
   // Get medication intelligence data from unified API
   const { data: medicationData, isLoading: medicationDataLoading } = useQuery({
     queryKey: ['medication-intelligence', medicationName],
@@ -272,7 +282,7 @@ export function FastMedicationIntelligence({
         <div className="space-y-2">
           <Label htmlFor="route">Route</Label>
           <Select value={route} onValueChange={handleRouteChange}>
-            <SelectTrigger className={missingFields?.route ? "border-red-300" : gptRecommendations?.route === route ? "text-red-600" : ""}>
+            <SelectTrigger className={missingFields?.route ? "border-4 border-red-500" : gptRecommendations?.route === route ? "text-red-600" : ""}>
               <SelectValue placeholder="Select route" />
             </SelectTrigger>
             <SelectContent>
@@ -293,7 +303,7 @@ export function FastMedicationIntelligence({
             value={quantity}
             onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
             placeholder="30"
-            className={missingFields?.quantity ? "border-red-300" : gptRecommendations?.quantity === quantity ? "text-red-600" : ""}
+            className={missingFields?.quantity ? "border-4 border-red-500" : gptRecommendations?.quantity === quantity ? "text-red-600" : ""}
           />
         </div>
 
@@ -306,7 +316,7 @@ export function FastMedicationIntelligence({
             onChange={(e) => handleRefillsChange(parseInt(e.target.value) || 0)}
             placeholder="2"
             max="11"
-            className={missingFields?.refills ? "border-red-300" : gptRecommendations?.refills === refills ? "text-red-600" : ""}
+            className={missingFields?.refills ? "border-4 border-red-500" : gptRecommendations?.refills === refills ? "text-red-600" : ""}
           />
         </div>
 
@@ -318,7 +328,7 @@ export function FastMedicationIntelligence({
             value={daysSupply}
             onChange={(e) => handleDaysSupplyChange(parseInt(e.target.value) || 0)}
             placeholder="90"
-            className={missingFields?.daysSupply ? "border-red-300" : gptRecommendations?.daysSupply === daysSupply ? "text-red-600" : ""}
+            className={missingFields?.daysSupply ? "border-4 border-red-500" : gptRecommendations?.daysSupply === daysSupply ? "text-red-600" : ""}
           />
         </div>
       </div>
@@ -331,7 +341,7 @@ export function FastMedicationIntelligence({
           onChange={(e) => handleSigChange(e.target.value)}
           placeholder="Enter instructions for use..."
           rows={3}
-          className={missingFields?.sig ? "border-red-300" : gptRecommendations?.sig === sig ? "text-red-600" : ""}
+          className={missingFields?.sig ? "border-4 border-red-500" : gptRecommendations?.sig === sig ? "text-red-600" : ""}
         />
         {!manualSigEdit && medicationData && (
           <div className="flex items-center gap-2 text-sm text-navy-blue-600">

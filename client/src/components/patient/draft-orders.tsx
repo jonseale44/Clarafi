@@ -1039,74 +1039,7 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
         />
       )}
 
-      {/* Pharmacy Validation Results */}
-      {validationResult && (
-        <div className="space-y-2 mb-4">
-          {validationResult.errors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <h4 className="text-sm font-medium text-red-800 mb-1">Pharmacy Errors (Must Fix)</h4>
-              <ul className="text-xs text-red-700 space-y-1">
-                {validationResult.errors.map((error, i) => (
-                  <li key={i} className="flex items-start">
-                    <span className="mr-1">•</span>
-                    <span>{error}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
-          {validationResult.warnings.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-              <h4 className="text-sm font-medium text-amber-800 mb-1">Warnings</h4>
-              <ul className="text-xs text-amber-700 space-y-1">
-                {validationResult.warnings.map((warning, i) => (
-                  <li key={i} className="flex items-start">
-                    <span className="mr-1">•</span>
-                    <span>{warning}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {validationResult.suggestions.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <h4 className="text-sm font-medium text-blue-800 mb-1">Suggestions</h4>
-              <ul className="text-xs text-blue-700 space-y-1">
-                {validationResult.suggestions.map((suggestion, i) => (
-                  <li key={i} className="flex items-start">
-                    <span className="mr-1">•</span>
-                    <span>{suggestion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {validationResult.deaSchedule && (
-            <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
-              <div className="text-xs text-purple-700">
-                <strong>DEA Schedule:</strong> {validationResult.deaSchedule} - Controlled Substance
-              </div>
-            </div>
-          )}
-
-          {validationResult.insuranceConsiderations && validationResult.insuranceConsiderations.length > 0 && (
-            <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-              <h4 className="text-sm font-medium text-gray-800 mb-1">Insurance Considerations</h4>
-              <ul className="text-xs text-gray-700 space-y-1">
-                {validationResult.insuranceConsiderations.map((consideration, i) => (
-                  <li key={i} className="flex items-start">
-                    <span className="mr-1">•</span>
-                    <span>{consideration}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
 
       {isValidating && (
         <div className="text-xs text-gray-500 mb-2">
