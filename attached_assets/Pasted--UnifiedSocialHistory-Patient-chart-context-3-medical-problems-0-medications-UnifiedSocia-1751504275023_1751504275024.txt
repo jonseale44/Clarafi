@@ -1,0 +1,54 @@
+
+🚬 [UnifiedSocialHistory] Patient chart context: 3 medical problems, 0 medications
+🚬 [UnifiedSocialHistory] 🤖 Starting GPT-4.1 social history extraction
+🚬 [UnifiedSocialHistory] Content length: 102 characters
+🚬 [UnifiedSocialHistory] Existing entries: 7
+🚬 [UnifiedSocialHistory] ❌ Error in unified processing: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at <anonymous> (/home/runner/workspace/server/unified-social-history-parser.ts:243:125)
+    at Array.map (<anonymous>)
+    at UnifiedSocialHistoryParser.processSocialHistoryWithGPT (/home/runner/workspace/server/unified-social-history-parser.ts:242:25)
+    at UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:107:38)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:754:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9)
+❌ [SocialHistoryExtraction] Error processing social history from attachment 71: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at <anonymous> (/home/runner/workspace/server/unified-social-history-parser.ts:243:125)
+    at Array.map (<anonymous>)
+    at UnifiedSocialHistoryParser.processSocialHistoryWithGPT (/home/runner/workspace/server/unified-social-history-parser.ts:242:25)
+    at UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:107:38)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:754:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9)
+❌ [SocialHistoryExtraction] Error stack: SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at <anonymous> (/home/runner/workspace/server/unified-social-history-parser.ts:243:125)
+    at Array.map (<anonymous>)
+    at UnifiedSocialHistoryParser.processSocialHistoryWithGPT (/home/runner/workspace/server/unified-social-history-parser.ts:242:25)
+    at UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:107:38)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:754:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9)
+🔥 [SOCIAL HISTORY WORKFLOW] ============= SOCIAL HISTORY EXTRACTION FAILED =============
+[Chart Service] Retrieved chart data: {
+  activeProblems: 0,
+  medicalHistory: 0,
+  currentMedications: 0,
+  allergies: 6,
+  medicalProblems: 3,
+  vitals: 0,
+  familyHistory: 0,
+  socialHistory: 7
+}
+🚨 [UnifiedAllergy] Patient chart context: 3 medical problems, 0 medications
+[Chart Service] Retrieved chart data: {
