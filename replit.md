@@ -119,6 +119,8 @@ Preferred communication style: Simple, everyday language.
 - **CLINICAL INDICATION REQUIREMENT**: Added clinical indication field as required for pharmacy compliance with proper validation styling
 - **RED TEXT FOR RECOMMENDATIONS**: GPT recommendations display in red text (text-red-600) when they match current field values indicating auto-populated suggestions
 - **PHARMACY COMPLIANCE**: System now meets pharmacy requirements by ensuring all prescriptions have required fields with intelligent GPT recommendations
+- **QUANTITY MISMATCH DETECTION**: Enhanced GPT validation to detect and recalculate correct quantities when sig/days supply don't match (e.g., 30 tablets for 90-day supply with once-daily dosing now recommends 90 tablets)
+- **LAYOUT SHIFT FIX**: Fixed validation message layout shifts by reserving space with fixed height container (h-4) that always renders
 - **PRODUCTION READY**: Complete validation system integrated with existing medication intelligence infrastructure for seamless pharmacy order processing
 
 ### Medications Section Timezone Translation Fix COMPLETED (July 3, 2025)
