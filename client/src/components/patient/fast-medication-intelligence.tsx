@@ -75,6 +75,38 @@ export function FastMedicationIntelligence({
   const [daysSupply, setDaysSupply] = useState(initialDaysSupply);
   const [manualSigEdit, setManualSigEdit] = useState(false);
 
+  // Sync internal state with parent when props change
+  useEffect(() => {
+    if (initialSig && initialSig !== sig) {
+      setSig(initialSig);
+      setManualSigEdit(false); // Reset manual edit flag when parent updates sig
+    }
+  }, [initialSig]); // Only depend on initialSig to avoid loops
+
+  useEffect(() => {
+    if (initialQuantity !== undefined && initialQuantity !== quantity) {
+      setQuantity(initialQuantity);
+    }
+  }, [initialQuantity]); // Only depend on initialQuantity
+
+  useEffect(() => {
+    if (initialRefills !== undefined && initialRefills !== refills) {
+      setRefills(initialRefills);
+    }
+  }, [initialRefills]); // Only depend on initialRefills
+
+  useEffect(() => {
+    if (initialDaysSupply !== undefined && initialDaysSupply !== daysSupply) {
+      setDaysSupply(initialDaysSupply);
+    }
+  }, [initialDaysSupply]); // Only depend on initialDaysSupply
+
+  useEffect(() => {
+    if (initialRoute && initialRoute !== route) {
+      setRoute(initialRoute);
+    }
+  }, [initialRoute]); // Only depend on initialRoute
+
   // Get medication intelligence data from unified API
   const { data: medicationData, isLoading: medicationDataLoading } = useQuery({
     queryKey: ['medication-intelligence', medicationName],
