@@ -239,9 +239,19 @@ CRITICAL CONSOLIDATION RULES:
 - Use "NEW_ENTRY" only when category doesn't exist yet
 
 EXISTING SOCIAL HISTORY DATA:
-${existingSocialHistory.map(entry => 
-  `ID: ${entry.id} | Category: ${entry.category} | Status: ${entry.currentStatus} | Last Visit: ${entry.visitHistory ? JSON.parse(entry.visitHistory)[0]?.date : 'None'}`
-).join('\n') || 'No existing social history entries'}
+${existingSocialHistory.map(entry => {
+  let lastVisitDate = 'None';
+  try {
+    if (entry.visitHistory) {
+      const visitHistory = typeof entry.visitHistory === 'string' ? JSON.parse(entry.visitHistory) : entry.visitHistory;
+      lastVisitDate = visitHistory[0]?.date || 'None';
+    }
+  } catch (e) {
+    console.warn(`🚬 [UnifiedSocialHistory] Error parsing visit history for entry ${entry.id}:`, e);
+    lastVisitDate = 'Parse Error';
+  }
+  return `ID: ${entry.id} | Category: ${entry.category} | Status: ${entry.currentStatus} | Last Visit: ${lastVisitDate}`;
+}).join('\n') || 'No existing social history entries'}
 
 PATIENT CONTEXT:
 ${patientContext}
