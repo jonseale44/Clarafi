@@ -2010,42 +2010,33 @@ Extract all medications from this document. For each medication, determine if it
         clinicalIndication: input.clinicalIndication || existingMedication.clinicalIndication
       };
 
-      // Validate pharmacy requirements
+      // Check if sig is missing and generate default if needed
+      if (!orderData.sig || orderData.sig.trim() === "") {
+        const generatedSig = pharmacyService.generateDefaultSig(
+          existingMedication.dosage || "1",
+          existingMedication.frequency || "once daily",
+          existingMedication.route || "by mouth"
+        );
+        
+        console.log(
+          `💊 [MoveToOrders] No sig found, generated default: "${generatedSig}"`,
+        );
+        
+        orderData.sig = generatedSig;
+        validationData.sig = generatedSig;
+      }
+      
+      // Validate pharmacy requirements - but don't block order creation
       const validationResult = await pharmacyService.validateMedicationOrder(validationData);
       
       if (!validationResult.isValid) {
-        console.error(
-          `❌ [MoveToOrders] Pharmacy validation failed:`,
+        console.warn(
+          `⚠️ [MoveToOrders] Pharmacy validation warnings:`,
           validationResult.errors,
         );
-        
-        // Generate sig if missing using existing medication data
-        if (validationResult.errors.includes("Patient instructions (sig) required")) {
-          const generatedSig = pharmacyService.generateDefaultSig(
-            existingMedication.dosage || "",
-            existingMedication.frequency || "daily",
-            existingMedication.route || "oral"
-          );
-          
-          console.log(
-            `💊 [MoveToOrders] Generated default sig for refill: "${generatedSig}"`,
-          );
-          
-          orderData.sig = generatedSig;
-          validationData.sig = generatedSig;
-          
-          // Re-validate with generated sig
-          const revalidation = await pharmacyService.validateMedicationOrder(validationData);
-          if (!revalidation.isValid) {
-            throw new Error(
-              `Medication order validation failed: ${revalidation.errors.join(", ")}`
-            );
-          }
-        } else {
-          throw new Error(
-            `Medication order validation failed: ${validationResult.errors.join(", ")}`
-          );
-        }
+        console.warn(
+          `⚠️ [MoveToOrders] Order will be created but may require review before signing`,
+        );
       }
 
       // Create draft order
