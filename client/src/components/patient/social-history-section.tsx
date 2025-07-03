@@ -751,9 +751,11 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                           new Date(a.date).getTime(),
                       )
                       .map((visit, index) => (
-                        <div key={index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
+                        <div key={index} className="flex items-start gap-3 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                          <span className="font-medium text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
+                            {formatDate(visit.date)}
+                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             {visit.source &&
                               getSourceBadge(
                                 visit.source,
@@ -762,7 +764,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                 visit.encounterId,
                               )}
                           </div>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 flex-1">{visit.notes}</p>
                         </div>
                       ))}
                   </div>
