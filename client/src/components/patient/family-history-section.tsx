@@ -480,25 +480,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
               </div>
             )}
 
-            {/* Source Information */}
-            <div className="pt-2 border-t">
-              <div className="text-xs text-gray-600 space-y-1">
-                <div>
-                  <span className="font-medium">Source:</span> {entry.sourceType} 
-                  <span className="ml-2">
-                    <span className="font-medium">Confidence:</span> {Math.round(parseFloat(entry.sourceConfidence) * 100)}%
-                  </span>
-                </div>
-                {entry.sourceNotes && (
-                  <div>
-                    <span className="font-medium">Notes:</span> {entry.sourceNotes}
-                  </div>
-                )}
-                <div>
-                  <span className="font-medium">Last updated:</span> {format(new Date(entry.updatedAt), "MMM d, yyyy 'at' h:mm a")}
-                </div>
-              </div>
-            </div>
+
           </div>
         </CollapsibleContent>
       </Collapsible>
