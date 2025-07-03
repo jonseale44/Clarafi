@@ -131,8 +131,9 @@ Preferred communication style: Simple, everyday language.
   - **Tom Oliver S. 18th**: 1800 Gurley Lane, Waco, TX 76706 (254-313-6000) - Full service with dental, lab, pharmacy
   - **West Waco**: 600 W State Highway 6, Woodway, TX 76712 (254-313-6700)
   - **Hillcrest Medical**: 120 Hillcrest Medical Blvd Building II, Waco, TX 76708 (254-313-6000) - Senior care specialty
-- **COMPREHENSIVE PROVIDER ACCESS**: User assigned to all 5 locations with appropriate roles (primary at Central, covering at others)
-- **AUTHENTIC ORGANIZATIONAL STRUCTURE**: Complete hierarchy with Waco Family Medicine health system, regional organizations (Hillsboro/Waco), and physical clinic locations
+- **INDEPENDENT CLINIC INTEGRATION**: Added Mission Hillsboro Medical Clinic (120 E Franklin St, Hillsboro, TX 76645, 254-479-1489) as separate independent health system demonstrating system flexibility for multiple clinic types
+- **COMPREHENSIVE PROVIDER ACCESS**: User assigned to all 6 locations total (5 Waco Family Medicine + 1 Mission Hillsboro) with appropriate roles (primary at Central, covering at others)
+- **AUTHENTIC ORGANIZATIONAL STRUCTURE**: Complete hierarchy supporting both large health systems (Waco Family Medicine with regional organizations) and independent single-location clinics (Mission Hillsboro)
 
 ### Social History Visit History Format Consistency Fix COMPLETED (July 3, 2025)
 - **CRITICAL FORMAT ALIGNMENT**: Successfully identified and fixed social history visit history formatting to match medical problems display pattern exactly
