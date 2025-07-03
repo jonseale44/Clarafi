@@ -65,7 +65,7 @@ const openai = new OpenAI({
 import { PatientChartService } from "./patient-chart-service.js";
 
 // OLD ClinicalNoteTemplates class REMOVED - All note types now consolidated in EnhancedNoteGenerationService
-// This provides full patient context (demographics, medical problems, medications, allergies, vitals) 
+// This provides full patient context (demographics, medical problems, medications, allergies, vitals)
 // for ALL note types instead of empty context that was causing poor AI generation quality
 
 // DEPRECATED CLASS REMOVED - All note types now use EnhancedNoteGenerationService with full patient context
@@ -149,13 +149,15 @@ ${formatVitalsForSOAP(encounterVitalsList)}
   `.trim();
 
   // Use EnhancedNoteGenerationService for all note types with full patient context
-  const { EnhancedNoteGenerationService } = await import("./enhanced-note-generation-service.js");
-  
+  const { EnhancedNoteGenerationService } = await import(
+    "./enhanced-note-generation-service.js"
+  );
+
   const generatedNote = await EnhancedNoteGenerationService.generateNote(
     noteType,
     patientId,
     encounterId,
-    transcription
+    transcription,
   );
 
   // Save note to encounter (same as before)
@@ -526,7 +528,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
-  
+
   // Location management routes
   const { setupLocationRoutes } = await import("./location-routes.js");
   setupLocationRoutes(app);
@@ -578,17 +580,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", unifiedSurgicalHistoryRoutes);
   app.use("/api", unifiedFamilyHistoryRoutes);
   app.use("/api", socialHistoryRoutes);
-  
+
   // Unified Imaging Routes (8th parallel processing service)
   setupUnifiedImagingRoutes(app);
-  
+
   // Unified Allergy Routes
-  app.get("/api/allergies/:patientId", APIResponseHandler.asyncHandler(unifiedAllergyAPI.getAllergies));
-  app.post("/api/allergies", APIResponseHandler.asyncHandler(unifiedAllergyAPI.createAllergy));
-  app.put("/api/allergies/:allergyId", APIResponseHandler.asyncHandler(unifiedAllergyAPI.updateAllergy));
-  app.delete("/api/allergies/:allergyId", APIResponseHandler.asyncHandler(unifiedAllergyAPI.deleteAllergy));
-  app.post("/api/allergies/process-unified", APIResponseHandler.asyncHandler(unifiedAllergyAPI.processUnifiedAllergies));
-  app.post("/api/allergies/:allergyId/visit-history", APIResponseHandler.asyncHandler(unifiedAllergyAPI.addAllergyVisitHistory));
+  app.get(
+    "/api/allergies/:patientId",
+    APIResponseHandler.asyncHandler(unifiedAllergyAPI.getAllergies),
+  );
+  app.post(
+    "/api/allergies",
+    APIResponseHandler.asyncHandler(unifiedAllergyAPI.createAllergy),
+  );
+  app.put(
+    "/api/allergies/:allergyId",
+    APIResponseHandler.asyncHandler(unifiedAllergyAPI.updateAllergy),
+  );
+  app.delete(
+    "/api/allergies/:allergyId",
+    APIResponseHandler.asyncHandler(unifiedAllergyAPI.deleteAllergy),
+  );
+  app.post(
+    "/api/allergies/process-unified",
+    APIResponseHandler.asyncHandler(unifiedAllergyAPI.processUnifiedAllergies),
+  );
+  app.post(
+    "/api/allergies/:allergyId/visit-history",
+    APIResponseHandler.asyncHandler(unifiedAllergyAPI.addAllergyVisitHistory),
+  );
 
   // Removed orphaned enhanced medical problems routes - functionality consolidated into unified API
 
@@ -822,32 +842,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Utility function to normalize name capitalization
       const normalizeNameCapitalization = (name: string): string => {
         if (!name) return name;
-        
+
         return name
-          .split(' ')
-          .map(word => {
+          .split(" ")
+          .map((word) => {
             if (!word) return word;
             // Handle special cases like O'Connor, McDonald, etc.
             if (word.includes("'")) {
-              return word.split("'").map(part => 
-                part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-              ).join("'");
+              return word
+                .split("'")
+                .map(
+                  (part) =>
+                    part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
+                )
+                .join("'");
             }
             return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
           })
-          .join(' ');
+          .join(" ");
       };
 
       const validatedData = insertPatientSchema.parse(req.body);
-      
+
       // Normalize name capitalization if firstName and lastName are provided
       if (validatedData.firstName) {
-        validatedData.firstName = normalizeNameCapitalization(validatedData.firstName);
+        validatedData.firstName = normalizeNameCapitalization(
+          validatedData.firstName,
+        );
       }
       if (validatedData.lastName) {
-        validatedData.lastName = normalizeNameCapitalization(validatedData.lastName);
+        validatedData.lastName = normalizeNameCapitalization(
+          validatedData.lastName,
+        );
       }
-      
+
       const patient = await storage.createPatient(validatedData);
       res.status(201).json(patient);
     } catch (error: any) {
@@ -1086,8 +1114,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
-
-
 
   app.get("/api/patients/:patientId/diagnoses", async (req, res) => {
     try {
@@ -2239,7 +2265,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
 
         console.log(
           `🎤 [Transcription] Auto-saving transcription for encounter ${encounterId}`,
-          `Raw: ${transcriptionRaw?.length || 0} chars, Processed: ${transcriptionProcessed?.length || 0} chars`
+          `Raw: ${transcriptionRaw?.length || 0} chars, Processed: ${transcriptionProcessed?.length || 0} chars`,
         );
 
         // Save transcription to encounter
@@ -2310,7 +2336,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
                 diagnosisDate: new Date().toISOString().split("T")[0],
                 status: diagnosis.isPrimary ? "active" : "active",
                 notes: `Updated via CPT codes interface on ${new Date().toISOString()}`,
-                
+
                 // Enhanced RCM billing workflow fields
                 isPrimary: diagnosis.isPrimary || false,
                 diagnosisPointer: String.fromCharCode(65 + i), // A, B, C, D for claim linking
@@ -2318,14 +2344,17 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
                 claimSubmissionStatus: "pending",
                 medicalNecessityDocumented: true, // AI-generated = documented
                 priorAuthorizationRequired: false, // Default - can be updated by billing staff
-                
+
                 // Automatic modifier application from CPT codes if available
-                modifierApplied: cptCodes?.find(cpt => 
-                  cpt.modifiers && cpt.modifiers.length > 0
-                )?.modifiers?.join(", ") || null
+                modifierApplied:
+                  cptCodes
+                    ?.find((cpt) => cpt.modifiers && cpt.modifiers.length > 0)
+                    ?.modifiers?.join(", ") || null,
               });
-              
-              console.log(`✅ [CPT API] Created diagnosis with RCM fields: ${diagnosis.diagnosis} (${diagnosis.icd10Code})`);
+
+              console.log(
+                `✅ [CPT API] Created diagnosis with RCM fields: ${diagnosis.diagnosis} (${diagnosis.icd10Code})`,
+              );
             } catch (diagnosisError) {
               console.error(
                 `❌ [CPT API] Error creating diagnosis:`,
@@ -2362,9 +2391,14 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
       const diagnosisId = parseInt(req.params.diagnosisId);
       const updates = req.body;
 
-      console.log(`💰 [RCM API] Updating billing status for diagnosis ${diagnosisId}`);
+      console.log(
+        `💰 [RCM API] Updating billing status for diagnosis ${diagnosisId}`,
+      );
 
-      const updatedDiagnosis = await storage.updateDiagnosisRCMStatus(diagnosisId, updates);
+      const updatedDiagnosis = await storage.updateDiagnosisRCMStatus(
+        diagnosisId,
+        updates,
+      );
 
       res.json({
         message: "Diagnosis billing status updated successfully",
@@ -3002,7 +3036,7 @@ Instructions:
       // Purpose: Cost-effective model for parsing mixed medical orders (medications, labs, imaging, referrals)
       // Uses structured JSON output for reliable data extraction from free-text medical orders
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-mini",
         messages: [
           {
             role: "system",
@@ -3015,7 +3049,7 @@ Instructions:
           },
         ],
         temperature: 0.1,
-        max_tokens: 1500,
+        max_tokens: 30000,
       });
 
       const content = response.choices[0]?.message?.content?.trim();
@@ -4119,8 +4153,11 @@ Return only valid JSON without markdown formatting.`;
   // Admin routes for prompt management
   app.get("/api/admin/prompt-reviews/pending", async (req, res) => {
     try {
-      console.log("🔍 [Admin] Accessing pending reviews, authenticated:", req.isAuthenticated());
-      
+      console.log(
+        "🔍 [Admin] Accessing pending reviews, authenticated:",
+        req.isAuthenticated(),
+      );
+
       const reviews = await storage.getAllPendingPromptReviews();
       console.log("📋 [Admin] Found", reviews.length, "pending reviews");
       res.json(reviews);
@@ -4132,19 +4169,24 @@ Return only valid JSON without markdown formatting.`;
 
   app.get("/api/admin/templates", async (req, res) => {
     try {
-      console.log("🔍 [Admin] Accessing templates, authenticated:", req.isAuthenticated());
-      
+      console.log(
+        "🔍 [Admin] Accessing templates, authenticated:",
+        req.isAuthenticated(),
+      );
+
       const templates = await storage.getUserNoteTemplates(1); // Get all templates for now
       console.log("📋 [Admin] Found", templates.length, "templates");
-      res.json(templates.map(t => ({
-        id: t.id,
-        templateName: t.templateName,
-        baseNoteType: t.baseNoteType,
-        displayName: t.displayName,
-        userId: t.userId,
-        hasActivePrompt: false,
-        activePromptLength: 0
-      })));
+      res.json(
+        templates.map((t) => ({
+          id: t.id,
+          templateName: t.templateName,
+          baseNoteType: t.baseNoteType,
+          displayName: t.displayName,
+          userId: t.userId,
+          hasActivePrompt: false,
+          activePromptLength: 0,
+        })),
+      );
     } catch (error: any) {
       console.error("❌ [Admin] Error fetching templates:", error);
       res.status(500).json({ message: "Failed to fetch templates" });
@@ -4155,14 +4197,14 @@ Return only valid JSON without markdown formatting.`;
     try {
       const reviewId = parseInt(req.params.reviewId);
       const { reviewedPrompt, reviewNotes, reviewStatus } = req.body;
-      
+
       await storage.updateAdminPromptReview(reviewId, {
         reviewedPrompt,
         reviewNotes,
         reviewStatus,
-        reviewedAt: new Date()
+        reviewedAt: new Date(),
       });
-      
+
       res.json({ message: "Review updated successfully" });
     } catch (error: any) {
       console.error("❌ [Admin] Error updating review:", error);
@@ -4175,14 +4217,13 @@ Return only valid JSON without markdown formatting.`;
       const reviewId = parseInt(req.params.reviewId);
       const userId = (req as any).user?.id || 1;
       await storage.activateReviewedPrompt(reviewId, userId);
-      
+
       res.json({ message: "Prompt activated successfully" });
     } catch (error: any) {
       console.error("❌ [Admin] Error activating prompt:", error);
       res.status(500).json({ message: "Failed to activate prompt" });
     }
   });
-
 
   return httpServer;
 }

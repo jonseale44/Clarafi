@@ -119,23 +119,23 @@ const attachmentProcessing = Promise.all([
 | **Medical Problems** | gpt-4.1 | 0.1 | 30,000 | json_object | `unified-medical-problems-parser.ts` |
 | **Surgical History** | gpt-4.1-mini | 0.1 | 30,000 | text | `unified-surgical-history-parser.ts` |
 | **Social History** | gpt-4.1-mini | 0.1 | 30,000 | text | `unified-social-history-parser.ts` |
-| **Family History** | gpt-4.1-mini | 0.3 | 30,000 | text | `unified-family-history-parser.ts` |
+| **Family History** | gpt-4.1-mini | 0.1 | 30,000 | text | `unified-family-history-parser.ts` |
 | **Medication Delta** | gpt-4.1 | 0.1 | default | json_object | `medication-delta-service.ts` |
 | **Allergy Parser** | gpt-4.1-nano | 0.1 | 30,000 | text | `unified-allergy-parser.ts` |
-| **Vitals Parser** | gpt-4.1-mini* | 0.1 | 30,000 | text | `vitals-parser-service.ts` |
+| **Vitals Parser** | gpt-4.1-mini | 0.1 | 30,000 | text | `vitals-parser-service.ts` |
 | **Imaging Parser** | gpt-4.1-nano | 0.3 | 30,000 | text | `unified-imaging-parser.ts` |
-| **Order Processing** | gpt-4.1-nano | 0.1 | 1,500 | text | `routes.ts` |
+| **Order Processing** | gpt-4.1-mini | 0.1 | 30,000 | text | `routes.ts` |
 
-*Technical Debt Identified: Vitals parser logs show "gpt-4.1-nano" but actually uses "gpt-4.1-mini"
+
 
 ### Temperature Analysis
 
 **Ultra-Deterministic (0.1)**:
-- Medical Problems, Surgical History, Social History, Medication Delta, Allergy Parser, Vitals Parser, Order Processing
+- Medical Problems, Surgical History, Social History, Family History, Medication Delta, Allergy Parser, Vitals Parser, Order Processing
 - **Rationale**: Medical data extraction requires maximum precision and consistency
 
 **Moderate Deterministic (0.3)**:
-- Family History, Imaging Parser
+- Imaging Parser
 - **Rationale**: Contextual extraction with slight creativity for better clinical narratives
 
 **Never Used**: Temperatures >0.5 are inappropriate for medical record processing
@@ -147,22 +147,21 @@ const attachmentProcessing = Promise.all([
 - **Usage**: Complex clinical reasoning and consolidation logic
 
 **GPT-4.1-mini**:
-- Surgical History, Social History, Vitals Parser
+- Surgical History, Social History, Family History, Vitals Parser, Order Processing
 - **Usage**: Structured data extraction with good clinical intelligence
 
 **GPT-4.1-nano**:
-- Allergy Parser, Imaging Parser, Order Processing
+- Allergy Parser, Imaging Parser
 - **Usage**: Simple extraction tasks and cost optimization
 
 ---
 
 ## Technical Debt Identified
 
-### 1. GPT Model Inconsistency (Minor)
-**Issue**: Vitals parser logs indicate "gpt-4.1-nano" but implementation uses "gpt-4.1-mini"
-**Location**: `server/vitals-parser-service.ts` line 124 vs line 129
-**Impact**: Low - only affects logging accuracy
-**Resolution**: Update logging to match actual model used
+### 1. GPT Model Inconsistency (Resolved)
+**Previous Issue**: Vitals parser logs indicated "gpt-4.1-nano" but implementation used "gpt-4.1-mini"
+**Status**: Resolved - configurations now correctly aligned
+**Impact**: No remaining technical debt from GPT model inconsistencies
 
 ### 2. Hardcoded User ID References (Resolved)
 **Previous Issue**: Multiple files referenced non-existent user ID 2 instead of existing user ID 1
@@ -259,9 +258,10 @@ The EMR system demonstrates sophisticated parallel processing architecture with 
 - Appropriate GPT model selection and temperature configuration
 - Smart selective processing for different clinical workflows
 
-**Minor Technical Debt**:
-- One logging inconsistency in vitals parser (easily resolved)
-- No major architectural concerns identified
+**Technical Debt Status**:
+- All previously identified inconsistencies have been resolved
+- No remaining technical debt identified
+- No major architectural concerns
 
 The system meets production EMR standards with professional-grade parallel processing capabilities suitable for high-volume clinical environments.
 

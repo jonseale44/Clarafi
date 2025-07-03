@@ -366,7 +366,7 @@ Only extract family history information that is explicitly mentioned. Do not inf
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-mini",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3,
+        temperature: 0.1,
         max_tokens: 30000,
       });
 

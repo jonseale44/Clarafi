@@ -5,7 +5,16 @@
 
 import OpenAI from "openai";
 import { db } from "./db";
-import { gptLabReviewNotes, labResults, patients, encounters, diagnoses, medications, allergies, medicalHistory } from "@shared/schema";
+import {
+  gptLabReviewNotes,
+  labResults,
+  patients,
+  encounters,
+  diagnoses,
+  medications,
+  allergies,
+  medicalHistory,
+} from "@shared/schema";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { PatientChartService } from "./patient-chart-service";
 
@@ -55,29 +64,36 @@ export interface GPTLabReviewResponse {
 }
 
 export class GPTLabReviewService {
-  
   /**
    * Generate GPT-powered lab review for selected results
    */
-  static async generateLabReview(request: GPTLabReviewRequest): Promise<number> {
+  static async generateLabReview(
+    request: GPTLabReviewRequest,
+  ): Promise<number> {
     const startTime = Date.now();
-    console.log(`🤖 [GPTLabReview] Starting review generation for patient ${request.patientId}, results: ${request.resultIds.join(',')}`);
+    console.log(
+      `🤖 [GPTLabReview] Starting review generation for patient ${request.patientId}, results: ${request.resultIds.join(",")}`,
+    );
 
     try {
       // 1. Gather current lab results being reviewed
-      const currentResults = await db.select()
+      const currentResults = await db
+        .select()
         .from(labResults)
         .where(inArray(labResults.id, request.resultIds));
 
       if (currentResults.length === 0) {
-        throw new Error('No lab results found for the specified IDs');
+        throw new Error("No lab results found for the specified IDs");
       }
 
       // 2. Get comprehensive patient context
       const patientContext = await this.buildPatientContext(request.patientId);
-      
+
       // 3. Get historical lab results for trending
-      const historicalResults = await this.getHistoricalLabResults(request.patientId, currentResults);
+      const historicalResults = await this.getHistoricalLabResults(
+        request.patientId,
+        currentResults,
+      );
       patientContext.priorLabResults = historicalResults;
 
       // 4. Get most recent SOAP note for clinical context
@@ -85,7 +101,10 @@ export class GPTLabReviewService {
       patientContext.recentSOAP = recentSOAP;
 
       // 5. Generate GPT review
-      const gptResponse = await this.callGPTForLabReview(currentResults, patientContext);
+      const gptResponse = await this.callGPTForLabReview(
+        currentResults,
+        patientContext,
+      );
 
       // 6. Save to database
       const reviewId = await this.saveGPTReview({
@@ -95,14 +114,15 @@ export class GPTLabReviewService {
         generatedBy: request.requestedBy,
         patientContext,
         gptResponse,
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       });
 
-      console.log(`🤖 [GPTLabReview] Review generated successfully with ID: ${reviewId}`);
+      console.log(
+        `🤖 [GPTLabReview] Review generated successfully with ID: ${reviewId}`,
+      );
       return reviewId;
-
     } catch (error) {
-      console.error('🤖 [GPTLabReview] Error generating review:', error);
+      console.error("🤖 [GPTLabReview] Error generating review:", error);
       throw error;
     }
   }
@@ -110,67 +130,79 @@ export class GPTLabReviewService {
   /**
    * Build comprehensive patient context for GPT
    */
-  private static async buildPatientContext(patientId: number): Promise<GPTPatientContext> {
-    console.log(`🤖 [GPTLabReview] Building patient context for patient ${patientId}`);
+  private static async buildPatientContext(
+    patientId: number,
+  ): Promise<GPTPatientContext> {
+    console.log(
+      `🤖 [GPTLabReview] Building patient context for patient ${patientId}`,
+    );
 
     // Get comprehensive chart data
     const chartData = await PatientChartService.getPatientChartData(patientId);
 
     return {
       demographics: chartData.demographics,
-      activeProblems: chartData.activeProblems.map((p: any) => p.title || p.diagnosis || p),
+      activeProblems: chartData.activeProblems.map(
+        (p: any) => p.title || p.diagnosis || p,
+      ),
       currentMedications: chartData.currentMedications.map((m: any) => ({
         name: m.medicationName,
         dosage: m.dosage,
-        frequency: m.frequency
+        frequency: m.frequency,
       })),
       allergies: chartData.allergies.map((a: any) => ({
         allergen: a.allergen,
         reaction: a.reaction,
-        severity: a.severity
+        severity: a.severity,
       })),
-      recentSOAP: '', // Will be populated separately
-      priorLabResults: [] // Will be populated separately
+      recentSOAP: "", // Will be populated separately
+      priorLabResults: [], // Will be populated separately
     };
   }
 
   /**
    * Get historical lab results for trending analysis
    */
-  private static async getHistoricalLabResults(patientId: number, currentResults: any[]): Promise<Array<{
-    testName: string;
-    value: string;
-    date: string;
-    abnormalFlag?: string;
-  }>> {
+  private static async getHistoricalLabResults(
+    patientId: number,
+    currentResults: any[],
+  ): Promise<
+    Array<{
+      testName: string;
+      value: string;
+      date: string;
+      abnormalFlag?: string;
+    }>
+  > {
     // Get unique test names from current results
-    const testNames = [...new Set(currentResults.map(r => r.testName))];
+    const testNames = [...new Set(currentResults.map((r) => r.testName))];
 
     // Get historical results for these tests (last 12 months)
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-    const historicalResults = await db.select({
-      testName: labResults.testName,
-      resultValue: labResults.resultValue,
-      resultAvailableAt: labResults.resultAvailableAt,
-      abnormalFlag: labResults.abnormalFlag
-    })
-    .from(labResults)
-    .where(
-      and(
-        eq(labResults.patientId, patientId),
-        inArray(labResults.testName, testNames)
+    const historicalResults = await db
+      .select({
+        testName: labResults.testName,
+        resultValue: labResults.resultValue,
+        resultAvailableAt: labResults.resultAvailableAt,
+        abnormalFlag: labResults.abnormalFlag,
+      })
+      .from(labResults)
+      .where(
+        and(
+          eq(labResults.patientId, patientId),
+          inArray(labResults.testName, testNames),
+        ),
       )
-    )
-    .orderBy(desc(labResults.resultAvailableAt))
-    .limit(50); // Limit to prevent excessive context
+      .orderBy(desc(labResults.resultAvailableAt))
+      .limit(50); // Limit to prevent excessive context
 
-    return historicalResults.map(r => ({
+    return historicalResults.map((r) => ({
       testName: r.testName,
-      value: r.resultValue || 'N/A',
-      date: r.resultAvailableAt?.toISOString().split('T')[0] || '',
-      abnormalFlag: r.abnormalFlag || undefined
+      value: r.resultValue || "N/A",
+      date: r.resultAvailableAt?.toISOString().split("T")[0] || "",
+      abnormalFlag: r.abnormalFlag || undefined,
     }));
   }
 
@@ -179,32 +211,32 @@ export class GPTLabReviewService {
    */
   private static async getRecentSOAPNote(patientId: number): Promise<string> {
     try {
-      const recentEncounter = await db.select({
-        subjectiveFindings: encounters.subjectiveFindings,
-        objectiveFindings: encounters.objectiveFindings,
-        assessment: encounters.assessment,
-        plan: encounters.plan,
-        encounterDate: encounters.encounterDate
-      })
-      .from(encounters)
-      .where(eq(encounters.patientId, patientId))
-      .orderBy(desc(encounters.encounterDate))
-      .limit(1);
+      const recentEncounter = await db
+        .select({
+          subjectiveFindings: encounters.subjectiveFindings,
+          objectiveFindings: encounters.objectiveFindings,
+          assessment: encounters.assessment,
+          plan: encounters.plan,
+          encounterDate: encounters.encounterDate,
+        })
+        .from(encounters)
+        .where(eq(encounters.patientId, patientId))
+        .orderBy(desc(encounters.encounterDate))
+        .limit(1);
 
       if (recentEncounter.length === 0) {
-        return 'No recent SOAP notes available';
+        return "No recent SOAP notes available";
       }
 
       const encounter = recentEncounter[0];
-      return `Recent SOAP Note (${encounter.encounterDate?.toISOString().split('T')[0]}):
-SUBJECTIVE: ${encounter.subjectiveFindings || 'Not documented'}
-OBJECTIVE: ${encounter.objectiveFindings || 'Not documented'}
-ASSESSMENT: ${encounter.assessment || 'Not documented'}
-PLAN: ${encounter.plan || 'Not documented'}`;
-
+      return `Recent SOAP Note (${encounter.encounterDate?.toISOString().split("T")[0]}):
+SUBJECTIVE: ${encounter.subjectiveFindings || "Not documented"}
+OBJECTIVE: ${encounter.objectiveFindings || "Not documented"}
+ASSESSMENT: ${encounter.assessment || "Not documented"}
+PLAN: ${encounter.plan || "Not documented"}`;
     } catch (error) {
-      console.error('🤖 [GPTLabReview] Error fetching SOAP note:', error);
-      return 'Error retrieving recent SOAP notes';
+      console.error("🤖 [GPTLabReview] Error fetching SOAP note:", error);
+      return "Error retrieving recent SOAP notes";
     }
   }
 
@@ -212,28 +244,38 @@ PLAN: ${encounter.plan || 'Not documented'}`;
    * Call GPT-4.1 for lab review generation
    */
   private static async callGPTForLabReview(
-    currentResults: any[], 
-    patientContext: GPTPatientContext
+    currentResults: any[],
+    patientContext: GPTPatientContext,
   ): Promise<GPTLabReviewResponse> {
-    console.log(`🤖 [GPTLabReview] Calling GPT-4.1 for ${currentResults.length} lab results`);
+    console.log(
+      `🤖 [GPTLabReview] Calling GPT-4.1 for ${currentResults.length} lab results`,
+    );
 
-    const labResultsSummary = currentResults.map(result => `
-- ${result.testName}: ${result.resultValue} ${result.resultUnits || ''} ${result.referenceRange ? `(Ref: ${result.referenceRange})` : ''} ${result.abnormalFlag ? `[${result.abnormalFlag}]` : ''} ${result.criticalFlag ? '[CRITICAL]' : ''}
-    `).join('');
+    const labResultsSummary = currentResults
+      .map(
+        (result) => `
+- ${result.testName}: ${result.resultValue} ${result.resultUnits || ""} ${result.referenceRange ? `(Ref: ${result.referenceRange})` : ""} ${result.abnormalFlag ? `[${result.abnormalFlag}]` : ""} ${result.criticalFlag ? "[CRITICAL]" : ""}
+    `,
+      )
+      .join("");
 
-    const historicalTrends = patientContext.priorLabResults.length > 0 
-      ? `\nHISTORICAL LAB TRENDS:\n${patientContext.priorLabResults.map(h => 
-          `- ${h.testName}: ${h.value} (${h.date}) ${h.abnormalFlag ? `[${h.abnormalFlag}]` : ''}`
-        ).join('\n')}`
-      : '\nNo significant historical lab data available.';
+    const historicalTrends =
+      patientContext.priorLabResults.length > 0
+        ? `\nHISTORICAL LAB TRENDS:\n${patientContext.priorLabResults
+            .map(
+              (h) =>
+                `- ${h.testName}: ${h.value} (${h.date}) ${h.abnormalFlag ? `[${h.abnormalFlag}]` : ""}`,
+            )
+            .join("\n")}`
+        : "\nNo significant historical lab data available.";
 
     const prompt = `You are an experienced physician reviewing lab results. You must provide a comprehensive clinical interpretation and generate appropriate patient communications.
 
 PATIENT CONTEXT:
 - Demographics: ${patientContext.demographics.age} year old ${patientContext.demographics.gender}, MRN: ${patientContext.demographics.mrn}
-- Active Problems: ${patientContext.activeProblems.length > 0 ? patientContext.activeProblems.join(', ') : 'None documented'}
-- Current Medications: ${patientContext.currentMedications.length > 0 ? patientContext.currentMedications.map(m => `${m.name} ${m.dosage} ${m.frequency}`).join(', ') : 'None documented'}
-- Allergies: ${patientContext.allergies.length > 0 ? patientContext.allergies.map(a => `${a.allergen} (${a.reaction})`).join(', ') : 'NKDA'}
+- Active Problems: ${patientContext.activeProblems.length > 0 ? patientContext.activeProblems.join(", ") : "None documented"}
+- Current Medications: ${patientContext.currentMedications.length > 0 ? patientContext.currentMedications.map((m) => `${m.name} ${m.dosage} ${m.frequency}`).join(", ") : "None documented"}
+- Allergies: ${patientContext.allergies.length > 0 ? patientContext.allergies.map((a) => `${a.allergen} (${a.reaction})`).join(", ") : "NKDA"}
 
 ${patientContext.recentSOAP}
 
@@ -256,33 +298,42 @@ Format your response as JSON:
 The patient and nurse messages should be identical in content but different in phrasing - the patient message should be direct to the patient, while the nurse message should be phrased as instructions for what the nurse should tell the patient.`;
 
     try {
-      console.log(`🤖 [GPTLabReview] Sending prompt to GPT-4 (${prompt.length} characters)`);
-      
+      console.log(
+        `🤖 [GPTLabReview] Sending prompt to GPT-4 (${prompt.length} characters)`,
+      );
+
       const response = await openai.chat.completions.create({
-        model: "gpt-4", // Using GPT-4.1 - the newest OpenAI model which was released after gpt-4o and is more advanced and cost-effective
+        model: "gpt-4.1-mini", // Using GPT-4.1 - the newest OpenAI model which was released after gpt-4o and is more advanced and cost-effective
         messages: [
           {
             role: "system",
-            content: "You are an experienced physician. Always respond with valid JSON in the exact format requested."
+            content:
+              "You are an experienced physician. Always respond with valid JSON in the exact format requested.",
           },
           {
-            role: "user", 
-            content: prompt
-          }
+            role: "user",
+            content: prompt,
+          },
         ],
-        temperature: 0.3, // Lower temperature for more consistent medical interpretations
-        max_tokens: 1500, // Ensure enough tokens for complete response
+        temperature: 0.1, // Lower temperature for more consistent medical interpretations
+        max_tokens: 30000, // Ensure enough tokens for complete response
       });
 
-      console.log(`🤖 [GPTLabReview] GPT-4 response received, usage:`, response.usage);
+      console.log(
+        `🤖 [GPTLabReview] GPT-4 response received, usage:`,
+        response.usage,
+      );
 
       const content = response.choices[0].message.content;
       if (!content) {
-        console.error('🤖 [GPTLabReview] No response content from GPT');
-        throw new Error('No response content from GPT');
+        console.error("🤖 [GPTLabReview] No response content from GPT");
+        throw new Error("No response content from GPT");
       }
 
-      console.log(`🤖 [GPTLabReview] Raw GPT response (${content.length} chars):`, content.substring(0, 200) + '...');
+      console.log(
+        `🤖 [GPTLabReview] Raw GPT response (${content.length} chars):`,
+        content.substring(0, 200) + "...",
+      );
 
       // Extract JSON from the response if it's wrapped in markdown or other text
       let jsonContent = content;
@@ -291,39 +342,49 @@ The patient and nurse messages should be identical in content but different in p
         jsonContent = jsonMatch[0];
       }
 
-      console.log(`🤖 [GPTLabReview] Parsing JSON content:`, jsonContent.substring(0, 200) + '...');
-      
+      console.log(
+        `🤖 [GPTLabReview] Parsing JSON content:`,
+        jsonContent.substring(0, 200) + "...",
+      );
+
       const parsedResponse = JSON.parse(jsonContent);
-      
+
       console.log(`🤖 [GPTLabReview] Successfully parsed GPT response:`, {
         clinicalReview: parsedResponse.clinicalReview?.length || 0,
         patientMessage: parsedResponse.patientMessage?.length || 0,
-        nurseMessage: parsedResponse.nurseMessage?.length || 0
+        nurseMessage: parsedResponse.nurseMessage?.length || 0,
       });
 
       return {
-        clinicalReview: parsedResponse.clinicalReview || 'No clinical review generated',
-        patientMessage: parsedResponse.patientMessage || 'No patient message generated',
-        nurseMessage: parsedResponse.nurseMessage || 'No nurse message generated',
+        clinicalReview:
+          parsedResponse.clinicalReview || "No clinical review generated",
+        patientMessage:
+          parsedResponse.patientMessage || "No patient message generated",
+        nurseMessage:
+          parsedResponse.nurseMessage || "No nurse message generated",
         processingTime: 0, // Will be calculated by caller
-        tokensUsed: response.usage?.total_tokens || 0
+        tokensUsed: response.usage?.total_tokens || 0,
       };
-
     } catch (error: any) {
-      console.error('🤖 [GPTLabReview] GPT API error details:', {
+      console.error("🤖 [GPTLabReview] GPT API error details:", {
         message: error.message,
         status: error.status,
         code: error.code,
         type: error.type,
         param: error.param,
-        response: error.response?.data
+        response: error.response?.data,
       });
-      
+
       if (error.response?.data) {
-        console.error('🤖 [GPTLabReview] Full OpenAI error response:', error.response.data);
+        console.error(
+          "🤖 [GPTLabReview] Full OpenAI error response:",
+          error.response.data,
+        );
       }
-      
-      throw new Error(`GPT processing failed: ${error.status || 'Unknown'} ${error.message}`);
+
+      throw new Error(
+        `GPT processing failed: ${error.status || "Unknown"} ${error.message}`,
+      );
     }
   }
 
@@ -339,21 +400,24 @@ The patient and nurse messages should be identical in content but different in p
     gptResponse: GPTLabReviewResponse;
     processingTime: number;
   }): Promise<number> {
-    const [savedReview] = await db.insert(gptLabReviewNotes).values({
-      patientId: data.patientId,
-      encounterId: data.encounterId,
-      resultIds: data.resultIds,
-      clinicalReview: data.gptResponse.clinicalReview,
-      patientMessage: data.gptResponse.patientMessage,
-      nurseMessage: data.gptResponse.nurseMessage,
-      patientContext: data.patientContext,
-      gptModel: "gpt-4", // Track model version
-      promptVersion: "v1.0",
-      processingTime: data.processingTime,
-      tokensUsed: data.gptResponse.tokensUsed,
-      generatedBy: data.generatedBy,
-      status: "draft" // Requires provider approval
-    }).returning({ id: gptLabReviewNotes.id });
+    const [savedReview] = await db
+      .insert(gptLabReviewNotes)
+      .values({
+        patientId: data.patientId,
+        encounterId: data.encounterId,
+        resultIds: data.resultIds,
+        clinicalReview: data.gptResponse.clinicalReview,
+        patientMessage: data.gptResponse.patientMessage,
+        nurseMessage: data.gptResponse.nurseMessage,
+        patientContext: data.patientContext,
+        gptModel: "gpt-4", // Track model version
+        promptVersion: "v1.0",
+        processingTime: data.processingTime,
+        tokensUsed: data.gptResponse.tokensUsed,
+        generatedBy: data.generatedBy,
+        status: "draft", // Requires provider approval
+      })
+      .returning({ id: gptLabReviewNotes.id });
 
     return savedReview.id;
   }
@@ -362,7 +426,8 @@ The patient and nurse messages should be identical in content but different in p
    * Get GPT review by ID
    */
   static async getGPTReview(reviewId: number): Promise<any> {
-    const review = await db.select()
+    const review = await db
+      .select()
       .from(gptLabReviewNotes)
       .where(eq(gptLabReviewNotes.id, reviewId))
       .limit(1);
@@ -376,31 +441,37 @@ The patient and nurse messages should be identical in content but different in p
   static async getGPTReviewsForResults(resultIds: number[]): Promise<any[]> {
     // For PostgreSQL array overlap, we'll use a different approach
     // This queries for reviews where any of the result IDs overlap
-    const reviews = await db.select()
+    const reviews = await db
+      .select()
       .from(gptLabReviewNotes)
       .orderBy(desc(gptLabReviewNotes.createdAt));
 
     // Filter in application for array overlap
-    return reviews.filter(review => 
-      review.resultIds && review.resultIds.some(id => resultIds.includes(id))
+    return reviews.filter(
+      (review) =>
+        review.resultIds &&
+        review.resultIds.some((id) => resultIds.includes(id)),
     );
   }
 
   /**
    * Update GPT review content (provider edits)
    */
-  static async updateGPTReview(reviewId: number, updates: {
-    clinicalReview?: string;
-    patientMessage?: string;
-    nurseMessage?: string;
-    revisedBy: number;
-    revisionReason: string;
-  }): Promise<void> {
+  static async updateGPTReview(
+    reviewId: number,
+    updates: {
+      clinicalReview?: string;
+      patientMessage?: string;
+      nurseMessage?: string;
+      revisedBy: number;
+      revisionReason: string;
+    },
+  ): Promise<void> {
     const updateData: any = {
       updatedAt: new Date(),
       revisedBy: updates.revisedBy,
       revisionReason: updates.revisionReason,
-      status: "revised" // Mark as revised when edited
+      status: "revised", // Mark as revised when edited
     };
 
     if (updates.clinicalReview !== undefined) {
@@ -413,23 +484,30 @@ The patient and nurse messages should be identical in content but different in p
       updateData.nurseMessage = updates.nurseMessage;
     }
 
-    await db.update(gptLabReviewNotes)
+    await db
+      .update(gptLabReviewNotes)
       .set(updateData)
       .where(eq(gptLabReviewNotes.id, reviewId));
 
-    console.log(`🤖 [GPTLabReview] Review ${reviewId} updated by user ${updates.revisedBy}`);
+    console.log(
+      `🤖 [GPTLabReview] Review ${reviewId} updated by user ${updates.revisedBy}`,
+    );
   }
 
   /**
    * Approve GPT review for sending
    */
-  static async approveGPTReview(reviewId: number, approvedBy: number): Promise<void> {
-    await db.update(gptLabReviewNotes)
+  static async approveGPTReview(
+    reviewId: number,
+    approvedBy: number,
+  ): Promise<void> {
+    await db
+      .update(gptLabReviewNotes)
       .set({
         status: "approved",
         reviewedBy: approvedBy,
         reviewedAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(gptLabReviewNotes.id, reviewId));
   }
@@ -437,17 +515,20 @@ The patient and nurse messages should be identical in content but different in p
   /**
    * Update GPT review content (for provider edits)
    */
-  static async updateGPTReview(reviewId: number, updates: {
-    clinicalReview?: string;
-    patientMessage?: string;
-    nurseMessage?: string;
-    revisedBy: number;
-    revisionReason: string;
-  }): Promise<void> {
+  static async updateGPTReview(
+    reviewId: number,
+    updates: {
+      clinicalReview?: string;
+      patientMessage?: string;
+      nurseMessage?: string;
+      revisedBy: number;
+      revisionReason: string;
+    },
+  ): Promise<void> {
     // Get current version for revision history
     const currentReview = await this.getGPTReview(reviewId);
     if (!currentReview) {
-      throw new Error('Review not found');
+      throw new Error("Review not found");
     }
 
     // Build revision history entry
@@ -455,40 +536,57 @@ The patient and nurse messages should be identical in content but different in p
       revisedAt: new Date().toISOString(),
       revisedBy: updates.revisedBy,
       changes: {} as any,
-      reason: updates.revisionReason
+      reason: updates.revisionReason,
     };
 
-    if (updates.clinicalReview && updates.clinicalReview !== currentReview.clinicalReview) {
+    if (
+      updates.clinicalReview &&
+      updates.clinicalReview !== currentReview.clinicalReview
+    ) {
       revisionEntry.changes.clinicalReview = {
         old: currentReview.clinicalReview,
-        new: updates.clinicalReview
+        new: updates.clinicalReview,
       };
     }
 
-    if (updates.patientMessage && updates.patientMessage !== currentReview.patientMessage) {
+    if (
+      updates.patientMessage &&
+      updates.patientMessage !== currentReview.patientMessage
+    ) {
       revisionEntry.changes.patientMessage = {
         old: currentReview.patientMessage,
-        new: updates.patientMessage
+        new: updates.patientMessage,
       };
     }
 
-    if (updates.nurseMessage && updates.nurseMessage !== currentReview.nurseMessage) {
+    if (
+      updates.nurseMessage &&
+      updates.nurseMessage !== currentReview.nurseMessage
+    ) {
       revisionEntry.changes.nurseMessage = {
         old: currentReview.nurseMessage,
-        new: updates.nurseMessage
+        new: updates.nurseMessage,
       };
     }
 
     // Update with revision history
-    const newRevisionHistory = [...(currentReview.revisionHistory || []), revisionEntry];
+    const newRevisionHistory = [
+      ...(currentReview.revisionHistory || []),
+      revisionEntry,
+    ];
 
-    await db.update(gptLabReviewNotes)
+    await db
+      .update(gptLabReviewNotes)
       .set({
-        ...(updates.clinicalReview && { clinicalReview: updates.clinicalReview }),
-        ...(updates.patientMessage && { patientMessage: updates.patientMessage }),
+        ...(updates.clinicalReview && {
+          clinicalReview: updates.clinicalReview,
+        }),
+        ...(updates.patientMessage && {
+          patientMessage: updates.patientMessage,
+        }),
         ...(updates.nurseMessage && { nurseMessage: updates.nurseMessage }),
         revisionHistory: newRevisionHistory,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(gptLabReviewNotes.id, reviewId));
   }
