@@ -1644,7 +1644,7 @@ Extract all medications from this document. For each medication, determine if it
           { role: "user", content: userPrompt },
         ],
         temperature: 0.1,
-        max_tokens: 2000,
+        max_tokens: 30000,
       });
 
       const processingTime = Date.now() - startTime;

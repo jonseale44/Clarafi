@@ -120,7 +120,8 @@ const attachmentProcessing = Promise.all([
 | **Surgical History** | gpt-4.1-mini | 0.1 | 30,000 | text | `unified-surgical-history-parser.ts` |
 | **Social History** | gpt-4.1-mini | 0.1 | 30,000 | text | `unified-social-history-parser.ts` |
 | **Family History** | gpt-4.1-mini | 0.1 | 30,000 | text | `unified-family-history-parser.ts` |
-| **Medication Delta** | gpt-4.1 | 0.1 | default | json_object | `medication-delta-service.ts` |
+| **Medication Delta (SOAP)** | gpt-4.1 | 0.1 | 30,000 | json_object | `medication-delta-service.ts` |
+| **Medication Delta (Attachment)** | gpt-4.1-mini | 0.1 | 30,000 | text | `medication-delta-service.ts` |
 | **Allergy Parser** | gpt-4.1-nano | 0.1 | 30,000 | text | `unified-allergy-parser.ts` |
 | **Vitals Parser** | gpt-4.1-mini | 0.1 | 30,000 | text | `vitals-parser-service.ts` |
 | **Imaging Parser** | gpt-4.1-nano | 0.3 | 30,000 | text | `unified-imaging-parser.ts` |
@@ -167,6 +168,14 @@ const attachmentProcessing = Promise.all([
 **Previous Issue**: Multiple files referenced non-existent user ID 2 instead of existing user ID 1
 **Status**: Fixed in previous updates
 **Files Corrected**: All attachment and social history processors
+
+### 3. Medication Attachment Processing Token Limit (RESOLVED July 3, 2025)
+**Critical Issue**: Attachment medication processing used insufficient max_tokens (2000) causing JSON parsing failures for large medication lists
+**Root Cause**: Large medication files (30-50+ medications) exceeded 2000 token limit, causing GPT response truncation mid-JSON
+**Symptoms**: `SyntaxError: Unterminated string in JSON at position 7381` errors for large medication files while small files processed successfully
+**Solution Implemented**: Increased max_tokens from 2000 to 30,000 in `callMedicationExtractionGPT()` to match SOAP processing configuration
+**Impact**: Eliminates all JSON parsing errors for large medication documents while maintaining architectural consistency across medication processing workflows
+**Files Updated**: `medication-delta-service.ts`
 
 ---
 
