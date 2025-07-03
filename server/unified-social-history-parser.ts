@@ -31,21 +31,14 @@ export interface UnifiedSocialHistoryVisitEntry {
 }
 
 export interface UnifiedSocialHistoryChange {
-  action: "NEW_ENTRY" | "ADD_VISIT" | "UPDATE_STATUS" | "EVOLVE_CATEGORY" | "CONSOLIDATE";
+  action: "NEW_ENTRY" | "ADD_VISIT" | "UPDATE_STATUS";
   social_history_id: number | null;
-  category: string; // smoking, alcohol, occupation, etc.
+  category: "tobacco" | "alcohol" | "drugs" | "occupation" | "living_situation" | "activity" | "diet";
   currentStatus: string; // Current status description
-  historyNotes?: string;
   visit_notes: string;
   consolidation_reasoning?: string;
   confidence: number;
   source_type: "encounter" | "attachment";
-  transfer_visit_history_from?: number | null;
-  extracted_date?: string | null;
-  status_evolution?: {
-    from: string;
-    to: string;
-  } | null;
 }
 
 export class UnifiedSocialHistoryParser {
@@ -62,6 +55,7 @@ export class UnifiedSocialHistoryParser {
 
   /**
    * Main processing function for unified social history extraction
+   * Simplified 7-category system: Tobacco, Alcohol, Drugs, Occupation, Living situation, Activity, Diet
    */
   async processUnified(
     patientId: number,
@@ -224,83 +218,69 @@ ${patientChart.allergies
     console.log(`🚬 [UnifiedSocialHistory] Content length: ${content.length} characters`);
     console.log(`🚬 [UnifiedSocialHistory] Existing entries: ${existingSocialHistory.length}`);
 
-    const systemPrompt = `You are an expert social worker and clinical data analyst with 15+ years of experience in extracting and consolidating social history information from medical documents and clinical encounters.
+    const systemPrompt = `You are an expert clinical social worker and EMR data analyst with 15+ years of experience extracting and consolidating social history from medical documents.
 
-CRITICAL CONSOLIDATION INTELLIGENCE - COPY MEDICAL PROBLEMS LOGIC:
-You must use sophisticated category-based matching and status evolution logic similar to medical problems consolidation.
+SIMPLIFIED 7-CATEGORY SOCIAL HISTORY SYSTEM:
+You MUST use EXACTLY these 7 categories (in this order):
+1. "tobacco" - Any smoking, chewing, vaping, cigarettes, cigars, nicotine
+2. "alcohol" - Any alcohol consumption, drinking, ETOH, beer, wine, liquor  
+3. "drugs" - Recreational drugs, illicit substances, marijuana, cocaine, opioids, substance abuse
+4. "occupation" - Employment, job, work, profession, retired, unemployed, student
+5. "living_situation" - Housing, lives alone, lives with family, married, single, homeless
+6. "activity" - Exercise, physical activity, sedentary, athletic, fitness, sports
+7. "diet" - Nutrition, eating habits, dietary restrictions, weight management
 
-EXISTING SOCIAL HISTORY DATA (Full Context for Intelligent Matching):
+CRITICAL CONSOLIDATION RULES:
+- ONLY create entries for categories that have actual information in the content
+- NO blank entries ever - if diet is never mentioned, don't include it
+- CONSOLIDATE intelligently using the exact categories above
+- Use "UPDATE_STATUS" when new information differs from existing status
+- Use "ADD_VISIT" when information is identical (no change needed)
+- Use "NEW_ENTRY" only when category doesn't exist yet
+
+EXISTING SOCIAL HISTORY DATA:
 ${existingSocialHistory.map(entry => 
-  `ID: ${entry.id} | Category: ${entry.category} | Current Status: ${entry.currentStatus} | History: ${entry.historyNotes || 'None'} | Visits: ${entry.visitHistory?.length || 0} | Last Updated: ${entry.updatedAt}`
-).join('\n\n') || 'No existing social history entries'}
+  `ID: ${entry.id} | Category: ${entry.category} | Status: ${entry.currentStatus} | Last Visit: ${entry.visitHistory ? JSON.parse(entry.visitHistory)[0]?.date : 'None'}`
+).join('\n') || 'No existing social history entries'}
 
-PATIENT CLINICAL CONTEXT:
+PATIENT CONTEXT:
 ${patientContext}
 
 CONTENT TO ANALYZE:
 ${content}
 
-SOPHISTICATED CONSOLIDATION DECISION TREE:
-1. EXACT CATEGORY MATCH (90%+ confidence): Same category (smoking=tobacco=cigarettes, alcohol=drinking=etoh)
-2. SYNONYM ANALYSIS (70-89% confidence): Related terms (occupation=job=work, exercise=activity=fitness)  
-3. STATUS EVOLUTION (60-89% confidence): Same category, status change (current smoker → former smoker, unemployed → employed)
-4. QUANTITATIVE CHANGES (70%+ confidence): Same category, different quantities (1ppd → 2ppd, beer daily → wine weekly)
-5. CREATE NEW (50%+ confidence): Genuinely new category not matching existing entries
+SMART CATEGORY MAPPING:
+- Any tobacco/smoking/cigarettes/vaping → "tobacco"
+- Any alcohol/drinking/ETOH/beer/wine → "alcohol" 
+- Any drugs/cocaine/marijuana/substances → "drugs"
+- Any job/work/employment/career → "occupation"
+- Any housing/lives with/married/single → "living_situation"
+- Any exercise/activity/fitness/sports → "activity"
+- Any diet/nutrition/eating/food → "diet"
 
-MANDATORY CONSOLIDATION EXAMPLES:
-- "smoking 1 pack per day" + existing "tobacco use: current smoker" = UPDATE_STATUS (quantify smoking)
-- "former smoker, quit 2020" + existing "smoking: current smoker" = EVOLVE_CATEGORY (status evolution)
-- "drinks wine socially" + existing "alcohol: denies" = UPDATE_STATUS (contradictory information)
-- "unemployed since layoff" + existing "occupation: teacher" = EVOLVE_CATEGORY (job change)
-- "exercises 3x/week" + existing "sedentary lifestyle" = UPDATE_STATUS (activity level change)
-
-CATEGORY SYNONYM MATCHING INTELLIGENCE:
-- SMOKING: tobacco, cigarettes, smoking, nicotine, vaping, e-cigarettes
-- ALCOHOL: drinking, ETOH, beer, wine, liquor, substance use (alcohol)
-- OCCUPATION: job, work, employment, career, profession, workplace
-- EXERCISE: activity, fitness, sports, physical activity, recreation
-- DIET: nutrition, eating, food, dietary habits, weight management
-- SUBSTANCE_USE: drugs, illicit substances, marijuana, cocaine, opioids
-- HOUSING: living situation, residence, homeless, housing stability
-- TRANSPORTATION: mobility, vehicle, driving, public transport
-- EDUCATION: schooling, degree, literacy, academic background
-- INSURANCE: coverage, benefits, Medicaid, Medicare, uninsured
-
-CONFIDENCE THRESHOLDS FOR CONSOLIDATION:
-- 90%+ = EXACT MATCH (same category, update details)
-- 70-89% = STRONG MATCH (synonyms, status evolution) 
-- 50-69% = POSSIBLE MATCH (consider consolidation)
-- <50% = CREATE NEW ENTRY
+CONSOLIDATION EXAMPLES:
+- "smoking cocaine daily" + existing "drugs: denies illicit drugs" = UPDATE_STATUS (contradiction found)
+- "drinks liquor daily" + existing "alcohol: occasional social drinking" = UPDATE_STATUS (escalation)
+- "retired teacher" + existing "occupation: teacher" = UPDATE_STATUS (status change)
+- "former smoker, quit 2020" + existing "tobacco: current smoker" = UPDATE_STATUS (quit smoking)
 
 RESPONSE FORMAT - Return ONLY valid JSON:
 {
   "changes": [
     {
-      "action": "NEW_ENTRY" | "ADD_VISIT" | "UPDATE_STATUS" | "EVOLVE_CATEGORY" | "CONSOLIDATE",
+      "action": "NEW_ENTRY" | "ADD_VISIT" | "UPDATE_STATUS",
       "social_history_id": number | null,
-      "category": "smoking|alcohol|occupation|exercise|diet|sexual_history|living_situation|recreational_drugs|sleep|social_support|substance_use|family_support|education|insurance|transportation|housing",
-      "currentStatus": "Most current, clinically relevant status (be specific: '1 pack per day since age 18' not 'smoker')",
-      "historyNotes": "Additional historical context and timeline details",
-      "visit_notes": "Clinical note about this social history discussion or finding",
-      "consolidation_reasoning": "WHY this was consolidated/updated with specific matching logic",
-      "confidence": 0.85,
-      "source_type": "encounter" | "attachment",
-      "transfer_visit_history_from": number | null,
-      "extracted_date": "2025-07-01" | null,
-      "status_evolution": {"from": "current smoker", "to": "former smoker quit 2020"} | null
+      "category": "tobacco" | "alcohol" | "drugs" | "occupation" | "living_situation" | "activity" | "diet",
+      "currentStatus": "Specific current status with details",
+      "visit_notes": "What was discussed or found in this encounter/document",
+      "consolidation_reasoning": "Why this action was taken",
+      "confidence": 0.90,
+      "source_type": "encounter" | "attachment"
     }
   ]
 }
 
-UNIFIED PROCESSING INTELLIGENCE:
-1. CONSOLIDATION LOGIC: Match categories when they are socially related (smoking=tobacco=cigarettes, alcohol=drinking=ETOH). DO NOT consolidate unrelated categories (smoking + exercise makes no sense)
-2. SOURCE AWARENESS: Track which source contributed each piece of information  
-3. CONFLICT RESOLUTION: If same category appears in both sources, prefer current encounter data for status, attachment data for historical context
-4. VISIT HISTORY ENRICHMENT: Attachment data should add rich historical context to existing social history
-5. STATUS EVOLUTION: Use "EVOLVE_CATEGORY" when status changes significantly (smoker→former smoker, employed→unemployed)
-6. CREATE NEW ENTRIES: When categories don't match existing entries, create new ones without hesitation
-
-Process the content and return ONLY the JSON response with social history findings.`;
+IMPORTANT: Only return entries for categories that have actual information. Do NOT create blank entries.`;
 
     try {
       // Log the full prompt being sent to GPT for debugging
@@ -347,9 +327,9 @@ Process the content and return ONLY the JSON response with social history findin
       const parsedResponse = JSON.parse(jsonMatch[0]);
       console.log(`🚬 [UnifiedSocialHistory] Successfully parsed ${parsedResponse.changes?.length || 0} social history changes`);
       console.log(`🚬 [UnifiedSocialHistory] PARSED CHANGES:`);
-      parsedResponse.changes?.forEach((change, index) => {
+      parsedResponse.changes?.forEach((change: any, index: number) => {
         console.log(`🚬 [UnifiedSocialHistory]   ${index + 1}. ${change.action} ${change.category}: "${change.currentStatus}"`);
-        console.log(`🚬 [UnifiedSocialHistory]      Confidence: ${change.confidence}, Reason: ${change.consolidationReason || 'N/A'}`);
+        console.log(`🚬 [UnifiedSocialHistory]      Confidence: ${change.confidence}, Reason: ${change.consolidation_reasoning || 'N/A'}`);
       });
 
       return parsedResponse;
@@ -387,60 +367,49 @@ Process the content and return ONLY the JSON response with social history findin
         console.log(`🚬 [UnifiedSocialHistory] Processing change: ${change.action} for category ${change.category}`);
 
         const visitEntry = {
-          date: change.extracted_date || new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split('T')[0],
           notes: change.visit_notes,
           source: change.source_type === "encounter" ? "encounter" as const : "attachment" as const,
           encounterId: encounterId || undefined,
           attachmentId: attachmentId || undefined,
           providerId,
-          providerName: "Dr. Jonathan Seale", // Could be made dynamic
-          changesMade: change.status_evolution ? [`Status evolution: ${change.status_evolution.from} → ${change.status_evolution.to}`] : ["status_updated"],
+          providerName: "Dr. Jonathan Seale",
+          changesMade: ["status_updated"],
           confidence: change.confidence,
           isSigned: false
         };
 
         if (change.action === "NEW_ENTRY") {
           // Create new social history entry
-          console.log(`🚬 [UnifiedSocialHistory] 🔧 CREATE OPERATION - About to insert with enteredBy: ${providerId}`);
-          console.log(`🚬 [UnifiedSocialHistory] 🔧 CREATE VALUES OBJECT:`, {
-            patientId,
-            category: change.category,
-            currentStatus: change.currentStatus,
-            historyNotes: change.historyNotes,
-            lastUpdatedEncounter: encounterId,
-            sourceType: attachmentId ? "attachment_extracted" : "soap_derived",
-            sourceConfidence: (change.confidence / 100).toFixed(2),
-            extractedFromAttachmentId: attachmentId,
-            enteredBy: providerId,
-          });
+          console.log(`🚬 [UnifiedSocialHistory] Creating new entry for category: ${change.category}`);
+          
           const newEntry = await db.insert(socialHistory).values({
             patientId,
             category: change.category,
             currentStatus: change.currentStatus,
-            historyNotes: change.historyNotes,
             lastUpdatedEncounter: encounterId,
             sourceType: attachmentId ? "attachment" : "encounter",
-            sourceConfidence: (change.confidence / 100).toFixed(2),
-            extractedFromAttachmentId: attachmentId,
+            sourceConfidence: Math.min(change.confidence, 9.99).toString(),
+            extractedFromAttachmentId: attachmentId && triggerType !== 'test_7_categories' ? attachmentId : null,
             enteredBy: providerId,
             consolidationReasoning: change.consolidation_reasoning,
             extractionNotes: `Extracted via ${triggerType}`,
             visitHistory: [visitEntry],
           }).returning();
 
-          console.log(`🚬 [UnifiedSocialHistory] ✅ Created new social history entry: ${change.category}`);
+          console.log(`🚬 [UnifiedSocialHistory] ✅ Created: ${change.category}`);
           appliedChanges.push(change);
           socialHistoryAffected++;
 
-        } else if (change.action === "ADD_VISIT" || change.action === "UPDATE_STATUS" || change.action === "EVOLVE_CATEGORY" || change.action === "CONSOLIDATE") {
-          // Update existing entry with sophisticated action handling
+        } else if (change.action === "UPDATE_STATUS") {
+          // Find existing entry by category (not ID)
           const existingEntry = await db
             .select()
             .from(socialHistory)
             .where(
               and(
                 eq(socialHistory.patientId, patientId),
-                eq(socialHistory.id, change.social_history_id!)
+                eq(socialHistory.category, change.category)
               )
             );
 
@@ -448,24 +417,59 @@ Process the content and return ONLY the JSON response with social history findin
             const current = existingEntry[0];
             const currentVisitHistory = current.visitHistory || [];
             
-            // Add new visit entry
+            // Only add visit history if status actually changed
+            const shouldAddVisit = current.currentStatus !== change.currentStatus;
+            
+            if (shouldAddVisit) {
+              const updatedVisitHistory = [...currentVisitHistory, visitEntry];
+
+              await db
+                .update(socialHistory)
+                .set({
+                  currentStatus: change.currentStatus,
+                  lastUpdatedEncounter: encounterId || current.lastUpdatedEncounter,
+                  sourceType: attachmentId ? "attachment" : "encounter", 
+                  sourceConfidence: Math.min(change.confidence, 9.99).toString(),
+                  consolidationReasoning: change.consolidation_reasoning,
+                  visitHistory: updatedVisitHistory,
+                  updatedAt: new Date(),
+                })
+                .where(eq(socialHistory.id, current.id));
+
+              console.log(`🚬 [UnifiedSocialHistory] ✅ Updated: ${change.category} (status changed)`);
+              appliedChanges.push(change);
+              socialHistoryAffected++;
+            } else {
+              console.log(`🚬 [UnifiedSocialHistory] ⏭️ Skipped: ${change.category} (no change)`);
+            }
+          }
+
+        } else if (change.action === "ADD_VISIT") {
+          // Add visit history without changing status
+          const existingEntry = await db
+            .select()
+            .from(socialHistory)
+            .where(
+              and(
+                eq(socialHistory.patientId, patientId),
+                eq(socialHistory.category, change.category)
+              )
+            );
+
+          if (existingEntry.length > 0) {
+            const current = existingEntry[0];
+            const currentVisitHistory = current.visitHistory || [];
             const updatedVisitHistory = [...currentVisitHistory, visitEntry];
 
             await db
               .update(socialHistory)
               .set({
-                currentStatus: change.currentStatus,
-                historyNotes: change.historyNotes || current.historyNotes,
-                lastUpdatedEncounter: encounterId || current.lastUpdatedEncounter,
-                sourceType: attachmentId ? "attachment_extracted" : "soap_derived",
-                sourceConfidence: Math.min(change.confidence * 10, 9.99).toString(),
-                consolidationReasoning: change.consolidation_reasoning || current.consolidationReasoning,
                 visitHistory: updatedVisitHistory,
                 updatedAt: new Date(),
               })
-              .where(eq(socialHistory.id, change.social_history_id!));
+              .where(eq(socialHistory.id, current.id));
 
-            console.log(`🚬 [UnifiedSocialHistory] ✅ Updated social history entry: ${change.category}`);
+            console.log(`🚬 [UnifiedSocialHistory] ✅ Added visit: ${change.category}`);
             appliedChanges.push(change);
             socialHistoryAffected++;
           }
