@@ -222,9 +222,17 @@ export class MedicationStandardizationService {
   /**
    * Validate medication data for completeness
    */
-  static validateMedication(med: Partial<StandardizedMedication>): { isValid: boolean; errors: string[] } {
+  static validateMedication(med: Partial<StandardizedMedication>): { 
+    isValid: boolean; 
+    errors: string[]; 
+    warnings: string[];
+    pharmacyRequirements: string[];
+  } {
     const errors: string[] = [];
+    const warnings: string[] = [];
+    const pharmacyRequirements: string[] = [];
     
+    // REQUIRED FIELDS - Pharmacy will reject without these
     if (!med.medicationName) {
       errors.push('Medication name is required');
     }
@@ -234,24 +242,95 @@ export class MedicationStandardizationService {
     }
     
     if (!med.dosageForm) {
-      errors.push('Dosage form is required');
+      errors.push('Dosage form is required (tablet, capsule, liquid, etc.)');
     }
     
     if (!med.sig) {
-      errors.push('Patient instructions (sig) are required');
+      errors.push('Sig (patient instructions) is required for pharmacy');
+    } else {
+      // Validate sig completeness
+      const sigLower = med.sig.toLowerCase();
+      if (!sigLower.includes('take') && !sigLower.includes('apply') && !sigLower.includes('inject') && !sigLower.includes('inhale')) {
+        warnings.push('Sig should start with action verb (Take, Apply, Inject, Inhale, etc.)');
+      }
+      if (!sigLower.match(/\b(daily|twice|three times|four times|every|prn|as needed|hours|days)\b/)) {
+        warnings.push('Sig should include frequency (daily, twice daily, every X hours, etc.)');
+      }
     }
     
     if (!med.quantity || med.quantity <= 0) {
-      errors.push('Valid quantity is required');
+      errors.push('Quantity to dispense is required');
+    } else if (med.quantity > 360) {
+      warnings.push('Quantity exceeds typical 90-day supply limits - may require prior auth');
     }
     
     if (med.refills === undefined || med.refills < 0) {
-      errors.push('Refills must be specified (0 or more)');
+      errors.push('Number of refills is required (use 0 for no refills)');
+    } else if (med.refills > 11) {
+      errors.push('Maximum 11 refills allowed per federal law');
+    }
+    
+    // Days Supply validation
+    if (!med.daysSupply || med.daysSupply <= 0) {
+      errors.push('Days supply is required for insurance billing');
+    } else if (med.daysSupply > 90) {
+      warnings.push('Days supply >90 may require special insurance approval');
+    }
+    
+    // Route validation
+    if (!med.route) {
+      errors.push('Route of administration is required');
+    }
+    
+    // Clinical indication for certain medications
+    if (!med.clinicalIndication) {
+      warnings.push('Clinical indication recommended for audit compliance');
+    }
+    
+    // Controlled substance checks
+    if (med.medicationName) {
+      const controlledSubstances = [
+        'oxycodone', 'hydrocodone', 'morphine', 'fentanyl', 'codeine',
+        'alprazolam', 'lorazepam', 'clonazepam', 'diazepam',
+        'adderall', 'ritalin', 'methylphenidate', 'amphetamine',
+        'tramadol', 'gabapentin' // Schedule V in some states
+      ];
+      
+      const isControlled = controlledSubstances.some(drug => 
+        med.medicationName!.toLowerCase().includes(drug)
+      );
+      
+      if (isControlled) {
+        pharmacyRequirements.push('Controlled substance - DEA number required');
+        pharmacyRequirements.push('Electronic prescribing required in most states');
+        if (med.refills && med.refills > 5) {
+          errors.push('Controlled substances (Schedule III-V) limited to 5 refills');
+        }
+        if (med.daysSupply && med.daysSupply > 30) {
+          warnings.push('Controlled substances typically limited to 30-day supply');
+        }
+      }
+    }
+    
+    // Prior authorization common medications
+    const priorAuthMeds = [
+      'humira', 'enbrel', 'remicade', 'stelara', 'cosentyx',
+      'ozempic', 'wegovy', 'mounjaro', 'jardiance',
+      'eliquis', 'xarelto', 'pradaxa'
+    ];
+    
+    if (med.medicationName && priorAuthMeds.some(drug => 
+      med.medicationName!.toLowerCase().includes(drug)
+    )) {
+      pharmacyRequirements.push('Prior authorization likely required');
+      med.requiresPriorAuth = true;
     }
     
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
+      warnings,
+      pharmacyRequirements
     };
   }
   

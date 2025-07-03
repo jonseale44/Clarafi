@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -846,6 +846,76 @@ function OrderEditForm({ order, onChange, onSave, onCancel }: {
 }
 
 function MedicationEditFields({ order, onChange }: { order: Order; onChange: (field: string, value: any) => void }) {
+  const [validationResult, setValidationResult] = useState<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+    suggestions: string[];
+    insuranceConsiderations?: string[];
+    deaSchedule?: string;
+    calculatedDaysSupply?: number;
+  } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const debounceTimer = useRef<NodeJS.Timeout>();
+
+  // Validate medication order
+  const validateOrder = useCallback(async () => {
+    if (!order.medicationName || !order.dosage || !order.sig) {
+      return; // Don't validate incomplete orders
+    }
+
+    setIsValidating(true);
+    try {
+      const response = await fetch("/api/medications/validate-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          medicationName: order.medicationName,
+          strength: order.dosage,
+          dosageForm: order.form || "tablet",
+          sig: order.sig,
+          quantity: order.quantity || 30,
+          refills: order.refills || 0,
+          daysSupply: order.daysSupply,
+          route: order.routeOfAdministration || "oral",
+          clinicalIndication: order.clinicalIndication,
+          patientId: order.patientId
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setValidationResult(result);
+        
+        // Auto-update days supply if calculated
+        if (result.calculatedDaysSupply && !order.daysSupply) {
+          onChange("daysSupply", result.calculatedDaysSupply);
+        }
+      }
+    } catch (error) {
+      console.error("Validation error:", error);
+    } finally {
+      setIsValidating(false);
+    }
+  }, [order, onChange]);
+
+  // Debounced validation on field changes
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    debounceTimer.current = setTimeout(() => {
+      validateOrder();
+    }, 1000); // 1 second debounce
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [order.medicationName, order.dosage, order.sig, order.quantity, order.refills, order.daysSupply, validateOrder]);
+
   const handleIntelligentUpdate = (updates: any) => {
     // Apply intelligent medication updates
     Object.keys(updates).forEach(key => {
@@ -865,6 +935,7 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           onChange={(e) => onChange("medicationName", e.target.value)}
           placeholder="e.g., Hydrochlorothiazide"
           required
+          className={validationResult?.errors.some(e => e.includes("Medication name")) ? "border-red-500" : ""}
         />
         <div className="text-xs text-gray-500 mt-1">Enter generic name only - intelligent dosing will activate</div>
       </div>
@@ -882,6 +953,81 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           initialDaysSupply={order.daysSupply || 90}
           onChange={handleIntelligentUpdate}
         />
+      )}
+
+      {/* Pharmacy Validation Results */}
+      {validationResult && (
+        <div className="space-y-2 mb-4">
+          {validationResult.errors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <h4 className="text-sm font-medium text-red-800 mb-1">Pharmacy Errors (Must Fix)</h4>
+              <ul className="text-xs text-red-700 space-y-1">
+                {validationResult.errors.map((error, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="mr-1">•</span>
+                    <span>{error}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {validationResult.warnings.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+              <h4 className="text-sm font-medium text-amber-800 mb-1">Warnings</h4>
+              <ul className="text-xs text-amber-700 space-y-1">
+                {validationResult.warnings.map((warning, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="mr-1">•</span>
+                    <span>{warning}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {validationResult.suggestions.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <h4 className="text-sm font-medium text-blue-800 mb-1">Suggestions</h4>
+              <ul className="text-xs text-blue-700 space-y-1">
+                {validationResult.suggestions.map((suggestion, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="mr-1">•</span>
+                    <span>{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {validationResult.deaSchedule && (
+            <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
+              <div className="text-xs text-purple-700">
+                <strong>DEA Schedule:</strong> {validationResult.deaSchedule} - Controlled Substance
+              </div>
+            </div>
+          )}
+
+          {validationResult.insuranceConsiderations && validationResult.insuranceConsiderations.length > 0 && (
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+              <h4 className="text-sm font-medium text-gray-800 mb-1">Insurance Considerations</h4>
+              <ul className="text-xs text-gray-700 space-y-1">
+                {validationResult.insuranceConsiderations.map((consideration, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="mr-1">•</span>
+                    <span>{consideration}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isValidating && (
+        <div className="text-xs text-gray-500 mb-2">
+          <span className="inline-block animate-pulse">Validating prescription...</span>
+        </div>
       )}
       
       <div className="grid grid-cols-2 gap-4">

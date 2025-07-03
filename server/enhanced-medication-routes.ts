@@ -487,4 +487,81 @@ router.get("/medications/formulary/search", async (req: Request, res: Response) 
   }
 });
 
+/**
+ * POST /api/medications/validate-order
+ * Validate medication order for pharmacy compliance
+ */
+router.post("/medications/validate-order", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const { pharmacyValidation } = await import("./pharmacy-validation-service.js");
+    
+    console.log(`💊 [ValidateOrder] Validating medication order for pharmacy compliance`);
+    
+    // Get patient context for validation
+    const patientId = req.body.patientId;
+    let patientContext = {};
+    
+    if (patientId) {
+      try {
+        const patient = await storage.getPatient(patientId);
+        const allergies = await storage.getPatientAllergies(patientId);
+        const medications = await storage.getPatientMedications(patientId);
+        
+        patientContext = {
+          patientAge: patient ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear() : undefined,
+          allergies: allergies.map(a => a.allergen),
+          currentMedications: medications.filter(m => m.status === 'active').map(m => m.medicationName)
+        };
+      } catch (error) {
+        console.warn(`⚠️ [ValidateOrder] Could not fetch patient context:`, error);
+      }
+    }
+
+    const validationResult = await pharmacyValidation.validateMedicationOrder({
+      ...req.body,
+      ...patientContext
+    });
+
+    console.log(`✅ [ValidateOrder] Validation complete: ${validationResult.isValid ? 'PASSED' : 'FAILED'}`);
+    
+    res.json(validationResult);
+
+  } catch (error) {
+    console.error("❌ [ValidateOrder] Error validating medication order:", error);
+    res.status(500).json({ error: "Failed to validate medication order" });
+  }
+});
+
+/**
+ * POST /api/medications/calculate-days-supply
+ * Calculate days supply from sig and quantity
+ */
+router.post("/medications/calculate-days-supply", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const { sig, quantity, dosageForm } = req.body;
+
+    if (!sig || !quantity || !dosageForm) {
+      return res.status(400).json({ error: "sig, quantity, and dosageForm are required" });
+    }
+
+    const { pharmacyValidation } = await import("./pharmacy-validation-service.js");
+    
+    const daysSupply = await pharmacyValidation.calculateDaysSupply(sig, quantity, dosageForm);
+    
+    res.json({ daysSupply });
+
+  } catch (error) {
+    console.error("❌ [CalculateDaysSupply] Error calculating days supply:", error);
+    res.status(500).json({ error: "Failed to calculate days supply" });
+  }
+});
+
 export default router;
