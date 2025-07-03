@@ -30,7 +30,9 @@ import {
   FileText,
   Edit,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Layers,
+  FolderOpen
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
@@ -557,7 +559,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   };
 
   // Dense list rendering for compact view with side category
-  const renderMedicationDenseList = (medication: Medication, categoryAbbr: string, isFirstInGroup: boolean) => {
+  const renderMedicationDenseList = (medication: Medication, categoryAbbr: string, isFirstInGroup: boolean, isLastInGroup: boolean) => {
     const statusColor = medication.status === 'active' ? 'border-green-300' : 
                        medication.status === 'pending' ? 'border-navy-blue-300' :
                        medication.status === 'held' ? 'border-amber-300' :
@@ -573,18 +575,22 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
           >
             <CollapsibleTrigger asChild>
               <div className={`dense-list-item group ${statusColor} dense-view-transition flex`}>
-                {/* Side category label with tooltip */}
-                <div className="w-12 flex-shrink-0 flex items-center justify-center">
-                  {isFirstInGroup && (
+                {/* Grouping indicator with tooltip */}
+                <div className={`w-6 flex-shrink-0 flex items-center justify-center ${
+                  groupingMode === 'medical_problem' && !isFirstInGroup && !isLastInGroup ? 'medication-group-line' : 
+                  groupingMode === 'medical_problem' && isFirstInGroup ? 'medication-group-line first-in-group' :
+                  groupingMode === 'medical_problem' && isLastInGroup ? 'medication-group-line last-in-group' : ''
+                }`}>
+                  {isFirstInGroup && groupingMode === 'medical_problem' && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200 cursor-help">
-                            {categoryAbbr}
-                          </span>
+                          <div className="cursor-help text-gray-400 hover:text-gray-600 transition-colors z-10 relative">
+                            <Layers className="h-3 w-3" />
+                          </div>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">{medication.clinicalIndication}</p>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <p className="text-xs font-medium">{medication.clinicalIndication || 'No indication specified'}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -834,21 +840,21 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       <div className={isDenseView ? "dense-list-container" : "emr-ultra-tight-spacing"}>
                         {medications.map((medication: Medication, index: number) => 
                           isDenseView ? 
-                            renderMedicationDenseList(medication, categoryAbbr, index === 0) :
+                            renderMedicationDenseList(medication, categoryAbbr, index === 0, index === medications.length - 1) :
                             <div key={medication.id} className="flex items-start gap-2">
-                              {/* Side category label for regular view */}
+                              {/* Grouping indicator for regular view */}
                               {groupingMode === 'medical_problem' && (
-                                <div className="w-12 flex-shrink-0 flex items-center justify-center">
+                                <div className="w-6 flex-shrink-0 flex items-center justify-center">
                                   {index === 0 && (
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200 cursor-help">
-                                            {categoryAbbr}
-                                          </span>
+                                          <div className="cursor-help text-gray-400 hover:text-gray-600 transition-colors">
+                                            <Layers className="h-3 w-3" />
+                                          </div>
                                         </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p className="text-xs">{medication.clinicalIndication}</p>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                          <p className="text-xs font-medium">{medication.clinicalIndication || 'No indication specified'}</p>
                                         </TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>

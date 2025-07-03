@@ -592,6 +592,65 @@
     @apply my-1;
   }
 
+  /* Medication grouping styles */
+  .medication-group-indicator {
+    position: relative;
+  }
+
+  .medication-group-indicator::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 1px;
+    height: 20px;
+    background-color: #e5e7eb;
+    transform: translateX(-50%);
+  }
+
+  .medication-group-indicator.last-in-group::after {
+    display: none;
+  }
+
+  .medication-group-bracket {
+    position: relative;
+    padding-left: 1rem;
+  }
+
+  .medication-group-bracket::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 8px;
+    height: 1px;
+    background-color: #e5e7eb;
+    transform: translateY(-50%);
+  }
+
+  .medication-group-line {
+    position: relative;
+  }
+
+  .medication-group-line::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background-color: #e5e7eb;
+  }
+
+  .medication-group-line.first-in-group::before {
+    top: 50%;
+    height: 50%;
+  }
+
+  .medication-group-line.last-in-group::before {
+    height: 50%;
+  }
+
   /* === DENSE VIEW SYSTEM === */
   /* Ultra-compact list format for all chart sections when dense view is enabled */
   
