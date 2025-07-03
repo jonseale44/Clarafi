@@ -1069,29 +1069,17 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                             {entry.visitHistory
                               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                               .map((visit, index) => (
-                                <div 
-                                  key={visit.id || index} 
-                                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg text-sm"
-                                >
-                                  <div className="flex flex-col items-center text-gray-400">
-                                    <Calendar className="h-4 w-4" />
-                                    <div className="w-px h-full bg-gray-300 mt-1"></div>
+                                <div key={visit.id || index} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700/50">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{formatDate(visit.date)}</span>
+                                    {visit.source && getSourceBadge(
+                                      visit.source, 
+                                      visit.confidence, 
+                                      visit.attachmentId, 
+                                      visit.encounterId
+                                    )}
                                   </div>
-                                  <div className="flex-1 min-w-0">
-                                    {/* EXACT MEDICAL PROBLEMS FORMAT: Date, badge, and notes ALL on same line */}
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                                        {formatDate(visit.date)}
-                                      </span>
-                                      {visit.source && getSourceBadge(
-                                        visit.source, 
-                                        visit.confidence, 
-                                        visit.attachmentId, 
-                                        visit.encounterId
-                                      )}
-                                      <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</span>
-                                    </div>
-                                  </div>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
                                 </div>
                               ))}
                           </div>
