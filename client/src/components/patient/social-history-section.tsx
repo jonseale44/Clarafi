@@ -1078,7 +1078,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                     <div className="w-px h-full bg-gray-300 mt-1"></div>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    {/* EXACT MEDICAL PROBLEMS FORMAT: Date and badge on one line, notes below */}
+                                    {/* EXACT MEDICAL PROBLEMS FORMAT: Date, badge, and notes ALL on same line */}
                                     <div className="flex items-center gap-2 mb-2">
                                       <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                                         {formatDate(visit.date)}
@@ -1089,8 +1089,8 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                         visit.attachmentId, 
                                         visit.encounterId
                                       )}
+                                      <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</span>
                                     </div>
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{visit.notes}</p>
                                   </div>
                                 </div>
                               ))}
