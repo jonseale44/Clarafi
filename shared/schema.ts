@@ -1710,25 +1710,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   approvedOrders: many(orders, { relationName: "approvedBy" }),
 }));
 
-export const patientsRelations = relations(patients, ({ many }) => ({
-  encounters: many(encounters),
-  appointments: many(appointments),
-  familyHistory: many(familyHistory),
-  medicalHistory: many(medicalHistory),
-  socialHistory: many(socialHistory),
-  surgicalHistory: many(surgicalHistory),
-  allergies: many(allergies),
-  vitals: many(vitals),
-  medications: many(medications),
-  diagnoses: many(diagnoses),
-  medicalProblems: many(medicalProblems),
-  labOrders: many(labOrders),
-  labResults: many(labResults),
-  imagingOrders: many(imagingOrders),
-  imagingResults: many(imagingResults),
-  orders: many(orders),
-  attachments: many(patientAttachments),
-}));
+// Replaced by patientsRelationsEnhanced below
 
 export const encountersRelations = relations(encounters, ({ one, many }) => ({
   patient: one(patients, {
@@ -1756,17 +1738,7 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
   attachments: many(patientAttachments),
 }));
 
-export const appointmentsRelations = relations(appointments, ({ one, many }) => ({
-  patient: one(patients, {
-    fields: [appointments.patientId],
-    references: [patients.id],
-  }),
-  provider: one(users, {
-    fields: [appointments.providerId],
-    references: [users.id],
-  }),
-  encounters: many(encounters),
-}));
+// Replaced by appointmentsRelationsEnhanced below
 
 export const signaturesRelations = relations(signatures, ({ one, many }) => ({
   user: one(users, {
