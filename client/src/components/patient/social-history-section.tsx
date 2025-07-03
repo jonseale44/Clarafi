@@ -467,20 +467,21 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
     try {
       // Handle date string to avoid timezone conversion issues
       // Parse date as YYYY-MM-DD format and treat as local date
+      // UPDATED: Match medical problems format (7/3/25 instead of Jul 3, 2025)
       if (dateString.includes('-')) {
         const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
         const localDate = new Date(year, month - 1, day); // month is 0-indexed
         return localDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
+          month: 'numeric',
+          day: 'numeric',
+          year: '2-digit'
         });
       }
       // Fallback for other date formats
       return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+        month: 'numeric',
+        day: 'numeric',
+        year: '2-digit'
       });
     } catch {
       return dateString;
@@ -1091,7 +1092,8 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                     <div className="w-px h-full bg-gray-300 mt-1"></div>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    {/* UPDATED: Medical problems format - date, badge, and notes on same line */}
+                                    <div className="flex items-center gap-2 flex-wrap">
                                       <span className="font-medium text-gray-900">
                                         {formatDate(visit.date)}
                                       </span>
@@ -1101,23 +1103,9 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
                                         visit.attachmentId, 
                                         visit.encounterId
                                       )}
+                                      <span className="text-gray-700 leading-relaxed">{visit.notes}</span>
                                     </div>
-                                    <p className="text-gray-700 leading-relaxed">{visit.notes}</p>
-                                    {visit.changesMade && visit.changesMade.length > 0 && (
-                                      <div className="mt-2">
-                                        <Label className="text-xs text-gray-500">Changes:</Label>
-                                        <ul className="list-disc list-inside text-xs text-gray-600 mt-1">
-                                          {visit.changesMade.map((change, idx) => (
-                                            <li key={idx}>{change}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
-                                    {visit.providerName && (
-                                      <div className="mt-1 text-xs text-gray-500">
-                                        Provider: {visit.providerName}
-                                      </div>
-                                    )}
+                                    {/* REMOVED: Changes section and Provider section per user request */}
                                   </div>
                                 </div>
                               ))}
