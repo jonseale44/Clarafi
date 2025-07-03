@@ -178,10 +178,10 @@ export default function Dashboard() {
                         setLocation(`/patients/${p.id}/chart`);
                       }}
                     >
-                      <h3 className="font-semibold text-lg">{p.firstName} {p.lastName}</h3>
-                      <p className="text-gray-600 text-base">ID: {p.id} | MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
+                      <h3 className="font-semibold" style={{ fontSize: '17px' }}>{p.firstName} {p.lastName}</h3>
+                      <p className="text-gray-600" style={{ fontSize: '15px' }}>ID: {p.id} | MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
                       <div className="mt-2">
-                        <span className={`px-2 py-1 text-sm rounded ${selectedPatientId === p.id ? 'bg-blue-100 text-navy-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                        <span className={`px-2 py-1 rounded ${selectedPatientId === p.id ? 'bg-blue-100 text-navy-blue-800' : 'bg-gray-100 text-gray-600'}`} style={{ fontSize: '13px' }}>
                           {selectedPatientId === p.id ? 'Currently Selected' : 'Click to Select'}
                         </span>
                       </div>
