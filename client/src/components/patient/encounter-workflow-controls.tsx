@@ -75,7 +75,7 @@ export function EncounterWorkflowControls({
         return {
           label: 'In Progress',
           icon: Stethoscope,
-          color: 'bg-blue-100 text-blue-800 border-blue-200',
+          color: 'bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200',
           description: 'Documentation in progress'
         };
       case 'pending_review':

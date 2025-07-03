@@ -319,7 +319,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
         return (
           <Badge 
             variant="default" 
-            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            className="text-xs cursor-pointer hover:bg-navy-blue-600 dark:hover:bg-navy-blue-400 transition-colors bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200"
             onClick={handleEncounterClick}
             title={`Click to view encounter details (Encounter #${encounterId})`}
           >
@@ -357,7 +357,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
       case "successful": return <CheckCircle className="h-4 w-4 text-green-600" />;
       case "complicated": return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
       case "cancelled": return <Clock className="h-4 w-4 text-gray-600" />;
-      case "ongoing": return <Activity className="h-4 w-4 text-blue-600" />;
+      case "ongoing": return <Activity className="h-4 w-4 text-navy-blue-600" />;
       default: return <CheckCircle className="h-4 w-4 text-green-600" />;
     }
   };
@@ -367,14 +367,14 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
       case "successful": return "bg-green-100 text-green-800 border-green-200";
       case "complicated": return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "cancelled": return "bg-gray-100 text-gray-800 border-gray-200";
-      case "ongoing": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "ongoing": return "bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200";
       default: return "bg-green-100 text-green-800 border-green-200";
     }
   };
 
   const getSourceColor = (sourceType: string) => {
     switch (sourceType) {
-      case "soap_derived": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "soap_derived": return "bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200";
       case "attachment_extracted": return "bg-purple-100 text-purple-800 border-purple-200";
       case "manual_entry": return "bg-gray-100 text-gray-800 border-gray-200";
       default: return "bg-gray-100 text-gray-800 border-gray-200";
@@ -658,7 +658,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                               );
                             case "encounter":
                               return (
-                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                <Badge variant="outline" className="text-xs bg-navy-blue-50 text-navy-blue-700 border-navy-blue-200">
                                   Enc {confidence}%
                                 </Badge>
                               );
@@ -765,7 +765,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                         return (
                                           <Badge 
                                             variant="outline" 
-                                            className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                            className="text-xs bg-navy-blue-50 text-navy-blue-700 border-navy-blue-200"
                                             title={`Encounter-derived surgery (Confidence: ${confidence}%)`}
                                           >
                                             Encounter {confidence}%
@@ -911,7 +911,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                   {visit.source === "encounter" && visit.encounterId && (
                                     <Badge 
                                       variant="outline" 
-                                      className="text-xs cursor-pointer hover:bg-blue-600 hover:text-white transition-colors bg-blue-50 text-blue-700 border-blue-200"
+                                      className="text-xs cursor-pointer hover:bg-navy-blue-600 hover:text-white transition-colors bg-navy-blue-50 text-navy-blue-700 border-navy-blue-200"
                                       onClick={() => {
                                         navigateWithContext(
                                           `/patients/${surgery.patientId}/encounters/${visit.encounterId}`,

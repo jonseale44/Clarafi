@@ -7,7 +7,7 @@ export const RealtimeMigrationGuide = () => {
     <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Zap className="h-5 w-5 mr-2 text-blue-600" />
+          <Zap className="h-5 w-5 mr-2 text-navy-blue-600" />
           Real-time API Migration Complete
         </CardTitle>
       </CardHeader>
@@ -42,7 +42,7 @@ export const RealtimeMigrationGuide = () => {
           {/* Performance */}
           <div className="space-y-3">
             <h3 className="font-semibold flex items-center">
-              <Clock className="h-4 w-4 mr-2 text-blue-600" />
+              <Clock className="h-4 w-4 mr-2 text-navy-blue-600" />
               Performance Benefits
             </h3>
             <ul className="space-y-2 text-sm">
@@ -55,9 +55,9 @@ export const RealtimeMigrationGuide = () => {
         </div>
 
         {/* Usage Instructions */}
-        <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="bg-navy-blue-50 p-4 rounded-lg">
           <h3 className="font-semibold flex items-center mb-2">
-            <MessageSquare className="h-4 w-4 mr-2 text-blue-600" />
+            <MessageSquare className="h-4 w-4 mr-2 text-navy-blue-600" />
             How to Use Real-time API
           </h3>
           <ol className="text-sm space-y-1 list-decimal list-inside">

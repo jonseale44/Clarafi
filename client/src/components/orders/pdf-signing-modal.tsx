@@ -132,7 +132,7 @@ export function PDFSigningModal({
   };
 
   const getOrderTypeColor = (orderType: string) => {
-    if (orderType === 'medication') return 'bg-blue-100 text-blue-800';
+    if (orderType === 'medication') return 'bg-navy-blue-100 text-navy-blue-800';
     if (orderType === 'lab') return 'bg-green-100 text-green-800';
     if (orderType === 'imaging') return 'bg-purple-100 text-purple-800';
     return 'bg-gray-100 text-gray-800';
@@ -167,14 +167,14 @@ export function PDFSigningModal({
           <div className="flex-1 overflow-auto">
             <div className="space-y-4">
               {/* Order Summary */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-navy-blue-50 border border-navy-blue-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-blue-900">
+                  <CheckCircle className="h-5 w-5 text-navy-blue-600" />
+                  <span className="font-medium text-navy-blue-900">
                     Ready to sign {orderIds.length} order{orderIds.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <p className="text-sm text-blue-700">
+                <p className="text-sm text-navy-blue-700">
                   Documents will be generated for orders that require printed forms.
                   You can preview, print, or download them before confirming.
                 </p>

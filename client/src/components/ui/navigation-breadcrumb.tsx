@@ -14,19 +14,19 @@ export function NavigationBreadcrumb({ className = "" }: NavigationBreadcrumbPro
   }
 
   return (
-    <div className={`bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center justify-between ${className}`}>
+    <div className={`bg-navy-blue-50 border-b border-navy-blue-200 px-4 py-2 flex items-center justify-between ${className}`}>
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
           size="sm"
           onClick={goBack}
-          className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 h-8 px-3"
+          className="text-navy-blue-700 hover:text-navy-blue-900 hover:bg-navy-blue-100 h-8 px-3"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to {navContext.contextLabel}
         </Button>
         
-        <div className="text-sm text-blue-600 hidden sm:block">
+        <div className="text-sm text-navy-blue-600 hidden sm:block">
           Viewing document from: <span className="font-medium">{navContext.contextLabel}</span>
         </div>
       </div>
@@ -36,7 +36,7 @@ export function NavigationBreadcrumb({ className = "" }: NavigationBreadcrumbPro
           variant="ghost"
           size="sm"
           onClick={clearContext}
-          className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 h-7 px-2"
+          className="text-navy-blue-600 hover:text-navy-blue-800 hover:bg-navy-blue-100 h-7 px-2"
           title="Clear navigation context and stay here"
         >
           <X className="h-3 w-3" />

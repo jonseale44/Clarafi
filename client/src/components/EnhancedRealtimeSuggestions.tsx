@@ -401,11 +401,11 @@ export function EnhancedRealtimeSuggestions({
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               AI Suggestions
-              {isFrozen && <Snowflake className="h-4 w-4 text-blue-500" />}
+              {isFrozen && <Snowflake className="h-4 w-4 text-navy-blue-500" />}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md text-sm max-h-48 overflow-y-auto">
+            <div className="bg-navy-blue-50 dark:bg-navy-blue-950 p-3 rounded-md text-sm max-h-48 overflow-y-auto">
               {suggestions.split('\n').map((line, index) => (
                 <div key={index} className="mb-1">
                   {line}

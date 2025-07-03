@@ -746,12 +746,12 @@ export const NursingTemplateAssessment = forwardRef<
     };
 
     return (
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-navy-blue-200 bg-navy-blue-50">
         <div className="p-6">
           <div className="mb-4">
             <div className="flex items-center space-x-2 mb-3">
-              <Activity className="h-5 w-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-blue-900">
+              <Activity className="h-5 w-5 text-navy-blue-600" />
+              <h3 className="text-lg font-semibold text-navy-blue-900">
                 Nursing Assessment Template
               </h3>
               {isActive && (
@@ -761,7 +761,7 @@ export const NursingTemplateAssessment = forwardRef<
                 </Badge>
               )}
               {isProcessing && (
-                <Badge variant="outline" className="text-blue-600 border-blue-600">
+                <Badge variant="outline" className="text-navy-blue-600 border-navy-blue-600">
                   <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
                   Processing
                 </Badge>
@@ -793,7 +793,7 @@ export const NursingTemplateAssessment = forwardRef<
           <div className="space-y-4">
             {templateFields.map(({ key, label, placeholder, multiline }) => (
               <div key={key} className="space-y-2">
-                <label className="text-sm font-medium text-blue-900">
+                <label className="text-sm font-medium text-navy-blue-900">
                   {label}
                 </label>
                 {editingField === key ? (
@@ -826,7 +826,7 @@ export const NursingTemplateAssessment = forwardRef<
                 ) : (
                   <div className="relative group">
                     <div
-                      className="p-3 bg-white border rounded-md cursor-pointer hover:border-blue-300 transition-colors min-h-[40px] text-sm"
+                      className="p-3 bg-white border rounded-md cursor-pointer hover:border-navy-blue-300 transition-colors min-h-[40px] text-sm"
                       onClick={() => setEditingField(key)}
                     >
                       {templateData[key as keyof NursingTemplateData] ? (
@@ -855,7 +855,7 @@ export const NursingTemplateAssessment = forwardRef<
           {/* Nursing Summary Section */}
           <div className="space-y-4 mt-6">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-blue-900">Nursing Summary</h4>
+              <h4 className="font-medium text-navy-blue-900">Nursing Summary</h4>
               <div className="flex items-center space-x-2">
                 <Button
                   onClick={generateSummary}
@@ -890,8 +890,8 @@ export const NursingTemplateAssessment = forwardRef<
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-sm">
                     {autoSaveStatus === "saving" && (
-                      <div className="flex items-center text-blue-600">
-                        <div className="animate-spin h-3 w-3 mr-1 border border-blue-600 border-t-transparent rounded-full" />
+                      <div className="flex items-center text-navy-blue-600">
+                        <div className="animate-spin h-3 w-3 mr-1 border border-navy-blue-600 border-t-transparent rounded-full" />
                         <span>Saving...</span>
                       </div>
                     )}
@@ -943,7 +943,7 @@ export const NursingTemplateAssessment = forwardRef<
                       />
                     </div>
                   ) : (
-                    <div className="p-4 bg-blue-50">
+                    <div className="p-4 bg-navy-blue-50">
                       <div
                         className="text-sm text-gray-800 font-sans leading-normal prose max-w-none"
                         dangerouslySetInnerHTML={{

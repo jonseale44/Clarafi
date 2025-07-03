@@ -78,7 +78,7 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
     switch (complexity) {
       case 'high': return 'bg-red-100 text-red-800';
       case 'moderate': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
+      case 'low': return 'bg-navy-blue-100 text-navy-blue-800';
       case 'straightforward': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -142,7 +142,7 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
                               <Badge 
                                 key={idx} 
                                 variant="secondary" 
-                                className="text-xs px-1 py-0 h-4 bg-blue-100 text-blue-800"
+                                className="text-xs px-1 py-0 h-4 bg-navy-blue-100 text-navy-blue-800"
                               >
                                 {modifier}
                               </Badge>
@@ -163,12 +163,12 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
 
           {/* Optimization Opportunities */}
           {complexityOptimization && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="bg-navy-blue-50 border border-navy-blue-200 rounded-lg p-3">
               <div className="flex items-center">
-                <TrendingUp className="h-4 w-4 text-blue-600 mr-2" />
-                <span className="text-sm font-medium text-blue-800">Billing Optimization</span>
+                <TrendingUp className="h-4 w-4 text-navy-blue-600 mr-2" />
+                <span className="text-sm font-medium text-navy-blue-800">Billing Optimization</span>
               </div>
-              <div className="text-sm text-blue-700 mt-1">{complexityOptimization}</div>
+              <div className="text-sm text-navy-blue-700 mt-1">{complexityOptimization}</div>
             </div>
           )}
 

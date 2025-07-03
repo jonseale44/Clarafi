@@ -218,7 +218,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
   const getValueDisplayClass = (result: LabResult) => {
     if (result.criticalFlag) return "text-red-600 dark:text-red-400 font-semibold";
     if (result.abnormalFlag === 'H' || result.abnormalFlag === 'HH') return "text-orange-600 dark:text-orange-400 font-medium";
-    if (result.abnormalFlag === 'L' || result.abnormalFlag === 'LL') return "text-blue-600 dark:text-blue-400 font-medium";
+    if (result.abnormalFlag === 'L' || result.abnormalFlag === 'LL') return "text-navy-blue-600 dark:text-navy-blue-400 font-medium";
     return "text-foreground";
   };
 
@@ -233,7 +233,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
     if (direction === 'increasing') {
       return <TrendingUp className={cn(iconClass, "text-red-500")} />;
     } else if (direction === 'decreasing') {
-      return <TrendingDown className={cn(iconClass, "text-blue-500")} />;
+      return <TrendingDown className={cn(iconClass, "text-navy-blue-500")} />;
     }
     
     return <Minus className="h-3 w-3 text-gray-400" />;

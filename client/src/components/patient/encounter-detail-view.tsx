@@ -98,9 +98,9 @@ const VulnerableWindowLoadingScreen = ({
     <div className="absolute inset-0 bg-white/95 rounded-lg flex items-center justify-center z-50">
       <div className="text-center space-y-4 p-8">
         <div className="mx-auto w-12 h-12 relative">
-          <div className="absolute inset-0 rounded-full border-4 border-blue-100"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-navy-blue-100"></div>
           <div 
-            className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"
+            className="absolute inset-0 rounded-full border-4 border-navy-blue-600 border-t-transparent animate-spin"
             style={{
               borderTopColor: 'transparent',
               borderRightColor: '#2563eb',
@@ -134,7 +134,7 @@ const VulnerableWindowLoadingScreen = ({
           </div>
         </div>
         
-        <div className="text-xs text-blue-600 max-w-xs">
+        <div className="text-xs text-navy-blue-600 max-w-xs">
           This prevents delayed AI responses from overwriting your manual edits.
         </div>
       </div>
@@ -3862,7 +3862,7 @@ Please provide medical suggestions based on this complete conversation context.`
                   variant="outline"
                   size="sm"
                   onClick={() => setIsTextMode(!isTextMode)}
-                  className={isTextMode ? "bg-blue-100" : ""}
+                  className={isTextMode ? "bg-navy-blue-100" : ""}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Text Mode
@@ -3870,7 +3870,7 @@ Please provide medical suggestions based on this complete conversation context.`
 
                 <Button
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"} text-white`}
+                  className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-navy-blue-600 hover:bg-navy-blue-700"} text-white`}
                 >
                   {isRecording ? (
                     <MicOff className="h-4 w-4 mr-2" />
@@ -3957,7 +3957,7 @@ Please provide medical suggestions based on this complete conversation context.`
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                       useRestAPI
                         ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-blue-100 text-blue-700 border border-blue-200"
+                        : "bg-navy-blue-100 text-navy-blue-700 border border-navy-blue-200"
                     }`}
                   >
                     {useRestAPI ? "REST API" : "WebSocket"}
@@ -3979,7 +3979,7 @@ Please provide medical suggestions based on this complete conversation context.`
                     isGeneratingSmartSuggestions
                   }
                   className={`relative overflow-hidden transition-all duration-200 ${
-                    isGeneratingRestSuggestions ? 'bg-blue-50 border-blue-200' : ''
+                    isGeneratingRestSuggestions ? 'bg-navy-blue-50 border-navy-blue-200' : ''
                   }`}
                   style={{
                     background: isGeneratingRestSuggestions && useRestAPI
@@ -3994,14 +3994,14 @@ Please provide medical suggestions based on this complete conversation context.`
                   <div className="flex items-center space-x-2">
                     {isGeneratingRestSuggestions && useRestAPI && (
                       <div 
-                        className="h-3 w-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"
+                        className="h-3 w-3 rounded-full border-2 border-navy-blue-600 border-t-transparent animate-spin"
                         style={{
                           animationDuration: '1s'
                         }}
                       />
                     )}
                     {isGeneratingSmartSuggestions && !useRestAPI && (
-                      <div className="h-3 w-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+                      <div className="h-3 w-3 rounded-full border-2 border-navy-blue-600 border-t-transparent animate-spin" />
                     )}
                     <span>
                       {isGeneratingRestSuggestions && useRestAPI
@@ -4016,7 +4016,7 @@ Please provide medical suggestions based on this complete conversation context.`
                   {/* Precise progress indicator - subtle border animation */}
                   {isGeneratingRestSuggestions && useRestAPI && (
                     <div 
-                      className="absolute bottom-0 left-0 h-0.5 bg-blue-500 transition-all duration-100 ease-out"
+                      className="absolute bottom-0 left-0 h-0.5 bg-navy-blue-500 transition-all duration-100 ease-out"
                       style={{
                         width: `${suggestionProgress}%`
                       }}
@@ -4051,8 +4051,8 @@ Please provide medical suggestions based on this complete conversation context.`
                 {/* Auto-save status indicator */}
                 <div className="flex items-center text-sm">
                   {autoSaveStatus === "saving" && (
-                    <div className="flex items-center text-blue-600">
-                      <div className="animate-spin h-3 w-3 mr-1 border border-blue-600 border-t-transparent rounded-full" />
+                    <div className="flex items-center text-navy-blue-600">
+                      <div className="animate-spin h-3 w-3 mr-1 border border-navy-blue-600 border-t-transparent rounded-full" />
                       <span>Saving...</span>
                     </div>
                   )}
@@ -4222,12 +4222,12 @@ Please provide medical suggestions based on this complete conversation context.`
                     autoSaveStatus === "saved" ||
                     (editor?.getHTML() || soapNote) === lastSaved
                       ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
-                      : "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                      : "bg-navy-blue-50 hover:bg-navy-blue-100 text-navy-blue-700 border-navy-blue-200"
                   }`}
                 >
                   {isSavingSOAP || isAutoSaving ? (
                     <>
-                      <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
+                      <div className="animate-spin h-4 w-4 mr-2 border-2 border-navy-blue-600 border-t-transparent rounded-full" />
                       Saving...
                     </>
                   ) : autoSaveStatus === "saved" ||
@@ -4281,15 +4281,15 @@ Please provide medical suggestions based on this complete conversation context.`
 
           {/* Smart Chart Update Button */}
           {isChartUpdateAvailable && (
-            <Card className="mb-4 border-l-4 border-l-blue-500 bg-blue-50">
+            <Card className="mb-4 border-l-4 border-l-blue-500 bg-navy-blue-50">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
-                      <RefreshCw className="h-5 w-5 text-blue-600" />
+                      <RefreshCw className="h-5 w-5 text-navy-blue-600" />
                       <div>
-                        <h3 className="font-semibold text-blue-900">Chart Update Available</h3>
-                        <p className="text-sm text-blue-700">
+                        <h3 className="font-semibold text-navy-blue-900">Chart Update Available</h3>
+                        <p className="text-sm text-navy-blue-700">
                           SOAP note has been modified. Update chart sections with latest content.
                         </p>
                       </div>
@@ -4300,8 +4300,8 @@ Please provide medical suggestions based on this complete conversation context.`
                     disabled={isUpdatingChart}
                     className={`relative overflow-hidden transition-all duration-300 ${
                       isUpdatingChart 
-                        ? 'bg-blue-100 text-blue-500 border-blue-300 cursor-not-allowed' 
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        ? 'bg-navy-blue-100 text-navy-blue-500 border-navy-blue-300 cursor-not-allowed' 
+                        : 'bg-navy-blue-600 hover:bg-navy-blue-700 text-white'
                     }`}
                     title="Update Medical Problems, Surgical History, Medications, Allergies, and Social History from SOAP note changes"
                   >
@@ -4328,7 +4328,7 @@ Please provide medical suggestions based on this complete conversation context.`
                     </span>
                   </Button>
                 </div>
-                <div className="mt-2 text-xs text-blue-600">
+                <div className="mt-2 text-xs text-navy-blue-600">
                   Will update: Medical Problems • Surgical History • Medications • Allergies • Social History
                 </div>
               </CardContent>

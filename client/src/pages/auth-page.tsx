@@ -302,7 +302,7 @@ export default function AuthPage() {
           <h2 className="text-4xl font-bold mb-6">
             Next-Generation EMR System
           </h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <p className="text-xl mb-8 text-navy-blue-100">
             Streamline patient care with AI-assisted voice workflows, unified encounter management, and comprehensive clinical documentation.
           </p>
           
@@ -313,7 +313,7 @@ export default function AuthPage() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">AI-Assisted Voice Recording</h3>
-                <p className="text-sm text-blue-100">
+                <p className="text-sm text-navy-blue-100">
                   Real-time transcription and clinical suggestions
                 </p>
               </div>
@@ -325,7 +325,7 @@ export default function AuthPage() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">Unified Encounter Model</h3>
-                <p className="text-sm text-blue-100">
+                <p className="text-sm text-navy-blue-100">
                   Same chart data for both nurses and providers
                 </p>
               </div>
@@ -337,7 +337,7 @@ export default function AuthPage() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">External Lab Integration</h3>
-                <p className="text-sm text-blue-100">
+                <p className="text-sm text-navy-blue-100">
                   HL7/API integration with LabCorp, Quest and more
                 </p>
               </div>

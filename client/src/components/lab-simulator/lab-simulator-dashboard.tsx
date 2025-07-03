@@ -191,7 +191,7 @@ export function LabSimulatorDashboard() {
   const getStatusColor = (status: string) => {
     const colors = {
       'draft': 'bg-gray-500',
-      'transmitted': 'bg-blue-500',
+      'transmitted': 'bg-navy-blue-500',
       'acknowledged': 'bg-yellow-500',
       'collected': 'bg-orange-500',
       'completed': 'bg-green-500',
@@ -218,7 +218,7 @@ export function LabSimulatorDashboard() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-2">
-        <FlaskConical className="h-6 w-6 text-blue-600" />
+        <FlaskConical className="h-6 w-6 text-navy-blue-600" />
         <h1 className="text-2xl font-bold">Lab Order Lifecycle Simulator</h1>
       </div>
 
@@ -365,7 +365,7 @@ export function LabSimulatorDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                <div className="bg-navy-blue-50 dark:bg-navy-blue-950 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Included Tests:</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>• Complete Blood Count</div>

@@ -337,7 +337,7 @@ export function ProviderDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "in_progress":
-        return "bg-blue-100 text-blue-800";
+        return "bg-navy-blue-100 text-navy-blue-800";
       case "waiting":
         return "bg-yellow-100 text-yellow-800";
       case "ready_for_provider":
@@ -375,17 +375,17 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors" onClick={() => setIsReviewDialogOpen(true)}>
+        <Card className="bg-navy-blue-50 border-navy-blue-200 cursor-pointer hover:bg-navy-blue-100 transition-colors" onClick={() => setIsReviewDialogOpen(true)}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <TestTube className="h-8 w-8 text-blue-600" />
+                <TestTube className="h-8 w-8 text-navy-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Lab Orders to Review</p>
-                  <p className="text-2xl font-bold text-blue-900">{stats?.labOrdersToReview || 0}</p>
+                  <p className="text-sm font-medium text-navy-blue-800">Lab Orders to Review</p>
+                  <p className="text-2xl font-bold text-navy-blue-900">{stats?.labOrdersToReview || 0}</p>
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="bg-white hover:bg-blue-50">
+              <Button size="sm" variant="outline" className="bg-white hover:bg-navy-blue-50">
                 Review
               </Button>
             </div>

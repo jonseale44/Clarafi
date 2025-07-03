@@ -115,7 +115,7 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
     } else if (result?.abnormalFlag === 'H') {
       baseClass += ' bg-orange-100 text-orange-800';
     } else if (result?.abnormalFlag === 'L') {
-      baseClass += ' bg-blue-100 text-blue-800';
+      baseClass += ' bg-navy-blue-100 text-navy-blue-800';
     } else {
       baseClass += ' text-gray-900';
     }

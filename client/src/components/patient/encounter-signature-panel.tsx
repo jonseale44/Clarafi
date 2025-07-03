@@ -166,7 +166,7 @@ export function EncounterSignaturePanel({
   ];
 
   return (
-    <Card className="border-blue-200">
+    <Card className="border-navy-blue-200">
       <CardHeader>
         <CardTitle className="flex items-center text-xl font-semibold">
           <PenTool className="h-5 w-5 mr-2" />
@@ -178,7 +178,7 @@ export function EncounterSignaturePanel({
         {/* Validation Status */}
         {validationLoading ? (
           <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600 mx-auto"></div>
             <p className="mt-2 text-sm text-gray-600">Validating requirements...</p>
           </div>
         ) : validation && (

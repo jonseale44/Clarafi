@@ -196,7 +196,7 @@ export default function UserSettingsPage() {
                 key={template.id}
                 className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                   selectedTemplate?.id === template.id
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-navy-blue-500 bg-navy-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => setSelectedTemplate(template)}
@@ -204,7 +204,7 @@ export default function UserSettingsPage() {
                 <div className="font-medium">{template.templateName}</div>
                 <div className="text-sm text-gray-500">
                   {template.isDefault && (
-                    <span className="text-blue-600 font-medium">Default • </span>
+                    <span className="text-navy-blue-600 font-medium">Default • </span>
                   )}
                   AI Learning: {template.enableAiLearning ? 'On' : 'Off'}
                 </div>
@@ -427,7 +427,7 @@ export default function UserSettingsPage() {
 
                 <TabsContent value="ai" className="space-y-4">
                   <div className="flex items-start space-x-2">
-                    <Brain className="h-5 w-5 mt-1 text-blue-600" />
+                    <Brain className="h-5 w-5 mt-1 text-navy-blue-600" />
                     <div>
                       <h3 className="font-medium">AI Learning System</h3>
                       <p className="text-sm text-gray-600 mt-1">
@@ -467,15 +467,15 @@ export default function UserSettingsPage() {
                     </div>
                   )}
 
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">What the AI Learns</h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
+                  <div className="bg-navy-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-navy-blue-900 mb-2">What the AI Learns</h4>
+                    <ul className="text-sm text-navy-blue-800 space-y-1">
                       <li>• Formatting preferences (bullets, spacing, organization)</li>
                       <li>• Documentation style (abbreviations, terminology)</li>
                       <li>• Section structure and content patterns</li>
                       <li>• Your clinical reasoning approach</li>
                     </ul>
-                    <p className="text-sm text-blue-700 mt-2">
+                    <p className="text-sm text-navy-blue-700 mt-2">
                       The AI will NOT learn patient-specific medical information - only your documentation preferences.
                     </p>
                   </div>

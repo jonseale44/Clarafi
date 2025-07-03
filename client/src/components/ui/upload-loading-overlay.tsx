@@ -35,14 +35,14 @@ export function UploadLoadingOverlay({
   const getStageIcon = () => {
     switch (stage) {
       case 'uploading':
-        return <FileText className="h-8 w-8 text-blue-500" />;
+        return <FileText className="h-8 w-8 text-navy-blue-500" />;
       case 'processing':
       case 'analyzing':
-        return <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />;
+        return <Loader2 className="h-8 w-8 text-navy-blue-500 animate-spin" />;
       case 'complete':
         return <CheckCircle className="h-8 w-8 text-green-500" />;
       default:
-        return <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />;
+        return <Loader2 className="h-8 w-8 text-navy-blue-500 animate-spin" />;
     }
   };
 
@@ -74,7 +74,7 @@ export function UploadLoadingOverlay({
             <span className="text-gray-600 dark:text-gray-400">
               {Math.round(progress)}% complete
             </span>
-            <span className="text-blue-600 dark:text-blue-400 font-medium">
+            <span className="text-navy-blue-600 dark:text-navy-blue-400 font-medium">
               {stage === 'complete' ? 'Updating chart...' : 'Please wait'}
             </span>
           </div>

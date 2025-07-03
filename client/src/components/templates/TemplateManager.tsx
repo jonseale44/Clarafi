@@ -444,7 +444,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                         <Badge variant="secondary">System Template</Badge>
                       )}
                       {!template.isBaseTemplate && (
-                        <Badge variant="outline" className="text-blue-600 border-blue-200">Custom</Badge>
+                        <Badge variant="outline" className="text-navy-blue-600 border-navy-blue-200">Custom</Badge>
                       )}
                     </div>
                     {template.usageCount && (

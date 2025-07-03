@@ -161,9 +161,9 @@ export function FastMedicationIntelligence({
           </div>
         )}
         {medicationDataLoading && (
-          <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-md">
-            <Info className="h-4 w-4 text-blue-600" />
-            <span className="text-sm text-blue-800">Loading medication data...</span>
+          <div className="flex items-center gap-2 p-2 bg-navy-blue-50 rounded-md">
+            <Info className="h-4 w-4 text-navy-blue-600" />
+            <span className="text-sm text-navy-blue-800">Loading medication data...</span>
           </div>
         )}
         {!medicationData && !medicationDataLoading && medicationName && (
@@ -282,7 +282,7 @@ export function FastMedicationIntelligence({
           rows={3}
         />
         {!manualSigEdit && medicationData && (
-          <div className="flex items-center gap-2 text-sm text-blue-600">
+          <div className="flex items-center gap-2 text-sm text-navy-blue-600">
             <CheckCircle className="h-3 w-3" />
             <span>Auto-generated from medication intelligence</span>
           </div>

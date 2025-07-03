@@ -272,8 +272,8 @@ export function IntelligentMedicationEditor({
     <div className="space-y-4">
       {/* Medication Info Header */}
       {medicationData && (
-        <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-md">
-          <Info className="h-4 w-4 text-blue-600" />
+        <div className="flex items-center gap-2 p-2 bg-navy-blue-50 rounded-md">
+          <Info className="h-4 w-4 text-navy-blue-600" />
           <div className="text-sm">
             <span className="font-medium">{medicationData.therapeuticClass}</span>
             {medicationData.brandNames && (
@@ -387,7 +387,7 @@ export function IntelligentMedicationEditor({
           className="min-h-[60px]"
         />
         {!manualSigEdit && medicationData && (
-          <div className="text-xs text-blue-600 mt-1">
+          <div className="text-xs text-navy-blue-600 mt-1">
             Instructions auto-generated based on medication components
           </div>
         )}

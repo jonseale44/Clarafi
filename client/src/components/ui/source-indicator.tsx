@@ -38,7 +38,7 @@ export function SourceIndicator({
         return {
           label: 'Manual Entry',
           icon: FileText,
-          color: 'bg-blue-100 text-blue-800 border-blue-200',
+          color: 'bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200',
           description: 'Manually entered by clinical staff'
         };
       case 'attachment_extracted':

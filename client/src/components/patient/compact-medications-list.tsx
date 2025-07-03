@@ -64,7 +64,7 @@ export function CompactMedicationsList({
             variant="ghost"
             size="sm"
             onClick={onExpandClick}
-            className="h-6 text-xs text-blue-600 hover:text-blue-800"
+            className="h-6 text-xs text-navy-blue-600 hover:text-navy-blue-800"
           >
             <ExternalLink className="h-3 w-3 mr-1" />
             View all {medications.length} medications

@@ -183,8 +183,8 @@ export const RealtimeSOAPGenerator: React.FC<RealtimeSOAPGeneratorProps> = ({
         )}
         
         {isGenerating && (
-          <div className="text-sm text-blue-600 flex items-center">
-            <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
+          <div className="text-sm text-navy-blue-600 flex items-center">
+            <div className="animate-spin h-4 w-4 mr-2 border-2 border-navy-blue-600 border-t-transparent rounded-full" />
             Generating via Real-time API...
           </div>
         )}
@@ -195,7 +195,7 @@ export const RealtimeSOAPGenerator: React.FC<RealtimeSOAPGeneratorProps> = ({
         disabled={!isConnected || isGenerating || !transcription}
         variant="default"
         size="sm"
-        className="bg-blue-600 hover:bg-blue-700 text-white"
+        className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
       >
         {isGenerating ? "Generating..." : "Generate SOAP Note (Real-time)"}
       </Button>

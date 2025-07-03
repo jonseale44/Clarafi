@@ -130,7 +130,7 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
                   <div className="flex items-center justify-between w-full">
                     <span>{option.label}</span>
                     {option.template?.isDefault && (
-                      <span className="text-xs text-blue-600 ml-2">Default</span>
+                      <span className="text-xs text-navy-blue-600 ml-2">Default</span>
                     )}
                   </div>
                 </SelectItem>

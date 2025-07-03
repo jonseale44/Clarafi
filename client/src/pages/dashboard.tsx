@@ -181,7 +181,7 @@ export default function Dashboard() {
                       <h3 className="font-semibold">{p.firstName} {p.lastName}</h3>
                       <p className="text-gray-600">ID: {p.id} | MRN: {p.mrn} | DOB: {new Date(p.dateOfBirth).toLocaleDateString()}</p>
                       <div className="mt-2">
-                        <span className={`px-2 py-1 text-xs rounded ${selectedPatientId === p.id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                        <span className={`px-2 py-1 text-xs rounded ${selectedPatientId === p.id ? 'bg-blue-100 text-navy-blue-800' : 'bg-gray-100 text-gray-600'}`}>
                           {selectedPatientId === p.id ? 'Currently Selected' : 'Click to Select'}
                         </span>
                       </div>

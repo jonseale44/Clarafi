@@ -344,7 +344,7 @@ export function EnhancedMedicalProblemsDialog({
     switch (source) {
       case "encounter":
         return (
-          <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+          <Badge variant="default" className="text-xs bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200">
             Note {confidencePercent > 0 ? `${confidencePercent}%` : ''}
           </Badge>
         );
@@ -387,7 +387,7 @@ export function EnhancedMedicalProblemsDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-blue-500" />
+                        <Brain className="h-4 w-4 text-navy-blue-500" />
                         Diagnosis * 
                         <Badge variant="secondary" className="text-xs">AI-Powered</Badge>
                       </FormLabel>
@@ -401,7 +401,7 @@ export function EnhancedMedicalProblemsDialog({
                           />
                           {isLoadingSuggestions && (
                             <div className="absolute right-3 top-2.5">
-                              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                              <div className="animate-spin h-4 w-4 border-2 border-navy-blue-500 border-t-transparent rounded-full"></div>
                             </div>
                           )}
                           {inputValue && !isLoadingSuggestions && (
@@ -444,7 +444,7 @@ export function EnhancedMedicalProblemsDialog({
                                   )}
                                 </div>
                                 <div className="ml-3 text-right">
-                                  <div className="text-sm font-mono text-blue-600">{suggestion.icd10Code}</div>
+                                  <div className="text-sm font-mono text-navy-blue-600">{suggestion.icd10Code}</div>
                                   <div className="text-xs text-gray-400">
                                     {Math.round(suggestion.confidence * 100)}% match
                                   </div>

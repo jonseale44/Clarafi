@@ -241,7 +241,7 @@
   }
 
   .alert-info {
-    @apply bg-blue-50 border border-blue-200 text-blue-800;
+    @apply bg-blue-50 border border-navy-blue-200 text-navy-blue-800;
   }
 
   .alert-success {
@@ -297,7 +297,7 @@
   }
 
   .status-badge-completed {
-    @apply bg-blue-100 text-blue-800;
+    @apply bg-blue-100 text-navy-blue-800;
   }
 
   .status-badge-cancelled {
@@ -319,15 +319,15 @@
 
   /* AI suggestions styling */
   .ai-suggestions {
-    @apply bg-blue-50 border border-blue-200 rounded-lg p-4;
+    @apply bg-blue-50 border border-navy-blue-200 rounded-lg p-4;
   }
 
   .ai-suggestion-title {
-    @apply font-medium text-blue-900 mb-2 flex items-center;
+    @apply font-medium text-navy-blue-900 mb-2 flex items-center;
   }
 
   .ai-suggestion-list {
-    @apply text-sm text-blue-800 space-y-1;
+    @apply text-sm text-navy-blue-800 space-y-1;
   }
 
   /* Patient chart styling */

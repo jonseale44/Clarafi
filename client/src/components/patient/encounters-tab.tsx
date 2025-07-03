@@ -66,7 +66,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
       case "in_progress":
         return "bg-yellow-100 text-yellow-800";
       case "scheduled":
-        return "bg-blue-100 text-blue-800";
+        return "bg-navy-blue-100 text-navy-blue-800";
       case "signed":
         return "bg-purple-100 text-purple-800";
       default:
@@ -159,7 +159,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
                       {encounter.encounterStatus?.replace('_', ' ') || 'Unknown'}
                     </Badge>
                     {encounter.signatureId && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      <Badge variant="secondary" className="bg-navy-blue-100 text-navy-blue-800">
                         Signed
                       </Badge>
                     )}

@@ -65,7 +65,7 @@ export function CPTAutocomplete({
     switch (complexity) {
       case 'high': return 'bg-red-100 text-red-800 border-red-200';
       case 'moderate': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'low': return 'bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200';
       case 'straightforward': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -74,7 +74,7 @@ export function CPTAutocomplete({
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
       "E&M New": "bg-green-100 text-green-800",
-      "E&M Established": "bg-blue-100 text-blue-800",
+      "E&M Established": "bg-navy-blue-100 text-navy-blue-800",
       "Preventive New": "bg-purple-100 text-purple-800",
       "Preventive Established": "bg-indigo-100 text-indigo-800",
       "Minor Surgery": "bg-red-100 text-red-800",

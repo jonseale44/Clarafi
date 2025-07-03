@@ -161,7 +161,7 @@ export function IntegratedLabView({ patientId, patientName }: IntegratedLabViewP
 
   const getAbnormalColor = (flag?: string) => {
     if (!flag || flag === 'N') return "";
-    return flag.includes('H') ? "text-red-600 font-semibold" : "text-blue-600 font-semibold";
+    return flag.includes('H') ? "text-red-600 font-semibold" : "text-navy-blue-600 font-semibold";
   };
 
   return (
@@ -424,12 +424,12 @@ export function IntegratedLabView({ patientId, patientName }: IntegratedLabViewP
               </div>
               
               {generatedMessage && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                <div className="p-3 bg-navy-blue-50 border border-navy-blue-200 rounded">
                   <div className="flex items-center gap-2 mb-2">
-                    <Send className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">Generated Patient Message</span>
+                    <Send className="h-4 w-4 text-navy-blue-600" />
+                    <span className="text-sm font-medium text-navy-blue-800">Generated Patient Message</span>
                   </div>
-                  <p className="text-sm text-blue-700">{generatedMessage}</p>
+                  <p className="text-sm text-navy-blue-700">{generatedMessage}</p>
                 </div>
               )}
             </div>

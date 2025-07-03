@@ -41,7 +41,7 @@ export function LabSourceIndicator({
         return {
           label: 'External Upload',
           icon: Upload,
-          color: 'bg-blue-100 text-blue-800 border-blue-200',
+          color: 'bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200',
           description: 'Lab report uploaded from external source'
         };
       case 'provider_entered':

@@ -29,7 +29,7 @@ export function DenseViewToggle({
     <div className={`flex items-center gap-2 ${className}`}>
       <div className="flex items-center gap-2">
         {isDenseView ? (
-          <Minimize2 className="h-4 w-4 text-blue-600" />
+          <Minimize2 className="h-4 w-4 text-navy-blue-600" />
         ) : (
           <Maximize2 className="h-4 w-4 text-gray-500" />
         )}
@@ -43,7 +43,7 @@ export function DenseViewToggle({
         checked={isDenseView}
         onCheckedChange={toggleDenseView}
         disabled={isToggling}
-        className="data-[state=checked]:bg-blue-600"
+        className="data-[state=checked]:bg-navy-blue-600"
       />
       
       <TooltipProvider>
@@ -78,7 +78,7 @@ export function DenseViewToggle({
 
   if (showCard) {
     return (
-      <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-950/20 dark:border-blue-800">
+      <Card className="border-navy-blue-200 bg-navy-blue-50/30 dark:bg-navy-blue-950/20 dark:border-navy-blue-800">
         <CardContent className={sizeClasses[size]}>
           {content}
         </CardContent>

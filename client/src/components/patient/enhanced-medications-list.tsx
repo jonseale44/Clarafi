@@ -163,10 +163,10 @@ const IntelligentAddMedicationForm: React.FC<IntelligentAddMedicationFormProps> 
   };
 
   return (
-    <Card className="border-blue-200 dark:border-blue-800">
+    <Card className="border-navy-blue-200 dark:border-navy-blue-800">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Zap className="h-4 w-4 text-blue-600" />
+          <Zap className="h-4 w-4 text-navy-blue-600" />
           Add New Medication (AI-Powered)
         </CardTitle>
         <p className="text-sm text-gray-600">
@@ -192,7 +192,7 @@ const IntelligentAddMedicationForm: React.FC<IntelligentAddMedicationFormProps> 
 
           {/* Fast Medication Intelligence - Only shows when medication name is entered */}
           {medicationName.trim() && (
-            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/50">
+            <div className="border border-navy-blue-200 rounded-lg p-4 bg-navy-blue-50/50">
               <FastMedicationIntelligence
                 medicationName={medicationName}
                 initialStrength={formData.dosage}
@@ -226,7 +226,7 @@ const IntelligentAddMedicationForm: React.FC<IntelligentAddMedicationFormProps> 
             <Button 
               type="submit" 
               disabled={isLoading || !medicationName.trim() || !formData.dosage}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-navy-blue-600 hover:bg-navy-blue-700"
             >
               {isLoading ? 'Adding...' : 'Add Medication'}
             </Button>
@@ -266,7 +266,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
         return (
           <Badge 
             variant="default" 
-            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            className="text-xs cursor-pointer hover:bg-navy-blue-600 dark:hover:bg-navy-blue-400 transition-colors bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200"
             onClick={handleEncounterClick}
             title={`Click to view encounter details (Encounter #${encounterId})`}
           >
@@ -536,7 +536,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   // Dense list rendering for compact view with side category
   const renderMedicationDenseList = (medication: Medication, categoryAbbr: string, isFirstInGroup: boolean) => {
     const statusColor = medication.status === 'active' ? 'border-green-300' : 
-                       medication.status === 'pending' ? 'border-blue-300' :
+                       medication.status === 'pending' ? 'border-navy-blue-300' :
                        medication.status === 'held' ? 'border-amber-300' :
                        medication.status === 'discontinued' ? 'border-gray-300' : 'border-gray-300';
     
@@ -576,13 +576,13 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                   )}
                   
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Pill className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                    <Pill className="h-3 w-3 text-navy-blue-500 flex-shrink-0" />
                     <span className="dense-list-primary">{medication.medicationName}</span>
                     <span className="dense-list-secondary">{medication.dosage}</span>
                     
                     <Badge variant="outline" className={`dense-list-badge ${
                       medication.status === 'active' ? 'text-green-700 bg-green-50' :
-                      medication.status === 'pending' ? 'text-blue-700 bg-blue-50' :
+                      medication.status === 'pending' ? 'text-navy-blue-700 bg-navy-blue-50' :
                       medication.status === 'held' ? 'text-amber-700 bg-amber-50' :
                       'text-gray-700 bg-gray-50'
                     }`}>
@@ -654,11 +654,11 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
           <Button
             variant="outline"
             size="sm"
-            className="h-8 w-8 p-0 bg-blue-50 border-blue-200 hover:bg-blue-100 flex-shrink-0"
+            className="h-8 w-8 p-0 bg-navy-blue-50 border-navy-blue-200 hover:bg-navy-blue-100 flex-shrink-0"
             onClick={() => moveToOrders.mutate({ medicationId: medication.id, encounterId })}
             title="Move to Orders"
           >
-            <ArrowRight className="h-3 w-3 text-blue-600" />
+            <ArrowRight className="h-3 w-3 text-navy-blue-600" />
           </Button>
         )}
       </div>
@@ -856,11 +856,11 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 w-8 p-0 bg-blue-50 border-blue-200 hover:bg-blue-100 flex-shrink-0"
+                                  className="h-8 w-8 p-0 bg-navy-blue-50 border-navy-blue-200 hover:bg-navy-blue-100 flex-shrink-0"
                                   onClick={() => moveToOrders.mutate({ medicationId: medication.id, encounterId })}
                                   title="Move to Orders"
                                 >
-                                  <ArrowRight className="h-3 w-3 text-blue-600" />
+                                  <ArrowRight className="h-3 w-3 text-navy-blue-600" />
                                 </Button>
                               )}
                             </div>
@@ -1090,8 +1090,8 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
 
             {/* Edit Form */}
             {isEditMode && (
-              <div className="mt-4 p-4 border border-blue-200 rounded-lg bg-blue-50/50">
-                <h4 className="font-medium mb-3 text-blue-800">Edit Medication</h4>
+              <div className="mt-4 p-4 border border-navy-blue-200 rounded-lg bg-navy-blue-50/50">
+                <h4 className="font-medium mb-3 text-navy-blue-800">Edit Medication</h4>
                 <FastMedicationIntelligence
                   medicationName={medication.medicationName}
                   initialStrength={medication.strength || medication.dosage || ''}
@@ -1164,7 +1164,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                         variant="outline" 
                         size="sm"
                         onClick={() => onMoveToOrders(medication.id)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 flex-shrink-0"
+                        className="text-navy-blue-600 hover:text-navy-blue-700 hover:bg-navy-blue-50 border-navy-blue-200 flex-shrink-0"
                       >
                         <ArrowRight className="h-3 w-3 mr-1" />
                         <span className="hidden sm:inline">Move to Orders</span>

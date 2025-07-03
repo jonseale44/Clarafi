@@ -429,7 +429,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
         return (
           <Badge
             variant="default"
-            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            className="text-xs cursor-pointer hover:bg-navy-blue-600 dark:hover:bg-navy-blue-400 transition-colors bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200"
             onClick={handleEncounterClick}
             title={`Click to view encounter details (Encounter #${encounterId})`}
           >
@@ -882,7 +882,7 @@ const SocialHistorySection: React.FC<SocialHistorySectionProps> = ({
         <Card>
           <CardContent className="pt-3 emr-card-content-tight">
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600"></div>
             </div>
           </CardContent>
         </Card>

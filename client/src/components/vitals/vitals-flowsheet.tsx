@@ -231,7 +231,7 @@ export function VitalsFlowsheet({
     if (range.criticalHigh && value > range.criticalHigh) 
       return { status: "critical-high", color: "text-red-700", bgColor: "bg-red-100" };
     if (value < range.min) 
-      return { status: "low", color: "text-blue-600", bgColor: "bg-blue-50" };
+      return { status: "low", color: "text-navy-blue-600", bgColor: "bg-navy-blue-50" };
     if (value > range.max) 
       return { status: "high", color: "text-orange-600", bgColor: "bg-orange-50" };
     return { status: "normal", color: "text-green-600", bgColor: "bg-green-50" };
@@ -465,8 +465,8 @@ export function VitalsFlowsheet({
 
   const getTrendIcon = (current: number | undefined, previous: number | undefined) => {
     if (!current || !previous) return <Minus className="h-3 w-3 text-gray-400" />;
-    if (current > previous) return <TrendingUp className="h-3 w-3 text-blue-500" />;
-    if (current < previous) return <TrendingDown className="h-3 w-3 text-blue-500" />;
+    if (current > previous) return <TrendingUp className="h-3 w-3 text-navy-blue-500" />;
+    if (current < previous) return <TrendingDown className="h-3 w-3 text-navy-blue-500" />;
     return <Minus className="h-3 w-3 text-gray-400" />;
   };
 
@@ -1024,9 +1024,9 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Auto-Parse Section */}
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+      <div className="bg-navy-blue-50 p-4 rounded-lg border border-navy-blue-200">
         <div className="flex items-center gap-2 mb-2">
-          <Label className="text-sm font-medium text-blue-900">
+          <Label className="text-sm font-medium text-navy-blue-900">
             Quick Parse Vitals
           </Label>
           <Button
@@ -1050,7 +1050,7 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
           className="flex-1 min-h-[60px] resize-none"
           rows={2}
         />
-        <p className="text-xs text-blue-700 mt-2">
+        <p className="text-xs text-navy-blue-700 mt-2">
           Enter vitals text above and click "Parse" to automatically fill form fields. Examples: "BP 120/80", "HR 75", "Temp 98.6F"
         </p>
       </div>

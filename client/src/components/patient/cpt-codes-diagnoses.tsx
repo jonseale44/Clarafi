@@ -695,7 +695,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                           <Badge 
                                             key={idx} 
                                             variant="secondary" 
-                                            className="text-xs px-1 py-0 h-4 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                            className="text-xs px-1 py-0 h-4 bg-navy-blue-100 text-navy-blue-800 hover:bg-navy-blue-200"
                                           >
                                             {modifier}
                                           </Badge>
@@ -721,7 +721,7 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
                                             <Badge 
                                               key={idx} 
                                               variant="secondary" 
-                                              className="text-xs bg-blue-100 text-blue-800"
+                                              className="text-xs bg-navy-blue-100 text-navy-blue-800"
                                             >
                                               {modifier}
                                             </Badge>

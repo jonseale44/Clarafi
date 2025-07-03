@@ -120,7 +120,7 @@ function VitalsSection({ patientId, encounterId, mode }: {
           <DialogHeader className="px-6 py-4 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="h-6 w-6 text-blue-600" />
+                <Activity className="h-6 w-6 text-navy-blue-600" />
                 <DialogTitle className="text-xl">Vitals - Full Screen View</DialogTitle>
                 <Badge variant="secondary">
                   {vitalsCount} entries
@@ -251,7 +251,7 @@ export function SharedChartSections({
               <Card>
                 <CardContent className="pt-3 emr-card-content-tight">
                   <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -274,7 +274,7 @@ export function SharedChartSections({
               <Card>
                 <CardContent className="pt-3 emr-card-content-tight">
                   <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -292,7 +292,7 @@ export function SharedChartSections({
               <Card>
                 <CardContent className="pt-3 emr-card-content-tight">
                   <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600"></div>
                   </div>
                 </CardContent>
               </Card>

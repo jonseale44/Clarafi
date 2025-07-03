@@ -58,7 +58,7 @@ export function PatientHeader({ patient, allergies }: PatientHeaderProps) {
               <h3 className="text-2xl font-bold text-gray-900">
                 {patient.firstName} {patient.lastName}
               </h3>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Badge variant="secondary" className="bg-navy-blue-100 text-navy-blue-800">
                 Active Patient
               </Badge>
             </div>

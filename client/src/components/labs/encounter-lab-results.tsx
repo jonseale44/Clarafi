@@ -139,7 +139,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
   function getFlagColor(flag: string): string {
     if (!flag || flag === 'N') return 'text-gray-900';
     if (flag.includes('H')) return 'text-red-600 font-semibold';
-    if (flag.includes('L')) return 'text-blue-600 font-semibold';
+    if (flag.includes('L')) return 'text-navy-blue-600 font-semibold';
     return 'text-orange-600 font-semibold';
   }
 
@@ -205,7 +205,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
               
               {!result.criticalFlag && result.abnormalFlag && result.abnormalFlag !== 'N' && (
                 <Badge className={`dense-list-badge ${
-                  result.abnormalFlag.includes('H') ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
+                  result.abnormalFlag.includes('H') ? 'bg-red-500 text-white' : 'bg-navy-blue-500 text-white'
                 }`}>
                   {result.abnormalFlag}
                 </Badge>
@@ -446,7 +446,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                     <div key={order.id} className="border rounded-lg p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <FlaskConical className="h-4 w-4 text-blue-500" />
+                          <FlaskConical className="h-4 w-4 text-navy-blue-500" />
                           <div>
                             <h4 className="font-medium">{order.testName}</h4>
                             <p className="text-sm text-muted-foreground">
@@ -458,7 +458,7 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
                           <Badge variant={order.priority === 'STAT' ? 'destructive' : 'secondary'}>
                             {order.priority || 'Routine'}
                           </Badge>
-                          <Badge variant="outline" className="text-blue-600 border-blue-200">
+                          <Badge variant="outline" className="text-navy-blue-600 border-navy-blue-200">
                             {order.orderStatus.toUpperCase()}
                           </Badge>
                         </div>
@@ -466,22 +466,22 @@ export function EncounterLabResults({ patientId, encounterDate }: EncounterLabRe
 
                       {/* External Lab Tracking */}
                       {order.externalOrderId && (
-                        <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
+                        <div className="bg-navy-blue-50 p-3 rounded border-l-4 border-navy-blue-400">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-blue-800">
+                              <p className="text-sm font-medium text-navy-blue-800">
                                 External Lab Tracking
                               </p>
-                              <p className="text-sm text-blue-600">
+                              <p className="text-sm text-navy-blue-600">
                                 Order ID: {order.externalOrderId}
                               </p>
                               {order.requisitionNumber && (
-                                <p className="text-sm text-blue-600">
+                                <p className="text-sm text-navy-blue-600">
                                   Requisition: {order.requisitionNumber}
                                 </p>
                               )}
                             </div>
-                            <Button variant="outline" size="sm" className="text-blue-600">
+                            <Button variant="outline" size="sm" className="text-navy-blue-600">
                               Track Order
                             </Button>
                           </div>

@@ -806,9 +806,9 @@ export function LabResultsMatrix({
     let classes = "text-center p-1 font-medium min-w-[80px] cursor-pointer transition-colors border-2 text-xs";
     
     if (isSelected) {
-      classes += " bg-blue-200 text-blue-900 border-blue-400";
+      classes += " bg-navy-blue-200 text-navy-blue-900 border-navy-blue-400";
     } else if (isHovered) {
-      classes += " bg-blue-100 border-blue-200";
+      classes += " bg-navy-blue-100 border-navy-blue-200";
     } else if (hasPendingResults) {
       classes += " bg-yellow-100 border-yellow-300";
     } else {
@@ -828,9 +828,9 @@ export function LabResultsMatrix({
     let classes = "p-2 sticky left-0 bg-white border-l-4 transition-all text-sm";
     
     if (isSelected) {
-      classes += " bg-blue-200 text-blue-900 border-l-blue-500 font-medium";
+      classes += " bg-navy-blue-200 text-navy-blue-900 border-l-blue-500 font-medium";
     } else if (isHovered) {
-      classes += " bg-blue-100 border-l-blue-300";
+      classes += " bg-navy-blue-100 border-l-blue-300";
     } else if (hasPendingResults) {
       classes += " bg-yellow-50 border-l-yellow-400";
     } else {
@@ -864,7 +864,7 @@ export function LabResultsMatrix({
     if (isReviewed && canUnreviewResult) return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
     if (isReviewed) return 'bg-gray-50 text-gray-700 border border-gray-200'; // Normal reviewed state
     if (abnormalFlag === 'H') return 'bg-orange-100 text-orange-800';
-    if (abnormalFlag === 'L') return 'bg-blue-100 text-blue-800';
+    if (abnormalFlag === 'L') return 'bg-navy-blue-100 text-navy-blue-800';
     return 'bg-gray-50 text-gray-700'; // Normal unreviewed state
   };
 
@@ -964,7 +964,7 @@ export function LabResultsMatrix({
                   return (
                     <tr 
                       key={test.testName} 
-                      className={`border-b hover:bg-muted/20 ${isTestSelected ? 'bg-blue-50' : ''}`}
+                      className={`border-b hover:bg-muted/20 ${isTestSelected ? 'bg-navy-blue-50' : ''}`}
                     >
                       <td 
                         className="p-3 sticky left-0 bg-white border-r border-gray-200 cursor-pointer transition-colors"
@@ -991,7 +991,7 @@ export function LabResultsMatrix({
                         
                         let cellClass = "p-3 text-center border-r border-gray-200 transition-colors";
                         if (isDateSelected) {
-                          cellClass += " bg-blue-50 border-2 border-blue-200";
+                          cellClass += " bg-navy-blue-50 border-2 border-navy-blue-200";
                         }
                         
                         return (
@@ -1000,7 +1000,7 @@ export function LabResultsMatrix({
                               <div 
                                 className={`px-2 py-1 rounded text-sm font-medium transition-all ${
                                   result.isPending 
-                                    ? 'bg-blue-100 text-blue-800 border border-blue-300' 
+                                    ? 'bg-navy-blue-100 text-navy-blue-800 border border-navy-blue-300' 
                                     : result.criticalFlag
                                     ? 'bg-red-100 text-red-800 border border-red-300'
                                     : result.abnormalFlag && result.abnormalFlag !== 'N'
@@ -1024,7 +1024,7 @@ export function LabResultsMatrix({
                               >
                                 {result.value}
                                 {result.isPending && (
-                                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-1 animate-pulse" />
+                                  <span className="inline-block w-2 h-2 bg-navy-blue-500 rounded-full ml-1 animate-pulse" />
                                 )}
                                 {!result.isPending && result.criticalFlag && (
                                   <AlertTriangle className="inline h-3 w-3 ml-1" />
@@ -1108,7 +1108,7 @@ export function LabResultsMatrix({
               </div>
               <Button
                 onClick={handleReviewSelection}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
               >
                 <Check className="h-3 w-3 mr-1" />
                 Review
@@ -1134,8 +1134,8 @@ export function LabResultsMatrix({
               <CollapsibleTrigger asChild>
                 <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-100">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium text-blue-800">Review Selected Lab Results</span>
+                    <FileText className="h-4 w-4 text-navy-blue-600" />
+                    <span className="font-medium text-navy-blue-800">Review Selected Lab Results</span>
                     <Badge variant="secondary">
                       {(() => {
                         let totalResults = 0;
@@ -1304,7 +1304,7 @@ export function LabResultsMatrix({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
-                        <Label className="font-medium text-blue-800">AI-Powered Lab Review</Label>
+                        <Label className="font-medium text-navy-blue-800">AI-Powered Lab Review</Label>
                         <Badge variant="secondary" className="text-xs">GPT-4.1</Badge>
                       </div>
                       <Button
@@ -1312,11 +1312,11 @@ export function LabResultsMatrix({
                         size="sm"
                         onClick={handleGenerateGPTReview}
                         disabled={isGeneratingGPTReview}
-                        className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                        className="flex items-center gap-2 border-navy-blue-200 text-navy-blue-700 hover:bg-navy-blue-50"
                       >
                         {isGeneratingGPTReview ? (
                           <>
-                            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="w-3 h-3 border-2 border-navy-blue-600 border-t-transparent rounded-full animate-spin"></div>
                             Generating...
                           </>
                         ) : (
@@ -1329,11 +1329,11 @@ export function LabResultsMatrix({
                     </div>
                     
                     {generatedGPTReview && (
-                      <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                      <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-navy-blue-200 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">🤖</span>
-                            <span className="font-medium text-blue-800">AI Clinical Review</span>
+                            <span className="font-medium text-navy-blue-800">AI Clinical Review</span>
                             <Badge variant="outline" className="text-xs">{generatedGPTReview.status}</Badge>
                             {editableReviewId === generatedGPTReview.id && (
                               <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
@@ -1358,8 +1358,8 @@ export function LabResultsMatrix({
                         
                         <div className="space-y-4">
                           {/* Clinical Interpretation */}
-                          <div className="p-3 bg-white border border-blue-200 rounded">
-                            <Label className="text-sm font-medium text-blue-700 mb-2 block">Clinical Interpretation</Label>
+                          <div className="p-3 bg-white border border-navy-blue-200 rounded">
+                            <Label className="text-sm font-medium text-navy-blue-700 mb-2 block">Clinical Interpretation</Label>
                             {editableReviewId === generatedGPTReview.id ? (
                               <Textarea
                                 value={editableClinicalReview}
@@ -1414,7 +1414,7 @@ export function LabResultsMatrix({
                           </div>
                           
                         
-                        <div className="flex justify-between items-center pt-3 border-t border-blue-200">
+                        <div className="flex justify-between items-center pt-3 border-t border-navy-blue-200">
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             {generatedGPTReview.status === 'revised' && (
                               <span>Last edited by provider</span>
@@ -1427,7 +1427,7 @@ export function LabResultsMatrix({
                             <Button
                               variant="default"
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
                             >
                               Approve & Send
                             </Button>
@@ -1529,7 +1529,7 @@ export function LabResultsMatrix({
                             });
                           }}
                           disabled={reviewMutation.isPending}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
                         >
                           {reviewMutation.isPending ? (
                             <>Processing...</>

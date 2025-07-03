@@ -319,7 +319,7 @@ export function EnhancedMedicalProblemsList({
         maxScore: 100,
         weight: weights.treatment_complexity,
         contribution: (factors.treatment_complexity * weights.treatment_complexity / 100), // New percentage system
-        color: "bg-blue-500"
+        color: "bg-navy-blue-500"
       },
       {
         name: "Patient Frequency",
@@ -354,7 +354,7 @@ export function EnhancedMedicalProblemsList({
         <div className="flex justify-between items-center text-xs font-semibold text-gray-500 dark:text-gray-400 px-1">
           <span></span>
           <div className="flex items-center space-x-1">
-            <span className="text-blue-600 dark:text-blue-400">GPT</span>
+            <span className="text-navy-blue-600 dark:text-navy-blue-400">GPT</span>
             <span>×</span>
             <span className="text-purple-600 dark:text-purple-400">User</span>
             <span>=</span>
@@ -373,7 +373,7 @@ export function EnhancedMedicalProblemsList({
                 <div className="flex justify-between items-center text-xs font-medium">
                   <span>{calc.name}</span>
                   <span className="text-gray-600 dark:text-gray-300">
-                    <span className="text-blue-600 dark:text-blue-400">{calc.score}%</span> × <span className="text-purple-600 dark:text-purple-400">{calc.weight}%</span> = {calc.contribution.toFixed(1)}
+                    <span className="text-navy-blue-600 dark:text-navy-blue-400">{calc.score}%</span> × <span className="text-purple-600 dark:text-purple-400">{calc.weight}%</span> = {calc.contribution.toFixed(1)}
                   </span>
                 </div>
                 
@@ -402,7 +402,7 @@ export function EnhancedMedicalProblemsList({
         <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center text-sm font-bold">
             <span>Total Priority Score:</span>
-            <span className="text-blue-600 dark:text-blue-400">{totalScore.toFixed(2)}</span>
+            <span className="text-navy-blue-600 dark:text-navy-blue-400">{totalScore.toFixed(2)}</span>
           </div>
           <p className="text-xs opacity-75 mt-1">
             Higher scores = higher clinical priority (relative to other conditions for this patient)
@@ -610,7 +610,7 @@ export function EnhancedMedicalProblemsList({
         return (
           <Badge 
             variant="default" 
-            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            className="text-xs cursor-pointer hover:bg-navy-blue-600 dark:hover:bg-navy-blue-400 transition-colors bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200"
             onClick={handleEncounterClick}
             title={`Click to view encounter details (Encounter #${encounterId})`}
           >
@@ -728,7 +728,7 @@ export function EnhancedMedicalProblemsList({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div>
-                                <Badge variant="outline" className={`emr-badge-small font-medium ${badgeClass} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
+                                <Badge variant="outline" className={`emr-badge-small font-medium ${badgeClass} cursor-pointer hover:bg-navy-blue-50 dark:hover:bg-navy-blue-900/20 transition-colors`}>
                                   {problem.rankingResult.finalRank === null || problem.rankingResult.finalRank === undefined 
                                     ? "Unranked" 
                                     : `${getPriorityDisplayName(problem.rankingResult.priorityLevel)} (#${problem.displayRank})`
@@ -1073,12 +1073,12 @@ export function EnhancedMedicalProblemsList({
         {activeProblems.length > 0 && (
           <>
             {!isFilterExpanded ? (
-              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+              <Card className="border-navy-blue-200 bg-navy-blue-50/50 dark:bg-navy-blue-950/20 dark:border-navy-blue-800">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      <Filter className="h-5 w-5 text-navy-blue-600 dark:text-navy-blue-400" />
+                      <CardTitle className="text-sm font-medium text-navy-blue-900 dark:text-navy-blue-100">
                         Priority Filter
                       </CardTitle>
                     </div>
@@ -1086,7 +1086,7 @@ export function EnhancedMedicalProblemsList({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsFilterExpanded(true)}
-                      className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-900/50"
+                      className="text-navy-blue-700 hover:text-navy-blue-900 hover:bg-navy-blue-100 dark:text-navy-blue-300 dark:hover:text-navy-blue-100 dark:hover:bg-navy-blue-900/50"
                     >
                       Customize
                     </Button>
@@ -1094,12 +1094,12 @@ export function EnhancedMedicalProblemsList({
                 </CardHeader>
               </Card>
             ) : (
-              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+              <Card className="border-navy-blue-200 bg-navy-blue-50/50 dark:bg-navy-blue-950/20 dark:border-navy-blue-800">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      <Filter className="h-5 w-5 text-navy-blue-600 dark:text-navy-blue-400" />
+                      <CardTitle className="text-sm font-medium text-navy-blue-900 dark:text-navy-blue-100">
                         Priority Filter
                       </CardTitle>
                     </div>
@@ -1107,7 +1107,7 @@ export function EnhancedMedicalProblemsList({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsFilterExpanded(false)}
-                      className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-900/50"
+                      className="text-navy-blue-700 hover:text-navy-blue-900 hover:bg-navy-blue-100 dark:text-navy-blue-300 dark:hover:text-navy-blue-100 dark:hover:bg-navy-blue-900/50"
                     >
                       Collapse
                     </Button>
@@ -1125,7 +1125,7 @@ export function EnhancedMedicalProblemsList({
                     formatValue={(value) => `${value}% (${Math.max(1, Math.ceil((value / 100) * activeProblems.length))} of ${activeProblems.length} problems)`}
                     className="mb-2"
                   />
-                  <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                  <div className="text-xs text-navy-blue-700 dark:text-navy-blue-300 space-y-1">
                     <div className="flex justify-between">
                       <span>• Large handle: Permanent user preference</span>
                       <span className="font-mono">{largeHandleValue}%</span>
@@ -1134,7 +1134,7 @@ export function EnhancedMedicalProblemsList({
                       <span>• Small handle: Session filter for this patient</span>
                       <span className="font-mono">{smallHandleValue}%</span>
                     </div>
-                    <div className="pt-1 border-t border-blue-200 dark:border-blue-800">
+                    <div className="pt-1 border-t border-navy-blue-200 dark:border-navy-blue-800">
                       <span>Showing {filteredActiveProblems.length} of {activeProblems.length} problems based on priority ranking</span>
                     </div>
                   </div>

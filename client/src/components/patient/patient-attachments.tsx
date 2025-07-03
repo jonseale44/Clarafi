@@ -459,7 +459,7 @@ export function PatientAttachments({
 
   const getDocumentTypeBadge = (documentType: string) => {
     const typeMap: Record<string, { label: string; color: string }> = {
-      'lab_results': { label: 'Lab Results', color: 'bg-blue-600' },
+      'lab_results': { label: 'Lab Results', color: 'bg-navy-blue-600' },
       'H&P': { label: 'H&P', color: 'bg-purple-600' },
       'discharge_summary': { label: 'Discharge', color: 'bg-orange-600' },
       'nursing_notes': { label: 'Nursing', color: 'bg-teal-600' },
@@ -502,7 +502,7 @@ export function PatientAttachments({
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8 text-gray-500">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-500 mx-auto mb-4"></div>
               <p>Loading attachments...</p>
             </div>
           </CardContent>
@@ -525,7 +525,7 @@ export function PatientAttachments({
               <div 
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
                   isDragOver 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
+                    ? 'border-navy-blue-500 bg-navy-blue-50 dark:bg-navy-blue-950' 
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
                 onDragOver={handleDragOver}
@@ -543,14 +543,14 @@ export function PatientAttachments({
                 />
                 <div className="space-y-2">
                   <Upload className={`h-10 w-10 mx-auto ${
-                    isDragOver ? 'text-blue-500' : 'text-gray-400'
+                    isDragOver ? 'text-navy-blue-500' : 'text-gray-400'
                   }`} />
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-medium">Click to upload</span> or drag and drop
                     <br />
                     PDF, Images, Documents (up to 100MB each)
                     <br />
-                    <span className="text-xs text-blue-600 dark:text-blue-400">
+                    <span className="text-xs text-navy-blue-600 dark:text-navy-blue-400">
                       Select multiple files for bulk upload
                     </span>
                   </div>
@@ -579,7 +579,7 @@ export function PatientAttachments({
                 ) : uploadMode === 'multiple' && uploadFiles.length > 0 ? (
                   <>
                     <div className="space-y-2">
-                      <div className="font-medium text-sm text-blue-600 dark:text-blue-400">
+                      <div className="font-medium text-sm text-navy-blue-600 dark:text-navy-blue-400">
                         Bulk Upload ({uploadFiles.length} files)
                       </div>
                       <div className="max-h-32 overflow-y-auto space-y-1">
@@ -727,7 +727,7 @@ export function PatientAttachments({
             return (
               <Card 
                 key={attachment.id}
-                className={isHighlighted ? "ring-2 ring-blue-500 bg-blue-50" : ""}
+                className={isHighlighted ? "ring-2 ring-blue-500 bg-navy-blue-50" : ""}
               >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">

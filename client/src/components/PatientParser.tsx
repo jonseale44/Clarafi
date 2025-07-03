@@ -443,7 +443,7 @@ export function PatientParser() {
                 <div 
                   className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                     isDragOver 
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
+                      ? 'border-navy-blue-500 bg-navy-blue-50 dark:bg-navy-blue-950' 
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                   onDragOver={handleDragOver}
@@ -460,7 +460,7 @@ export function PatientParser() {
                   <Label htmlFor="file-upload" className="cursor-pointer">
                     <div className="space-y-2">
                       <Upload className={`h-10 w-10 mx-auto ${
-                        isDragOver ? 'text-blue-500' : 'text-gray-400'
+                        isDragOver ? 'text-navy-blue-500' : 'text-gray-400'
                       }`} />
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         {selectedFile ? (
@@ -492,7 +492,7 @@ export function PatientParser() {
                     className="resize-none"
                   />
                   {activeTab === 'text' && textContent.trim() && !isProcessing && (
-                    <div className="absolute top-2 right-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    <div className="absolute top-2 right-2 text-xs text-navy-blue-600 bg-navy-blue-50 px-2 py-1 rounded">
                       Auto-parsing...
                     </div>
                   )}
@@ -502,8 +502,8 @@ export function PatientParser() {
           </Tabs>
 
           {isProcessing && (
-            <div className="flex items-center justify-center gap-2 text-blue-600 py-4">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center gap-2 text-navy-blue-600 py-4">
+              <div className="w-4 h-4 border-2 border-navy-blue-600 border-t-transparent rounded-full animate-spin" />
               <span className="text-sm">Processing...</span>
             </div>
           )}

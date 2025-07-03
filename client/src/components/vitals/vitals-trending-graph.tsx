@@ -175,7 +175,7 @@ export function VitalsTrendingGraph({ vitalsEntries, patientId }: VitalsTrending
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-600" />
+            <TrendingUp className="h-5 w-5 text-navy-blue-600" />
             Vitals Trending
           </CardTitle>
         </CardHeader>
@@ -193,7 +193,7 @@ export function VitalsTrendingGraph({ vitalsEntries, patientId }: VitalsTrending
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-600" />
+            <TrendingUp className="h-5 w-5 text-navy-blue-600" />
             <CardTitle>Vitals Trending</CardTitle>
             <Badge variant="secondary" className="text-xs">
               {chartData.length} entries

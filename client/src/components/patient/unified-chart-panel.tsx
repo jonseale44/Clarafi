@@ -286,7 +286,7 @@ export function UnifiedChartPanel({
       {/* Resize Handle */}
       {config.allowResize && (
         <div
-          className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-blue-400 bg-gray-200 transition-colors group z-20"
+          className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-navy-blue-400 bg-gray-200 transition-colors group z-20"
           onMouseDown={handleMouseDown}
           title="Drag to resize panel"
         >
@@ -323,7 +323,7 @@ export function UnifiedChartPanel({
                 DOB: {formatDate(patient.dateOfBirth)}
               </p>
               {encounterId && (
-                <p className="text-sm text-blue-600">
+                <p className="text-sm text-navy-blue-600">
                   Encounter #{encounterId}
                 </p>
               )}
@@ -396,7 +396,7 @@ export function UnifiedChartPanel({
               <CollapsibleTrigger className="w-full">
                 <div 
                   className={`flex items-center justify-between w-full chart-section-trigger text-left hover:bg-gray-100 border-b border-gray-100 transition-colors ${
-                    isActive ? 'bg-blue-50 border-blue-200' : ''
+                    isActive ? 'bg-navy-blue-50 border-navy-blue-200' : ''
                   }`}
                   onDoubleClick={(e) => {
                     if (section.allowExpanded && !panelState.isExpanded) {

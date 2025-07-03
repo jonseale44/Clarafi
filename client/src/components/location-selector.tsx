@@ -82,7 +82,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
   const getRoleColor = (role: string) => {
     switch (role) {
       case "primary_provider":
-        return "bg-blue-100 text-blue-800";
+        return "bg-navy-blue-100 text-navy-blue-800";
       case "covering_provider":
         return "bg-green-100 text-green-800";
       case "nurse":
@@ -100,7 +100,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600 mx-auto"></div>
               <p className="mt-4 text-sm text-gray-600">Loading your locations...</p>
             </div>
           </CardContent>
@@ -142,7 +142,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
           {Object.entries(groupedLocations).map(([healthSystem, organizations]) => (
             <div key={healthSystem} className="space-y-4">
               <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-blue-600" />
+                <Building2 className="h-5 w-5 text-navy-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">{healthSystem}</h3>
               </div>
 
@@ -161,9 +161,9 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                         key={location.locationId}
                         className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
                           selectedLocationId === location.locationId
-                            ? "ring-2 ring-blue-500 bg-blue-50"
+                            ? "ring-2 ring-blue-500 bg-navy-blue-50"
                             : "hover:bg-gray-50"
-                        } ${location.isPrimary ? "border-blue-200" : ""}`}
+                        } ${location.isPrimary ? "border-navy-blue-200" : ""}`}
                         onClick={() => setSelectedLocationId(location.locationId)}
                       >
                         <CardContent className="p-4">
@@ -183,7 +183,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                                 </div>
                               </div>
                               {location.isPrimary && (
-                                <Badge variant="outline" className="text-xs bg-blue-100">
+                                <Badge variant="outline" className="text-xs bg-navy-blue-100">
                                   Primary
                                 </Badge>
                               )}

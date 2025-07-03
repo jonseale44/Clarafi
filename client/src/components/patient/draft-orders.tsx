@@ -404,7 +404,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
               className={`relative overflow-hidden transition-all duration-300 ${
                 isAutoGenerating 
                   ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed' 
-                  : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300'
+                  : 'bg-navy-blue-50 hover:bg-navy-blue-100 text-navy-blue-700 border-navy-blue-200 hover:border-navy-blue-300'
               }`}
               title={isAutoGenerating ? `Processing orders... ${Math.round(ordersProgress)}% complete` : "Generate draft orders from SOAP note content"}
             >
@@ -439,7 +439,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
               size="sm"
               onClick={() => bulkSignMutation.mutate(undefined)}
               disabled={bulkSignMutation.isPending}
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              className="text-navy-blue-600 border-navy-blue-200 hover:bg-navy-blue-50"
             >
               <PenTool className="h-4 w-4 mr-2" />
               {bulkSignMutation.isPending ? "Signing..." : "Sign All"}
@@ -566,7 +566,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
                       size="sm"
                       onClick={() => bulkSignMutation.mutate(type)}
                       disabled={bulkSignMutation.isPending}
-                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      className="text-navy-blue-600 border-navy-blue-200 hover:bg-navy-blue-50"
                     >
                       <PenTool className="h-4 w-4 mr-2" />
                       Sign All {type}
@@ -618,7 +618,7 @@ function OrderCard({ order, onEdit, onDelete, onSign, isEditing, onSave, onCance
 
   if (isEditing) {
     return (
-      <Card className="border-blue-200">
+      <Card className="border-navy-blue-200">
         <CardContent className="p-4">
           <OrderEditForm
             order={editedOrder}
@@ -672,7 +672,7 @@ function OrderCard({ order, onEdit, onDelete, onSign, isEditing, onSave, onCance
                 size="sm"
                 variant="outline"
                 onClick={() => onSign(order.id)}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                className="text-navy-blue-600 border-navy-blue-200 hover:bg-navy-blue-50"
               >
                 <PenTool className="h-4 w-4" />
               </Button>
@@ -714,7 +714,7 @@ function OrderContent({ order }: { order: Order }) {
             {order.daysSupply && <span><strong>Days:</strong> {order.daysSupply}</span>}
           </div>
           {order.diagnosisCode && (
-            <div className="text-xs text-blue-600 mt-1 font-medium">ICD-10: {order.diagnosisCode}</div>
+            <div className="text-xs text-navy-blue-600 mt-1 font-medium">ICD-10: {order.diagnosisCode}</div>
           )}
           {order.requiresPriorAuth && (
             <div className="text-xs text-orange-600 mt-1 font-medium bg-orange-50 px-2 py-1 rounded">Prior Authorization Required</div>
@@ -733,7 +733,7 @@ function OrderContent({ order }: { order: Order }) {
             {order.testCode && <span>Code: {order.testCode}</span>}
           </div>
           {order.fastingRequired && (
-            <div className="text-xs text-blue-600 mt-1 font-medium">Fasting Required</div>
+            <div className="text-xs text-navy-blue-600 mt-1 font-medium">Fasting Required</div>
           )}
           {order.providerNotes && (
             <div className="text-xs text-gray-600 mt-1">Notes: {order.providerNotes}</div>
@@ -1352,11 +1352,11 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
       </div>
 
       {entryMode === "ai" ? (
-        <div className="border rounded-md p-3 bg-blue-50">
-          <Label className="font-semibold text-blue-800 mb-2 block">
+        <div className="border rounded-md p-3 bg-navy-blue-50">
+          <Label className="font-semibold text-navy-blue-800 mb-2 block">
             Quick Order Entry (AI-Powered)
           </Label>
-          <p className="text-xs text-blue-600 mb-3">
+          <p className="text-xs text-navy-blue-600 mb-3">
             Enter mixed orders in natural language. AI will automatically detect and categorize different order types.
           </p>
           <div className="space-y-3">
@@ -1384,7 +1384,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
               <div className="space-y-3 max-h-40 overflow-y-auto">
                 {aiParsedData.orders.map((order: any, index: number) => (
                   <div key={index} className="p-2 bg-white rounded border text-sm">
-                    <div className="font-medium text-blue-800 mb-1">
+                    <div className="font-medium text-navy-blue-800 mb-1">
                       {order.orderType === 'medication' && '💊 Medication'}
                       {order.orderType === 'lab' && '🧪 Lab Test'}
                       {order.orderType === 'imaging' && '📸 Imaging'}

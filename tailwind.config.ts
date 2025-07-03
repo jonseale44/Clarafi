@@ -62,7 +62,19 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         // Clarafi Brand Colors
-        "navy-blue": "hsl(var(--navy-blue))",
+        "navy-blue": {
+          DEFAULT: "hsl(var(--navy-blue))",
+          50: "220 100% 95%",
+          100: "220 100% 90%",
+          200: "220 100% 80%",
+          300: "220 100% 70%",
+          400: "220 100% 60%",
+          500: "220 100% 50%",
+          600: "220 100% 40%",
+          700: "220 100% 30%",
+          800: "220 100% 20%",
+          900: "220 100% 10%",
+        },
         "gold": "hsl(var(--gold))",
       },
       keyframes: {

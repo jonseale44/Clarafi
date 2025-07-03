@@ -296,7 +296,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
         return (
           <Badge 
             variant="default" 
-            className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+            className="text-xs cursor-pointer hover:bg-navy-blue-600 dark:hover:bg-navy-blue-400 transition-colors bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200"
             onClick={handleEncounterClick}
             title="Click to view encounter details"
           >

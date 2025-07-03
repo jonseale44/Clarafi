@@ -152,12 +152,12 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
         <div className="absolute top-1/2 -translate-y-1/2 w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
           {/* Active range (from 0 to small handle) */}
           <div 
-            className="absolute left-0 top-0 h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-150"
+            className="absolute left-0 top-0 h-full bg-navy-blue-500 dark:bg-navy-blue-400 rounded-full transition-all duration-150"
             style={{ width: `${smallHandlePercent}%` }}
           />
           {/* Preference range (from small handle to large handle) */}
           <div 
-            className="absolute top-0 h-full bg-blue-300 dark:bg-blue-600 rounded-full transition-all duration-150"
+            className="absolute top-0 h-full bg-navy-blue-300 dark:bg-navy-blue-600 rounded-full transition-all duration-150"
             style={{ 
               left: `${smallHandlePercent}%`,
               width: `${largeHandlePercent - smallHandlePercent}%`
@@ -186,7 +186,7 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
         {/* Large Handle (Permanent Preference) - Stays on track, larger and distinctive */}
         <div
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 bg-blue-600 dark:bg-blue-500 border-3 border-white dark:border-gray-800 rounded-full cursor-grab transition-all duration-150 hover:scale-110 shadow-lg z-10",
+            "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 bg-navy-blue-600 dark:bg-navy-blue-500 border-3 border-white dark:border-gray-800 rounded-full cursor-grab transition-all duration-150 hover:scale-110 shadow-lg z-10",
             isDragging === 'large' && "cursor-grabbing scale-110 shadow-xl",
             disabled && "cursor-not-allowed"
           )}
@@ -195,7 +195,7 @@ export const DualHandleSlider: React.FC<DualHandleSliderProps> = ({
           title={`Permanent preference: ${formatValue(largeHandleValue)}`}
         >
           {/* Inner circle for visual distinction */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-blue-400 dark:bg-blue-300 rounded-full"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-navy-blue-400 dark:bg-navy-blue-300 rounded-full"></div>
         </div>
       </div>
       

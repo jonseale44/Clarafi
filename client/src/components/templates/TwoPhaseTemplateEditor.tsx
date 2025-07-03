@@ -366,7 +366,7 @@ export function TwoPhaseTemplateEditor({
               className={`inline-block px-1 py-0.5 rounded cursor-pointer transition-all duration-200 ${
                 hoveredCommentId === comment.id 
                   ? 'bg-yellow-300 shadow-md' 
-                  : 'bg-blue-200 hover:bg-blue-300'
+                  : 'bg-navy-blue-200 hover:bg-navy-blue-300'
               }`}
               onMouseEnter={() => setHoveredCommentId(comment.id)}
               onMouseLeave={() => setHoveredCommentId(null)}
@@ -402,7 +402,7 @@ export function TwoPhaseTemplateEditor({
       return (
         <div
           key={comment.id}
-          className="absolute w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-md cursor-pointer hover:bg-blue-600 z-10 transition-all duration-200"
+          className="absolute w-3 h-3 bg-navy-blue-500 rounded-full border-2 border-white shadow-md cursor-pointer hover:bg-navy-blue-600 z-10 transition-all duration-200"
           style={{
             left: `${position.left}px`,
             top: `${position.top}px`
@@ -614,7 +614,7 @@ export function TwoPhaseTemplateEditor({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                <div className="text-sm text-gray-600 bg-navy-blue-50 p-3 rounded-lg">
                   <strong>Instructions:</strong>
                   <ul className="mt-1 space-y-1">
                     <li>• <strong>Select text</strong> to add instructions about that specific content</li>
@@ -711,7 +711,7 @@ export function TwoPhaseTemplateEditor({
                         className={`flex items-start gap-3 p-3 rounded border transition-all duration-200 cursor-pointer ${
                           hoveredCommentId === comment.id 
                             ? 'bg-yellow-50 border-yellow-300 shadow-md' 
-                            : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                            : 'bg-navy-blue-50 border-navy-blue-200 hover:bg-navy-blue-100'
                         }`}
                         onMouseEnter={() => setHoveredCommentId(comment.id)}
                         onMouseLeave={() => setHoveredCommentId(null)}
@@ -720,15 +720,15 @@ export function TwoPhaseTemplateEditor({
                         <div className="flex-1">
                           {comment.selectedText ? (
                             <div className="mb-2">
-                              <Badge variant="default" className="text-xs bg-blue-600 mb-1">
+                              <Badge variant="default" className="text-xs bg-navy-blue-600 mb-1">
                                 📝 Text-specific instruction
                               </Badge>
-                              <div className="text-sm font-medium text-blue-800 bg-blue-100 px-2 py-1 rounded mb-1">
+                              <div className="text-sm font-medium text-navy-blue-800 bg-navy-blue-100 px-2 py-1 rounded mb-1">
                                 "{comment.selectedText}"
                               </div>
                             </div>
                           ) : (
-                            <Badge variant="outline" className="text-xs mb-2 border-blue-300">
+                            <Badge variant="outline" className="text-xs mb-2 border-navy-blue-300">
                               📍 Position-based instruction
                             </Badge>
                           )}
@@ -784,7 +784,7 @@ export function TwoPhaseTemplateEditor({
                     onClick={handleFinalSave} 
                     disabled={isSaving}
                     className={`relative overflow-hidden transition-all duration-200 ${
-                      isSaving ? 'bg-blue-50 border-blue-200' : ''
+                      isSaving ? 'bg-navy-blue-50 border-navy-blue-200' : ''
                     }`}
                     style={{
                       background: isSaving
@@ -799,7 +799,7 @@ export function TwoPhaseTemplateEditor({
                     <div className="flex items-center space-x-2">
                       {isSaving && (
                         <div 
-                          className="h-3 w-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"
+                          className="h-3 w-3 rounded-full border-2 border-navy-blue-600 border-t-transparent animate-spin"
                           style={{
                             animationDuration: '1s'
                           }}
@@ -815,7 +815,7 @@ export function TwoPhaseTemplateEditor({
                     {/* Precise progress indicator - subtle border animation */}
                     {isSaving && (
                       <div 
-                        className="absolute bottom-0 left-0 h-0.5 bg-blue-500 transition-all duration-100 ease-out"
+                        className="absolute bottom-0 left-0 h-0.5 bg-navy-blue-500 transition-all duration-100 ease-out"
                         style={{
                           width: `${saveProgress}%`
                         }}

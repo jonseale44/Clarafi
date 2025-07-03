@@ -20,7 +20,7 @@ export function QuickStats({ vitals }: QuickStatsProps) {
         return { status: "Normal", color: "text-green-600" };
       case "temp":
         if (value > 100.4) return { status: "Fever", color: "text-red-600" };
-        if (value < 97) return { status: "Low", color: "text-blue-600" };
+        if (value < 97) return { status: "Low", color: "text-navy-blue-600" };
         return { status: "Normal", color: "text-green-600" };
       case "o2sat":
         if (value < 95) return { status: "Low", color: "text-red-600" };

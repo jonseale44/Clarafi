@@ -202,7 +202,7 @@ export function MedicalProblemsSection({
       case 'active': return 'bg-red-100 text-red-800';
       case 'chronic': return 'bg-orange-100 text-orange-800';
       case 'resolved': return 'bg-green-100 text-green-800';
-      case 'rule_out': return 'bg-blue-100 text-blue-800';
+      case 'rule_out': return 'bg-navy-blue-100 text-navy-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -476,7 +476,7 @@ export function MedicalProblemsSection({
                           {problem.visitHistory && problem.visitHistory.length > 0 ? (
                             <div className="space-y-2">
                               {problem.visitHistory.map((visit: any, index: number) => (
-                                <div key={index} className="border-l-2 border-blue-200 pl-2">
+                                <div key={index} className="border-l-2 border-navy-blue-200 pl-2">
                                   <div className="text-gray-700 font-medium text-xs">
                                     {new Date(visit.date).toLocaleDateString('en-US', {
                                       year: 'numeric',
@@ -508,7 +508,7 @@ export function MedicalProblemsSection({
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(problem)}
-                      className="text-blue-600 hover:text-blue-700 h-6 w-6 p-0"
+                      className="text-navy-blue-600 hover:text-navy-blue-700 h-6 w-6 p-0"
                     >
                       <Edit className="h-3 w-3" />
                     </Button>

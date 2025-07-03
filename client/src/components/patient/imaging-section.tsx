@@ -103,7 +103,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
       case "preliminary":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "addendum":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -159,7 +159,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
       return (
         <Badge 
           variant="default" 
-          className="text-xs cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors bg-blue-100 text-blue-800 border-blue-200"
+          className="text-xs cursor-pointer hover:bg-navy-blue-600 dark:hover:bg-navy-blue-400 transition-colors bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200"
           onClick={handleEncounterClick}
           title="Click to view encounter details"
         >
@@ -299,7 +299,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
         <Card>
           <CardContent className="pt-3 emr-card-content-tight">
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600"></div>
             </div>
           </CardContent>
         </Card>
@@ -434,7 +434,7 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
                         <div className="space-y-2">
                           {result.visitHistory.map((visit, index) => (
                             <div key={index} className="flex items-start space-x-3 text-sm">
-                              <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                              <div className="flex-shrink-0 w-2 h-2 bg-navy-blue-500 rounded-full mt-2"></div>
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-1">
                                   <span className="text-gray-600">{formatDate(visit.date)}</span>

@@ -146,7 +146,7 @@ export function OrderSigningPanel({ encounterId, patientId, onOrdersSigned }: Or
       case 'urgent':
         return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200';
     }
   };
 
@@ -236,7 +236,7 @@ export function OrderSigningPanel({ encounterId, patientId, onOrdersSigned }: Or
             const isSelected = selectedOrders.includes(order.id);
             
             return (
-              <div key={order.id} className={`p-4 border rounded-lg ${isSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200'}`}>
+              <div key={order.id} className={`p-4 border rounded-lg ${isSelected ? 'border-navy-blue-300 bg-navy-blue-50' : 'border-gray-200'}`}>
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     checked={isSelected}
