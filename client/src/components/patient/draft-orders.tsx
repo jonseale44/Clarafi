@@ -1041,11 +1041,11 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
 
 
 
-      {isValidating && (
-        <div className="text-xs text-gray-500 mb-2">
+      <div className="text-xs text-gray-500 mb-2 h-4">
+        {isValidating && (
           <span className="inline-block animate-pulse">Validating prescription...</span>
-        </div>
-      )}
+        )}
+      </div>
       
       <div>
         <Label htmlFor="clinicalIndication">Clinical Indication *</Label>
