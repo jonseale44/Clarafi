@@ -40,6 +40,29 @@ import { useDenseView } from '@/hooks/use-dense-view';
 import { useLocation } from 'wouter';
 import { useNavigationContext } from '@/hooks/use-navigation-context';
 
+// Helper function to format dates without timezone issues
+const formatDate = (dateString?: string | null) => {
+  if (!dateString) return 'N/A';
+  
+  // Handle YYYY-MM-DD format dates to avoid timezone conversion
+  if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    return localDate.toLocaleDateString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: '2-digit'
+    });
+  }
+  
+  // For other date formats, use regular parsing
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'numeric',
+    day: 'numeric',
+    year: '2-digit'
+  });
+};
+
 interface Medication {
   id: number;
   medicationName: string;
@@ -635,7 +658,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                   )}
                   {medication.startDate && (
                     <div>
-                      <strong>Start Date:</strong> {new Date(medication.startDate).toLocaleDateString()}
+                      <strong>Start Date:</strong> {formatDate(medication.startDate)}
                     </div>
                   )}
                   {medication.sig && (
@@ -1007,7 +1030,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                 {medication.startDate && (
                   <span className="flex items-center emr-element-gap-tight">
                     <Calendar className="h-3 w-3" />
-                    Started {new Date(medication.startDate).toLocaleDateString()}
+                    Started {formatDate(medication.startDate)}
                   </span>
                 )}
               </div>
