@@ -694,59 +694,37 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                             <Clock className="h-3 w-3" />
                             Visit History
                           </h4>
-                          <div className="space-y-2">
-                            {entry.visitHistory.map((visit, index) => (
-                              <div key={index} className="border rounded-lg p-3 bg-gray-50">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      {format(new Date(visit.date + 'T12:00:00'), "MMM d, yyyy")}
-                                    </Badge>
-                                    {getSourceBadge(
-                                      visit.source,
-                                      visit.confidence,
-                                      visit.attachmentId,
-                                      visit.encounterId
-                                    )}
-
-                                  </div>
-                                  {visit.providerName && (
-                                    <span className="text-xs text-gray-500">
-                                      by {visit.providerName}
-                                    </span>
+                          <div className="emr-dense-list">
+                            {entry.visitHistory
+                              .sort((a, b) => {
+                                // Primary sort: Date descending (most recent first)
+                                const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+                                if (dateComparison !== 0) return dateComparison;
+                                
+                                // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+                                const aEncounterId = a.encounterId || 0;
+                                const bEncounterId = b.encounterId || 0;
+                                return bEncounterId - aEncounterId;
+                              })
+                              .map((visit, index) => (
+                              <div key={index} className="flex items-start gap-3 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                <span className="font-medium text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
+                                  {format(new Date(visit.date + 'T12:00:00'), "M/d/yy")}
+                                </span>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  {getSourceBadge(
+                                    visit.source,
+                                    visit.confidence,
+                                    visit.attachmentId,
+                                    visit.encounterId
                                   )}
                                 </div>
-                                <p className="text-sm text-gray-700 mb-2">{visit.notes}</p>
-                                {visit.changesMade && visit.changesMade.length > 0 && (
-                                  <div className="text-xs text-gray-600">
-                                    <span className="font-medium">Changes:</span> {visit.changesMade.join(", ")}
-                                  </div>
-                                )}
+                                <p className="text-xs text-gray-700 dark:text-gray-300 flex-1">{visit.notes}</p>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
-
-                      {/* Source Information */}
-                      <div className="pt-2 border-t">
-                        <div className="text-xs text-gray-600 space-y-1">
-                          <div>
-                            <span className="font-medium">Source:</span> {entry.sourceType} 
-                            <span className="ml-2">
-                              <span className="font-medium">Confidence:</span> {Math.round(parseFloat(entry.sourceConfidence) * 100)}%
-                            </span>
-                          </div>
-                          {entry.sourceNotes && (
-                            <div>
-                              <span className="font-medium">Notes:</span> {entry.sourceNotes}
-                            </div>
-                          )}
-                          <div>
-                            <span className="font-medium">Last updated:</span> {format(new Date(entry.updatedAt), "MMM d, yyyy 'at' h:mm a")}
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
