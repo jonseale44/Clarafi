@@ -526,6 +526,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
+  
+  // Location management routes
+  const { setupLocationRoutes } = await import("./location-routes.js");
+  setupLocationRoutes(app);
 
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);

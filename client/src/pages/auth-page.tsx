@@ -13,6 +13,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { Loader2, Hospital, Shield, Activity, Users } from "lucide-react";
+import { LocationSelector } from "@/components/location-selector";
+import { useQuery } from "@tanstack/react-query";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -32,6 +34,14 @@ type RegisterData = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [locationSelected, setLocationSelected] = useState(false);
+
+  // Check if user has existing session location
+  const { data: sessionLocation } = useQuery({
+    queryKey: ["/api/user/session-location"],
+    enabled: !!user && !showLocationSelector,
+  });
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -58,17 +68,33 @@ export default function AuthPage() {
     },
   });
 
-  // Redirect if already logged in
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
+  // Handle login success and location selection flow
   const onLogin = (data: LoginData) => {
     loginMutation.mutate({
       username: data.username,
       password: data.password,
+    }, {
+      onSuccess: () => {
+        // After successful login, check if user needs to select location
+        setShowLocationSelector(true);
+      }
     });
   };
+
+  const handleLocationSelected = (location: any) => {
+    setLocationSelected(true);
+    setShowLocationSelector(false);
+  };
+
+  // Show location selector after login but before main app
+  if (user && showLocationSelector) {
+    return <LocationSelector onLocationSelected={handleLocationSelected} />;
+  }
+
+  // Redirect to main app if user is logged in and has selected location
+  if (user && (locationSelected || sessionLocation)) {
+    return <Redirect to="/" />;
+  }
 
   const onRegister = (data: RegisterData) => {
     const { confirmPassword, ...registerData } = data;

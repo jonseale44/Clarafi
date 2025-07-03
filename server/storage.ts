@@ -5,6 +5,7 @@ import {
   patientPhysicalFindings, medicalProblems, externalLabs, patientOrderPreferences,
   signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
   userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews,
+  healthSystems, organizations, locations, userLocations, userSessionLocations,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
@@ -30,6 +31,12 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  
+  // Location management
+  getUserLocations(userId: number): Promise<any[]>;
+  setUserSessionLocation(userId: number, locationId: number, rememberSelection?: boolean): Promise<void>;
+  getUserSessionLocation(userId: number): Promise<any>;
+  clearUserSessionLocation(userId: number): Promise<void>;
   
   // User preferences management (note: now handled via getUserNotePreferences in auth.ts)
   
@@ -147,6 +154,105 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(users.username);
+  }
+
+  // Location management
+  async getUserLocations(userId: number): Promise<any[]> {
+    const userLocationsList = await db
+      .select({
+        id: userLocations.id,
+        userId: userLocations.userId,
+        locationId: userLocations.locationId,
+        roleAtLocation: userLocations.roleAtLocation,
+        isPrimary: userLocations.isPrimary,
+        canSchedule: userLocations.canSchedule,
+        canViewAllPatients: userLocations.canViewAllPatients,
+        canCreateOrders: userLocations.canCreateOrders,
+        locationName: locations.name,
+        locationShortName: locations.shortName,
+        locationType: locations.locationType,
+        address: locations.address,
+        city: locations.city,
+        state: locations.state,
+        zipCode: locations.zipCode,
+        phone: locations.phone,
+        services: locations.services,
+        organizationName: organizations.name,
+        healthSystemName: healthSystems.name
+      })
+      .from(userLocations)
+      .leftJoin(locations, eq(userLocations.locationId, locations.id))
+      .leftJoin(organizations, eq(locations.organizationId, organizations.id))
+      .leftJoin(healthSystems, eq(locations.healthSystemId, healthSystems.id))
+      .where(eq(userLocations.userId, userId))
+      .orderBy(userLocations.isPrimary);
+    
+    return userLocationsList;
+  }
+
+  async setUserSessionLocation(userId: number, locationId: number, rememberSelection = false): Promise<void> {
+    // Clear any existing active session location for this user
+    await db
+      .update(userSessionLocations)
+      .set({ isActive: false })
+      .where(eq(userSessionLocations.userId, userId));
+
+    // Create new session location
+    await db
+      .insert(userSessionLocations)
+      .values({
+        userId,
+        locationId,
+        selectedAt: new Date(),
+        isActive: true,
+        rememberSelection
+      })
+      .onConflictDoUpdate({
+        target: [userSessionLocations.userId, userSessionLocations.locationId],
+        set: {
+          selectedAt: new Date(),
+          isActive: true,
+          rememberSelection
+        }
+      });
+  }
+
+  async getUserSessionLocation(userId: number): Promise<any> {
+    const [sessionLocation] = await db
+      .select({
+        userId: userSessionLocations.userId,
+        locationId: userSessionLocations.locationId,
+        selectedAt: userSessionLocations.selectedAt,
+        isActive: userSessionLocations.isActive,
+        rememberSelection: userSessionLocations.rememberSelection,
+        locationName: locations.name,
+        locationShortName: locations.shortName,
+        locationType: locations.locationType,
+        address: locations.address,
+        city: locations.city,
+        state: locations.state,
+        organizationName: organizations.name,
+        healthSystemName: healthSystems.name
+      })
+      .from(userSessionLocations)
+      .leftJoin(locations, eq(userSessionLocations.locationId, locations.id))
+      .leftJoin(organizations, eq(locations.organizationId, organizations.id))
+      .leftJoin(healthSystems, eq(locations.healthSystemId, healthSystems.id))
+      .where(and(
+        eq(userSessionLocations.userId, userId),
+        eq(userSessionLocations.isActive, true)
+      ))
+      .orderBy(desc(userSessionLocations.selectedAt))
+      .limit(1);
+
+    return sessionLocation;
+  }
+
+  async clearUserSessionLocation(userId: number): Promise<void> {
+    await db
+      .update(userSessionLocations)
+      .set({ isActive: false })
+      .where(eq(userSessionLocations.userId, userId));
   }
 
   // User preferences management removed - now handled via getUserNotePreferences in auth.ts
