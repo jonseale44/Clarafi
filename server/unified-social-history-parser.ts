@@ -33,7 +33,14 @@ export interface UnifiedSocialHistoryVisitEntry {
 export interface UnifiedSocialHistoryChange {
   action: "NEW_ENTRY" | "ADD_VISIT" | "UPDATE_STATUS";
   social_history_id: number | null;
-  category: "tobacco" | "alcohol" | "drugs" | "occupation" | "living_situation" | "activity" | "diet";
+  category:
+    | "tobacco2"
+    | "alcohol"
+    | "drugs"
+    | "occupation"
+    | "living_situation"
+    | "activity"
+    | "diet";
   currentStatus: string; // Current status description
   visit_notes: string;
   consolidation_reasoning?: string;
@@ -64,23 +71,37 @@ export class UnifiedSocialHistoryParser {
     attachmentContent: string | null = null,
     attachmentId: number | null = null,
     providerId: number = 1, // Using existing user ID (jonseale) - TODO: make configurable
-    triggerType: string = "manual_processing"
+    triggerType: string = "manual_processing",
   ) {
-    console.log(`🚬 [UnifiedSocialHistory] ============= STARTING UNIFIED SOCIAL HISTORY PROCESSING =============`);
-    console.log(`🚬 [UnifiedSocialHistory] Patient: ${patientId}, Encounter: ${encounterId}, Provider: ${providerId}`);
-    console.log(`🚬 [UnifiedSocialHistory] Trigger: ${triggerType}, Attachment: ${attachmentId}`);
-    console.log(`🚬 [UnifiedSocialHistory] Content sources: SOAP=${!!soapNote}, Attachment=${!!attachmentContent}`);
+    console.log(
+      `🚬 [UnifiedSocialHistory] ============= STARTING UNIFIED SOCIAL HISTORY PROCESSING =============`,
+    );
+    console.log(
+      `🚬 [UnifiedSocialHistory] Patient: ${patientId}, Encounter: ${encounterId}, Provider: ${providerId}`,
+    );
+    console.log(
+      `🚬 [UnifiedSocialHistory] Trigger: ${triggerType}, Attachment: ${attachmentId}`,
+    );
+    console.log(
+      `🚬 [UnifiedSocialHistory] Content sources: SOAP=${!!soapNote}, Attachment=${!!attachmentContent}`,
+    );
 
     if (soapNote) {
-      console.log(`🚬 [UnifiedSocialHistory] SOAP content preview: "${soapNote.substring(0, 200)}..."`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] SOAP content preview: "${soapNote.substring(0, 200)}..."`,
+      );
     }
 
     if (attachmentContent) {
-      console.log(`🚬 [UnifiedSocialHistory] Attachment content preview: "${attachmentContent.substring(0, 200)}..."`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] Attachment content preview: "${attachmentContent.substring(0, 200)}..."`,
+      );
     }
 
     if (!soapNote && !attachmentContent) {
-      console.log(`🚬 [UnifiedSocialHistory] ⚠️ No content to process - skipping`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] ⚠️ No content to process - skipping`,
+      );
       return {
         success: true,
         changes: [],
@@ -92,15 +113,24 @@ export class UnifiedSocialHistoryParser {
 
     try {
       // Get existing social history for consolidation
-      const existingSocialHistory = await this.getExistingSocialHistory(patientId);
-      console.log(`🚬 [UnifiedSocialHistory] Found ${existingSocialHistory.length} existing social history entries for patient ${patientId}`);
+      const existingSocialHistory =
+        await this.getExistingSocialHistory(patientId);
+      console.log(
+        `🚬 [UnifiedSocialHistory] Found ${existingSocialHistory.length} existing social history entries for patient ${patientId}`,
+      );
 
       // Get patient chart context for intelligent extraction
-      const patientChart = await PatientChartService.getPatientChartData(patientId);
-      console.log(`🚬 [UnifiedSocialHistory] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`);
+      const patientChart =
+        await PatientChartService.getPatientChartData(patientId);
+      console.log(
+        `🚬 [UnifiedSocialHistory] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`,
+      );
 
       // Prepare combined content for GPT analysis
-      const combinedContent = this.prepareCombinedContent(soapNote, attachmentContent);
+      const combinedContent = this.prepareCombinedContent(
+        soapNote,
+        attachmentContent,
+      );
       const patientContextForGPT = this.formatPatientChartForGPT(patientChart);
 
       // Process with GPT-4.1 for social history extraction
@@ -108,10 +138,12 @@ export class UnifiedSocialHistoryParser {
         combinedContent,
         existingSocialHistory,
         patientContextForGPT,
-        triggerType
+        triggerType,
       );
 
-      console.log(`🚬 [UnifiedSocialHistory] GPT processing complete. Changes: ${gptResponse.changes?.length || 0}`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] GPT processing complete. Changes: ${gptResponse.changes?.length || 0}`,
+      );
 
       // Apply changes to database
       const result = await this.applyChangesToDatabase(
@@ -120,17 +152,25 @@ export class UnifiedSocialHistoryParser {
         encounterId,
         attachmentId,
         providerId,
-        triggerType
+        triggerType,
       );
 
-      console.log(`🚬 [UnifiedSocialHistory] ============= UNIFIED SOCIAL HISTORY PROCESSING COMPLETE =============`);
-      console.log(`🚬 [UnifiedSocialHistory] Total changes applied: ${result.changes.length}`);
-      console.log(`🚬 [UnifiedSocialHistory] Social history entries affected: ${result.socialHistoryAffected}`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] ============= UNIFIED SOCIAL HISTORY PROCESSING COMPLETE =============`,
+      );
+      console.log(
+        `🚬 [UnifiedSocialHistory] Total changes applied: ${result.changes.length}`,
+      );
+      console.log(
+        `🚬 [UnifiedSocialHistory] Social history entries affected: ${result.socialHistoryAffected}`,
+      );
 
       return result;
-
     } catch (error) {
-      console.error(`🚬 [UnifiedSocialHistory] ❌ Error in unified processing:`, error);
+      console.error(
+        `🚬 [UnifiedSocialHistory] ❌ Error in unified processing:`,
+        error,
+      );
       throw error;
     }
   }
@@ -145,10 +185,15 @@ export class UnifiedSocialHistoryParser {
         .from(socialHistory)
         .where(eq(socialHistory.patientId, patientId));
 
-      console.log(`🚬 [UnifiedSocialHistory] Retrieved ${existing.length} existing social history entries`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] Retrieved ${existing.length} existing social history entries`,
+      );
       return existing;
     } catch (error) {
-      console.error(`🚬 [UnifiedSocialHistory] Error fetching existing social history:`, error);
+      console.error(
+        `🚬 [UnifiedSocialHistory] Error fetching existing social history:`,
+        error,
+      );
       return [];
     }
   }
@@ -156,18 +201,21 @@ export class UnifiedSocialHistoryParser {
   /**
    * Prepare combined content for GPT processing
    */
-  private prepareCombinedContent(soapNote: string | null, attachmentContent: string | null): string {
+  private prepareCombinedContent(
+    soapNote: string | null,
+    attachmentContent: string | null,
+  ): string {
     const parts = [];
-    
+
     if (soapNote?.trim()) {
       parts.push(`ENCOUNTER NOTES:\n${soapNote.trim()}`);
     }
-    
+
     if (attachmentContent?.trim()) {
       parts.push(`ATTACHMENT CONTENT:\n${attachmentContent.trim()}`);
     }
-    
-    return parts.join('\n\n');
+
+    return parts.join("\n\n");
   }
 
   /**
@@ -180,7 +228,10 @@ export class UnifiedSocialHistoryParser {
     if (patientChart.medicalProblems?.length > 0) {
       sections.push(`CURRENT MEDICAL PROBLEMS:
 ${patientChart.medicalProblems
-  .map((problem: any) => `- ${problem.problemName} (${problem.status || 'active'})`)
+  .map(
+    (problem: any) =>
+      `- ${problem.problemName} (${problem.status || "active"})`,
+  )
   .join("\n")}`);
     }
 
@@ -188,7 +239,10 @@ ${patientChart.medicalProblems
     if (patientChart.currentMedications?.length > 0) {
       sections.push(`CURRENT MEDICATIONS:
 ${patientChart.currentMedications
-  .map((med: any) => `- ${med.medicationName} ${med.dosage || ''} ${med.frequency || ''}`)
+  .map(
+    (med: any) =>
+      `- ${med.medicationName} ${med.dosage || ""} ${med.frequency || ""}`,
+  )
   .join("\n")}`);
     }
 
@@ -196,7 +250,10 @@ ${patientChart.currentMedications
     if (patientChart.allergies?.length > 0) {
       sections.push(`ALLERGIES:
 ${patientChart.allergies
-  .map((allergy: any) => `- ${allergy.allergen}: ${allergy.reaction} (${allergy.severity})`)
+  .map(
+    (allergy: any) =>
+      `- ${allergy.allergen}: ${allergy.reaction} (${allergy.severity})`,
+  )
   .join("\n")}`);
     }
 
@@ -212,11 +269,17 @@ ${patientChart.allergies
     content: string,
     existingSocialHistory: any[],
     patientContext: string,
-    triggerType: string
+    triggerType: string,
   ) {
-    console.log(`🚬 [UnifiedSocialHistory] 🤖 Starting GPT-4.1 social history extraction`);
-    console.log(`🚬 [UnifiedSocialHistory] Content length: ${content.length} characters`);
-    console.log(`🚬 [UnifiedSocialHistory] Existing entries: ${existingSocialHistory.length}`);
+    console.log(
+      `🚬 [UnifiedSocialHistory] 🤖 Starting GPT-4.1 social history extraction`,
+    );
+    console.log(
+      `🚬 [UnifiedSocialHistory] Content length: ${content.length} characters`,
+    );
+    console.log(
+      `🚬 [UnifiedSocialHistory] Existing entries: ${existingSocialHistory.length}`,
+    );
 
     const systemPrompt = `You are an expert clinical social worker and EMR data analyst with 15+ years of experience extracting and consolidating social history from medical documents.
 
@@ -239,19 +302,29 @@ CRITICAL CONSOLIDATION RULES:
 - Use "NEW_ENTRY" only when category doesn't exist yet
 
 EXISTING SOCIAL HISTORY DATA:
-${existingSocialHistory.map(entry => {
-  let lastVisitDate = 'None';
-  try {
-    if (entry.visitHistory) {
-      const visitHistory = typeof entry.visitHistory === 'string' ? JSON.parse(entry.visitHistory) : entry.visitHistory;
-      lastVisitDate = visitHistory[0]?.date || 'None';
-    }
-  } catch (e) {
-    console.warn(`🚬 [UnifiedSocialHistory] Error parsing visit history for entry ${entry.id}:`, e);
-    lastVisitDate = 'Parse Error';
-  }
-  return `ID: ${entry.id} | Category: ${entry.category} | Status: ${entry.currentStatus} | Last Visit: ${lastVisitDate}`;
-}).join('\n') || 'No existing social history entries'}
+${
+  existingSocialHistory
+    .map((entry) => {
+      let lastVisitDate = "None";
+      try {
+        if (entry.visitHistory) {
+          const visitHistory =
+            typeof entry.visitHistory === "string"
+              ? JSON.parse(entry.visitHistory)
+              : entry.visitHistory;
+          lastVisitDate = visitHistory[0]?.date || "None";
+        }
+      } catch (e) {
+        console.warn(
+          `🚬 [UnifiedSocialHistory] Error parsing visit history for entry ${entry.id}:`,
+          e,
+        );
+        lastVisitDate = "Parse Error";
+      }
+      return `ID: ${entry.id} | Category: ${entry.category} | Status: ${entry.currentStatus} | Last Visit: ${lastVisitDate}`;
+    })
+    .join("\n") || "No existing social history entries"
+}
 
 PATIENT CONTEXT:
 ${patientContext}
@@ -294,33 +367,45 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
 
     try {
       // Log the full prompt being sent to GPT for debugging
-      console.log(`🚬 [UnifiedSocialHistory] ============= GPT PROMPT DEBUG =============`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] ============= GPT PROMPT DEBUG =============`,
+      );
       console.log(`🚬 [UnifiedSocialHistory] SYSTEM PROMPT (first 500 chars):`);
       console.log(systemPrompt.substring(0, 500) + "...");
       console.log(`🚬 [UnifiedSocialHistory] USER CONTENT (first 1000 chars):`);
       console.log(content.substring(0, 1000) + "...");
       console.log(`🚬 [UnifiedSocialHistory] EXISTING SOCIAL HISTORY ENTRIES:`);
       existingSocialHistory.forEach((entry, index) => {
-        console.log(`🚬 [UnifiedSocialHistory]   ${index + 1}. ${entry.category}: "${entry.currentStatus}"`);
+        console.log(
+          `🚬 [UnifiedSocialHistory]   ${index + 1}. ${entry.category}: "${entry.currentStatus}"`,
+        );
       });
-      console.log(`🚬 [UnifiedSocialHistory] ============= END PROMPT DEBUG =============`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] ============= END PROMPT DEBUG =============`,
+      );
 
       const response = await this.openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: content }
+          { role: "user", content: content },
         ],
         temperature: 0.3,
-        max_tokens: 4000
+        max_tokens: 4000,
       });
 
       const gptContent = response.choices[0]?.message?.content?.trim();
-      console.log(`🚬 [UnifiedSocialHistory] ============= GPT RESPONSE DEBUG =============`);
-      console.log(`🚬 [UnifiedSocialHistory] GPT response length: ${gptContent?.length || 0} characters`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] ============= GPT RESPONSE DEBUG =============`,
+      );
+      console.log(
+        `🚬 [UnifiedSocialHistory] GPT response length: ${gptContent?.length || 0} characters`,
+      );
       console.log(`🚬 [UnifiedSocialHistory] FULL GPT RESPONSE:`);
       console.log(gptContent);
-      console.log(`🚬 [UnifiedSocialHistory] ============= END RESPONSE DEBUG =============`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] ============= END RESPONSE DEBUG =============`,
+      );
 
       if (!gptContent) {
         console.log(`🚬 [UnifiedSocialHistory] No GPT response received`);
@@ -335,17 +420,25 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
       }
 
       const parsedResponse = JSON.parse(jsonMatch[0]);
-      console.log(`🚬 [UnifiedSocialHistory] Successfully parsed ${parsedResponse.changes?.length || 0} social history changes`);
+      console.log(
+        `🚬 [UnifiedSocialHistory] Successfully parsed ${parsedResponse.changes?.length || 0} social history changes`,
+      );
       console.log(`🚬 [UnifiedSocialHistory] PARSED CHANGES:`);
       parsedResponse.changes?.forEach((change: any, index: number) => {
-        console.log(`🚬 [UnifiedSocialHistory]   ${index + 1}. ${change.action} ${change.category}: "${change.currentStatus}"`);
-        console.log(`🚬 [UnifiedSocialHistory]      Confidence: ${change.confidence}, Reason: ${change.consolidation_reasoning || 'N/A'}`);
+        console.log(
+          `🚬 [UnifiedSocialHistory]   ${index + 1}. ${change.action} ${change.category}: "${change.currentStatus}"`,
+        );
+        console.log(
+          `🚬 [UnifiedSocialHistory]      Confidence: ${change.confidence}, Reason: ${change.consolidation_reasoning || "N/A"}`,
+        );
       });
 
       return parsedResponse;
-
     } catch (error) {
-      console.error(`🚬 [UnifiedSocialHistory] Error in GPT processing:`, error);
+      console.error(
+        `🚬 [UnifiedSocialHistory] Error in GPT processing:`,
+        error,
+      );
       return { changes: [] };
     }
   }
@@ -359,14 +452,20 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
     encounterId: number | null,
     attachmentId: number | null,
     providerId: number,
-    triggerType: string
+    triggerType: string,
   ) {
-    console.log(`🚬 [UnifiedSocialHistory] 💾 Applying ${changes.length} changes to database`);
+    console.log(
+      `🚬 [UnifiedSocialHistory] 💾 Applying ${changes.length} changes to database`,
+    );
     console.log(`🚬 [UnifiedSocialHistory] 🔧 Database operation parameters:`);
     console.log(`🚬 [UnifiedSocialHistory] 🔧   - patientId: ${patientId}`);
     console.log(`🚬 [UnifiedSocialHistory] 🔧   - encounterId: ${encounterId}`);
-    console.log(`🚬 [UnifiedSocialHistory] 🔧   - attachmentId: ${attachmentId}`);
-    console.log(`🚬 [UnifiedSocialHistory] 🔧   - providerId: ${providerId} (THIS SHOULD BE 1, NOT 2)`);
+    console.log(
+      `🚬 [UnifiedSocialHistory] 🔧   - attachmentId: ${attachmentId}`,
+    );
+    console.log(
+      `🚬 [UnifiedSocialHistory] 🔧   - providerId: ${providerId} (THIS SHOULD BE 1, NOT 2)`,
+    );
     console.log(`🚬 [UnifiedSocialHistory] 🔧   - triggerType: ${triggerType}`);
 
     const appliedChanges = [];
@@ -374,43 +473,57 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
 
     for (const change of changes) {
       try {
-        console.log(`🚬 [UnifiedSocialHistory] Processing change: ${change.action} for category ${change.category}`);
+        console.log(
+          `🚬 [UnifiedSocialHistory] Processing change: ${change.action} for category ${change.category}`,
+        );
 
         const visitEntry = {
-          date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split("T")[0],
           notes: change.visit_notes,
-          source: change.source_type === "encounter" ? "encounter" as const : "attachment" as const,
+          source:
+            change.source_type === "encounter"
+              ? ("encounter" as const)
+              : ("attachment" as const),
           encounterId: encounterId || undefined,
           attachmentId: attachmentId || undefined,
           providerId,
           providerName: "Dr. Jonathan Seale",
           changesMade: ["status_updated"],
           confidence: change.confidence,
-          isSigned: false
+          isSigned: false,
         };
 
         if (change.action === "NEW_ENTRY") {
           // Create new social history entry
-          console.log(`🚬 [UnifiedSocialHistory] Creating new entry for category: ${change.category}`);
-          
-          const newEntry = await db.insert(socialHistory).values({
-            patientId,
-            category: change.category,
-            currentStatus: change.currentStatus,
-            lastUpdatedEncounter: encounterId,
-            sourceType: attachmentId ? "attachment" : "encounter",
-            sourceConfidence: Math.min(change.confidence, 9.99).toString(),
-            extractedFromAttachmentId: attachmentId && triggerType !== 'test_7_categories' ? attachmentId : null,
-            enteredBy: providerId,
-            consolidationReasoning: change.consolidation_reasoning,
-            extractionNotes: `Extracted via ${triggerType}`,
-            visitHistory: [visitEntry],
-          }).returning();
+          console.log(
+            `🚬 [UnifiedSocialHistory] Creating new entry for category: ${change.category}`,
+          );
 
-          console.log(`🚬 [UnifiedSocialHistory] ✅ Created: ${change.category}`);
+          const newEntry = await db
+            .insert(socialHistory)
+            .values({
+              patientId,
+              category: change.category,
+              currentStatus: change.currentStatus,
+              lastUpdatedEncounter: encounterId,
+              sourceType: attachmentId ? "attachment" : "encounter",
+              sourceConfidence: Math.min(change.confidence, 9.99).toString(),
+              extractedFromAttachmentId:
+                attachmentId && triggerType !== "test_7_categories"
+                  ? attachmentId
+                  : null,
+              enteredBy: providerId,
+              consolidationReasoning: change.consolidation_reasoning,
+              extractionNotes: `Extracted via ${triggerType}`,
+              visitHistory: [visitEntry],
+            })
+            .returning();
+
+          console.log(
+            `🚬 [UnifiedSocialHistory] ✅ Created: ${change.category}`,
+          );
           appliedChanges.push(change);
           socialHistoryAffected++;
-
         } else if (change.action === "UPDATE_STATUS") {
           // Find existing entry by category (not ID)
           const existingEntry = await db
@@ -419,17 +532,18 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
             .where(
               and(
                 eq(socialHistory.patientId, patientId),
-                eq(socialHistory.category, change.category)
-              )
+                eq(socialHistory.category, change.category),
+              ),
             );
 
           if (existingEntry.length > 0) {
             const current = existingEntry[0];
             const currentVisitHistory = current.visitHistory || [];
-            
+
             // Only add visit history if status actually changed
-            const shouldAddVisit = current.currentStatus !== change.currentStatus;
-            
+            const shouldAddVisit =
+              current.currentStatus !== change.currentStatus;
+
             if (shouldAddVisit) {
               const updatedVisitHistory = [...currentVisitHistory, visitEntry];
 
@@ -437,23 +551,30 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
                 .update(socialHistory)
                 .set({
                   currentStatus: change.currentStatus,
-                  lastUpdatedEncounter: encounterId || current.lastUpdatedEncounter,
-                  sourceType: attachmentId ? "attachment" : "encounter", 
-                  sourceConfidence: Math.min(change.confidence, 9.99).toString(),
+                  lastUpdatedEncounter:
+                    encounterId || current.lastUpdatedEncounter,
+                  sourceType: attachmentId ? "attachment" : "encounter",
+                  sourceConfidence: Math.min(
+                    change.confidence,
+                    9.99,
+                  ).toString(),
                   consolidationReasoning: change.consolidation_reasoning,
                   visitHistory: updatedVisitHistory,
                   updatedAt: new Date(),
                 })
                 .where(eq(socialHistory.id, current.id));
 
-              console.log(`🚬 [UnifiedSocialHistory] ✅ Updated: ${change.category} (status changed)`);
+              console.log(
+                `🚬 [UnifiedSocialHistory] ✅ Updated: ${change.category} (status changed)`,
+              );
               appliedChanges.push(change);
               socialHistoryAffected++;
             } else {
-              console.log(`🚬 [UnifiedSocialHistory] ⏭️ Skipped: ${change.category} (no change)`);
+              console.log(
+                `🚬 [UnifiedSocialHistory] ⏭️ Skipped: ${change.category} (no change)`,
+              );
             }
           }
-
         } else if (change.action === "ADD_VISIT") {
           // Add visit history without changing status
           const existingEntry = await db
@@ -462,8 +583,8 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
             .where(
               and(
                 eq(socialHistory.patientId, patientId),
-                eq(socialHistory.category, change.category)
-              )
+                eq(socialHistory.category, change.category),
+              ),
             );
 
           if (existingEntry.length > 0) {
@@ -479,18 +600,24 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
               })
               .where(eq(socialHistory.id, current.id));
 
-            console.log(`🚬 [UnifiedSocialHistory] ✅ Added visit: ${change.category}`);
+            console.log(
+              `🚬 [UnifiedSocialHistory] ✅ Added visit: ${change.category}`,
+            );
             appliedChanges.push(change);
             socialHistoryAffected++;
           }
         }
-
       } catch (error) {
-        console.error(`🚬 [UnifiedSocialHistory] Error applying change for ${change.category}:`, error);
+        console.error(
+          `🚬 [UnifiedSocialHistory] Error applying change for ${change.category}:`,
+          error,
+        );
       }
     }
 
-    console.log(`🚬 [UnifiedSocialHistory] 💾 Database operations complete. ${socialHistoryAffected} entries affected`);
+    console.log(
+      `🚬 [UnifiedSocialHistory] 💾 Database operations complete. ${socialHistoryAffected} entries affected`,
+    );
 
     return {
       success: true,
