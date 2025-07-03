@@ -93,7 +93,9 @@ export class UnifiedSurgicalHistoryParser {
     console.log(`🔄 [UnifiedSurgicalHistory] Trigger: ${triggerType}`);
 
     if (!soapNote && !attachmentContent) {
-      console.warn(`🔄 [UnifiedSurgicalHistory] ⚠️ No content provided for processing`);
+      console.warn(
+        `🔄 [UnifiedSurgicalHistory] ⚠️ No content provided for processing`,
+      );
       return {
         changes: [],
         processing_time_ms: Date.now() - startTime,
@@ -108,27 +110,38 @@ export class UnifiedSurgicalHistoryParser {
 
     try {
       // Get existing surgical history for consolidation
-      const existingSurgeries = await this.getExistingSurgicalHistory(patientId);
-      console.log(`🔄 [UnifiedSurgicalHistory] Found ${existingSurgeries.length} existing surgical procedures for patient ${patientId}`);
+      const existingSurgeries =
+        await this.getExistingSurgicalHistory(patientId);
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] Found ${existingSurgeries.length} existing surgical procedures for patient ${patientId}`,
+      );
 
       // Get patient chart context for intelligent extraction
-      const patientChart = await PatientChartService.getPatientChartData(patientId);
-      console.log(`🔄 [UnifiedSurgicalHistory] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`);
+      const patientChart =
+        await PatientChartService.getPatientChartData(patientId);
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`,
+      );
 
       // Prepare combined content for GPT analysis
-      const combinedContent = this.prepareCombinedContent(soapNote, attachmentContent);
+      const combinedContent = this.prepareCombinedContent(
+        soapNote,
+        attachmentContent,
+      );
       const patientContextForGPT = this.formatPatientChartForGPT(patientChart);
 
-      // Process with GPT-4.1 for surgical history extraction
+      // Process with gpt-4.1-mini for surgical history extraction
       const gptResponse = await this.callGPTForSurgicalAnalysis(
         combinedContent,
         existingSurgeries,
         patientContextForGPT,
         triggerType,
-        attachmentId
+        attachmentId,
       );
 
-      console.log(`🔄 [UnifiedSurgicalHistory] GPT processing complete, ${gptResponse.length} surgical changes identified`);
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] GPT processing complete, ${gptResponse.length} surgical changes identified`,
+      );
 
       // Apply each change from GPT response
       const changes: UnifiedSurgicalChange[] = [];
@@ -139,7 +152,12 @@ export class UnifiedSurgicalHistoryParser {
 
       for (const change of gptResponse) {
         try {
-          await this.applyUnifiedChange(change, patientId, encounterId, attachmentId);
+          await this.applyUnifiedChange(
+            change,
+            patientId,
+            encounterId,
+            attachmentId,
+          );
           changes.push(change);
           surgeriesAffected++;
 
@@ -150,16 +168,24 @@ export class UnifiedSurgicalHistoryParser {
             attachmentSurgeries++;
           }
 
-          if (change.action === "EVOLVE_SURGERY" || change.consolidation_reasoning) {
+          if (
+            change.action === "EVOLVE_SURGERY" ||
+            change.consolidation_reasoning
+          ) {
             conflictsResolved++;
           }
         } catch (error) {
-          console.error(`❌ [UnifiedSurgicalHistory] Error applying change:`, error);
+          console.error(
+            `❌ [UnifiedSurgicalHistory] Error applying change:`,
+            error,
+          );
         }
       }
 
       console.log(`🔄 [UnifiedSurgicalHistory] === PROCESSING COMPLETE ===`);
-      console.log(`🔄 [UnifiedSurgicalHistory] Surgeries affected: ${surgeriesAffected}`);
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] Surgeries affected: ${surgeriesAffected}`,
+      );
 
       return {
         changes,
@@ -171,9 +197,11 @@ export class UnifiedSurgicalHistoryParser {
           conflicts_resolved: conflictsResolved,
         },
       };
-
     } catch (error) {
-      console.error(`❌ [UnifiedSurgicalHistory] Error in unified processing:`, error);
+      console.error(
+        `❌ [UnifiedSurgicalHistory] Error in unified processing:`,
+        error,
+      );
       return {
         changes: [],
         processing_time_ms: Date.now() - startTime,
@@ -198,7 +226,7 @@ export class UnifiedSurgicalHistoryParser {
         .where(eq(surgicalHistory.patientId, patientId))
         .orderBy(desc(surgicalHistory.procedureDate));
 
-      return surgeries.map(surgery => ({
+      return surgeries.map((surgery) => ({
         id: surgery.id,
         procedure_name: surgery.procedureName,
         procedure_date: surgery.procedureDate,
@@ -208,10 +236,13 @@ export class UnifiedSurgicalHistoryParser {
         complications: surgery.complications,
         outcome: surgery.outcome,
         source_type: surgery.sourceType,
-        source_confidence: surgery.sourceConfidence
+        source_confidence: surgery.sourceConfidence,
       }));
     } catch (error) {
-      console.error(`🏥 [UnifiedSurgicalHistory] Error fetching existing surgical history:`, error);
+      console.error(
+        `🏥 [UnifiedSurgicalHistory] Error fetching existing surgical history:`,
+        error,
+      );
       return [];
     }
   }
@@ -219,7 +250,10 @@ export class UnifiedSurgicalHistoryParser {
   /**
    * Prepare combined content from SOAP note and attachment
    */
-  private prepareCombinedContent(soapNote: string | null, attachmentContent: string | null): string {
+  private prepareCombinedContent(
+    soapNote: string | null,
+    attachmentContent: string | null,
+  ): string {
     const sections = [];
 
     if (soapNote && soapNote.trim().length > 0) {
@@ -227,10 +261,12 @@ export class UnifiedSurgicalHistoryParser {
     }
 
     if (attachmentContent && attachmentContent.trim().length > 0) {
-      sections.push(`=== ATTACHED DOCUMENT CONTENT ===\n${attachmentContent.trim()}`);
+      sections.push(
+        `=== ATTACHED DOCUMENT CONTENT ===\n${attachmentContent.trim()}`,
+      );
     }
 
-    return sections.join('\n\n');
+    return sections.join("\n\n");
   }
 
   /**
@@ -257,31 +293,36 @@ ${patientChart.currentMedications
   .join("\n")}`);
     }
 
-    return sections.length > 0 
-      ? sections.join("\n") 
+    return sections.length > 0
+      ? sections.join("\n")
       : "- No additional clinical context available";
   }
 
   /**
-   * Call GPT-4.1 for surgical analysis using medical problems parser architecture
+   * Call GPT-4.1-mini for surgical analysis using medical problems parser architecture
    */
   private async callGPTForSurgicalAnalysis(
     combinedContent: string,
     existingSurgeries: any[],
     patientContext: string,
     triggerType: string,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<UnifiedSurgicalChange[]> {
-    
     const prompt = `You are an expert surgical assistant with 20+ years experience in surgical documentation and medical record management. Your task is to analyze surgical history mentions and provide unified changes that handle consolidation, evolution, and visit history transfer.
 
 PATIENT CLINICAL CONTEXT:
 ${patientContext}
 
 EXISTING SURGICAL HISTORY:
-${existingSurgeries.length > 0 
-  ? existingSurgeries.map(s => `ID: ${s.id} | ${s.procedure_name} (${s.procedure_date}) at ${s.facility_name || 'Unknown facility'}, Surgeon: ${s.surgeon_name || 'Unknown'}`).join('\n')
-  : "- No previous surgical history recorded"
+${
+  existingSurgeries.length > 0
+    ? existingSurgeries
+        .map(
+          (s) =>
+            `ID: ${s.id} | ${s.procedure_name} (${s.procedure_date}) at ${s.facility_name || "Unknown facility"}, Surgeon: ${s.surgeon_name || "Unknown"}`,
+        )
+        .join("\n")
+    : "- No previous surgical history recorded"
 }
 
 DOCUMENT TO ANALYZE:
@@ -383,16 +424,23 @@ Response: [
 Analyze the document and return appropriate surgical history changes:`;
 
     try {
-      console.log(`🔄 [UnifiedSurgicalHistory] 🤖 Sending request to GPT-4.1`);
-      console.log(`🔄 [UnifiedSurgicalHistory] 🤖 Content length: ${combinedContent.length} characters`);
-      console.log(`🔄 [UnifiedSurgicalHistory] 🤖 Existing surgeries: ${existingSurgeries.length}`);
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] 🤖 Sending request to gpt-4.1-mini`,
+      );
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] 🤖 Content length: ${combinedContent.length} characters`,
+      );
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] 🤖 Existing surgeries: ${existingSurgeries.length}`,
+      );
 
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1-mini",
         messages: [
           {
             role: "system",
-            content: "You are a surgical documentation expert with 20+ years of experience. Extract surgical history accurately and return only valid JSON array of unified changes.",
+            content:
+              "You are a surgical documentation expert with 20+ years of experience. Extract surgical history accurately and return only valid JSON array of unified changes.",
           },
           {
             role: "user",
@@ -404,34 +452,49 @@ Analyze the document and return appropriate surgical history changes:`;
       });
 
       const responseContent = response.choices[0]?.message?.content?.trim();
-      
+
       if (!responseContent) {
         console.warn(`🔄 [UnifiedSurgicalHistory] ⚠️ Empty response from GPT`);
         return [];
       }
 
-      console.log(`🔄 [UnifiedSurgicalHistory] 🤖 GPT Response: ${responseContent.substring(0, 500)}...`);
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] 🤖 GPT Response: ${responseContent.substring(0, 500)}...`,
+      );
 
       // Parse JSON response
       let parsedResponse;
       try {
         // Clean response if it has markdown formatting
-        const cleanResponse = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const cleanResponse = responseContent
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
         parsedResponse = JSON.parse(cleanResponse);
       } catch (parseError) {
-        console.error(`🔄 [UnifiedSurgicalHistory] ❌ JSON parsing error:`, parseError);
-        console.error(`🔄 [UnifiedSurgicalHistory] ❌ Raw response:`, responseContent);
+        console.error(
+          `🔄 [UnifiedSurgicalHistory] ❌ JSON parsing error:`,
+          parseError,
+        );
+        console.error(
+          `🔄 [UnifiedSurgicalHistory] ❌ Raw response:`,
+          responseContent,
+        );
         return [];
       }
 
       if (!Array.isArray(parsedResponse)) {
-        console.error(`🔄 [UnifiedSurgicalHistory] ❌ Response is not an array:`, parsedResponse);
+        console.error(
+          `🔄 [UnifiedSurgicalHistory] ❌ Response is not an array:`,
+          parsedResponse,
+        );
         return [];
       }
 
-      console.log(`🔄 [UnifiedSurgicalHistory] ✅ Successfully parsed ${parsedResponse.length} surgical changes from GPT`);
+      console.log(
+        `🔄 [UnifiedSurgicalHistory] ✅ Successfully parsed ${parsedResponse.length} surgical changes from GPT`,
+      );
       return parsedResponse;
-
     } catch (error) {
       console.error(`🔄 [UnifiedSurgicalHistory] ❌ Error calling GPT:`, error);
       return [];
@@ -445,19 +508,31 @@ Analyze the document and return appropriate surgical history changes:`;
     change: UnifiedSurgicalChange,
     patientId: number,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
-    console.log(`🔄 [UnifiedSurgicalHistory] Applying change: ${change.action} for ${change.procedure_name}`);
+    console.log(
+      `🔄 [UnifiedSurgicalHistory] Applying change: ${change.action} for ${change.procedure_name}`,
+    );
 
     switch (change.action) {
       case "NEW_SURGERY":
-        await this.createNewSurgery(change, patientId, encounterId, attachmentId);
+        await this.createNewSurgery(
+          change,
+          patientId,
+          encounterId,
+          attachmentId,
+        );
         break;
       case "ADD_VISIT":
         await this.addVisitToExistingSurgery(change, encounterId, attachmentId);
         break;
       case "EVOLVE_SURGERY":
-        await this.evolveSurgeryWithHistoryTransfer(change, patientId, encounterId, attachmentId);
+        await this.evolveSurgeryWithHistoryTransfer(
+          change,
+          patientId,
+          encounterId,
+          attachmentId,
+        );
         break;
       case "CORRECT_DATE":
         await this.correctSurgeryDate(change, encounterId, attachmentId);
@@ -466,7 +541,9 @@ Analyze the document and return appropriate surgical history changes:`;
         await this.updateSurgeryDetails(change, encounterId, attachmentId);
         break;
       default:
-        console.warn(`🔄 [UnifiedSurgicalHistory] Unknown action: ${change.action}`);
+        console.warn(
+          `🔄 [UnifiedSurgicalHistory] Unknown action: ${change.action}`,
+        );
     }
   }
 
@@ -477,7 +554,7 @@ Analyze the document and return appropriate surgical history changes:`;
     change: UnifiedSurgicalChange,
     patientId: number,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
     // Determine appropriate date for visit history
     let visitDate: string;
@@ -501,19 +578,26 @@ Analyze the document and return appropriate surgical history changes:`;
     // Create initial visit history entry
     const initialVisitEntry = {
       date: visitDate,
-      notes: change.visit_notes || `Surgical procedure: ${change.procedure_name}`,
-      source: change.source_type === "attachment" ? "attachment" as const : "encounter" as const,
+      notes:
+        change.visit_notes || `Surgical procedure: ${change.procedure_name}`,
+      source:
+        change.source_type === "attachment"
+          ? ("attachment" as const)
+          : ("encounter" as const),
       encounterId: encounterId || undefined,
       attachmentId: attachmentId || undefined,
       confidence: change.confidence,
       isSigned: false,
-      sourceNotes: change.consolidation_reasoning || "New surgical procedure entry",
+      sourceNotes:
+        change.consolidation_reasoning || "New surgical procedure entry",
     };
 
     // Convert percentage confidence (0-100) to decimal (0.00-1.00) for database storage
     const confidenceDecimal = change.confidence / 100;
-    console.log(`🏥 [SurgicalHistory] Converting confidence ${change.confidence}% to decimal ${confidenceDecimal.toFixed(2)}`);
-    
+    console.log(
+      `🏥 [SurgicalHistory] Converting confidence ${change.confidence}% to decimal ${confidenceDecimal.toFixed(2)}`,
+    );
+
     await db.insert(surgicalHistory).values({
       patientId,
       procedureName: change.procedure_name!,
@@ -525,7 +609,9 @@ Analyze the document and return appropriate surgical history changes:`;
       updatedAt: new Date(),
     });
 
-    console.log(`✅ [UnifiedSurgicalHistory] Created surgery: ${change.procedure_name} (${change.source_type})`);
+    console.log(
+      `✅ [UnifiedSurgicalHistory] Created surgery: ${change.procedure_name} (${change.source_type})`,
+    );
   }
 
   /**
@@ -534,7 +620,7 @@ Analyze the document and return appropriate surgical history changes:`;
   private async addVisitToExistingSurgery(
     change: UnifiedSurgicalChange,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
     if (!change.surgery_id) return;
 
@@ -570,13 +656,18 @@ Analyze the document and return appropriate surgical history changes:`;
       visitHistory,
       encounterId,
       attachmentId,
-      change.source_type
+      change.source_type,
     );
 
     const newVisitEntry = {
       date: visitDate,
-      notes: change.visit_notes || `Surgery discussed: ${existingSurgery.procedureName}`,
-      source: change.source_type === "attachment" ? "attachment" as const : "encounter" as const,
+      notes:
+        change.visit_notes ||
+        `Surgery discussed: ${existingSurgery.procedureName}`,
+      source:
+        change.source_type === "attachment"
+          ? ("attachment" as const)
+          : ("encounter" as const),
       encounterId: encounterId || undefined,
       attachmentId: attachmentId || undefined,
       confidence: change.confidence,
@@ -594,7 +685,9 @@ Analyze the document and return appropriate surgical history changes:`;
       })
       .where(eq(surgicalHistory.id, change.surgery_id));
 
-    console.log(`✅ [UnifiedSurgicalHistory] Added visit to surgery: ${existingSurgery.procedureName}`);
+    console.log(
+      `✅ [UnifiedSurgicalHistory] Added visit to surgery: ${existingSurgery.procedureName}`,
+    );
   }
 
   /**
@@ -604,14 +697,22 @@ Analyze the document and return appropriate surgical history changes:`;
     change: UnifiedSurgicalChange,
     patientId: number,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
-    console.log(`🔄 [UnifiedSurgicalHistory] Evolving surgery with history transfer`);
-    console.log(`🔄 [UnifiedSurgicalHistory] From surgery ID: ${change.transfer_visit_history_from}`);
-    console.log(`🔄 [UnifiedSurgicalHistory] New procedure: ${change.procedure_name}`);
+    console.log(
+      `🔄 [UnifiedSurgicalHistory] Evolving surgery with history transfer`,
+    );
+    console.log(
+      `🔄 [UnifiedSurgicalHistory] From surgery ID: ${change.transfer_visit_history_from}`,
+    );
+    console.log(
+      `🔄 [UnifiedSurgicalHistory] New procedure: ${change.procedure_name}`,
+    );
 
     if (!change.transfer_visit_history_from) {
-      console.warn(`⚠️ [UnifiedSurgicalHistory] No source surgery ID provided for evolution`);
+      console.warn(
+        `⚠️ [UnifiedSurgicalHistory] No source surgery ID provided for evolution`,
+      );
       return;
     }
 
@@ -622,7 +723,9 @@ Analyze the document and return appropriate surgical history changes:`;
       .where(eq(surgicalHistory.id, change.transfer_visit_history_from));
 
     if (!oldSurgery) {
-      console.error(`❌ [UnifiedSurgicalHistory] Source surgery ${change.transfer_visit_history_from} not found`);
+      console.error(
+        `❌ [UnifiedSurgicalHistory] Source surgery ${change.transfer_visit_history_from} not found`,
+      );
       return;
     }
 
@@ -650,7 +753,9 @@ Analyze the document and return appropriate surgical history changes:`;
     // Add new visit entry for this evolution
     const newVisitEntry: UnifiedSurgicalVisitHistoryEntry = {
       date: visitDate,
-      notes: change.visit_notes || `Surgery evolved: ${oldSurgery.procedureName} → ${change.procedure_name}`,
+      notes:
+        change.visit_notes ||
+        `Surgery evolved: ${oldSurgery.procedureName} → ${change.procedure_name}`,
       source: change.source_type === "attachment" ? "attachment" : "encounter",
       encounterId: encounterId || undefined,
       attachmentId: attachmentId || undefined,
@@ -674,7 +779,9 @@ Analyze the document and return appropriate surgical history changes:`;
       updatedAt: new Date(),
     });
 
-    console.log(`✅ [UnifiedSurgicalHistory] Evolved surgery: ${oldSurgery.procedureName} → ${change.procedure_name}`);
+    console.log(
+      `✅ [UnifiedSurgicalHistory] Evolved surgery: ${oldSurgery.procedureName} → ${change.procedure_name}`,
+    );
   }
 
   /**
@@ -683,7 +790,7 @@ Analyze the document and return appropriate surgical history changes:`;
   private async correctSurgeryDate(
     change: UnifiedSurgicalChange,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
     if (!change.surgery_id || !change.date_change) return;
 
@@ -701,7 +808,9 @@ Analyze the document and return appropriate surgical history changes:`;
     const visitDate = change.date_change.to;
     const newVisitEntry: UnifiedSurgicalVisitHistoryEntry = {
       date: visitDate,
-      notes: change.visit_notes || `Date corrected: ${change.date_change.from} → ${change.date_change.to}`,
+      notes:
+        change.visit_notes ||
+        `Date corrected: ${change.date_change.from} → ${change.date_change.to}`,
       source: change.source_type === "attachment" ? "attachment" : "encounter",
       encounterId: encounterId || undefined,
       attachmentId: attachmentId || undefined,
@@ -720,7 +829,9 @@ Analyze the document and return appropriate surgical history changes:`;
       })
       .where(eq(surgicalHistory.id, change.surgery_id));
 
-    console.log(`✅ [UnifiedSurgicalHistory] Corrected surgery date: ${change.date_change.from} → ${change.date_change.to}`);
+    console.log(
+      `✅ [UnifiedSurgicalHistory] Corrected surgery date: ${change.date_change.from} → ${change.date_change.to}`,
+    );
   }
 
   /**
@@ -729,7 +840,7 @@ Analyze the document and return appropriate surgical history changes:`;
   private async updateSurgeryDetails(
     change: UnifiedSurgicalChange,
     encounterId: number | null,
-    attachmentId: number | null
+    attachmentId: number | null,
   ): Promise<void> {
     if (!change.surgery_id) return;
 
@@ -744,7 +855,8 @@ Analyze the document and return appropriate surgical history changes:`;
       ? (existingSurgery.visitHistory as UnifiedSurgicalVisitHistoryEntry[])
       : [];
 
-    const visitDate = change.extracted_date || new Date().toISOString().split("T")[0];
+    const visitDate =
+      change.extracted_date || new Date().toISOString().split("T")[0];
     const changesMade = [];
 
     if (change.surgeon_change) changesMade.push("surgeon_updated");
@@ -780,7 +892,9 @@ Analyze the document and return appropriate surgical history changes:`;
       .set(updateData)
       .where(eq(surgicalHistory.id, change.surgery_id));
 
-    console.log(`✅ [UnifiedSurgicalHistory] Updated surgery details for: ${existingSurgery.procedureName}`);
+    console.log(
+      `✅ [UnifiedSurgicalHistory] Updated surgery details for: ${existingSurgery.procedureName}`,
+    );
   }
 
   /**
@@ -790,19 +904,19 @@ Analyze the document and return appropriate surgical history changes:`;
     existingVisits: UnifiedSurgicalVisitHistoryEntry[],
     encounterId: number | null,
     attachmentId: number | null,
-    sourceType: "encounter" | "attachment"
+    sourceType: "encounter" | "attachment",
   ): UnifiedSurgicalVisitHistoryEntry[] {
-    return existingVisits.filter(visit => {
+    return existingVisits.filter((visit) => {
       // Allow both attachment and encounter entries for the same encounter ID
       if (encounterId && visit.encounterId === encounterId) {
         return visit.source !== sourceType; // Keep if different source type
       }
-      
+
       // Prevent duplicate attachment entries
       if (attachmentId && visit.attachmentId === attachmentId) {
         return false; // Remove duplicate attachment
       }
-      
+
       return true; // Keep all other entries
     });
   }

@@ -58,8 +58,11 @@ export class UnifiedFamilyHistoryParser {
     encounterId: number | null,
     soapNote: string | null,
     attachmentContent: string | null,
-    triggerType: "stop_recording" | "manual_processing" | "attachment_processing" = "manual_processing",
-    attachmentId?: number
+    triggerType:
+      | "stop_recording"
+      | "manual_processing"
+      | "attachment_processing" = "manual_processing",
+    attachmentId?: number,
   ): Promise<{
     success: boolean;
     changes: UnifiedFamilyHistoryChange[];
@@ -67,21 +70,37 @@ export class UnifiedFamilyHistoryParser {
     encounterFamilyHistory: number;
     attachmentFamilyHistory: number;
   }> {
-    console.log(`🔥 [UNIFIED FAMILY HISTORY] ============= PROCESSING INITIATED =============`);
-    console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Processing family history for patient ${patientId}`);
-    console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Trigger: ${triggerType}, Encounter: ${encounterId}, Attachment: ${attachmentId}`);
-    console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] SOAP note length: ${soapNote?.length || 0} characters`);
-    console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Attachment content length: ${attachmentContent?.length || 0} characters`);
-    
+    console.log(
+      `🔥 [UNIFIED FAMILY HISTORY] ============= PROCESSING INITIATED =============`,
+    );
+    console.log(
+      `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Processing family history for patient ${patientId}`,
+    );
+    console.log(
+      `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Trigger: ${triggerType}, Encounter: ${encounterId}, Attachment: ${attachmentId}`,
+    );
+    console.log(
+      `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] SOAP note length: ${soapNote?.length || 0} characters`,
+    );
+    console.log(
+      `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Attachment content length: ${attachmentContent?.length || 0} characters`,
+    );
+
     if (soapNote) {
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] SOAP note preview: "${soapNote.substring(0, 200)}..."`);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] SOAP note preview: "${soapNote.substring(0, 200)}..."`,
+      );
     }
     if (attachmentContent) {
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Attachment content preview: "${attachmentContent.substring(0, 200)}..."`);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Attachment content preview: "${attachmentContent.substring(0, 200)}..."`,
+      );
     }
 
     if (!soapNote && !attachmentContent) {
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ⚠️ No content to process - skipping`);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ⚠️ No content to process - skipping`,
+      );
       return {
         success: true,
         changes: [],
@@ -93,15 +112,24 @@ export class UnifiedFamilyHistoryParser {
 
     try {
       // Get existing family history for consolidation
-      const existingFamilyHistory = await this.getExistingFamilyHistory(patientId);
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Found ${existingFamilyHistory.length} existing family history entries for patient ${patientId}`);
+      const existingFamilyHistory =
+        await this.getExistingFamilyHistory(patientId);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Found ${existingFamilyHistory.length} existing family history entries for patient ${patientId}`,
+      );
 
       // Get patient chart context for intelligent extraction
-      const patientChart = await PatientChartService.getPatientChartData(patientId);
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`);
+      const patientChart =
+        await PatientChartService.getPatientChartData(patientId);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Patient chart context: ${patientChart.medicalProblems?.length || 0} medical problems, ${patientChart.currentMedications?.length || 0} medications`,
+      );
 
       // Prepare combined content for GPT analysis
-      const combinedContent = this.prepareCombinedContent(soapNote, attachmentContent);
+      const combinedContent = this.prepareCombinedContent(
+        soapNote,
+        attachmentContent,
+      );
       const patientContextForGPT = this.formatPatientChartForGPT(patientChart);
 
       // Process with GPT-4.1 for family history extraction
@@ -110,10 +138,12 @@ export class UnifiedFamilyHistoryParser {
         existingFamilyHistory,
         patientContextForGPT,
         triggerType,
-        attachmentId
+        attachmentId,
       );
 
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] GPT processing complete, ${gptResponse.length} family history changes identified`);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] GPT processing complete, ${gptResponse.length} family history changes identified`,
+      );
 
       // Apply each change from GPT response
       const changes: UnifiedFamilyHistoryChange[] = [];
@@ -123,11 +153,16 @@ export class UnifiedFamilyHistoryParser {
 
       for (const change of gptResponse) {
         try {
-          const result = await this.applyFamilyHistoryChange(change, patientId, encounterId, attachmentId);
+          const result = await this.applyFamilyHistoryChange(
+            change,
+            patientId,
+            encounterId,
+            attachmentId,
+          );
           if (result.success) {
             changes.push(change);
             familyHistoryAffected++;
-            
+
             if (change.visitEntry.source === "encounter") {
               encounterFamilyHistory++;
             } else if (change.visitEntry.source === "attachment") {
@@ -135,12 +170,19 @@ export class UnifiedFamilyHistoryParser {
             }
           }
         } catch (error) {
-          console.error(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Error applying change for ${change.familyMember}:`, error);
+          console.error(
+            `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Error applying change for ${change.familyMember}:`,
+            error,
+          );
         }
       }
 
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] 📊 Processing complete: ${familyHistoryAffected} family history entries affected`);
-      console.log(`🔥 [UNIFIED FAMILY HISTORY] ============= PROCESSING COMPLETE =============`);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] 📊 Processing complete: ${familyHistoryAffected} family history entries affected`,
+      );
+      console.log(
+        `🔥 [UNIFIED FAMILY HISTORY] ============= PROCESSING COMPLETE =============`,
+      );
 
       return {
         success: true,
@@ -150,7 +192,10 @@ export class UnifiedFamilyHistoryParser {
         attachmentFamilyHistory,
       };
     } catch (error) {
-      console.error(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Error in processUnified:`, error);
+      console.error(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Error in processUnified:`,
+        error,
+      );
       return {
         success: false,
         changes: [],
@@ -174,7 +219,10 @@ export class UnifiedFamilyHistoryParser {
   /**
    * Prepare combined content from SOAP note and attachment
    */
-  private prepareCombinedContent(soapNote: string | null, attachmentContent: string | null): string {
+  private prepareCombinedContent(
+    soapNote: string | null,
+    attachmentContent: string | null,
+  ): string {
     const sections = [];
 
     if (soapNote) {
@@ -234,7 +282,7 @@ ${patientChart.familyHistory
     existingFamilyHistory: any[],
     patientContext: string,
     triggerType: string,
-    attachmentId?: number
+    attachmentId?: number,
   ): Promise<UnifiedFamilyHistoryChange[]> {
     const prompt = `You are an expert family history specialist with 20+ years experience in genetic medicine and hereditary disease patterns. Analyze the provided clinical content and extract/update family history information.
 
@@ -242,9 +290,16 @@ PATIENT CONTEXT:
 ${patientContext}
 
 EXISTING FAMILY HISTORY RECORDS:
-${existingFamilyHistory.length > 0 
-  ? existingFamilyHistory.map(fh => `- ${fh.familyMember}: ${fh.medicalHistory} (Source: ${fh.sourceType}, Confidence: ${fh.sourceConfidence})`).join("\n")
-  : "- No existing family history records"}
+${
+  existingFamilyHistory.length > 0
+    ? existingFamilyHistory
+        .map(
+          (fh) =>
+            `- ${fh.familyMember}: ${fh.medicalHistory} (Source: ${fh.sourceType}, Confidence: ${fh.sourceConfidence})`,
+        )
+        .join("\n")
+    : "- No existing family history records"
+}
 
 CLINICAL CONTENT TO ANALYZE:
 ${content}
@@ -294,10 +349,10 @@ RESPONSE FORMAT (JSON Array):
     "consolidationReason": "Combined existing HTN history with new death information",
     "confidence": 0.95,
     "visitEntry": {
-      "date": "${new Date().toLocaleDateString('en-CA')}",
+      "date": "${new Date().toLocaleDateString("en-CA")}",
       "notes": "Added father's death from MI at age 83, consolidated with existing HTN history",
-      "source": "${triggerType === 'attachment_processing' ? 'attachment' : 'encounter'}",
-      ${attachmentId ? `"attachmentId": ${attachmentId},` : ''}
+      "source": "${triggerType === "attachment_processing" ? "attachment" : "encounter"}",
+      ${attachmentId ? `"attachmentId": ${attachmentId},` : ""}
       "changesMade": ["Added death information", "Consolidated medical history"],
       "confidence": 0.95
     },
@@ -324,13 +379,17 @@ Only extract family history information that is explicitly mentioned. Do not inf
       // Parse JSON response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
-        console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] No JSON array found in GPT response`);
+        console.log(
+          `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] No JSON array found in GPT response`,
+        );
         return [];
       }
 
       const changes = JSON.parse(jsonMatch[0]);
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] GPT extracted ${changes.length} family history changes`);
-      
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] GPT extracted ${changes.length} family history changes`,
+      );
+
       return changes;
     } catch (error) {
       console.error(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Error calling GPT:`, error);
@@ -345,10 +404,12 @@ Only extract family history information that is explicitly mentioned. Do not inf
     change: UnifiedFamilyHistoryChange,
     patientId: number,
     encounterId: number | null,
-    attachmentId?: number
+    attachmentId?: number,
   ): Promise<{ success: boolean }> {
     try {
-      console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Applying ${change.action} for ${change.familyMember}: ${change.medicalHistory}`);
+      console.log(
+        `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Applying ${change.action} for ${change.familyMember}: ${change.medicalHistory}`,
+      );
 
       // Check if family member already exists
       const existing = await db
@@ -357,22 +418,30 @@ Only extract family history information that is explicitly mentioned. Do not inf
         .where(
           and(
             eq(familyHistory.patientId, patientId),
-            eq(familyHistory.familyMember, change.familyMember)
-          )
+            eq(familyHistory.familyMember, change.familyMember),
+          ),
         )
         .limit(1);
 
-      if (existing.length > 0 && (change.action === "update" || change.action === "consolidate")) {
+      if (
+        existing.length > 0 &&
+        (change.action === "update" || change.action === "consolidate")
+      ) {
         // Update existing record
         const existingRecord = existing[0];
         const currentVisitHistory = existingRecord.visitHistory || [];
-        
+
         // Add new visit history entry with timezone-corrected date
         const visitEntryWithLocalDate = {
           ...change.visitEntry,
-          date: new Date(change.visitEntry.date + 'T12:00:00').toISOString().split('T')[0] // Convert to local date at noon to avoid timezone shifts
+          date: new Date(change.visitEntry.date + "T12:00:00")
+            .toISOString()
+            .split("T")[0], // Convert to local date at noon to avoid timezone shifts
         };
-        const newVisitHistory = [...currentVisitHistory, visitEntryWithLocalDate];
+        const newVisitHistory = [
+          ...currentVisitHistory,
+          visitEntryWithLocalDate,
+        ];
 
         await db
           .update(familyHistory)
@@ -387,14 +456,18 @@ Only extract family history information that is explicitly mentioned. Do not inf
           })
           .where(eq(familyHistory.id, existingRecord.id));
 
-        console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ✅ Updated existing record for ${change.familyMember}`);
+        console.log(
+          `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ✅ Updated existing record for ${change.familyMember}`,
+        );
       } else {
         // Create new record with timezone-corrected date
         const visitEntryWithLocalDate = {
           ...change.visitEntry,
-          date: new Date(change.visitEntry.date + 'T12:00:00').toISOString().split('T')[0] // Convert to local date at noon to avoid timezone shifts
+          date: new Date(change.visitEntry.date + "T12:00:00")
+            .toISOString()
+            .split("T")[0], // Convert to local date at noon to avoid timezone shifts
         };
-        
+
         await db.insert(familyHistory).values({
           patientId,
           familyMember: change.familyMember,
@@ -406,7 +479,9 @@ Only extract family history information that is explicitly mentioned. Do not inf
           extractedFromAttachmentId: attachmentId,
         });
 
-        console.log(`👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ✅ Created new record for ${change.familyMember}`);
+        console.log(
+          `👨‍👩‍👧‍👦 [UnifiedFamilyHistory] ✅ Created new record for ${change.familyMember}`,
+        );
       }
 
       return { success: true };
