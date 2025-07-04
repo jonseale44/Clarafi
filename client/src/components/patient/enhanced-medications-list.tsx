@@ -781,26 +781,29 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       <span className="text-xs font-medium text-gray-700">Visit History</span>
                     </div>
                     <div className="space-y-2">
-                      {medication.visitHistory.map((visit: any, index: number) => (
-                        <div key={index} className="flex items-start gap-2 text-xs">
-                          <span className="text-gray-500 whitespace-nowrap">
-                            {formatDate(visit.date)}:
-                          </span>
-                          <span className="flex-1 text-gray-700">
-                            {visit.notes}
-                          </span>
-                          {visit.sourceType && (
-                            <span className="flex-shrink-0">
-                              {getSourceBadge(
-                                visit.sourceType,
-                                visit.confidence,
-                                visit.attachmentId,
-                                visit.encounterId
-                              )}
+                      {medication.visitHistory.map((visit: any, index: number) => {
+                        const visitDate = visit.encounterDate || visit.date;
+                        return (
+                          <div key={index} className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-500 whitespace-nowrap">
+                              {formatDate(visitDate)}:
                             </span>
-                          )}
-                        </div>
-                      ))}
+                            <span className="flex-1 text-gray-700">
+                              {visit.notes}
+                            </span>
+                            {visit.sourceType && (
+                              <span className="flex-shrink-0">
+                                {getSourceBadge(
+                                  visit.sourceType,
+                                  visit.confidence,
+                                  visit.attachmentId,
+                                  visit.encounterId
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
