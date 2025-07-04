@@ -651,22 +651,19 @@ Analyze the document and return appropriate surgical history changes:`;
       visitDate = new Date().toISOString().split("T")[0];
     }
 
-    const newVisitNotes = change.visit_notes || 
-      `Surgery discussed: ${existingSurgery.procedureName}`;
-
     // Check for duplicate visits to prevent adding identical entries
     const filteredHistory = this.filterDuplicateVisitEntries(
       visitHistory,
       encounterId,
       attachmentId,
       change.source_type,
-      newVisitNotes,
-      visitDate
     );
 
     const newVisitEntry = {
       date: visitDate,
-      notes: newVisitNotes,
+      notes:
+        change.visit_notes ||
+        `Surgery discussed: ${existingSurgery.procedureName}`,
       source:
         change.source_type === "attachment"
           ? ("attachment" as const)
@@ -901,15 +898,13 @@ Analyze the document and return appropriate surgical history changes:`;
   }
 
   /**
-   * Filter duplicate visit entries with enhanced content-based deduplication
+   * Filter duplicate visit entries (matches medical problems logic)
    */
   private filterDuplicateVisitEntries(
     existingVisits: UnifiedSurgicalVisitHistoryEntry[],
     encounterId: number | null,
     attachmentId: number | null,
     sourceType: "encounter" | "attachment",
-    newVisitNotes: string,
-    newVisitDate: string
   ): UnifiedSurgicalVisitHistoryEntry[] {
     return existingVisits.filter((visit) => {
       // Allow both attachment and encounter entries for the same encounter ID
@@ -922,69 +917,8 @@ Analyze the document and return appropriate surgical history changes:`;
         return false; // Remove duplicate attachment
       }
 
-      // Enhanced content-based deduplication
-      // Check if the content is very similar (90%+ match)
-      const normalizedExisting = visit.notes.toLowerCase().replace(/\s+/g, ' ').trim();
-      const normalizedNew = newVisitNotes.toLowerCase().replace(/\s+/g, ' ').trim();
-      
-      // Exact match check
-      if (normalizedExisting === normalizedNew) {
-        console.log('🔍 [SurgicalHistory] Exact content match detected - removing duplicate visit entry');
-        return false; // Remove exact duplicate
-      }
-      
-      // Calculate similarity for near-duplicates
-      const similarity = this.calculateSimilarity(normalizedExisting, normalizedNew);
-      
-      // If very similar content (>90%) and same date, likely a duplicate
-      if (similarity > 0.9 && visit.date === newVisitDate) {
-        console.log(`🔍 [SurgicalHistory] High similarity (${(similarity * 100).toFixed(1)}%) content detected on same date - removing duplicate`);
-        return false; // Remove very similar content
-      }
-
       return true; // Keep all other entries
     });
-  }
-
-  /**
-   * Calculate similarity between two strings (0-1)
-   */
-  private calculateSimilarity(str1: string, str2: string): number {
-    const distance = this.levenshteinDistance(str1, str2);
-    const maxLength = Math.max(str1.length, str2.length);
-    return maxLength === 0 ? 1 : 1 - distance / maxLength;
-  }
-
-  /**
-   * Calculate Levenshtein distance between two strings
-   */
-  private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = [];
-
-    // Initialize matrix
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
-    }
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
-    }
-
-    // Calculate distances
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1, // substitution
-            matrix[i][j - 1] + 1,     // insertion
-            matrix[i - 1][j] + 1      // deletion
-          );
-        }
-      }
-    }
-
-    return matrix[str2.length][str1.length];
   }
 }
 

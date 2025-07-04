@@ -505,87 +505,28 @@ Return a JSON object with this exact structure:
   }
 
   /**
-   * Filter duplicate visit entries using date-based logic
-   * Simpler approach: if dates match, it's a duplicate (except for same encounter with different sources)
+   * Filter duplicate visit entries using surgical history pattern
+   * Prevents duplicate visits for same encounter/attachment
    */
   private filterDuplicateVisitEntries(
     existingVisits: UnifiedImagingVisitHistoryEntry[],
     encounterId: number | null,
     attachmentId: number | null,
     sourceType: "encounter" | "attachment",
-    newVisitNotes?: string,
-    newVisitDate?: string,
   ): UnifiedImagingVisitHistoryEntry[] {
     return existingVisits.filter((visit) => {
-      // First check: Same attachment ID always means duplicate
-      if (attachmentId && visit.attachmentId === attachmentId) {
-        return false;
+      // Allow both attachment and encounter entries for the same encounter ID
+      if (encounterId && visit.encounterId === encounterId) {
+        return visit.source !== sourceType; // Keep if different source type
       }
 
-      // Date-based deduplication
-      if (newVisitDate && visit.date === newVisitDate) {
-        // Check if it's the allowed exception:
-        // Same encounter with different sources (attachment vs SOAP note)
-        if (encounterId && visit.encounterId === encounterId) {
-          // Allow different source types within same encounter
-          return visit.source !== sourceType;
-        }
-        
-        // Otherwise, same date = duplicate
-        console.log(
-          `🚫 [UnifiedImaging] Filtering duplicate: Same date ${newVisitDate}`
-        );
-        return false;
+      // Prevent duplicate attachment entries
+      if (attachmentId && visit.attachmentId === attachmentId) {
+        return false; // Remove duplicate attachment
       }
 
       return true; // Keep all other entries
     });
-  }
-
-  /**
-   * Calculate similarity between two strings (0-1)
-   */
-  private calculateSimilarity(str1: string, str2: string): number {
-    const longer = str1.length > str2.length ? str1 : str2;
-    const shorter = str1.length > str2.length ? str2 : str1;
-    
-    if (longer.length === 0) {
-      return 1.0;
-    }
-    
-    const editDistance = this.levenshteinDistance(longer, shorter);
-    return (longer.length - editDistance) / longer.length;
-  }
-
-  /**
-   * Calculate Levenshtein distance between two strings
-   */
-  private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = [];
-    
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
-    }
-    
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
-    }
-    
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1, // substitution
-            matrix[i][j - 1] + 1,     // insertion
-            matrix[i - 1][j] + 1      // deletion
-          );
-        }
-      }
-    }
-    
-    return matrix[str2.length][str1.length];
   }
 
   /**
@@ -666,6 +607,14 @@ Return a JSON object with this exact structure:
           if (existing.length) {
             const currentHistory = existing[0].visitHistory || [];
             
+            // Filter out duplicate visits using surgical history pattern
+            const filteredHistory = this.filterDuplicateVisitEntries(
+              currentHistory,
+              encounterId,
+              attachmentId,
+              sourceType
+            );
+            
             const newVisit: UnifiedImagingVisitHistoryEntry = {
               date: new Date().toISOString().split("T")[0],
               notes: change.visit_notes || "Study reviewed",
@@ -674,16 +623,6 @@ Return a JSON object with this exact structure:
               attachmentId: attachmentId || undefined,
               confidence: change.confidence,
             };
-            
-            // Filter out duplicate visits with content-based deduplication
-            const filteredHistory = this.filterDuplicateVisitEntries(
-              currentHistory,
-              encounterId,
-              attachmentId,
-              sourceType,
-              newVisit.notes,
-              newVisit.date
-            );
 
             await db
               .update(imagingResults)

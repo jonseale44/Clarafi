@@ -885,9 +885,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       existingVisitHistory,
       historyEntry.encounterId || null,
       null, // No attachment ID for order-based updates
-      "encounter",
-      historyEntry.notes || "",
-      historyEntry.date
+      "encounter"
     );
     
     const updatedVisitHistory = [
@@ -957,9 +955,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       existingVisitHistory,
       historyEntry.encounterId || null,
       null, // No attachment ID for order-based updates
-      "encounter",
-      historyEntry.notes || "",
-      historyEntry.date
+      "encounter"
     );
     
     // Add visit history entry for discontinuation
@@ -1697,16 +1693,14 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   /**
-   * Filter duplicate visit entries with enhanced content-based deduplication
-   * Prevents duplicate visits for same encounter/attachment/content
+   * Filter duplicate visit entries using surgical history pattern
+   * Prevents duplicate visits for same encounter/attachment
    */
   private filterDuplicateVisitEntries(
     existingVisits: any[],
     encounterId: number | null,
     attachmentId: number | null,
     sourceType: "encounter" | "attachment",
-    newVisitNotes: string,
-    newVisitDate: string
   ): any[] {
     return existingVisits.filter((visit) => {
       // Allow both attachment and encounter entries for the same encounter ID
@@ -1719,69 +1713,8 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         return false; // Remove duplicate attachment
       }
 
-      // Enhanced content-based deduplication
-      // Check if the content is very similar (90%+ match)
-      const normalizedExisting = (visit.notes || '').toLowerCase().replace(/\s+/g, ' ').trim();
-      const normalizedNew = newVisitNotes.toLowerCase().replace(/\s+/g, ' ').trim();
-      
-      // Exact match check
-      if (normalizedExisting === normalizedNew) {
-        console.log('🔍 [Medications] Exact content match detected - removing duplicate visit entry');
-        return false; // Remove exact duplicate
-      }
-      
-      // Calculate similarity for near-duplicates
-      const similarity = this.calculateSimilarity(normalizedExisting, normalizedNew);
-      
-      // If very similar content (>90%) and same date, likely a duplicate
-      if (similarity > 0.9 && visit.date === newVisitDate) {
-        console.log(`🔍 [Medications] High similarity (${(similarity * 100).toFixed(1)}%) content detected on same date - removing duplicate`);
-        return false; // Remove very similar content
-      }
-
       return true; // Keep all other entries
     });
-  }
-
-  /**
-   * Calculate similarity between two strings (0-1)
-   */
-  private calculateSimilarity(str1: string, str2: string): number {
-    const distance = this.levenshteinDistance(str1, str2);
-    const maxLength = Math.max(str1.length, str2.length);
-    return maxLength === 0 ? 1 : 1 - distance / maxLength;
-  }
-
-  /**
-   * Calculate Levenshtein distance between two strings
-   */
-  private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = [];
-
-    // Initialize matrix
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
-    }
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
-    }
-
-    // Calculate distances
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1, // substitution
-            matrix[i][j - 1] + 1,     // insertion
-            matrix[i - 1][j] + 1      // deletion
-          );
-        }
-      }
-    }
-
-    return matrix[str2.length][str1.length];
   }
 
   /**
@@ -1823,9 +1756,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       currentVisitHistory,
       encounterId,
       attachmentId,
-      "attachment",
-      visitEntry.notes,
-      visitEntry.encounterDate
+      "attachment"
     );
     
     const updatedVisitHistory = [...filteredVisitHistory, visitEntry];
