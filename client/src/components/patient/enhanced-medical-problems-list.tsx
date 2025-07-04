@@ -14,6 +14,7 @@ import { UploadLoadingOverlay } from "@/components/ui/upload-loading-overlay";
 import { EnhancedMedicalProblemsDialog } from "./enhanced-medical-problems-dialog";
 import { DualHandleSlider } from "@/components/ui/dual-handle-slider";
 import { RankingWeightControls } from "./ranking-weight-controls";
+import { CompactRankingControls } from "./compact-ranking-controls";
 import { useLocation } from "wouter";
 import { useNavigationContext } from "@/hooks/use-navigation-context";
 import { useDenseView } from "@/hooks/use-dense-view";
@@ -1069,85 +1070,16 @@ export function EnhancedMedicalProblemsList({
           </div>
         )}
 
-        {/* Priority Filter Slider */}
+        {/* Compact Ranking Controls - Combines Priority Filter and Ranking Weights */}
         {activeProblems.length > 0 && (
-          <>
-            {!isFilterExpanded ? (
-              <Card className="border-navy-blue-200 bg-navy-blue-50/50 dark:bg-navy-blue-950/20 dark:border-navy-blue-800">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-5 w-5 text-navy-blue-600 dark:text-navy-blue-400" />
-                      <CardTitle className="text-sm font-medium text-navy-blue-900 dark:text-navy-blue-100">
-                        Priority Filter
-                      </CardTitle>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsFilterExpanded(true)}
-                      className="text-navy-blue-700 hover:text-navy-blue-900 hover:bg-navy-blue-100 dark:text-navy-blue-300 dark:hover:text-navy-blue-100 dark:hover:bg-navy-blue-900/50"
-                    >
-                      Customize
-                    </Button>
-                  </div>
-                </CardHeader>
-              </Card>
-            ) : (
-              <Card className="border-navy-blue-200 bg-navy-blue-50/50 dark:bg-navy-blue-950/20 dark:border-navy-blue-800">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-5 w-5 text-navy-blue-600 dark:text-navy-blue-400" />
-                      <CardTitle className="text-sm font-medium text-navy-blue-900 dark:text-navy-blue-100">
-                        Priority Filter
-                      </CardTitle>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsFilterExpanded(false)}
-                      className="text-navy-blue-700 hover:text-navy-blue-900 hover:bg-navy-blue-100 dark:text-navy-blue-300 dark:hover:text-navy-blue-100 dark:hover:bg-navy-blue-900/50"
-                    >
-                      Collapse
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <DualHandleSlider
-                    min={1}
-                    max={100}
-                    largeHandleValue={largeHandleValue}
-                    smallHandleValue={smallHandleValue}
-                    onLargeHandleChange={handleLargeHandleChange}
-                    onSmallHandleChange={handleSmallHandleChange}
-                    label="Medical Problems Display"
-                    formatValue={(value) => `${value}% (${Math.max(1, Math.ceil((value / 100) * activeProblems.length))} of ${activeProblems.length} problems)`}
-                    className="mb-2"
-                  />
-                  <div className="text-xs text-navy-blue-700 dark:text-navy-blue-300 space-y-1">
-                    <div className="flex justify-between">
-                      <span>• Large handle: Permanent user preference</span>
-                      <span className="font-mono">{largeHandleValue}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>• Small handle: Session filter for this patient</span>
-                      <span className="font-mono">{smallHandleValue}%</span>
-                    </div>
-                    <div className="pt-1 border-t border-navy-blue-200 dark:border-navy-blue-800">
-                      <span>Showing {filteredActiveProblems.length} of {activeProblems.length} problems based on priority ranking</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-
-        {/* Ranking Weight Controls */}
-        {activeProblems.length > 0 && (
-          <RankingWeightControls 
+          <CompactRankingControls
             patientId={patientId}
+            activeProblemsCount={activeProblems.length}
+            filteredProblemsCount={filteredActiveProblems.length}
+            largeHandleValue={largeHandleValue}
+            smallHandleValue={smallHandleValue}
+            onLargeHandleChange={handleLargeHandleChange}
+            onSmallHandleChange={handleSmallHandleChange}
             onWeightsChange={(weights) => {
               // Real-time recalculation happens automatically via the currentRankingWeights dependency
               // No API call needed - just update user preferences cache
