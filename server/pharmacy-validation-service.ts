@@ -1,6 +1,6 @@
 /**
  * Pharmacy Validation Service
- * 
+ *
  * GPT-powered pharmacy compliance validation for medication orders
  * Ensures all prescriptions meet pharmacy and insurance requirements
  */
@@ -61,21 +61,27 @@ export class PharmacyValidationService {
   /**
    * Validate medication order with GPT-powered pharmacy intelligence
    */
-  async validateMedicationOrder(order: MedicationOrderForValidation): Promise<PharmacyValidationResult> {
-    console.log(`💊 [PharmacyValidation] Validating order: ${order.medicationName} ${order.strength}`);
+  async validateMedicationOrder(
+    order: MedicationOrderForValidation,
+  ): Promise<PharmacyValidationResult> {
+    console.log(
+      `💊 [PharmacyValidation] Validating order: ${order.medicationName} ${order.strength}`,
+    );
 
     // First run basic validation
-    const basicValidation = MedicationStandardizationService.validateMedication({
-      medicationName: order.medicationName,
-      strength: order.strength,
-      dosageForm: order.dosageForm,
-      sig: order.sig,
-      quantity: order.quantity,
-      refills: order.refills,
-      daysSupply: order.daysSupply || 0,
-      route: order.route,
-      clinicalIndication: order.clinicalIndication
-    });
+    const basicValidation = MedicationStandardizationService.validateMedication(
+      {
+        medicationName: order.medicationName,
+        strength: order.strength,
+        dosageForm: order.dosageForm,
+        sig: order.sig,
+        quantity: order.quantity,
+        refills: order.refills,
+        daysSupply: order.daysSupply || 0,
+        route: order.route,
+        clinicalIndication: order.clinicalIndication,
+      },
+    );
 
     // If basic validation fails critically, return early
     if (basicValidation.errors.length > 0) {
@@ -84,12 +90,11 @@ export class PharmacyValidationService {
         errors: basicValidation.errors,
         warnings: basicValidation.warnings,
         suggestions: ["Please correct the errors before proceeding"],
-        insuranceConsiderations: []
+        insuranceConsiderations: [],
       };
     }
 
     try {
-
       // Check for missing fields
       const missingFields = {
         sig: !order.sig,
@@ -97,7 +102,7 @@ export class PharmacyValidationService {
         refills: order.refills === undefined || order.refills === null,
         daysSupply: !order.daysSupply || order.daysSupply === 0,
         route: !order.route,
-        clinicalIndication: !order.clinicalIndication
+        clinicalIndication: !order.clinicalIndication,
       };
 
       // Use GPT for advanced validation
@@ -106,20 +111,20 @@ export class PharmacyValidationService {
 MEDICATION ORDER:
 - Medication: ${order.medicationName} ${order.strength}
 - Form: ${order.dosageForm}
-- Sig: ${order.sig || 'MISSING'}
-- Quantity: ${order.quantity || 'MISSING'}
-- Refills: ${order.refills !== undefined ? order.refills : 'MISSING'}
-- Days Supply: ${order.daysSupply || 'MISSING'}
-- Route: ${order.route || 'MISSING'}
-- Clinical Indication: ${order.clinicalIndication || 'MISSING'}
+- Sig: ${order.sig || "MISSING"}
+- Quantity: ${order.quantity || "MISSING"}
+- Refills: ${order.refills !== undefined ? order.refills : "MISSING"}
+- Days Supply: ${order.daysSupply || "MISSING"}
+- Route: ${order.route || "MISSING"}
+- Clinical Indication: ${order.clinicalIndication || "MISSING"}
 
 PATIENT CONTEXT:
-- Age: ${order.patientAge || 'Unknown'}
-- Weight: ${order.patientWeight ? order.patientWeight + ' kg' : 'Unknown'}
-- Renal Function: ${order.renalFunction || 'Unknown'}
-- Hepatic Function: ${order.hepaticFunction || 'Unknown'}
-- Allergies: ${order.allergies?.join(', ') || 'None documented'}
-- Current Medications: ${order.currentMedications?.join(', ') || 'None documented'}
+- Age: ${order.patientAge || "Unknown"}
+- Weight: ${order.patientWeight ? order.patientWeight + " kg" : "Unknown"}
+- Renal Function: ${order.renalFunction || "Unknown"}
+- Hepatic Function: ${order.hepaticFunction || "Unknown"}
+- Allergies: ${order.allergies?.join(", ") || "None documented"}
+- Current Medications: ${order.currentMedications?.join(", ") || "None documented"}
 
 IMPORTANT: 
 1. For any field marked as 'MISSING', provide a recommended value in the missing_field_recommendations section based on the medication, indication, and patient context.
@@ -165,20 +170,21 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
 }`;
 
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1-mini",
         messages: [
           {
             role: "system",
-            content: "You are an expert clinical pharmacist performing prescription validation."
+            content:
+              "You are an expert clinical pharmacist performing prescription validation.",
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         temperature: 0.1, // Low temperature for consistent validation
-        max_tokens: 2000,
-        response_format: { type: "json_object" }
+        max_tokens: 30000,
+        response_format: { type: "json_object" },
       });
 
       const response = completion.choices[0].message.content;
@@ -196,48 +202,65 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
 
       // Combine basic and GPT validation results
       const result: PharmacyValidationResult = {
-        isValid: gptValidation.validation_passed && basicValidation.errors.length === 0,
+        isValid:
+          gptValidation.validation_passed &&
+          basicValidation.errors.length === 0,
         errors: [
           ...basicValidation.errors,
-          ...(gptValidation.critical_errors || [])
+          ...(gptValidation.critical_errors || []),
         ],
         warnings: [
           ...basicValidation.warnings,
           ...(gptValidation.warnings || []),
-          ...(gptValidation.interaction_check?.significant_interactions || [])
+          ...(gptValidation.interaction_check?.significant_interactions || []),
         ],
         suggestions: gptValidation.suggestions || [],
         calculatedDaysSupply,
         insuranceConsiderations: gptValidation.insurance_considerations || [],
-        deaSchedule: gptValidation.dea_schedule !== 'None' ? gptValidation.dea_schedule : undefined,
-        priorAuthRequired: gptValidation.prior_auth_likely || basicValidation.pharmacyRequirements.includes('Prior authorization likely required'),
+        deaSchedule:
+          gptValidation.dea_schedule !== "None"
+            ? gptValidation.dea_schedule
+            : undefined,
+        priorAuthRequired:
+          gptValidation.prior_auth_likely ||
+          basicValidation.pharmacyRequirements.includes(
+            "Prior authorization likely required",
+          ),
         alternativeSuggestions: gptValidation.alternative_suggestions || [],
-        missingFieldRecommendations: gptValidation.missing_field_recommendations || {}
+        missingFieldRecommendations:
+          gptValidation.missing_field_recommendations || {},
       };
 
       // Add dosing concerns to warnings if any
-      if (gptValidation.dosing_assessment && !gptValidation.dosing_assessment.appropriate_for_indication) {
-        result.warnings.push(gptValidation.dosing_assessment.specific_concerns || "Dosing may not be appropriate for indication");
+      if (
+        gptValidation.dosing_assessment &&
+        !gptValidation.dosing_assessment.appropriate_for_indication
+      ) {
+        result.warnings.push(
+          gptValidation.dosing_assessment.specific_concerns ||
+            "Dosing may not be appropriate for indication",
+        );
       }
 
       console.log(`✅ [PharmacyValidation] Validation complete:`, {
         valid: result.isValid,
         errors: result.errors.length,
-        warnings: result.warnings.length
+        warnings: result.warnings.length,
       });
 
       return result;
-
     } catch (error) {
       console.error(`❌ [PharmacyValidation] Error validating order:`, error);
-      
+
       // Return minimal validation result if GPT fails
       return {
         isValid: false,
         errors: ["Validation service temporarily unavailable"],
         warnings: ["Manual pharmacy review required"],
-        suggestions: ["Please have pharmacist manually review this prescription"],
-        insuranceConsiderations: []
+        suggestions: [
+          "Please have pharmacist manually review this prescription",
+        ],
+        insuranceConsiderations: [],
       };
     }
   }
@@ -245,7 +268,11 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
   /**
    * Calculate days supply from sig and quantity
    */
-  async calculateDaysSupply(sig: string, quantity: number, dosageForm: string): Promise<number> {
+  async calculateDaysSupply(
+    sig: string,
+    quantity: number,
+    dosageForm: string,
+  ): Promise<number> {
     try {
       const prompt = `As a pharmacist, calculate the days supply for this prescription:
 Sig: ${sig}
@@ -254,24 +281,26 @@ Quantity: ${quantity} ${dosageForm}
 Return ONLY a number representing the days supply.`;
 
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
+        model: "gpt-4.1-nano",
         messages: [
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         temperature: 0,
-        max_tokens: 10
+        max_tokens: 100,
       });
 
       const response = completion.choices[0].message.content;
       const daysSupply = parseInt(response?.trim() || "0");
-      
-      return daysSupply > 0 ? daysSupply : 30; // Default to 30 if calculation fails
 
+      return daysSupply > 0 ? daysSupply : 30; // Default to 30 if calculation fails
     } catch (error) {
-      console.error(`❌ [PharmacyValidation] Error calculating days supply:`, error);
+      console.error(
+        `❌ [PharmacyValidation] Error calculating days supply:`,
+        error,
+      );
       return 30; // Default
     }
   }
@@ -279,7 +308,11 @@ Return ONLY a number representing the days supply.`;
   /**
    * Suggest appropriate refills based on medication type and indication
    */
-  suggestRefills(medicationName: string, clinicalIndication: string, isControlled: boolean): number {
+  suggestRefills(
+    medicationName: string,
+    clinicalIndication: string,
+    isControlled: boolean,
+  ): number {
     // Controlled substances
     if (isControlled) {
       return 0; // No refills for Schedule II, limited for III-V
@@ -291,7 +324,11 @@ Return ONLY a number representing the days supply.`;
     }
 
     // Chronic conditions
-    if (clinicalIndication?.match(/hypertension|diabetes|hyperlipidemia|hypothyroid|depression|anxiety/i)) {
+    if (
+      clinicalIndication?.match(
+        /hypertension|diabetes|hyperlipidemia|hypothyroid|depression|anxiety/i,
+      )
+    ) {
       return 5; // 6 months of refills for chronic conditions
     }
 
