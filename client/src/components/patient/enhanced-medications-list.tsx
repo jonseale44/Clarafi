@@ -267,6 +267,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   const [expandedMedications, setExpandedMedications] = useState<Set<number>>(new Set());
   const [activeStatusTab, setActiveStatusTab] = useState<'current' | 'discontinued' | 'held' | 'historical'>('current');
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
+  const [editingMedication, setEditingMedication] = useState<number | null>(null);
   const { toast } = useToast();
   const { isDenseView } = useDenseView();
   
@@ -635,19 +636,13 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Create edit dialog for dense view medication
-                          const editData = {
-                            id: medication.id,
-                            medicationName: medication.medicationName,
-                            strength: medication.strength || medication.dosage || '',
-                            dosageForm: medication.dosageForm || '',
-                            route: medication.route || '',
-                            sig: medication.sig || '',
-                            quantity: medication.quantity || 30,
-                            refills: medication.refillsRemaining || 2,
-                            daysSupply: medication.daysSupply || 90
-                          };
-                          updateMedication.mutate(editData);
+                          // Open edit dialog by setting edit mode and expanding the item
+                          setEditingMedication(medication.id);
+                          setExpandedMedications(prev => {
+                            const newSet = new Set(prev);
+                            newSet.add(medication.id);
+                            return newSet;
+                          });
                         }}
                       >
                         <Edit className="h-3 w-3" />
@@ -660,31 +655,55 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
             
             <CollapsibleContent>
               <div className="dense-list-expanded ml-12">
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <strong>Frequency:</strong> {medication.frequency}
+                {editingMedication === medication.id ? (
+                  <FastMedicationIntelligence
+                    initialData={{
+                      medicationName: medication.medicationName,
+                      strength: medication.strength || medication.dosage || '',
+                      dosageForm: medication.dosageForm || '',
+                      route: medication.route || '',
+                      sig: medication.sig || '',
+                      quantity: medication.quantity || 30,
+                      refills: medication.refillsRemaining || 2,
+                      daysSupply: medication.daysSupply || 90,
+                      clinicalIndication: medication.clinicalIndication || ''
+                    }}
+                    onSave={(data) => {
+                      updateMedication.mutate({
+                        id: medication.id,
+                        ...data
+                      });
+                      setEditingMedication(null);
+                    }}
+                    onCancel={() => setEditingMedication(null)}
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <strong>Frequency:</strong> {medication.frequency}
+                    </div>
+                    {medication.strength && (
+                      <div>
+                        <strong>Strength:</strong> {medication.strength}
+                      </div>
+                    )}
+                    {medication.prescriber && (
+                      <div>
+                        <strong>Prescriber:</strong> {medication.prescriber}
+                      </div>
+                    )}
+                    {medication.startDate && (
+                      <div>
+                        <strong>Start Date:</strong> {formatDate(medication.startDate)}
+                      </div>
+                    )}
+                    {medication.sig && (
+                      <div className="col-span-2">
+                        <strong>Instructions:</strong> {medication.sig}
+                      </div>
+                    )}
                   </div>
-                  {medication.strength && (
-                    <div>
-                      <strong>Strength:</strong> {medication.strength}
-                    </div>
-                  )}
-                  {medication.prescriber && (
-                    <div>
-                      <strong>Prescriber:</strong> {medication.prescriber}
-                    </div>
-                  )}
-                  {medication.startDate && (
-                    <div>
-                      <strong>Start Date:</strong> {formatDate(medication.startDate)}
-                    </div>
-                  )}
-                  {medication.sig && (
-                    <div className="col-span-2">
-                      <strong>Instructions:</strong> {medication.sig}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
