@@ -1264,7 +1264,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                   {medication.visitHistory
                     .sort((a: any, b: any) => {
                       // Primary sort: Date descending (most recent first)
-                      const dateComparison = new Date(b.encounterDate || b.date).getTime() - new Date(a.encounterDate || a.date).getTime();
+                      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
                       if (dateComparison !== 0) return dateComparison;
                       
                       // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
@@ -1274,7 +1274,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                     })
                     .slice(0, 5) // Show only last 5 entries
                     .map((visit: any, index: number) => {
-                      const visitDate = visit.encounterDate || visit.date;
+                      const visitDate = visit.date;
                       const formattedDate = formatDate(visitDate);
                       
                       return (

@@ -141,6 +141,7 @@ Preferred communication style: Simple, everyday language.
 - **COMPREHENSIVE COVERAGE**: Visit history tracking added to all medication actions: new medications, updates, and discontinuations
 - **PRODUCTION READY**: System now creates chronological visit history like "7/3/25: Increased ↑ citalopram to 40mg" from medication orders
 - **CHRONOLOGICAL ORDERING FIX**: Visit history now properly sorted with most recent entries first, using encounter ID as secondary sort for same-day entries matching medical problems pattern
+- **FIELD NAME STANDARDIZATION**: Updated visit history display to use consistent `date` field instead of mixed `encounterDate || date` pattern for better consistency across all chart sections
 
 ### Medication State Reversal on Order Deletion COMPLETED (July 4, 2025)
 - **BIDIRECTIONAL RELATIONSHIP SUPPORT**: Added full bidirectional tracking between medication orders and medication records using orderId in visit history entries
