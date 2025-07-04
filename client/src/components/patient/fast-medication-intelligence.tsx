@@ -97,6 +97,7 @@ export function FastMedicationIntelligence({
 
   useEffect(() => {
     if (initialRefills !== undefined && initialRefills !== refills) {
+      console.log('🔄 [FastMedicationIntelligence] Syncing refills:', { initialRefills, currentRefills: refills });
       setRefills(initialRefills);
     }
   }, [initialRefills]); // Only depend on initialRefills
