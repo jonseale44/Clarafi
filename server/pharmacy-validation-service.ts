@@ -7,6 +7,7 @@
 
 import OpenAI from "openai";
 import { MedicationStandardizationService } from "./medication-standardization-service.js";
+import { RxNormService } from "./rxnorm-service.js";
 
 export interface PharmacyValidationResult {
   isValid: boolean;
