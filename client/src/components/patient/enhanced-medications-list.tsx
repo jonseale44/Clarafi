@@ -676,14 +676,35 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       initialRoute={editFormData?.routeOfAdministration || medication.route || ''}
                       initialSig={editFormData?.sig || medication.sig || ''}
                       initialQuantity={editFormData?.quantity || medication.quantity || 30}
-                      initialRefills={editFormData?.refills || medication.refillsRemaining || 2}
+                      initialRefills={(() => {
+                        const refillsValue = editFormData?.refills || medication.refillsRemaining || 2;
+                        console.log('🔍 [Enhanced Medications] Computing initialRefills:', {
+                          editFormDataRefills: editFormData?.refills,
+                          medicationRefillsRemaining: medication.refillsRemaining,
+                          fallback: 2,
+                          finalValue: refillsValue,
+                          medicationId: medication.id,
+                          medicationFields: Object.keys(medication)
+                        });
+                        return refillsValue;
+                      })()}
                       initialDaysSupply={editFormData?.daysSupply || medication.daysSupply || 90}
                       onChange={(updates) => {
+                        console.log('🔄 [Enhanced Medications] FastMedicationIntelligence onChange:', {
+                          updates,
+                          previousFormData: editFormData,
+                          medicationId: medication.id
+                        });
                         // Store updates in state but don't save yet
-                        setEditFormData((prev: any) => ({
-                          ...prev,
-                          ...updates
-                        }));
+                        setEditFormData((prev: any) => {
+                          const newFormData = { ...prev, ...updates };
+                          console.log('🔄 [Enhanced Medications] Updated form data:', {
+                            old: prev,
+                            new: newFormData,
+                            refillsChanged: prev?.refills !== newFormData.refills
+                          });
+                          return newFormData;
+                        });
                       }}
                     />
                     <div className="flex gap-2 mt-4">

@@ -96,9 +96,14 @@ export function FastMedicationIntelligence({
   }, [initialQuantity]); // Only depend on initialQuantity
 
   useEffect(() => {
-    console.log('🔄 [FastMedicationIntelligence] Refills effect triggered:', { initialRefills, currentRefills: refills });
+    console.log('🔄 [FastMedicationIntelligence] Refills effect triggered:', { 
+      initialRefills, 
+      currentRefills: refills,
+      isDifferent: initialRefills !== undefined && initialRefills !== refills,
+      willSync: initialRefills !== undefined && initialRefills !== refills
+    });
     if (initialRefills !== undefined && initialRefills !== refills) {
-      console.log('🔄 [FastMedicationIntelligence] Syncing refills:', { initialRefills, currentRefills: refills });
+      console.log('🔄 [FastMedicationIntelligence] Syncing refills FROM', refills, 'TO', initialRefills);
       setRefills(initialRefills);
     }
   }, [initialRefills]); // Only depend on initialRefills to avoid loops
@@ -197,9 +202,16 @@ export function FastMedicationIntelligence({
   }, [onChange]);
 
   const handleRefillsChange = useCallback((newRefills: number) => {
+    console.log('🔄 [FastMedicationIntelligence] handleRefillsChange called:', {
+      oldRefills: refills,
+      newRefills,
+      initialRefills,
+      willUpdate: newRefills !== refills
+    });
     setRefills(newRefills);
     onChange({ refills: newRefills });
-  }, [onChange]);
+    console.log('🔄 [FastMedicationIntelligence] onChange called with refills:', newRefills);
+  }, [onChange, refills, initialRefills]);
 
   const handleDaysSupplyChange = useCallback((newDaysSupply: number) => {
     setDaysSupply(newDaysSupply);
