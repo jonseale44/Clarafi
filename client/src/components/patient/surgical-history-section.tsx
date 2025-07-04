@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Scissors, Plus, Edit2, Trash2, Calendar, MapPin, User, FileText, AlertTriangle, CheckCircle, Clock, Activity, ChevronDown, ChevronRight } from "lucide-react";
@@ -587,14 +588,14 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                 format(parseISO(surgery.procedureDate), 'MMM yy') : 'Unknown';
               
               return (
-                <div key={surgery.id} className="dense-list-item flex items-center justify-between py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-sm transition-colors">
+                <div key={surgery.id} className="dense-list-item group flex items-center justify-between py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-sm transition-colors relative">
+                  {/* Hover-only procedure category label */}
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 text-white text-xs px-2 py-0.5 rounded-r-md pointer-events-none z-10">
+                    {procedureAbbrev}
+                  </div>
+                  
                   <div className="flex items-center space-x-3 flex-1">
-                    {/* Procedure abbreviation label */}
-                    <div className="dense-list-label text-red-600 dark:text-red-400 text-xs font-medium min-w-[60px]">
-                      {procedureAbbrev}
-                    </div>
-                    
-                    {/* Main content */}
+                    {/* Main content - removed the visible procedure abbreviation label */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
