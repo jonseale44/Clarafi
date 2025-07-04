@@ -1341,6 +1341,35 @@ function NewOrderForm({ onSubmit, isSubmitting }: {
   const [aiText, setAiText] = useState("");
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [aiParsedData, setAiParsedData] = useState<any>(null);
+  const [typingTimer, setTypingTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Real-time parsing effect with debounce
+  useEffect(() => {
+    // Clear existing timer if user is still typing
+    if (typingTimer) {
+      clearTimeout(typingTimer);
+    }
+
+    // Clear parsed data immediately when text is empty
+    if (!aiText.trim()) {
+      setAiParsedData(null);
+      return;
+    }
+
+    // Set a new timer to parse after 1.5 seconds of no typing
+    const timer = setTimeout(() => {
+      processAIText();
+    }, 1500);
+
+    setTypingTimer(timer);
+
+    // Cleanup timer on unmount or when aiText changes
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [aiText]); // Only depend on aiText to avoid infinite loops
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1459,7 +1488,7 @@ function NewOrderForm({ onSubmit, isSubmitting }: {
             Quick Order Entry (AI-Powered)
           </Label>
           <p className="text-xs text-navy-blue-600 mb-3">
-            Enter mixed orders in natural language. AI will automatically detect and categorize different order types.
+            Type orders in natural language. AI will automatically parse and categorize them as you type.
           </p>
           <div className="space-y-3">
             <Textarea
@@ -1468,14 +1497,11 @@ function NewOrderForm({ onSubmit, isSubmitting }: {
               value={aiText}
               onChange={(e) => setAiText(e.target.value)}
             />
-            <Button
-              type="button"
-              onClick={processAIText}
-              disabled={!aiText.trim() || isProcessingAI}
-              className="w-full"
-            >
-              {isProcessingAI ? "Processing..." : "Parse with AI"}
-            </Button>
+            {isProcessingAI && (
+              <div className="flex items-center justify-center text-sm text-navy-blue-600">
+                <div className="animate-pulse">AI is parsing your orders...</div>
+              </div>
+            )}
           </div>
 
           {aiParsedData && aiParsedData.orders && (
