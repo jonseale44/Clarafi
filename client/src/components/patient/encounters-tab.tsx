@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Encounter } from "@shared/schema";
-import { Plus, Eye, Edit, Clock, MapPin, User, Calendar, RefreshCw } from "lucide-react";
+import { Plus, Eye, Edit, MapPin, User, Calendar, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
@@ -32,11 +32,11 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Invalid Date";
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
+      // Format as M/D/YY (e.g., 7/3/25)
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const year = date.getFullYear().toString().slice(-2);
+      return `${month}/${day}/${year}`;
     } catch {
       return "Invalid Date";
     }
@@ -54,6 +54,26 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
       });
     } catch {
       return "Invalid Time";
+    }
+  };
+
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return "No date/time";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid Date/Time";
+      // Format as M/D/YY at H:MM AM/PM
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const year = date.getFullYear().toString().slice(-2);
+      const time = date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      return `${month}/${day}/${year} at ${time}`;
+    } catch {
+      return "Invalid Date/Time";
     }
   };
 
@@ -165,26 +185,22 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
                     )}
                   </div>
                   
-                  <div className="grid grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-3 w-3" />
-                      <span className="font-medium">Date:</span>
-                      <span>{encounter.startTime ? formatDate(encounter.startTime.toString()) : "No date"}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <User className="h-3 w-3" />
-                      <span className="font-medium">Provider:</span>
-                      <span>{getProviderName(encounter.providerId)}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-3 w-3" />
-                      <span className="font-medium">Time:</span>
-                      <span>{encounter.startTime ? formatTime(encounter.startTime.toString()) : "No time"}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="h-3 w-3" />
-                      <span className="font-medium">Location:</span>
-                      <span>{encounter.location || "Not specified"}</span>
+                  <div className="space-y-1 text-sm text-gray-600 mb-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                        <span>{encounter.startTime ? formatDateTime(encounter.startTime.toString()) : "No date/time"}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5 text-gray-400" />
+                        <span>{getProviderName(encounter.providerId)}</span>
+                      </div>
+                      {encounter.location && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                          <span>{encounter.location}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
