@@ -3041,7 +3041,7 @@ Instructions:
       // Purpose: Cost-effective model for parsing mixed medical orders (medications, labs, imaging, referrals)
       // Uses structured JSON output for reliable data extraction from free-text medical orders
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4.1-nano",
         messages: [
           {
             role: "system",
