@@ -28,6 +28,7 @@ import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
 import setupTemplateRoutes from "./template-routes";
 import { imagingRoutes } from "./imaging-api";
 import { setupUnifiedImagingRoutes } from "./unified-imaging-api";
+import { createRxNormRoutes } from "./rxnorm-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -626,6 +627,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Medication formulary routes (500-medication database)
   app.use("/api/formulary", medicationFormularyRoutes);
+
+  // RxNorm medication database routes (200,000+ medications)
+  const rxnormRoutes = createRxNormRoutes();
+  app.use("/api/rxnorm", rxnormRoutes);
 
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
