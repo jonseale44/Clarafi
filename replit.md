@@ -859,6 +859,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Social History Date Extraction Fix COMPLETED (January 10, 2025)
+- **CRITICAL BUG FIXED**: Social history parser was hardcoding today's date instead of extracting dates from document content
+- **ROOT CAUSE**: Social history parser was missing date extraction intelligence that medical problems and medications parsers have
+- **GPT PROMPT ENHANCEMENT**: Added "DATE EXTRACTION INTELLIGENCE" section to social history GPT prompt with document date priorities
+- **IMPLEMENTATION**: Added 3-tier date extraction logic matching medical problems pattern:
+  1. First priority: Use extracted_date from GPT response (document headers/signatures)
+  2. Second priority: Use encounter.startTime if processing from encounter
+  3. Last resort: Use current date as fallback
+- **TECHNICAL DETAILS**: 
+  - Updated UnifiedSocialHistoryChange interface to include extracted_date field
+  - Fixed encounter date field reference from encounterDate to startTime (correct schema field)
+  - Replaced hardcoded `new Date().toISOString().split("T")[0]` with intelligent date extraction
+- **PRODUCTION IMPACT**: Social history visit entries now show correct historical dates from documents instead of always showing today's date
+
 ### Admin Prompt Management System Implementation (June 25, 2025)
 - **COMPLETE ADMIN INTERFACE**: Built comprehensive admin system for viewing and editing GPT-generated prompts from all users
 - **THREE-PANE VIEW**: Admin interface shows original user template, GPT-generated prompt, and admin-edited version side by side

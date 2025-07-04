@@ -46,6 +46,7 @@ export interface UnifiedSocialHistoryChange {
   consolidation_reasoning?: string;
   confidence: number;
   source_type: "encounter" | "attachment";
+  extracted_date?: string | null; // Date extracted from document content
 }
 
 export class UnifiedSocialHistoryParser {
@@ -347,6 +348,21 @@ CONSOLIDATION EXAMPLES:
 - "retired teacher" + existing "occupation: teacher" = UPDATE_STATUS (status change)
 - "former smoker, quit 2020" + existing "tobacco: current smoker" = UPDATE_STATUS (quit smoking)
 
+DATE EXTRACTION INTELLIGENCE:
+Extract accurate dates from document content for proper timeline tracking:
+- FIRST PRIORITY: Look for explicit document dates in headers/footers
+  • "Date of Service: MM/DD/YYYY"
+  • "Date: MM/DD/YYYY"
+  • "Visit Date: MM/DD/YYYY"
+- SECOND PRIORITY: Look for dates near provider signatures
+  • "John Smith, MD - MM/DD/YYYY"
+  • "Electronically signed on MM/DD/YYYY"
+- THIRD PRIORITY: Look for dated sections
+  • "Progress Note - MM/DD/YYYY"
+  • "History & Physical - MM/DD/YYYY"
+- CRITICAL: Use the SAME document date for ALL social history entries from this document
+- If multiple dates exist, use the most recent that represents when the social history was documented
+
 RESPONSE FORMAT - Return ONLY valid JSON:
 {
   "changes": [
@@ -358,7 +374,8 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "visit_notes": "What was discussed or found in this encounter/document",
       "consolidation_reasoning": "Why this action was taken",
       "confidence": 0.90,
-      "source_type": "encounter" | "attachment"
+      "source_type": "encounter" | "attachment",
+      "extracted_date": "YYYY-MM-DD" | null
     }
   ]
 }
@@ -502,8 +519,42 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
           `🚬 [UnifiedSocialHistory] Processing change: ${change.action} for category ${change.category}`,
         );
 
+        // Determine appropriate date for visit history
+        let visitDate: string;
+        if (change.extracted_date) {
+          // Use extracted date from attachment content
+          visitDate = change.extracted_date;
+          console.log(
+            `🚬 [UnifiedSocialHistory] ✅ Using extracted date from document: ${visitDate}`,
+          );
+        } else if (encounterId) {
+          // If no extracted date but we have an encounter, use encounter date
+          const [encounter] = await db
+            .select()
+            .from(encounters)
+            .where(eq(encounters.id, encounterId));
+          
+          if (encounter?.startTime) {
+            visitDate = encounter.startTime.toISOString().split("T")[0];
+            console.log(
+              `🚬 [UnifiedSocialHistory] 📅 Using encounter date: ${visitDate}`,
+            );
+          } else {
+            visitDate = new Date().toISOString().split("T")[0];
+            console.log(
+              `🚬 [UnifiedSocialHistory] ⚠️ No encounter date found - using current date: ${visitDate}`,
+            );
+          }
+        } else {
+          // Last resort: use current date
+          visitDate = new Date().toISOString().split("T")[0];
+          console.log(
+            `🚬 [UnifiedSocialHistory] ⚠️ No extracted date or encounter - using current date: ${visitDate}`,
+          );
+        }
+
         const visitEntry = {
-          date: new Date().toISOString().split("T")[0],
+          date: visitDate,
           notes: change.visit_notes,
           source:
             change.source_type === "encounter"
