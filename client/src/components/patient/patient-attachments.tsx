@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,9 @@ import {
   Maximize2,
   Minimize2,
   Search,
-  X
+  X,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -46,59 +48,85 @@ function ExtractedContentDialog({ attachment, getDocumentTypeBadge }: ExtractedC
   const [searchTerm, setSearchTerm] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Function to highlight search results
+  // Calculate total matches
+  const totalMatches = useMemo(() => {
+    if (!searchTerm.trim() || !attachment.extractedContent?.extractedText) return 0;
+    
+    const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const matches = attachment.extractedContent.extractedText.match(regex);
+    return matches ? matches.length : 0;
+  }, [attachment.extractedContent?.extractedText, searchTerm]);
+
+  // Function to highlight search results with current match indication
   const highlightText = (text: string, search: string) => {
     if (!search.trim()) return text;
     
     const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
+    let matchCount = 0;
     
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5">
-          {part}
-        </mark>
-      ) : (
-        part
-      )
-    );
+    return parts.map((part, index) => {
+      if (regex.test(part)) {
+        const isCurrentMatch = matchCount === currentMatchIndex;
+        matchCount++;
+        return (
+          <mark 
+            key={index} 
+            data-match-index={matchCount - 1}
+            className={`rounded px-0.5 ${
+              isCurrentMatch 
+                ? 'bg-orange-400 dark:bg-orange-600' 
+                : 'bg-yellow-200 dark:bg-yellow-800'
+            }`}
+          >
+            {part}
+          </mark>
+        );
+      }
+      return part;
+    });
   };
 
-  // Filter and highlight the text based on search
-  const displayedText = useMemo(() => {
-    if (!attachment.extractedContent?.extractedText) return "";
-    
-    if (!searchTerm.trim()) {
-      return attachment.extractedContent.extractedText;
+  // Navigate to previous match
+  const goToPreviousMatch = () => {
+    if (totalMatches > 0) {
+      setCurrentMatchIndex((prevIndex) => 
+        prevIndex > 0 ? prevIndex - 1 : totalMatches - 1
+      );
     }
+  };
 
-    // Split text into lines and filter those containing the search term
-    const lines = attachment.extractedContent.extractedText.split('\n');
-    const matchingLines = lines.filter(line => 
-      line.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // If no matches, show message
-    if (matchingLines.length === 0) {
-      return "No results found for your search.";
+  // Navigate to next match
+  const goToNextMatch = () => {
+    if (totalMatches > 0) {
+      setCurrentMatchIndex((prevIndex) => 
+        prevIndex < totalMatches - 1 ? prevIndex + 1 : 0
+      );
     }
+  };
 
-    // Return filtered lines with context (one line before and after each match)
-    const contextLines = new Set<number>();
-    lines.forEach((line, index) => {
-      if (line.toLowerCase().includes(searchTerm.toLowerCase())) {
-        contextLines.add(index - 1); // Previous line
-        contextLines.add(index);     // Current line
-        contextLines.add(index + 1); // Next line
+  // Scroll to current match when it changes
+  useEffect(() => {
+    if (scrollAreaRef.current && totalMatches > 0) {
+      const matchElement = scrollAreaRef.current.querySelector(
+        `mark[data-match-index="${currentMatchIndex}"]`
+      );
+      if (matchElement) {
+        matchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    });
+    }
+  }, [currentMatchIndex, totalMatches]);
 
-    return lines
-      .map((line, index) => contextLines.has(index) ? line : null)
-      .filter(line => line !== null)
-      .join('\n');
-  }, [attachment.extractedContent?.extractedText, searchTerm]);
+  // Reset current match index when search term changes
+  useEffect(() => {
+    setCurrentMatchIndex(0);
+  }, [searchTerm]);
+
+  // Get the displayed text (always show full text, not filtered)
+  const displayedText = attachment.extractedContent?.extractedText || "";
 
   const handleCopyText = () => {
     if (attachment.extractedContent?.extractedText) {
@@ -186,19 +214,41 @@ function ExtractedContentDialog({ attachment, getDocumentTypeBadge }: ExtractedC
           </div>
 
           {searchTerm && (
-            <div className="text-sm text-gray-500">
-              {displayedText === "No results found for your search." 
-                ? "No results found" 
-                : `Showing results for "${searchTerm}"`}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                {totalMatches > 0 
+                  ? `${currentMatchIndex + 1} of ${totalMatches} matches for "${searchTerm}"`
+                  : `No matches found for "${searchTerm}"`}
+              </div>
+              {totalMatches > 0 && (
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={goToPreviousMatch}
+                    title="Previous match"
+                    className="h-8 px-2"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={goToNextMatch}
+                    title="Next match"
+                    className="h-8 px-2"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
           <ScrollArea className={`${isExpanded ? "flex-1" : "h-96"} w-full rounded border p-4 bg-gray-50 dark:bg-gray-900`}>
-            <div className="whitespace-pre-wrap text-sm">
-              {searchTerm.trim() 
-                ? (displayedText === "No results found for your search." 
-                    ? displayedText 
-                    : highlightText(displayedText, searchTerm))
+            <div ref={scrollAreaRef} className="whitespace-pre-wrap text-sm">
+              {searchTerm.trim() && totalMatches > 0
+                ? highlightText(displayedText, searchTerm)
                 : displayedText}
             </div>
           </ScrollArea>
