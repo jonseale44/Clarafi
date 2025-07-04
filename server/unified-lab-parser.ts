@@ -118,13 +118,15 @@ Return ONLY a valid JSON array with this structure:
 ]
 
 CRITICAL LABORATORY INTELLIGENCE RULES:
+- EXCLUDE ALL VITAL SIGNS - DO NOT extract: blood pressure, heart rate, respiratory rate, temperature, oxygen saturation, weight, height, BMI, pain scale
+- ONLY extract true laboratory tests: blood tests, urine tests, cultures, pathology, molecular tests, etc.
 - Standardize test names (CBC with Differential → Complete Blood Count, BMP → Basic Metabolic Panel)
 - Extract ALL individual components from panels (CBC → WBC, RBC, Hemoglobin, Hematocrit, Platelets, etc.)
 - Consolidate duplicate tests from same date/specimen with confidence reasoning
 - Flag critical values (glucose <50 or >400, creatinine >3.0, WBC <2.0 or >20.0, etc.)
 - Convert units to standard format (mg/dL preferred for US labs)
 - Assign LOINC codes when clearly identifiable from context
-- Determine test category from result type and reference ranges
+- Determine test category from result type and reference ranges (chemistry/hematology/microbiology/molecular - NEVER "vital signs")
 - Extract temporal context even without explicit dates
 - Preserve exact result values with appropriate precision
 - Use consolidation reasoning to explain merge/separate decisions
@@ -288,8 +290,40 @@ Input: "${labText}"`;
   private validateAndEnhanceResults(
     results: ParsedLabResult[],
   ): ParsedLabResult[] {
+    // List of vital sign test names to exclude
+    const vitalSignTests = [
+      'blood pressure', 'bp', 'systolic', 'diastolic',
+      'heart rate', 'pulse', 'hr',
+      'respiratory rate', 'rr', 'respiration',
+      'temperature', 'temp',
+      'oxygen saturation', 'o2 sat', 'spo2', 'pulse ox',
+      'weight', 'body weight',
+      'height', 'body height',
+      'bmi', 'body mass index',
+      'pain scale', 'pain score', 'pain level'
+    ];
+
     return results
-      .filter((result) => result.testName && result.resultValue) // Must have basic data
+      .filter((result) => {
+        // Must have basic data
+        if (!result.testName || !result.resultValue) return false;
+        
+        // Exclude vital signs
+        const testNameLower = result.testName.toLowerCase();
+        const isVitalSign = vitalSignTests.some(vital => testNameLower.includes(vital.toLowerCase()));
+        if (isVitalSign) {
+          console.log(`⚗️ [LabParser] ⚠️ Filtering out vital sign: ${result.testName}`);
+          return false;
+        }
+        
+        // Exclude if test category is explicitly "vital signs"
+        if (result.testCategory?.toLowerCase() === 'vital signs') {
+          console.log(`⚗️ [LabParser] ⚠️ Filtering out test with vital signs category: ${result.testName}`);
+          return false;
+        }
+        
+        return true;
+      })
       .map((result) => ({
         ...result,
         confidence: Math.min(100, Math.max(0, result.confidence || 75)), // Ensure 0-100 range

@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Lab Parser Vital Signs Exclusion Fix COMPLETED (January 9, 2025)
+- **CRITICAL BUG FIXED**: Lab parser was incorrectly extracting vital signs (blood pressure, heart rate, temperature, etc.) and saving them as lab results
+- **GPT PROMPT ENHANCEMENT**: Updated unified lab parser prompt to explicitly exclude all vital signs and only extract true laboratory tests
+- **VALIDATION FILTER ADDED**: Implemented double-check filtering in validateAndEnhanceResults() to catch and exclude any vital signs that slip through
+- **DATABASE CLEANUP**: Deleted 67 incorrect entries where vitals were stored as lab results with test_category = 'vital signs'
+- **COMPREHENSIVE EXCLUSION LIST**: Added explicit filtering for blood pressure, heart rate, respiratory rate, temperature, oxygen saturation, weight, height, BMI, and pain scale
+- **PRODUCTION READY**: Lab results section now correctly shows only laboratory test results, not vital signs
+
 ### Vitals Parser Deduplication Implementation COMPLETED (January 10, 2025)
 - **INTELLIGENT DEDUPLICATION SYSTEM**: Successfully implemented GPT-directed deduplication for vitals parser matching labs parser pattern
 - **GETEXISTINGVITALS METHOD**: Added comprehensive method to retrieve existing patient vitals for deduplication context
