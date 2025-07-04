@@ -2960,8 +2960,10 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         apiKey: process.env.OPENAI_API_KEY,
       });
 
-      // Enhanced prompt to parse mixed order types
-      const prompt = `Parse all medical orders from this text and categorize them automatically: "${text}"
+      // Enhanced prompt to parse mixed order types with medical intelligence
+      const prompt = `You are an expert physician's clinical decision support AI. Parse and interpret medical orders from this input: "${text}"
+
+CRITICAL: You must interpret queries intelligently and provide complete, clinically appropriate orders.
 
 Return a JSON object with arrays for each order type found:
 {
@@ -3004,34 +3006,69 @@ Return a JSON object with arrays for each order type found:
   ]
 }
 
-CRITICAL MEDICATION RULES:
-- ALWAYS use proper case medication names (Aspirin, Lisinopril, Hydrochlorothiazide, NOT aspirin, lisinopril, hctz)
-- ALWAYS generate sig instructions based on dosage form count, NOT strength amount
-- Examples of CORRECT sig instructions:
-  * "Take 1 tablet by mouth once daily" (NOT "Take 81 mg by mouth once daily")
-  * "Take 2 capsules by mouth twice daily" (NOT "Take 40 mg by mouth twice daily")
-  * "Apply 1 patch topically once daily" (NOT "Apply 25 mg topically once daily")
-- Always expand common abbreviations to full generic names:
-  * HCTZ → Hydrochlorothiazide
-  * ASA → Aspirin
-  * APAP → Acetaminophen
+INTELLIGENT INTERPRETATION RULES:
 
-Instructions:
-- Extract ALL orders mentioned, even if there are multiple of the same type
-- For medications: 
-  * Include generic and brand names, dosages, frequencies, quantities
-  * Default to 90-day TOTAL supply (including refills) unless duration is specified
-  * For once daily: 30 tablets with 2 refills (30+30+30=90 day supply)
-  * For twice daily: 60 tablets with 2 refills (60+60+60=180 tablets for 90 days)
-  * For three times daily: 90 tablets with 2 refills (90+90+90=270 tablets for 90 days)
-  * If specific duration mentioned (e.g., "for 5 days", "7 day course"), calculate exact quantity with 0 refills
-  * If user specifies exact quantity/refills, use those values instead of defaults
-- For labs: Recognize common abbreviations (CMP = Comprehensive Metabolic Panel, CBC = Complete Blood Count, etc.)
-- For imaging: Recognize abbreviations (CXR = Chest X-ray, CT = Computed Tomography, etc.)
-- For referrals: Extract specialty consultations mentioned
-- Set appropriate defaults for missing information
-- Only include arrays for order types that are actually found in the text
-- Return only valid JSON without markdown formatting`;
+1. MEDICATION QUERIES:
+- "HCTZ max dose" → Hydrochlorothiazide 50 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "Lisinopril starting dose" → Lisinopril 10 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "Metformin for diabetes" → Metformin 500 mg, Take 1 tablet by mouth twice daily, 60 qty, 2 refills
+- "Aspirin for cardioprotection" → Aspirin 81 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "Atorvastatin high intensity" → Atorvastatin 80 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- Always expand abbreviations: HCTZ → Hydrochlorothiazide, ASA → Aspirin, APAP → Acetaminophen
+- When "max dose" requested, provide maximum safe daily dose per clinical guidelines
+- When "starting dose" requested, provide standard initial dose per clinical guidelines
+
+2. LAB TEST QUERIES:
+- "Hep C antibody positive patient, next test to further evaluate" → Hepatitis C RNA Quantitative
+- "Diabetic labs" → HbA1c, Comprehensive Metabolic Panel, Lipid Panel, Urine Microalbumin
+- "Thyroid workup" → TSH, Free T4
+- "Anemia workup" → CBC with differential, Iron studies, B12, Folate
+- "Liver function" → Comprehensive Metabolic Panel
+- "Kidney function" → Basic Metabolic Panel, Urinalysis
+- "Check potassium" → Basic Metabolic Panel
+- "Prediabetic screening" → HbA1c, Fasting Glucose
+- "Hepatitis panel" → Hepatitis A Antibody Total, Hepatitis B Surface Antigen, Hepatitis B Core Antibody, Hepatitis C Antibody
+- "Chest pain cardiac workup" → Troponin, CK-MB, BNP, D-dimer
+- "Lipid management" → Lipid Panel
+- "STD screening" → HIV 1/2 Antibody, RPR, Gonorrhea/Chlamydia PCR
+- Understand clinical workflows: positive screening tests need confirmatory tests
+
+3. IMAGING QUERIES:
+- "Chest pain imaging" → Chest X-ray PA and lateral
+- "Headache workup" → CT Head without contrast
+- "Abdominal pain" → CT Abdomen/Pelvis with contrast
+- "Knee pain" → Knee X-ray (specify laterality if mentioned)
+- "Pulmonary embolism rule out" → CT Chest with PE protocol
+- "Kidney stones" → CT Abdomen/Pelvis without contrast
+- "Back pain imaging" → Lumbar Spine X-ray
+- Understand appropriate imaging for symptoms
+
+4. REFERRAL QUERIES:
+- "Heart failure referral" → Cardiology
+- "Depression management" → Psychiatry
+- "Joint replacement evaluation" → Orthopedic Surgery
+- "Skin lesion" → Dermatology
+- "COPD management" → Pulmonology
+- "Diabetes specialist" → Endocrinology
+- "Memory concerns" → Neurology
+- "GI bleeding" → Gastroenterology
+
+MEDICATION DEFAULTS:
+- Default to 90-day TOTAL supply (including refills) unless duration specified
+- For once daily: 30 tablets with 2 refills (30+30+30=90 day supply)
+- For twice daily: 60 tablets with 2 refills (60+60+60=180 tablets)
+- For three times daily: 90 tablets with 2 refills (90+90+90=270 tablets)
+- For antibiotics or short courses: exact quantity with 0 refills
+- Always use generic names unless brand specifically requested
+- Include appropriate form (tablet, capsule, liquid) based on medication
+
+LAB DEFAULTS:
+- Priority: "routine" unless specified
+- Fasting: true for lipid panels, glucose tests; false otherwise
+- Specimen type: "blood" for most tests unless otherwise appropriate
+- Lab name: leave blank to use default lab
+
+CRITICAL: Always provide complete, validated orders that a physician would actually prescribe. Never output partial orders like "max dose" without the actual dosage. Interpret queries intelligently - physicians often use shorthand but expect complete orders.`;
 
       console.log(
         `[AI Parser] Sending request to OpenAI for multi-type parsing`,
