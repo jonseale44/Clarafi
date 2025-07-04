@@ -113,7 +113,7 @@ export default function AuthPage() {
               </div>
               <div>
                 <h1 className="text-5xl font-bold">
-                  <span className="text-navy-blue">CLAR</span><span className="text-gold">A</span><span className="text-navy-blue">F</span><span className="text-gold">I</span>
+                  <span className="text-navy-blue">CLAR</span><span className="text-gold ai-letters-animate">A</span><span className="text-navy-blue">F</span><span className="text-gold ai-letters-animate ai-letters-animate-delayed">I</span>
                 </h1>
                 <p className="text-sm text-gray-500">EMR System</p>
               </div>

@@ -109,6 +109,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Login Screen Animation & Location Data Restoration COMPLETED (July 4, 2025)
+- **ANIMATION MOVED TO LOGIN ONLY**: Removed CLARAFI animation from dashboard and applied it exclusively to the auth/login screen per user requirements
+- **LOCATION DATA RESTORED**: Successfully restored all location data after critical database loss - 6 locations total (5 Waco Family Medicine + 1 Mission Hillsboro)
+- **USER ACCESS RESTORED**: Re-assigned both users (IDs 2 and 3) to all 6 locations with appropriate roles (primary at Central, covering at others)
+- **DATABASE CONSTRAINT FIXES**: Resolved schema issues with system_type, operatingHours JSONB formatting, and roleAtLocation field requirements
+- **PRODUCTION READY**: Location selection functionality restored for multi-location workflow management
+
 ### CLARAFI Animation Implementation COMPLETED (July 4, 2025)
 - **SOPHISTICATED FALLING ANIMATION**: Successfully implemented "AI" falling animation where gold letters start massive (scale 100x) and fall away from user
 - **3D FALLING EFFECT**: Animation uses scale transformation from 100x down to 1x over 2 seconds with cubic-bezier easing
@@ -117,7 +124,7 @@ Preferred communication style: Simple, everyday language.
 - **BOUNCE LANDING**: Added subtle bounce at end (scale 1.15 → 0.97 → 1.02 → 1) for realistic landing
 - **BRANDING CONSISTENCY**: Navy blue letters (CLAR, F) remain static while gold letters (A, I) animate
 - **CSS IMPLEMENTATION**: Animation created with @keyframes ai-fall-away and applied via ai-letters-animate class
-- **PRODUCTION READY**: Animation enhances brand identity by emphasizing AI capabilities within CLARAFI name
+- **LOGIN SCREEN ONLY**: Animation now appears exclusively on the auth/login page, not on the dashboard
 
 ### User Note Type Preference System Implementation COMPLETED (July 4, 2025)
 - **PREFERENCE PERSISTENCE ADDED**: Successfully implemented system to remember each user's last selected SOAP note type as their default for future encounters
