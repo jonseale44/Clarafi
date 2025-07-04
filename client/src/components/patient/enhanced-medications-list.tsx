@@ -669,14 +669,15 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                 {editingMedication === medication.id ? (
                   <div className="mb-4">
                     <FastMedicationIntelligence
+                      key={`edit-${medication.id}`}
                       medicationName={medication.medicationName}
-                      initialStrength={medication.strength || medication.dosage || ''}
-                      initialForm={medication.dosageForm || ''}
-                      initialRoute={medication.route || ''}
-                      initialSig={medication.sig || ''}
-                      initialQuantity={medication.quantity || 30}
-                      initialRefills={medication.refillsRemaining || 2}
-                      initialDaysSupply={medication.daysSupply || 90}
+                      initialStrength={editFormData?.dosage || medication.strength || medication.dosage || ''}
+                      initialForm={editFormData?.form || medication.dosageForm || ''}
+                      initialRoute={editFormData?.routeOfAdministration || medication.route || ''}
+                      initialSig={editFormData?.sig || medication.sig || ''}
+                      initialQuantity={editFormData?.quantity || medication.quantity || 30}
+                      initialRefills={editFormData?.refills || medication.refillsRemaining || 2}
+                      initialDaysSupply={editFormData?.daysSupply || medication.daysSupply || 90}
                       onChange={(updates) => {
                         // Store updates in state but don't save yet
                         setEditFormData((prev: any) => ({
