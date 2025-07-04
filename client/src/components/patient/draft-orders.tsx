@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool, Settings } from "lucide-react";
+import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool, Settings, Maximize2, Minimize2 } from "lucide-react";
 import { MedicationInputHelper } from "./medication-input-helper";
 import { FastMedicationIntelligence } from "./fast-medication-intelligence";
 import { OrderPreferencesDialog } from "./order-preferences-dialog";
@@ -73,6 +73,7 @@ interface DraftOrdersProps {
 export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, ordersProgress = 0 }: DraftOrdersProps) {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
+  const [isDialogExpanded, setIsDialogExpanded] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -463,14 +464,40 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
                 Add Order
               </Button>
             </DialogTrigger>
-            <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Orders</DialogTitle>
+            <DialogContent className={`transition-all duration-300 ${isDialogExpanded ? "max-w-7xl h-[90vh]" : "max-w-4xl h-auto"}`}>
+            <DialogHeader className="space-y-3">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-xl">Add New Orders</DialogTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsDialogExpanded(!isDialogExpanded)}
+                  className="hover:bg-gray-100"
+                >
+                  {isDialogExpanded ? (
+                    <>
+                      <Minimize2 className="h-4 w-4 mr-1" />
+                      Collapse
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="h-4 w-4 mr-1" />
+                      Expand
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Type multiple orders in natural language. The AI will parse medications, labs, imaging, and referrals automatically.
+              </p>
             </DialogHeader>
-            <NewOrderForm
-              onSubmit={(orderData) => createOrderMutation.mutate(orderData)}
-              isSubmitting={createOrderMutation.isPending}
-            />
+            <div className={`mt-4 ${isDialogExpanded ? "overflow-y-auto max-h-[calc(90vh-180px)]" : ""}`}>
+              <NewOrderForm
+                onSubmit={(orderData) => createOrderMutation.mutate(orderData)}
+                isSubmitting={createOrderMutation.isPending}
+                isExpanded={isDialogExpanded}
+              />
+            </div>
           </DialogContent>
           </Dialog>
         </div>
@@ -1334,9 +1361,10 @@ function ReferralEditFields({ order, onChange }: { order: Order; onChange: (fiel
   );
 }
 
-function NewOrderForm({ onSubmit, isSubmitting }: {
+function NewOrderForm({ onSubmit, isSubmitting, isExpanded = false }: {
   onSubmit: (orderData: Partial<Order>) => void;
   isSubmitting: boolean;
+  isExpanded?: boolean;
 }) {
   const [aiText, setAiText] = useState("");
   const [isProcessingAI, setIsProcessingAI] = useState(false);
@@ -1492,7 +1520,7 @@ function NewOrderForm({ onSubmit, isSubmitting }: {
           </p>
           <div className="space-y-3">
             <Textarea
-              className="h-24 bg-white"
+              className={`bg-white ${isExpanded ? "h-40" : "h-24"}`}
               placeholder="Example: Lisinopril 10mg daily, HCTZ 25mg daily, Aspirin 81mg, CMP, CBC with diff, Chest X-ray PA and lateral, Cardiology consultation for chest pain"
               value={aiText}
               onChange={(e) => setAiText(e.target.value)}
@@ -1502,6 +1530,45 @@ function NewOrderForm({ onSubmit, isSubmitting }: {
                 <div className="animate-pulse">AI is parsing your orders...</div>
               </div>
             )}
+            {isExpanded && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Quick Reference:</p>
+                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                  <div>
+                    <strong className="text-navy-blue-700">Medications:</strong>
+                    <ul className="ml-4 mt-1 space-y-0.5">
+                      <li>• metop succ max dose → Metoprolol succinate 200mg daily</li>
+                      <li>• HFpEF triple therapy → Entresto, Jardiance, Aldactone</li>
+                      <li>• zpak for sinusitis → Azithromycin Z-pack</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong className="text-navy-blue-700">Labs:</strong>
+                    <ul className="ml-4 mt-1 space-y-0.5">
+                      <li>• DM2 labs → A1c, glucose, lipid panel</li>
+                      <li>• thyroid panel → TSH, Free T4, Free T3</li>
+                      <li>• annual HIV screen → HIV 1/2 antigen/antibody</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong className="text-navy-blue-700">Imaging:</strong>
+                    <ul className="ml-4 mt-1 space-y-0.5">
+                      <li>• CXR PA/lat → Chest X-ray PA and lateral</li>
+                      <li>• abd CT wo contrast → Abdominal CT without contrast</li>
+                      <li>• knee MRI for meniscus → Knee MRI with/without contrast</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong className="text-navy-blue-700">Referrals:</strong>
+                    <ul className="ml-4 mt-1 space-y-0.5">
+                      <li>• rheum eval → Rheumatology referral</li>
+                      <li>• ENDO for TSH {">"} 10 → Endocrinology referral</li>
+                      <li>• cards for new AFib → Cardiology consultation</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {aiParsedData && aiParsedData.orders && (
@@ -1509,41 +1576,81 @@ function NewOrderForm({ onSubmit, isSubmitting }: {
               <Label className="font-semibold text-green-800 mb-2 block">
                 AI Parsed Orders ({aiParsedData.totalCount}):
               </Label>
-              <div className="space-y-3 max-h-40 overflow-y-auto">
+              <div className={`space-y-3 overflow-y-auto ${isExpanded ? "max-h-96" : "max-h-40"}`}>
                 {aiParsedData.orders.map((order: any, index: number) => (
-                  <div key={index} className="p-2 bg-white rounded border text-sm">
-                    <div className="font-medium text-navy-blue-800 mb-1">
-                      {order.orderType === 'medication' && '💊 Medication'}
-                      {order.orderType === 'lab' && '🧪 Lab Test'}
-                      {order.orderType === 'imaging' && '📸 Imaging'}
-                      {order.orderType === 'referral' && '👨‍⚕️ Referral'}
+                  <div key={index} className={`p-2 bg-white rounded border ${isExpanded ? "p-3" : "p-2"} text-sm`}>
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-navy-blue-800 mb-1">
+                        {order.orderType === 'medication' && (
+                          <div className="flex items-center gap-2">
+                            <Pill className="h-4 w-4" />
+                            <span>Medication</span>
+                          </div>
+                        )}
+                        {order.orderType === 'lab' && (
+                          <div className="flex items-center gap-2">
+                            <FlaskConical className="h-4 w-4" />
+                            <span>Lab Test</span>
+                          </div>
+                        )}
+                        {order.orderType === 'imaging' && (
+                          <div className="flex items-center gap-2">
+                            <Scan className="h-4 w-4" />
+                            <span>Imaging</span>
+                          </div>
+                        )}
+                        {order.orderType === 'referral' && (
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="h-4 w-4" />
+                            <span>Referral</span>
+                          </div>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {order.priority || 'routine'}
+                      </Badge>
                     </div>
                     {order.orderType === 'medication' && (
-                      <div className="space-y-1">
+                      <div className={`space-y-1 mt-2 ${isExpanded ? "grid grid-cols-2 gap-2" : ""}`}>
                         <div><strong>Name:</strong> {order.medicationName}</div>
                         <div><strong>Dosage:</strong> {order.dosage}</div>
-                        {order.sig && <div><strong>Instructions:</strong> {order.sig}</div>}
-                        <div><strong>Quantity:</strong> {order.quantity} | <strong>Refills:</strong> {order.refills}</div>
+                        {order.sig && <div className={isExpanded ? "col-span-2" : ""}><strong>Instructions:</strong> {order.sig}</div>}
+                        <div><strong>Quantity:</strong> {order.quantity}</div>
+                        <div><strong>Refills:</strong> {order.refills}</div>
+                        {isExpanded && order.form && <div><strong>Form:</strong> {order.form}</div>}
+                        {isExpanded && order.routeOfAdministration && <div><strong>Route:</strong> {order.routeOfAdministration}</div>}
+                        {isExpanded && order.daysSupply && <div><strong>Days Supply:</strong> {order.daysSupply}</div>}
                       </div>
                     )}
                     {order.orderType === 'lab' && (
-                      <div className="space-y-1">
+                      <div className="space-y-1 mt-2">
                         <div><strong>Test:</strong> {order.testName}</div>
                         {order.labName && <div><strong>Lab Panel:</strong> {order.labName}</div>}
-                        {order.fastingRequired && <div><strong>Fasting:</strong> Required</div>}
+                        {order.specimenType && <div><strong>Specimen:</strong> {order.specimenType}</div>}
+                        {order.fastingRequired && <div className="text-orange-600"><strong>Fasting:</strong> Required</div>}
+                        {isExpanded && order.priority && order.priority !== 'routine' && (
+                          <div className="text-red-600"><strong>Priority:</strong> {order.priority.toUpperCase()}</div>
+                        )}
                       </div>
                     )}
                     {order.orderType === 'imaging' && (
-                      <div className="space-y-1">
+                      <div className="space-y-1 mt-2">
                         <div><strong>Study:</strong> {order.studyType}</div>
                         <div><strong>Region:</strong> {order.region}</div>
-                        {order.contrastNeeded && <div><strong>Contrast:</strong> Needed</div>}
+                        {order.laterality && <div><strong>Laterality:</strong> {order.laterality}</div>}
+                        {order.contrastNeeded && <div className="text-purple-600"><strong>Contrast:</strong> Required</div>}
+                        {isExpanded && order.urgency && order.urgency !== 'routine' && (
+                          <div className="text-red-600"><strong>Urgency:</strong> {order.urgency.toUpperCase()}</div>
+                        )}
                       </div>
                     )}
                     {order.orderType === 'referral' && (
-                      <div className="space-y-1">
+                      <div className="space-y-1 mt-2">
                         <div><strong>Specialty:</strong> {order.specialtyType}</div>
                         {order.providerName && <div><strong>Provider:</strong> {order.providerName}</div>}
+                        {isExpanded && order.urgency && (
+                          <div className={order.urgency === 'stat' ? "text-red-600" : ""}><strong>Urgency:</strong> {order.urgency}</div>
+                        )}
                       </div>
                     )}
                   </div>
