@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### SOAP (Peds) Template Addition COMPLETED (July 4, 2025)
+- **NEW PEDIATRIC TEMPLATE ADDED**: Successfully implemented "SOAP (Peds)" template designed specifically for pediatric patient encounters
+- **AGE-APPROPRIATE PHYSICAL EXAM**: Modified Objective section with pediatric-specific normal exam template including well-appearing/interactive general appearance instead of "AAO x3"
+- **PEDIATRIC EXAM COMPONENTS**: Added pediatric-specific elements including TMs (tympanic membranes) examination, age-appropriate neurological assessment, and weight to vitals
+- **BACKEND IMPLEMENTATION**: Added `buildSOAPPediatricPrompt()` method in `enhanced-note-generation-service.ts` copying exact SOAP template with only Objective section modifications
+- **FRONTEND INTEGRATION**: Updated `NoteTypeSelector.tsx` and `TwoPhaseTemplateEditor.tsx` to include "SOAP (Peds)" option in Progress Notes category
+- **IDENTICAL FORMATTING**: Maintained exact same formatting as regular SOAP including concise phrases, bolding for abnormal findings only, and all other sections unchanged
+- **PRODUCTION READY**: Template available immediately in all note generation interfaces alongside existing SOAP, SOAP (Narrative), SOAP (Psychiatric), APSO, and other templates
+
 ### SOAP (Psychiatric) Template Addition COMPLETED (July 4, 2025)
 - **NEW PSYCHIATRIC TEMPLATE ADDED**: Successfully implemented "SOAP (Psychiatric)" template designed specifically for psychiatric encounters
 - **MENTAL STATUS EXAMINATION**: MSE replaces physical exam section with comprehensive psychiatric assessment including appearance, behavior, speech, mood, affect, thought process/content, perception, cognition, and insight/judgment
