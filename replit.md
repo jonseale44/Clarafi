@@ -117,6 +117,7 @@ Preferred communication style: Simple, everyday language.
 - **CLEAN FORM STRUCTURE**: NewOrderForm component now only contains textarea for natural language input, AI parsing button, parsed results display, and submit button
 - **GPT-4.1-MINI MODEL**: Using cost-effective mini model for multi-type order parsing with excellent accuracy for all order types
 - **PRODUCTION READY**: Simplified interface reduces cognitive load for physicians while maintaining full functionality through intelligent AI parsing
+- **CRITICAL ENDPOINT PRESERVATION**: Maintained `extract-orders-from-soap` endpoint for automated SOAP note processing while removing only the redundant single-type parser endpoint
 
 ### RxNorm API Integration Implementation COMPLETED (July 4, 2025)
 - **PRODUCTION MEDICATION DATABASE**: Successfully integrated NIH RxNorm API providing access to 200,000+ medications for production EMR use

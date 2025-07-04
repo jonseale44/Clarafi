@@ -1901,8 +1901,107 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
 
   // CPT Codes and Diagnoses API endpoints for billing integration
 
-  // Single-type order extraction endpoint removed - use multi-type AI parser at /api/orders/parse-ai-text
-  // All orders now use natural language AI parsing with GPT-4.1-mini
+  // Extract orders from SOAP note
+  app.post(
+    "/api/encounters/:encounterId/extract-orders-from-soap",
+    async (req, res) => {
+      try {
+        if (!req.isAuthenticated()) return res.sendStatus(401);
+
+        const encounterId = parseInt(req.params.encounterId);
+
+        // Get the encounter and SOAP note
+        const encounter = await storage.getEncounter(encounterId);
+        if (!encounter) {
+          return res.status(404).json({ message: "Encounter not found" });
+        }
+
+        if (!encounter.note || !encounter.note.trim()) {
+          return res.status(400).json({
+            message:
+              "No SOAP note found for this encounter. Please save a SOAP note first.",
+          });
+        }
+
+        console.log(
+          `📋 [ExtractOrders] Starting order extraction for encounter ${encounterId}`,
+        );
+
+        // Import and use the SOAPOrdersExtractor
+        const { SOAPOrdersExtractor } = await import(
+          "./soap-orders-extractor.js"
+        );
+        const extractor = new SOAPOrdersExtractor();
+
+        // Extract orders from the SOAP note (this now includes deduplication)
+        const deduplicatedOrders = await extractor.extractOrders(
+          encounter.note,
+          encounter.patientId,
+          encounterId,
+        );
+
+        console.log(
+          `📋 [ExtractOrders] Extracted and deduplicated ${deduplicatedOrders.length} orders`,
+        );
+
+        // Clear existing draft orders since GPT has determined the final reconciled set
+        console.log(
+          `📋 [ExtractOrders] Clearing existing draft orders - GPT reconciled to ${deduplicatedOrders.length} final orders`,
+        );
+        const existingDraftOrders =
+          await storage.getDraftOrdersByEncounter(encounterId);
+        console.log(
+          `📋 [ExtractOrders] Found ${existingDraftOrders.length} existing orders to delete`,
+        );
+
+        for (const existingOrder of existingDraftOrders) {
+          try {
+            await storage.deleteOrder(existingOrder.id);
+            console.log(
+              `📋 [ExtractOrders] Successfully deleted order ${existingOrder.id}`,
+            );
+          } catch (error) {
+            console.error(
+              `📋 [ExtractOrders] Error deleting order ${existingOrder.id}:`,
+              error,
+            );
+            // Continue with other orders even if one fails
+          }
+        }
+
+        // Save the deduplicated orders
+        const savedOrders = [];
+        for (const orderData of deduplicatedOrders) {
+          try {
+            const savedOrder = await storage.createOrder(orderData);
+            savedOrders.push(savedOrder);
+          } catch (error: any) {
+            console.error("❌ [ExtractOrders] Failed to save order:", error);
+            // Continue with other orders even if one fails
+          }
+        }
+
+        console.log(
+          `📋 [ExtractOrders] Successfully saved ${savedOrders.length} deduplicated orders`,
+        );
+
+        res.json({
+          message: "Orders extracted and saved successfully",
+          ordersCount: savedOrders.length,
+          orders: savedOrders,
+        });
+      } catch (error: any) {
+        console.error(
+          "❌ [ExtractOrders] Error extracting orders from SOAP:",
+          error,
+        );
+        res.status(500).json({
+          message: "Failed to extract orders from SOAP note",
+          error: error.message,
+        });
+      }
+    },
+  );
 
   // Extract CPT codes from SOAP note
   app.post(
@@ -2986,174 +3085,7 @@ Instructions:
     }
   });
 
-  // Legacy single-type parser (keeping for backward compatibility)
-  app.post("/api/orders/parse-ai-text-single", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
-
-      const { text, orderType } = req.body;
-
-      if (!text || !orderType) {
-        return res
-          .status(400)
-          .json({ message: "Text and orderType are required" });
-      }
-
-      console.log(
-        `[AI Parser] Parsing ${orderType} order from text: "${text}"`,
-      );
-
-      const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-
-      let prompt = "";
-      let responseSchema = "";
-
-      switch (orderType) {
-        case "medication":
-          prompt = `Parse this medication order into structured data: "${text}"
-          
-Extract the following information and return as JSON:
-- medication_name: The name of the medication
-- dosage: The strength/dose (e.g., "10mg", "500mg")
-- sig: Patient instructions (e.g., "Take twice daily with food")
-- quantity: Number of units to dispense (default to 90-day TOTAL supply: once daily=30 tablets, twice daily=60 tablets, etc.)
-- refills: Number of refills (default 2 for maintenance medications, 0 for short courses)
-- form: Medication form (tablet, capsule, liquid, etc. - default "tablet")
-- route_of_administration: How to take (oral, topical, injection, etc. - default "oral")
-- days_supply: Days supply (30 for initial fill, 90 total with refills for maintenance)
-
-Special rules:
-- If specific duration mentioned (e.g., "for 5 days", "7 day course"), calculate exact quantity with 0 refills
-- If user specifies exact quantity/refills, use those values instead of defaults
-- For maintenance medications: 30-day initial quantity with 2 refills (total 90-day supply)
-- For twice daily: 60-day initial quantity with 2 refills
-- For three times daily: 90-day initial quantity with 2 refills
-
-Return only valid JSON without markdown formatting.`;
-
-          responseSchema = `{
-  "medication_name": "string",
-  "dosage": "string", 
-  "sig": "string",
-  "quantity": number,
-  "refills": number,
-  "form": "string",
-  "route_of_administration": "string",
-  "days_supply": number
-}`;
-          break;
-
-        case "lab":
-          prompt = `Parse this lab order into structured data: "${text}"
-          
-Extract the following information and return as JSON:
-- test_name: The specific test name
-- lab_name: The lab panel or grouping name
-- specimen_type: Type of specimen (blood, urine, etc. - default "blood")
-- fasting_required: Whether fasting is required (boolean)
-- priority: Priority level (routine, urgent, stat - default "routine")
-
-Return only valid JSON without markdown formatting.`;
-
-          responseSchema = `{
-  "test_name": "string",
-  "lab_name": "string",
-  "specimen_type": "string",
-  "fasting_required": boolean,
-  "priority": "string"
-}`;
-          break;
-
-        case "imaging":
-          prompt = `Parse this imaging order into structured data: "${text}"
-          
-Extract the following information and return as JSON:
-- study_type: Type of imaging study (X-ray, CT, MRI, Ultrasound, etc.)
-- region: Body part or region to be imaged
-- laterality: Side specification (left, right, bilateral, or null)
-- contrast_needed: Whether contrast is needed (boolean)
-- priority: Priority level (routine, urgent, stat - default "routine")
-
-Return only valid JSON without markdown formatting.`;
-
-          responseSchema = `{
-  "study_type": "string",
-  "region": "string",
-  "laterality": "string or null",
-  "contrast_needed": boolean,
-  "priority": "string"
-}`;
-          break;
-
-        case "referral":
-          prompt = `Parse this referral order into structured data: "${text}"
-          
-Extract the following information and return as JSON:
-- specialty_type: The medical specialty (cardiology, orthopedics, etc.)
-- provider_name: Specific provider name if mentioned (or null)
-- urgency: Urgency level (routine, urgent - default "routine")
-
-Return only valid JSON without markdown formatting.`;
-
-          responseSchema = `{
-  "specialty_type": "string",
-  "provider_name": "string or null",
-  "urgency": "string"
-}`;
-          break;
-
-        default:
-          return res.status(400).json({ message: "Unsupported order type" });
-      }
-
-      // Parse individual order type using GPT-4.1-nano for precise single-category extraction
-      // Purpose: Specialized parsing for specific order types (medication, lab, imaging, referral)
-      // Uses strict schema validation to ensure consistent structured output format
-      const response = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
-        messages: [
-          {
-            role: "system",
-            content: `You are a medical AI that parses natural language orders into structured data. Always return valid JSON matching this schema: ${responseSchema}`,
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.1,
-        max_tokens: 500,
-      });
-
-      const content = response.choices[0]?.message?.content?.trim();
-      if (!content) {
-        throw new Error("No response from GPT");
-      }
-
-      // Clean the response - remove markdown code blocks if present
-      let cleanedContent = content;
-      if (content.startsWith("```json")) {
-        cleanedContent = content
-          .replace(/```json\s*/, "")
-          .replace(/\s*```$/, "");
-      } else if (content.startsWith("```")) {
-        cleanedContent = content.replace(/```\s*/, "").replace(/\s*```$/, "");
-      }
-
-      const parsedData = JSON.parse(cleanedContent);
-      console.log(
-        `[AI Parser] Successfully parsed ${orderType} order:`,
-        parsedData,
-      );
-
-      res.json(parsedData);
-    } catch (error: any) {
-      console.error("[AI Parser] Error parsing order text:", error);
-      res.status(500).json({ message: "Failed to parse order text" });
-    }
-  });
+  // Single-type parser endpoint removed - all manual orders now use multi-type AI parser at /api/orders/parse-ai-text
 
   // Update encounter status
   app.put("/api/encounters/:encounterId/status", async (req, res) => {
