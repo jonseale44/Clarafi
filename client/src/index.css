@@ -883,3 +883,54 @@
 .dark .search-context-separator {
   border-top-color: rgb(55 65 81); /* gray-700 */
 }
+
+/* CLARAFI AI falling animation */
+@keyframes ai-fall-away {
+  0% {
+    transform: scale(100);
+    opacity: 0.8;
+  }
+  5% {
+    transform: scale(80);
+    opacity: 0.95;
+  }
+  15% {
+    transform: scale(40);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(10);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(2);
+    opacity: 1;
+  }
+  85% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  92% {
+    transform: scale(0.97);
+    opacity: 1;
+  }
+  96% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ai-letters-animate {
+  display: inline-block;
+  animation: ai-fall-away 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.ai-letters-animate-delayed {
+  animation-delay: 0.15s;
+}

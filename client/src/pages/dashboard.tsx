@@ -283,7 +283,7 @@ export default function Dashboard() {
                 <span className="text-gold font-bold text-sm">C</span>
               </div>
               <span className="font-bold text-xl">
-                <span className="text-navy-blue">CLAR</span><span className="text-gold">A</span><span className="text-navy-blue">F</span><span className="text-gold">I</span>
+                <span className="text-navy-blue">CLAR</span><span className="text-gold ai-letters-animate">A</span><span className="text-navy-blue">F</span><span className="text-gold ai-letters-animate ai-letters-animate-delayed">I</span>
               </span>
             </div>
             
