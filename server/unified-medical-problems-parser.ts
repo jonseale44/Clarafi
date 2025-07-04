@@ -1071,8 +1071,8 @@ REQUIRED JSON RESPONSE FORMAT:
   }
 
   /**
-   * Filter duplicate visit entries using enhanced logic
-   * Prevents duplicate visits for same encounter/attachment/content
+   * Filter duplicate visit entries using date-based logic
+   * Simpler approach: if dates match, it's a duplicate (except for same encounter with different sources)
    */
   private filterDuplicateVisitEntries(
     existingVisits: UnifiedVisitHistoryEntry[],
@@ -1083,35 +1083,25 @@ REQUIRED JSON RESPONSE FORMAT:
     newVisitDate?: string,
   ): UnifiedVisitHistoryEntry[] {
     return existingVisits.filter((visit) => {
-      // Allow both attachment and encounter entries for the same encounter ID
-      if (encounterId && visit.encounterId === encounterId) {
-        return visit.source !== sourceType; // Keep if different source type
-      }
-
-      // Prevent duplicate attachment entries by ID
+      // First check: Same attachment ID always means duplicate
       if (attachmentId && visit.attachmentId === attachmentId) {
-        return false; // Remove duplicate attachment
+        return false;
       }
 
-      // NEW: Prevent duplicate content-based entries
-      // Check if we have similar content on the same date
-      if (newVisitNotes && newVisitDate && visit.date === newVisitDate) {
-        // Normalize notes for comparison (remove whitespace variations)
-        const normalizedExisting = visit.notes.toLowerCase().replace(/\s+/g, ' ').trim();
-        const normalizedNew = newVisitNotes.toLowerCase().replace(/\s+/g, ' ').trim();
-        
-        // Check for exact or near-exact matches
-        if (normalizedExisting === normalizedNew) {
-          console.log(`🚫 [UnifiedMedicalProblems] Detected duplicate visit content on ${newVisitDate}`);
-          return false; // Remove duplicate content
+      // Date-based deduplication
+      if (newVisitDate && visit.date === newVisitDate) {
+        // Check if it's the allowed exception:
+        // Same encounter with different sources (attachment vs SOAP note)
+        if (encounterId && visit.encounterId === encounterId) {
+          // Allow different source types within same encounter
+          return visit.source !== sourceType;
         }
         
-        // Check for high similarity (>90% match)
-        const similarity = this.calculateSimilarity(normalizedExisting, normalizedNew);
-        if (similarity > 0.9) {
-          console.log(`🚫 [UnifiedMedicalProblems] Detected similar visit content (${Math.round(similarity * 100)}% match) on ${newVisitDate}`);
-          return false; // Remove very similar content
-        }
+        // Otherwise, same date = duplicate
+        console.log(
+          `🚫 [UnifiedMedicalProblems] Filtering duplicate: Same date ${newVisitDate}`
+        );
+        return false;
       }
 
       return true; // Keep all other entries
