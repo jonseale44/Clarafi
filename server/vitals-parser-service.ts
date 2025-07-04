@@ -1,4 +1,7 @@
 import OpenAI from "openai";
+import { db } from "./db.js";
+import { vitals } from "../shared/schema.js";
+import { eq, desc } from "drizzle-orm";
 
 interface ParsedVitalsData {
   systolicBp?: number;
@@ -36,9 +39,38 @@ export class VitalsParserService {
     });
   }
 
+  private async getExistingVitals(patientId: number): Promise<any[]> {
+    try {
+      const results = await db
+        .select({
+          recordedAt: vitals.recordedAt,
+          systolicBp: vitals.systolicBp,
+          diastolicBp: vitals.diastolicBp,
+          heartRate: vitals.heartRate,
+          temperature: vitals.temperature,
+          oxygenSaturation: vitals.oxygenSaturation,
+          respiratoryRate: vitals.respiratoryRate,
+          painScale: vitals.painScale,
+          weight: vitals.weight,
+          height: vitals.height,
+          notes: vitals.notes,
+        })
+        .from(vitals)
+        .where(eq(vitals.patientId, patientId))
+        .orderBy(desc(vitals.recordedAt))
+        .limit(20); // Recent vitals for context
+
+      return results;
+    } catch (error) {
+      console.error("🩺 [VitalsParser] Error fetching existing vitals:", error);
+      return [];
+    }
+  }
+
   async parseVitalsText(
     vitalsText: string,
     patientContext?: { age?: number; gender?: string },
+    patientId?: number,
   ): Promise<VitalsParsingResult> {
     if (!vitalsText || vitalsText.trim().length === 0) {
       return {
@@ -64,9 +96,27 @@ export class VitalsParserService {
     );
     console.log("🩺 [VitalsParser] Starting AI parsing process...");
 
+    // Get existing vitals for consolidation logic
+    let existingVitals: any[] = [];
+    if (patientId) {
+      existingVitals = await this.getExistingVitals(patientId);
+      console.log("🩺 [VitalsParser] Found existing vitals:", existingVitals.length);
+    }
+
     try {
       // Enhanced GPT prompt for multiple vitals extraction with temporal intelligence
       const prompt = `You are a medical AI assistant that extracts ALL vital signs from clinical text, including multiple sets across different dates/times.
+
+${existingVitals.length > 0 ? `EXISTING PATIENT VITALS:
+${JSON.stringify(existingVitals, null, 2)}
+
+CONSOLIDATION LOGIC:
+- Same date + same measurements = consolidate (do not create duplicate entries)
+- Same date + different measurements = separate entries if temporally distinct (e.g., morning vs evening)
+- Different dates = always separate entries
+- If vital signs match existing records exactly (same date, same measurements), DO NOT extract them again
+- Consider existing patient vitals to avoid unnecessary duplication
+` : ''}
 
 Analyze this clinical text and identify EVERY DISTINCT SET of vital signs. Each set may be from different dates, times, or clinical contexts (admission, daily rounds, discharge, etc.).
 

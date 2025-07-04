@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Vitals Parser Deduplication Implementation COMPLETED (January 10, 2025)
+- **INTELLIGENT DEDUPLICATION SYSTEM**: Successfully implemented GPT-directed deduplication for vitals parser matching labs parser pattern
+- **GETEXISTINGVITALS METHOD**: Added comprehensive method to retrieve existing patient vitals for deduplication context
+- **ENHANCED GPT PROMPT**: Updated vitals parser prompt with consolidation logic: same date + same measurements = consolidate, different dates = separate entries  
+- **PARAMETER FLOW FIX**: Updated attachment-chart-processor.ts and chart-section-orchestrator.ts to pass patientId parameter to parseVitalsText method
+- **CONSOLIDATION INTELLIGENCE**: GPT now considers existing patient vitals to avoid unnecessary duplication while maintaining separate entries for different dates
+- **PRODUCTION READY**: Vitals extraction from documents now properly prevents duplicate entries through intelligent GPT consolidation
+
 ### Visit History Deduplication Implementation COMPLETED (January 10, 2025)
 - **CRITICAL FINDING**: Only surgical history had proper visit history deduplication - ALL other sections were creating duplicate visit entries
 - **WORKING IMPLEMENTATION**: Surgical History's `filterDuplicateVisitEntries` method with proper ID-based deduplication logic served as the pattern

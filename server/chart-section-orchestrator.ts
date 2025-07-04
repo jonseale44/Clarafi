@@ -197,7 +197,7 @@ export class ChartSectionOrchestrator {
     const result = await this.vitalsParser.parseVitalsText(content, {
       age: context.patientAge,
       gender: context.patientGender
-    });
+    }, context.patientId);
 
     console.log(`🩺 [ChartOrchestrator] Vitals processing complete: ${result.success ? 'Success' : 'Failed'}`);
     return result;

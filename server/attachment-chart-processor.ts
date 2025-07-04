@@ -271,7 +271,8 @@ export class AttachmentChartProcessor {
       // Use enhanced vitals parser for any medical document (supports multiple vitals sets)
       const vitalsResult = await this.vitalsParser.parseVitalsText(
         extractedContent.extractedText, 
-        patientContext
+        patientContext,
+        attachment.patientId
       );
 
       if (vitalsResult.success && vitalsResult.data && vitalsResult.data.length > 0) {
