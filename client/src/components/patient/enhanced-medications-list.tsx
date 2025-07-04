@@ -656,27 +656,49 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
             <CollapsibleContent>
               <div className="dense-list-expanded ml-12">
                 {editingMedication === medication.id ? (
-                  <FastMedicationIntelligence
-                    initialData={{
-                      medicationName: medication.medicationName,
-                      strength: medication.strength || medication.dosage || '',
-                      dosageForm: medication.dosageForm || '',
-                      route: medication.route || '',
-                      sig: medication.sig || '',
-                      quantity: medication.quantity || 30,
-                      refills: medication.refillsRemaining || 2,
-                      daysSupply: medication.daysSupply || 90,
-                      clinicalIndication: medication.clinicalIndication || ''
-                    }}
-                    onSave={(data) => {
-                      updateMedication.mutate({
-                        id: medication.id,
-                        ...data
-                      });
-                      setEditingMedication(null);
-                    }}
-                    onCancel={() => setEditingMedication(null)}
-                  />
+                  <div className="mb-4">
+                    <FastMedicationIntelligence
+                      medicationName={medication.medicationName}
+                      initialStrength={medication.strength || medication.dosage || ''}
+                      initialForm={medication.dosageForm || ''}
+                      initialRoute={medication.route || ''}
+                      initialSig={medication.sig || ''}
+                      initialQuantity={medication.quantity || 30}
+                      initialRefills={medication.refillsRemaining || 2}
+                      initialDaysSupply={medication.daysSupply || 90}
+                      onChange={(updates) => {
+                        // Updates are received in the format expected by the backend
+                        updateMedication.mutate({
+                          id: medication.id,
+                          medicationName: medication.medicationName,
+                          dosage: updates.dosage || medication.dosage,
+                          dosageForm: updates.form || medication.dosageForm,
+                          route: updates.routeOfAdministration || medication.route,
+                          sig: updates.sig || medication.sig,
+                          quantity: updates.quantity || medication.quantity,
+                          refills: updates.refills || medication.refillsRemaining,
+                          daysSupply: updates.daysSupply || medication.daysSupply,
+                          clinicalIndication: medication.clinicalIndication || ''
+                        });
+                      }}
+                    />
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        onClick={() => setEditingMedication(null)}
+                        className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
+                      >
+                        Save Changes
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingMedication(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
@@ -871,7 +893,9 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       <div className={isDenseView ? "dense-list-container" : "emr-ultra-tight-spacing"}>
                         {medications.map((medication: Medication, index: number) => 
                           isDenseView ? 
-                            renderMedicationDenseList(medication, categoryAbbr, index === 0, index === medications.length - 1) :
+                            <div key={medication.id}>
+                              {renderMedicationDenseList(medication, categoryAbbr, index === 0, index === medications.length - 1)}
+                            </div> :
                             <div key={medication.id} className="flex items-start gap-2">
                               {/* Grouping indicator for regular view */}
                               {groupingMode === 'medical_problem' && (
