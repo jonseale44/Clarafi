@@ -585,7 +585,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
 
               const procedureAbbrev = getProcedureAbbreviation(surgery.procedureName);
               const dateDisplay = surgery.procedureDate ? 
-                format(parseISO(surgery.procedureDate), 'MMM yy') : 'Unknown';
+                format(parseISO(surgery.procedureDate), "MMM ''yy") : 'Unknown';
               
               return (
                 <div key={surgery.id} className="dense-list-item group flex items-center justify-between py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-sm transition-colors relative">
