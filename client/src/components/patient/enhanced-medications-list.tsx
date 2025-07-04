@@ -268,6 +268,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   const [activeStatusTab, setActiveStatusTab] = useState<'current' | 'discontinued' | 'held' | 'historical'>('current');
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const [editingMedication, setEditingMedication] = useState<number | null>(null);
+  const [editFormData, setEditFormData] = useState<any>(null);
   const { toast } = useToast();
   const { isDenseView } = useDenseView();
   
@@ -636,6 +637,16 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
+                          // Initialize form data with current medication values
+                          setEditFormData({
+                            dosage: medication.strength || medication.dosage || '',
+                            form: medication.dosageForm || '',
+                            routeOfAdministration: medication.route || '',
+                            sig: medication.sig || '',
+                            quantity: medication.quantity || 30,
+                            refills: medication.refillsRemaining || 2,
+                            daysSupply: medication.daysSupply || 90
+                          });
                           // Open edit dialog by setting edit mode and expanding the item
                           setEditingMedication(medication.id);
                           setExpandedMedications(prev => {
@@ -667,25 +678,35 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       initialRefills={medication.refillsRemaining || 2}
                       initialDaysSupply={medication.daysSupply || 90}
                       onChange={(updates) => {
-                        // Updates are received in the format expected by the backend
-                        updateMedication.mutate({
-                          id: medication.id,
-                          medicationName: medication.medicationName,
-                          dosage: updates.dosage || medication.dosage,
-                          dosageForm: updates.form || medication.dosageForm,
-                          route: updates.routeOfAdministration || medication.route,
-                          sig: updates.sig || medication.sig,
-                          quantity: updates.quantity || medication.quantity,
-                          refills: updates.refills || medication.refillsRemaining,
-                          daysSupply: updates.daysSupply || medication.daysSupply,
-                          clinicalIndication: medication.clinicalIndication || ''
-                        });
+                        // Store updates in state but don't save yet
+                        setEditFormData((prev: any) => ({
+                          ...prev,
+                          ...updates
+                        }));
                       }}
                     />
                     <div className="flex gap-2 mt-4">
                       <Button
                         size="sm"
-                        onClick={() => setEditingMedication(null)}
+                        onClick={() => {
+                          // Save the accumulated form data to database
+                          const dataToSave = {
+                            id: medication.id,
+                            medicationName: medication.medicationName,
+                            dosage: editFormData?.dosage || medication.strength || medication.dosage,
+                            dosageForm: editFormData?.form || medication.dosageForm,
+                            route: editFormData?.routeOfAdministration || medication.route,
+                            sig: editFormData?.sig || medication.sig,
+                            quantity: editFormData?.quantity || medication.quantity,
+                            refills: editFormData?.refills || medication.refillsRemaining,
+                            daysSupply: editFormData?.daysSupply || medication.daysSupply,
+                            clinicalIndication: medication.clinicalIndication || ''
+                          };
+                          
+                          updateMedication.mutate(dataToSave);
+                          setEditingMedication(null);
+                          setEditFormData(null);
+                        }}
                         className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
                       >
                         Save Changes
@@ -693,7 +714,10 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setEditingMedication(null)}
+                        onClick={() => {
+                          setEditingMedication(null);
+                          setEditFormData(null);
+                        }}
                       >
                         Cancel
                       </Button>
