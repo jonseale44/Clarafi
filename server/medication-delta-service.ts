@@ -1198,6 +1198,24 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       };
     }
 
+    // Generate meaningful clinical history note based on the changes
+    let action: "started" | "continued" | "increased" | "decreased" | "changed" = "changed";
+    
+    if (order.dosage && existingMedication.dosage && order.dosage !== existingMedication.dosage) {
+      // Compare numeric dosages to determine if increased or decreased
+      const currentDose = this.extractNumericDose(order.dosage);
+      const previousDose = this.extractNumericDose(existingMedication.dosage);
+      
+      if (currentDose > previousDose) {
+        action = "increased";
+      } else if (currentDose < previousDose) {
+        action = "decreased";
+      }
+    }
+    
+    const clinicalNote = this.generateClinicalHistoryNote(order, existingMedication, action);
+    change.history_notes = clinicalNote;
+
     return change;
   }
 
@@ -1257,23 +1275,17 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       note = `Started ${medName}`;
       if (dosage) note += ` ${dosage}`;
     } else if (action === "continued") {
-      // Check if dosage changed
-      if (existingMedication && dosage && dosage !== existingMedication.dosage) {
-        // Compare numeric dosages to determine if increased or decreased
-        const currentDose = this.extractNumericDose(dosage);
-        const previousDose = this.extractNumericDose(existingMedication.dosage);
-        
-        if (currentDose > previousDose) {
-          note = `Increased ↑ ${medName} to ${dosage}`;
-        } else if (currentDose < previousDose) {
-          note = `Decreased ↓ ${medName} to ${dosage}`;
-        } else {
-          note = `Changed ${medName} to ${dosage}`;
-        }
-      } else {
-        note = `Continued ${medName}`;
-        if (dosage) note += ` ${dosage}`;
-      }
+      note = `Continued ${medName}`;
+      if (dosage) note += ` ${dosage}`;
+    } else if (action === "increased") {
+      note = `Increased ↑ ${medName}`;
+      if (dosage) note += ` to ${dosage}`;
+    } else if (action === "decreased") {
+      note = `Decreased ↓ ${medName}`;
+      if (dosage) note += ` to ${dosage}`;
+    } else if (action === "changed") {
+      note = `Changed ${medName}`;
+      if (dosage) note += ` to ${dosage}`;
     }
     
     return note;
