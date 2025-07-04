@@ -890,32 +890,40 @@
     transform: scale(100);
     opacity: 0.8;
   }
-  5% {
-    transform: scale(80);
+  10% {
+    transform: scale(50);
+    opacity: 0.9;
+  }
+  20% {
+    transform: scale(25);
     opacity: 0.95;
   }
-  15% {
-    transform: scale(40);
+  30% {
+    transform: scale(15);
     opacity: 1;
   }
   40% {
     transform: scale(10);
     opacity: 1;
   }
+  50% {
+    transform: scale(6.5);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(4);
+    opacity: 1;
+  }
   70% {
-    transform: scale(2);
+    transform: scale(2.5);
     opacity: 1;
   }
-  85% {
-    transform: scale(1.15);
+  80% {
+    transform: scale(1.6);
     opacity: 1;
   }
-  92% {
-    transform: scale(0.97);
-    opacity: 1;
-  }
-  96% {
-    transform: scale(1.02);
+  90% {
+    transform: scale(1.2);
     opacity: 1;
   }
   100% {
@@ -926,7 +934,7 @@
 
 .ai-letters-animate {
   display: inline-block;
-  animation: ai-fall-away 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: ai-fall-away 2.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   transform-origin: center center;
   will-change: transform, opacity;
 }
