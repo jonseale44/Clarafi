@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { patients, encounters, medications, allergies, medicalHistory, medicalProblems, vitals, familyHistory, socialHistory } from "../shared/schema.js";
+import { patients, encounters, medications, allergies, medicalHistory, medicalProblems, vitals, familyHistory, socialHistory, imagingResults } from "../shared/schema.js";
 import { eq, desc } from "drizzle-orm";
 
 /**
@@ -21,6 +21,7 @@ export class PatientChartService {
     vitals: any[];
     familyHistory: any[];
     socialHistory: any[];
+    imagingResults: any[];
   }> {
     try {
       console.log(`[Chart Service] Fetching chart data for patient ${patientId}`);
@@ -80,6 +81,13 @@ export class PatientChartService {
         .where(eq(socialHistory.patientId, patientId))
         .orderBy(desc(socialHistory.updatedAt));
 
+      // Get imaging results (recent 10)
+      const imagingResultsRecords = await db.select()
+        .from(imagingResults)
+        .where(eq(imagingResults.patientId, patientId))
+        .orderBy(desc(imagingResults.studyDate))
+        .limit(10);
+
       const chartData = {
         activeProblems: activeProblems,
         medicalHistory: medicalHistoryRecords.map(h => ({
@@ -138,6 +146,17 @@ export class PatientChartService {
           details: sh.currentStatus,
           notes: sh.historyNotes,
           sourceType: sh.sourceType
+        })),
+        imagingResults: imagingResultsRecords.map(ir => ({
+          id: ir.id,
+          studyDate: ir.studyDate,
+          modality: ir.modality,
+          bodyPart: ir.bodyPart,
+          clinicalSummary: ir.clinicalSummary,
+          findings: ir.findings,
+          impression: ir.impression,
+          resultStatus: ir.resultStatus,
+          radiologistName: ir.radiologistName
         }))
       };
 
@@ -150,7 +169,8 @@ export class PatientChartService {
         medicalProblems: chartData.medicalProblems.length,
         vitals: chartData.vitals.length,
         familyHistory: chartData.familyHistory.length,
-        socialHistory: chartData.socialHistory.length
+        socialHistory: chartData.socialHistory.length,
+        imagingResults: chartData.imagingResults.length
       });
 
       return chartData;
@@ -165,7 +185,8 @@ export class PatientChartService {
         medicalProblems: [],
         vitals: [],
         familyHistory: [],
-        socialHistory: []
+        socialHistory: [],
+        imagingResults: []
       };
     }
   }

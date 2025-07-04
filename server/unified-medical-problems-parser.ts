@@ -1147,6 +1147,19 @@ ${patientChart.socialHistory
   .join("\n")}`);
     }
 
+    // Imaging Results (for condition confirmation and progression monitoring)
+    if (patientChart.imagingResults?.length > 0) {
+      sections.push(`
+RECENT IMAGING (Use for condition validation and progression context):
+${patientChart.imagingResults
+  .slice(0, 5)
+  .map((img: any) => {
+    const date = new Date(img.studyDate).toLocaleDateString();
+    return `- ${date}: ${img.modality} ${img.bodyPart} - ${img.clinicalSummary || img.impression || 'See findings'}`;
+  })
+  .join("\n")}`);
+    }
+
     return sections.length > 0
       ? sections.join("\n")
       : "- No additional clinical data available for visit history enhancement";

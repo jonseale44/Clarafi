@@ -838,6 +838,7 @@ IMPORTANT INSTRUCTIONS:
           medicationsCount: patientChart.medications?.length || 0,
           allergiesCount: patientChart.allergies?.length || 0,
           vitalsCount: patientChart.vitals?.length || 0,
+          imagingResultsCount: patientChart.imagingResults?.length || 0,
         },
       );
 
@@ -902,6 +903,17 @@ IMPORTANT INSTRUCTIONS:
           : "- Vitals documented but incomplete";
       };
 
+      const recentImaging = 
+        patientChart.imagingResults?.length > 0
+          ? patientChart.imagingResults
+              .slice(0, 5)
+              .map((img: any) => {
+                const date = new Date(img.studyDate).toLocaleDateString();
+                return `- ${date}: ${img.modality || "Unknown modality"} ${img.bodyPart || ""} - ${img.clinicalSummary || img.impression || "Results pending"}`;
+              })
+              .join("\n")
+          : "- No recent imaging studies available";
+
       const context = `
 PATIENT CONTEXT:
 - Name: ${demographics.firstName || "Unknown"} ${demographics.lastName || "Unknown"}
@@ -920,6 +932,9 @@ ${knownAllergies}
 
 RECENT VITALS:
 ${formatVitalsForContext(patientChart.vitals || [])}
+
+RECENT IMAGING:
+${recentImaging}
       `.trim();
 
       console.log(
@@ -952,6 +967,9 @@ KNOWN ALLERGIES:
 
 RECENT VITALS:
 - Unable to retrieve recent vitals
+
+RECENT IMAGING:
+- Unable to retrieve recent imaging
       `.trim();
     }
   }
