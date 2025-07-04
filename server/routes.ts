@@ -3007,8 +3007,16 @@ Return a JSON object with arrays for each order type found:
 }
 
 INTELLIGENT INTERPRETATION RULES:
+For any input, always output the specific, actionable clinical orders required for safe, guideline-based care (no matter how shorthand or partial the physician's input). Treat every input as though you are writing for an intern who is new and requires explicit instructions. Do not output any order as a non-expanded phrase or partial instruction.
+
+If an order, symptom, or abbreviation is unknown or ambiguous, use your medical knowledge and clinical context to infer the most likely desired orders in line with outpatient primary care best practice. If more than one workup is possible, choose the most common/likely for an outpatient adult patient.
+
+For any query with "workup", "w/u", "full workup", "evaluation for", "symptom workup/eval" (e.g. "polyarthritis workup", "fatigue w/u", "confusion eval", "anemia workup"), you MUST expand into individual, clinically appropriate lab tests and diagnostic studies in the JSON—do NOT just restate the phrase.
+
+Note: The following example mappings are illustrative, not exhaustive. For novel or unfamiliar queries, always use clinical reasoning and best practices to generate complete, appropriate orders—even if not specifically shown below.
 
 1. MEDICATION QUERIES:
+
 Quick Medication Queries:
 - "metop succ max dose" → Metoprolol Succinate 200 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
 - "atorva 40 titrate up" → Atorvastatin 80 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
@@ -3267,29 +3275,30 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           "./pharmacy-validation-service.js"
         );
         const pharmacyValidator = new PharmacyValidationService();
-        
-        const validationResult = await pharmacyValidator.validateMedicationOrder({
-          medicationName: order.medicationName || "",
-          strength: order.dosage || "",
-          dosageForm: order.form || "",
-          sig: order.sig || "",
-          quantity: order.quantity || 0,
-          refills: order.refills || 0,
-          daysSupply: order.daysSupply || 0,
-          route: order.routeOfAdministration || "",
-          clinicalIndication: order.clinicalIndication || "",
-          patientId: order.patientId
-        });
-        
+
+        const validationResult =
+          await pharmacyValidator.validateMedicationOrder({
+            medicationName: order.medicationName || "",
+            strength: order.dosage || "",
+            dosageForm: order.form || "",
+            sig: order.sig || "",
+            quantity: order.quantity || 0,
+            refills: order.refills || 0,
+            daysSupply: order.daysSupply || 0,
+            route: order.routeOfAdministration || "",
+            clinicalIndication: order.clinicalIndication || "",
+            patientId: order.patientId,
+          });
+
         if (validationResult.errors.length > 0) {
           console.log(
             `❌ [Order Signing] Validation failed for medication order ${orderId}:`,
-            validationResult.errors
+            validationResult.errors,
           );
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: "Cannot sign order - validation errors exist",
             validationErrors: validationResult.errors,
-            missingFields: validationResult.missingFieldRecommendations
+            missingFields: validationResult.missingFieldRecommendations,
           });
         }
       }
