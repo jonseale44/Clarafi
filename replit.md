@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### User Note Type Preference System Implementation COMPLETED (July 4, 2025)
+- **PREFERENCE PERSISTENCE ADDED**: Successfully implemented system to remember each user's last selected SOAP note type as their default for future encounters
+- **DATABASE FIELD UTILIZED**: Used existing `lastSelectedNoteType` field in `userNotePreferences` table to store user's template selection
+- **FRONTEND INTEGRATION**: Updated `NoteTypeSelector.tsx` component to automatically save preferences when note type changes and load saved preference on component mount
+- **USER-SPECIFIC SETTINGS**: Each user's preference is stored independently - one provider's selection doesn't affect other users
+- **AUTOMATIC INITIALIZATION**: When creating new encounters, the system automatically pre-selects the user's last used template instead of defaulting to basic SOAP
+- **SEAMLESS EXPERIENCE**: Preference saving happens silently in background without interrupting clinical workflow
+- **PRODUCTION READY**: Feature works across all template types including SOAP, SOAP (Narrative), SOAP (Psychiatric), SOAP (Peds), APSO, and custom templates
+
 ### SOAP (Peds) Template Addition COMPLETED (July 4, 2025)
 - **NEW PEDIATRIC TEMPLATE ADDED**: Successfully implemented "SOAP (Peds)" template designed specifically for pediatric patient encounters
 - **AGE-APPROPRIATE PHYSICAL EXAM**: Modified Objective section with pediatric-specific normal exam template including well-appearing/interactive general appearance instead of "AAO x3"

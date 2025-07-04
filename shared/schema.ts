@@ -290,6 +290,9 @@ export const userNotePreferences = pgTable("user_note_preferences", {
   defaultDischargeTemplate: integer("default_discharge_template").references(() => userNoteTemplates.id),
   defaultProcedureTemplate: integer("default_procedure_template").references(() => userNoteTemplates.id),
   
+  // Last selected built-in note type
+  lastSelectedNoteType: text("last_selected_note_type").default("soap"), // 'soap', 'soapNarrative', 'soapPsychiatric', 'soapPediatric', 'apso', 'progress', 'hAndP', 'discharge', 'procedure'
+  
   // Global AI learning preferences
   globalAiLearning: boolean("global_ai_learning").default(true),
   learningAggressiveness: text("learning_aggressiveness").default("moderate"), // 'conservative', 'moderate', 'aggressive'

@@ -18,12 +18,13 @@ interface NoteTypeSelectorProps {
   disabled?: boolean;
 }
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Settings } from "lucide-react";
 import { TemplateManager } from "./templates/TemplateManager";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
   noteType,
@@ -33,11 +34,36 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
   disabled = false
 }) => {
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Get user preferences
+  const { data: userPreferences } = useQuery<any>({
+    queryKey: ['/api/user/preferences']
+  });
+
+  // Mutation to update user preferences
+  const updatePreferencesMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      return await apiRequest('PUT', '/api/user/preferences', updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user/preferences'] });
+    }
+  });
 
   // Get all user templates
-  const { data: userTemplates = [] } = useQuery({
+  const { data: userTemplates = [] } = useQuery<Template[]>({
     queryKey: ['/api/templates/user']
   });
+
+  // Initialize with user's last selected note type
+  useEffect(() => {
+    if (!hasInitialized && userPreferences?.lastSelectedNoteType && noteType === 'soap') {
+      // Only set default if current noteType is still the default 'soap'
+      onNoteTypeChange(userPreferences.lastSelectedNoteType);
+      setHasInitialized(true);
+    }
+  }, [userPreferences, hasInitialized, noteType, onNoteTypeChange]);
 
   const noteTypes = [
     { value: 'soap', label: 'SOAP Note', category: 'Progress Notes' },
@@ -63,7 +89,7 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
       baseNoteType: note.value
     })),
     // Custom templates
-    ...userTemplates.map((template: Template) => ({
+    ...userTemplates.map((template) => ({
       id: template.id,
       value: `template-${template.id}`,
       label: template.displayName,
@@ -83,11 +109,14 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
   }, {} as Record<string, typeof allOptions>);
 
   const handleSelectionChange = (value: string) => {
+    let selectedNoteType: string;
+    
     if (value.startsWith('template-')) {
       // Custom template selected
       const templateId = value.replace('template-', '');
       const template = userTemplates.find((t: Template) => t.id.toString() === templateId);
       if (template) {
+        selectedNoteType = template.baseNoteType;
         onNoteTypeChange(template.baseNoteType);
         if (onTemplateChange) {
           onTemplateChange(template);
@@ -95,10 +124,16 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
       }
     } else {
       // Base note type selected
+      selectedNoteType = value;
       onNoteTypeChange(value);
       if (onTemplateChange) {
-        onTemplateChange(null);
+        onTemplateChange(null as any);
       }
+    }
+    
+    // Save the user's preference
+    if (selectedNoteType!) {
+      updatePreferencesMutation.mutate({ lastSelectedNoteType: selectedNoteType });
     }
   };
 
@@ -132,7 +167,7 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
                 <SelectItem key={option.id} value={option.value}>
                   <div className="flex items-center justify-between w-full">
                     <span>{option.label}</span>
-                    {option.template?.isDefault && (
+                    {!option.isBaseTemplate && (option as any).template?.isDefault && (
                       <span className="text-xs text-navy-blue-600 ml-2">Default</span>
                     )}
                   </div>
