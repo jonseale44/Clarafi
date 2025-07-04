@@ -73,7 +73,6 @@ interface DraftOrdersProps {
 export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, ordersProgress = 0 }: DraftOrdersProps) {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
-  const [newOrderType, setNewOrderType] = useState<string>("medication");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -466,11 +465,9 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
             </DialogTrigger>
             <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Order</DialogTitle>
+              <DialogTitle>Add New Orders</DialogTitle>
             </DialogHeader>
             <NewOrderForm
-              orderType={newOrderType}
-              onOrderTypeChange={setNewOrderType}
               onSubmit={(orderData) => createOrderMutation.mutate(orderData)}
               isSubmitting={createOrderMutation.isPending}
             />
@@ -1337,26 +1334,13 @@ function ReferralEditFields({ order, onChange }: { order: Order; onChange: (fiel
   );
 }
 
-function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: {
-  orderType: string;
-  onOrderTypeChange: (type: string) => void;
+function NewOrderForm({ onSubmit, isSubmitting }: {
   onSubmit: (orderData: Partial<Order>) => void;
   isSubmitting: boolean;
 }) {
-  const [orderData, setOrderData] = useState<Partial<Order>>({
-    orderType,
-    priority: "routine",
-  });
-  const [entryMode, setEntryMode] = useState<"ai" | "standard">("ai");
   const [aiText, setAiText] = useState("");
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [aiParsedData, setAiParsedData] = useState<any>(null);
-
-  useEffect(() => {
-    setOrderData({ orderType, priority: "routine" });
-    setAiParsedData(null);
-    setAiText("");
-  }, [orderType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1367,16 +1351,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
       aiParsedData.orders.forEach((order: any) => {
         onSubmit(order);
       });
-    } else {
-      // Submit single manual order
-      const finalData = aiParsedData || orderData;
-      console.log("[NewOrderForm] Submitting single order:", finalData);
-      onSubmit(finalData);
     }
-  };
-
-  const handleInputChange = (field: string, value: any) => {
-    setOrderData({ ...orderData, [field]: value });
   };
 
   const processAIText = async () => {
@@ -1388,8 +1363,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: aiText,
-          orderType: orderType // Still send as a hint, but AI will auto-detect
+          text: aiText
         })
       });
 
@@ -1405,7 +1379,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
           for (const med of parsed.medications) {
             allOrders.push({
               orderType: 'medication',
-              priority: orderData.priority,
+              priority: 'routine',
               medicationName: med.medication_name,
               dosage: med.dosage,
               sig: med.sig,
@@ -1423,7 +1397,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
           for (const lab of parsed.labs) {
             allOrders.push({
               orderType: 'lab',
-              priority: lab.priority || orderData.priority,
+              priority: lab.priority || 'routine',
               testName: lab.test_name,
               labName: lab.lab_name,
               specimenType: lab.specimen_type,
@@ -1437,7 +1411,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
           for (const img of parsed.imaging) {
             allOrders.push({
               orderType: 'imaging',
-              priority: img.priority || orderData.priority,
+              priority: img.priority || 'routine',
               studyType: img.study_type,
               region: img.region,
               laterality: img.laterality,
@@ -1451,7 +1425,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
           for (const ref of parsed.referrals) {
             allOrders.push({
               orderType: 'referral',
-              urgency: ref.urgency || orderData.priority,
+              urgency: ref.urgency || 'routine',
               specialtyType: ref.specialty_type,
               providerName: ref.provider_name,
             });
@@ -1472,8 +1446,7 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
       }
     } catch (error) {
       console.error('AI parsing error:', error);
-      // Fall back to manual entry
-      setEntryMode("standard");
+      // Error will be handled by toast notification
     } finally {
       setIsProcessingAI(false);
     }
@@ -1481,53 +1454,6 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="orderType">Order Type</Label>
-        <Select value={orderType} onValueChange={onOrderTypeChange}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="medication">Medication</SelectItem>
-            <SelectItem value="lab">Lab Test</SelectItem>
-            <SelectItem value="imaging">Imaging</SelectItem>
-            <SelectItem value="referral">Referral</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Entry Mode Selection */}
-      <div className="border rounded-md p-3 bg-gray-50">
-        <Label className="font-semibold text-gray-700 mb-2 block">Entry Mode</Label>
-        <div className="flex gap-4">
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="ai-entry"
-              checked={entryMode === "ai"}
-              onChange={() => setEntryMode("ai")}
-              className="w-4 h-4"
-            />
-            <Label htmlFor="ai-entry" className="text-sm cursor-pointer">
-              AI Entry (Natural Language)
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="standard-entry"
-              checked={entryMode === "standard"}
-              onChange={() => setEntryMode("standard")}
-              className="w-4 h-4"
-            />
-            <Label htmlFor="standard-entry" className="text-sm cursor-pointer">
-              Standard Entry
-            </Label>
-          </div>
-        </div>
-      </div>
-
-      {entryMode === "ai" ? (
         <div className="border rounded-md p-3 bg-navy-blue-50">
           <Label className="font-semibold text-navy-blue-800 mb-2 block">
             Quick Order Entry (AI-Powered)
@@ -1600,34 +1526,8 @@ function NewOrderForm({ orderType, onOrderTypeChange, onSubmit, isSubmitting }: 
             </div>
           )}
         </div>
-      ) : (
-        <>
-          {orderType === "medication" && (
-            <MedicationEditFields order={orderData as Order} onChange={handleInputChange} />
-          )}
-          {orderType === "lab" && (
-            <LabEditFields order={orderData as Order} onChange={handleInputChange} />
-          )}
-          {orderType === "imaging" && (
-            <ImagingEditFields order={orderData as Order} onChange={handleInputChange} />
-          )}
-          {orderType === "referral" && (
-            <ReferralEditFields order={orderData as Order} onChange={handleInputChange} />
-          )}
 
-          <div>
-            <Label htmlFor="clinicalIndication">Clinical Indication</Label>
-            <Textarea
-              id="clinicalIndication"
-              value={orderData.clinicalIndication || ""}
-              onChange={(e) => handleInputChange("clinicalIndication", e.target.value)}
-              placeholder="Reason for this order..."
-            />
-          </div>
-        </>
-      )}
-
-      <Button type="submit" disabled={isSubmitting || (entryMode === "ai" && !aiParsedData)} className="w-full">
+      <Button type="submit" disabled={isSubmitting || !aiParsedData} className="w-full">
         {isSubmitting ? "Creating..." : 
          aiParsedData && aiParsedData.orders ? 
          `Create ${aiParsedData.totalCount} Orders` : 
