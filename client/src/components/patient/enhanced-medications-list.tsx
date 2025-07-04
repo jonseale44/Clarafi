@@ -1117,6 +1117,51 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
               </div>
             )}
 
+            {/* Visit History */}
+            {medication.visitHistory && medication.visitHistory.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Visit History
+                </h4>
+                <div className="space-y-2">
+                  {medication.visitHistory
+                    .sort((a: any, b: any) => new Date(b.encounterDate || b.date).getTime() - new Date(a.encounterDate || a.date).getTime())
+                    .slice(0, 5) // Show only last 5 entries
+                    .map((visit: any, index: number) => {
+                      const visitDate = visit.encounterDate || visit.date;
+                      const formattedDate = formatDate(visitDate);
+                      
+                      return (
+                        <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-md text-sm">
+                          <div className="flex-shrink-0 text-gray-500 font-medium min-w-[60px]">
+                            {formattedDate}
+                          </div>
+                          <div className="flex-1">
+                            {visit.notes || visit.changes?.join(', ') || 'No specific changes noted'}
+                          </div>
+                          {visit.source && (
+                            <div className="flex-shrink-0">
+                              {getSourceBadge(
+                                visit.source === 'attachment' ? 'attachment' : 'encounter',
+                                visit.confidence?.toString(),
+                                visit.sourceId,
+                                visit.encounterId
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  {medication.visitHistory.length > 5 && (
+                    <div className="text-xs text-gray-500 italic text-center">
+                      ... and {medication.visitHistory.length - 5} more entries
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Edit Form */}
             {isEditMode && (
               <div className="mt-4 p-4 border border-navy-blue-200 rounded-lg bg-navy-blue-50/50">

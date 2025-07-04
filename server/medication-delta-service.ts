@@ -1568,7 +1568,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   /**
-   * Call GPT for medication extraction from document
+   * Call GPT for medication extraction from document with enhanced date intelligence
    */
   private async callMedicationExtractionGPT(
     extractedText: string,
@@ -1600,7 +1600,14 @@ Please analyze this SOAP note and identify medication changes that occurred duri
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const systemPrompt = `You are an expert clinical pharmacist with 20+ years of experience extracting medication information from medical documents. Your task is to identify and consolidate medication data with existing patient medications.
+    const systemPrompt = `You are an expert clinical pharmacist with 20+ years of experience extracting medication information from medical documents. Your task is to identify and consolidate medication data with existing patient medications with sophisticated date intelligence.
+
+CRITICAL DATE EXTRACTION INTELLIGENCE:
+- MANDATORY: Extract the PRIMARY document date for ALL medications from this attachment
+- Look for "Date of Service:", "Date:", "Date/Time:", signature dates, or document headers
+- ALL medications from this single attachment should use the SAME extracted document date
+- If no specific date found, use null (system will default to current date)
+- Extract medication date ranges when documented (e.g., "started 2/20/24, increased 5/15/24")
 
 CONSOLIDATION RULES:
 - AGGRESSIVE CONSOLIDATION: Same medication = same drug name, even if dosage/frequency differs
@@ -1608,13 +1615,24 @@ CONSOLIDATION RULES:
 - Brand/Generic matching: Synthroid should consolidate with levothyroxine
 - Combination drugs: List active ingredients separately if documented as separate medications
 - DO NOT create duplicate medications for the same drug
+- CONSOLIDATE dose changes over time for same medication
 
 EXTRACTION RULES:
 - Extract ALL medications mentioned (current, historical, discontinued)
 - Include dosage, frequency, route, indication, status
 - Mark discontinued medications appropriately
-- Extract start dates if mentioned
-- Include any medication changes documented
+- Extract start dates and dose change dates if mentioned
+- Include any medication changes documented with dates
+- Create ultra-concise visit history entries for dose changes
+
+VISIT HISTORY INTELLIGENCE:
+For medications with documented changes, create ultra-concise visit entries:
+- "Started 10mg daily" (initial dose)
+- "Increased to 20mg" (dose increase)
+- "Decreased to 5mg" (dose decrease) 
+- "Discontinued - side effects" (discontinuation)
+- "Resumed 15mg daily" (restart)
+- Use up/down arrows for dose changes when appropriate
 
 CONFIDENCE SCORING:
 - High confidence (0.90+): Explicitly listed in medication list/table
@@ -1624,11 +1642,12 @@ CONFIDENCE SCORING:
 RESPONSE FORMAT:
 Return JSON with:
 {
+  "extracted_date": "2024-07-03" | null,
   "medications": [
     {
       "medication_name": "standardized name",
-      "dosage": "strength and amount",
-      "frequency": "how often",
+      "dosage": "current strength and amount",
+      "frequency": "current frequency",
       "route": "route of administration", 
       "indication": "reason for use",
       "status": "active/discontinued/historical",
@@ -1636,7 +1655,19 @@ Return JSON with:
       "should_consolidate": true/false,
       "consolidation_reasoning": "why consolidate or create new",
       "notes": "additional context",
-      "changes": ["any documented changes"]
+      "changes": ["dose/frequency changes with dates"],
+      "visit_history": [
+        {
+          "date": "2024-02-20",
+          "notes": "Started 10mg daily",
+          "change_type": "started"
+        },
+        {
+          "date": "2024-05-15", 
+          "notes": "Increased ↑ to 20mg",
+          "change_type": "increased"
+        }
+      ]
     }
   ]
 }`;
@@ -1690,6 +1721,7 @@ Extract all medications from this document. For each medication, determine if it
         gptResponse = JSON.parse(responseText);
         console.log(`💊 [GPT] JSON parsing successful`);
         console.log(`💊 [GPT] Medications found in response: ${gptResponse.medications?.length || 0}`);
+        console.log(`💊 [GPT] Extracted document date: ${gptResponse.extracted_date || 'none'}`);
       } catch (parseError) {
         console.error(`💊 [GPT] JSON parsing failed:`, parseError);
         console.error(`💊 [GPT] Raw response text that failed to parse:`, responseText);
