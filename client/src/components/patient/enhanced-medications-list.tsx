@@ -1117,6 +1117,33 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
               </div>
             )}
 
+            {/* Visit History */}
+            {medication.visitHistory && medication.visitHistory.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-medium mb-2">Visit History</h4>
+                <div className="space-y-2 text-sm">
+                  {medication.visitHistory.map((visit: any, index: number) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <div className="flex-shrink-0 w-2 h-2 bg-navy-blue-500 rounded-full mt-1.5"></div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{formatDate(visit.encounterDate)}</span>
+                          {visit.confidence && (
+                            <Badge variant="outline" className="text-xs">
+                              {Math.round(visit.confidence * 100)}%
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-gray-600 dark:text-gray-400">
+                          {visit.notes}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Edit Form */}
             {isEditMode && (
               <div className="mt-4 p-4 border border-navy-blue-200 rounded-lg bg-navy-blue-50/50">

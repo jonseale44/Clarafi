@@ -1314,12 +1314,18 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         `💊 [AttachmentMedications] GPT extracted ${gptResponse.medications?.length || 0} medications`,
       );
 
+      // Extract document date from GPT response
+      const documentDate = gptResponse.document_date || null;
+      console.log(
+        `💊 [AttachmentMedications] Document date extracted: ${documentDate || 'Using current date'}`,
+      );
+
       // Apply changes with attachment source attribution
       const changes = [];
       if (gptResponse.medications && gptResponse.medications.length > 0) {
         for (const medicationData of gptResponse.medications) {
           const change = await this.processAttachmentMedication(
-            medicationData,
+            { ...medicationData, document_date: documentDate },
             patientId,
             encounterId,
             attachmentId,
@@ -1433,10 +1439,29 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       `💊 [AttachmentVisitHistory] Adding visit history to medication ${existingMedication.id}`,
     );
 
+    // Use document date if provided, otherwise use current date
+    const encounterDate = medicationData.document_date || new Date().toISOString().split("T")[0];
+    
+    // Build ultra-concise visit note based on lifecycle event
+    let visitNote = '';
+    if (medicationData.lifecycle_event === 'increased' && medicationData.dosage) {
+      visitNote = `Increased ↑ ${existingMedication.medicationName} to ${medicationData.dosage}`;
+    } else if (medicationData.lifecycle_event === 'decreased' && medicationData.dosage) {
+      visitNote = `Decreased ↓ ${existingMedication.medicationName} to ${medicationData.dosage}`;
+    } else if (medicationData.lifecycle_event === 'stopped') {
+      visitNote = `Discontinued ${existingMedication.medicationName}`;
+    } else if (medicationData.lifecycle_event === 'started') {
+      visitNote = `Started ${existingMedication.medicationName} ${medicationData.dosage || ''}`;
+    } else if (medicationData.visit_note) {
+      visitNote = medicationData.visit_note;
+    } else {
+      visitNote = `${existingMedication.medicationName} ${medicationData.dosage || existingMedication.dosage}`;
+    }
+
     const visitEntry = {
-      encounterDate: new Date().toISOString().split("T")[0],
+      encounterDate: encounterDate,
       changes: medicationData.changes || [],
-      notes: medicationData.notes || `Referenced in document`,
+      notes: visitNote.trim(),
       source: "attachment",
       sourceId: attachmentId,
       encounterId: encounterId,
@@ -1491,13 +1516,25 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         medicationData.route,
       );
 
+    // Use document date if provided, otherwise use current date
+    const encounterDate = medicationData.document_date || new Date().toISOString().split("T")[0];
+    
+    // Build ultra-concise visit note
+    let visitNote = '';
+    if (medicationData.visit_note) {
+      visitNote = medicationData.visit_note;
+    } else if (medicationData.lifecycle_event === 'started') {
+      visitNote = `Started ${medicationData.medication_name} ${medicationData.dosage || ''}`;
+    } else {
+      visitNote = `${medicationData.medication_name} ${medicationData.dosage || ''}`;
+    }
+
     // Create initial visit history entry
     const initialVisitHistory = [
       {
-        encounterDate: new Date().toISOString().split("T")[0],
+        encounterDate: encounterDate,
         changes: ["Extracted from document"],
-        notes:
-          medicationData.notes || `Medication extracted from uploaded document`,
+        notes: visitNote.trim(),
         source: "attachment",
         sourceId: attachmentId,
         encounterId: encounterId,
@@ -1600,7 +1637,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const systemPrompt = `You are an expert clinical pharmacist with 20+ years of experience extracting medication information from medical documents. Your task is to identify and consolidate medication data with existing patient medications.
+    const systemPrompt = `You are an expert clinical pharmacist with 20+ years of experience extracting medication information from medical documents. Your task is to identify and consolidate medication data with existing patient medications while building comprehensive visit histories.
 
 CONSOLIDATION RULES:
 - AGGRESSIVE CONSOLIDATION: Same medication = same drug name, even if dosage/frequency differs
@@ -1616,6 +1653,19 @@ EXTRACTION RULES:
 - Extract start dates if mentioned
 - Include any medication changes documented
 
+DATE EXTRACTION - CRITICAL:
+- Extract the PRIMARY document date for ALL medications from this attachment
+- Look for "Date of Service:", "Date:", "Date/Time:", signature dates, or document headers
+- ALL medications from this single document should use the SAME extracted document date
+- If no specific date found, use null (system will default to current date)
+- This date is CRUCIAL for building accurate medication timelines
+
+VISIT HISTORY INTELLIGENCE:
+- Identify dose changes (increased, decreased, maintained)
+- Track medication lifecycle events (started, stopped, changed)
+- Note reason for changes when documented
+- Build ultra-concise visit notes for timeline tracking
+
 CONFIDENCE SCORING:
 - High confidence (0.90+): Explicitly listed in medication list/table
 - Medium confidence (0.70-0.89): Mentioned in narrative with clear details
@@ -1624,6 +1674,7 @@ CONFIDENCE SCORING:
 RESPONSE FORMAT:
 Return JSON with:
 {
+  "document_date": "2025-01-07", // Primary date extracted from document
   "medications": [
     {
       "medication_name": "standardized name",
@@ -1636,7 +1687,9 @@ Return JSON with:
       "should_consolidate": true/false,
       "consolidation_reasoning": "why consolidate or create new",
       "notes": "additional context",
-      "changes": ["any documented changes"]
+      "changes": ["any documented changes"],
+      "lifecycle_event": "started/increased/decreased/stopped/maintained", // For visit history
+      "visit_note": "Started citalopram 10mg" // Ultra-concise for timeline
     }
   ]
 }`;
