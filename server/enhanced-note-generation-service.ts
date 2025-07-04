@@ -34,7 +34,6 @@ Generate a complete, professional SOAP note with the following sections:
 Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.  
 
 **OBJECTIVE:** Organize this section as follows:
-
 Vitals: List all vital signs in a single line, formatted as:
 
 BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
@@ -84,8 +83,7 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
-
-CRITICAL FORMATTING RULE: Leave one blank line between each condition.
+CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
 [Plan item 1]
@@ -95,21 +93,18 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition.
 Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
-
 - Trial low-dose inhaler therapy to address potential airway constriction.
 - Monitor response to inhaler and reassess in 2 weeks.
 - Patient education on environmental triggers (e.g., dust exposure).
 
 Fatigue, Work-Related Stress (Z73.0):
-
 - Counsel patient on stress management and lifestyle modifications.
 - Encourage gradual increase in physical activity.
 
 Family History of Cardiovascular Disease (Z82.49):
-
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
-**ORDERS:** 
 
+**ORDERS:** 
 For all orders, follow this highly-structured format:
 
 Medications:
@@ -170,14 +165,10 @@ Generate a complete, professional SOAP note with the following sections:
 **SUBJECTIVE:**
 Summarize patient-reported symptoms, concerns, relevant history, and review of systems in narrative format. Use concise sentences and short phrases. Each topic should be separated by a paragraph and a blank line. Do not use bullet points.
 
-**OBJECTIVE:** Organize this section as follows:
-
-Vitals: List all vital signs in a single line, formatted as:
-
+**OBJECTIVE:** <!--Organize this section as follows:-->
+<!--Vitals: List all vital signs in a single line, formatted as: -->
 BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
-
-- If the physical exam is completely normal, use the following full, pre-defined template verbatim:
-
+<!-- If the physical exam is completely normal, use the following full, pre-defined template verbatim: -->
 Physical Exam:
 Gen: AAO x 3. NAD.
 HEENT: MMM, no lymphadenopathy.
@@ -187,7 +178,7 @@ Abd: Normoactive bowel sounds. Soft, non-tender.
 Ext: No clubbing, cyanosis, or edema.
 Skin: No rashes or lesions.
 
-<!-- Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded 
+<!-- Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded -->
 
 <!--Do NOT use diagnostic terms (e.g., "pneumonia," "actinic keratosis," "otitis media"). Write only objective physician-level findings.-->
 
@@ -221,8 +212,7 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
-
-CRITICAL FORMATTING RULE: Leave one blank line between each condition.
+CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
 [Plan item 1]
@@ -232,19 +222,17 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition.
 Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
-
 - Trial low-dose inhaler therapy to address potential airway constriction.
 - Monitor response to inhaler and reassess in 2 weeks.
 - Patient education on environmental triggers (e.g., dust exposure).
 
 Fatigue, Work-Related Stress (Z73.0):
-
 - Counsel patient on stress management and lifestyle modifications.
 - Encourage gradual increase in physical activity.
 
 Family History of Cardiovascular Disease (Z82.49):
-
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
+
 **ORDERS:** 
 
 For all orders, follow this highly-structured format:
@@ -305,8 +293,7 @@ ${transcription}
 Generate a complete, professional APSO note with the following sections:
 
 **ASSESSMENT/PLAN:**
-
-CRITICAL FORMATTING RULE: Leave one blank line between each condition.
+CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
 [Plan item 1]
@@ -316,31 +303,24 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition.
 Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
-
 - Trial low-dose inhaler therapy to address potential airway constriction.
 - Monitor response to inhaler and reassess in 2 weeks.
 - Patient education on environmental triggers (e.g., dust exposure).
 
 Fatigue, Work-Related Stress (Z73.0):
-
 - Counsel patient on stress management and lifestyle modifications.
 - Encourage gradual increase in physical activity.
 
 Family History of Cardiovascular Disease (Z82.49):
-
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **SUBJECTIVE:**
 Summarize patient-reported symptoms, concerns, relevant history, and review of systems. Use bullet points for clarity.  
 
-**OBJECTIVE:** Organize this section as follows:
-
-Vitals: <!--List all vital signs in a single line, formatted as:-->
-
+**OBJECTIVE:** <!--Organize this section as follows:-->
+<!--Vitals: List all vital signs in a single line, formatted as: -->
 BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
-
-<!--If the physical exam is completely normal, use the following full, pre-defined template verbatim:-->
-
+<!-- If the physical exam is completely normal, use the following full, pre-defined template verbatim: -->
 Physical Exam:
 Gen: AAO x 3. NAD.
 HEENT: MMM, no lymphadenopathy.
@@ -383,8 +363,8 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 🚫 Bad outcome (Incorrect Use of Diagnosis):
 Skin: Cellulitis on the left lower leg.
 <!--insert FOUR blank lines)-->
-**ORDERS:** 
 
+**ORDERS:** 
 For all orders, follow this highly-structured format:
 
 Medications:
@@ -448,13 +428,18 @@ Generate a complete, professional progress note with the following sections:
 - Any changes since last assessment
 - Pain levels, functional status
 
-**OBJECTIVE:**
-Vitals: BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
-
+**OBJECTIVE:** <!--Organize this section as follows:-->
+<!--Vitals: List all vital signs in a single line, formatted as: -->
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+<!-- If the physical exam is completely normal, use the following full, pre-defined template verbatim: -->
 Physical Exam:
-- Focus on relevant systems based on current problems
-- Include pertinent findings related to active issues
-- Bold abnormal findings
+Gen: AAO x 3. NAD.
+HEENT: MMM, no lymphadenopathy.
+CV: Normal rate, regular rhythm. No m/c/g/r.
+Lungs: Normal work of breathing. CTAB.
+Abd: Normoactive bowel sounds. Soft, non-tender.
+Ext: No clubbing, cyanosis, or edema.
+Skin: No rashes or lesions.
 
 Labs/Studies: Include relevant recent results
 
@@ -1042,7 +1027,7 @@ IMPORTANT INSTRUCTIONS:
           : "- Vitals documented but incomplete";
       };
 
-      const recentImaging = 
+      const recentImaging =
         patientChart.imagingResults?.length > 0
           ? patientChart.imagingResults
               .slice(0, 5)
