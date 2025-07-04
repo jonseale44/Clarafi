@@ -115,6 +115,7 @@ Preferred communication style: Simple, everyday language.
 - **USER ACCESS RESTORED**: Re-assigned both users (IDs 2 and 3) to all 6 locations with appropriate roles (primary at Central, covering at others)
 - **DATABASE CONSTRAINT FIXES**: Resolved schema issues with system_type, operatingHours JSONB formatting, and roleAtLocation field requirements
 - **PRODUCTION READY**: Location selection functionality restored for multi-location workflow management
+- **ANIMATION SMOOTHING FIX**: Resolved jumping animation issues by simplifying to single smooth transition from scale 80 to 1 with both letters animating in sync
 
 ### CLARAFI Animation Implementation COMPLETED (July 4, 2025)
 - **SOPHISTICATED FALLING ANIMATION**: Successfully implemented "AI" falling animation where gold letters start massive (scale 100x) and fall away from user
