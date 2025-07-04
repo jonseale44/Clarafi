@@ -1262,7 +1262,16 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                 </h4>
                 <div className="space-y-2">
                   {medication.visitHistory
-                    .sort((a: any, b: any) => new Date(b.encounterDate || b.date).getTime() - new Date(a.encounterDate || a.date).getTime())
+                    .sort((a: any, b: any) => {
+                      // Primary sort: Date descending (most recent first)
+                      const dateComparison = new Date(b.encounterDate || b.date).getTime() - new Date(a.encounterDate || a.date).getTime();
+                      if (dateComparison !== 0) return dateComparison;
+                      
+                      // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+                      const aEncounterId = a.encounterId || 0;
+                      const bEncounterId = b.encounterId || 0;
+                      return bEncounterId - aEncounterId;
+                    })
                     .slice(0, 5) // Show only last 5 entries
                     .map((visit: any, index: number) => {
                       const visitDate = visit.encounterDate || visit.date;

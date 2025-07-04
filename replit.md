@@ -140,6 +140,7 @@ Preferred communication style: Simple, everyday language.
 - **ORDER-TRIGGERED UPDATES**: Visit history entries automatically created when `processOrderDelta` runs during order creation
 - **COMPREHENSIVE COVERAGE**: Visit history tracking added to all medication actions: new medications, updates, and discontinuations
 - **PRODUCTION READY**: System now creates chronological visit history like "7/3/25: Increased ↑ citalopram to 40mg" from medication orders
+- **CHRONOLOGICAL ORDERING FIX**: Visit history now properly sorted with most recent entries first, using encounter ID as secondary sort for same-day entries matching medical problems pattern
 
 ### Enhanced Document Search Functionality in Extracted Content Interface (July 4, 2025)
 - **MICROSOFT WORD-STYLE SEARCH**: Transformed search from Google-style filtering to Word-style highlighting that preserves full document context
