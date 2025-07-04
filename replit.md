@@ -131,6 +131,16 @@ Preferred communication style: Simple, everyday language.
 - **CONSOLIDATION SYSTEM**: Medications now support same consolidation and merging intelligence as medical problems with visit history preservation
 - **PRODUCTION READY**: Medication system now provides identical intelligence, visit tracking, and clinical workflow support as medical problems section
 
+### Automatic Order-Based Medication Visit History Tracking COMPLETED (July 4, 2025)
+- **AUTOMATIC DOSE TRACKING**: Successfully implemented automatic visit history generation when medications are created or updated from orders
+- **SIMPLE CLINICAL FORMAT**: Visit history entries use concise clinical format: "Started medication X", "Increased ↑ to Y", "Decreased ↓ to Z", "Continued medication"
+- **DOSE COMPARISON LOGIC**: System automatically detects dose increases/decreases by comparing numeric dosage values
+- **DUAL HISTORY SYSTEM**: Maintains both `medicationHistory` (for system use) and `visitHistory` (for UI display) fields
+- **PRESERVED ATTACHMENT WORKFLOW**: Attachment-based visit history creation continues to work independently and correctly
+- **ORDER-TRIGGERED UPDATES**: Visit history entries automatically created when `processOrderDelta` runs during order creation
+- **COMPREHENSIVE COVERAGE**: Visit history tracking added to all medication actions: new medications, updates, and discontinuations
+- **PRODUCTION READY**: System now creates chronological visit history like "7/3/25: Increased ↑ citalopram to 40mg" from medication orders
+
 ### Enhanced Document Search Functionality in Extracted Content Interface (July 4, 2025)
 - **MICROSOFT WORD-STYLE SEARCH**: Transformed search from Google-style filtering to Word-style highlighting that preserves full document context
 - **COMPLETE TEXT VISIBILITY**: All document text remains visible during search - no more isolating only matching lines

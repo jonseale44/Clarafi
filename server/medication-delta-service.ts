@@ -773,6 +773,16 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       lastUpdatedEncounterId: encounterId,
       sourceOrderId: relatedOrder?.id || null, // Link to source order
       medicationHistory: [historyEntry],
+      // Add visit history in the format expected by the UI
+      visitHistory: [
+        {
+          encounterId: encounterId,
+          date: historyEntry.date,
+          notes: historyEntry.notes,
+          sourceType: 'encounter',
+          confidence: historyEntry.confidence || 0.95,
+        }
+      ],
       changeLog: [
         {
           encounter_id: encounterId,
@@ -843,6 +853,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
 
     const existingHistory = (medication.medicationHistory as any[]) || [];
     const existingChangeLog = (medication.changeLog as any[]) || [];
+    const existingVisitHistory = (medication.visitHistory as any[]) || [];
 
     const updatedHistory = [...existingHistory, historyEntry];
     const updatedChangeLog = [
@@ -859,8 +870,21 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       },
     ];
 
+    // Add visit history entry for UI display
+    const updatedVisitHistory = [
+      ...existingVisitHistory,
+      {
+        encounterId: historyEntry.encounterId,
+        date: historyEntry.date,
+        notes: historyEntry.notes,
+        sourceType: 'encounter',
+        confidence: historyEntry.confidence || 0.95,
+      }
+    ];
+
     const updateData: any = {
       medicationHistory: updatedHistory,
+      visitHistory: updatedVisitHistory,
       changeLog: updatedChangeLog,
       lastUpdatedEncounterId: historyEntry.encounterId,
     };
@@ -894,6 +918,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
 
     const existingHistory = (medication.medicationHistory as any[]) || [];
     const existingChangeLog = (medication.changeLog as any[]) || [];
+    const existingVisitHistory = (medication.visitHistory as any[]) || [];
 
     const updatedHistory = [...existingHistory, historyEntry];
     const updatedChangeLog = [
@@ -906,10 +931,23 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       },
     ];
 
+    // Add visit history entry for discontinuation
+    const updatedVisitHistory = [
+      ...existingVisitHistory,
+      {
+        encounterId: historyEntry.encounterId,
+        date: historyEntry.date,
+        notes: historyEntry.notes,
+        sourceType: 'encounter',
+        confidence: historyEntry.confidence || 0.95,
+      }
+    ];
+
     await storage.updateMedication(change.medication_id, {
       status: "discontinued",
       endDate: new Date().toISOString().split("T")[0],
       medicationHistory: updatedHistory,
+      visitHistory: updatedVisitHistory,
       changeLog: updatedChangeLog,
       lastUpdatedEncounterId: historyEntry.encounterId,
     });
@@ -1170,11 +1208,14 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     order: any,
     existingMedication: any,
   ): MedicationChange {
+    // Generate meaningful clinical history note
+    const clinicalNote = this.generateClinicalHistoryNote(order, existingMedication, "continued");
+    
     return {
       medication_id: existingMedication.id,
       action: "ADD_HISTORY",
       medication_name: order.medicationName,
-      history_notes: `Order ${order.id} continues existing medication`,
+      history_notes: clinicalNote,
       confidence: 0.9,
       reasoning: "Medication continues from previous encounters",
     };
@@ -1184,14 +1225,108 @@ Please analyze this SOAP note and identify medication changes that occurred duri
    * Create new medication change
    */
   private createNewMedicationChange(order: any): MedicationChange {
+    // Generate meaningful clinical history note
+    const clinicalNote = this.generateClinicalHistoryNote(order, null, "started");
+    
     return {
       medication_id: undefined,
       action: "NEW_MEDICATION",
       medication_name: order.medicationName,
-      history_notes: `New medication prescribed via order ${order.id}`,
+      history_notes: clinicalNote,
       confidence: 0.95,
       reasoning: "New medication order",
     };
+  }
+
+  /**
+   * Generate meaningful clinical history note from order details
+   */
+  private generateClinicalHistoryNote(
+    order: any,
+    existingMedication: any,
+    action: "started" | "continued" | "increased" | "decreased" | "changed"
+  ): string {
+    // Extract key details from order
+    const medName = order.medicationName || "medication";
+    const dosage = order.dosage || "";
+    
+    // Build the clinical note based on action
+    let note = "";
+    
+    if (action === "started") {
+      note = `Started ${medName}`;
+      if (dosage) note += ` ${dosage}`;
+    } else if (action === "continued") {
+      // Check if dosage changed
+      if (existingMedication && dosage && dosage !== existingMedication.dosage) {
+        // Compare numeric dosages to determine if increased or decreased
+        const currentDose = this.extractNumericDose(dosage);
+        const previousDose = this.extractNumericDose(existingMedication.dosage);
+        
+        if (currentDose > previousDose) {
+          note = `Increased ↑ ${medName} to ${dosage}`;
+        } else if (currentDose < previousDose) {
+          note = `Decreased ↓ ${medName} to ${dosage}`;
+        } else {
+          note = `Changed ${medName} to ${dosage}`;
+        }
+      } else {
+        note = `Continued ${medName}`;
+        if (dosage) note += ` ${dosage}`;
+      }
+    }
+    
+    return note;
+  }
+
+  /**
+   * Extract numeric dose from dosage string for comparison
+   */
+  private extractNumericDose(dosageStr: string): number {
+    if (!dosageStr) return 0;
+    
+    // Extract numeric value from strings like "10mg", "20 mg", "0.5mg"
+    const match = dosageStr.match(/(\d+\.?\d*)/);
+    return match ? parseFloat(match[1]) : 0;
+  }
+
+  /**
+   * Convert frequency to medical abbreviation
+   */
+  private abbreviateFrequency(frequency: string): string {
+    const freq = frequency.toLowerCase();
+    
+    // Common medical abbreviations
+    if (freq.includes("once daily") || freq.includes("once a day") || freq.includes("1 time daily")) {
+      return "QD";
+    } else if (freq.includes("twice daily") || freq.includes("twice a day") || freq.includes("2 times daily")) {
+      return "BID";
+    } else if (freq.includes("three times daily") || freq.includes("three times a day") || freq.includes("3 times daily")) {
+      return "TID";
+    } else if (freq.includes("four times daily") || freq.includes("four times a day") || freq.includes("4 times daily")) {
+      return "QID";
+    } else if (freq.includes("every 8 hours")) {
+      return "Q8H";
+    } else if (freq.includes("every 12 hours")) {
+      return "Q12H";
+    } else if (freq.includes("at bedtime") || freq.includes("at night")) {
+      return "QHS";
+    } else if (freq.includes("as needed") || freq.includes("prn")) {
+      return "PRN";
+    } else if (freq.includes("every morning")) {
+      return "QAM";
+    } else if (freq.includes("every evening")) {
+      return "QPM";
+    }
+    
+    // Extract frequency from sig if not matched
+    const sigMatch = frequency.match(/take\s+\d+\s+\w+\s+(.+?)(?:\s+for|$)/i);
+    if (sigMatch) {
+      return this.abbreviateFrequency(sigMatch[1]);
+    }
+    
+    // Return original if no match
+    return frequency;
   }
 
   /**
