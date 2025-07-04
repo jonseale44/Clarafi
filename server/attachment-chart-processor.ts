@@ -14,7 +14,7 @@ import {
   vitals, 
   patients 
 } from "../shared/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Attachment Chart Processor
@@ -250,6 +250,24 @@ export class AttachmentChartProcessor {
     }
 
     try {
+      // First, check if we've already processed vitals from this exact attachment
+      console.log(`🩺 [VitalsExtraction] 🔍 Checking if attachment ${attachment.id} has already been processed for vitals`);
+      const existingVitalsFromAttachment = await db.select()
+        .from(vitals)
+        .where(
+          and(
+            eq(vitals.patientId, attachment.patientId),
+            eq(vitals.extractedFromAttachmentId, attachment.id)
+          )
+        );
+
+      if (existingVitalsFromAttachment.length > 0) {
+        console.log(`🩺 [VitalsExtraction] ⚠️ Attachment ${attachment.id} has already been processed - found ${existingVitalsFromAttachment.length} existing vitals entries`);
+        console.log(`🩺 [VitalsExtraction] 🚫 Skipping duplicate processing to prevent duplicate vitals`);
+        console.log(`🔥 [VITALS WORKFLOW] ============= VITALS EXTRACTION SKIPPED - ALREADY PROCESSED =============`);
+        return;
+      }
+
       // Get patient context for better parsing
       console.log(`🩺 [VitalsExtraction] 🔍 Fetching patient context for patient ${attachment.patientId}`);
       const [patient] = await db.select()
