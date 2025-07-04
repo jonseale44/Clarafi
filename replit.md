@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical Lab Test Name Matching Safety Fix COMPLETED (January 9, 2025)
+- **CRITICAL CLINICAL SAFETY BUG FIXED**: Lab results matrix was incorrectly matching test names using dangerous substring logic
+- **DANGEROUS BUG**: Hemoglobin A1c (HbA1c) was incorrectly appearing as regular Hemoglobin due to substring matching
+- **ROOT CAUSE**: Test name matching used `includes()` logic that caused "Hemoglobin" to match "Hemoglobin A1c" 
+- **SOLUTION IMPLEMENTED**: Changed both `getTestValue()` and `getCellClass()` functions to use exact matching after normalization
+- **CLINICAL IMPACT**: Prevents serious clinical errors where different lab tests could be confused (e.g., HbA1c vs Hemoglobin have very different clinical meanings)
+- **MATCHING LOGIC**: Now uses normalized exact matching only - removes special characters and compares lowercase strings for exact equality
+- **PRODUCTION READY**: Lab results matrix now safely displays lab values without risk of test name confusion
+
 ### Lab Parser Vital Signs Exclusion Fix COMPLETED (January 9, 2025)
 - **CRITICAL BUG FIXED**: Lab parser was incorrectly extracting vital signs (blood pressure, heart rate, temperature, etc.) and saving them as lab results
 - **GPT PROMPT ENHANCEMENT**: Updated unified lab parser prompt to explicitly exclude all vital signs and only extract true laboratory tests

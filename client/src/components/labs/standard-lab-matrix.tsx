@@ -89,10 +89,9 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
       const normalizedResult = normalizeTestName(r.testName);
       const normalizedKey = normalizeTestName(testKey);
       
-      // Check for common variations
-      return normalizedResult === normalizedKey ||
-             normalizedResult.includes(normalizedKey) ||
-             normalizedKey.includes(normalizedResult);
+      // Only match if they're exactly equal after normalization
+      // This prevents "Hemoglobin" from matching "Hemoglobin A1c"
+      return normalizedResult === normalizedKey;
     });
     
     return result ? result.resultValue : null;
@@ -102,11 +101,18 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
     if (!value) return 'p-3 text-center border-r border-gray-200 text-gray-400';
     
     const dateData = dateColumns.find(d => d.dateKey === dateKey);
-    const result = dateData?.results.find(r => 
-      r.testName === testKey || 
-      r.testName.includes(testKey) ||
-      testKey.includes(r.testName)
-    );
+    const result = dateData?.results.find(r => {
+      // Exact match first
+      if (r.testName === testKey) return true;
+      
+      // Normalize names for matching (same logic as getTestValue)
+      const normalizeTestName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const normalizedResult = normalizeTestName(r.testName);
+      const normalizedKey = normalizeTestName(testKey);
+      
+      // Only match if they're exactly equal after normalization
+      return normalizedResult === normalizedKey;
+    });
     
     let baseClass = 'p-3 text-center border-r border-gray-200 font-medium';
     
