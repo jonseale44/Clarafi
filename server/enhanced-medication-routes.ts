@@ -280,14 +280,20 @@ router.put("/medications/:medicationId", async (req: Request, res: Response) => 
       changes: req.body.changes || {}
     };
 
+    // Map frontend field names to database schema field names
     const updateData = {
       ...req.body,
+      // Map refills to refillsRemaining (database schema field)
+      refillsRemaining: req.body.refills,
       changeLog: [
         ...(req.body.changeLog || []),
         changeLogEntry
       ],
       updatedAt: new Date()
     };
+    
+    // Remove the frontend refills field to avoid confusion
+    delete updateData.refills;
 
     const updatedMedication = await storage.updateMedication(medicationId, updateData);
     
