@@ -1577,6 +1577,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
             attachmentId,
             providerId,
             existingMedications,
+            gptResponse.extracted_date, // Pass the extracted date from GPT
           );
           if (change) {
             changes.push(change);
@@ -1611,6 +1612,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     attachmentId: number,
     providerId: number,
     existingMedications: any[],
+    extractedDate: string | null,
   ): Promise<any> {
     console.log(
       `💊 [AttachmentMed] Processing medication: ${medicationData.medication_name}`,
@@ -1631,6 +1633,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         medicationData,
         attachmentId,
         encounterId,
+        extractedDate,
       );
     } else {
       console.log(`💊 [AttachmentMed] Creating new medication from attachment`);
@@ -1640,6 +1643,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         encounterId,
         attachmentId,
         providerId,
+        extractedDate,
       );
     }
   }
@@ -1680,13 +1684,14 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     medicationData: any,
     attachmentId: number,
     encounterId: number,
+    extractedDate: string | null,
   ): Promise<any> {
     console.log(
       `💊 [AttachmentVisitHistory] Adding visit history to medication ${existingMedication.id}`,
     );
 
     const visitEntry = {
-      encounterDate: new Date().toISOString().split("T")[0],
+      encounterDate: extractedDate || new Date().toISOString().split("T")[0],
       changes: medicationData.changes || [],
       notes: medicationData.notes || `Referenced in document`,
       source: "attachment",
@@ -1729,6 +1734,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     encounterId: number,
     attachmentId: number,
     providerId: number,
+    extractedDate: string | null,
   ): Promise<any> {
     console.log(
       `💊 [AttachmentCreate] Creating new medication: ${medicationData.medication_name}`,
@@ -1746,7 +1752,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     // Create initial visit history entry
     const initialVisitHistory = [
       {
-        encounterDate: new Date().toISOString().split("T")[0],
+        encounterDate: extractedDate || new Date().toISOString().split("T")[0],
         changes: ["Extracted from document"],
         notes:
           medicationData.notes || `Medication extracted from uploaded document`,
@@ -1778,7 +1784,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       frequency: medicationData.frequency || "daily",
       sig: medicationData.sig || null,
       clinicalIndication: medicationData.indication,
-      startDate: new Date().toISOString().split("T")[0],
+      startDate: extractedDate || new Date().toISOString().split("T")[0],
       status:
         medicationData.status === "discontinued" ? "historical" : "active",
       firstEncounterId: encounterId,
