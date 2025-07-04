@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,13 +24,207 @@ import {
   FileSearch,
   Loader2,
   Brain,
-  FileX
+  FileX,
+  Maximize2,
+  Minimize2,
+  Search,
+  X
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Enhanced Extracted Content Dialog Component
+interface ExtractedContentDialogProps {
+  attachment: PatientAttachment;
+  getDocumentTypeBadge: (type: string) => JSX.Element;
+}
+
+function ExtractedContentDialog({ attachment, getDocumentTypeBadge }: ExtractedContentDialogProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Function to highlight search results
+  const highlightText = (text: string, search: string) => {
+    if (!search.trim()) return text;
+    
+    const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
+  // Filter and highlight the text based on search
+  const displayedText = useMemo(() => {
+    if (!attachment.extractedContent?.extractedText) return "";
+    
+    if (!searchTerm.trim()) {
+      return attachment.extractedContent.extractedText;
+    }
+
+    // Split text into lines and filter those containing the search term
+    const lines = attachment.extractedContent.extractedText.split('\n');
+    const matchingLines = lines.filter(line => 
+      line.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // If no matches, show message
+    if (matchingLines.length === 0) {
+      return "No results found for your search.";
+    }
+
+    // Return filtered lines with context (one line before and after each match)
+    const contextLines = new Set<number>();
+    lines.forEach((line, index) => {
+      if (line.toLowerCase().includes(searchTerm.toLowerCase())) {
+        contextLines.add(index - 1); // Previous line
+        contextLines.add(index);     // Current line
+        contextLines.add(index + 1); // Next line
+      }
+    });
+
+    return lines
+      .map((line, index) => contextLines.has(index) ? line : null)
+      .filter(line => line !== null)
+      .join('\n');
+  }, [attachment.extractedContent?.extractedText, searchTerm]);
+
+  const handleCopyText = () => {
+    if (attachment.extractedContent?.extractedText) {
+      navigator.clipboard.writeText(attachment.extractedContent.extractedText);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+  };
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-green-600 hover:text-green-800"
+          title="View extracted text"
+        >
+          <FileSearch className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent 
+        className={`${
+          isExpanded 
+            ? "max-w-full max-h-full w-full h-full m-0" 
+            : "max-w-4xl max-h-[80vh]"
+        } transition-all duration-200`}
+        aria-describedby="extracted-content-description"
+      >
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>
+              Extracted Content: {attachment.extractedContent?.aiGeneratedTitle || attachment.originalFileName}
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleExpanded}
+              title={isExpanded ? "Exit fullscreen" : "Fullscreen"}
+              className="ml-4"
+            >
+              {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </div>
+          <span id="extracted-content-description" className="sr-only">
+            View and search the extracted text content from the uploaded document
+          </span>
+        </DialogHeader>
+        <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between space-x-2">
+            <div className="flex items-center space-x-2">
+              {attachment.extractedContent?.documentType && getDocumentTypeBadge(attachment.extractedContent.documentType)}
+              <span className="text-sm text-gray-500">
+                Processed: {formatDistanceToNow(new Date(attachment.extractedContent?.processedAt || new Date()), { addSuffix: true })}
+              </span>
+            </div>
+            
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search in extracted text..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSearch}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {searchTerm && (
+            <div className="text-sm text-gray-500">
+              {displayedText === "No results found for your search." 
+                ? "No results found" 
+                : `Showing results for "${searchTerm}"`}
+            </div>
+          )}
+
+          <ScrollArea className={`${isExpanded ? "flex-1" : "h-96"} w-full rounded border p-4 bg-gray-50 dark:bg-gray-900`}>
+            <div className="whitespace-pre-wrap text-sm">
+              {searchTerm.trim() 
+                ? (displayedText === "No results found for your search." 
+                    ? displayedText 
+                    : highlightText(displayedText, searchTerm))
+                : displayedText}
+            </div>
+          </ScrollArea>
+
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              {attachment.extractedContent?.extractedText && (
+                <>
+                  {attachment.extractedContent.extractedText.split('\n').length} lines • 
+                  {attachment.extractedContent.extractedText.length} characters
+                </>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyText}
+            >
+              Copy Full Text
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface PatientAttachment {
   id: number;
@@ -783,47 +977,10 @@ export function PatientAttachments({
                   <div className="flex items-center space-x-2 ml-4">
                     {/* View Extracted Text Button */}
                     {attachment.extractedContent?.processingStatus === 'completed' && attachment.extractedContent.extractedText && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-green-600 hover:text-green-800"
-                            title="View extracted text"
-                          >
-                            <FileSearch className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh]">
-                          <DialogHeader>
-                            <DialogTitle>
-                              Extracted Content: {attachment.extractedContent.aiGeneratedTitle || attachment.originalFileName}
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="flex items-center space-x-2">
-                              {attachment.extractedContent.documentType && getDocumentTypeBadge(attachment.extractedContent.documentType)}
-                              <span className="text-sm text-gray-500">
-                                Processed: {formatDistanceToNow(new Date(attachment.extractedContent.processedAt), { addSuffix: true })}
-                              </span>
-                            </div>
-                            <ScrollArea className="h-96 w-full rounded border p-4">
-                              <div className="whitespace-pre-wrap text-sm">
-                                {attachment.extractedContent.extractedText}
-                              </div>
-                            </ScrollArea>
-                            <div className="flex justify-end space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigator.clipboard.writeText(attachment.extractedContent!.extractedText)}
-                              >
-                                Copy Text
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <ExtractedContentDialog 
+                        attachment={attachment}
+                        getDocumentTypeBadge={getDocumentTypeBadge}
+                      />
                     )}
 
                     <Button

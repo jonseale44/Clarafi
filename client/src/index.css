@@ -862,3 +862,24 @@
     }
   }
 }
+
+/* Enhanced Extracted Content Dialog Styles */
+.highlight-search-result {
+  background-color: rgb(254 249 195); /* yellow-200 */
+  border-radius: 0.125rem;
+  padding: 0 0.125rem;
+}
+
+.dark .highlight-search-result {
+  background-color: rgb(133 77 14); /* yellow-800 */
+}
+
+/* Search result context lines */
+.search-context-separator {
+  margin: 0.5rem 0;
+  border-top: 1px dashed rgb(229 231 235); /* gray-200 */
+}
+
+.dark .search-context-separator {
+  border-top-color: rgb(55 65 81); /* gray-700 */
+}
