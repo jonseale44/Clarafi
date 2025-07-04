@@ -112,7 +112,7 @@ export default function AuthPage() {
                 <Hospital className="h-6 w-6 text-gold" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-5xl font-bold">
                   <span className="text-navy-blue">CLAR</span><span className="text-gold">A</span><span className="text-navy-blue">F</span><span className="text-gold">I</span>
                 </h1>
                 <p className="text-sm text-gray-500">EMR System</p>
