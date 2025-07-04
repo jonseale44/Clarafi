@@ -1626,13 +1626,30 @@ EXTRACTION RULES:
 - Create ultra-concise visit history entries for dose changes
 
 VISIT HISTORY INTELLIGENCE:
-For medications with documented changes, create ultra-concise visit entries:
-- "Started 10mg daily" (initial dose)
-- "Increased to 20mg" (dose increase)
-- "Decreased to 5mg" (dose decrease) 
-- "Discontinued - side effects" (discontinuation)
-- "Resumed 15mg daily" (restart)
-- Use up/down arrows for dose changes when appropriate
+For medications with documented changes, create ultra-concise visit entries with abbreviations and symbols:
+- "Started 10mg QD" (initial dose, use QD instead of daily)
+- "↑ to 20mg" (dose increase, use ↑ symbol)
+- "↓ to 5mg BID" (dose decrease, use ↓ symbol)
+- "D/C - AE" (discontinued due to adverse effects)
+- "Resumed 10mg" (medication restarted)
+- "Changed to 15mg QHS" (timing change)
+
+ABBREVIATION RULES FOR VISIT HISTORY:
+- Always put dose changes FIRST in the history notes
+- Use ↑ for increased, ↓ for decreased
+- Use D/C for discontinued
+- Use standard medical abbreviations: QD, BID, TID, QID, QHS, PRN
+- Keep entries under 30 characters when possible
+- Format: "[action] [dose] [frequency]" (e.g., "↑ 40mg BID")
+- For discontinuation include reason if known: "D/C - AE", "D/C - ineffective", "D/C - completed"
+
+EXAMPLES OF ULTRA-CONCISE HISTORY NOTES:
+- "↑ 40mg QD" (increased to 40mg once daily)
+- "↓ 10mg BID" (decreased to 10mg twice daily)
+- "Started 5mg QHS" (initiated at bedtime)
+- "D/C - resolved" (discontinued, condition resolved)
+- "Changed to ER 20mg" (switched to extended release)
+- "Added 2.5mg PRN" (added as-needed dose)
 
 CONFIDENCE SCORING:
 - High confidence (0.90+): Explicitly listed in medication list/table
