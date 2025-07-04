@@ -743,7 +743,7 @@ export function LabResultsMatrix({
         // Get all reviewed results for this date (results that are NOT pending review)
         matrixData.forEach(test => {
           test.results.forEach(result => {
-            const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+            const resultDisplayDate = format(new Date(result.date), 'MM/dd/yy');
             if (resultDisplayDate === selectedDisplayDate && !result.needsReview && result.isReviewed) { 
               resultIds.push(result.id);
             }
@@ -984,7 +984,7 @@ export function LabResultsMatrix({
                       
                       {displayColumns.map((dateCol, index) => {
                         const result = test.results.find(r => {
-                          const resultDateKey = format(new Date(r.date), 'yyyy-MM-dd HH:mm');
+                          const resultDateKey = format(new Date(r.date), 'MM/dd/yy');
                           return resultDateKey === dateCol.displayDate;
                         });
                         const isDateSelected = selectedDates.has(dateCol.displayDate);
