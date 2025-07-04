@@ -96,11 +96,12 @@ export function FastMedicationIntelligence({
   }, [initialQuantity]); // Only depend on initialQuantity
 
   useEffect(() => {
+    console.log('🔄 [FastMedicationIntelligence] Refills effect triggered:', { initialRefills, currentRefills: refills });
     if (initialRefills !== undefined && initialRefills !== refills) {
       console.log('🔄 [FastMedicationIntelligence] Syncing refills:', { initialRefills, currentRefills: refills });
       setRefills(initialRefills);
     }
-  }, [initialRefills]); // Only depend on initialRefills
+  }, [initialRefills]); // Only depend on initialRefills to avoid loops
 
   useEffect(() => {
     if (initialDaysSupply !== undefined && initialDaysSupply !== daysSupply) {
