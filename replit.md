@@ -109,6 +109,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### SOAP (Psychiatric) Template Addition COMPLETED (July 4, 2025)
+- **NEW PSYCHIATRIC TEMPLATE ADDED**: Successfully implemented "SOAP (Psychiatric)" template designed specifically for psychiatric encounters
+- **MENTAL STATUS EXAMINATION**: MSE replaces physical exam section with comprehensive psychiatric assessment including appearance, behavior, speech, mood, affect, thought process/content, perception, cognition, and insight/judgment
+- **PSYCHIATRIC-FOCUSED SUBJECTIVE**: Enhanced subjective section covers mood state, sleep patterns, appetite changes, substance use, stressors, psychiatric history, family psychiatric history, and safety assessment (SI/HI)
+- **BACKEND IMPLEMENTATION**: Added `buildSOAPPsychiatricPrompt()` method in `enhanced-note-generation-service.ts` with extensive MSE examples and psychiatric-specific formatting
+- **FRONTEND INTEGRATION**: Updated `NoteTypeSelector.tsx` and `TwoPhaseTemplateEditor.tsx` to include "SOAP (Psychiatric)" option in Progress Notes category
+- **MSE FORMATTING**: Normal MSE template provided verbatim with bolding only for abnormal findings, maintaining pertinent negatives in regular text
+- **PSYCHIATRIC ORDERS**: Includes specialized order sections for psychotropic medications, therapy/counseling, safety planning, and psychiatric-specific labs (drug levels, metabolic panels)
+- **DSM-5 DIAGNOSIS FORMAT**: Assessment section uses DSM-5 codes with psychiatric diagnosis examples (MDD, GAD, substance use disorders)
+- **COMPREHENSIVE EXAMPLES**: Included 3 detailed MSE examples covering psychosis, depression with SI, and mania scenarios with correct objective documentation
+- **PRODUCTION READY**: Template available immediately in all note generation interfaces alongside existing SOAP, SOAP (Narrative), APSO, Progress, H&P, Discharge, and Procedure templates
+
 ### SOAP (Narrative) Template Addition COMPLETED (July 4, 2025)
 - **NEW TEMPLATE ADDED**: Successfully implemented "SOAP (Narrative)" template as requested, available alongside existing note templates
 - **BACKEND IMPLEMENTATION**: Added `buildSOAPNarrativePrompt()` method in `enhanced-note-generation-service.ts` with narrative subjective formatting

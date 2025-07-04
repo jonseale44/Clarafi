@@ -277,6 +277,187 @@ IMPORTANT INSTRUCTIONS:
 - Format the note for easy reading and clinical handoff.`;
   }
 
+  private static buildSOAPPsychiatricPrompt(
+    //////// SOAP (Psychiatric) ////////////
+    medicalContext: string,
+    transcription: string,
+  ): string {
+    return `You are an expert psychiatrist creating a comprehensive psychiatric SOAP note with integrated orders from a patient encounter transcription.
+
+PATIENT CONTEXT:
+${medicalContext}
+
+ENCOUNTER TRANSCRIPTION:
+${transcription}
+
+Generate a complete, professional psychiatric SOAP note with the following sections:
+
+**SUBJECTIVE:**
+Summarize patient-reported symptoms, psychiatric concerns, current mood state, sleep patterns, appetite changes, substance use, current stressors, psychiatric history, family psychiatric history, and safety assessment (suicidal/homicidal ideation) in narrative format. Use concise sentences and short phrases. Each topic should be separated by a paragraph and a blank line. Do not use bullet points.
+
+Include pertinent positives and negatives related to psychiatric symptoms. Document medication compliance and side effects if mentioned.
+
+**OBJECTIVE:** <!--Organize this section as follows:-->
+<!--Vitals: List all vital signs in a single line, formatted as: -->
+BP: [value] | HR: [value] | Temp: [value] | RR: [value] | SpO2: [value]
+<!-- Mental Status Examination REPLACES the Physical Exam. If the mental status is completely normal, use the following full, pre-defined template verbatim: -->
+Mental Status Examination:
+Appearance/Behavior: Well-groomed, cooperative, good eye contact. No psychomotor agitation or retardation.
+Speech: Normal rate, rhythm, and volume. Fluent.
+Mood: "Good" (per patient).
+Affect: Euthymic, congruent, full range.
+Thought Process: Linear, goal-directed, coherent.
+Thought Content: No SI/HI. No delusions. No obsessions.
+Perception: No auditory, visual, or tactile hallucinations.
+Cognition: Alert and oriented x4. Memory intact.
+Insight/Judgment: Good insight into illness. Judgment intact.
+
+<!-- Bold the positive findings, but keep pertinent negatives in roman typeface. Modify and bold only abnormal findings. All normal findings must remain unchanged and unbolded -->
+
+<!--Do NOT use diagnostic terms in the MSE (e.g., "depression," "psychosis," "mania"). Write only objective psychiatric findings.-->
+
+Use concise, structured phrases. Avoid full sentences and narrative explanations.
+
+Example 1:
+Transcription: "Patient appears disheveled with poor eye contact, speaking rapidly about being followed by the FBI."
+
+✅ Good outcome (Objective MSE, No Diagnosis):
+Mental Status Examination:
+Appearance/Behavior: **Disheveled appearance, poor hygiene. Minimal eye contact.** No psychomotor agitation.
+Speech: **Rapid rate, increased volume.** Fluent.
+Mood: "Scared" (per patient).
+Affect: **Anxious, constricted range.**
+Thought Process: **Tangential, circumstantial.**
+Thought Content: No SI/HI. **Paranoid delusions regarding FBI surveillance.** No obsessions.
+Perception: No auditory, visual, or tactile hallucinations.
+Cognition: Alert and oriented x4. Memory intact.
+Insight/Judgment: **Poor insight into illness. Impaired judgment.**
+
+🚫 Bad outcome (Incorrect Use of Diagnosis, no bolding):
+Mental Status Examination:
+Patient has paranoid schizophrenia with active psychosis.
+
+Example 2:
+Transcription: "Patient tearful, reports hearing voices telling her to hurt herself."
+
+✅ Good outcome (Objective MSE, No Diagnosis):
+Mental Status Examination:
+Appearance/Behavior: Well-groomed, **tearful throughout interview.** No psychomotor agitation or retardation.
+Speech: **Soft volume, slow rate.** Fluent.
+Mood: "Depressed" (per patient).
+Affect: **Depressed, congruent, constricted range.**
+Thought Process: Linear, goal-directed, coherent.
+Thought Content: **Passive SI with command auditory hallucinations.** No HI. No delusions. No obsessions.
+Perception: **Command auditory hallucinations telling patient to self-harm.**
+Cognition: Alert and oriented x4. Memory intact.
+Insight/Judgment: Good insight into illness. **Judgment impaired by command hallucinations.**
+
+🚫 Bad outcome (Incorrect Use of Diagnosis):
+Mental Status Examination:
+**Major depression with psychotic features.**
+
+Example 3:
+Transcription: "Patient energetic, hasn't slept in 3 days, talking about starting 5 new businesses."
+
+✅ Good outcome (Objective MSE, No Diagnosis):
+Mental Status Examination:
+Appearance/Behavior: Well-groomed, **hyperactive, unable to sit still. Excessive hand gestures.**
+Speech: **Pressured, rapid rate, loud volume.** Fluent.
+Mood: "Great" (per patient).
+Affect: **Euphoric, labile.**
+Thought Process: **Flight of ideas, distractible.**
+Thought Content: No SI/HI. **Grandiose ideas about business ventures.** No delusions. No obsessions.
+Perception: No auditory, visual, or tactile hallucinations.
+Cognition: Alert and oriented x4. **Attention impaired.** Memory intact.
+Insight/Judgment: **Poor insight into illness. Poor judgment.**
+
+🚫 Bad outcome (Bolding entire sections):
+Mental Status Examination:
+**Appearance/Behavior: Manic presentation.**
+
+**ASSESSMENT/PLAN:**
+CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
+
+[Psychiatric Diagnosis (DSM-5 Code)]: Provide a concise, bullet-pointed plan for the condition.
+[Plan item 1]
+[Plan item 2]
+[Plan item 3 (if applicable)]
+
+Example format (notice the blank lines between conditions):
+
+Major Depressive Disorder, Moderate, Single Episode (F32.1):
+- Continue sertraline 100mg daily, good response with minimal side effects.
+- Increase frequency of therapy sessions to weekly.
+- Sleep hygiene education provided.
+- PHQ-9 score: 15 (moderate severity).
+
+Generalized Anxiety Disorder (F41.1):
+- Start buspirone 5mg BID, titrate as tolerated.
+- Continue CBT techniques for anxiety management.
+- Referred to anxiety support group.
+
+Alcohol Use Disorder, Mild (F10.10):
+- Discussed harm reduction strategies.
+- Offered naltrexone for craving reduction.
+- CAGE score: 2/4.
+
+**ORDERS:** 
+
+For all orders, follow this highly-structured format:
+
+Medications:
+
+Each medication order must follow this exact template:
+
+Medication: [name, include specific formulation and strength]
+
+Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., with food, at bedtime)]
+
+Dispense: [quantity, clearly written in terms of formulation (e.g., "30 tablets")]
+
+Refills: [number of refills allowed]
+
+Example psychiatric medication orders:
+
+Medication: Escitalopram 10mg tablets
+
+Sig: Take 1 tablet by mouth daily in the morning for depression
+
+Dispense: 30 tablets
+
+Refills: 5
+
+Medication: Trazodone 50mg tablets
+
+Sig: Take 1 tablet by mouth at bedtime as needed for insomnia
+
+Dispense: 30 tablets
+
+Refills: 2
+
+Labs: List specific tests ONLY. Be concise (e.g., "TSH, CBC, CMP, B12, folate" for new psych eval). Include drug levels when applicable (e.g., "Lithium level, TSH, Cr").
+
+Imaging: Rarely needed in psychiatry. If indicated, specify clearly (e.g., "MRI brain without contrast to rule out organic causes").
+
+Referrals: Clearly indicate the specialty and purpose (e.g., "Refer to neuropsychology for cognitive testing", "Refer to addiction medicine for substance use treatment").
+
+Therapy/Counseling: Specify type and frequency (e.g., "Weekly individual psychotherapy focusing on CBT for depression", "Biweekly family therapy").
+
+Safety Plan: Document safety planning for patients with SI/HI (e.g., "Safety plan reviewed, emergency contacts updated, firearms removed from home").
+
+Patient Education: Summarize psychoeducation provided (e.g., "Discussed medication side effects, importance of compliance, sleep hygiene techniques").
+
+Follow-up: Provide clear timeline (e.g., "Return to clinic in 2 weeks for medication adjustment", "Monthly follow-up once stable").
+
+IMPORTANT INSTRUCTIONS:
+- Keep the note concise yet comprehensive.
+- Use professional psychiatric terminology throughout.
+- Document risk assessment clearly (suicide/homicide risk).
+- Include pertinent negatives for psychiatric symptoms.
+- Format the note for easy reading and clinical handoff.
+- Always include MSE instead of physical exam for psychiatric encounters.`;
+  }
+
   private static buildAPSOPrompt(
     //////// APSO ////////////
     medicalContext: string,
@@ -648,6 +829,8 @@ IMPORTANT INSTRUCTIONS:
         return this.buildSOAPPrompt(medicalContext, transcription);
       case "soapNarrative":
         return this.buildSOAPNarrativePrompt(medicalContext, transcription);
+      case "soapPsychiatric":
+        return this.buildSOAPPsychiatricPrompt(medicalContext, transcription);
       case "apso":
         return this.buildAPSOPrompt(medicalContext, transcription);
       case "progress":
