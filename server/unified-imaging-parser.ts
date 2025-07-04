@@ -505,6 +505,31 @@ Return a JSON object with this exact structure:
   }
 
   /**
+   * Filter duplicate visit entries using surgical history pattern
+   * Prevents duplicate visits for same encounter/attachment
+   */
+  private filterDuplicateVisitEntries(
+    existingVisits: UnifiedImagingVisitHistoryEntry[],
+    encounterId: number | null,
+    attachmentId: number | null,
+    sourceType: "encounter" | "attachment",
+  ): UnifiedImagingVisitHistoryEntry[] {
+    return existingVisits.filter((visit) => {
+      // Allow both attachment and encounter entries for the same encounter ID
+      if (encounterId && visit.encounterId === encounterId) {
+        return visit.source !== sourceType; // Keep if different source type
+      }
+
+      // Prevent duplicate attachment entries
+      if (attachmentId && visit.attachmentId === attachmentId) {
+        return false; // Remove duplicate attachment
+      }
+
+      return true; // Keep all other entries
+    });
+  }
+
+  /**
    * Apply GPT-generated changes to database
    */
   private async applyChangesToDatabase(
@@ -581,6 +606,15 @@ Return a JSON object with this exact structure:
 
           if (existing.length) {
             const currentHistory = existing[0].visitHistory || [];
+            
+            // Filter out duplicate visits using surgical history pattern
+            const filteredHistory = this.filterDuplicateVisitEntries(
+              currentHistory,
+              encounterId,
+              attachmentId,
+              sourceType
+            );
+            
             const newVisit: UnifiedImagingVisitHistoryEntry = {
               date: new Date().toISOString().split("T")[0],
               notes: change.visit_notes || "Study reviewed",
@@ -593,7 +627,7 @@ Return a JSON object with this exact structure:
             await db
               .update(imagingResults)
               .set({
-                visitHistory: [...currentHistory, newVisit],
+                visitHistory: [...filteredHistory, newVisit],
                 updatedAt: new Date(),
               })
               .where(eq(imagingResults.id, change.imaging_id));

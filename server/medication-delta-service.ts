@@ -880,8 +880,16 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       clinicalIndication: medication.clinicalIndication,
     };
 
+    // Filter out duplicate visits using surgical history pattern
+    const filteredVisitHistory = this.filterDuplicateVisitEntries(
+      existingVisitHistory,
+      historyEntry.encounterId || null,
+      null, // No attachment ID for order-based updates
+      "encounter"
+    );
+    
     const updatedVisitHistory = [
-      ...existingVisitHistory,
+      ...filteredVisitHistory,
       {
         encounterId: historyEntry.encounterId,
         date: historyEntry.date,
@@ -942,9 +950,17 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       },
     ];
 
+    // Filter out duplicate visits using surgical history pattern
+    const filteredVisitHistory = this.filterDuplicateVisitEntries(
+      existingVisitHistory,
+      historyEntry.encounterId || null,
+      null, // No attachment ID for order-based updates
+      "encounter"
+    );
+    
     // Add visit history entry for discontinuation
     const updatedVisitHistory = [
-      ...existingVisitHistory,
+      ...filteredVisitHistory,
       {
         encounterId: historyEntry.encounterId,
         date: historyEntry.date,
@@ -1677,6 +1693,31 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   /**
+   * Filter duplicate visit entries using surgical history pattern
+   * Prevents duplicate visits for same encounter/attachment
+   */
+  private filterDuplicateVisitEntries(
+    existingVisits: any[],
+    encounterId: number | null,
+    attachmentId: number | null,
+    sourceType: "encounter" | "attachment",
+  ): any[] {
+    return existingVisits.filter((visit) => {
+      // Allow both attachment and encounter entries for the same encounter ID
+      if (encounterId && visit.encounterId === encounterId) {
+        return visit.source !== sourceType; // Keep if different source type
+      }
+
+      // Prevent duplicate attachment entries
+      if (attachmentId && visit.sourceId === attachmentId) {
+        return false; // Remove duplicate attachment
+      }
+
+      return true; // Keep all other entries
+    });
+  }
+
+  /**
    * Add visit history entry from attachment to existing medication
    */
   private async addAttachmentVisitHistory(
@@ -1706,10 +1747,19 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       },
     };
 
-    // Get current visit history and add new entry
+    // Get current visit history and filter duplicates
     const currentVisitHistory =
       (existingMedication.visitHistory as any[]) || [];
-    const updatedVisitHistory = [...currentVisitHistory, visitEntry];
+    
+    // Filter out duplicate visits using surgical history pattern
+    const filteredVisitHistory = this.filterDuplicateVisitEntries(
+      currentVisitHistory,
+      encounterId,
+      attachmentId,
+      "attachment"
+    );
+    
+    const updatedVisitHistory = [...filteredVisitHistory, visitEntry];
 
     // Update medication with new visit history
     await storage.updateMedication(existingMedication.id, {

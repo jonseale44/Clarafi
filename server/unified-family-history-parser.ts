@@ -398,6 +398,31 @@ Only extract family history information that is explicitly mentioned. Do not inf
   }
 
   /**
+   * Filter duplicate visit entries using surgical history pattern
+   * Prevents duplicate visits for same encounter/attachment
+   */
+  private filterDuplicateVisitEntries(
+    existingVisits: UnifiedFamilyHistoryVisitEntry[],
+    encounterId: number | null,
+    attachmentId: number | null,
+    sourceType: "encounter" | "attachment",
+  ): UnifiedFamilyHistoryVisitEntry[] {
+    return existingVisits.filter((visit) => {
+      // Allow both attachment and encounter entries for the same encounter ID
+      if (encounterId && visit.encounterId === encounterId) {
+        return visit.source !== sourceType; // Keep if different source type
+      }
+
+      // Prevent duplicate attachment entries
+      if (attachmentId && visit.attachmentId === attachmentId) {
+        return false; // Remove duplicate attachment
+      }
+
+      return true; // Keep all other entries
+    });
+  }
+
+  /**
    * Apply a single family history change to the database
    */
   private async applyFamilyHistoryChange(
@@ -431,6 +456,14 @@ Only extract family history information that is explicitly mentioned. Do not inf
         const existingRecord = existing[0];
         const currentVisitHistory = existingRecord.visitHistory || [];
 
+        // Filter out duplicate visits using surgical history pattern
+        const filteredVisitHistory = this.filterDuplicateVisitEntries(
+          currentVisitHistory,
+          encounterId,
+          attachmentId,
+          change.visitEntry.source
+        );
+
         // Add new visit history entry with timezone-corrected date
         const visitEntryWithLocalDate = {
           ...change.visitEntry,
@@ -439,7 +472,7 @@ Only extract family history information that is explicitly mentioned. Do not inf
             .split("T")[0], // Convert to local date at noon to avoid timezone shifts
         };
         const newVisitHistory = [
-          ...currentVisitHistory,
+          ...filteredVisitHistory,
           visitEntryWithLocalDate,
         ];
 

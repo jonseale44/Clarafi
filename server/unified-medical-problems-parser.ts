@@ -942,63 +942,43 @@ REQUIRED JSON RESPONSE FORMAT:
       visitDate = new Date().toISOString().split("T")[0];
     }
 
-    // Check for existing visit from this EXACT source (encounter + source type, or specific attachment)
-    const existingVisitIndex = visitHistory.findIndex((visit) => {
-      if (change.source_type === "encounter") {
-        // For encounter source: match BOTH encounterId AND source type to prevent 
-        // blocking when attachment from same encounter was processed earlier
-        return visit.encounterId === encounterId && visit.source === "encounter";
-      } else {
-        // For attachment source: match specific attachmentId
-        return visit.attachmentId === attachmentId;
-      }
-    });
+    // Filter out duplicate visits using surgical history pattern
+    const filteredVisitHistory = this.filterDuplicateVisitEntries(
+      visitHistory,
+      encounterId,
+      attachmentId,
+      change.source_type === "encounter" ? "encounter" : "attachment"
+    );
 
-    let updatedVisitHistory: UnifiedVisitHistoryEntry[] = visitHistory;
+    let updatedVisitHistory: UnifiedVisitHistoryEntry[] = filteredVisitHistory;
 
-    if (existingVisitIndex >= 0) {
-      // Update existing visit
-      const updatedVisit: UnifiedVisitHistoryEntry = {
-        ...visitHistory[existingVisitIndex],
+    // Add new visit ONLY if GPT provided actual visit notes
+    const visitNotes = change.visit_notes?.trim() || "";
+
+    // Handle visit notes creation - but don't exit early as we still need ranking updates
+    if (!visitNotes) {
+      console.log(
+        `🚫 [UnifiedMedicalProblems] Skipping visit entry for problem ${change.problem_id} (empty notes), but proceeding with ranking update`,
+      );
+      // Don't add visit entry but continue to ranking update
+    } else {
+      const newVisitEntry: UnifiedVisitHistoryEntry = {
         date: visitDate,
-        notes: change.visit_notes || visitHistory[existingVisitIndex].notes,
+        notes: visitNotes,
+        source:
+          change.source_type === "attachment" ? "attachment" : "encounter",
+        encounterId: encounterId || undefined,
+        attachmentId: attachmentId || undefined,
         icd10AtVisit:
-          change.icd10_change?.to ||
-          visitHistory[existingVisitIndex].icd10AtVisit,
+          change.icd10_change?.to || existingProblem.currentIcd10Code || "",
+        changesMade: change.icd10_change
+          ? ["diagnosis_evolution"]
+          : ["routine_follow_up"],
         confidence: change.confidence,
+        isSigned: false,
       };
 
-      updatedVisitHistory = [...visitHistory];
-      updatedVisitHistory[existingVisitIndex] = updatedVisit;
-    } else {
-      // Add new visit ONLY if GPT provided actual visit notes
-      const visitNotes = change.visit_notes?.trim() || "";
-
-      // Handle visit notes creation - but don't exit early as we still need ranking updates
-      if (!visitNotes) {
-        console.log(
-          `🚫 [UnifiedMedicalProblems] Skipping visit entry for problem ${change.problem_id} (empty notes), but proceeding with ranking update`,
-        );
-        // Don't add visit entry but continue to ranking update
-      } else {
-        const newVisitEntry: UnifiedVisitHistoryEntry = {
-          date: visitDate,
-          notes: visitNotes,
-          source:
-            change.source_type === "attachment" ? "attachment" : "encounter",
-          encounterId: encounterId || undefined,
-          attachmentId: attachmentId || undefined,
-          icd10AtVisit:
-            change.icd10_change?.to || existingProblem.currentIcd10Code || "",
-          changesMade: change.icd10_change
-            ? ["diagnosis_evolution"]
-            : ["routine_follow_up"],
-          confidence: change.confidence,
-          isSigned: false,
-        };
-
-        updatedVisitHistory = [...visitHistory, newVisitEntry];
-      }
+      updatedVisitHistory = [...filteredVisitHistory, newVisitEntry];
     }
 
     // Update the problem with ranking
@@ -1086,6 +1066,31 @@ REQUIRED JSON RESPONSE FORMAT:
     return Math.floor(
       (today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
     );
+  }
+
+  /**
+   * Filter duplicate visit entries using surgical history pattern
+   * Prevents duplicate visits for same encounter/attachment
+   */
+  private filterDuplicateVisitEntries(
+    existingVisits: UnifiedVisitHistoryEntry[],
+    encounterId: number | null,
+    attachmentId: number | null,
+    sourceType: "encounter" | "attachment",
+  ): UnifiedVisitHistoryEntry[] {
+    return existingVisits.filter((visit) => {
+      // Allow both attachment and encounter entries for the same encounter ID
+      if (encounterId && visit.encounterId === encounterId) {
+        return visit.source !== sourceType; // Keep if different source type
+      }
+
+      // Prevent duplicate attachment entries
+      if (attachmentId && visit.attachmentId === attachmentId) {
+        return false; // Remove duplicate attachment
+      }
+
+      return true; // Keep all other entries
+    });
   }
 
   /**

@@ -444,6 +444,31 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
   }
 
   /**
+   * Filter duplicate visit entries using surgical history pattern
+   * Prevents duplicate visits for same encounter/attachment
+   */
+  private filterDuplicateVisitEntries(
+    existingVisits: UnifiedSocialHistoryVisitEntry[],
+    encounterId: number | null,
+    attachmentId: number | null,
+    sourceType: "encounter" | "attachment",
+  ): UnifiedSocialHistoryVisitEntry[] {
+    return existingVisits.filter((visit) => {
+      // Allow both attachment and encounter entries for the same encounter ID
+      if (encounterId && visit.encounterId === encounterId) {
+        return visit.source !== sourceType; // Keep if different source type
+      }
+
+      // Prevent duplicate attachment entries
+      if (attachmentId && visit.attachmentId === attachmentId) {
+        return false; // Remove duplicate attachment
+      }
+
+      return true; // Keep all other entries
+    });
+  }
+
+  /**
    * Apply changes to database
    */
   private async applyChangesToDatabase(
@@ -540,12 +565,20 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
             const current = existingEntry[0];
             const currentVisitHistory = current.visitHistory || [];
 
+            // Filter out duplicate visits using surgical history pattern
+            const filteredVisitHistory = this.filterDuplicateVisitEntries(
+              currentVisitHistory,
+              encounterId,
+              attachmentId,
+              change.source_type
+            );
+
             // Only add visit history if status actually changed
             const shouldAddVisit =
               current.currentStatus !== change.currentStatus;
 
             if (shouldAddVisit) {
-              const updatedVisitHistory = [...currentVisitHistory, visitEntry];
+              const updatedVisitHistory = [...filteredVisitHistory, visitEntry];
 
               await db
                 .update(socialHistory)
@@ -590,7 +623,16 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
           if (existingEntry.length > 0) {
             const current = existingEntry[0];
             const currentVisitHistory = current.visitHistory || [];
-            const updatedVisitHistory = [...currentVisitHistory, visitEntry];
+            
+            // Filter out duplicate visits using surgical history pattern
+            const filteredVisitHistory = this.filterDuplicateVisitEntries(
+              currentVisitHistory,
+              encounterId,
+              attachmentId,
+              change.source_type
+            );
+            
+            const updatedVisitHistory = [...filteredVisitHistory, visitEntry];
 
             await db
               .update(socialHistory)
