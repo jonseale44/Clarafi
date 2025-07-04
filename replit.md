@@ -109,17 +109,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Visit History Deduplication Implementation COMPLETED (January 10, 2025)
-- **CRITICAL FINDING**: Only surgical history had proper visit history deduplication - ALL other sections were creating duplicate visit entries
-- **WORKING IMPLEMENTATION**: Surgical History's `filterDuplicateVisitEntries` method with proper ID-based deduplication logic served as the pattern
-- **FIXED ALL BROKEN IMPLEMENTATIONS**: Applied surgical history pattern to Medical Problems, Medications, Imaging, Family History, and Social History
-- **MEDICAL PROBLEMS FIX**: Added `filterDuplicateVisitEntries` method and applied proactive filtering in `applyUnifiedChanges` method
-- **SOCIAL HISTORY FIX**: Replaced content-based deduplication with ID-based filtering using surgical history pattern
-- **FAMILY HISTORY FIX**: Added complete deduplication logic that was previously missing entirely
-- **IMAGING FIX**: Enhanced existing consolidation with proper visit history deduplication using `filterDuplicateVisitEntries`
-- **MEDICATIONS FIX**: Applied deduplication to all three visit history update locations: addAttachmentVisitHistory, updateExistingMedication, and discontinueMedication
-- **STANDARDIZATION ACHIEVED**: All sections now use consistent encounter/attachment ID filtering to prevent duplicate visit entries
-- **DOCUMENTATION CREATED**: Comprehensive comparison analysis in VISIT_HISTORY_DEDUPLICATION_COMPARISON.md identifying surgical history pattern as solution
+### Enhanced Content-Based Visit History Deduplication Implementation COMPLETED (January 10, 2025)
+- **CRITICAL ENHANCEMENT**: Upgraded all parsers from simple ID-based deduplication to sophisticated content-based deduplication to handle same document uploaded multiple times
+- **ROOT CAUSE ADDRESSED**: Same H&P document uploaded multiple times creates different attachment IDs, causing duplicate visit entries - now prevented through content similarity checking
+- **COMPREHENSIVE IMPLEMENTATION**: Enhanced all major parsers (medical problems, imaging, family history, surgical history, social history, medications) with:
+  - **Content Similarity Detection**: `calculateSimilarity` method using Levenshtein distance algorithm (90% threshold)
+  - **Enhanced filterDuplicateVisitEntries**: Method signature updated to include newVisitNotes and newVisitDate parameters
+  - **Content Normalization**: Lowercase conversion and whitespace normalization for accurate comparison
+  - **Dual Deduplication**: Both ID-based and content-based filtering for comprehensive duplicate prevention
+- **MEDICAL PROBLEMS**: Enhanced with content-based deduplication, proactive filtering in `applyUnifiedChanges`
+- **IMAGING PARSER**: Added calculateSimilarity method and enhanced deduplication logic
+- **FAMILY HISTORY**: Complete deduplication implementation (was missing entirely), fixed method parameters
+- **SURGICAL HISTORY**: Enhanced from basic to content-based deduplication with similarity checking
+- **MEDICATIONS**: Updated all three filterDuplicateVisitEntries calls with new parameters
+- **SOCIAL HISTORY**: Already had enhanced deduplication (served as reference implementation)
+- **PRODUCTION IMPACT**: Users can safely re-upload documents without creating duplicate visit histories
+- **DOCUMENTATION CREATED**: Comprehensive implementation guide in ENHANCED_CONTENT_DEDUPLICATION_IMPLEMENTATION.md
 
 ### Enhanced Medication Processing Prompts & GPT Model Upgrade COMPLETED (January 9, 2025)
 - **GPT MODEL UPGRADE**: Upgraded medication attachment processing from GPT-4.1-mini to full GPT-4.1 model for superior intelligence matching SOAP processing

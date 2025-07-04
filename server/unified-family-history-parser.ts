@@ -398,14 +398,16 @@ Only extract family history information that is explicitly mentioned. Do not inf
   }
 
   /**
-   * Filter duplicate visit entries using surgical history pattern
-   * Prevents duplicate visits for same encounter/attachment
+   * Filter duplicate visit entries with content-based deduplication
+   * Prevents duplicate visits for same encounter/attachment/content
    */
   private filterDuplicateVisitEntries(
     existingVisits: UnifiedFamilyHistoryVisitEntry[],
     encounterId: number | null,
     attachmentId: number | null,
     sourceType: "encounter" | "attachment",
+    newVisitNotes?: string,
+    newVisitDate?: string,
   ): UnifiedFamilyHistoryVisitEntry[] {
     return existingVisits.filter((visit) => {
       // Allow both attachment and encounter entries for the same encounter ID
@@ -413,13 +415,75 @@ Only extract family history information that is explicitly mentioned. Do not inf
         return visit.source !== sourceType; // Keep if different source type
       }
 
-      // Prevent duplicate attachment entries
+      // Prevent duplicate attachment entries by ID
       if (attachmentId && visit.attachmentId === attachmentId) {
         return false; // Remove duplicate attachment
       }
 
+      // NEW: Prevent duplicate content-based entries
+      // Check if we have similar content on the same date
+      if (newVisitNotes && newVisitDate && visit.date === newVisitDate) {
+        // Normalize notes for comparison (remove whitespace variations)
+        const normalizedExisting = visit.notes.toLowerCase().replace(/\s+/g, ' ').trim();
+        const normalizedNew = newVisitNotes.toLowerCase().replace(/\s+/g, ' ').trim();
+        
+        // Check for exact or near-exact matches
+        if (normalizedExisting === normalizedNew) {
+          console.log(`🚫 [UnifiedFamilyHistory] Detected duplicate visit content on ${newVisitDate}`);
+          return false; // Remove duplicate content
+        }
+        
+        // Check for high similarity (>90% match)
+        const similarity = this.calculateSimilarity(normalizedExisting, normalizedNew);
+        if (similarity > 0.9) {
+          console.log(`🚫 [UnifiedFamilyHistory] Detected similar visit content (${Math.round(similarity * 100)}% match) on ${newVisitDate}`);
+          return false; // Remove very similar content
+        }
+      }
+
       return true; // Keep all other entries
     });
+  }
+
+  /**
+   * Calculate similarity between two strings (0-1)
+   */
+  private calculateSimilarity(str1: string, str2: string): number {
+    const distance = this.levenshteinDistance(str1, str2);
+    const maxLength = Math.max(str1.length, str2.length);
+    return maxLength === 0 ? 1 : 1 - distance / maxLength;
+  }
+
+  /**
+   * Calculate Levenshtein distance between two strings
+   */
+  private levenshteinDistance(str1: string, str2: string): number {
+    const matrix = [];
+
+    // Initialize matrix
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+
+    // Calculate distances
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+
+    return matrix[str2.length][str1.length];
   }
 
   /**
@@ -456,14 +520,6 @@ Only extract family history information that is explicitly mentioned. Do not inf
         const existingRecord = existing[0];
         const currentVisitHistory = existingRecord.visitHistory || [];
 
-        // Filter out duplicate visits using surgical history pattern
-        const filteredVisitHistory = this.filterDuplicateVisitEntries(
-          currentVisitHistory,
-          encounterId,
-          attachmentId,
-          change.visitEntry.source
-        );
-
         // Add new visit history entry with timezone-corrected date
         const visitEntryWithLocalDate = {
           ...change.visitEntry,
@@ -471,6 +527,17 @@ Only extract family history information that is explicitly mentioned. Do not inf
             .toISOString()
             .split("T")[0], // Convert to local date at noon to avoid timezone shifts
         };
+        
+        // Filter out duplicate visits with content-based deduplication
+        const filteredVisitHistory = this.filterDuplicateVisitEntries(
+          currentVisitHistory,
+          encounterId,
+          attachmentId,
+          change.visitEntry.source,
+          change.visitEntry.notes,
+          visitEntryWithLocalDate.date
+        );
+        
         const newVisitHistory = [
           ...filteredVisitHistory,
           visitEntryWithLocalDate,
