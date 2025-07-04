@@ -635,7 +635,19 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Add edit functionality here
+                          // Create edit dialog for dense view medication
+                          const editData = {
+                            id: medication.id,
+                            medicationName: medication.medicationName,
+                            strength: medication.strength || medication.dosage || '',
+                            dosageForm: medication.dosageForm || '',
+                            route: medication.route || '',
+                            sig: medication.sig || '',
+                            quantity: medication.quantity || 30,
+                            refills: medication.refillsRemaining || 2,
+                            daysSupply: medication.daysSupply || 90
+                          };
+                          updateMedication.mutate(editData);
                         }}
                       >
                         <Edit className="h-3 w-3" />
