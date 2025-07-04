@@ -924,7 +924,61 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteOrder(id: number): Promise<void> {
-    // First, update any medications that reference this order to remove the reference
+    // Get the order to check if it's a medication order
+    const order = await this.getOrder(id);
+    
+    if (order && order.orderType === 'medication') {
+      console.log(`🔄 [STORAGE] Reverting medication state for order ${id}`);
+      
+      // Find medications that have visit history entries created by this order
+      const medicationsWithHistory = await db
+        .select()
+        .from(medications)
+        .where(eq(medications.patientId, order.patientId));
+      
+      for (const medication of medicationsWithHistory) {
+        if (medication.visitHistory && Array.isArray(medication.visitHistory)) {
+          const visitHistory = medication.visitHistory as any[];
+          
+          // Find visit history entries created by this order
+          const orderVisitEntries = visitHistory.filter((visit: any) => visit.orderId === id);
+          
+          if (orderVisitEntries.length > 0) {
+            console.log(`🔄 [STORAGE] Found ${orderVisitEntries.length} visit history entries for medication ${medication.id}`);
+            
+            // Get the most recent visit entry created by this order
+            const mostRecentOrderVisit = orderVisitEntries[orderVisitEntries.length - 1];
+            
+            // If this entry has previousState, revert the medication
+            if (mostRecentOrderVisit.previousState) {
+              console.log(`🔄 [STORAGE] Reverting medication ${medication.id} to previous state`);
+              
+              const previousState = mostRecentOrderVisit.previousState;
+              const updateData: any = {};
+              
+              if (previousState.dosage !== undefined) updateData.dosage = previousState.dosage;
+              if (previousState.frequency !== undefined) updateData.frequency = previousState.frequency;
+              if (previousState.status !== undefined) updateData.status = previousState.status;
+              if (previousState.clinicalIndication !== undefined) updateData.clinicalIndication = previousState.clinicalIndication;
+              
+              // Remove visit history entries created by this order
+              const filteredVisitHistory = visitHistory.filter((visit: any) => visit.orderId !== id);
+              updateData.visitHistory = filteredVisitHistory;
+              
+              // Update the medication
+              await db
+                .update(medications)
+                .set(updateData)
+                .where(eq(medications.id, medication.id));
+                
+              console.log(`✅ [STORAGE] Reverted medication ${medication.id} and removed order visit history`);
+            }
+          }
+        }
+      }
+    }
+    
+    // Update any medications that reference this order to remove the reference
     await db
       .update(medications)
       .set({ sourceOrderId: null })

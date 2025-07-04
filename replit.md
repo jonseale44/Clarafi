@@ -142,6 +142,16 @@ Preferred communication style: Simple, everyday language.
 - **PRODUCTION READY**: System now creates chronological visit history like "7/3/25: Increased ↑ citalopram to 40mg" from medication orders
 - **CHRONOLOGICAL ORDERING FIX**: Visit history now properly sorted with most recent entries first, using encounter ID as secondary sort for same-day entries matching medical problems pattern
 
+### Medication State Reversal on Order Deletion COMPLETED (July 4, 2025)
+- **BIDIRECTIONAL RELATIONSHIP SUPPORT**: Added full bidirectional tracking between medication orders and medication records using orderId in visit history entries
+- **ORDER DELETION STATE REVERSAL**: When a medication order is deleted, system now automatically reverts medication to its previous state by examining previousState in visit history
+- **VISIT HISTORY CLEANUP**: Order deletion removes all visit history entries created by that order, maintaining clean audit trail
+- **SCHEMA ENHANCEMENT**: Updated medications visitHistory entries to include orderId field for tracking which order created each visit history entry
+- **MEDICATION CHANGE TRACKING**: Enhanced MedicationChange interface and all change creation methods (createUpdateChange, createHistoryChange, createNewMedicationChange) to include orderId
+- **COMPREHENSIVE STATE TRACKING**: Visit history entries now store previousState with dosage, frequency, status, and clinicalIndication for proper reversal
+- **PRODUCTION WORKFLOW**: Example: warfarin 5mg → order increases to 10mg → order deleted → medication automatically reverts to 5mg with visit history cleaned up
+- **DELETEORDER ENHANCEMENT**: Upgraded storage.deleteOrder to find and process all medications with visit history entries created by the deleted order
+
 ### Enhanced Document Search Functionality in Extracted Content Interface (July 4, 2025)
 - **MICROSOFT WORD-STYLE SEARCH**: Transformed search from Google-style filtering to Word-style highlighting that preserves full document context
 - **COMPLETE TEXT VISIBILITY**: All document text remains visible during search - no more isolating only matching lines

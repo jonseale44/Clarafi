@@ -60,6 +60,7 @@ export interface MedicationChangeLogEntry {
 
 export interface MedicationChange {
   medication_id?: number; // null if new medication
+  order_id?: number; // ID of the order that triggered this change
   action:
     | "ADD_HISTORY"
     | "UPDATE_DOSAGE"
@@ -780,6 +781,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
           date: historyEntry.date,
           notes: historyEntry.notes,
           sourceType: 'encounter',
+          orderId: change.order_id, // Track which order created this visit entry
           confidence: historyEntry.confidence || 0.95,
         }
       ],
@@ -870,15 +872,24 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       },
     ];
 
-    // Add visit history entry for UI display
+    // Add visit history entry for UI display with order tracking
+    const previousState = {
+      dosage: medication.dosage,
+      frequency: medication.frequency,
+      status: medication.status,
+      clinicalIndication: medication.clinicalIndication,
+    };
+
     const updatedVisitHistory = [
       ...existingVisitHistory,
       {
         encounterId: historyEntry.encounterId,
         date: historyEntry.date,
         notes: historyEntry.notes,
-        sourceType: 'encounter',
+        source: 'order' as const,
+        orderId: change.order_id, // Track which order created this visit entry
         confidence: historyEntry.confidence || 0.95,
+        previousState, // Store medication state before this change
       }
     ];
 
@@ -937,6 +948,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       {
         encounterId: historyEntry.encounterId,
         date: historyEntry.date,
+        orderId: change.order_id, // Track which order created this visit entry
         notes: historyEntry.notes,
         sourceType: 'encounter',
         confidence: historyEntry.confidence || 0.95,
@@ -1169,6 +1181,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   ): MedicationChange {
     const change: MedicationChange = {
       medication_id: existingMedication.id,
+      order_id: order.id, // Track which order created this change
       action: "UPDATE_DOSAGE",
       medication_name: order.medicationName,
       confidence: 0.95,
@@ -1231,6 +1244,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     
     return {
       medication_id: existingMedication.id,
+      order_id: order.id, // Track which order created this change
       action: "ADD_HISTORY",
       medication_name: order.medicationName,
       history_notes: clinicalNote,
@@ -1248,6 +1262,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     
     return {
       medication_id: undefined,
+      order_id: order.id, // Track which order created this change
       action: "NEW_MEDICATION",
       medication_name: order.medicationName,
       history_notes: clinicalNote,

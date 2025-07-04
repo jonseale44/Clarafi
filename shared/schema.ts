@@ -917,7 +917,26 @@ export const medications = pgTable("medications", {
   reasonForChange: text("reason_for_change"),
   medicationHistory: jsonb("medication_history").default([]), // Chronological changes
   changeLog: jsonb("change_log").default([]), // Audit trail
-  visitHistory: jsonb("visit_history").default([]), // Unified visit history like medical problems
+  visitHistory: jsonb("visit_history").$type<Array<{
+    date: string; // YYYY-MM-DD format
+    notes: string; // Clinical notes about medication changes
+    source: "encounter" | "attachment" | "manual" | "order";
+    encounterId?: number; // Reference to encounter if source is encounter
+    attachmentId?: number; // Reference to attachment if source is attachment
+    orderId?: number; // Reference to order that created this visit entry
+    providerId?: number;
+    providerName?: string;
+    changesMade?: string[]; // Array of changes made
+    confidence?: number; // AI confidence in extraction (0.0-1.0)
+    isSigned?: boolean; // Provider signature status
+    sourceNotes?: string; // Additional context
+    previousState?: { // Snapshot of medication state before this change
+      dosage?: string;
+      frequency?: string;
+      status?: string;
+      clinicalIndication?: string;
+    };
+  }>>().default([]), // Unified visit history like medical problems
   
   // Source attribution (unified with other chart sections)
   sourceType: text("source_type"), // 'encounter', 'attachment', 'manual', 'order_conversion'
