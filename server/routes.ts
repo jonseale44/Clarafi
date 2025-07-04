@@ -3009,49 +3009,127 @@ Return a JSON object with arrays for each order type found:
 INTELLIGENT INTERPRETATION RULES:
 
 1. MEDICATION QUERIES:
-- "HCTZ max dose" → Hydrochlorothiazide 50 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
-- "Lisinopril starting dose" → Lisinopril 10 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
-- "Metformin for diabetes" → Metformin 500 mg, Take 1 tablet by mouth twice daily, 60 qty, 2 refills
-- "Aspirin for cardioprotection" → Aspirin 81 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
-- "Atorvastatin high intensity" → Atorvastatin 80 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
-- Always expand abbreviations: HCTZ → Hydrochlorothiazide, ASA → Aspirin, APAP → Acetaminophen
-- When "max dose" requested, provide maximum safe daily dose per clinical guidelines
-- When "starting dose" requested, provide standard initial dose per clinical guidelines
+Quick Medication Queries:
+- "metop succ max dose" → Metoprolol Succinate 200 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "atorva 40 titrate up" → Atorvastatin 80 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "lantus starter dose DM2" → Insulin Glargine 10 units subcutaneous at bedtime, 1 vial (10mL), 2 refills
+- "increase sertraline to 100" → Sertraline 100 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "duloxetine for fibromyalgia, start low" → Duloxetine 30 mg, Take 1 capsule by mouth once daily, 30 qty, 2 refills
+- "switch lisinopril to losartan, equivalent dose" → Losartan 50 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+
+Partial Names/Abbreviations:
+- "HCTZ 25mg" → Hydrochlorothiazide 25 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "metf 500 BID" → Metformin 500 mg, Take 1 tablet by mouth twice daily, 60 qty, 2 refills
+- "amlo 10" → Amlodipine 10 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "GLP1 for T2DM" → Semaglutide 0.25 mg subcutaneous weekly, 4 pens (1 month supply), 2 refills
+- "rosuv 20" → Rosuvastatin 20 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+
+Starter Doses:
+- "start SSRI for depression" → Escitalopram 10 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "start allopurinol for gout ppx" → Allopurinol 100 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "antihypertensive, start ACEI" → Lisinopril 10 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+- "T2DM: start metformin low dose" → Metformin 500 mg, Take 1 tablet by mouth once daily, 30 qty, 2 refills
+
+Complex Regimens:
+- "HFpEF triple therapy" → 
+  * Furosemide 40 mg once daily
+  * Metoprolol Succinate 50 mg once daily  
+  * Spironolactone 25 mg once daily
+- "T2DM, metformin+GLP1+SGLT2 combo" →
+  * Metformin 1000 mg twice daily
+  * Semaglutide 0.5 mg weekly
+  * Empagliflozin 10 mg once daily
+- "anticoagulate a.fib, DOAC starter" → Apixaban 5 mg, Take 1 tablet by mouth twice daily, 60 qty, 2 refills
+
+Short-term Medications:
+- "zpak for sinusitis" → Azithromycin 250 mg, Day 1: Take 2 tablets, Days 2-5: Take 1 tablet daily, 6 tablets total, 0 refills
+- "pred burst for asthma flare" → Prednisone 40 mg, Take 1 tablet by mouth once daily for 5 days, 5 tablets, 0 refills
+- "augmentin 875 for dog bite" → Amoxicillin-Clavulanate 875-125 mg, Take 1 tablet by mouth twice daily for 7 days, 14 tablets, 0 refills
+- "TMP-SMX UTI tx" → Trimethoprim-Sulfamethoxazole DS, Take 1 tablet by mouth twice daily for 3 days, 6 tablets, 0 refills
 
 2. LAB TEST QUERIES:
+Quick Lab Panels:
+- "DM2 labs" → HbA1c, Fasting Glucose, Comprehensive Metabolic Panel, Lipid Panel, Urine Microalbumin
+- "thyroid panel" → TSH, Free T4, Free T3
+- "cholesterol screen" → Lipid Panel
+- "CBC, CMP, TSH" → Complete Blood Count, Comprehensive Metabolic Panel, Thyroid Stimulating Hormone
+
+Follow-up Labs After Abnormalities:
+- "repeat TSH in 6wks after levothyroxine start" → TSH (6 weeks follow-up)
+- "Hep B surface ab after vaccine" → Hepatitis B Surface Antibody
+- "ferritin/iron studies after low Hgb" → Iron Panel (Iron, TIBC, Ferritin, Transferrin Saturation)
+- "monitor K+ with spironolactone start" → Basic Metabolic Panel
+- "HIV confirmatory after screen+" → HIV-1/HIV-2 Differentiation Assay
 - "Hep C antibody positive patient, next test to further evaluate" → Hepatitis C RNA Quantitative
-- "Diabetic labs" → HbA1c, Comprehensive Metabolic Panel, Lipid Panel, Urine Microalbumin
-- "Thyroid workup" → TSH, Free T4
-- "Anemia workup" → CBC with differential, Iron studies, B12, Folate
-- "Liver function" → Comprehensive Metabolic Panel
-- "Kidney function" → Basic Metabolic Panel, Urinalysis
-- "Check potassium" → Basic Metabolic Panel
-- "Prediabetic screening" → HbA1c, Fasting Glucose
-- "Hepatitis panel" → Hepatitis A Antibody Total, Hepatitis B Surface Antigen, Hepatitis B Core Antibody, Hepatitis C Antibody
-- "Chest pain cardiac workup" → Troponin, CK-MB, BNP, D-dimer
-- "Lipid management" → Lipid Panel
-- "STD screening" → HIV 1/2 Antibody, RPR, Gonorrhea/Chlamydia PCR
-- Understand clinical workflows: positive screening tests need confirmatory tests
+
+Screening Labs:
+- "annual HIV screen" → HIV 1/2 Antigen/Antibody Combo
+- "Hep C screen at age 50" → Hepatitis C Antibody
+- "PSA in 52yo male" → Prostate Specific Antigen
+- "A1c for DM2 screen" → Hemoglobin A1c
+- "syphilis test for STD exposure" → RPR with Reflex to Titer
+
+Diagnostic Workup for Symptoms:
+- "Full workup fatigue" → CBC with differential, CMP, TSH, Ferritin, B12, Vitamin D 25-OH
+- "chest pain w/u" → Troponin I, EKG, D-dimer (if PE suspected)
+- "polyarthritis w/u" → ESR, CRP, RF, Anti-CCP, ANA, Uric Acid, Lyme Antibody
+- "anemia workup" → CBC with differential, Reticulocyte Count, Iron Studies, Haptoglobin, LDH, B12, Folate
 
 3. IMAGING QUERIES:
-- "Chest pain imaging" → Chest X-ray PA and lateral
-- "Headache workup" → CT Head without contrast
-- "Abdominal pain" → CT Abdomen/Pelvis with contrast
-- "Knee pain" → Knee X-ray (specify laterality if mentioned)
+Shortcut Phrases:
+- "CXR PA/lat" → Chest X-ray PA and lateral
+- "knee XR, 3 views" → Knee X-ray, 3 views (AP, lateral, sunrise)
+- "ankle MRI no contrast" → Ankle MRI without contrast
+- "CT abd/pelvis w/ contrast" → CT Abdomen/Pelvis with contrast
+- "head CT for new HA" → CT Head without contrast
+
+Appropriate Imaging for Symptoms:
+- "acute low back pain, XR only if red flags" → Lumbar Spine X-ray 
+- "persistent cough/hemoptysis, CXR" → Chest X-ray PA and lateral
+- "first time seizure, brain MRI" → Brain MRI with and without contrast
+- "recurrent UTI, renal US" → Renal Ultrasound
+- "chest pain imaging" → Chest X-ray PA and lateral
 - "Pulmonary embolism rule out" → CT Chest with PE protocol
 - "Kidney stones" → CT Abdomen/Pelvis without contrast
-- "Back pain imaging" → Lumbar Spine X-ray
-- Understand appropriate imaging for symptoms
+
+Contrast Decisions:
+- "abdominal CT, no contrast if renal dz" → CT Abdomen/Pelvis without contrast
+- "brain MRI w/ and w/o contrast for new mass" → Brain MRI with and without contrast
+- "liver MRI for lesion, with contrast" → Liver MRI with contrast
 
 4. REFERRAL QUERIES:
-- "Heart failure referral" → Cardiology
-- "Depression management" → Psychiatry
-- "Joint replacement evaluation" → Orthopedic Surgery
-- "Skin lesion" → Dermatology
-- "COPD management" → Pulmonology
-- "Diabetes specialist" → Endocrinology
-- "Memory concerns" → Neurology
-- "GI bleeding" → Gastroenterology
+Common Referral Patterns:
+- "rheum eval for polyarthritis" → Rheumatology referral
+- "ENDO for TSH >10" → Endocrinology referral 
+- "GI for colonoscopy, FOBT+" → Gastroenterology referral
+- "ENT referral, chronic sinusitis" → ENT (Otolaryngology) referral
+- "ortho for knee pain w/ meniscal tear on MRI" → Orthopedic Surgery referral
+
+Specialty Referrals:
+- "neuro for new onset seizures" → Neurology referral
+- "cards for CHF management" → Cardiology referral
+- "derm for eval skin lesion" → Dermatology referral
+- "pulm for abnormal PFTs" → Pulmonology referral
+- "urology for hematuria" → Urology referral
+- "Depression management" → Psychiatry referral
+- "Memory concerns" → Neurology referral
+
+5. COMPLEX MULTI-ORDER QUERIES:
+- "full thyroid workup" → TSH, Free T4, TPO Antibody, consider ultrasound if goiter/nodules, consider Endocrinology referral
+- "pre-op eval DM2" → CBC, CMP, HbA1c, EKG, Chest X-ray, discontinue metformin instructions, anesthesia consult
+- "chronic cough w/u" → Chest X-ray, Spirometry, PPD, consider sinus CT if postnasal drip suspected, PPI trial
+- "unintentional weight loss workup" → CBC, CMP, TSH, UA, Chest X-ray, Iron studies, FOBT, CT Abdomen/Pelvis, consider GI/Onc referrals
+- "HIV f/u after positive screen" → HIV-1/HIV-2 Differentiation Assay, CD4 count, HIV Viral Load, Hepatitis panel, TB screen, STI panel, start ART, ID referral
+- "DM2 diagnosis" → A1c, Fasting glucose, Urine microalbumin, Lipid panel, Creatinine, Start metformin, LFTs for metformin safety, CDE referral, eye exam referral, diabetic foot exam
+- "CHF new diagnosis" → Chest X-ray, Echo, EKG, BNP, CBC, BMP, start ACEI/BB/spironolactone, low sodium diet education, Cardiology referral
+
+MEDICAL ABBREVIATIONS:
+- Common abbreviations: CMP, CBC, CXR, UA, A1c, TSH, FT4, EKG, CPK, LFTs, PFTs
+- Frequency: BID (twice daily), TID (three times daily), qHS (at bedtime), PRN (as needed)
+- Clinical terms: f/u (follow-up), w/u (workup), PPX (prophylaxis), s/p (status post), r/o (rule out)
+- Specialties: ENDO (endocrinology), GI (gastroenterology), ENT (ear/nose/throat), ID (infectious disease)
+- Conditions: DM2 (type 2 diabetes), CHF (congestive heart failure), HTN (hypertension), a.fib (atrial fibrillation)
+- Medications: ACEI (ACE inhibitor), BB (beta blocker), SSRI (selective serotonin reuptake inhibitor), PPI (proton pump inhibitor), DOAC (direct oral anticoagulant)
 
 MEDICATION DEFAULTS:
 - Default to 90-day TOTAL supply (including refills) unless duration specified

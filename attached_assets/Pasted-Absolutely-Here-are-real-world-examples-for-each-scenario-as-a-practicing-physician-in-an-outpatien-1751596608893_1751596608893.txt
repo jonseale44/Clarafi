@@ -1,0 +1,104 @@
+Absolutely! Here are real-world examples for each scenario as a practicing physician in an outpatient clinic. I’ve aimed to reflect the kind of shorthand, abbreviations, and “mental shortcuts” we might use in busy practice. These should be useful for making your prompt (and eventual GPT) robust for generating comprehensive outpatient orders.
+
+Medication Examples
+a) Quick Medication Queries
+“metop succ max dose”
+“atorva 40 titrate up”
+“lantus starter dose DM2”
+“increase sertraline to 100”
+“duloxetine for fibromyalgia, start low”
+“switch lisinopril to losartan, equivalent dose”
+b) Partial Medication Names/Abbreviations
+“HCTZ 25mg”
+“metf 500 BID” (metformin)
+“amlo 10” (amlodipine)
+“GLP1 for T2DM”
+“rosuv 20” (rosuvastatin 20 mg)
+c) Starter Dose Orders
+“start SSRI for depression”
+“start allopurinol for gout ppx”
+“antihypertensive, start ACEI”
+“T2DM: start metformin low dose”
+“Insulin for T1DM, standard basal-bolus regimen”
+d) Complex Medication Regimens
+“HFpEF triple therapy”
+“T2DM, metformin+GLP1+SGLT2 combo”
+“anticoagulate a.fib, DOAC starter”
+“statin + ezetimibe for high LDL”
+“add spironolactone for resistant HTN”
+e) Short-term Medications
+“zpak for sinusitis”
+“pred burst for asthma flare”
+“augmentin 875 for dog bite”
+“short course taper oral steroids for RA flare”
+“TMP-SMX UTI tx”
+Lab Examples
+a) Quick Lab Panels
+“DM2 labs” (A1c, fasting glucose, urine microalbumin, lipid)
+“thyroid panel”
+“cholesterol screen”
+“CBC, CMP, TSH”
+b) Follow-up Labs After Abnormalities
+“repeat TSH in 6wks after levothyroxine start”
+“Hep B surface ab after vaccine”
+“ferritin/iron studies after low Hgb”
+“monitor K+ with spironolactone start”
+“HIV confirmatory after screen+”
+c) Screening Labs
+“annual HIV screen”
+“Hep C screen at age 50”
+“PSA in 52yo male”
+“A1c for DM2 screen”
+“syphilis test for STD exposure”
+d) Diagnostic Workup for Symptoms
+“Full workup fatigue” (CBC, CMP, TSH, ferritin, B12/VitD)
+“chest pain w/u” (troponin, EKG, CXR, d-dimer if indicated)
+“polyarthritis w/u” (ESR, CRP, RF, anti-CCP, ANA, uric acid, Lyme)
+“anemia workup” (CBC, retic, iron studies, haptoglobin, LDH, B12, folate)
+Imaging Examples
+a) Shortcut Phrases Physicians Use
+“CXR PA/lat”
+“knee XR, 3 views”
+“ankle MRI no contrast”
+“CT abd/pelvis w/ contrast”
+“head CT for new HA”
+b) Appropriate Imaging for Presenting Symptoms
+“acute low back pain, XR only if red flags”
+“persistent cough/hemoptysis, CXR”
+“first time seizure, brain MRI”
+“recurrent UTI, renal US”
+c) Contrast vs. No Contrast
+“abdominal CT, no contrast if renal dz”
+“brain MRI w/ and w/o contrast for new mass”
+“liver MRI for lesion, with contrast”
+Referral Examples
+a) How I’d Phrase Referral Requests
+“rheum eval for polyarthritis”
+“ENDO for TSH >10”
+“GI for colonoscopy, FOBT+”
+“ENT referral, chronic sinusitis”
+“ortho for knee pain w/ meniscal tear on MRI”
+b) Common Specialty Referrals
+“neuro for new onset seizures”
+“cards for CHF management”
+“derm for eval skin lesion”
+“pulm for abnormal PFTs”
+“urology for hematuria”
+General Questions
+a) Common Medical Abbreviations
+“CMP, CBC, CXR, UA, A1c, TSH, FT4, EKG, CPK, LFTs, PFTs”
+“f/u = follow-up”
+“w/u = workup”
+“PPX = prophylaxis”
+“s/p = status post”
+“r/o = rule out”
+“BID, TID, qHS, PRN”
+b) Order Patterns Unique to My Practice
+For new DM2: “DM2 diagnosis—A1c, fasting glucose, urine microalbumin, lipid panel, creatinine, start metformin, transaminases for metformin safety, CDE referral, eye/foot exam orders, flu/pneumo vaccines”
+For new CHF: “chest XR, echo, EKG, BNP, CBC, BMP, med start: ACEI/BB/spironolactone, low Na diet education, cards referral”
+c) Complex Queries needing Multiple Orders
+“full thyroid workup” --> TSH, FT4, TPO ab, CBC, lipid, consider imaging if goiter/nodules present, Endo referral if abnormal
+“pre-op eval DM2” --> CBC, CMP, A1c, EKG, CXR, d/c metformin day of surgery, adjust antihypertensives, anesthesia consult, f/u in 1wk
+“chronic cough w/u” --> CXR, spirometry, PPD, sinus imaging if suspect postnasal drip, trial of PPI, order for ACEI review
+“unintentional weight loss workup” --> CBC, CMP, TSH, UA, CXR, iron studies, fecal occult blood, CT abd/pelvis, GI and onc referrals
+“HIV f/u after positive screen” --> confirmatory Western blot/antigen ab, baseline CD4/viral load, hepatitis panel, TB screen, STI panel, start ART, refer to ID
