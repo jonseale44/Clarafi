@@ -75,22 +75,22 @@ const VulnerableWindowLoadingScreen = ({
   contentLength,
 }: VulnerableWindowLoadingScreenProps) => {
   const [progress, setProgress] = useState(0);
-  
+
   useEffect(() => {
     // 4-second progress animation (matches vulnerable window duration)
     const startTime = Date.now();
     const duration = 4000; // 4 seconds
-    
+
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const newProgress = Math.min((elapsed / duration) * 100, 100);
       setProgress(newProgress);
-      
+
       if (newProgress >= 100) {
         clearInterval(interval);
       }
     }, 50); // Update every 50ms for smooth progression
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -99,17 +99,17 @@ const VulnerableWindowLoadingScreen = ({
       <div className="text-center space-y-4 p-8">
         <div className="mx-auto w-12 h-12 relative">
           <div className="absolute inset-0 rounded-full border-4 border-navy-blue-100"></div>
-          <div 
+          <div
             className="absolute inset-0 rounded-full border-4 border-navy-blue-600 border-t-transparent animate-spin"
             style={{
-              borderTopColor: 'transparent',
-              borderRightColor: '#2563eb',
-              borderBottomColor: '#2563eb',
-              borderLeftColor: '#2563eb',
+              borderTopColor: "transparent",
+              borderRightColor: "#2563eb",
+              borderBottomColor: "#2563eb",
+              borderLeftColor: "#2563eb",
             }}
           ></div>
         </div>
-        
+
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-gray-900">
             Protecting Your Edits
@@ -118,14 +118,14 @@ const VulnerableWindowLoadingScreen = ({
             Editor locked to prevent API overwrites
           </p>
         </div>
-        
+
         <div className="w-64 bg-gray-200 rounded-full h-3 overflow-hidden">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-100 ease-out"
             style={{ width: `${progress}%` }}
           ></div>
         </div>
-        
+
         <div className="text-xs text-gray-500 space-y-1">
           <div>{Math.round(progress)}% complete</div>
           <div className="flex justify-between text-xs">
@@ -133,7 +133,7 @@ const VulnerableWindowLoadingScreen = ({
             <span>Content: {contentLength} chars</span>
           </div>
         </div>
-        
+
         <div className="text-xs text-navy-blue-600 max-w-xs">
           This prevents delayed AI responses from overwriting your manual edits.
         </div>
@@ -156,10 +156,7 @@ const chartSections = [
   { id: "surgical-history", label: "Surgical History" },
   { id: "attachments", label: "Attachments" },
   { id: "appointments", label: "Appointments" },
-
 ];
-
-
 
 export function EncounterDetailView({
   patient,
@@ -173,9 +170,12 @@ export function EncounterDetailView({
   }) as { data?: { id?: number; role?: string } };
 
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">("INACTIVE");
+  const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">(
+    "INACTIVE",
+  );
   const [transcription, setTranscription] = useState("");
-  const [mediaRecorderRef, setMediaRecorderRef] = useState<MediaRecorder | null>(null);
+  const [mediaRecorderRef, setMediaRecorderRef] =
+    useState<MediaRecorder | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
@@ -219,9 +219,11 @@ export function EncounterDetailView({
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
   const [liveTranscriptionContent, setLiveTranscriptionContent] = useState(""); // Unified content for AI
   const [useRestAPI, setUseRestAPI] = useState<boolean>(true);
-  const [isGeneratingRestSuggestions, setIsGeneratingRestSuggestions] = useState(false);
+  const [isGeneratingRestSuggestions, setIsGeneratingRestSuggestions] =
+    useState(false);
   const [suggestionProgress, setSuggestionProgress] = useState(0);
-  const [isGeneratingSmartSuggestions, setIsGeneratingSmartSuggestions] = useState(false);
+  const [isGeneratingSmartSuggestions, setIsGeneratingSmartSuggestions] =
+    useState(false);
   const [lastSuggestionCall, setLastSuggestionCall] = useState<number>(0);
   const [generationProgress, setGenerationProgress] = useState(0);
 
@@ -263,14 +265,21 @@ export function EncounterDetailView({
 
   // Transcription auto-save functionality
   const transcriptionAutoSaveTimer = useRef<NodeJS.Timeout | null>(null);
-  const [lastSavedTranscription, setLastSavedTranscription] = useState<string>("");
+  const [lastSavedTranscription, setLastSavedTranscription] =
+    useState<string>("");
   const [transcriptionSaveStatus, setTranscriptionSaveStatus] = useState<
     "saved" | "saving" | "unsaved" | ""
   >("");
 
   // Auto-save transcription function
-  const autoSaveTranscription = async (rawTranscription: string, processedTranscription?: string) => {
-    if (!rawTranscription.trim() || rawTranscription === lastSavedTranscription) {
+  const autoSaveTranscription = async (
+    rawTranscription: string,
+    processedTranscription?: string,
+  ) => {
+    if (
+      !rawTranscription.trim() ||
+      rawTranscription === lastSavedTranscription
+    ) {
       return; // Don't save empty content or unchanged content
     }
 
@@ -279,7 +288,7 @@ export function EncounterDetailView({
     try {
       console.log(
         "🎤 [TranscriptionAutoSave] Saving transcription automatically...",
-        `Raw: ${rawTranscription.length} chars, Processed: ${processedTranscription?.length || 0} chars`
+        `Raw: ${rawTranscription.length} chars, Processed: ${processedTranscription?.length || 0} chars`,
       );
 
       const response = await fetch(
@@ -302,18 +311,25 @@ export function EncounterDetailView({
         );
       }
 
-      console.log("✅ [TranscriptionAutoSave] Transcription auto-saved successfully");
+      console.log(
+        "✅ [TranscriptionAutoSave] Transcription auto-saved successfully",
+      );
       setLastSavedTranscription(rawTranscription);
       setTranscriptionSaveStatus("saved");
-
     } catch (error) {
-      console.error("❌ [TranscriptionAutoSave] Failed to auto-save transcription:", error);
+      console.error(
+        "❌ [TranscriptionAutoSave] Failed to auto-save transcription:",
+        error,
+      );
       setTranscriptionSaveStatus("unsaved");
     }
   };
 
   // Debounced transcription auto-save trigger
-  const triggerTranscriptionAutoSave = (rawContent: string, processedContent?: string) => {
+  const triggerTranscriptionAutoSave = (
+    rawContent: string,
+    processedContent?: string,
+  ) => {
     // Only trigger auto-save if there are actual changes
     if (!rawContent.trim() || rawContent === lastSavedTranscription) {
       setTranscriptionSaveStatus("saved");
@@ -336,10 +352,11 @@ export function EncounterDetailView({
   const [isAutoGeneratingSOAP, setIsAutoGeneratingSOAP] = useState(false);
 
   // Track automatic medical problems, orders and billing generation after stopping recording
-  const [isAutoGeneratingMedicalProblems, setIsAutoGeneratingMedicalProblems] = useState(false);
+  const [isAutoGeneratingMedicalProblems, setIsAutoGeneratingMedicalProblems] =
+    useState(false);
   const [isAutoGeneratingOrders, setIsAutoGeneratingOrders] = useState(false);
   const [isAutoGeneratingBilling, setIsAutoGeneratingBilling] = useState(false);
-  
+
   // Enhanced progress tracking for medical problems, orders and billing animations
   const [medicalProblemsProgress, setMedicalProblemsProgress] = useState(0);
   const [ordersProgress, setOrdersProgress] = useState(0);
@@ -454,13 +471,15 @@ export function EncounterDetailView({
 
   // Animation helper functions for medical problems, orders and billing progress
   const startMedicalProblemsAnimation = () => {
-    console.log("🎬 [MedicalProblemsAnimation] Starting medical problems animation");
+    console.log(
+      "🎬 [MedicalProblemsAnimation] Starting medical problems animation",
+    );
     setIsAutoGeneratingMedicalProblems(true);
     setMedicalProblemsProgress(0);
-    
+
     const startTime = Date.now();
     const estimatedDuration = 4500; // Medical problems typically take 4.5 seconds (GPT-4.1 processing)
-    
+
     medicalProblemsProgressInterval.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
@@ -469,12 +488,14 @@ export function EncounterDetailView({
   };
 
   const completeMedicalProblemsAnimation = () => {
-    console.log("✅ [MedicalProblemsAnimation] Completing medical problems animation");
+    console.log(
+      "✅ [MedicalProblemsAnimation] Completing medical problems animation",
+    );
     if (medicalProblemsProgressInterval.current) {
       clearInterval(medicalProblemsProgressInterval.current);
       medicalProblemsProgressInterval.current = null;
     }
-    
+
     setMedicalProblemsProgress(100);
     setTimeout(() => {
       setIsAutoGeneratingMedicalProblems(false);
@@ -486,10 +507,10 @@ export function EncounterDetailView({
     console.log("🎬 [OrdersAnimation] Starting orders animation");
     setIsAutoGeneratingOrders(true);
     setOrdersProgress(0);
-    
+
     const startTime = Date.now();
     const estimatedDuration = 4000; // Orders typically take 4 seconds
-    
+
     ordersProgressInterval.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
@@ -503,7 +524,7 @@ export function EncounterDetailView({
       clearInterval(ordersProgressInterval.current);
       ordersProgressInterval.current = null;
     }
-    
+
     setOrdersProgress(100);
     setTimeout(() => {
       setIsAutoGeneratingOrders(false);
@@ -515,10 +536,10 @@ export function EncounterDetailView({
     console.log("🎬 [BillingAnimation] Starting billing animation");
     setIsAutoGeneratingBilling(true);
     setBillingProgress(0);
-    
+
     const startTime = Date.now();
     const estimatedDuration = 3500; // Billing typically takes 3.5 seconds
-    
+
     billingProgressInterval.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min((elapsed / estimatedDuration) * 100, 95);
@@ -532,7 +553,7 @@ export function EncounterDetailView({
       clearInterval(billingProgressInterval.current);
       billingProgressInterval.current = null;
     }
-    
+
     setBillingProgress(100);
     setTimeout(() => {
       setIsAutoGeneratingBilling(false);
@@ -635,7 +656,7 @@ export function EncounterDetailView({
     setIsAutoGeneratingSOAP(false);
     setIsAutoGeneratingOrders(false);
     setIsAutoGeneratingBilling(false);
-    
+
     // Complete the progress animation
     setGenerationProgress(100);
     setTimeout(() => {
@@ -672,12 +693,15 @@ export function EncounterDetailView({
       console.log(
         `✅ [EncounterView] Real-time SOAP note saved to encounter at ${new Date().toISOString()}`,
       );
-      
+
       // 🔑 Set baseline hash for chart update detection immediately after SOAP save
       const baselineHash = generateSOAPHash(note);
       setLastProcessedSOAPHash(baselineHash);
-      console.log("🔑 [ChartUpdate] Setting baseline hash after recording stop:", baselineHash);
-      
+      console.log(
+        "🔑 [ChartUpdate] Setting baseline hash after recording stop:",
+        baselineHash,
+      );
+
       console.log(
         `🔍 [EncounterView] SOAP save completed successfully, starting medical problems processing...`,
       );
@@ -747,11 +771,17 @@ export function EncounterDetailView({
           allergyRequestBody,
         );
 
-        console.log(`🚨 [ParallelProcessing] === STARTING ALLERGY API CALL ===`);
-        console.log(`🚨 [ParallelProcessing] Calling: /api/allergies/process-unified`);
+        console.log(
+          `🚨 [ParallelProcessing] === STARTING ALLERGY API CALL ===`,
+        );
+        console.log(
+          `🚨 [ParallelProcessing] Calling: /api/allergies/process-unified`,
+        );
         console.log(`🚨 [ParallelProcessing] Patient ID: ${patient.id}`);
         console.log(`🚨 [ParallelProcessing] Encounter ID: ${encounterId}`);
-        console.log(`🚨 [ParallelProcessing] SOAP Note Length: ${note?.length || 0} chars`);
+        console.log(
+          `🚨 [ParallelProcessing] SOAP Note Length: ${note?.length || 0} chars`,
+        );
 
         // Process all services in parallel for maximum efficiency
         const [
@@ -902,7 +932,9 @@ export function EncounterDetailView({
         );
         console.log(`🏥 [Orders] Response status: ${ordersResponse.status}`);
         console.log(`🏥 [CPT] Response status: ${cptResponse.status}`);
-        console.log(`🚨 [Allergies] Response status: ${allergyResponse.status}`);
+        console.log(
+          `🚨 [Allergies] Response status: ${allergyResponse.status}`,
+        );
 
         // Handle medical problems response
         if (medicalProblemsResponse.ok) {
@@ -916,7 +948,7 @@ export function EncounterDetailView({
 
           // Invalidate medical problems queries to refresh UI (unified API)
           await queryClient.invalidateQueries({
-            queryKey: ['/api/medical-problems', patient.id],
+            queryKey: ["/api/medical-problems", patient.id],
           });
           console.log(`🔄 [MedicalProblems] Cache invalidation completed`);
         } else {
@@ -1013,23 +1045,26 @@ export function EncounterDetailView({
 
           // Invalidate allergy queries to refresh UI
           await queryClient.invalidateQueries({
-            queryKey: ['/api/allergies', patient.id],
+            queryKey: ["/api/allergies", patient.id],
           });
           console.log(`🔄 [Allergies] Cache invalidation completed`);
         } else {
           const errorText = await allergyResponse.text();
-          console.error(`❌ [Allergies] FAILED with status ${allergyResponse.status}`);
+          console.error(
+            `❌ [Allergies] FAILED with status ${allergyResponse.status}`,
+          );
           console.error(`❌ [Allergies] Error response: ${errorText}`);
         }
 
         console.log(`🏥 [ParallelProcessing] === PARALLEL PROCESSING END ===`);
-        
+
         // Update hash after successful processing to track chart state
         const processedHash = generateSOAPHash(soapNote);
         setLastProcessedSOAPHash(processedHash);
         setIsChartUpdateAvailable(false);
-        console.log("📝 [ChartUpdate] Hash updated after stop recording processing");
-        
+        console.log(
+          "📝 [ChartUpdate] Hash updated after stop recording processing",
+        );
       } catch (error) {
         console.error(
           `❌ [ParallelProcessing] EXCEPTION during processing:`,
@@ -1110,7 +1145,7 @@ export function EncounterDetailView({
 
       // Invalidate medical problems cache since CPT codes trigger medical problems processing (unified API)
       await queryClient.invalidateQueries({
-        queryKey: ['/api/medical-problems', patient.id],
+        queryKey: ["/api/medical-problems", patient.id],
       });
 
       console.log("🔄 [EncounterView] Query invalidation completed");
@@ -1135,24 +1170,30 @@ export function EncounterDetailView({
     if (!userEditingLock) {
       setUserEditingLock(true);
       setLastUserEditTime(Date.now());
-      console.log("🔒 [UserEditLock] User started editing - persistent lock activated");
-      
+      console.log(
+        "🔒 [UserEditLock] User started editing - persistent lock activated",
+      );
+
       // Activate vulnerable window protection
       if (!editorVulnerableWindow) {
         setEditorVulnerableWindow(true);
-        console.log("🛡️ [VulnerableWindow] Editor locked - protecting against delayed API responses");
-        
+        console.log(
+          "🛡️ [VulnerableWindow] Editor locked - protecting against delayed API responses",
+        );
+
         // Clear any existing timeout
         if (vulnerableWindowTimeout) {
           clearTimeout(vulnerableWindowTimeout);
         }
-        
+
         // Set timeout to clear vulnerable window after 4 seconds
         const timeout = setTimeout(() => {
           setEditorVulnerableWindow(false);
-          console.log("🛡️ [VulnerableWindow] Editor unlocked - vulnerable window passed");
+          console.log(
+            "🛡️ [VulnerableWindow] Editor unlocked - vulnerable window passed",
+          );
         }, 4000);
-        
+
         setVulnerableWindowTimeout(timeout);
       }
     }
@@ -1169,7 +1210,7 @@ export function EncounterDetailView({
     console.log("🔓 [UserEditLock] Edit lock cleared - AI updates allowed");
   };
 
-  // Cleanup timeout on unmount  
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (vulnerableWindowTimeout) {
@@ -1179,15 +1220,20 @@ export function EncounterDetailView({
   }, []);
 
   // Modal warning state for recording conflicts
-  const [showRecordingConflictModal, setShowRecordingConflictModal] = useState(false);
-  const [pendingRecordingStart, setPendingRecordingStart] = useState<(() => void) | null>(null);
+  const [showRecordingConflictModal, setShowRecordingConflictModal] =
+    useState(false);
+  const [pendingRecordingStart, setPendingRecordingStart] = useState<
+    (() => void) | null
+  >(null);
 
   // Vulnerable window protection - editor loading during API pipeline risk
   const [editorVulnerableWindow, setEditorVulnerableWindow] = useState(false);
-  const [vulnerableWindowTimeout, setVulnerableWindowTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [vulnerableWindowTimeout, setVulnerableWindowTimeout] =
+    useState<NodeJS.Timeout | null>(null);
 
   // Smart Chart Update Button State
-  const [lastProcessedSOAPHash, setLastProcessedSOAPHash] = useState<string>("");
+  const [lastProcessedSOAPHash, setLastProcessedSOAPHash] =
+    useState<string>("");
   const [isChartUpdateAvailable, setIsChartUpdateAvailable] = useState(false);
   const [isUpdatingChart, setIsUpdatingChart] = useState(false);
   const [chartUpdateProgress, setChartUpdateProgress] = useState(0);
@@ -1198,7 +1244,7 @@ export function EncounterDetailView({
     const cleanContent = content.trim();
     for (let i = 0; i < cleanContent.length; i++) {
       const char = cleanContent.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return hash.toString();
@@ -1210,12 +1256,14 @@ export function EncounterDetailView({
     console.log("🔍 [ChartUpdate] Input conditions:", {
       soapNoteExists: !!currentSOAP,
       soapLength: currentSOAP?.length || 0,
-      soapPreview: currentSOAP ? currentSOAP.substring(0, 100) + "..." : "NO SOAP NOTE",
+      soapPreview: currentSOAP
+        ? currentSOAP.substring(0, 100) + "..."
+        : "NO SOAP NOTE",
       hasLastHash: !!lastProcessedSOAPHash,
       lastHash: lastProcessedSOAPHash || "NONE SET",
       buttonCurrentlyVisible: isChartUpdateAvailable,
       isRecording: isRecording,
-      isGenerating: isGeneratingSOAP || isAutoGeneratingSOAP
+      isGenerating: isGeneratingSOAP || isAutoGeneratingSOAP,
     });
 
     if (!currentSOAP || currentSOAP.trim().length < 100) {
@@ -1231,7 +1279,7 @@ export function EncounterDetailView({
       currentHash,
       lastProcessedHash: lastProcessedSOAPHash || "NONE",
       hashesMatch: currentHash === lastProcessedSOAPHash,
-      hashExists: !!lastProcessedSOAPHash
+      hashExists: !!lastProcessedSOAPHash,
     });
 
     // Check all conditions for showing button
@@ -1243,30 +1291,51 @@ export function EncounterDetailView({
 
     console.log("🔍 [ChartUpdate] Condition analysis:", {
       hasBaseline: hasBaseline ? "✅ YES" : "❌ NO - need baseline hash first",
-      hasChanges: hasChanges ? "✅ YES" : "❌ NO - content unchanged", 
+      hasChanges: hasChanges ? "✅ YES" : "❌ NO - content unchanged",
       notRecording: notRecording ? "✅ YES" : "❌ NO - recording active",
       notGenerating: notGenerating ? "✅ YES" : "❌ NO - generation active",
       soapLongEnough: soapLongEnough ? "✅ YES" : "❌ NO - SOAP too short",
-      allConditionsMet: hasBaseline && hasChanges && notRecording && notGenerating && soapLongEnough
+      allConditionsMet:
+        hasBaseline &&
+        hasChanges &&
+        notRecording &&
+        notGenerating &&
+        soapLongEnough,
     });
-    
+
     // Only show button if content has changed significantly since last processing
-    if (hasBaseline && hasChanges && notRecording && notGenerating && soapLongEnough) {
+    if (
+      hasBaseline &&
+      hasChanges &&
+      notRecording &&
+      notGenerating &&
+      soapLongEnough
+    ) {
       setIsChartUpdateAvailable(true);
       console.log("✅ [ChartUpdate] ALL CONDITIONS MET - SHOWING BUTTON");
-      console.log("✅ [ChartUpdate] Button will process: Medical Problems, Surgical History, Medications, Allergies");
-      console.log("✅ [ChartUpdate] Will exclude: Orders, Billing (transactional data)");
+      console.log(
+        "✅ [ChartUpdate] Button will process: Medical Problems, Surgical History, Medications, Allergies",
+      );
+      console.log(
+        "✅ [ChartUpdate] Will exclude: Orders, Billing (transactional data)",
+      );
     } else {
       setIsChartUpdateAvailable(false);
       console.log("❌ [ChartUpdate] CONDITIONS NOT MET - HIDING BUTTON");
       if (!hasBaseline) {
-        console.log("💡 [ChartUpdate] TIP: Baseline hash gets set when recording stops or on initial load");
+        console.log(
+          "💡 [ChartUpdate] TIP: Baseline hash gets set when recording stops or on initial load",
+        );
       }
       if (!hasChanges && hasBaseline) {
-        console.log("💡 [ChartUpdate] TIP: Edit the SOAP note content to trigger button");
+        console.log(
+          "💡 [ChartUpdate] TIP: Edit the SOAP note content to trigger button",
+        );
       }
       if (!notRecording) {
-        console.log("💡 [ChartUpdate] TIP: Stop recording first before manual chart updates");
+        console.log(
+          "💡 [ChartUpdate] TIP: Stop recording first before manual chart updates",
+        );
       }
       if (!notGenerating) {
         console.log("💡 [ChartUpdate] TIP: Wait for AI generation to complete");
@@ -1288,8 +1357,13 @@ export function EncounterDetailView({
       // For existing encounters that already have SOAP notes, set initial hash on load
       const initialHash = generateSOAPHash(soapNote);
       setLastProcessedSOAPHash(initialHash);
-      console.log("🔧 [ChartUpdate] Setting initial hash for existing SOAP note:", initialHash);
-      console.log("🔧 [ChartUpdate] Note: Button will only appear after SOAP content changes significantly");
+      console.log(
+        "🔧 [ChartUpdate] Setting initial hash for existing SOAP note:",
+        initialHash,
+      );
+      console.log(
+        "🔧 [ChartUpdate] Note: Button will only appear after SOAP content changes significantly",
+      );
     }
   }, [soapNote]); // Only depends on soapNote, not lastProcessedSOAPHash to avoid infinite loop
 
@@ -1298,14 +1372,16 @@ export function EncounterDetailView({
   // 2. Manual Update Chart button (this function)
   // Current sections: medicalProblems, surgicalHistory, medications
   // Future sections: allergies, imaging, familyHistory, [add here]
-  
+
   // Selective chart update - processes only chart data (excludes orders & billing)
   const updateChartFromNote = async () => {
     if (!patient || !encounter || !soapNote || isUpdatingChart) return;
 
     console.log("🔄 [ChartUpdate] === SELECTIVE CHART UPDATE START ===");
-    console.log("🔄 [ChartUpdate] Processing: Medical Problems + Surgical History + Medications + Allergies + Social History");
-    
+    console.log(
+      "🔄 [ChartUpdate] Processing: Medical Problems + Surgical History + Medications + Allergies + Social History",
+    );
+
     setIsUpdatingChart(true);
     setChartUpdateProgress(0);
 
@@ -1320,7 +1396,13 @@ export function EncounterDetailView({
       }, 50);
 
       // Process only chart sections in parallel (exclude orders & CPT)
-      const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, allergyResponse, socialHistoryResponse] = await Promise.all([
+      const [
+        medicalProblemsResponse,
+        surgicalHistoryResponse,
+        medicationsResponse,
+        allergyResponse,
+        socialHistoryResponse,
+      ] = await Promise.all([
         // Medical Problems Processing
         fetch("/api/medical-problems/process-unified", {
           method: "POST",
@@ -1337,7 +1419,7 @@ export function EncounterDetailView({
           }),
         }),
 
-        // Surgical History Processing  
+        // Surgical History Processing
         fetch("/api/surgical-history/process-unified", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1400,29 +1482,41 @@ export function EncounterDetailView({
       setChartUpdateProgress(100);
 
       console.log(`🔄 [ChartUpdate] All chart requests completed`);
-      console.log(`🔄 [ChartUpdate] Medical Problems: ${medicalProblemsResponse.status}`);
-      console.log(`🔄 [ChartUpdate] Surgical History: ${surgicalHistoryResponse.status}`);  
-      console.log(`🔄 [ChartUpdate] Medications: ${medicationsResponse.status}`);
+      console.log(
+        `🔄 [ChartUpdate] Medical Problems: ${medicalProblemsResponse.status}`,
+      );
+      console.log(
+        `🔄 [ChartUpdate] Surgical History: ${surgicalHistoryResponse.status}`,
+      );
+      console.log(
+        `🔄 [ChartUpdate] Medications: ${medicationsResponse.status}`,
+      );
       console.log(`🔄 [ChartUpdate] Allergies: ${allergyResponse.status}`);
-      console.log(`🔄 [ChartUpdate] Social History: ${socialHistoryResponse.status}`);
+      console.log(
+        `🔄 [ChartUpdate] Social History: ${socialHistoryResponse.status}`,
+      );
 
       // Handle responses and refresh UI
       let sectionsUpdated = 0;
 
       if (medicalProblemsResponse.ok) {
         const result = await medicalProblemsResponse.json();
-        console.log(`✅ [ChartUpdate-MedProblems] ${result.problemsAffected || result.total_problems_affected || 0} problems affected`);
-        
+        console.log(
+          `✅ [ChartUpdate-MedProblems] ${result.problemsAffected || result.total_problems_affected || 0} problems affected`,
+        );
+
         await queryClient.invalidateQueries({
-          queryKey: ['/api/medical-problems', patient.id],
+          queryKey: ["/api/medical-problems", patient.id],
         });
         sectionsUpdated++;
       }
 
       if (surgicalHistoryResponse.ok) {
         const result = await surgicalHistoryResponse.json();
-        console.log(`✅ [ChartUpdate-Surgery] ${result.surgeriesAffected || 0} surgeries affected`);
-        
+        console.log(
+          `✅ [ChartUpdate-Surgery] ${result.surgeriesAffected || 0} surgeries affected`,
+        );
+
         await queryClient.invalidateQueries({
           queryKey: [`/api/surgical-history/${patient.id}`],
         });
@@ -1431,8 +1525,10 @@ export function EncounterDetailView({
 
       if (medicationsResponse.ok) {
         const result = await medicationsResponse.json();
-        console.log(`✅ [ChartUpdate-Meds] ${result.medicationsAffected || 0} medications affected`);
-        
+        console.log(
+          `✅ [ChartUpdate-Meds] ${result.medicationsAffected || 0} medications affected`,
+        );
+
         await queryClient.invalidateQueries({
           queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
         });
@@ -1441,18 +1537,22 @@ export function EncounterDetailView({
 
       if (allergyResponse.ok) {
         const result = await allergyResponse.json();
-        console.log(`✅ [ChartUpdate-Allergies] ${result.allergiesAffected || 0} allergies affected`);
-        
+        console.log(
+          `✅ [ChartUpdate-Allergies] ${result.allergiesAffected || 0} allergies affected`,
+        );
+
         await queryClient.invalidateQueries({
-          queryKey: ['/api/allergies', patient.id],
+          queryKey: ["/api/allergies", patient.id],
         });
         sectionsUpdated++;
       }
 
       if (socialHistoryResponse.ok) {
         const result = await socialHistoryResponse.json();
-        console.log(`✅ [ChartUpdate-SocialHistory] ${result.socialHistoryAffected || 0} social history items affected`);
-        
+        console.log(
+          `✅ [ChartUpdate-SocialHistory] ${result.socialHistoryAffected || 0} social history items affected`,
+        );
+
         await queryClient.invalidateQueries({
           queryKey: [`/api/social-history`, patient.id],
         });
@@ -1470,9 +1570,11 @@ export function EncounterDetailView({
       });
 
       console.log("🔄 [ChartUpdate] === SELECTIVE CHART UPDATE COMPLETE ===");
-
     } catch (error) {
-      console.error("❌ [ChartUpdate] Error during selective chart update:", error);
+      console.error(
+        "❌ [ChartUpdate] Error during selective chart update:",
+        error,
+      );
       toast({
         title: "Update Failed",
         description: "Failed to update chart sections. Please try again.",
@@ -1484,7 +1586,7 @@ export function EncounterDetailView({
     }
   };
 
-  // Cleanup timeout on unmount  
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (vulnerableWindowTimeout) {
@@ -1495,16 +1597,16 @@ export function EncounterDetailView({
 
   // Custom extension to force Enter key to create hard breaks instead of paragraphs
   const ForceHardBreak = Extension.create({
-    name: 'forceHardBreak',
-    
+    name: "forceHardBreak",
+
     addKeyboardShortcuts() {
       return {
-        'Enter': () => {
-          return this.editor.commands.setHardBreak()
+        Enter: () => {
+          return this.editor.commands.setHardBreak();
         },
-      }
+      };
     },
-  })
+  });
 
   const editor = useEditor({
     extensions: [
@@ -1558,7 +1660,7 @@ export function EncounterDetailView({
         // Convert single line breaks to HTML breaks
         .replace(/\n/g, "<br/>")
         // Aggressively clean up multiple consecutive breaks (2 or more)
-        .replace(/(<br\/>){2,}/g, "<br/>")
+        //.replace(/(<br\/>){2,}/g, "<br/>")
         // Ensure SOAP headers have proper spacing before them but not excessive spacing after
         .replace(/(<strong>SUBJECTIVE:<\/strong>)/g, "<br/>$1")
         .replace(/(<strong>OBJECTIVE:<\/strong>)/g, "<br/>$1")
@@ -1572,19 +1674,25 @@ export function EncounterDetailView({
 
   // Check for unsaved content before navigation and trigger immediate save
   const checkUnsavedContent = async () => {
-    const hasUnsavedTranscription = transcriptionSaveStatus === "unsaved" || transcriptionSaveStatus === "saving";
-    const hasUnsavedSoapNote = autoSaveStatus === "unsaved" || autoSaveStatus === "saving";
-    
+    const hasUnsavedTranscription =
+      transcriptionSaveStatus === "unsaved" ||
+      transcriptionSaveStatus === "saving";
+    const hasUnsavedSoapNote =
+      autoSaveStatus === "unsaved" || autoSaveStatus === "saving";
+
     if (hasUnsavedTranscription || hasUnsavedSoapNote) {
       const unsavedItems = [];
       if (hasUnsavedTranscription) unsavedItems.push("transcription");
       if (hasUnsavedSoapNote) unsavedItems.push("SOAP note");
-      
-      console.log("💾 [Navigation] Unsaved content detected, triggering immediate save:", {
-        transcription: transcriptionSaveStatus,
-        soapNote: autoSaveStatus,
-        unsavedItems
-      });
+
+      console.log(
+        "💾 [Navigation] Unsaved content detected, triggering immediate save:",
+        {
+          transcription: transcriptionSaveStatus,
+          soapNote: autoSaveStatus,
+          unsavedItems,
+        },
+      );
 
       // Trigger immediate saves to prevent data loss
       try {
@@ -1597,7 +1705,7 @@ export function EncounterDetailView({
 
         toast({
           title: "Content Saved",
-          description: `Your ${unsavedItems.join(" and ")} ${unsavedItems.length === 1 ? 'has' : 'have'} been saved automatically.`,
+          description: `Your ${unsavedItems.join(" and ")} ${unsavedItems.length === 1 ? "has" : "have"} been saved automatically.`,
           duration: 3000,
         });
       } catch (error) {
@@ -1616,7 +1724,7 @@ export function EncounterDetailView({
     return () => {
       // Check for unsaved content before component unmounts
       checkUnsavedContent();
-      
+
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current);
       }
@@ -1652,22 +1760,23 @@ export function EncounterDetailView({
       // Load existing transcription from database
       if (encounter.transcriptionRaw || encounter.transcriptionProcessed) {
         const savedRawTranscription = encounter.transcriptionRaw || "";
-        const savedProcessedTranscription = encounter.transcriptionProcessed || "";
+        const savedProcessedTranscription =
+          encounter.transcriptionProcessed || "";
 
         if (savedRawTranscription.trim()) {
           setTranscription(savedRawTranscription);
           setLastSavedTranscription(savedRawTranscription);
           setTranscriptionSaveStatus("saved");
-          
+
           // CRITICAL: Also initialize the transcription buffer for multi-session recording
           setTranscriptionBuffer(savedRawTranscription);
-          
+
           console.log(
             "🎤 [EncounterView] Restored transcription from database:",
-            `Raw: ${savedRawTranscription.length} chars, Processed: ${savedProcessedTranscription.length} chars`
+            `Raw: ${savedRawTranscription.length} chars, Processed: ${savedProcessedTranscription.length} chars`,
           );
           console.log(
-            "🎤 [EncounterView] MULTI-SESSION FIX: Initialized transcription buffer with saved content for continuation"
+            "🎤 [EncounterView] MULTI-SESSION FIX: Initialized transcription buffer with saved content for continuation",
           );
         }
 
@@ -1676,7 +1785,12 @@ export function EncounterDetailView({
         }
       }
     }
-  }, [encounter?.note, encounter?.transcriptionRaw, encounter?.transcriptionProcessed, editor]);
+  }, [
+    encounter?.note,
+    encounter?.transcriptionRaw,
+    encounter?.transcriptionProcessed,
+    editor,
+  ]);
 
   // Effect to load new SOAP note content only when it's generated
   useEffect(() => {
@@ -1890,11 +2004,16 @@ export function EncounterDetailView({
       "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
       patient.id,
     );
-    console.log("🎤 [EncounterView] Current AI mode:", useRestAPI ? "REST API" : "WebSocket");
+    console.log(
+      "🎤 [EncounterView] Current AI mode:",
+      useRestAPI ? "REST API" : "WebSocket",
+    );
 
     // Check for edit lock conflict and show modal if needed
     if (userEditingLock) {
-      console.log("🔒 [UserEditLock] Edit lock active - showing conflict modal");
+      console.log(
+        "🔒 [UserEditLock] Edit lock active - showing conflict modal",
+      );
       setPendingRecordingStart(() => () => proceedWithRecording());
       setShowRecordingConflictModal(true);
       return;
@@ -1906,7 +2025,6 @@ export function EncounterDetailView({
 
   // Actual recording implementation (extracted from original startRecording)
   const proceedWithRecording = async () => {
-
     // Clear previous suggestions when starting new recording (both WebSocket and REST API)
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
@@ -1924,8 +2042,12 @@ export function EncounterDetailView({
 
       try {
         if (useRestAPI) {
-          console.log("🔍 [EncounterView] REST API mode - WebSocket needed for Whisper transcription, AI suggestions disabled");
-          console.log("🔍 [TokenMonitor] REST API mode - WebSocket will handle transcription only, no AI suggestion tokens");
+          console.log(
+            "🔍 [EncounterView] REST API mode - WebSocket needed for Whisper transcription, AI suggestions disabled",
+          );
+          console.log(
+            "🔍 [TokenMonitor] REST API mode - WebSocket will handle transcription only, no AI suggestion tokens",
+          );
         }
         console.log(
           "🌐 [EncounterView] Connecting to OpenAI Realtime API for transcription...",
@@ -2200,8 +2322,13 @@ Please provide medical suggestions based on what the provider is saying in this 
 
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log("📨 [EncounterView] WebSocket mode - OpenAI message type:", message.type);
-          console.log("🔍 [TokenMonitor] WebSocket activity detected - consuming tokens in background");
+          console.log(
+            "📨 [EncounterView] WebSocket mode - OpenAI message type:",
+            message.type,
+          );
+          console.log(
+            "🔍 [TokenMonitor] WebSocket activity detected - consuming tokens in background",
+          );
 
           // Log all incoming messages for debugging
           console.log("📥 [API-IN] Complete OpenAI message:");
@@ -2286,7 +2413,10 @@ Please provide medical suggestions based on what the provider is saying in this 
               }
 
               // Trigger transcription auto-save after each delta update
-              triggerTranscriptionAutoSave(newTranscription, liveTranscriptionContent + deltaText);
+              triggerTranscriptionAutoSave(
+                newTranscription,
+                liveTranscriptionContent + deltaText,
+              );
 
               return newTranscription;
             });
@@ -2342,7 +2472,9 @@ Please provide medical suggestions based on what the provider is saying in this 
                 console.log(
                   "🧠 [EncounterView] WebSocket mode - Real-time AI context update with partial transcription",
                 );
-                console.log("🔍 [TokenMonitor] WebSocket context update - consuming tokens for suggestions");
+                console.log(
+                  "🔍 [TokenMonitor] WebSocket context update - consuming tokens for suggestions",
+                );
 
                 // Send live partial transcription to AI
                 const contextUpdate = {
@@ -2386,7 +2518,9 @@ Please provide medical suggestions based on what the provider is saying in this 
               "🧠 [EncounterView] WebSocket mode - AI suggestions delta received:",
               deltaText,
             );
-            console.log("🔍 [TokenMonitor] WebSocket delta received - tokens being consumed for suggestions");
+            console.log(
+              "🔍 [TokenMonitor] WebSocket delta received - tokens being consumed for suggestions",
+            );
             console.log("🧠 [EncounterView] Delta length:", deltaText.length);
             console.log(
               "🧠 [EncounterView] Current suggestions buffer length:",
@@ -2837,12 +2971,14 @@ Please provide medical suggestions based on this complete conversation context.`
 
       mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
       setIsRecording(true);
-      
+
       // Clear all edit locks when starting new recording
       setUserEditingLock(false);
       setRecordingCooldown(false);
       setLastUserEditTime(null);
-      console.log("🔓 [UserEditLock] All edit locks cleared - starting new recording session");
+      console.log(
+        "🔓 [UserEditLock] All edit locks cleared - starting new recording session",
+      );
 
       (window as any).currentMediaRecorder = mediaRecorder;
 
@@ -2876,7 +3012,10 @@ Please provide medical suggestions based on this complete conversation context.`
 
   const stopRecording = async () => {
     console.log("🎤 [EncounterView] === STOP RECORDING CALLED ===");
-    console.log("🎤 [EncounterView] Current AI mode:", useRestAPI ? "REST API" : "WebSocket");
+    console.log(
+      "🎤 [EncounterView] Current AI mode:",
+      useRestAPI ? "REST API" : "WebSocket",
+    );
     console.log(
       "🎤 [EncounterView] Current soapNote:",
       soapNote ? soapNote.substring(0, 100) + "..." : "NULL/EMPTY",
@@ -2888,23 +3027,34 @@ Please provide medical suggestions based on this complete conversation context.`
     );
 
     // Stop recording based on current mode
-    const mediaRecorder = (window as any).currentMediaRecorder || mediaRecorderRef;
+    const mediaRecorder =
+      (window as any).currentMediaRecorder || mediaRecorderRef;
     if (mediaRecorder && mediaRecorder.state === "recording") {
-      console.log("🛑 [EncounterView] Stopping MediaRecorder, current state:", mediaRecorder.state);
+      console.log(
+        "🛑 [EncounterView] Stopping MediaRecorder, current state:",
+        mediaRecorder.state,
+      );
       mediaRecorder.stop();
       console.log("🎤 [EncounterView] MediaRecorder stopped");
     } else {
-      console.log("⚠️ [EncounterView] No active MediaRecorder found or already stopped");
-      console.log("🔍 [EncounterView] MediaRecorder state:", mediaRecorder?.state || "null");
+      console.log(
+        "⚠️ [EncounterView] No active MediaRecorder found or already stopped",
+      );
+      console.log(
+        "🔍 [EncounterView] MediaRecorder state:",
+        mediaRecorder?.state || "null",
+      );
     }
 
     setIsRecording(false);
     setLastRecordingStopTime(Date.now());
-    
+
     // Activate recording cooldown to prevent AI overwrites during transcription completion
     setRecordingCooldown(true);
-    console.log("⏱️ [UserEditLock] Recording cooldown activated - preventing AI updates for 5 seconds");
-    
+    console.log(
+      "⏱️ [UserEditLock] Recording cooldown activated - preventing AI updates for 5 seconds",
+    );
+
     // Clear cooldown after transcription typically finishes
     setTimeout(() => {
       setRecordingCooldown(false);
@@ -2929,8 +3079,10 @@ Please provide medical suggestions based on this complete conversation context.`
 
       try {
         // Save SOAP note and final transcription
-        console.log("🔄 [StopRecording] Saving SOAP note and final transcription...");
-        
+        console.log(
+          "🔄 [StopRecording] Saving SOAP note and final transcription...",
+        );
+
         // Save final transcription state
         if (transcription && transcription.trim()) {
           await autoSaveTranscription(transcription, liveTranscriptionContent);
@@ -2948,7 +3100,10 @@ Please provide medical suggestions based on this complete conversation context.`
           },
         );
 
-        console.log("🔄 [StopRecording] SOAP save response status:", soapSaveResponse.status);
+        console.log(
+          "🔄 [StopRecording] SOAP save response status:",
+          soapSaveResponse.status,
+        );
         if (!soapSaveResponse.ok) {
           const soapError = await soapSaveResponse.text();
           console.error("❌ [StopRecording] SOAP save failed:", soapError);
@@ -2974,292 +3129,390 @@ Please provide medical suggestions based on this complete conversation context.`
         startOrdersAnimation();
         startBillingAnimation();
 
-        const [medicalProblemsResponse, surgicalHistoryResponse, medicationsResponse, ordersResponse, cptResponse, allergyResponse, familyHistoryResponse, socialHistoryResponse] =
-          await Promise.all([
-            fetch(`/api/medical-problems/process-unified`, {
+        const [
+          medicalProblemsResponse,
+          surgicalHistoryResponse,
+          medicationsResponse,
+          ordersResponse,
+          cptResponse,
+          allergyResponse,
+          familyHistoryResponse,
+          socialHistoryResponse,
+        ] = await Promise.all([
+          fetch(`/api/medical-problems/process-unified`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              patientId: patient.id,
+              encounterId: encounterId,
+              soapNote: soapNote,
+              triggerType: "recording_complete",
+            }),
+          }).then(async (response) => {
+            console.log(
+              "🏥 [StopRecording] Medical problems response status:",
+              response.status,
+            );
+            console.log(
+              "🏥 [StopRecording] Medical problems response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] Medical problems processing failed:",
+                errorText.substring(0, 500),
+              );
+            }
+            return response;
+          }),
+          fetch(`/api/surgical-history/process-unified`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              patientId: patient.id,
+              encounterId: encounterId,
+              soapNote: soapNote,
+              triggerType: "recording_complete",
+            }),
+          }).then(async (response) => {
+            console.log(
+              "🏥 [StopRecording] Surgical history response status:",
+              response.status,
+            );
+            console.log(
+              "🏥 [StopRecording] Surgical history response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] Surgical history processing failed:",
+                errorText.substring(0, 500),
+              );
+            }
+            return response;
+          }),
+          fetch(`/api/encounters/${encounterId}/process-medications`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ patientId: patient.id }),
+          }).then(async (response) => {
+            console.log(
+              "💊 [StopRecording] Medications response status:",
+              response.status,
+            );
+            console.log(
+              "💊 [StopRecording] Medications response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] Medications processing failed:",
+                errorText.substring(0, 500),
+              );
+            }
+            return response;
+          }),
+          fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({}),
+          }).then(async (response) => {
+            console.log(
+              "📋 [StopRecording] Orders response status:",
+              response.status,
+            );
+            console.log(
+              "📋 [StopRecording] Orders response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] Orders processing failed:",
+                errorText.substring(0, 500),
+              );
+            }
+            return response;
+          }),
+          fetch(
+            `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
+            {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
-              body: JSON.stringify({
-                patientId: patient.id,
-                encounterId: encounterId,
-                soapNote: soapNote,
-                triggerType: "recording_complete",
-              }),
-            }).then(async (response) => {
-              console.log("🏥 [StopRecording] Medical problems response status:", response.status);
-              console.log("🏥 [StopRecording] Medical problems response headers:", Object.fromEntries(response.headers.entries()));
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ [StopRecording] Medical problems processing failed:", errorText.substring(0, 500));
-              }
+              body: JSON.stringify({ soapNote }),
+            },
+          ).then(async (response) => {
+            console.log(
+              "🏥 [StopRecording] CPT response status:",
+              response.status,
+            );
+            console.log(
+              "🏥 [StopRecording] CPT response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] CPT extraction failed:",
+                errorText,
+              );
               return response;
-            }),
-            fetch(`/api/surgical-history/process-unified`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                patientId: patient.id,
-                encounterId: encounterId,
-                soapNote: soapNote,
-                triggerType: "recording_complete",
-              }),
-            }).then(async (response) => {
-              console.log("🏥 [StopRecording] Surgical history response status:", response.status);
-              console.log("🏥 [StopRecording] Surgical history response headers:", Object.fromEntries(response.headers.entries()));
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ [StopRecording] Surgical history processing failed:", errorText.substring(0, 500));
-              }
-              return response;
-            }),
-            fetch(`/api/encounters/${encounterId}/process-medications`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({ patientId: patient.id }),
-            }).then(async (response) => {
-              console.log("💊 [StopRecording] Medications response status:", response.status);
-              console.log("💊 [StopRecording] Medications response headers:", Object.fromEntries(response.headers.entries()));
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ [StopRecording] Medications processing failed:", errorText.substring(0, 500));
-              }
-              return response;
-            }),
-            fetch(`/api/encounters/${encounterId}/extract-orders-from-soap`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({}),
-            }).then(async (response) => {
-              console.log("📋 [StopRecording] Orders response status:", response.status);
-              console.log("📋 [StopRecording] Orders response headers:", Object.fromEntries(response.headers.entries()));
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ [StopRecording] Orders processing failed:", errorText.substring(0, 500));
-              }
-              return response;
-            }),
-            fetch(
-              `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
+            }
+
+            const extractedData = await response.json();
+            console.log(
+              "✅ [StopRecording] CPT extraction successful:",
+              extractedData,
+            );
+
+            // Now save the extracted data to the database
+            console.log("💾 [StopRecording] Saving CPT codes to database...");
+            const saveResponse = await fetch(
+              `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
               {
-                method: "POST",
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ soapNote }),
+                body: JSON.stringify({
+                  cptCodes: extractedData.cptCodes || [],
+                  diagnoses: extractedData.diagnoses || [],
+                  mappings: extractedData.mappings || [],
+                }),
               },
-            ).then(async (response) => {
+            );
+
+            if (saveResponse.ok) {
               console.log(
-                "🏥 [StopRecording] CPT response status:",
-                response.status,
+                "✅ [StopRecording] CPT codes saved to database successfully",
               );
+
+              // Force refetch encounter data to refresh billing component immediately
+              await queryClient.refetchQueries({
+                queryKey: [
+                  `/api/patients/${patient.id}/encounters/${encounterId}`,
+                ],
+              });
               console.log(
-                "🏥 [StopRecording] CPT response headers:",
-                Object.fromEntries(response.headers.entries()),
+                "🔄 [StopRecording] Encounter data refetched for billing component",
               );
-
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error(
-                  "❌ [StopRecording] CPT extraction failed:",
-                  errorText,
-                );
-                return response;
-              }
-
-              const extractedData = await response.json();
-              console.log(
-                "✅ [StopRecording] CPT extraction successful:",
-                extractedData,
+            } else {
+              const saveErrorText = await saveResponse.text();
+              console.error(
+                "❌ [StopRecording] Failed to save CPT codes:",
+                saveErrorText,
               );
+            }
 
-              // Now save the extracted data to the database
-              console.log("💾 [StopRecording] Saving CPT codes to database...");
-              const saveResponse = await fetch(
-                `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
-                {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                  body: JSON.stringify({
-                    cptCodes: extractedData.cptCodes || [],
-                    diagnoses: extractedData.diagnoses || [],
-                    mappings: extractedData.mappings || [],
-                  }),
-                },
+            // Return the original extraction response for the parallel processing handler
+            return new Response(JSON.stringify(extractedData), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers,
+            });
+          }),
+          fetch(`/api/allergies/process-unified`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              patientId: patient.id,
+              encounterId: encounterId,
+              soapNote: soapNote,
+              attachmentContent: null,
+              attachmentId: null,
+              triggerType: "recording_complete",
+              providerId: 1,
+            }),
+          }).then(async (response) => {
+            console.log(
+              "🚨 [StopRecording] Allergy API response status:",
+              response.status,
+            );
+            console.log(
+              "🚨 [StopRecording] Allergy API response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] Allergy processing failed:",
+                errorText.substring(0, 500),
               );
+              return response;
+            }
 
-              if (saveResponse.ok) {
-                console.log(
-                  "✅ [StopRecording] CPT codes saved to database successfully",
-                );
+            const allergyData = await response.json();
+            console.log(
+              "✅ [StopRecording] Allergy processing successful:",
+              allergyData,
+            );
 
-                // Force refetch encounter data to refresh billing component immediately
-                await queryClient.refetchQueries({
-                  queryKey: [
-                    `/api/patients/${patient.id}/encounters/${encounterId}`,
-                  ],
-                });
-                console.log(
-                  "🔄 [StopRecording] Encounter data refetched for billing component",
-                );
-              } else {
-                const saveErrorText = await saveResponse.text();
-                console.error(
-                  "❌ [StopRecording] Failed to save CPT codes:",
-                  saveErrorText,
-                );
-              }
-
-              // Return the original extraction response for the parallel processing handler
-              return new Response(JSON.stringify(extractedData), {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-              });
+            return new Response(JSON.stringify(allergyData), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers,
+            });
+          }),
+          fetch(`/api/family-history/process-unified`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              patientId: patient.id,
+              encounterId: encounterId,
+              soapNote: soapNote,
+              attachmentContent: null,
+              attachmentId: null,
+              triggerType: "recording_complete",
             }),
-            fetch(`/api/allergies/process-unified`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                patientId: patient.id,
-                encounterId: encounterId,
-                soapNote: soapNote,
-                attachmentContent: null,
-                attachmentId: null,
-                triggerType: "recording_complete",
-                providerId: 1,
-              }),
-            }).then(async (response) => {
-              console.log("🚨 [StopRecording] Allergy API response status:", response.status);
-              console.log("🚨 [StopRecording] Allergy API response headers:", Object.fromEntries(response.headers.entries()));
-              
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ [StopRecording] Allergy processing failed:", errorText.substring(0, 500));
-                return response;
-              }
+          }).then(async (response) => {
+            console.log(
+              "👨‍👩‍👧‍👦 [StopRecording] Family history API response status:",
+              response.status,
+            );
+            console.log(
+              "👨‍👩‍👧‍👦 [StopRecording] Family history API response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
 
-              const allergyData = await response.json();
-              console.log("✅ [StopRecording] Allergy processing successful:", allergyData);
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] Family history processing failed:",
+                errorText.substring(0, 500),
+              );
+              return response;
+            }
 
-              return new Response(JSON.stringify(allergyData), {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-              });
+            const familyHistoryData = await response.json();
+            console.log(
+              "✅ [StopRecording] Family history processing successful:",
+              familyHistoryData,
+            );
+
+            return new Response(JSON.stringify(familyHistoryData), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers,
+            });
+          }),
+          fetch(`/api/social-history/process-unified`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              patientId: patient.id,
+              encounterId: encounterId,
+              soapNote: soapNote,
+              attachmentContent: null,
+              attachmentId: null,
+              triggerType: "recording_complete",
             }),
-            fetch(`/api/family-history/process-unified`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                patientId: patient.id,
-                encounterId: encounterId,
-                soapNote: soapNote,
-                attachmentContent: null,
-                attachmentId: null,
-                triggerType: "recording_complete",
-              }),
-            }).then(async (response) => {
-              console.log("👨‍👩‍👧‍👦 [StopRecording] Family history API response status:", response.status);
-              console.log("👨‍👩‍👧‍👦 [StopRecording] Family history API response headers:", Object.fromEntries(response.headers.entries()));
-              
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ [StopRecording] Family history processing failed:", errorText.substring(0, 500));
-                return response;
-              }
+          }).then(async (response) => {
+            console.log(
+              "🚬 [StopRecording] Social history API response status:",
+              response.status,
+            );
+            console.log(
+              "🚬 [StopRecording] Social history API response headers:",
+              Object.fromEntries(response.headers.entries()),
+            );
 
-              const familyHistoryData = await response.json();
-              console.log("✅ [StopRecording] Family history processing successful:", familyHistoryData);
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                "❌ [StopRecording] Social history processing failed:",
+                errorText.substring(0, 500),
+              );
+              return response;
+            }
 
-              return new Response(JSON.stringify(familyHistoryData), {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-              });
-            }),
-            fetch(`/api/social-history/process-unified`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                patientId: patient.id,
-                encounterId: encounterId,
-                soapNote: soapNote,
-                attachmentContent: null,
-                attachmentId: null,
-                triggerType: "recording_complete",
-              }),
-            }).then(async (response) => {
-              console.log("🚬 [StopRecording] Social history API response status:", response.status);
-              console.log("🚬 [StopRecording] Social history API response headers:", Object.fromEntries(response.headers.entries()));
-              
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ [StopRecording] Social history processing failed:", errorText.substring(0, 500));
-                return response;
-              }
+            const socialHistoryData = await response.json();
+            console.log(
+              "✅ [StopRecording] Social history processing successful:",
+              socialHistoryData,
+            );
 
-              const socialHistoryData = await response.json();
-              console.log("✅ [StopRecording] Social history processing successful:", socialHistoryData);
-
-              return new Response(JSON.stringify(socialHistoryData), {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-              });
-            }),
-          ]);
+            return new Response(JSON.stringify(socialHistoryData), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers,
+            });
+          }),
+        ]);
 
         // Handle parallel responses and invalidate caches
         console.log("🔄 [StopRecording] Processing parallel responses...");
-        
+
         // Helper function to handle response processing with consistent error handling
         const handleServiceResponse = async (
-          response: Response, 
-          serviceName: string, 
+          response: Response,
+          serviceName: string,
           resultProperty: string,
           cacheInvalidation: () => Promise<void>,
-          animationCompletion?: () => void
+          animationCompletion?: () => void,
         ) => {
           if (response.ok) {
             try {
               const result = await response.json();
               const affected = result[resultProperty] || 0;
-              console.log(`✅ [StopRecording] ${serviceName} processed: ${affected} items affected`);
-              
+              console.log(
+                `✅ [StopRecording] ${serviceName} processed: ${affected} items affected`,
+              );
+
               await cacheInvalidation();
-              console.log(`✅ [StopRecording] ${serviceName} cache invalidated`);
-              
+              console.log(
+                `✅ [StopRecording] ${serviceName} cache invalidated`,
+              );
+
               if (animationCompletion) animationCompletion();
             } catch (jsonError) {
-              console.error(`❌ [StopRecording] Error parsing ${serviceName} JSON:`, jsonError);
+              console.error(
+                `❌ [StopRecording] Error parsing ${serviceName} JSON:`,
+                jsonError,
+              );
               if (animationCompletion) animationCompletion();
             }
           } else {
             try {
               const errorText = await response.text();
-              console.error(`❌ [StopRecording] ${serviceName} processing failed: ${response.status}`);
-              console.error(`❌ [StopRecording] ${serviceName} error:`, errorText.substring(0, 500));
+              console.error(
+                `❌ [StopRecording] ${serviceName} processing failed: ${response.status}`,
+              );
+              console.error(
+                `❌ [StopRecording] ${serviceName} error:`,
+                errorText.substring(0, 500),
+              );
             } catch (textError) {
-              console.error(`❌ [StopRecording] Error reading ${serviceName} error text:`, textError);
+              console.error(
+                `❌ [StopRecording] Error reading ${serviceName} error text:`,
+                textError,
+              );
             }
             if (animationCompletion) animationCompletion();
           }
         };
-        
+
         // Handle medical problems response
         await handleServiceResponse(
           medicalProblemsResponse,
           "Medical problems",
           "problemsAffected",
-          () => queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patient.id] }),
-          completeMedicalProblemsAnimation
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: ["/api/medical-problems", patient.id],
+            }),
+          completeMedicalProblemsAnimation,
         );
 
         // Handle surgical history response
@@ -3267,15 +3520,21 @@ Please provide medical suggestions based on this complete conversation context.`
           surgicalHistoryResponse,
           "Surgical history",
           "total_surgeries_affected",
-          () => queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patient.id}`] })
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: [`/api/surgical-history/${patient.id}`],
+            }),
         );
-        
+
         // Handle medications response
         await handleServiceResponse(
           medicationsResponse,
           "Medications",
           "medicationsAffected",
-          () => queryClient.invalidateQueries({ queryKey: [`/api/patients/${patient.id}/medications-enhanced`] })
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: [`/api/patients/${patient.id}/medications-enhanced`],
+            }),
         );
 
         // Handle orders response
@@ -3283,17 +3542,25 @@ Please provide medical suggestions based on this complete conversation context.`
           ordersResponse,
           "Orders",
           "ordersAffected",
-          () => queryClient.invalidateQueries({ queryKey: [`/api/patients/${patient.id}/draft-orders`] }),
-          completeOrdersAnimation
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: [`/api/patients/${patient.id}/draft-orders`],
+            }),
+          completeOrdersAnimation,
         );
 
-        // Handle CPT response  
+        // Handle CPT response
         await handleServiceResponse(
           cptResponse,
           "CPT codes",
           "cptCodesAffected",
-          () => queryClient.invalidateQueries({ queryKey: [`/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`] }),
-          completeBillingAnimation
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: [
+                `/api/patients/${patient.id}/encounters/${encounterId}/cpt-codes`,
+              ],
+            }),
+          completeBillingAnimation,
         );
 
         // Handle allergy response
@@ -3301,7 +3568,10 @@ Please provide medical suggestions based on this complete conversation context.`
           allergyResponse,
           "Allergies",
           "allergiesAffected",
-          () => queryClient.invalidateQueries({ queryKey: ['/api/allergies', patient.id] })
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: ["/api/allergies", patient.id],
+            }),
         );
 
         // Handle family history response
@@ -3309,7 +3579,10 @@ Please provide medical suggestions based on this complete conversation context.`
           familyHistoryResponse,
           "Family history",
           "familyHistoryAffected",
-          () => queryClient.invalidateQueries({ queryKey: [`/api/family-history/${patient.id}`] })
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: [`/api/family-history/${patient.id}`],
+            }),
         );
 
         // Handle social history response
@@ -3317,7 +3590,10 @@ Please provide medical suggestions based on this complete conversation context.`
           socialHistoryResponse,
           "Social history",
           "socialHistoryAffected",
-          () => queryClient.invalidateQueries({ queryKey: [`/api/social-history`, patient.id] })
+          () =>
+            queryClient.invalidateQueries({
+              queryKey: [`/api/social-history`, patient.id],
+            }),
         );
 
         toast({
@@ -3352,14 +3628,27 @@ Please provide medical suggestions based on this complete conversation context.`
 
     // Mode-specific cleanup and status reporting
     if (useRestAPI) {
-      console.log("🔍 [EncounterView] REST API mode - WebSocket stays open for transcription only");
-      console.log("🔍 [TokenMonitor] REST API mode - no AI suggestion token consumption, only Whisper transcription");
+      console.log(
+        "🔍 [EncounterView] REST API mode - WebSocket stays open for transcription only",
+      );
+      console.log(
+        "🔍 [TokenMonitor] REST API mode - no AI suggestion token consumption, only Whisper transcription",
+      );
     } else {
-      console.log("🧠 [EncounterView] WebSocket mode - WebSocket remains open for ongoing AI suggestions");
-      console.log("🔍 [TokenMonitor] WebSocket mode - background token consumption continues for suggestions");
+      console.log(
+        "🧠 [EncounterView] WebSocket mode - WebSocket remains open for ongoing AI suggestions",
+      );
+      console.log(
+        "🔍 [TokenMonitor] WebSocket mode - background token consumption continues for suggestions",
+      );
     }
-    
-    console.log("✅ [EncounterView] Recording complete. Mode:", useRestAPI ? "REST API (manual suggestions + WebSocket transcription)" : "WebSocket (continuous suggestions + transcription)");
+
+    console.log(
+      "✅ [EncounterView] Recording complete. Mode:",
+      useRestAPI
+        ? "REST API (manual suggestions + WebSocket transcription)"
+        : "WebSocket (continuous suggestions + transcription)",
+    );
   };
 
   const generateSmartSuggestions = () => {
@@ -3370,7 +3659,7 @@ Please provide medical suggestions based on this complete conversation context.`
       );
       setIsGeneratingSmartSuggestions(false);
       toast({
-        title: "Smart Suggestions Generated", 
+        title: "Smart Suggestions Generated",
         description: "GPT analysis complete",
       });
     }, 1000);
@@ -3378,13 +3667,19 @@ Please provide medical suggestions based on this complete conversation context.`
 
   // REST API Suggestions - Cost-optimized alternative
   const generateRestAPISuggestions = async () => {
-    console.log("🔍 [TokenMonitor] Manual REST API suggestion request initiated");
+    console.log(
+      "🔍 [TokenMonitor] Manual REST API suggestion request initiated",
+    );
     console.log("🔍 [TokenMonitor] This will consume tokens via REST API call");
-    
+
     // Throttling check for manual requests - using lastSuggestionCall for animation state
     const now = Date.now();
     if (now - lastSuggestionCall < 10000) {
-      console.log("🚫 [RestAPI] Manual request throttled - last request was", Math.round((now - lastSuggestionCall) / 1000), "seconds ago");
+      console.log(
+        "🚫 [RestAPI] Manual request throttled - last request was",
+        Math.round((now - lastSuggestionCall) / 1000),
+        "seconds ago",
+      );
       toast({
         title: "Request Throttled",
         description: `Please wait ${Math.ceil((10000 - (now - lastSuggestionCall)) / 1000)} more seconds before requesting suggestions again.`,
@@ -3392,13 +3687,13 @@ Please provide medical suggestions based on this complete conversation context.`
       });
       return;
     }
-    
+
     setLastSuggestionCall(now);
-    
+
     // Start animation
     setIsGeneratingRestSuggestions(true);
     setSuggestionProgress(0);
-    
+
     // Progress animation - smooth updates every 50ms
     const startTime = Date.now();
     const estimatedDuration = 4000;
@@ -3441,7 +3736,7 @@ Please provide medical suggestions based on this complete conversation context.`
       if (response.ok) {
         const data = await response.json();
         console.log("🧠 [EncounterView] REST API suggestions received:", data);
-        
+
         // Complete animation
         clearInterval(progressInterval);
         setSuggestionProgress(100);
@@ -3451,8 +3746,11 @@ Please provide medical suggestions based on this complete conversation context.`
         }, 500);
 
         if (data.aiSuggestions?.realTimePrompts?.length > 0) {
-          console.log("🔍 [TokenMonitor] REST API response received - tokens consumed:", data.usage);
-          
+          console.log(
+            "🔍 [TokenMonitor] REST API response received - tokens consumed:",
+            data.usage,
+          );
+
           // Implement accumulative behavior with WebSocket formatting
           setGptSuggestions((prevSuggestions) => {
             // Format suggestions exactly like WebSocket with proper bullet points
@@ -3483,7 +3781,9 @@ Please provide medical suggestions based on this complete conversation context.`
             description: `Added ${data.aiSuggestions.realTimePrompts.length} new insights using ${data.model}`,
           });
         } else {
-          console.log("🔍 [TokenMonitor] REST API response with no suggestions - tokens still consumed");
+          console.log(
+            "🔍 [TokenMonitor] REST API response with no suggestions - tokens still consumed",
+          );
           setGptSuggestions((prevSuggestions) => {
             if (
               !prevSuggestions ||
@@ -3503,13 +3803,15 @@ Please provide medical suggestions based on this complete conversation context.`
       }
     } catch (error) {
       console.error("❌ [EncounterView] REST API suggestions failed:", error);
-      console.log("🔍 [TokenMonitor] REST API request failed - no tokens consumed");
-      
+      console.log(
+        "🔍 [TokenMonitor] REST API request failed - no tokens consumed",
+      );
+
       // Reset animation on error
       clearInterval(progressInterval);
       setIsGeneratingRestSuggestions(false);
       setSuggestionProgress(0);
-      
+
       setGptSuggestions(
         `❌ REST API Error: ${(error as any)?.message || "Unknown error"}`,
       );
@@ -3603,7 +3905,7 @@ Please provide medical suggestions based on this complete conversation context.`
     // Start animation - Set generating state first
     setIsGeneratingSOAP(true);
     setGenerationProgress(0);
-    
+
     // Progress animation - smooth updates every 50ms
     const startTime = Date.now();
     const estimatedDuration = 6000; // Note generation typically takes longer than suggestions
@@ -3617,7 +3919,7 @@ Please provide medical suggestions based on this complete conversation context.`
       // Use the unified streaming system with force generation
       if (realtimeSOAPRef.current) {
         realtimeSOAPRef.current.generateSOAPNote(true); // Force generation bypasses intelligent streaming checks
-        
+
         // Complete the progress animation when generation is done
         // Note: The actual completion will be handled by onSOAPNoteComplete callback
         // but we set up a fallback cleanup
@@ -3628,7 +3930,6 @@ Please provide medical suggestions based on this complete conversation context.`
             setGenerationProgress(0);
           }, 500);
         }, estimatedDuration);
-        
       } else {
         clearInterval(progressInterval);
         setGenerationProgress(0);
@@ -3651,7 +3952,8 @@ Please provide medical suggestions based on this complete conversation context.`
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description: "An error occurred during note generation. Please try again.",
+        description:
+          "An error occurred during note generation. Please try again.",
       });
     }
   };
@@ -3710,9 +4012,7 @@ Please provide medical suggestions based on this complete conversation context.`
       const timeSinceRecordingStop = Date.now() - lastRecordingStopTime;
       const shouldProcessMedicalProblems = timeSinceRecordingStop > 5000; // Only wait 5 seconds after recording stop
 
-      console.log(
-        "🏥 [SmartProcessing] === MEDICAL PROBLEMS PROCESSING ===",
-      );
+      console.log("🏥 [SmartProcessing] === MEDICAL PROBLEMS PROCESSING ===");
       console.log(
         "🏥 [SmartProcessing] Time since recording stop:",
         timeSinceRecordingStop,
@@ -3755,7 +4055,7 @@ Please provide medical suggestions based on this complete conversation context.`
 
             // Invalidate medical problems cache (unified API)
             await queryClient.invalidateQueries({
-              queryKey: ['/api/medical-problems', patient.id],
+              queryKey: ["/api/medical-problems", patient.id],
             });
           } else {
             console.error(
@@ -3808,12 +4108,12 @@ Please provide medical suggestions based on this complete conversation context.`
       <UnifiedChartPanel
         patient={patient}
         config={{
-          context: 'provider-encounter',
+          context: "provider-encounter",
           userRole: currentUser?.role,
           allowResize: true,
           defaultWidth: "w-80",
           maxExpandedWidth: "90vw",
-          enableSearch: true
+          enableSearch: true,
         }}
         encounterId={encounterId}
         encounter={encounter}
@@ -3848,9 +4148,7 @@ Please provide medical suggestions based on this complete conversation context.`
           {/* Voice Recording Section */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">
-                Real-Time Transcription
-              </h2>
+              <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-green-600">● Connected</span>
               </div>
@@ -3947,9 +4245,7 @@ Please provide medical suggestions based on this complete conversation context.`
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <h2 className="text-xl font-semibold">
-                  AI Suggestions
-                </h2>
+                <h2 className="text-xl font-semibold">AI Suggestions</h2>
                 <div className="flex items-center space-x-2 text-sm">
                   <span className="text-gray-500">Mode:</span>
                   <button
@@ -3974,29 +4270,33 @@ Please provide medical suggestions based on this complete conversation context.`
                   size="sm"
                   variant="outline"
                   disabled={
-                    (useRestAPI && (!transcription || transcription.length < 15)) ||
+                    (useRestAPI &&
+                      (!transcription || transcription.length < 15)) ||
                     isGeneratingRestSuggestions ||
                     isGeneratingSmartSuggestions
                   }
                   className={`relative overflow-hidden transition-all duration-200 ${
-                    isGeneratingRestSuggestions ? 'bg-navy-blue-50 border-navy-blue-200' : ''
+                    isGeneratingRestSuggestions
+                      ? "bg-navy-blue-50 border-navy-blue-200"
+                      : ""
                   }`}
                   style={{
-                    background: isGeneratingRestSuggestions && useRestAPI
-                      ? `linear-gradient(90deg, 
+                    background:
+                      isGeneratingRestSuggestions && useRestAPI
+                        ? `linear-gradient(90deg, 
                           rgba(59, 130, 246, 0.1) 0%, 
                           rgba(59, 130, 246, 0.1) ${suggestionProgress}%, 
                           transparent ${suggestionProgress}%, 
                           transparent 100%)`
-                      : undefined
+                        : undefined,
                   }}
                 >
                   <div className="flex items-center space-x-2">
                     {isGeneratingRestSuggestions && useRestAPI && (
-                      <div 
+                      <div
                         className="h-3 w-3 rounded-full border-2 border-navy-blue-600 border-t-transparent animate-spin"
                         style={{
-                          animationDuration: '1s'
+                          animationDuration: "1s",
                         }}
                       />
                     )}
@@ -4007,18 +4307,18 @@ Please provide medical suggestions based on this complete conversation context.`
                       {isGeneratingRestSuggestions && useRestAPI
                         ? `Generating... ${Math.round(suggestionProgress)}%`
                         : isGeneratingSmartSuggestions && !useRestAPI
-                        ? "Generating..."
-                        : useRestAPI
-                        ? "Add Suggestions"
-                        : "Generate Suggestions"}
+                          ? "Generating..."
+                          : useRestAPI
+                            ? "Add Suggestions"
+                            : "Generate Suggestions"}
                     </span>
                   </div>
                   {/* Precise progress indicator - subtle border animation */}
                   {isGeneratingRestSuggestions && useRestAPI && (
-                    <div 
+                    <div
                       className="absolute bottom-0 left-0 h-0.5 bg-navy-blue-500 transition-all duration-100 ease-out"
                       style={{
-                        width: `${suggestionProgress}%`
+                        width: `${suggestionProgress}%`,
                       }}
                     />
                   )}
@@ -4045,9 +4345,7 @@ Please provide medical suggestions based on this complete conversation context.`
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <h2 className="text-xl font-semibold">
-                  Note
-                </h2>
+                <h2 className="text-xl font-semibold">Note</h2>
                 {/* Auto-save status indicator */}
                 <div className="flex items-center text-sm">
                   {autoSaveStatus === "saving" && (
@@ -4105,13 +4403,13 @@ Please provide medical suggestions based on this complete conversation context.`
                   onSOAPNoteComplete={(note) => {
                     setSoapNote(note);
                     setIsGeneratingSOAP(false);
-                    
+
                     // Complete the progress animation
                     setGenerationProgress(100);
                     setTimeout(() => {
                       setGenerationProgress(0);
                     }, 500);
-                    
+
                     if (editor && !editor.isDestroyed) {
                       const formattedContent = formatSoapNoteContent(note);
                       editor.commands.setContent(formattedContent);
@@ -4137,12 +4435,16 @@ Please provide medical suggestions based on this complete conversation context.`
                     onClick={() => {
                       if (userEditingLock) {
                         // Show modal for user with edits
-                        console.log("🔒 [UserEditLock] Manual AI regeneration requested with edit lock active");
+                        console.log(
+                          "🔒 [UserEditLock] Manual AI regeneration requested with edit lock active",
+                        );
                         setShowRecordingConflictModal(true);
                         setPendingRecordingStart(() => () => {
                           // Auto-save current edits first
                           if (editor && soapNote.trim()) {
-                            console.log("💾 [UserEditLock] Auto-saving edits before regeneration");
+                            console.log(
+                              "💾 [UserEditLock] Auto-saving edits before regeneration",
+                            );
                             handleSaveSOAP();
                           }
                           // Clear edit lock and regenerate
@@ -4158,30 +4460,33 @@ Please provide medical suggestions based on this complete conversation context.`
                     }}
                     disabled={isGeneratingSOAP || !transcription.trim()}
                     className={`relative overflow-hidden transition-all duration-200 ${
-                      userEditingLock 
-                        ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200' 
-                        : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200'
-                    } ${isGeneratingSOAP ? (userEditingLock ? 'bg-purple-100 border-purple-300' : 'bg-green-100 border-green-300') : ''}`}
+                      userEditingLock
+                        ? "bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+                        : "bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    } ${isGeneratingSOAP ? (userEditingLock ? "bg-purple-100 border-purple-300" : "bg-green-100 border-green-300") : ""}`}
                     style={{
                       background: isGeneratingSOAP
                         ? `linear-gradient(90deg, 
-                            ${userEditingLock 
-                              ? 'rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0.1)' 
-                              : 'rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.1)'
+                            ${
+                              userEditingLock
+                                ? "rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0.1)"
+                                : "rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.1)"
                             } ${generationProgress || 0}%, 
                             transparent ${generationProgress || 0}%, 
                             transparent 100%)`
-                        : undefined
+                        : undefined,
                     }}
                   >
                     <div className="flex items-center space-x-2">
                       {isGeneratingSOAP && (
-                        <div 
+                        <div
                           className={`h-3 w-3 rounded-full border-2 ${
-                            userEditingLock ? 'border-purple-600' : 'border-green-600'
+                            userEditingLock
+                              ? "border-purple-600"
+                              : "border-green-600"
                           } border-t-transparent animate-spin`}
                           style={{
-                            animationDuration: '1s'
+                            animationDuration: "1s",
                           }}
                         />
                       )}
@@ -4190,18 +4495,18 @@ Please provide medical suggestions based on this complete conversation context.`
                         {isGeneratingSOAP
                           ? `Generating... ${Math.round(generationProgress || 0)}%`
                           : userEditingLock
-                          ? "Regenerate from AI"
-                          : "Generate from Transcription"}
+                            ? "Regenerate from AI"
+                            : "Generate from Transcription"}
                       </span>
                     </div>
                     {/* Precise progress indicator - subtle border animation */}
                     {isGeneratingSOAP && (
-                      <div 
+                      <div
                         className={`absolute bottom-0 left-0 h-0.5 ${
-                          userEditingLock ? 'bg-purple-500' : 'bg-green-500'
+                          userEditingLock ? "bg-purple-500" : "bg-green-500"
                         } transition-all duration-100 ease-out`}
                         style={{
-                          width: `${generationProgress || 0}%`
+                          width: `${generationProgress || 0}%`,
                         }}
                       />
                     )}
@@ -4267,10 +4572,10 @@ Please provide medical suggestions based on this complete conversation context.`
                     </div>
                   </div>
                 )}
-                
+
                 {/* Vulnerable Window Protection Loading Screen */}
                 {editorVulnerableWindow && (
-                  <VulnerableWindowLoadingScreen 
+                  <VulnerableWindowLoadingScreen
                     userEditingLock={userEditingLock}
                     contentLength={soapNote?.length || 0}
                   />
@@ -4288,9 +4593,12 @@ Please provide medical suggestions based on this complete conversation context.`
                     <div className="flex items-center space-x-2">
                       <RefreshCw className="h-5 w-5 text-navy-blue-600" />
                       <div>
-                        <h3 className="font-semibold text-navy-blue-900">Chart Update Available</h3>
+                        <h3 className="font-semibold text-navy-blue-900">
+                          Chart Update Available
+                        </h3>
                         <p className="text-sm text-navy-blue-700">
-                          SOAP note has been modified. Update chart sections with latest content.
+                          SOAP note has been modified. Update chart sections
+                          with latest content.
                         </p>
                       </div>
                     </div>
@@ -4299,37 +4607,39 @@ Please provide medical suggestions based on this complete conversation context.`
                     onClick={updateChartFromNote}
                     disabled={isUpdatingChart}
                     className={`relative overflow-hidden transition-all duration-300 ${
-                      isUpdatingChart 
-                        ? 'bg-navy-blue-100 text-navy-blue-500 border-navy-blue-300 cursor-not-allowed' 
-                        : 'bg-navy-blue-600 hover:bg-navy-blue-700 text-white'
+                      isUpdatingChart
+                        ? "bg-navy-blue-100 text-navy-blue-500 border-navy-blue-300 cursor-not-allowed"
+                        : "bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
                     }`}
                     title="Update Medical Problems, Surgical History, Medications, Allergies, and Social History from SOAP note changes"
                   >
                     {/* Progress bar background */}
                     {isUpdatingChart && (
-                      <div 
+                      <div
                         className="absolute inset-0 bg-gradient-to-r from-blue-200 to-blue-300 transition-all duration-100 ease-linear"
-                        style={{ 
+                        style={{
                           width: `${chartUpdateProgress}%`,
-                          opacity: 0.3
+                          opacity: 0.3,
                         }}
                       />
                     )}
-                    
-                    <RefreshCw className={`h-4 w-4 mr-2 relative z-10 ${
-                      isUpdatingChart ? 'animate-spin' : ''
-                    }`} />
-                    
+
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 relative z-10 ${
+                        isUpdatingChart ? "animate-spin" : ""
+                      }`}
+                    />
+
                     <span className="relative z-10">
-                      {isUpdatingChart 
+                      {isUpdatingChart
                         ? `Updating... ${Math.round(chartUpdateProgress)}%`
-                        : "Update Chart from Note"
-                      }
+                        : "Update Chart from Note"}
                     </span>
                   </Button>
                 </div>
                 <div className="mt-2 text-xs text-navy-blue-600">
-                  Will update: Medical Problems • Surgical History • Medications • Allergies • Social History
+                  Will update: Medical Problems • Surgical History • Medications
+                  • Allergies • Social History
                 </div>
               </CardContent>
             </Card>
@@ -4402,7 +4712,10 @@ Please provide medical suggestions based on this complete conversation context.`
       </div>
 
       {/* Recording Conflict Modal */}
-      <Dialog open={showRecordingConflictModal} onOpenChange={setShowRecordingConflictModal}>
+      <Dialog
+        open={showRecordingConflictModal}
+        onOpenChange={setShowRecordingConflictModal}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
@@ -4410,10 +4723,14 @@ Please provide medical suggestions based on this complete conversation context.`
               <span>Warning: Manual Edits Will Be Lost</span>
             </DialogTitle>
             <DialogDescription className="pt-2">
-              You have made manual edits to the note. Starting live recording or regenerating from AI will replace your changes with AI-generated content.
+              You have made manual edits to the note. Starting live recording or
+              regenerating from AI will replace your changes with AI-generated
+              content.
               <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
                 <div className="text-sm text-amber-800">
-                  <strong>Your edits will be automatically saved before proceeding.</strong>
+                  <strong>
+                    Your edits will be automatically saved before proceeding.
+                  </strong>
                 </div>
               </div>
             </DialogDescription>
@@ -4432,7 +4749,9 @@ Please provide medical suggestions based on this complete conversation context.`
             </Button>
             <Button
               onClick={() => {
-                console.log("🔄 [UserEditLock] User confirmed override with AI");
+                console.log(
+                  "🔄 [UserEditLock] User confirmed override with AI",
+                );
                 setShowRecordingConflictModal(false);
                 if (pendingRecordingStart) {
                   pendingRecordingStart();
