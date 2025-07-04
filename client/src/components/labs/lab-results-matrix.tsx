@@ -146,7 +146,7 @@ export function LabResultsMatrix({
         selectedDates.forEach(selectedDisplayDate => {
           matrixData.forEach(test => {
             const matchingResults = test.results.filter(result => {
-              const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+              const resultDisplayDate = format(new Date(result.date), 'MM/dd/yy');
               return resultDisplayDate === selectedDisplayDate;
             });
             resultIds.push(...matchingResults.map(r => r.id as number));
@@ -619,7 +619,7 @@ export function LabResultsMatrix({
     
     matrixData.forEach(test => {
       test.results.forEach(result => {
-        const dateKey = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+        const dateKey = format(new Date(result.date), 'MM/dd/yy');
         console.log('🧪 [LabResultsMatrix] Processing result for date columns:', dateKey);
         
         if (!dateMap.has(dateKey)) {
@@ -653,7 +653,7 @@ export function LabResultsMatrix({
       const resultIds: number[] = [];
       matrixData.forEach(test => {
         test.results.forEach(result => {
-          const resultDateKey = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+          const resultDateKey = format(new Date(result.date), 'MM/dd/yy');
           if (resultDateKey === col.displayDate) {
             resultIds.push(result.id as number);
           }
@@ -668,7 +668,7 @@ export function LabResultsMatrix({
     console.log('🧪 [LabResultsMatrix] Date clicked:', date, 'isShiftClick:', isShiftClick);
     
     // Convert ISO date to display format for consistent matching
-    const displayDate = format(new Date(date), 'yyyy-MM-dd HH:mm');
+    const displayDate = format(new Date(date), 'MM/dd/yy');
     console.log('🧪 [LabResultsMatrix] Converted to display format:', displayDate);
     
     // Selection behavior for visual highlighting - this should happen first
@@ -1066,7 +1066,7 @@ export function LabResultsMatrix({
                       matrixData.forEach(test => {
                         const matchingResults = test.results.filter(result => {
                           // Convert result date to display format for comparison
-                          const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+                          const resultDisplayDate = format(new Date(result.date), 'MM/dd/yy');
                           const matches = resultDisplayDate === selectedDisplayDate;
                           if (matches) {
                             console.log('🔍 [LabResultsMatrix] Found matching result for count:', {
@@ -1144,7 +1144,7 @@ export function LabResultsMatrix({
                           selectedDates.forEach(selectedDisplayDate => {
                             matrixData.forEach(test => {
                               const matchingResults = test.results.filter(result => {
-                                const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+                                const resultDisplayDate = format(new Date(result.date), 'MM/dd/yy');
                                 return resultDisplayDate === selectedDisplayDate;
                               });
                               totalResults += matchingResults.length;
@@ -1472,7 +1472,7 @@ export function LabResultsMatrix({
                                 console.log('🔍 [LabResultsMatrix] Processing selected display date:', selectedDisplayDate);
                                 matrixData.forEach(test => {
                                   const matchingResults = test.results.filter(result => {
-                                    const resultDisplayDate = format(new Date(result.date), 'yyyy-MM-dd HH:mm');
+                                    const resultDisplayDate = format(new Date(result.date), 'MM/dd/yy');
                                     const matches = resultDisplayDate === selectedDisplayDate;
                                     if (matches) {
                                       console.log('🔍 [LabResultsMatrix] Found matching result:', {
