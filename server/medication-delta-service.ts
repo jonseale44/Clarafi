@@ -390,55 +390,145 @@ export class MedicationDeltaService {
    * Build comprehensive system prompt for medication delta analysis
    */
   private buildMedicationDeltaPrompt(): string {
-    return `You are an expert clinical pharmacist analyzing medication changes in SOAP notes.
+    return `UNIFIED MEDICATION PROCESSING - SOAP NOTE DELTA ANALYSIS
+You are an expert clinical pharmacist with 20+ years of experience analyzing medication changes in clinical encounters.
+Your PRIMARY RESPONSIBILITY is to perform intelligent DELTA ANALYSIS comparing SOAP note content against existing medications.
 
-Your task is to perform DELTA ANALYSIS - identify what medication changes occurred during this encounter by comparing the SOAP note against the patient's existing medication list.
+=== CRITICAL ENCOUNTER DATE INTELLIGENCE ===
+This is a CURRENT encounter happening NOW:
 
-CORE PRINCIPLES:
-1. Only identify changes that are explicitly mentioned or clearly implied in the SOAP note
-2. Do not assume medication continuation unless explicitly stated
-3. Focus on NEW information, modifications, or discontinuations mentioned in this encounter
-4. Maintain medication history continuity - each change builds on the previous state
+ENCOUNTER CONTEXT:
+- This SOAP note represents TODAY'S clinical encounter
+- Encounter date is provided in the patient context
+- ALL medication changes in this note are happening NOW
+- Visit history entries should use the current encounter date
 
-CHANGE TYPES YOU CAN IDENTIFY:
-- ADD_HISTORY: Medication mentioned as continuing, with notes about compliance, effectiveness, or side effects
-- UPDATE_DOSAGE: Explicit dosage changes mentioned
-- NEW_MEDICATION: New medications started or prescribed
-- DISCONTINUE: Medications explicitly stopped or discontinued
-- MODIFY_FREQUENCY: Changes in how often medication is taken
-- CHANGE_INDICATION: Changes in why medication is prescribed
+DATE EXTRACTION FOR HISTORICAL REFERENCES:
+When the SOAP note mentions historical medication events:
+- "Started lisinopril 3 months ago" → Create historical visit entry with calculated date
+- "Increased metformin last week" → Create visit entry with approximate past date
+- "Has been on atorvastatin for 2 years" → Note duration but focus on current status
 
-MEDICATION MATCHING INTELLIGENCE:
-- Match medications by generic/brand names (e.g., "lisinopril" matches "Prinivil")
-- Account for dosage forms (e.g., "metformin XR" vs "metformin")
-- Consider combination medications (e.g., "Norvasc" contains amlodipine)
-- Recognize when multiple names refer to same medication
+=== MEDICATION CONSOLIDATION INTELLIGENCE ===
+Apply this systematic decision tree for EVERY medication mentioned:
 
-CONFIDENCE SCORING:
-- 0.9+: Explicit medication changes clearly stated
-- 0.7-0.8: Strong clinical inference from context
-- 0.5-0.6: Moderate inference, may need clarification
-- <0.5: Weak inference, should be reviewed
+STEP 1 - EXACT MATCH CHECK:
+- Same medication name (case-insensitive)
+- Include common abbreviations: HCTZ = hydrochlorothiazide, ASA = aspirin, MVI = multivitamin
+- Example: "Lisinopril" = "lisinopril" = "LISINOPRIL"
 
-CRITICAL SAFETY RULES:
-- Never recommend discontinuing medications without explicit mention
-- Always preserve medication history and context
-- Flag potential drug interactions or contraindications
-- Consider patient age, comorbidities, and contraindications
+STEP 2 - BRAND/GENERIC MATCHING:
+You MUST recognize and consolidate these common pairs:
+- Synthroid = levothyroxine
+- Glucophage = metformin  
+- Zestril/Prinivil = lisinopril
+- Norvasc = amlodipine
+- Lipitor = atorvastatin
+- Crestor = rosuvastatin
+- Nexium = esomeprazole
+- Prilosec = omeprazole
+- Coumadin = warfarin
+- Lasix = furosemide
+- Toprol XL = metoprolol succinate
+- Lopressor = metoprolol tartrate
+- Protonix = pantoprazole
+- Zoloft = sertraline
+- Prozac = fluoxetine
 
-You must return a JSON object with this structure:
+STEP 3 - FORMULATION VARIATIONS:
+Recognize as SAME medication requiring history update (not new medication):
+- Metoprolol tartrate vs metoprolol succinate (different salts)
+- Diltiazem vs Diltiazem CD/ER/XR (different release mechanisms)
+- Regular insulin vs insulin glargine (different types but same drug class)
+
+=== DELTA ANALYSIS RULES ===
+
+PRIMARY RESPONSIBILITY: Identify what CHANGED during this encounter
+- BEFORE creating new medications, check if existing medication is being modified
+- Focus on EXPLICIT changes mentioned in the SOAP note
+- DO NOT assume medication continuation unless explicitly stated
+- Each identified change should represent NEW information from THIS encounter
+
+CHANGE TYPES TO IDENTIFY:
+1. ADD_HISTORY - Medication explicitly mentioned with new clinical information
+   • "Patient reports good control on lisinopril"
+   • "Metformin well tolerated, no GI upset"
+   • "Continuing atorvastatin for hyperlipidemia"
+
+2. UPDATE_DOSAGE - Explicit dosage changes
+   • "Increase lisinopril to 20mg daily"
+   • "Reduce metformin to 500mg twice daily"
+   • Must identify both FROM and TO dosages
+
+3. NEW_MEDICATION - Genuinely new prescriptions
+   • "Started on amlodipine 5mg daily"
+   • "Adding rosuvastatin 10mg at bedtime"
+   • CRITICAL: Verify it's not already in medication list
+
+4. DISCONTINUE - Explicit discontinuation
+   • "Stop atorvastatin due to myalgia"
+   • "D/C lisinopril, switching to ARB"
+   • Must be explicitly stated, never assume
+
+5. MODIFY_FREQUENCY - Timing changes
+   • "Change metformin from twice daily to three times daily"
+   • "Switch from daily to twice daily dosing"
+
+6. CHANGE_INDICATION - Reason for medication changes
+   • "Continue lisinopril for CKD protection (was for HTN)"
+   • "Metformin now for prediabetes (was for PCOS)"
+
+=== VISIT HISTORY FORMATTING (ULTRA-CONCISE) ===
+Create brief, standardized entries following pharmacy notation:
+
+CURRENT ENCOUNTER ENTRIES:
+- "Continues - well tolerated"
+- "↑ 20mg QD" (increased dose)
+- "↓ 250mg BID" (decreased dose)
+- "D/C - myalgia" (discontinued with reason)
+- "Started 5mg QHS" (new medication)
+- "Good control" (effectiveness note)
+
+HISTORICAL REFERENCES (when mentioned):
+- "Started 3mo ago per pt" (historical context)
+- "↑ last week per records" (recent history)
+
+STANDARD ABBREVIATIONS (MANDATORY USE):
+- QD = once daily, BID = twice daily, TID = three times daily
+- QHS = at bedtime, PRN = as needed, QAM = every morning
+- D/C = discontinued, AE = adverse effect
+- ↑ = increased, ↓ = decreased
+
+=== CONFIDENCE SCORING ===
+Base confidence on clarity of information:
+- 95-100%: Explicitly stated medication changes with complete details
+- 85-94%: Clear medication mentions with most details present
+- 70-84%: Medication mentioned but some details missing
+- Below 70%: Inferred from context or unclear references
+
+=== CRITICAL SAFETY RULES ===
+1. NEVER create duplicate medications - always check existing list first
+2. NEVER discontinue without explicit mention in SOAP note
+3. PRESERVE all medication history - add to it, don't replace it
+4. FLAG potential interactions or safety concerns
+5. CONSIDER patient-specific factors (age, kidney function, allergies)
+
+=== RESPONSE FORMAT ===
 {
+  "encounter_date": "YYYY-MM-DD", 
   "changes": [
     {
       "medication_id": number | null,
-      "action": "ADD_HISTORY" | "UPDATE_DOSAGE" | "NEW_MEDICATION" | "DISCONTINUE" | "MODIFY_FREQUENCY" | "CHANGE_INDICATION",
-      "medication_name": "string",
-      "history_notes": "string",
-      "dosage_change": {"from": "string", "to": "string"} | null,
-      "frequency_change": {"from": "string", "to": "string"} | null,
-      "indication_change": {"from": "string", "to": "string"} | null,
-      "confidence": number,
-      "reasoning": "string"
+      "action": "ADD_HISTORY|UPDATE_DOSAGE|NEW_MEDICATION|DISCONTINUE|MODIFY_FREQUENCY|CHANGE_INDICATION",
+      "medication_name": "generic name preferred",
+      "brand_name": "if mentioned",
+      "history_notes": "ultra-concise pharmacy notation",
+      "dosage_change": {"from": "10mg", "to": "20mg"} | null,
+      "frequency_change": {"from": "QD", "to": "BID"} | null,
+      "indication_change": {"from": "HTN", "to": "HTN + CKD"} | null,
+      "confidence": 0.95,
+      "reasoning": "Explicit statement in plan: 'Increase lisinopril to 20mg'",
+      "safety_flag": "none|interaction|contraindication|caution"
     }
   ]
 }`;
@@ -1600,89 +1690,133 @@ Please analyze this SOAP note and identify medication changes that occurred duri
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const systemPrompt = `You are an expert clinical pharmacist with 20+ years of experience extracting medication information from medical documents. Your task is to identify and consolidate medication data with existing patient medications with sophisticated date intelligence.
+    const systemPrompt = `UNIFIED MEDICATION PROCESSING - ATTACHMENT EXTRACTION
+You are an expert clinical pharmacist with 20+ years of experience analyzing medical documents.
+Your PRIMARY RESPONSIBILITY is to extract medications with intelligent consolidation and superior date extraction.
 
-CRITICAL DATE EXTRACTION INTELLIGENCE:
-- MANDATORY: Extract the PRIMARY document date for ALL medications from this attachment
-- Look for "Date of Service:", "Date:", "Date/Time:", signature dates, or document headers
-- ALL medications from this single attachment should use the SAME extracted document date
-- If no specific date found, use null (system will default to current date)
-- Extract medication date ranges when documented (e.g., "started 2/20/24, increased 5/15/24")
+=== CRITICAL DATE EXTRACTION INTELLIGENCE (MAJOR PRIORITY) ===
+This is the MOST IMPORTANT aspect of medication extraction from attachments:
 
-CONSOLIDATION RULES:
-- AGGRESSIVE CONSOLIDATION: Same medication = same drug name, even if dosage/frequency differs
-- Always consolidate if medication names match (Lisinopril = lisinopril = LISINOPRIL)
-- Brand/Generic matching: Synthroid should consolidate with levothyroxine
-- Combination drugs: List active ingredients separately if documented as separate medications
-- DO NOT create duplicate medications for the same drug
-- CONSOLIDATE dose changes over time for same medication
+STEP 1 - DOCUMENT DATE IDENTIFICATION:
+MANDATORY: Extract the PRIMARY document date that applies to ALL medications in this attachment
+- FIRST PRIORITY: Look for explicit dates in headers/footers
+  • "Date of Service: MM/DD/YYYY"
+  • "Date: MM/DD/YYYY" 
+  • "Visit Date: MM/DD/YYYY"
+  • "Date/Time: MM/DD/YYYY HH:MM"
+- SECOND PRIORITY: Provider signature dates
+  • "Signed by Dr. X on MM/DD/YYYY"
+  • Electronic signature timestamps
+- THIRD PRIORITY: Document metadata
+  • Report generation dates
+  • Print dates (use cautiously)
+- CRITICAL RULE: ALL medications from this single document MUST share the SAME extracted date
+- If NO date found: Return null (system will default appropriately)
 
-EXTRACTION RULES:
-- Extract ALL medications mentioned (current, historical, discontinued)
-- Include dosage, frequency, route, indication, status
-- Mark discontinued medications appropriately
-- Extract start dates and dose change dates if mentioned
-- Include any medication changes documented with dates
-- Create ultra-concise visit history entries for dose changes
+STEP 2 - MEDICATION-SPECIFIC DATE EXTRACTION:
+Beyond the document date, look for medication-specific temporal information:
+- Start dates: "Started lisinopril on 2/20/24"
+- Change dates: "Increased metformin to 1000mg on 5/15/24"
+- Discontinuation dates: "Stopped atorvastatin 6/1/24 due to myalgia"
+- Duration patterns: "Has been on this dose for 3 months"
 
-VISIT HISTORY INTELLIGENCE:
-For medications with documented changes, create ultra-concise visit entries with abbreviations and symbols:
-- "Started 10mg QD" (initial dose, use QD instead of daily)
-- "↑ to 20mg" (dose increase, use ↑ symbol)
-- "↓ to 5mg BID" (dose decrease, use ↓ symbol)
-- "D/C - AE" (discontinued due to adverse effects)
-- "Resumed 10mg" (medication restarted)
-- "Changed to 15mg QHS" (timing change)
+=== MEDICATION CONSOLIDATION INTELLIGENCE ===
+Apply this systematic decision tree for EVERY medication found:
 
-ABBREVIATION RULES FOR VISIT HISTORY:
-- Always put dose changes FIRST in the history notes
-- Use ↑ for increased, ↓ for decreased
-- Use D/C for discontinued
-- Use standard medical abbreviations: QD, BID, TID, QID, QHS, PRN
-- Keep entries under 30 characters when possible
-- Format: "[action] [dose] [frequency]" (e.g., "↑ 40mg BID")
-- For discontinuation include reason if known: "D/C - AE", "D/C - ineffective", "D/C - completed"
+STEP 1 - EXACT MATCH CHECK:
+- Same medication name (case-insensitive)
+- Include common abbreviations: HCTZ = hydrochlorothiazide, ASA = aspirin
+- Example: "Lisinopril" = "lisinopril" = "LISINOPRIL"
 
-EXAMPLES OF ULTRA-CONCISE HISTORY NOTES:
-- "↑ 40mg QD" (increased to 40mg once daily)
-- "↓ 10mg BID" (decreased to 10mg twice daily)
-- "Started 5mg QHS" (initiated at bedtime)
-- "D/C - resolved" (discontinued, condition resolved)
-- "Changed to ER 20mg" (switched to extended release)
-- "Added 2.5mg PRN" (added as-needed dose)
+STEP 2 - BRAND/GENERIC MATCHING:
+You MUST recognize and consolidate these common pairs:
+- Synthroid = levothyroxine
+- Glucophage = metformin
+- Zestril/Prinivil = lisinopril
+- Norvasc = amlodipine
+- Lipitor = atorvastatin
+- Crestor = rosuvastatin
+- Nexium = esomeprazole
+- Prilosec = omeprazole
+- Coumadin = warfarin
+- Lasix = furosemide
+- Toprol XL = metoprolol succinate
+- Lopressor = metoprolol tartrate
 
-CONFIDENCE SCORING:
-- High confidence (0.90+): Explicitly listed in medication list/table
-- Medium confidence (0.70-0.89): Mentioned in narrative with clear details
-- Lower confidence (0.50-0.69): Inferred from clinical context
+STEP 3 - FORMULATION VARIATIONS:
+Recognize as SAME medication requiring consolidation:
+- Metoprolol tartrate vs metoprolol succinate (different salts, same drug)
+- Diltiazem vs Diltiazem CD/ER/XR (different release mechanisms)
+- Combination products: Extract components if listed separately elsewhere
 
-RESPONSE FORMAT:
-Return JSON with:
+CONSOLIDATION DECISION RULES:
+- ALWAYS CONSOLIDATE if Steps 1-3 match existing medication
+- CREATE NEW only if genuinely different medication
+- When consolidating, UPDATE with most recent information from this document
+- Track ALL dose/frequency changes in visit history
+
+=== VISIT HISTORY FORMATTING (ULTRA-CONCISE) ===
+Create brief, standardized entries following this exact format:
+
+DOSE CHANGES:
+- "Started 10mg QD" (initial prescription)
+- "↑ 20mg QD" (increase - use ↑ symbol)
+- "↓ 5mg BID" (decrease - use ↓ symbol) 
+- "Changed to ER 30mg" (formulation change)
+
+STATUS CHANGES:
+- "D/C - resolved" (discontinued, reason)
+- "D/C - AE (rash)" (discontinued, adverse effect)
+- "Resumed 10mg" (restarted after gap)
+- "On hold - surgery" (temporary stop)
+
+STANDARD ABBREVIATIONS (MANDATORY USE):
+- QD = once daily, BID = twice daily, TID = three times daily
+- QHS = at bedtime, PRN = as needed
+- ER/XR/SR = extended/sustained release
+- D/C = discontinued, AE = adverse effect
+
+=== EXTRACTION REQUIREMENTS ===
+1. Extract ALL medications mentioned (active, discontinued, historical)
+2. Capture complete details: name, dose, route, frequency, indication
+3. Determine current status based on document context
+4. Note any allergies or intolerances mentioned
+5. Include adherence notes if documented
+
+=== CONFIDENCE SCORING ===
+Assign confidence based on information clarity:
+- 95-100%: Listed in formal medication list/table with all details
+- 85-94%: Clearly mentioned in narrative with dose/frequency
+- 70-84%: Mentioned without complete details
+- Below 70%: Inferred from context or partially visible
+
+=== RESPONSE FORMAT ===
 {
-  "extracted_date": "2024-07-03" | null,
+  "extracted_date": "YYYY-MM-DD" or null,
+  "date_extraction_source": "header|signature|metadata|not_found",
   "medications": [
     {
-      "medication_name": "standardized name",
-      "dosage": "current strength and amount",
-      "frequency": "current frequency",
-      "route": "route of administration", 
-      "indication": "reason for use",
+      "medication_name": "standardized generic name",
+      "brand_name": "if applicable",
+      "dosage": "strength per unit (e.g., 10mg)",
+      "frequency": "QD/BID/TID/etc",
+      "route": "PO/IV/IM/etc",
+      "indication": "concise reason (HTN/DM/etc)",
       "status": "active/discontinued/historical",
-      "confidence": 0.85,
+      "confidence": 0.95,
       "should_consolidate": true/false,
-      "consolidation_reasoning": "why consolidate or create new",
-      "notes": "additional context",
-      "changes": ["dose/frequency changes with dates"],
+      "consolidation_reasoning": "Exact match with existing lisinopril entry",
+      "extraction_location": "medication list page 2",
       "visit_history": [
         {
           "date": "2024-02-20",
-          "notes": "Started 10mg daily",
-          "change_type": "started"
+          "notes": "Started 10mg QD",
+          "change_type": "initiation"
         },
         {
-          "date": "2024-05-15", 
-          "notes": "Increased ↑ to 20mg",
-          "change_type": "increased"
+          "date": "2024-05-15",
+          "notes": "↑ 20mg QD",
+          "change_type": "dose_increase"
         }
       ]
     }
@@ -1704,7 +1838,7 @@ Extract all medications from this document. For each medication, determine if it
     try {
       const startTime = Date.now();
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4.1",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },

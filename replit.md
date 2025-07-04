@@ -109,6 +109,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Enhanced Medication Processing Prompts & GPT Model Upgrade COMPLETED (January 9, 2025)
+- **GPT MODEL UPGRADE**: Upgraded medication attachment processing from GPT-4.1-mini to full GPT-4.1 model for superior intelligence matching SOAP processing
+- **CRITICAL DATE EXTRACTION FIX**: Enhanced attachment prompt with comprehensive date extraction intelligence matching medical problems system's major strength
+- **STRUCTURED PROMPT DESIGN**: Redesigned both medication prompts with clear section headers (===), step-by-step decision trees, and emphasized critical rules
+- **BRAND/GENERIC INTELLIGENCE**: Added extensive medication synonym matching (Synthroid=levothyroxine, Glucophage=metformin, etc.) for better consolidation
+- **DOCUMENT DATE PRIORITY**: Implemented hierarchical date extraction: headers → signatures → metadata with clear rules for single document date application
+- **ULTRA-CONCISE FORMATTING**: Standardized visit history notation across both prompts with pharmacy abbreviations (QD, BID, ↑, ↓, D/C)
+- **CONFIDENCE SCORING CLARITY**: Aligned confidence scoring ranges between attachment and SOAP processing for consistency
+- **MAINTAINED SEPARATE ROUTES**: Per requirements, kept separate processing routes while upgrading intelligence of each independently
+- **PRODUCTION IMPACT**: Medication system now has date extraction intelligence matching medical problems' superior capability
+
 ### Complete Medication System Intelligence with Visit History Implementation COMPLETED (July 4, 2025)
 - **MEDICATION-MEDICAL PROBLEMS PARITY ACHIEVED**: Successfully implemented complete medication intelligence system matching medical problems functionality exactly
 - **VISIT HISTORY DISPLAY**: Added comprehensive visit history section to medication UI with ultra-concise format showing dose changes over time
