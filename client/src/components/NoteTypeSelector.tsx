@@ -41,6 +41,7 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
 
   const noteTypes = [
     { value: 'soap', label: 'SOAP Note', category: 'Progress Notes' },
+    { value: 'soapNarrative', label: 'SOAP (Narrative)', category: 'Progress Notes' },
     { value: 'apso', label: 'APSO Note', category: 'Progress Notes' },
     { value: 'progress', label: 'Hospital Progress Note', category: 'Progress Notes' },
     { value: 'hAndP', label: 'H&P (History & Physical)', category: 'Initial Evaluation' },

@@ -33,6 +33,7 @@ interface TwoPhaseTemplateEditorProps {
 
 const NOTE_TYPES = [
   { value: 'soap', label: 'SOAP Note' },
+  { value: 'soapNarrative', label: 'SOAP (Narrative)' },
   { value: 'progress', label: 'Progress Note' },
   { value: 'hAndP', label: 'History & Physical' },
   { value: 'apso', label: 'APSO Note' },

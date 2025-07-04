@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### SOAP (Narrative) Template Addition COMPLETED (July 4, 2025)
+- **NEW TEMPLATE ADDED**: Successfully implemented "SOAP (Narrative)" template as requested, available alongside existing note templates
+- **BACKEND IMPLEMENTATION**: Added `buildSOAPNarrativePrompt()` method in `enhanced-note-generation-service.ts` with narrative subjective formatting
+- **FRONTEND INTEGRATION**: Updated `NoteTypeSelector.tsx` and `TwoPhaseTemplateEditor.tsx` to include "SOAP (Narrative)" option in Progress Notes category
+- **NARRATIVE SUBJECTIVE FORMAT**: Template identical to regular SOAP except subjective section uses narrative paragraphs instead of bullet points
+- **CONCISE NARRATIVE STYLE**: GPT instructed to use short sentences and phrases with each topic separated by paragraphs and blank lines
+- **CONSISTENT ORDERING**: Template appears between "SOAP Note" and "APSO Note" in the Progress Notes category for logical grouping
+- **SWITCH CASE INTEGRATION**: Added "soapNarrative" case in template selection logic for proper routing to new prompt method
+- **PRODUCTION READY**: Template available immediately in all note generation interfaces alongside existing SOAP, APSO, Progress, H&P, Discharge, and Procedure templates
+
 ### Critical Lab Test Name Matching Safety Fix COMPLETED (January 9, 2025)
 - **CRITICAL CLINICAL SAFETY BUG FIXED**: Lab results matrix was incorrectly matching test names using dangerous substring logic
 - **DANGEROUS BUG**: Hemoglobin A1c (HbA1c) was incorrectly appearing as regular Hemoglobin due to substring matching
