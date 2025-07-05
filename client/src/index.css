@@ -896,41 +896,41 @@
   }
 }
 
-/* Gold shimmer effect - flashlight passing over gold bars */
+/* Gold shimmer effect - flashlight passing over gold bars (TEMP: 400ms steps) */
 @keyframes gold-shimmer-a {
   0%, 10% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
     text-shadow: none;
   }
-  15% {
+  20% {
     color: #FFD033;
     filter: brightness(1.2) contrast(1.15);
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-  }
-  20% {
-    color: #FFD966;
-    filter: brightness(1.4) contrast(1.2);
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-  }
-  25% {
-    color: #FFEB3B;
-    filter: brightness(1.6) contrast(1.3);
-    text-shadow: 
-      0 0 20px rgba(255, 215, 0, 0.9),
-      0 0 40px rgba(255, 215, 0, 0.6);
   }
   30% {
     color: #FFD966;
     filter: brightness(1.4) contrast(1.2);
     text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
   }
-  35% {
+  40% {
+    color: #FFEB3B;
+    filter: brightness(1.6) contrast(1.3);
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.9),
+      0 0 40px rgba(255, 215, 0, 0.6);
+  }
+  50% {
+    color: #FFD966;
+    filter: brightness(1.4) contrast(1.2);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  }
+  60% {
     color: #FFD033;
     filter: brightness(1.2) contrast(1.15);
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
   }
-  40%, 100% {
+  70%, 100% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
     text-shadow: none;
@@ -938,39 +938,39 @@
 }
 
 @keyframes gold-shimmer-i {
-  0%, 20% {
+  0%, 30% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
     text-shadow: none;
   }
-  25% {
+  40% {
     color: #FFD033;
     filter: brightness(1.2) contrast(1.15);
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
   }
-  30% {
+  50% {
     color: #FFD966;
     filter: brightness(1.4) contrast(1.2);
     text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
   }
-  35% {
+  60% {
     color: #FFEB3B;
     filter: brightness(1.6) contrast(1.3);
     text-shadow: 
       0 0 20px rgba(255, 215, 0, 0.9),
       0 0 40px rgba(255, 215, 0, 0.6);
   }
-  40% {
+  70% {
     color: #FFD966;
     filter: brightness(1.4) contrast(1.2);
     text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
   }
-  45% {
+  80% {
     color: #FFD033;
     filter: brightness(1.2) contrast(1.15);
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
   }
-  50%, 100% {
+  90%, 100% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
     text-shadow: none;
