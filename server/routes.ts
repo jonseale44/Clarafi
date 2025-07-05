@@ -1344,7 +1344,7 @@ Avoid restating general knowledge or overly simplistic recommendations a physici
 
 DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
 
-IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
+IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused. 
 
 Format each bullet point on its own line with no extra spacing between them.`
         : `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
