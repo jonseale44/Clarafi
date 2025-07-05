@@ -16,7 +16,8 @@ import {
   Trash2,
   Eye,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Clock
 } from "lucide-react";
 import { useNavigationContext } from "@/hooks/use-navigation-context";
 import { useDenseView } from "@/hooks/use-dense-view";
@@ -69,18 +70,12 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
       if (dateString.includes('-')) {
         const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
         const localDate = new Date(year, month - 1, day); // month is 0-indexed
-        return localDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
+        // Use M/d/yy format to match family history section
+        return `${month}/${day}/${String(year).slice(-2)}`;
       }
       // Fallback for other date formats
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
+      const date = new Date(dateString);
+      return `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(-2)}`;
     } catch {
       return 'Invalid Date';
     }
@@ -176,6 +171,55 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
     );
   };
 
+  // Get source badge for visit history entries
+  const getVisitSourceBadge = (visit: any) => {
+    if (visit.sourceType === "attachment") {
+      const confidencePercent = visit.confidence ? Math.round(visit.confidence * 100) : 0;
+      const handleDocumentClick = () => {
+        if (visit.attachmentId) {
+          const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${visit.attachmentId}`;
+          navigateWithContext(targetUrl, "imaging", mode);
+        }
+      };
+      
+      return (
+        <Badge 
+          variant="secondary" 
+          className="text-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors bg-amber-100 text-amber-800 border-amber-200"
+          onClick={handleDocumentClick}
+          title={`Click to view source document (Attachment #${visit.attachmentId})`}
+        >
+          MR {confidencePercent}%
+        </Badge>
+      );
+    }
+    
+    if (visit.sourceType === "encounter") {
+      const confidencePercent = visit.confidence ? Math.round(visit.confidence * 100) : 0;
+      const handleEncounterClick = () => {
+        if (visit.encounterId) {
+          navigateWithContext(`/patients/${patientId}/encounters/${visit.encounterId}`, "imaging", mode);
+        }
+      };
+      return (
+        <Badge 
+          variant="default" 
+          className="text-xs cursor-pointer hover:bg-navy-blue-600 dark:hover:bg-navy-blue-400 transition-colors bg-navy-blue-100 text-navy-blue-800 border-navy-blue-200"
+          onClick={handleEncounterClick}
+          title={`Click to view encounter details (Encounter #${visit.encounterId})`}
+        >
+          Note {confidencePercent}%
+        </Badge>
+      );
+    }
+    
+    if (visit.sourceType === "manual_entry") {
+      return <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border-gray-200">Manual</Badge>;
+    }
+    
+    return null;
+  };
+
   // Dense view render function
   const renderImagingDenseList = (result: ImagingResult) => {
     return (
@@ -268,19 +312,31 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
               {/* Visit History */}
               {result.visitHistory && result.visitHistory.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-sm mb-1">Visit History</h4>
-                  <div className="space-y-2">
-                    {result.visitHistory.map((visit, index) => (
-                      <div key={index} className="text-sm">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-gray-600">{formatDate(visit.date)}</span>
-                          {visit.confidence && (
-                            <Badge variant="outline" className="text-xs">
-                              {Math.round(visit.confidence * 100)}% confidence
-                            </Badge>
-                          )}
+                  <h4 className="font-medium text-sm mb-1 text-gray-700 flex items-center gap-2">
+                    <Clock className="h-3 w-3" />
+                    Visit History
+                  </h4>
+                  <div className="emr-dense-list">
+                    {result.visitHistory
+                      .sort((a, b) => {
+                        // Primary sort: Date descending (most recent first)
+                        const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+                        if (dateComparison !== 0) return dateComparison;
+                        
+                        // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+                        const aEncounterId = a.encounterId || 0;
+                        const bEncounterId = b.encounterId || 0;
+                        return bEncounterId - aEncounterId;
+                      })
+                      .map((visit, index) => (
+                      <div key={index} className="flex items-start gap-3 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                        <span className="font-medium text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
+                          {formatDate(visit.date)}
+                        </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {getVisitSourceBadge(visit)}
                         </div>
-                        <p className="text-gray-700">{visit.notes}</p>
+                        <p className="text-xs text-gray-700 dark:text-gray-300 flex-1">{visit.notes}</p>
                       </div>
                     ))}
                   </div>
@@ -430,22 +486,31 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
                     {/* Visit History */}
                     {result.visitHistory && result.visitHistory.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-sm mb-2">Visit History</h4>
-                        <div className="space-y-2">
-                          {result.visitHistory.map((visit, index) => (
-                            <div key={index} className="flex items-start space-x-3 text-sm">
-                              <div className="flex-shrink-0 w-2 h-2 bg-navy-blue-500 rounded-full mt-2"></div>
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <span className="text-gray-600">{formatDate(visit.date)}</span>
-                                  {visit.confidence && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {Math.round(visit.confidence * 100)}% confidence
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-gray-700">{visit.notes}</p>
+                        <h4 className="font-medium text-sm mb-2 text-gray-700 flex items-center gap-2">
+                          <Clock className="h-3 w-3" />
+                          Visit History
+                        </h4>
+                        <div className="emr-dense-list">
+                          {result.visitHistory
+                            .sort((a, b) => {
+                              // Primary sort: Date descending (most recent first)
+                              const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+                              if (dateComparison !== 0) return dateComparison;
+                              
+                              // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+                              const aEncounterId = a.encounterId || 0;
+                              const bEncounterId = b.encounterId || 0;
+                              return bEncounterId - aEncounterId;
+                            })
+                            .map((visit, index) => (
+                            <div key={index} className="flex items-start gap-3 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                              <span className="font-medium text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
+                                {formatDate(visit.date)}
+                              </span>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {getVisitSourceBadge(visit)}
                               </div>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 flex-1">{visit.notes}</p>
                             </div>
                           ))}
                         </div>
