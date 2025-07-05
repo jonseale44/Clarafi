@@ -118,15 +118,22 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
     enabled: !!patientId
   });
 
+  // Filter out resolved allergies
+  const activeAllergies = allergies.filter((allergy: AllergyEntry) => 
+    allergy.status !== 'resolved' && allergy.status !== 'inactive'
+  );
+
   console.log(`🚨 [AllergySection] Query state:`, {
     isLoading,
     hasError: !!error,
     dataLength: allergies.length,
+    activeCount: activeAllergies.length,
     enabled: !!patientId,
     queryKey: ['/api/allergies', patientId]
   });
 
   console.log(`🚨 [AllergySection] Allergy data:`, allergies);
+  console.log(`🚨 [AllergySection] Active allergies:`, activeAllergies);
 
   // Create allergy mutation
   const createMutation = useMutation({
@@ -501,7 +508,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
         </div>
       </CardHeader>
       <CardContent className={isDenseView ? "emr-card-content" : "emr-card-content space-y-3"}>
-        {allergies.length === 0 ? (
+        {activeAllergies.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             <Shield className="h-12 w-12 mx-auto mb-3 text-gray-300" />
             <p className="text-sm">No allergies documented</p>
@@ -512,9 +519,9 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
         ) : (
           <div className={isDenseView ? "dense-list-container" : "space-y-3"}>
             {isDenseView ? (
-              allergies.map(renderAllergyDenseList)
+              activeAllergies.map(renderAllergyDenseList)
             ) : (
-              allergies.map((allergy: AllergyEntry) => (
+              activeAllergies.map((allergy: AllergyEntry) => (
                 <Collapsible
                   key={allergy.id}
                   open={openCards[allergy.id]}

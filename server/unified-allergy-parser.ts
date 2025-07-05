@@ -444,6 +444,12 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
             change.visitEntry,
           ];
 
+          // For resolve_conflict actions on NKDA, ensure it's marked as inactive/resolved
+          const updateStatus = change.action === "resolve_conflict" && 
+                             existingRecord.allergen.toLowerCase().includes("no known") 
+                             ? "resolved" 
+                             : (change.status || existingRecord.status);
+
           // Update the record
           await db
             .update(allergies)
@@ -452,7 +458,7 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
               reaction: change.reaction || existingRecord.reaction,
               severity: change.severity || existingRecord.severity,
               allergyType: change.allergyType || existingRecord.allergyType,
-              status: change.status || existingRecord.status,
+              status: updateStatus,
               drugClass: change.drugClass || existingRecord.drugClass,
               crossReactivity:
                 change.crossReactivity || existingRecord.crossReactivity,
