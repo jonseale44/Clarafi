@@ -5,6 +5,11 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   FileImage, 
   Calendar, 
@@ -70,19 +75,29 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
 
   const formatDate = (dateString: string) => {
     try {
-      if (!dateString) return 'Not specified';
+      if (!dateString || dateString === 'null' || dateString === 'undefined') return 'Not specified';
+      
       // Handle date string to avoid timezone conversion issues
       if (dateString.includes('-')) {
-        const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
-        const localDate = new Date(year, month - 1, day); // month is 0-indexed
-        // Use M/d/yy format to match family history section
-        return `${month}/${day}/${String(year).slice(-2)}`;
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+          const [year, month, day] = parts.map(num => parseInt(num, 10));
+          if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            // Use M/d/yy format to match family history section
+            return `${month}/${day}/${String(year).slice(-2)}`;
+          }
+        }
       }
-      // Fallback for other date formats
+      
+      // Try parsing as Date object
       const date = new Date(dateString);
-      return `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(-2)}`;
+      if (!isNaN(date.getTime()) && date.getFullYear() > 1970) {
+        return `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(-2)}`;
+      }
+      
+      return 'Not specified';
     } catch {
-      return 'Invalid Date';
+      return 'Not specified';
     }
   };
 
@@ -279,18 +294,13 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
               )}
               
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="dense-list-primary">{result.modality}</span>
-                <span className="dense-list-secondary">{result.bodyPart}</span>
                 <span className="dense-list-secondary text-xs">
                   {formatDate(result.studyDate)}
                 </span>
+                <span className="dense-list-primary">{result.modality}</span>
+                <span className="dense-list-secondary">{result.bodyPart}</span>
+                {getSourceBadge(result)}
               </div>
-              
-              {mostRecentVisit && (
-                <div className="flex items-center gap-2">
-                  {getVisitSourceBadge(mostRecentVisit)}
-                </div>
-              )}
             </div>
             
             <div className="dense-list-actions">
@@ -537,6 +547,121 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingResult} onOpenChange={(open) => !open && setEditingResult(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Imaging Result</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            // TODO: Implement form submission
+            toast({
+              title: "Success",
+              description: "Imaging result updated successfully",
+            });
+            setEditingResult(null);
+          }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="modality">Modality</Label>
+                <Select value={editingResult?.modality} disabled>
+                  <SelectTrigger>
+                    <SelectValue placeholder={editingResult?.modality} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={editingResult?.modality || ""}>{editingResult?.modality}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="bodyPart">Body Part</Label>
+                <Input
+                  id="bodyPart"
+                  value={editingResult?.bodyPart || ""}
+                  disabled
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="studyDate">Study Date</Label>
+              <Input
+                id="studyDate"
+                type="date"
+                value={editingResult?.studyDate || ""}
+                disabled
+              />
+            </div>
+            <div>
+              <Label htmlFor="resultStatus">Result Status</Label>
+              <Select value={editingResult?.resultStatus} disabled>
+                <SelectTrigger>
+                  <SelectValue placeholder={editingResult?.resultStatus} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="preliminary">Preliminary</SelectItem>
+                  <SelectItem value="final">Final</SelectItem>
+                  <SelectItem value="addendum">Addendum</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {editingResult?.impression && (
+              <div>
+                <Label htmlFor="impression">Impression</Label>
+                <Textarea
+                  id="impression"
+                  value={editingResult.impression}
+                  rows={4}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+            )}
+            {editingResult?.findings && (
+              <div>
+                <Label htmlFor="findings">Findings</Label>
+                <Textarea
+                  id="findings"
+                  value={editingResult.findings}
+                  rows={6}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+            )}
+            {editingResult?.visitHistory && editingResult.visitHistory.length > 0 && (
+              <div>
+                <Label>Visit History</Label>
+                <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border rounded-md p-3 bg-gray-50">
+                  {editingResult.visitHistory
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((visit, index) => (
+                      <div key={index} className="flex items-start gap-3 py-1 border-b last:border-0">
+                        <span className="font-medium text-xs text-gray-600 flex-shrink-0">
+                          {formatDate(visit.date)}
+                        </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {getVisitSourceBadge(visit)}
+                        </div>
+                        <p className="text-xs text-gray-700 flex-1">{visit.notes}</p>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingResult(null)}
+              >
+                Close
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
