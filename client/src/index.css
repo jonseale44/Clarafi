@@ -898,7 +898,7 @@
 
 .ai-letters-animate {
   display: inline-block;
-  animation: ai-fall-away 3s ease-out forwards;
+  animation: ai-fall-away 1.5s ease-out forwards;
   transform-origin: center center;
   will-change: transform, opacity;
 }
