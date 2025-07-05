@@ -382,6 +382,20 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
       console.log(`🎯 [UnifiedAllergy] === FULL GPT RESPONSE ===`);
       console.log(`🎯 [UnifiedAllergy] Raw response:`, content);
       console.log(`🎯 [UnifiedAllergy] Parsed changes:`, JSON.stringify(changes, null, 2));
+      
+      // Log specifically for NKDA resolution debugging
+      console.log(`🎯 [UnifiedAllergy] === NKDA RESOLUTION DEBUG ===`);
+      changes.forEach((change, idx) => {
+        console.log(`🎯 [UnifiedAllergy] Change ${idx + 1}:`, {
+          action: change.action,
+          allergen: change.allergen,
+          existingRecordId: change.existingRecordId,
+          status: change.status,
+          isResolveConflict: change.action === 'resolve_conflict',
+          reason: change.consolidationReason
+        });
+      });
+      console.log(`🎯 [UnifiedAllergy] === END NKDA DEBUG ===`);
 
       return changes;
     } catch (error) {
