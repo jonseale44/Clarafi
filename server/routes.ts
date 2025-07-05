@@ -1328,9 +1328,7 @@ ${
       // Use exact same prompts as working WebSocket system
       const isProvider = userRole === "provider";
       const instructions = isProvider
-        ? `Absolutely! Here’s the complete, integrated prompt for your clinical GPT, with the new treatment requirement seamlessly built into the symptom workup section. This includes all structure, style, and content rules, and plenty of concrete examples:
-
-Medical AI Assistant for Physicians — Master Prompt
+        ? `
 
 LANGUAGE:
 
