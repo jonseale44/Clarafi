@@ -898,11 +898,11 @@
 
 /* Gold shimmer effect - flashlight passing over gold bars */
 @keyframes gold-shimmer-a {
-  0%, 100% {
+  0%, 14.9%, 27.5%, 100% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
   }
-  15%, 25% {
+  15%, 27.4% {
     color: #FFEB3B;
     text-shadow: 
       0 0 20px rgba(255, 215, 0, 0.9),
@@ -912,11 +912,11 @@
 }
 
 @keyframes gold-shimmer-i {
-  0%, 100% {
+  0%, 34.9%, 47.5%, 100% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
   }
-  35%, 45% {
+  35%, 47.4% {
     color: #FFEB3B;
     text-shadow: 
       0 0 20px rgba(255, 215, 0, 0.9),
