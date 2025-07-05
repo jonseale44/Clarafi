@@ -234,6 +234,12 @@ CORE ALLERGY PROCESSING INSTRUCTIONS:
    - If existing allergy + NKDA document: Use temporal intelligence
    - If NKDA document is OLDER → Keep existing allergy (patient developed allergy after NKDA)
    - If NKDA document is NEWER → Document NKDA and mark existing allergy as "resolved" or "refuted"
+   
+   - If existing NKDA + new allergy document: Replace NKDA with new allergy
+   - NKDA means "No Known Drug Allergies" at that point in time
+   - A newer document with specific allergies ALWAYS supersedes older NKDA
+   - Mark NKDA record as "resolved" and create new allergy record
+   
    - Always create visit history explaining temporal reasoning
    - Auto-resolve conflicts - do not flag for provider review
 
@@ -305,6 +311,20 @@ RESPONSE FORMAT (JSON Array):
     "temporalConflictResolution": "No conflicts detected"
   }
 ]
+
+EXAMPLE SCENARIOS:
+
+1. Existing: NKDA (ID: 25) from 6/1/24 → New document 7/1/24 states "PCN allergy"
+   ACTION: Mark NKDA ID:25 as "resolved", create new PCN allergy
+   REASON: Patient developed allergy after NKDA documentation
+
+2. Existing: PCN allergy (ID: 30) from 5/1/24 → New document 7/1/24 states "NKDA"
+   ACTION: Mark PCN allergy ID:30 as "resolved", document NKDA
+   REASON: More recent assessment shows no allergies
+
+3. Existing: NKDA (ID: 40) → New document states "Sulfa - rash"
+   ACTION: Mark NKDA ID:40 as "resolved", create Sulfa allergy
+   REASON: New allergy discovered, NKDA no longer accurate
 
 Extract all allergy information that is explicitly mentioned. Handle NKDA scenarios with temporal intelligence. Auto-resolve conflicts using timeline analysis.`;
 
