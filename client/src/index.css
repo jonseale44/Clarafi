@@ -898,30 +898,52 @@
 
 /* Gold shimmer effect - flashlight passing over gold bars */
 @keyframes gold-shimmer-a {
-  0%, 14.9%, 40%, 100% {
+  0%, 10% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
   }
-  15%, 39.9% {
+  15% {
     color: #FFEB3B;
     text-shadow: 
-      0 0 20px rgba(255, 215, 0, 0.9),
-      0 0 40px rgba(255, 215, 0, 0.6);
-    filter: brightness(1.4) contrast(1.2);
+      0 0 25px rgba(255, 235, 59, 1),
+      0 0 50px rgba(255, 215, 0, 0.8);
+    filter: brightness(1.5) contrast(1.3);
+  }
+  20% {
+    color: #FFE45C;
+    text-shadow: 
+      0 0 15px rgba(255, 235, 59, 0.7),
+      0 0 30px rgba(255, 215, 0, 0.5);
+    filter: brightness(1.3) contrast(1.2);
+  }
+  25%, 100% {
+    color: #FFD700;
+    filter: brightness(1) contrast(1.1);
   }
 }
 
 @keyframes gold-shimmer-i {
-  0%, 34.9%, 60%, 100% {
+  0%, 30% {
     color: #FFD700;
     filter: brightness(1) contrast(1.1);
   }
-  35%, 59.9% {
+  35% {
     color: #FFEB3B;
     text-shadow: 
-      0 0 20px rgba(255, 215, 0, 0.9),
-      0 0 40px rgba(255, 215, 0, 0.6);
-    filter: brightness(1.4) contrast(1.2);
+      0 0 25px rgba(255, 235, 59, 1),
+      0 0 50px rgba(255, 215, 0, 0.8);
+    filter: brightness(1.5) contrast(1.3);
+  }
+  40% {
+    color: #FFE45C;
+    text-shadow: 
+      0 0 15px rgba(255, 235, 59, 0.7),
+      0 0 30px rgba(255, 215, 0, 0.5);
+    filter: brightness(1.3) contrast(1.2);
+  }
+  45%, 100% {
+    color: #FFD700;
+    filter: brightness(1) contrast(1.1);
   }
 }
 
