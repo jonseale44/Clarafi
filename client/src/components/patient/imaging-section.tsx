@@ -22,6 +22,8 @@ import {
 import { useNavigationContext } from "@/hooks/use-navigation-context";
 import { useDenseView } from "@/hooks/use-dense-view";
 import { apiRequest } from "@/lib/queryClient";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImagingResult {
   id: number;
@@ -59,9 +61,12 @@ interface ImagingSectionProps {
 
 export default function ImagingSection({ patientId, encounterId, mode, isReadOnly }: ImagingSectionProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [expandedDenseEntries, setExpandedDenseEntries] = useState<Set<number>>(new Set());
+  const [editingResult, setEditingResult] = useState<ImagingResult | null>(null);
   const queryClient = useQueryClient();
   const { navigateWithContext } = useNavigationContext();
   const { isDenseView } = useDenseView();
+  const { toast } = useToast();
 
   const formatDate = (dateString: string) => {
     try {
@@ -78,6 +83,39 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
       return `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(-2)}`;
     } catch {
       return 'Invalid Date';
+    }
+  };
+
+  const toggleDenseEntryExpansion = (entryId: number) => {
+    setExpandedDenseEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleEdit = (result: ImagingResult) => {
+    setEditingResult(result);
+  };
+
+  const handleDelete = async (resultId: number) => {
+    try {
+      await apiRequest('DELETE', `/api/imaging-results/${resultId}`);
+      toast({
+        title: 'Success',
+        description: 'Imaging result deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/imaging-results', patientId] });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete imaging result',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -220,132 +258,107 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
     return null;
   };
 
-  // Dense view render function
+  // Dense view render function - matches family history pattern exactly
   const renderImagingDenseList = (result: ImagingResult) => {
+    const isExpanded = expandedDenseEntries.has(result.id);
+    const mostRecentVisit = result.visitHistory?.[0];
+    
     return (
-      <div
+      <Collapsible
         key={result.id}
-        className="dense-list-item group"
-        onClick={() => {
-          const newExpanded = [...expandedItems];
-          const itemId = result.id.toString();
-          if (newExpanded.includes(itemId)) {
-            setExpandedItems(newExpanded.filter(id => id !== itemId));
-          } else {
-            setExpandedItems([...newExpanded, itemId]);
-          }
-        }}
+        open={isExpanded}
+        onOpenChange={() => toggleDenseEntryExpansion(result.id)}
       >
-        <div className="dense-list-content">
-          {expandedItems.includes(result.id.toString()) ? (
-            <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
-          ) : (
-            <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
-          )}
-          
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {getModalityIcon(result.modality)}
-            <span className="dense-list-primary">
-              {result.modality} - {result.bodyPart}
-            </span>
-            
-            <Badge className={`dense-list-badge ${getStatusColor(result.resultStatus)}`}>
-              {result.resultStatus}
-            </Badge>
-            
-            {getSourceBadge(result)}
-          </div>
-          
-          <div className="dense-list-secondary">
-            <span>{formatDate(result.studyDate)}</span>
-            {result.facilityName && (
-              <span>• {result.facilityName}</span>
-            )}
-            {result.radiologistName && (
-              <span>• Dr. {result.radiologistName}</span>
-            )}
-          </div>
-        </div>
-        
-        {!isReadOnly && (
-          <div className="dense-list-actions" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <Eye className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <Edit className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        )}
-        
-        {/* Expanded content for dense view */}
-        {expandedItems.includes(result.id.toString()) && (
-          <div className="dense-list-expanded">
-            <div className="space-y-3">
-              {/* Clinical Summary */}
-              <div>
-                <h4 className="font-medium text-sm mb-1">Clinical Summary</h4>
-                <p className="text-sm text-gray-700">{result.clinicalSummary}</p>
-              </div>
-
-              {/* Findings and Impression */}
-              {(result.findings || result.impression) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {result.findings && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-1">Findings</h4>
-                      <p className="text-sm text-gray-700">{result.findings}</p>
-                    </div>
-                  )}
-                  {result.impression && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-1">Impression</h4>
-                      <p className="text-sm text-gray-700">{result.impression}</p>
-                    </div>
-                  )}
-                </div>
+        <CollapsibleTrigger asChild>
+          <div className="dense-list-item group">
+            <div className="dense-list-content">
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
               )}
-
-              {/* Visit History */}
-              {result.visitHistory && result.visitHistory.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-sm mb-1 text-gray-700 flex items-center gap-2">
-                    <Clock className="h-3 w-3" />
-                    Visit History
-                  </h4>
-                  <div className="emr-dense-list">
-                    {result.visitHistory
-                      .sort((a, b) => {
-                        // Primary sort: Date descending (most recent first)
-                        const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
-                        if (dateComparison !== 0) return dateComparison;
-                        
-                        // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
-                        const aEncounterId = a.encounterId || 0;
-                        const bEncounterId = b.encounterId || 0;
-                        return bEncounterId - aEncounterId;
-                      })
-                      .map((visit, index) => (
-                      <div key={index} className="flex items-start gap-3 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                        <span className="font-medium text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
-                          {formatDate(visit.date)}
-                        </span>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {getVisitSourceBadge(visit)}
-                        </div>
-                        <p className="text-xs text-gray-700 dark:text-gray-300 flex-1">{visit.notes}</p>
-                      </div>
-                    ))}
-                  </div>
+              
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="dense-list-primary">{result.modality}</span>
+                <span className="dense-list-secondary">{result.bodyPart}</span>
+                <span className="dense-list-secondary text-xs">
+                  {formatDate(result.studyDate)}
+                </span>
+              </div>
+              
+              {mostRecentVisit && (
+                <div className="flex items-center gap-2">
+                  {getVisitSourceBadge(mostRecentVisit)}
                 </div>
               )}
             </div>
+            
+            <div className="dense-list-actions">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(result);
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm("Are you sure you want to delete this imaging result?")) {
+                    handleDelete(result.id);
+                  }
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-        )}
-      </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="dense-list-expanded">
+            {/* Visit History Only - no clinical summary, findings, or impression */}
+            {result.visitHistory && result.visitHistory.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Clock className="h-3 w-3" />
+                  Visit History
+                </h4>
+                <div className="emr-dense-list">
+                  {result.visitHistory
+                    .sort((a, b) => {
+                      // Primary sort: Date descending (most recent first)
+                      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+                      if (dateComparison !== 0) return dateComparison;
+                      
+                      // Secondary sort: Encounter ID descending (higher encounter numbers first for same-date entries)
+                      const aEncounterId = a.encounterId || 0;
+                      const bEncounterId = b.encounterId || 0;
+                      return bEncounterId - aEncounterId;
+                    })
+                    .map((visit, index) => (
+                    <div key={index} className="flex items-start gap-3 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                      <span className="font-medium text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
+                        {formatDate(visit.date)}
+                      </span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {getVisitSourceBadge(visit)}
+                      </div>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 flex-1">{visit.notes}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     );
   };
 
@@ -436,55 +449,55 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
                     </div>
                     <div className="flex items-center space-x-2">
                       {!isReadOnly && (
-                        <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit(result);
+                                  }}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit imaging result</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm("Are you sure you want to delete this imaging result?")) {
+                                      handleDelete(result.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete imaging result</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       )}
                     </div>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
-                  <div className="space-y-4">
-                    {/* Clinical Summary */}
-                    <div>
-                      <h4 className="font-medium text-sm mb-2">Clinical Summary</h4>
-                      <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
-                        {result.clinicalSummary}
-                      </p>
-                    </div>
-
-                    {/* Detailed Findings and Impression */}
-                    {(result.findings || result.impression) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {result.findings && (
-                          <div>
-                            <h4 className="font-medium text-sm mb-2">Findings</h4>
-                            <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
-                              {result.findings}
-                            </p>
-                          </div>
-                        )}
-                        {result.impression && (
-                          <div>
-                            <h4 className="font-medium text-sm mb-2">Impression</h4>
-                            <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
-                              {result.impression}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Visit History */}
-                    {result.visitHistory && result.visitHistory.length > 0 && (
+                  {/* Visit History Only - no clinical summary, findings, or impression */}
+                  {result.visitHistory && result.visitHistory.length > 0 && (
+                    <div className="space-y-2">
+                      {/* Visit History section with only content that matters */}
                       <div>
                         <h4 className="font-medium text-sm mb-2 text-gray-700 flex items-center gap-2">
                           <Clock className="h-3 w-3" />
@@ -515,21 +528,8 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
                           ))}
                         </div>
                       </div>
-                    )}
-
-                    {/* Source Information */}
-                    {result.extractedFromAttachmentId && (
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                        <span className="text-xs text-gray-500">
-                          Extracted from attachment #{result.extractedFromAttachmentId}
-                        </span>
-                        <Button variant="ghost" size="sm" className="text-xs">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View Document
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
               ))}

@@ -2427,7 +2427,6 @@ export const insertImagingResultSchema = createInsertSchema(imagingResults).pick
   visitHistory: true,
 });
 
-export type ImagingResult = typeof imagingResults.$inferSelect;
 export type InsertImagingResult = z.infer<typeof insertImagingResultSchema>;
 
 // Admin prompt management table for viewing/editing generated prompts
