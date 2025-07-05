@@ -896,9 +896,90 @@
   }
 }
 
+/* Gold shimmer effect - flashlight passing over gold bars */
+@keyframes gold-shimmer-a {
+  0%, 100% {
+    color: #FFD700;
+    text-shadow: 
+      0 1px 0 rgba(204, 163, 0, 0.8),
+      0 2px 0 rgba(184, 143, 0, 0.7),
+      0 3px 0 rgba(164, 123, 0, 0.6),
+      0 4px 4px rgba(0, 0, 0, 0.3);
+    filter: brightness(1) contrast(1.1);
+  }
+  15%, 25% {
+    color: #FFEB3B;
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.9),
+      0 0 40px rgba(255, 215, 0, 0.6),
+      0 1px 0 rgba(255, 235, 59, 0.9),
+      0 2px 0 rgba(255, 215, 0, 0.8),
+      0 3px 0 rgba(204, 163, 0, 0.7),
+      0 4px 6px rgba(0, 0, 0, 0.4);
+    filter: brightness(1.4) contrast(1.2);
+  }
+}
+
+@keyframes gold-shimmer-i {
+  0%, 100% {
+    color: #FFD700;
+    text-shadow: 
+      0 1px 0 rgba(204, 163, 0, 0.8),
+      0 2px 0 rgba(184, 143, 0, 0.7),
+      0 3px 0 rgba(164, 123, 0, 0.6),
+      0 4px 4px rgba(0, 0, 0, 0.3);
+    filter: brightness(1) contrast(1.1);
+  }
+  35%, 45% {
+    color: #FFEB3B;
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.9),
+      0 0 40px rgba(255, 215, 0, 0.6),
+      0 1px 0 rgba(255, 235, 59, 0.9),
+      0 2px 0 rgba(255, 215, 0, 0.8),
+      0 3px 0 rgba(204, 163, 0, 0.7),
+      0 4px 6px rgba(0, 0, 0, 0.4);
+    filter: brightness(1.4) contrast(1.2);
+  }
+}
+
 .ai-letters-animate {
   display: inline-block;
-  animation: ai-fall-away 1.5s ease-out forwards;
   transform-origin: center center;
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter, color, text-shadow;
+  position: relative;
+  
+  /* Gold metallic base */
+  color: #FFD700;
+  
+  /* 3D gold effect */
+  text-shadow: 
+    0 1px 0 rgba(204, 163, 0, 0.8),
+    0 2px 0 rgba(184, 143, 0, 0.7),
+    0 3px 0 rgba(164, 123, 0, 0.6),
+    0 4px 4px rgba(0, 0, 0, 0.3);
+  
+  /* Metallic gradient overlay for depth */
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 235, 59, 0.2) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(204, 163, 0, 0.2) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* Apply animations to specific letters */
+.ai-letter-a {
+  animation: 
+    ai-fall-away 1.5s ease-out forwards,
+    gold-shimmer-a 4s ease-in-out 1.75s infinite;
+}
+
+.ai-letter-i {
+  animation: 
+    ai-fall-away 1.5s ease-out 0.15s forwards,
+    gold-shimmer-i 4s ease-in-out 1.75s infinite;
 }
