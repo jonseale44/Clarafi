@@ -353,6 +353,9 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
       console.log(
         `🚨 [UnifiedAllergy] GPT extracted ${changes.length} allergy changes`,
       );
+      console.log(`🎯 [UnifiedAllergy] === FULL GPT RESPONSE ===`);
+      console.log(`🎯 [UnifiedAllergy] Raw response:`, content);
+      console.log(`🎯 [UnifiedAllergy] Parsed changes:`, JSON.stringify(changes, null, 2));
 
       return changes;
     } catch (error) {
@@ -369,9 +372,21 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
     patientId: number,
     encounterId?: number,
   ): Promise<UnifiedAllergyChange[]> {
+    console.log(`🎯 [UnifiedAllergy] === APPLYING ALLERGY CHANGES ===`);
+    console.log(`🎯 [UnifiedAllergy] Patient ID: ${patientId}`);
+    console.log(`🎯 [UnifiedAllergy] Number of changes: ${changes.length}`);
+    console.log(`🎯 [UnifiedAllergy] Changes to apply:`, JSON.stringify(changes, null, 2));
+    
     const processedChanges: UnifiedAllergyChange[] = [];
 
     for (const change of changes) {
+      console.log(`🎯 [UnifiedAllergy] Processing change:`, {
+        action: change.action,
+        allergen: change.allergen,
+        existingRecordId: change.existingRecordId,
+        confidence: change.confidence
+      });
+      
       try {
         let allergyId: number;
 
@@ -445,10 +460,24 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
           ];
 
           // For resolve_conflict actions on NKDA, ensure it's marked as inactive/resolved
+          console.log(`🎯 [UnifiedAllergy] Checking resolve_conflict logic:`, {
+            action: change.action,
+            isResolveConflict: change.action === "resolve_conflict",
+            existingAllergen: existingRecord.allergen,
+            hasNoKnown: existingRecord.allergen.toLowerCase().includes("no known"),
+            currentStatus: existingRecord.status
+          });
+          
           const updateStatus = change.action === "resolve_conflict" && 
                              existingRecord.allergen.toLowerCase().includes("no known") 
                              ? "resolved" 
                              : (change.status || existingRecord.status);
+                             
+          console.log(`🎯 [UnifiedAllergy] Status decision:`, {
+            originalStatus: existingRecord.status,
+            newStatus: updateStatus,
+            willResolve: updateStatus === "resolved"
+          });
 
           // Update the record
           await db
