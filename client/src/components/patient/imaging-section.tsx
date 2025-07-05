@@ -299,6 +299,9 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
                 </span>
                 <span className="dense-list-primary">{result.modality}</span>
                 <span className="dense-list-secondary">{result.bodyPart}</span>
+                <Badge className={`text-xs ${getStatusColor(result.resultStatus)}`}>
+                  {result.resultStatus}
+                </Badge>
                 {getSourceBadge(result)}
               </div>
             </div>
@@ -571,7 +574,9 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
                     <SelectValue placeholder={editingResult?.modality} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={editingResult?.modality || ""}>{editingResult?.modality}</SelectItem>
+                    {editingResult?.modality && (
+                      <SelectItem value={editingResult.modality}>{editingResult.modality}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -595,9 +600,9 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
             </div>
             <div>
               <Label htmlFor="resultStatus">Result Status</Label>
-              <Select value={editingResult?.resultStatus} disabled>
+              <Select value={editingResult?.resultStatus || "final"} disabled>
                 <SelectTrigger>
-                  <SelectValue placeholder={editingResult?.resultStatus} />
+                  <SelectValue placeholder={editingResult?.resultStatus || "Final"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="preliminary">Preliminary</SelectItem>
