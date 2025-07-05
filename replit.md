@@ -127,16 +127,6 @@ Preferred communication style: Simple, everyday language.
 - **CSS IMPLEMENTATION**: Animation created with @keyframes ai-fall-away and applied via ai-letters-animate class
 - **LOGIN SCREEN ONLY**: Animation now appears exclusively on the auth/login page, not on the dashboard
 
-### Gold Shimmer Flashlight Effect COMPLETED (January 11, 2025)
-- **3D FLASHLIGHT EFFECT**: Implemented realistic flashlight passing over gold bars animation that triggers 250ms after letters land
-- **SEQUENTIAL SHIMMER**: Flashlight beam moves left-to-right, illuminating A letter (15-25% of cycle) then I letter (35-45% of cycle)
-- **BRIGHT GLARE EFFECT**: Letters brighten from gold (#FFD700) to bright gold (#FFEB3B) with 40% brightness increase when illuminated
-- **REALISTIC GOLD REFLECTION**: Added glowing shadow effects (20px and 40px glows) simulating how solid gold reflects flashlight
-- **REPEATING ANIMATION**: Effect repeats every 4 seconds continuously after initial landing sequence
-- **SEPARATE LETTER ANIMATIONS**: Created gold-shimmer-a and gold-shimmer-i keyframes for independent letter timing
-- **METALLIC DEPTH**: Added gradient overlay and enhanced text shadows for 3D gold bar appearance
-- **PRODUCTION READY**: Flashlight shimmer effect creates engaging visual interest on login screen
-
 ### User Note Type Preference System Implementation COMPLETED (July 4, 2025)
 - **PREFERENCE PERSISTENCE ADDED**: Successfully implemented system to remember each user's last selected SOAP note type as their default for future encounters
 - **DATABASE FIELD UTILIZED**: Used existing `lastSelectedNoteType` field in `userNotePreferences` table to store user's template selection
