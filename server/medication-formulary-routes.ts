@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from 'express';
 import { APIResponseHandler } from './api-response-handler.js';
-import { medicationFormularyService } from './medication-formulary-service.js';
+import { MedicationFormularyService } from './medication-formulary-service.js';
 import { db } from './db.js';
 import { medicationFormulary } from '../shared/schema.js';
 import { sql } from 'drizzle-orm';
@@ -26,7 +26,7 @@ router.get('/search', async (req: Request, res: Response) => {
       return APIResponseHandler.badRequest(res, 'Search query is required');
     }
 
-    const matches = await medicationFormularyService.searchMedications(
+    const matches = await MedicationFormularyService.searchMedications(
       query, 
       parseInt(limit as string, 10)
     );
@@ -50,20 +50,20 @@ router.get('/medication/:name', async (req: Request, res: Response) => {
   try {
     const { name } = req.params;
     
-    const medication = await medicationFormularyService.getMedicationByGenericName(name);
+    const medication = await MedicationFormularyService.getMedicationByGenericName(name);
     
     if (!medication) {
       return APIResponseHandler.notFound(res, 'medication');
     }
 
-    const alerts = medicationFormularyService.getMedicationAlerts(medication);
+    const alerts = MedicationFormularyService.getMedicationAlerts(medication);
     
     return APIResponseHandler.success(res, {
       medication,
       alerts,
       smartSigs: {
-        '25mg_tablet': medicationFormularyService.generateSmartSig(medication, '25 mg', 'tablet'),
-        '50mg_tablet': medicationFormularyService.generateSmartSig(medication, '50 mg', 'tablet')
+        '25mg_tablet': MedicationFormularyService.generateSmartSig(medication, '25 mg', 'tablet'),
+        '50mg_tablet': MedicationFormularyService.generateSmartSig(medication, '50 mg', 'tablet')
       }
     });
   } catch (error) {
@@ -78,7 +78,7 @@ router.get('/medication/:name', async (req: Request, res: Response) => {
  */
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    const stats = await medicationFormularyService.getFormularyStats();
+    const stats = await MedicationFormularyService.getFormularyStats();
     
     // Add some additional database metrics
     const totalCount = await db
@@ -178,7 +178,7 @@ router.post('/test-hybrid', async (req: Request, res: Response) => {
       const startTime = Date.now();
       
       // Try local formulary first
-      const localMatch = await medicationFormularyService.searchMedications(medName, 1);
+      const localMatch = await MedicationFormularyService.searchMedications(medName, 1);
       const localTime = Date.now() - startTime;
       
       const result = {

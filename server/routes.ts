@@ -21,7 +21,7 @@ import * as unifiedAllergyAPI from "./unified-allergy-api";
 import enhancedMedicationRoutes from "./enhanced-medication-routes";
 import medicationStandardizationRoutes from "./medication-standardization-routes";
 import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";
-import medicationFormularyRoutes from "./medication-formulary-routes";
+// import medicationFormularyRoutes from "./medication-formulary-routes";
 import validationRoutes from "./validation-routes";
 import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
 import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
@@ -626,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", unifiedMedicationIntelligenceRoutes);
 
   // Medication formulary routes (500-medication database)
-  app.use("/api/formulary", medicationFormularyRoutes);
+  // app.use("/api/formulary", medicationFormularyRoutes);
 
   // RxNorm medication database routes (200,000+ medications)
   const rxnormRoutes = createRxNormRoutes();

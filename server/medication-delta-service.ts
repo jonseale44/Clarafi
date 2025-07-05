@@ -1997,9 +1997,13 @@ STANDARD ABBREVIATIONS (MANDATORY USE):
 === EXTRACTION REQUIREMENTS ===
 1. Extract ALL medications mentioned (active, discontinued, historical)
 2. Capture complete details: name, dose, route, frequency, indication
-3. Determine current status based on document context
-4. Note any allergies or intolerances mentioned
-5. Include adherence notes if documented
+3. CRITICAL: Extract medication FORM (tablet, capsule, injection, liquid, cream, patch, inhaler, etc.)
+   - Look for form in medication lists: "metformin 500mg tablet", "insulin glargine injection"
+   - If form not explicitly stated but medication name implies it (e.g., "insulin" → injection)
+   - Common forms: tablet, capsule, injection, solution, suspension, cream, ointment, patch, inhaler
+4. Determine current status based on document context
+5. Note any allergies or intolerances mentioned
+6. Include adherence notes if documented
 
 === CONFIDENCE SCORING ===
 Assign confidence based on information clarity:
@@ -2017,8 +2021,9 @@ Assign confidence based on information clarity:
       "medication_name": "standardized generic name",
       "brand_name": "if applicable",
       "dosage": "strength per unit (e.g., 10mg)",
+      "form": "tablet/capsule/injection/liquid/solution/cream/patch/inhaler/etc",
       "frequency": "QD/BID/TID/etc",
-      "route": "PO/IV/IM/etc",
+      "route": "PO/IV/IM/SC/topical/inhalation/etc",
       "indication": "concise reason (HTN/DM/etc)",
       "status": "active/discontinued/historical",
       "confidence": 0.95,

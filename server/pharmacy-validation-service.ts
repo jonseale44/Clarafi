@@ -7,6 +7,7 @@
 
 import OpenAI from "openai";
 import { MedicationStandardizationService } from "./medication-standardization-service.js";
+import { MedicationFormularyService } from "./medication-formulary-service.js";
 import { RxNormService } from "./rxnorm-service.js";
 
 export interface PharmacyValidationResult {
@@ -194,6 +195,30 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
       }
 
       const gptValidation = JSON.parse(response);
+      
+      // Add safety check for dangerous medication-form combinations
+      const formAllowed = MedicationFormularyService.isFormAllowed(
+        order.medicationName,
+        order.dosageForm
+      );
+      
+      if (!formAllowed) {
+        const defaultForm = MedicationFormularyService.getDefaultForm(
+          order.medicationName,
+          order.route
+        );
+        
+        // Add critical safety error
+        gptValidation.compliance.errors.unshift(
+          `CRITICAL SAFETY: ${order.medicationName} cannot be ${order.dosageForm}. Should be ${defaultForm}.`
+        );
+        
+        // Add to warnings if not already present
+        if (!gptValidation.safety_assessment.specific_concerns.includes('dangerous form')) {
+          gptValidation.safety_assessment.specific_concerns += 
+            ` DANGEROUS FORM: ${order.medicationName} ${order.dosageForm} is medically impossible and dangerous.`;
+        }
+      }
 
       // Calculate days supply if not provided
       let calculatedDaysSupply = order.daysSupply;

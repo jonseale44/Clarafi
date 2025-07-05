@@ -5,6 +5,8 @@
  * Used by both AI-parsed orders and manual entry to ensure consistency
  */
 
+import { MedicationFormularyService } from './medication-formulary-service';
+
 export interface StandardizedMedication {
   medicationName: string;        // Clean medication name (e.g., "Montelukast")
   brandName?: string;           // Brand name if applicable (e.g., "Singulair")
@@ -65,8 +67,8 @@ export class MedicationStandardizationService {
     // Standardize strength format
     strength = this.standardizeStrength(strength);
     
-    // Standardize dosage form
-    dosageForm = this.standardizeDosageForm(dosageForm);
+    // Standardize dosage form with intelligent defaults
+    dosageForm = this.standardizeDosageForm(dosageForm, medicationName, route);
     
     // Standardize route
     route = this.standardizeRoute(route);
@@ -171,10 +173,17 @@ export class MedicationStandardizationService {
   }
   
   /**
-   * Standardize dosage form
+   * Standardize dosage form with intelligent defaults
    */
-  private static standardizeDosageForm(form: string): string {
-    if (!form) return 'tablet'; // Default form
+  private static standardizeDosageForm(form: string, medicationName?: string, route?: string): string {
+    // Get intelligent default from formulary if no form provided
+    if (!form && medicationName) {
+      const intelligentDefault = MedicationFormularyService.getDefaultForm(medicationName, route);
+      console.log(`💊 [MedicationStandardization] No form provided for ${medicationName}, using intelligent default: ${intelligentDefault}`);
+      return intelligentDefault;
+    }
+    
+    if (!form) return 'solution'; // Safest generic default (not tablet!)
     
     const formMap: { [key: string]: string } = {
       'tab': 'tablet',
