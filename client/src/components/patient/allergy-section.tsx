@@ -274,8 +274,8 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
       case 'attachment_extracted': {
         const handleDocumentClick = () => {
           if (allergy.extractedFromAttachmentId) {
-            // Navigate to attachment section - implement navigation logic
             console.log("Navigate to attachment:", allergy.extractedFromAttachmentId);
+            navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${allergy.extractedFromAttachmentId}`, "allergies", mode || "patient-chart");
           }
         };
         return (

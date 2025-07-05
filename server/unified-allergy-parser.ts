@@ -147,6 +147,22 @@ export class UnifiedAllergyParser {
       console.log(
         `🚨 [UnifiedAllergy] GPT processed ${gptResponse.length} allergy changes`,
       );
+      
+      // DETAILED GPT RESPONSE LOGGING
+      console.log(`🔍 [UnifiedAllergy] ===== DETAILED GPT RESPONSE ANALYSIS =====`);
+      gptResponse.forEach((change, index) => {
+        console.log(`🔍 [UnifiedAllergy] Change ${index + 1}:`, {
+          action: change.action,
+          allergen: change.allergen,
+          status: change.status,
+          existingRecordId: change.existingRecordId,
+          consolidationReason: change.consolidationReason,
+          temporalConflictResolution: change.temporalConflictResolution,
+          attachmentId: change.visitEntry?.attachmentId,
+          encounterId: change.visitEntry?.encounterId
+        });
+      });
+      console.log(`🔍 [UnifiedAllergy] ===== END GPT RESPONSE ANALYSIS =====`);
 
       // Apply changes to database
       const processedChanges = await this.applyAllergyChanges(
@@ -328,6 +344,11 @@ EXAMPLE SCENARIOS:
 
 Extract all allergy information that is explicitly mentioned. Handle NKDA scenarios with temporal intelligence. Auto-resolve conflicts using timeline analysis.`;
 
+    console.log(`🔍 [UnifiedAllergy] ===== SENDING PROMPT TO GPT =====`);
+    console.log(`🔍 [UnifiedAllergy] Existing allergies in prompt:`, existingAllergies.map(a => `ID:${a.id} ${a.allergen} (${a.status})`));
+    console.log(`🔍 [UnifiedAllergy] Combined content preview:`, combinedContent.substring(0, 300));
+    console.log(`🔍 [UnifiedAllergy] ===== END PROMPT CONTEXT =====`);
+
     try {
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-mini",
@@ -342,10 +363,15 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
         return [];
       }
 
+      console.log(`🔍 [UnifiedAllergy] ===== RAW GPT RESPONSE =====`);
+      console.log(`🔍 [UnifiedAllergy] Full GPT response:`, content);
+      console.log(`🔍 [UnifiedAllergy] ===== END RAW GPT RESPONSE =====`);
+
       // Parse GPT response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         console.log("🚨 [UnifiedAllergy] No JSON array found in GPT response");
+        console.log("🚨 [UnifiedAllergy] GPT Response:", content);
         return [];
       }
 
