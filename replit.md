@@ -109,6 +109,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Upload-Time Duplicate Detection System COMPLETED (July 5, 2025)
+- **CRITICAL ARCHITECTURE ENHANCEMENT**: Implemented SHA-256 content hashing to prevent duplicate file uploads at the source
+- **ROOT CAUSE ADDRESSED**: Fixed issue where identical documents uploaded multiple times created duplicate visit history entries (e.g., Johnny McRae's heart failure appearing twice from attachment IDs 10 and 11)
+- **PREVENTION AT SOURCE**: System now calculates file hash during upload and checks for existing identical files before creating new attachment records
+- **DATABASE SCHEMA UPDATE**: Added `contentHash` VARCHAR(64) field to patient_attachments table for content-based duplicate detection
+- **SINGLE FILE UPLOADS**: Enhanced POST `/api/patients/:patientId/attachments` endpoint to calculate SHA-256 hash and return existing attachment if duplicate detected
+- **BULK FILE UPLOADS**: Enhanced POST `/api/patients/:patientId/attachments/bulk` endpoint with same duplicate detection logic for each file in batch
+- **AUTOMATIC CLEANUP**: Duplicate files are automatically removed from disk when detected, saving storage space
+- **USER FEEDBACK**: API returns existing attachment with `isDuplicate: true` flag and informative message when duplicate upload attempted
+- **PRODUCTION IMPACT**: Prevents duplicate visit history entries from being created when same document is uploaded multiple times, solving the medical problems deduplication issue at its source
+
 ### Critical Medication Safety System Implementation COMPLETED (July 5, 2025)
 - **CRITICAL SAFETY BUG FIXED**: Insulin was being classified as "tablet" form when imported from medical documents, creating dangerous patient safety risk
 - **MULTI-LAYERED SAFETY SYSTEM IMPLEMENTED**: Built comprehensive medication safety system comparable to Athena/Epic EMR standards

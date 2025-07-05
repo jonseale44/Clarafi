@@ -2199,6 +2199,9 @@ export const patientAttachments = pgTable("patient_attachments", {
   isConfidential: boolean("is_confidential").default(false),
   accessLevel: text("access_level").default("standard"), // 'public', 'standard', 'restricted'
   
+  // Duplicate detection
+  contentHash: text("content_hash"), // SHA-256 hash of file content for duplicate detection
+  
   // Status
   processingStatus: text("processing_status").default("completed"), // 'processing', 'completed', 'failed'
   virusScanStatus: text("virus_scan_status").default("pending"), // 'pending', 'clean', 'infected'
@@ -2247,6 +2250,7 @@ export const insertPatientAttachmentSchema = createInsertSchema(patientAttachmen
   uploadedBy: true,
   isConfidential: true,
   accessLevel: true,
+  contentHash: true,
 });
 
 export const insertAttachmentExtractedContentSchema = createInsertSchema(attachmentExtractedContent).pick({

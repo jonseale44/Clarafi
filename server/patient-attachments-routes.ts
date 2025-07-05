@@ -8,6 +8,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import sharp from "sharp";
 import { createHash } from "crypto";
+import { createReadStream } from "fs";
 import { documentAnalysisService } from "./document-analysis-service.js";
 
 const router = Router();
@@ -120,6 +121,56 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     const patientId = parseInt(req.params.patientId);
     const { title, description, encounterId, isConfidential } = req.body;
     
+    // Calculate file hash for duplicate detection
+    console.log('📎 [AttachmentUpload] Calculating file hash for duplicate detection...');
+    const hash = createHash('sha256');
+    const stream = createReadStream(req.file.path);
+    
+    await new Promise((resolve, reject) => {
+      stream.on('data', (data) => hash.update(data));
+      stream.on('end', resolve);
+      stream.on('error', reject);
+    });
+    
+    const contentHash = hash.digest('hex');
+    console.log(`📎 [AttachmentUpload] File hash calculated: ${contentHash}`);
+    
+    // Check for existing attachment with same hash for this patient
+    console.log(`📎 [AttachmentUpload] Checking for duplicate files for patient ${patientId}...`);
+    const existingAttachment = await db.select()
+      .from(patientAttachments)
+      .where(and(
+        eq(patientAttachments.patientId, patientId),
+        eq(patientAttachments.contentHash, contentHash)
+      ))
+      .limit(1);
+    
+    if (existingAttachment.length > 0) {
+      console.log(`📎 [AttachmentUpload] ⚠️ Duplicate file detected! Returning existing attachment ID: ${existingAttachment[0].id}`);
+      console.log(`📎 [AttachmentUpload] Existing file details:`, {
+        id: existingAttachment[0].id,
+        originalFileName: existingAttachment[0].originalFileName,
+        uploadedAt: existingAttachment[0].createdAt
+      });
+      
+      // Clean up the newly uploaded duplicate file
+      try {
+        await fs.unlink(req.file.path);
+        console.log('📎 [AttachmentUpload] ✅ Duplicate file cleaned up');
+      } catch (error) {
+        console.error('📎 [AttachmentUpload] ❌ Failed to clean up duplicate file:', error);
+      }
+      
+      // Return the existing attachment
+      return res.status(200).json({
+        ...existingAttachment[0],
+        isDuplicate: true,
+        message: 'This file has already been uploaded for this patient'
+      });
+    }
+    
+    console.log('📎 [AttachmentUpload] ✅ No duplicate found, proceeding with upload');
+    
     // Generate thumbnail if applicable
     const thumbnailPath = await generateThumbnail(req.file.path, req.file.mimetype);
     
@@ -138,6 +189,7 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
       uploadedBy: req.user!.id,
       isConfidential: isConfidential === 'true',
       category: 'general', // Single category for now as requested
+      contentHash: contentHash, // Add the hash to prevent future duplicates
     };
 
     const validatedData = insertPatientAttachmentSchema.parse(attachmentData);
@@ -235,6 +287,50 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
       uploadedFiles.push(file);
       
       try {
+        // Calculate file hash for duplicate detection
+        console.log(`📎 [AttachmentUpload] Calculating hash for ${file.originalname}...`);
+        const hash = createHash('sha256');
+        const stream = createReadStream(file.path);
+        
+        await new Promise((resolve, reject) => {
+          stream.on('data', (data) => hash.update(data));
+          stream.on('end', resolve);
+          stream.on('error', reject);
+        });
+        
+        const contentHash = hash.digest('hex');
+        console.log(`📎 [AttachmentUpload] Hash calculated: ${contentHash.substring(0, 16)}...`);
+        
+        // Check for existing attachment with same hash for this patient
+        const existingAttachment = await db.select()
+          .from(patientAttachments)
+          .where(and(
+            eq(patientAttachments.patientId, patientId),
+            eq(patientAttachments.contentHash, contentHash)
+          ))
+          .limit(1);
+        
+        if (existingAttachment.length > 0) {
+          console.log(`📎 [AttachmentUpload] ⚠️ Duplicate detected: ${file.originalname} matches existing attachment ID: ${existingAttachment[0].id}`);
+          
+          // Clean up the duplicate file
+          try {
+            await fs.unlink(file.path);
+            console.log(`📎 [AttachmentUpload] ✅ Duplicate file cleaned up: ${file.originalname}`);
+          } catch (error) {
+            console.error(`📎 [AttachmentUpload] ❌ Failed to clean up duplicate: ${file.originalname}`, error);
+          }
+          
+          // Add the existing attachment to results with duplicate flag
+          createdAttachments.push({
+            ...existingAttachment[0],
+            isDuplicate: true,
+            message: `${file.originalname} was already uploaded`
+          });
+          
+          continue; // Skip to next file
+        }
+        
         // Generate thumbnail if applicable
         const thumbnailPath = await generateThumbnail(file.path, file.mimetype);
         
@@ -253,6 +349,7 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
           uploadedBy: req.user!.id,
           isConfidential: isConfidential === 'true',
           category: 'general',
+          contentHash: contentHash, // Add the hash to prevent future duplicates
         };
 
         const validatedData = insertPatientAttachmentSchema.parse(attachmentData);
