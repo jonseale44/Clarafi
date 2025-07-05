@@ -383,17 +383,34 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
                 {getSourceBadge(allergy)}
                 
                 <div className="dense-list-actions">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingAllergy(allergy);
-                    }}
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
+                  <Dialog open={editingAllergy?.id === allergy.id} onOpenChange={(open) => !open && setEditingAllergy(null)}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingAllergy(allergy);
+                        }}
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Edit Allergy</DialogTitle>
+                      </DialogHeader>
+                      {editingAllergy && (
+                        <AllergyForm
+                          allergy={editingAllergy}
+                          onSubmit={(data) => updateMutation.mutate({ id: editingAllergy.id, ...data })}
+                          onCancel={() => setEditingAllergy(null)}
+                          isLoading={updateMutation.isPending}
+                        />
+                      )}
+                    </DialogContent>
+                  </Dialog>
                   <Button 
                     size="sm" 
                     variant="ghost" 
@@ -550,7 +567,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
                           <div className="flex items-center gap-2">
                             {getSourceBadge(allergy)}
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                              <Dialog>
+                              <Dialog open={editingAllergy?.id === allergy.id} onOpenChange={(open) => !open && setEditingAllergy(null)}>
                                 <DialogTrigger asChild>
                                   <Button 
                                     size="sm" 
@@ -568,14 +585,12 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
                                   <DialogHeader>
                                     <DialogTitle>Edit Allergy</DialogTitle>
                                   </DialogHeader>
-                                  {editingAllergy && (
-                                    <AllergyForm
-                                      allergy={editingAllergy}
-                                      onSubmit={(data) => updateMutation.mutate({ id: editingAllergy.id, ...data })}
-                                      onCancel={() => setEditingAllergy(null)}
-                                      isLoading={updateMutation.isPending}
-                                    />
-                                  )}
+                                  <AllergyForm
+                                    allergy={allergy}
+                                    onSubmit={(data) => updateMutation.mutate({ id: allergy.id, ...data })}
+                                    onCancel={() => setEditingAllergy(null)}
+                                    isLoading={updateMutation.isPending}
+                                  />
                                 </DialogContent>
                               </Dialog>
                               <Button 

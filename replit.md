@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Allergy Badge Navigation Fix COMPLETED (July 5, 2025)
+- **CRITICAL NAVIGATION FIX**: Fixed allergy badge hyperlinks not working due to missing attachment ID in database records
+- **ROOT CAUSE**: GPT prompt template was interpolating attachment ID in prompt string rather than JSON structure, causing attachment ID to not be preserved in visit entries
+- **GPT PROMPT FIX**: Updated unified-allergy-parser.ts to properly include attachmentId and encounterId in visit entry JSON structure
+- **DATA FLOW PRESERVATION**: Ensured attachment ID flows from attachment-chart-processor → unified-allergy-parser → GPT response → database
+- **BADGE CLICK FUNCTIONALITY**: Allergy badges with "MR XX%" can now properly navigate to source attachment documents
+- **PRODUCTION IMPACT**: Allergies extracted from attachments will now properly store extractedFromAttachmentId field enabling source navigation
+
 ### Upload-Time Duplicate Detection System COMPLETED (July 5, 2025)
 - **CRITICAL ARCHITECTURE ENHANCEMENT**: Implemented SHA-256 content hashing to prevent duplicate file uploads at the source
 - **ROOT CAUSE ADDRESSED**: Fixed issue where identical documents uploaded multiple times created duplicate visit history entries (e.g., Johnny McRae's heart failure appearing twice from attachment IDs 10 and 11)

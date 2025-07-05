@@ -301,7 +301,7 @@ RESPONSE FORMAT (JSON Array):
       "date": "${new Date().toLocaleDateString("en-CA")}",
       "notes": "Patient reports penicillin allergy causing rash and hives, moderate severity",
       "source": "${triggerType === "attachment_processing" ? "attachment" : "encounter"}",
-      ${attachmentId ? `"attachmentId": ${attachmentId},` : ""}
+      ${attachmentId ? `"attachmentId": ${attachmentId},` : ""}${encounterId ? `"encounterId": ${encounterId},` : ""}
       "changesMade": ["allergy_documented", "severity_specified", "reaction_detailed"],
       "confidence": 0.95,
       "conflictResolution": "No temporal conflicts - first documentation of this allergy"
