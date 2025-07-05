@@ -295,7 +295,7 @@ ${
     ? existingFamilyHistory
         .map(
           (fh) =>
-            `- ${fh.familyMember}: ${fh.medicalHistory} (Source: ${fh.sourceType}, Confidence: ${fh.sourceConfidence})`,
+            `ID: ${fh.id} | ${fh.familyMember}: ${fh.medicalHistory} (Source: ${fh.sourceType}, Confidence: ${fh.sourceConfidence})`,
         )
         .join("\n")
     : "- No existing family history records"

@@ -206,7 +206,7 @@ export class UnifiedAllergyParser {
         ? existingAllergies
             .map(
               (allergy) =>
-                `- ${allergy.allergen}: ${allergy.reaction || "reaction not specified"} (${allergy.severity || "severity unknown"}) - Status: ${allergy.status}, Type: ${allergy.allergyType || "unknown"}`,
+                `ID: ${allergy.id} | ${allergy.allergen}: ${allergy.reaction || "reaction not specified"} (${allergy.severity || "severity unknown"}) - Status: ${allergy.status}, Type: ${allergy.allergyType || "unknown"}`,
             )
             .join("\n")
         : "No existing allergies documented";
