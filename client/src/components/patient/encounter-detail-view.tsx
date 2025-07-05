@@ -179,6 +179,10 @@ export function EncounterDetailView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
+  
+  // Accordion states for transcription and AI suggestions
+  const [isTranscriptionExpanded, setIsTranscriptionExpanded] = useState(false);
+  const [isAISuggestionsExpanded, setIsAISuggestionsExpanded] = useState(false);
 
   // Deduplication system
   const processedEvents = useRef(new Set<string>());
@@ -4147,15 +4151,23 @@ Please provide medical suggestions based on this complete conversation context.`
 
           {/* Voice Recording Section */}
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-green-600">● Connected</span>
+            <Collapsible 
+              open={isTranscriptionExpanded} 
+              onOpenChange={setIsTranscriptionExpanded}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <CollapsibleTrigger className="flex items-center space-x-2 hover:text-gray-700 cursor-pointer group">
+                  <ChevronRight className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isTranscriptionExpanded ? 'rotate-90' : ''}`} />
+                  <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
+                </CollapsibleTrigger>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-green-600">● Connected</span>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
+              <CollapsibleContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -4225,27 +4237,35 @@ Please provide medical suggestions based on this complete conversation context.`
                     Restart Transcription
                   </Button>
                 )}
-              </div>
+                  </div>
 
-              {/* Transcription Content */}
-              <div className="space-y-2">
-                <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
-                  <div className="whitespace-pre-line text-sm leading-relaxed">
-                    {transcription ||
-                      (isRecording
-                        ? "Listening..."
-                        : "Transcription will appear here during recording")}
+                  {/* Transcription Content */}
+                  <div className="space-y-2">
+                    <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
+                      <div className="whitespace-pre-line text-sm leading-relaxed">
+                        {transcription ||
+                          (isRecording
+                            ? "Listening..."
+                            : "Transcription will appear here during recording")}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
 
           {/* AI Suggestions */}
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <h2 className="text-xl font-semibold">AI Suggestions</h2>
+            <Collapsible 
+              open={isAISuggestionsExpanded} 
+              onOpenChange={setIsAISuggestionsExpanded}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <CollapsibleTrigger className="flex items-center space-x-2 hover:text-gray-700 cursor-pointer group">
+                  <ChevronRight className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isAISuggestionsExpanded ? 'rotate-90' : ''}`} />
+                  <h2 className="text-xl font-semibold">AI Suggestions</h2>
+                </CollapsibleTrigger>
                 <div className="flex items-center space-x-2 text-sm">
                   <span className="text-gray-500">Mode:</span>
                   <button
@@ -4260,7 +4280,9 @@ Please provide medical suggestions based on this complete conversation context.`
                   </button>
                 </div>
               </div>
-              <div className="flex gap-2">
+              
+              <CollapsibleContent>
+                <div className="flex gap-2">
                 <Button
                   onClick={
                     useRestAPI
@@ -4335,11 +4357,12 @@ Please provide medical suggestions based on this complete conversation context.`
                   </Button>
                 )}
               </div>
-            </div>
-            <div className="text-gray-500 text-sm whitespace-pre-line">
-              {gptSuggestions || "AI analysis will appear here..."}
-            </div>
-          </Card>
+              <div className="text-gray-500 text-sm whitespace-pre-line mt-4">
+                {gptSuggestions || "AI analysis will appear here..."}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
 
           {/* Note Section */}
           <Card className="p-6">
