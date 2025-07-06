@@ -301,39 +301,7 @@ export default function AuthPage() {
                       </div>
                     )}
 
-                    {/* Practice Details for individual providers */}
-                    {registrationType === 'individual' && (
-                      <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-                        <h4 className="font-medium text-sm">Practice Information</h4>
-                        <div className="space-y-2">
-                          <Label htmlFor="practiceName">Practice Name (Optional)</Label>
-                          <Input
-                            id="practiceName"
-                            {...registerForm.register("practiceName")}
-                            placeholder="e.g., Smith Family Medicine"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="practiceCity">City</Label>
-                            <Input
-                              id="practiceCity"
-                              {...registerForm.register("practiceCity")}
-                              placeholder="City"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="practiceState">State</Label>
-                            <Input
-                              id="practiceState"
-                              {...registerForm.register("practiceState")}
-                              placeholder="TX"
-                              maxLength={2}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -395,37 +363,10 @@ export default function AuthPage() {
                       </Select>
                     </div>
 
-                    {/* Only show for providers */}
-                    {registerForm.watch("role") === "provider" && (
-                      <div className="space-y-2">
-                        <Label>Practice Type</Label>
-                        <div className="space-y-3">
-                          <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="join_existing"
-                              checked={registerForm.watch("registrationType") === "join_existing"}
-                              onChange={(e) => registerForm.setValue("registrationType", "join_existing")}
-                              className="text-primary"
-                            />
-                            <span>Join existing clinic or health system</span>
-                          </label>
-                          <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="individual"
-                              checked={registerForm.watch("registrationType") === "individual"}
-                              onChange={(e) => registerForm.setValue("registrationType", "individual")}
-                              className="text-primary"
-                            />
-                            <span>Create my own individual practice</span>
-                          </label>
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Show practice details for individual providers */}
-                    {registerForm.watch("role") === "provider" && registerForm.watch("registrationType") === "individual" && (
+
+                    {/* Show practice details for individual practice registration */}
+                    {registrationType === "individual" && (
                       <div className="space-y-4 border-t pt-4">
                         <h3 className="font-medium">Practice Information</h3>
                         
