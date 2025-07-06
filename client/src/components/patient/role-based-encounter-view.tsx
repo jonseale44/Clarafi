@@ -38,7 +38,7 @@ export function RoleBasedEncounterView({
   console.log("🔍 [RoleBasedEncounter] Is nurse?", currentUser?.role === 'nurse');
 
   // Route to appropriate encounter view based on user role
-  if (currentUser?.role === 'nurse') {
+  if (currentUser?.role === 'nurse' || currentUser?.role === 'ma') {
     console.log("🩺 [RoleBasedEncounter] Routing to NursingEncounterView");
     return (
       <NursingEncounterView

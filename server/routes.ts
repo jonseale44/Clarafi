@@ -4200,33 +4200,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
-  // Test medication activation (debug route)
-  app.post("/api/debug/activate-medication", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const { encounterId, orderIds, providerId } = req.body;
-      console.log(`🧪 [Debug] Manual medication activation test`);
-      console.log(
-        `🧪 [Debug] Encounter: ${encounterId}, Orders: [${orderIds.join(", ")}], Provider: ${providerId}`,
-      );
-
-      const { medicationDelta } = await import("./medication-delta-service.js");
-      await medicationDelta.signMedicationOrders(
-        encounterId,
-        orderIds,
-        providerId,
-      );
-
-      res.json({
-        success: true,
-        message: "Medication activation test completed",
-      });
-    } catch (error: any) {
-      console.error("🧪 [Debug] Test activation failed:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   // Get unsigned orders for encounter
   app.get("/api/encounters/:encounterId/unsigned-orders", async (req, res) => {

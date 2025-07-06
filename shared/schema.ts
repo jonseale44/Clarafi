@@ -170,7 +170,7 @@ export const users = pgTable("users", {
   // Basic info
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  role: text("role").notNull(), // 'admin', 'provider', 'nurse', 'staff'
+  role: text("role").notNull(), // 'admin', 'provider', 'nurse', 'ma', 'staff', 'front_desk', 'billing', 'lab_tech', 'referral_coordinator', 'practice_manager', 'read_only'
   
   // Professional details
   npi: text("npi").unique(),
