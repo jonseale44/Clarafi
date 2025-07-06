@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { PatientParserService } from "./patient-parser-service";
 import { db } from "./db";
 import { patients, insertPatientSchema } from "../shared/schema";
+import { tenantIsolation } from "./tenant-isolation";
 
 const router = Router();
 
@@ -75,9 +76,12 @@ router.post("/parse-patient-info", async (req: Request, res: Response) => {
  * POST /api/parse-and-create-patient
  * Parses patient information and creates a new patient record
  */
-router.post("/parse-and-create-patient", async (req: Request, res: Response) => {
+router.post("/parse-and-create-patient", tenantIsolation, async (req: Request, res: Response) => {
   try {
     console.log("🔍 [PatientParser] Parsing and creating patient...");
+    
+    // Get the healthSystemId from authenticated user
+    const healthSystemId = req.userHealthSystemId!;
     
     // Validate request body
     const validationResult = parseRequestSchema.safeParse(req.body);
@@ -117,8 +121,14 @@ router.post("/parse-and-create-patient", async (req: Request, res: Response) => 
     // Format data for patient creation
     const patientData = parserService.formatForPatientCreation(parseResult.data);
     
+    // Add healthSystemId to patient data
+    const patientDataWithHealthSystem = {
+      ...patientData,
+      healthSystemId
+    };
+    
     // Validate against schema
-    const schemaValidation = insertPatientSchema.safeParse(patientData);
+    const schemaValidation = insertPatientSchema.safeParse(patientDataWithHealthSystem);
     if (!schemaValidation.success) {
       return res.status(400).json({
         success: false,
@@ -127,12 +137,17 @@ router.post("/parse-and-create-patient", async (req: Request, res: Response) => 
       });
     }
 
-    // Check if patient already exists (by name and DOB) - simplified check by MRN for now
-    // In production, you'd want a more sophisticated duplicate detection
+    // Check if patient already exists (by MRN and healthSystemId)
+    // Ensuring tenant isolation - patients can have the same MRN across different health systems
     const existingPatients = await db
       .select()
       .from(patients)
-      .where(eq(patients.mrn, patientData.mrn))
+      .where(
+        and(
+          eq(patients.mrn, patientDataWithHealthSystem.mrn),
+          eq(patients.healthSystemId, healthSystemId)
+        )
+      )
       .limit(1);
 
     if (existingPatients.length > 0) {
@@ -143,10 +158,10 @@ router.post("/parse-and-create-patient", async (req: Request, res: Response) => 
       });
     }
 
-    // Create the patient
+    // Create the patient with healthSystemId
     const [newPatient] = await db
       .insert(patients)
-      .values(patientData)
+      .values(patientDataWithHealthSystem)
       .returning();
 
     console.log("✅ [PatientParser] Successfully created patient:", newPatient.id);

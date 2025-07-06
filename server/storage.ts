@@ -40,13 +40,13 @@ export interface IStorage {
   
   // User preferences management (note: now handled via getUserNotePreferences in auth.ts)
   
-  // Patient management
-  getPatient(id: number): Promise<Patient | undefined>;
-  getPatientByMrn(mrn: string): Promise<Patient | undefined>;
+  // Patient management - now with tenant isolation
+  getPatient(id: number, healthSystemId: number): Promise<Patient | undefined>;
+  getPatientByMrn(mrn: string, healthSystemId: number): Promise<Patient | undefined>;
   createPatient(patient: InsertPatient): Promise<Patient>;
-  getAllPatients(): Promise<Patient[]>;
-  searchPatients(query: string): Promise<Patient[]>;
-  deletePatient(id: number): Promise<void>;
+  getAllPatients(healthSystemId: number): Promise<Patient[]>;
+  searchPatients(query: string, healthSystemId: number): Promise<Patient[]>;
+  deletePatient(id: number, healthSystemId: number): Promise<void>;
   
   // Encounter management
   getEncounter(id: number): Promise<Encounter | undefined>;
@@ -249,18 +249,30 @@ export class DatabaseStorage implements IStorage {
 
   // User preferences management removed - now handled via getUserNotePreferences in auth.ts
 
-  // Patient management
-  async getPatient(id: number): Promise<Patient | undefined> {
-    const [patient] = await db.select().from(patients).where(eq(patients.id, id));
+  // Patient management - with tenant isolation
+  async getPatient(id: number, healthSystemId: number): Promise<Patient | undefined> {
+    const [patient] = await db.select().from(patients)
+      .where(and(
+        eq(patients.id, id),
+        eq(patients.healthSystemId, healthSystemId)
+      ));
     return patient || undefined;
   }
 
-  async getPatientByMrn(mrn: string): Promise<Patient | undefined> {
-    const [patient] = await db.select().from(patients).where(eq(patients.mrn, mrn));
+  async getPatientByMrn(mrn: string, healthSystemId: number): Promise<Patient | undefined> {
+    const [patient] = await db.select().from(patients)
+      .where(and(
+        eq(patients.mrn, mrn),
+        eq(patients.healthSystemId, healthSystemId)
+      ));
     return patient || undefined;
   }
 
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
+    // healthSystemId must be included in insertPatient
+    if (!insertPatient.healthSystemId) {
+      throw new Error("healthSystemId is required for patient creation");
+    }
     const [patient] = await db
       .insert(patients)
       .values(insertPatient)
@@ -268,22 +280,31 @@ export class DatabaseStorage implements IStorage {
     return patient;
   }
 
-  async getAllPatients(): Promise<Patient[]> {
-    return await db.select().from(patients).orderBy(desc(patients.createdAt));
-  }
-
-  async searchPatients(query: string): Promise<Patient[]> {
+  async getAllPatients(healthSystemId: number): Promise<Patient[]> {
     return await db.select().from(patients)
-      .where(
-        // Simple text search - in production you'd use full-text search
-        // This is a basic implementation for demonstration
-        eq(patients.mrn, query)
-      )
+      .where(eq(patients.healthSystemId, healthSystemId))
       .orderBy(desc(patients.createdAt));
   }
 
-  async deletePatient(id: number): Promise<void> {
-    console.log(`🗑️ [Storage] Starting cascading deletion for patient ${id}`);
+  async searchPatients(query: string, healthSystemId: number): Promise<Patient[]> {
+    return await db.select().from(patients)
+      .where(and(
+        eq(patients.healthSystemId, healthSystemId),
+        // Simple text search - in production you'd use full-text search
+        // This is a basic implementation for demonstration
+        eq(patients.mrn, query)
+      ))
+      .orderBy(desc(patients.createdAt));
+  }
+
+  async deletePatient(id: number, healthSystemId: number): Promise<void> {
+    console.log(`🗑️ [Storage] Starting cascading deletion for patient ${id} in health system ${healthSystemId}`);
+    
+    // First verify the patient belongs to this health system
+    const patient = await this.getPatient(id, healthSystemId);
+    if (!patient) {
+      throw new Error(`Patient ${id} not found in health system ${healthSystemId}`);
+    }
     
     try {
       // Delete in proper order to handle foreign key constraints

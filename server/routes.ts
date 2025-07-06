@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { tenantIsolation } from "./tenant-isolation";
 import { APIResponseHandler } from "./api-response-handler.js";
 import patientOrderPreferencesRoutes from "./patient-order-preferences-routes.js";
 import {
@@ -801,37 +802,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Patient routes
-  app.get("/api/patients", async (req, res) => {
+  // Patient routes - with tenant isolation
+  app.get("/api/patients", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const patients = await storage.getAllPatients();
+      const healthSystemId = req.userHealthSystemId!;
+      const patients = await storage.getAllPatients(healthSystemId);
       res.json(patients);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
 
-  app.get("/api/patients/search", async (req, res) => {
+  app.get("/api/patients/search", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const { q } = req.query;
       if (!q) return res.json([]);
 
-      const patients = await storage.searchPatients(q as string);
+      const healthSystemId = req.userHealthSystemId!;
+      const patients = await storage.searchPatients(q as string, healthSystemId);
       res.json(patients);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
 
-  app.get("/api/patients/:id", async (req, res) => {
+  app.get("/api/patients/:id", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
-      const patient = await storage.getPatient(parseInt(req.params.id));
+      const healthSystemId = req.userHealthSystemId!;
+      const patient = await storage.getPatient(parseInt(req.params.id), healthSystemId);
       if (!patient)
         return res.status(404).json({ message: "Patient not found" });
 
@@ -841,7 +845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/patients", async (req, res) => {
+  app.post("/api/patients", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -882,14 +886,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
 
-      const patient = await storage.createPatient(validatedData);
+      // Add the healthSystemId from the user's context
+      const healthSystemId = req.userHealthSystemId!;
+      const patientData = {
+        ...validatedData,
+        healthSystemId
+      };
+
+      const patient = await storage.createPatient(patientData);
       res.status(201).json(patient);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
 
-  app.delete("/api/patients/:id", async (req, res) => {
+  app.delete("/api/patients/:id", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -898,13 +909,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid patient ID" });
       }
 
+      const healthSystemId = req.userHealthSystemId!;
+      
       // Check if patient exists before deletion
-      const patient = await storage.getPatient(patientId);
+      const patient = await storage.getPatient(patientId, healthSystemId);
       if (!patient) {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      await storage.deletePatient(patientId);
+      await storage.deletePatient(patientId, healthSystemId);
       res.status(200).json({ message: "Patient deleted successfully" });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1258,7 +1271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // REST API Live AI Suggestions - Cost-optimized alternative to WebSocket
-  app.post("/api/voice/live-suggestions", async (req, res) => {
+  app.post("/api/voice/live-suggestions", tenantIsolation, async (req, res) => {
     try {
       const { patientId, userRole, transcription } = req.body;
 
@@ -1269,7 +1282,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const patientIdNum = parseInt(patientId);
-      const patient = await storage.getPatient(patientIdNum);
+      const healthSystemId = req.userHealthSystemId!;
+      const patient = await storage.getPatient(patientIdNum, healthSystemId);
       if (!patient) {
         return res.status(404).json({ error: "Patient not found" });
       }
@@ -1593,6 +1607,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
   // This route uses legacy realtime medical context service - Enhanced Realtime Service is primary
   app.post(
     "/api/voice/transcribe-enhanced",
+    tenantIsolation,
     upload.single("audio"),
     async (req, res) => {
       try {
@@ -1606,7 +1621,8 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         const userRoleStr = userRole || "provider";
         const isLive = isLiveChunk === "true";
 
-        const patient = await storage.getPatient(patientIdNum);
+        const healthSystemId = req.userHealthSystemId!;
+        const patient = await storage.getPatient(patientIdNum, healthSystemId);
         if (!patient) {
           return res.status(404).json({ error: "Patient not found" });
         }
@@ -1675,10 +1691,11 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
 
   // ⚠️ LEGACY ROUTE - Get assistant configuration for a patient (DEPRECATED)
   // This route uses the legacy Assistants API - current AI suggestions use Enhanced Realtime Service
-  app.get("/api/patients/:id/assistant", async (req, res) => {
+  app.get("/api/patients/:id/assistant", tenantIsolation, async (req, res) => {
     try {
       const patientId = parseInt(req.params.id);
-      const patient = await storage.getPatient(patientId);
+      const healthSystemId = req.userHealthSystemId!;
+      const patient = await storage.getPatient(patientId, healthSystemId);
 
       if (!patient) {
         return res.status(404).json({ message: "Patient not found" });
@@ -1729,10 +1746,11 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
 
   // ⚠️ LEGACY ROUTE - Get assistant thread messages for a patient (DEPRECATED)
   // This route uses the legacy Assistants API - current AI suggestions use Enhanced Realtime Service
-  app.get("/api/patients/:id/assistant/messages", async (req, res) => {
+  app.get("/api/patients/:id/assistant/messages", tenantIsolation, async (req, res) => {
     try {
       const patientId = parseInt(req.params.id);
-      const patient = await storage.getPatient(patientId);
+      const healthSystemId = req.userHealthSystemId!;
+      const patient = await storage.getPatient(patientId, healthSystemId);
 
       if (!patient) {
         return res.status(404).json({ message: "Patient not found" });
@@ -2597,15 +2615,17 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
   // Get billing summary for encounter (for EMR billing integration)
   app.get(
     "/api/patients/:id/encounters/:encounterId/billing-summary",
+    tenantIsolation,
     async (req, res) => {
       try {
         if (!req.isAuthenticated()) return res.sendStatus(401);
 
         const patientId = parseInt(req.params.id);
         const encounterId = parseInt(req.params.encounterId);
+        const healthSystemId = req.userHealthSystemId!;
 
         const encounter = await storage.getEncounter(encounterId);
-        const patient = await storage.getPatient(patientId);
+        const patient = await storage.getPatient(patientId, healthSystemId);
         const diagnoses = await storage.getPatientDiagnoses(patientId);
 
         if (!encounter || !patient) {
