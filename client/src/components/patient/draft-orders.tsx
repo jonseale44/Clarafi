@@ -1370,6 +1370,7 @@ function NewOrderForm({ onSubmit, isSubmitting, isExpanded = false }: {
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [aiParsedData, setAiParsedData] = useState<any>(null);
   const [typingTimer, setTypingTimer] = useState<NodeJS.Timeout | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
 
   // Real-time parsing effect with debounce
   useEffect(() => {
@@ -1399,16 +1400,63 @@ function NewOrderForm({ onSubmit, isSubmitting, isExpanded = false }: {
     };
   }, [aiText]); // Only depend on aiText to avoid infinite loops
 
+  // Helper functions to filter and organize parsed orders
+  const getOrdersByType = (type: string) => {
+    if (!aiParsedData || !aiParsedData.orders) return [];
+    return aiParsedData.orders.filter((order: any) => order.orderType === type);
+  };
+
+  const getSortedAndGroupedOrders = () => {
+    if (!aiParsedData || !aiParsedData.orders) return [];
+    
+    const orderTypeOrder = ['lab', 'imaging', 'medication', 'referral'];
+    
+    return aiParsedData.orders
+      .slice()
+      .sort((a: any, b: any) => {
+        const aTypeIndex = orderTypeOrder.indexOf(a.orderType);
+        const bTypeIndex = orderTypeOrder.indexOf(b.orderType);
+        
+        if (aTypeIndex !== bTypeIndex) {
+          return aTypeIndex - bTypeIndex;
+        }
+        
+        return 0;
+      });
+  };
+
+  const getOrderIcon = (orderType: string) => {
+    switch (orderType) {
+      case "medication": return Pill;
+      case "lab": return FlaskConical;
+      case "imaging": return Scan;
+      case "referral": return UserCheck;
+      default: return null;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (aiParsedData && aiParsedData.orders) {
-      // Submit multiple orders from AI parsing
-      console.log("[NewOrderForm] Submitting multiple AI-parsed orders:", aiParsedData.orders);
-      aiParsedData.orders.forEach((order: any) => {
+      // Submit all orders or filtered by type
+      const ordersToSubmit = activeTab === 'all' 
+        ? aiParsedData.orders 
+        : getOrdersByType(activeTab);
+      
+      console.log(`[NewOrderForm] Submitting ${ordersToSubmit.length} ${activeTab} orders`);
+      ordersToSubmit.forEach((order: any) => {
         onSubmit(order);
       });
     }
+  };
+
+  const handleSubmitByType = (orderType: string) => {
+    const ordersToSubmit = getOrdersByType(orderType);
+    console.log(`[NewOrderForm] Submitting ${ordersToSubmit.length} ${orderType} orders`);
+    ordersToSubmit.forEach((order: any) => {
+      onSubmit(order);
+    });
   };
 
   const processAIText = async () => {
@@ -1511,161 +1559,149 @@ function NewOrderForm({ onSubmit, isSubmitting, isExpanded = false }: {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="border rounded-md p-3 bg-navy-blue-50">
-          <Label className="font-semibold text-navy-blue-800 mb-2 block">
-            Quick Order Entry (AI-Powered)
-          </Label>
-          <p className="text-xs text-navy-blue-600 mb-3">
-            Type orders in natural language. AI will automatically parse and categorize them as you type.
-          </p>
-          <div className="space-y-3">
-            <Textarea
-              className={`bg-white ${isExpanded ? "h-40" : "h-24"}`}
-              placeholder="Example: Lisinopril 10mg daily, HCTZ 25mg daily, Aspirin 81mg, CMP, CBC with diff, Chest X-ray PA and lateral, Cardiology consultation for chest pain"
-              value={aiText}
-              onChange={(e) => setAiText(e.target.value)}
-            />
-            {isProcessingAI && (
-              <div className="flex items-center justify-center text-sm text-navy-blue-600">
-                <div className="animate-pulse">AI is parsing your orders...</div>
-              </div>
-            )}
-            {isExpanded && (
-              <div className="mt-2 p-3 bg-gray-50 rounded-md">
-                <p className="text-xs font-semibold text-gray-700 mb-2">Quick Reference:</p>
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                  <div>
-                    <strong className="text-navy-blue-700">Medications:</strong>
-                    <ul className="ml-4 mt-1 space-y-0.5">
-                      <li>• metop succ max dose → Metoprolol succinate 200mg daily</li>
-                      <li>• HFpEF triple therapy → Entresto, Jardiance, Aldactone</li>
-                      <li>• zpak for sinusitis → Azithromycin Z-pack</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <strong className="text-navy-blue-700">Labs:</strong>
-                    <ul className="ml-4 mt-1 space-y-0.5">
-                      <li>• DM2 labs → A1c, glucose, lipid panel</li>
-                      <li>• thyroid panel → TSH, Free T4, Free T3</li>
-                      <li>• annual HIV screen → HIV 1/2 antigen/antibody</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <strong className="text-navy-blue-700">Imaging:</strong>
-                    <ul className="ml-4 mt-1 space-y-0.5">
-                      <li>• CXR PA/lat → Chest X-ray PA and lateral</li>
-                      <li>• abd CT wo contrast → Abdominal CT without contrast</li>
-                      <li>• knee MRI for meniscus → Knee MRI with/without contrast</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <strong className="text-navy-blue-700">Referrals:</strong>
-                    <ul className="ml-4 mt-1 space-y-0.5">
-                      <li>• rheum eval → Rheumatology referral</li>
-                      <li>• ENDO for TSH {">"} 10 → Endocrinology referral</li>
-                      <li>• cards for new AFib → Cardiology consultation</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {aiParsedData && aiParsedData.orders && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-              <Label className="font-semibold text-green-800 mb-2 block">
-                AI Parsed Orders ({aiParsedData.totalCount}):
-              </Label>
-              <div className={`space-y-3 overflow-y-auto ${isExpanded ? "max-h-96" : "max-h-40"}`}>
-                {aiParsedData.orders.map((order: any, index: number) => (
-                  <div key={index} className={`p-2 bg-white rounded border ${isExpanded ? "p-3" : "p-2"} text-sm`}>
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-navy-blue-800 mb-1">
-                        {order.orderType === 'medication' && (
-                          <div className="flex items-center gap-2">
-                            <Pill className="h-4 w-4" />
-                            <span>Medication</span>
-                          </div>
-                        )}
-                        {order.orderType === 'lab' && (
-                          <div className="flex items-center gap-2">
-                            <FlaskConical className="h-4 w-4" />
-                            <span>Lab Test</span>
-                          </div>
-                        )}
-                        {order.orderType === 'imaging' && (
-                          <div className="flex items-center gap-2">
-                            <Scan className="h-4 w-4" />
-                            <span>Imaging</span>
-                          </div>
-                        )}
-                        {order.orderType === 'referral' && (
-                          <div className="flex items-center gap-2">
-                            <UserCheck className="h-4 w-4" />
-                            <span>Referral</span>
-                          </div>
-                        )}
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {order.priority || 'routine'}
-                      </Badge>
-                    </div>
-                    {order.orderType === 'medication' && (
-                      <div className={`space-y-1 mt-2 ${isExpanded ? "grid grid-cols-2 gap-2" : ""}`}>
-                        <div><strong>Name:</strong> {order.medicationName}</div>
-                        <div><strong>Dosage:</strong> {order.dosage}</div>
-                        {order.sig && <div className={isExpanded ? "col-span-2" : ""}><strong>Instructions:</strong> {order.sig}</div>}
-                        <div><strong>Quantity:</strong> {order.quantity}</div>
-                        <div><strong>Refills:</strong> {order.refills}</div>
-                        {isExpanded && order.form && <div><strong>Form:</strong> {order.form}</div>}
-                        {isExpanded && order.routeOfAdministration && <div><strong>Route:</strong> {order.routeOfAdministration}</div>}
-                        {isExpanded && order.daysSupply && <div><strong>Days Supply:</strong> {order.daysSupply}</div>}
-                      </div>
-                    )}
-                    {order.orderType === 'lab' && (
-                      <div className="space-y-1 mt-2">
-                        <div><strong>Test:</strong> {order.testName}</div>
-                        {order.labName && <div><strong>Lab Panel:</strong> {order.labName}</div>}
-                        {order.specimenType && <div><strong>Specimen:</strong> {order.specimenType}</div>}
-                        {order.fastingRequired && <div className="text-orange-600"><strong>Fasting:</strong> Required</div>}
-                        {isExpanded && order.priority && order.priority !== 'routine' && (
-                          <div className="text-red-600"><strong>Priority:</strong> {order.priority.toUpperCase()}</div>
-                        )}
-                      </div>
-                    )}
-                    {order.orderType === 'imaging' && (
-                      <div className="space-y-1 mt-2">
-                        <div><strong>Study:</strong> {order.studyType}</div>
-                        <div><strong>Region:</strong> {order.region}</div>
-                        {order.laterality && <div><strong>Laterality:</strong> {order.laterality}</div>}
-                        {order.contrastNeeded && <div className="text-purple-600"><strong>Contrast:</strong> Required</div>}
-                        {isExpanded && order.urgency && order.urgency !== 'routine' && (
-                          <div className="text-red-600"><strong>Urgency:</strong> {order.urgency.toUpperCase()}</div>
-                        )}
-                      </div>
-                    )}
-                    {order.orderType === 'referral' && (
-                      <div className="space-y-1 mt-2">
-                        <div><strong>Specialty:</strong> {order.specialtyType}</div>
-                        {order.providerName && <div><strong>Provider:</strong> {order.providerName}</div>}
-                        {isExpanded && order.urgency && (
-                          <div className={order.urgency === 'stat' ? "text-red-600" : ""}><strong>Urgency:</strong> {order.urgency}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+      <div>
+        <Label className="font-semibold text-navy-blue-800 mb-2 block">
+          Quick Order Entry (AI-Powered)
+        </Label>
+        <p className="text-xs text-navy-blue-600 mb-3">
+          Type orders in natural language. AI will automatically parse and categorize them as you type.
+        </p>
+        <div className="space-y-3">
+          <Textarea
+            className={`bg-white ${isExpanded ? "h-40" : "h-24"}`}
+            placeholder="Example: Lisinopril 10mg daily, HCTZ 25mg daily, Aspirin 81mg, CMP, CBC with diff, Chest X-ray PA and lateral, Cardiology consultation for chest pain"
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+          />
+          {isProcessingAI && (
+            <div className="flex items-center justify-center text-sm text-navy-blue-600">
+              <div className="animate-pulse">AI is parsing your orders...</div>
             </div>
           )}
         </div>
+      </div>
 
-      <Button type="submit" disabled={isSubmitting || !aiParsedData} className="w-full">
-        {isSubmitting ? "Creating..." : 
-         aiParsedData && aiParsedData.orders ? 
-         `Create ${aiParsedData.totalCount} Orders` : 
-         "Create Order"}
-      </Button>
+      {aiParsedData && aiParsedData.orders && aiParsedData.orders.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Parsed Orders</h3>
+            <span className="text-sm text-gray-600">
+              {aiParsedData.totalCount} total orders
+            </span>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="all">
+                All ({aiParsedData.totalCount})
+              </TabsTrigger>
+              <TabsTrigger value="medication">
+                Meds ({getOrdersByType('medication').length})
+              </TabsTrigger>
+              <TabsTrigger value="lab">
+                Labs ({getOrdersByType('lab').length})
+              </TabsTrigger>
+              <TabsTrigger value="imaging">
+                Imaging ({getOrdersByType('imaging').length})
+              </TabsTrigger>
+              <TabsTrigger value="referral">
+                Referrals ({getOrdersByType('referral').length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="mt-4">
+              <div className="space-y-3">
+                {getSortedAndGroupedOrders().map((order: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <OrderContent order={order} />
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="medication" className="mt-4">
+              <div className="space-y-3">
+                {getOrdersByType('medication').length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No medication orders</p>
+                ) : (
+                  getOrdersByType('medication').map((order: any, index: number) => (
+                    <Card key={index} className="p-4">
+                      <OrderContent order={order} />
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="lab" className="mt-4">
+              <div className="space-y-3">
+                {getOrdersByType('lab').length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No lab orders</p>
+                ) : (
+                  getOrdersByType('lab').map((order: any, index: number) => (
+                    <Card key={index} className="p-4">
+                      <OrderContent order={order} />
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="imaging" className="mt-4">
+              <div className="space-y-3">
+                {getOrdersByType('imaging').length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No imaging orders</p>
+                ) : (
+                  getOrdersByType('imaging').map((order: any, index: number) => (
+                    <Card key={index} className="p-4">
+                      <OrderContent order={order} />
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="referral" className="mt-4">
+              <div className="space-y-3">
+                {getOrdersByType('referral').length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No referral orders</p>
+                ) : (
+                  getOrdersByType('referral').map((order: any, index: number) => (
+                    <Card key={index} className="p-4">
+                      <OrderContent order={order} />
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex items-center gap-2 pt-2">
+            <Button
+              type="submit"
+              className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
+              disabled={isSubmitting}
+            >
+              Create {activeTab === 'all' ? 'All' : activeTab === 'medication' ? 'Medication' : activeTab === 'lab' ? 'Lab' : activeTab === 'imaging' ? 'Imaging' : 'Referral'} Orders ({activeTab === 'all' ? aiParsedData.totalCount : getOrdersByType(activeTab).length})
+            </Button>
+            {activeTab !== 'all' && getOrdersByType(activeTab).length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSubmitByType(activeTab)}
+              >
+                Create Only {activeTab === 'medication' ? 'Medications' : activeTab === 'lab' ? 'Labs' : activeTab === 'imaging' ? 'Imaging' : 'Referrals'}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(!aiParsedData || !aiParsedData.orders || aiParsedData.orders.length === 0) && aiText && !isProcessingAI && (
+        <div className="text-center py-4">
+          <p className="text-gray-500">No orders parsed yet. Keep typing...</p>
+        </div>
+      )}
     </form>
   );
 }
