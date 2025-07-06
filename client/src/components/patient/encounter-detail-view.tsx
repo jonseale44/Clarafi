@@ -4151,23 +4151,16 @@ Please provide medical suggestions based on this complete conversation context.`
 
           {/* Voice Recording Section */}
           <Card className="p-6">
-            <Collapsible 
-              open={isTranscriptionExpanded} 
-              onOpenChange={setIsTranscriptionExpanded}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <CollapsibleTrigger className="flex items-center space-x-2 hover:text-gray-700 cursor-pointer group">
-                  <ChevronRight className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isTranscriptionExpanded ? 'rotate-90' : ''}`} />
-                  <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
-                </CollapsibleTrigger>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-green-600">● Connected</span>
-                </div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-green-600">● Connected</span>
               </div>
+            </div>
 
-              <CollapsibleContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
+            {/* Recording Controls - Always Visible */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -4237,17 +4230,28 @@ Please provide medical suggestions based on this complete conversation context.`
                     Restart Transcription
                   </Button>
                 )}
-                  </div>
+              </div>
+            </div>
 
-                  {/* Transcription Content */}
-                  <div className="space-y-2">
-                    <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
-                      <div className="whitespace-pre-line text-sm leading-relaxed">
-                        {transcription ||
-                          (isRecording
-                            ? "Listening..."
-                            : "Transcription will appear here during recording")}
-                      </div>
+            {/* Transcription Content - Collapsible */}
+            <Collapsible 
+              open={isTranscriptionExpanded} 
+              onOpenChange={setIsTranscriptionExpanded}
+              className="mt-4"
+            >
+              <CollapsibleTrigger className="flex items-center space-x-2 hover:text-gray-700 cursor-pointer group mb-2">
+                <ChevronRight className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isTranscriptionExpanded ? 'rotate-90' : ''}`} />
+                <span className="text-sm font-medium text-gray-700">Transcription Content</span>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <div className="space-y-2">
+                  <div className="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
+                    <div className="whitespace-pre-line text-sm leading-relaxed">
+                      {transcription ||
+                        (isRecording
+                          ? "Listening..."
+                          : "Transcription will appear here during recording")}
                     </div>
                   </div>
                 </div>
