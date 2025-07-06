@@ -5,7 +5,7 @@ export interface ChartSection {
   label: string;
   icon?: LucideIcon;
   contexts: ('patient-chart' | 'provider-encounter' | 'nurse-encounter')[];
-  roles?: ('admin' | 'provider' | 'nurse')[];
+  roles?: ('admin' | 'provider' | 'nurse' | 'ma')[];
   allowExpanded?: boolean;
   compactMode?: boolean;
   expandedWidth?: string;
@@ -36,7 +36,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Patient Encounters",
     icon: Star,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 1,
     allowExpanded: true,
     expandedWidth: "w-96"
@@ -46,7 +46,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Medical Problems",
     icon: AlertCircle,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 2,
     allowExpanded: true,
     expandedWidth: "w-[500px]"
@@ -56,7 +56,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Medication",
     icon: TestTube,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 3,
     allowExpanded: true,
     expandedWidth: "w-[600px]",
@@ -67,7 +67,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Allergies",
     icon: AlertCircle,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 4,
     allowExpanded: true,
     expandedWidth: "w-96"
@@ -77,7 +77,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Labs",
     icon: TestTube,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 5,
     allowExpanded: true,
     expandedWidth: "w-[700px]"
@@ -87,7 +87,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Vitals",
     icon: Activity,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 6,
     allowExpanded: true,
     expandedWidth: "w-[600px]"
@@ -97,7 +97,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Imaging",
     icon: Camera,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 7,
     allowExpanded: true,
     expandedWidth: "w-[500px]"
@@ -107,7 +107,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Patient Documents",
     icon: FileText,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 8,
     allowExpanded: true,
     expandedWidth: "w-[800px]"
@@ -117,7 +117,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Family History",
     icon: Users,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 9,
     allowExpanded: true,
     expandedWidth: "w-96"
@@ -127,7 +127,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Social History",
     icon: Users,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 10,
     allowExpanded: true,
     expandedWidth: "w-96"
@@ -137,7 +137,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Surgical History",
     icon: History,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 11,
     allowExpanded: true,
     expandedWidth: "w-[500px]"
@@ -147,7 +147,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Attachments",
     icon: Paperclip,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 12,
     allowExpanded: true,
     expandedWidth: "w-[600px]"
@@ -157,7 +157,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Appointments",
     icon: Calendar,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
     priority: 13,
     allowExpanded: true,
     expandedWidth: "w-96"
@@ -168,7 +168,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Nursing Assessments",
     icon: Stethoscope,
     contexts: ['nurse-encounter'],
-    roles: ['admin', 'nurse'],
+    roles: ['admin', 'nurse', 'ma'],
     priority: 15,
     allowExpanded: true,
     expandedWidth: "w-[500px]"
@@ -178,7 +178,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     label: "Care Plans",
     icon: Heart,
     contexts: ['nurse-encounter'],
-    roles: ['admin', 'nurse'],
+    roles: ['admin', 'nurse', 'ma'],
     priority: 16,
     allowExpanded: true,
     expandedWidth: "w-[500px]"
