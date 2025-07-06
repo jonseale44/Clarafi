@@ -9,7 +9,9 @@ import { User as SelectUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends SelectUser {
+      healthSystemName?: string;
+    }
   }
 }
 
@@ -180,6 +182,41 @@ export function setupAuth(app: Express) {
     } catch (error: any) {
       console.error("Error updating user preferences:", error);
       res.status(500).json({ error: "Failed to update user preferences" });
+    }
+  });
+
+  // User profile update endpoint
+  app.put("/api/user/profile", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      const { firstName, lastName, email, credentials, npi } = req.body;
+      
+      // Validate email if it's being changed
+      if (email && email !== req.user.email) {
+        const existingEmailUser = await storage.getUserByEmail(email);
+        if (existingEmailUser && existingEmailUser.id !== userId) {
+          return res.status(400).json({ 
+            message: "Email address is already in use",
+            field: "email"
+          });
+        }
+      }
+      
+      // Update user profile
+      const updatedUser = await storage.updateUserProfile(userId, {
+        firstName,
+        lastName,
+        email,
+        credentials,
+        npi: npi && npi.trim() ? npi.trim() : null
+      });
+      
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ error: "Failed to update profile" });
     }
   });
 }

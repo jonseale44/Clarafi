@@ -129,9 +129,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User management
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+  async getUser(id: number): Promise<User & { healthSystemName?: string } | undefined> {
+    const result = await db
+      .select()
+      .from(users)
+      .leftJoin(healthSystems, eq(users.healthSystemId, healthSystems.id))
+      .where(eq(users.id, id));
+    
+    if (!result || result.length === 0) return undefined;
+    
+    const { users: user, health_systems: healthSystem } = result[0];
+    
+    return {
+      ...user,
+      healthSystemName: healthSystem?.name
+    };
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -142,6 +154,41 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
+  }
+
+  async updateUserProfile(
+    userId: number,
+    updates: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      credentials?: string;
+      npi?: string | null;
+    }
+  ): Promise<User & { healthSystemName?: string }> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...(updates.firstName !== undefined && { firstName: updates.firstName }),
+        ...(updates.lastName !== undefined && { lastName: updates.lastName }),
+        ...(updates.email !== undefined && { email: updates.email }),
+        ...(updates.credentials !== undefined && { credentials: updates.credentials }),
+        ...(updates.npi !== undefined && { npi: updates.npi }),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!updatedUser) {
+      throw new Error(`User with id ${userId} not found`);
+    }
+    
+    // Fetch the full user data with health system name
+    const fullUser = await this.getUser(userId);
+    if (!fullUser) {
+      throw new Error(`Could not fetch updated user with id ${userId}`);
+    }
+    
+    return fullUser;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {

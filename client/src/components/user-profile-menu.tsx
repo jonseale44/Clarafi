@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { EditProfileDialog } from "./edit-profile-dialog";
 
 interface UserProfileMenuProps {
   className?: string;
@@ -30,6 +31,7 @@ interface UserProfileMenuProps {
 export function UserProfileMenu({ className }: UserProfileMenuProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   // Fetch current user data
   const { data: user, isLoading } = useQuery<UserType>({
@@ -100,82 +102,105 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          className={`flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 ${className}`}
-        >
-          <Avatar className="w-8 h-8">
-            <AvatarFallback className="text-xs bg-primary text-white">
-              {user?.firstName?.[0] || 'U'}{user?.lastName?.[0] || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex flex-col items-start">
-            <span className="text-sm font-medium text-gray-900">
-              {user?.firstName} {user?.lastName}
-            </span>
-            <div className="flex items-center space-x-1">
-              <Badge 
-                variant="outline" 
-                className={`text-xs px-1.5 py-0.5 h-5 ${getRoleColor(user?.role || '')}`}
-              >
-                {getRoleIcon(user?.role || '')}
-                <span className="ml-1 capitalize">{user?.role}</span>
-              </Badge>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            className={`flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 ${className}`}
+          >
+            <Avatar className="w-8 h-8">
+              <AvatarFallback className="text-xs bg-primary text-white">
+                {user?.firstName?.[0] || 'U'}{user?.lastName?.[0] || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium text-gray-900">
+                {user?.firstName} {user?.lastName}
+              </span>
+              <div className="flex items-center space-x-1">
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs px-1.5 py-0.5 h-5 ${getRoleColor(user?.role || '')}`}
+                >
+                  {getRoleIcon(user?.role || '')}
+                  <span className="ml-1 capitalize">{user?.role}</span>
+                </Badge>
+              </div>
             </div>
-          </div>
+            
+            <ChevronDown className="w-4 h-4 text-gray-500" />
+          </Button>
+        </DropdownMenuTrigger>
+        
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel>
+            <div className="flex flex-col space-y-1">
+              <div className="font-medium">
+                {user?.firstName} {user?.lastName}
+              </div>
+              <div className="text-xs text-gray-500 font-normal">
+                {user?.email}
+              </div>
+              {user?.credentials && (
+                <div className="text-xs text-gray-500 font-normal">
+                  {user.credentials}
+                </div>
+              )}
+              {user?.npi && (
+                <div className="text-xs text-gray-500 font-normal">
+                  NPI: {user.npi}
+                </div>
+              )}
+            </div>
+          </DropdownMenuLabel>
           
-          <ChevronDown className="w-4 h-4 text-gray-500" />
-        </Button>
-      </DropdownMenuTrigger>
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={() => setEditProfileOpen(true)}
+          >
+            <Edit3 className="w-4 h-4 mr-2" />
+            Edit Profile
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem className="cursor-pointer">
+            <Settings className="w-4 h-4 mr-2" />
+            Account Settings
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem 
+            className="cursor-pointer text-red-600 focus:text-red-600"
+            onClick={handleLogout}
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            {logoutMutation.isPending ? "Signing out..." : "Sign Out"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>
-          <div className="flex flex-col space-y-1">
-            <div className="font-medium">
-              {user?.firstName} {user?.lastName}
-            </div>
-            <div className="text-xs text-gray-500 font-normal">
-              {user?.email}
-            </div>
-            {user?.credentials && (
-              <div className="text-xs text-gray-500 font-normal">
-                {user.credentials}
-              </div>
-            )}
-            {user?.npi && (
-              <div className="text-xs text-gray-500 font-normal">
-                NPI: {user.npi}
-              </div>
-            )}
-          </div>
-        </DropdownMenuLabel>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem className="cursor-pointer">
-          <Edit3 className="w-4 h-4 mr-2" />
-          Edit Profile
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem className="cursor-pointer">
-          <Settings className="w-4 h-4 mr-2" />
-          Account Settings
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem 
-          className="cursor-pointer text-red-600 focus:text-red-600"
-          onClick={handleLogout}
-          disabled={logoutMutation.isPending}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          {logoutMutation.isPending ? "Signing out..." : "Sign Out"}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      {user && (
+        <EditProfileDialog
+          open={editProfileOpen}
+          onOpenChange={setEditProfileOpen}
+          user={{
+            id: user.id,
+            username: user.username,
+            email: user.email || "",
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            role: user.role,
+            credentials: user.credentials,
+            npi: user.npi,
+            healthSystemName: user.healthSystemName
+          }}
+        />
+      )}
+    </>
   );
 }
