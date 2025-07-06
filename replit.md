@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Draft Orders Panel Tabbed Interface Implementation COMPLETED (February 14, 2025)
+- **COMPLETE UI REDESIGN**: Successfully redesigned "add new order" panel to match the main orders panel with tabbed interface
+- **TABBED NAVIGATION**: Implemented All, Meds, Labs, Imaging, Referrals tabs showing filtered views of AI-parsed orders
+- **MAINTAINED AI FUNCTIONALITY**: Kept the AI-powered natural language input feature unchanged with real-time parsing
+- **HELPER FUNCTIONS**: Added getOrdersByType(), getOrderCountsByType(), and getSortedOrdersByType() for organizing parsed orders
+- **FILTERED CATEGORY VIEWS**: Each tab shows only relevant orders with appropriate empty state messages
+- **DUAL SUBMISSION OPTIONS**: Support for both bulk submission (all orders) and individual category submission
+- **LAB ORDER ERROR FIX**: Fixed foreign key constraint error by creating default external lab entry (ID: 1) in database
+- **PRODUCTION READY**: Draft orders interface now provides consistent user experience with main orders section
+
 ### Imaging Section UI/UX Redesign COMPLETED (July 5, 2025)
 - **COMPLETE UI OVERHAUL**: Successfully redesigned imaging section to perfectly match family history's clean layout pattern
 - **MINIMAL INTERFACE**: Removed clinical summary, findings, and impression from main view - now only displays in visit history within edit dialog
