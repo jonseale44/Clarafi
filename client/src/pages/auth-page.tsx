@@ -23,9 +23,24 @@ const loginSchema = z.object({
 
 const registerSchema = insertUserSchema.extend({
   confirmPassword: z.string(),
+  registrationType: z.enum(["individual", "join_existing"]).default("join_existing"),
+  practiceName: z.string().optional(),
+  practiceAddress: z.string().optional(),
+  practiceCity: z.string().optional(),
+  practiceState: z.string().optional(),
+  practiceZipCode: z.string().optional(),
+  practicePhone: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  if (data.registrationType === "individual" && data.role === "provider") {
+    return !!(data.practiceName && data.practiceAddress && data.practiceCity && data.practiceState && data.practiceZipCode);
+  }
+  return true;
+}, {
+  message: "Practice information is required for individual providers",
+  path: ["practiceName"],
 });
 
 type LoginData = z.infer<typeof loginSchema>;
@@ -65,6 +80,13 @@ export default function AuthPage() {
       credentials: "",
       specialties: [],
       licenseNumber: "",
+      registrationType: "join_existing",
+      practiceName: "",
+      practiceAddress: "",
+      practiceCity: "",
+      practiceState: "",
+      practiceZipCode: "",
+      practicePhone: "",
     },
   });
 
@@ -98,7 +120,18 @@ export default function AuthPage() {
 
   const onRegister = (data: RegisterData) => {
     const { confirmPassword, ...registerData } = data;
-    registerMutation.mutate(registerData);
+    
+    // Pass all the data including registration type and practice info
+    registerMutation.mutate({
+      ...registerData,
+      registrationType: data.registrationType,
+      practiceName: data.practiceName,
+      practiceAddress: data.practiceAddress,
+      practiceCity: data.practiceCity,
+      practiceState: data.practiceState,
+      practiceZipCode: data.practiceZipCode,
+      practicePhone: data.practicePhone,
+    });
   };
 
   return (
@@ -250,6 +283,100 @@ export default function AuthPage() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Only show for providers */}
+                    {registerForm.watch("role") === "provider" && (
+                      <div className="space-y-2">
+                        <Label>Practice Type</Label>
+                        <div className="space-y-3">
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              value="join_existing"
+                              checked={registerForm.watch("registrationType") === "join_existing"}
+                              onChange={(e) => registerForm.setValue("registrationType", "join_existing")}
+                              className="text-primary"
+                            />
+                            <span>Join existing clinic or health system</span>
+                          </label>
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              value="individual"
+                              checked={registerForm.watch("registrationType") === "individual"}
+                              onChange={(e) => registerForm.setValue("registrationType", "individual")}
+                              className="text-primary"
+                            />
+                            <span>Create my own individual practice</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show practice details for individual providers */}
+                    {registerForm.watch("role") === "provider" && registerForm.watch("registrationType") === "individual" && (
+                      <div className="space-y-4 border-t pt-4">
+                        <h3 className="font-medium">Practice Information</h3>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="practiceName">Practice Name</Label>
+                          <Input
+                            id="practiceName"
+                            {...registerForm.register("practiceName")}
+                            placeholder="Your Practice Name"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="practiceAddress">Practice Address</Label>
+                          <Input
+                            id="practiceAddress"
+                            {...registerForm.register("practiceAddress")}
+                            placeholder="123 Main Street"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="practiceCity">City</Label>
+                            <Input
+                              id="practiceCity"
+                              {...registerForm.register("practiceCity")}
+                              placeholder="City"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="practiceState">State</Label>
+                            <Input
+                              id="practiceState"
+                              {...registerForm.register("practiceState")}
+                              placeholder="TX"
+                              maxLength={2}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="practiceZipCode">Zip Code</Label>
+                            <Input
+                              id="practiceZipCode"
+                              {...registerForm.register("practiceZipCode")}
+                              placeholder="00000"
+                              maxLength={5}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="practicePhone">Phone</Label>
+                            <Input
+                              id="practicePhone"
+                              {...registerForm.register("practicePhone")}
+                              placeholder="555-555-5555"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">

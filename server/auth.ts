@@ -84,15 +84,18 @@ export function setupAuth(app: Express) {
         }
       }
 
-      // Clean up empty NPI to prevent unique constraint violations
-      const userData = {
+      // Import RegistrationService
+      const { RegistrationService } = await import("./registration-service.js");
+
+      // Prepare registration data with hashed password
+      const registrationData = {
         ...req.body,
         password: await hashPassword(req.body.password),
         npi: req.body.npi && req.body.npi.trim() ? req.body.npi.trim() : null,
       };
 
-      console.log("✅ [Registration] Creating new user:", userData.username);
-      const user = await storage.createUser(userData);
+      console.log("✅ [Registration] Creating new user:", registrationData.username);
+      const user = await RegistrationService.registerUser(registrationData);
 
       req.login(user, (err) => {
         if (err) {
