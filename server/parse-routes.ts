@@ -5,6 +5,7 @@ import { PatientParserService } from "./patient-parser-service";
 import { db } from "./db";
 import { patients, insertPatientSchema } from "../shared/schema";
 import { tenantIsolation } from "./tenant-isolation";
+import { storage } from "./storage";
 
 const router = Router();
 
@@ -121,10 +122,16 @@ router.post("/parse-and-create-patient", tenantIsolation, async (req: Request, r
     // Format data for patient creation
     const patientData = parserService.formatForPatientCreation(parseResult.data);
     
-    // Add healthSystemId to patient data
+    // Get user's session location if available
+    const userId = (req.user as any).id;
+    const sessionLocation = await storage.getUserSessionLocation(userId);
+    
+    // Add healthSystemId and preferredLocationId to patient data
     const patientDataWithHealthSystem = {
       ...patientData,
-      healthSystemId
+      healthSystemId,
+      // Automatically assign the user's current location as the patient's preferred location
+      preferredLocationId: sessionLocation?.locationId || null
     };
     
     // Validate against schema

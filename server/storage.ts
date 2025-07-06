@@ -205,6 +205,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Location management
+  async getHealthSystemLocations(healthSystemId: number): Promise<any[]> {
+    const locationsList = await db
+      .select({
+        id: locations.id,
+        name: locations.name,
+        shortName: locations.shortName,
+        locationType: locations.locationType,
+        address: locations.address,
+        city: locations.city,
+        state: locations.state,
+        zipCode: locations.zipCode,
+        phone: locations.phone,
+        services: locations.services,
+        organizationName: organizations.name,
+        healthSystemName: healthSystems.name
+      })
+      .from(locations)
+      .leftJoin(organizations, eq(locations.organizationId, organizations.id))
+      .leftJoin(healthSystems, eq(locations.healthSystemId, healthSystems.id))
+      .where(eq(locations.healthSystemId, healthSystemId))
+      .orderBy(locations.name);
+    
+    return locationsList;
+  }
+
   async getUserLocations(userId: number): Promise<any[]> {
     const userLocationsList = await db
       .select({

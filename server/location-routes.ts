@@ -1,7 +1,24 @@
 import { Express } from "express";
 import { storage } from "./storage";
+import { tenantIsolation } from "./tenant-isolation";
 
 export function setupLocationRoutes(app: Express) {
+  
+  // Get all locations for the user's health system
+  app.get("/api/locations", tenantIsolation, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const healthSystemId = req.userHealthSystemId!;
+      const locations = await storage.getHealthSystemLocations(healthSystemId);
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ error: "Failed to fetch locations" });
+    }
+  });
   
   // Get user's assigned locations
   app.get("/api/user/locations", async (req, res) => {
