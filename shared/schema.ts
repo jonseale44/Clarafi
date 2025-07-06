@@ -11,9 +11,20 @@ import { relations } from "drizzle-orm";
 // Health Systems (Top Level) - e.g., "Ascension", "Scott & White", "Mayo Clinic"
 export const healthSystems = pgTable("health_systems", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(), // "Ascension Health System"
-  shortName: text("short_name"), // "Ascension"
-  systemType: text("system_type").notNull(), // 'health_system', 'hospital_network', 'clinic_group', 'independent'
+  name: text("name").notNull(), // "Ascension Health System" or "Dr. Smith Private Practice"
+  shortName: text("short_name"), // "Ascension" or "Dr. Smith"
+  systemType: text("system_type").notNull(), // 'health_system', 'hospital_network', 'clinic_group', 'individual_provider'
+  
+  // Subscription Management
+  subscriptionTier: integer("subscription_tier").default(1), // 1=Individual, 2=Small Group, 3=Enterprise
+  subscriptionStatus: text("subscription_status").default('active'), // 'active', 'suspended', 'cancelled'
+  subscriptionStartDate: timestamp("subscription_start_date"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  
+  // For merging/migration tracking
+  mergedIntoHealthSystemId: integer("merged_into_health_system_id").references(() => healthSystems.id),
+  mergedDate: timestamp("merged_date"),
+  originalProviderId: integer("original_provider_id").references(() => users.id), // For individual provider accounts
   
   // Contact and administrative info
   primaryContact: text("primary_contact"),
@@ -166,6 +177,9 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  
+  // Multi-tenant association
+  healthSystemId: integer("health_system_id").notNull().references(() => healthSystems.id),
   
   // Basic info
   firstName: text("first_name").notNull(),
@@ -384,6 +398,10 @@ export const userAssistantThreads = pgTable("user_assistant_threads", {
 export const patients = pgTable("patients", {
   id: serial("id").primaryKey(),
   mrn: varchar("mrn").notNull().unique(),
+  
+  // Multi-tenant isolation - CRITICAL for data security
+  healthSystemId: integer("health_system_id").notNull().references(() => healthSystems.id),
+  
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
