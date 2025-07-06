@@ -13,6 +13,32 @@ export function registerAdminUserRoutes(app: Express) {
     next();
   };
 
+  // Public endpoint to get health systems for registration
+  // Does not require authentication since it's used on registration page
+  app.get("/api/health-systems/public", async (req, res) => {
+    try {
+      const publicHealthSystems = await db
+        .select({
+          id: healthSystems.id,
+          name: healthSystems.name,
+          systemType: healthSystems.systemType,
+        })
+        .from(healthSystems)
+        .where(
+          and(
+            eq(healthSystems.subscriptionStatus, 'active'),
+            isNull(healthSystems.mergedIntoHealthSystemId)
+          )
+        )
+        .orderBy(healthSystems.name);
+
+      res.json(publicHealthSystems);
+    } catch (error) {
+      console.error("Error fetching public health systems:", error);
+      res.status(500).json({ message: "Failed to fetch health systems" });
+    }
+  });
+
   // Get all users with location count
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {

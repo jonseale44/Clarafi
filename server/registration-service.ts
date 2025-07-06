@@ -114,7 +114,10 @@ export class RegistrationService {
 
       } else {
         // Join existing health system (default behavior)
-        healthSystemId = data.existingHealthSystemId || 2; // Default to Waco Family Medicine
+        if (!data.existingHealthSystemId) {
+          throw new Error('Health system selection is required when joining an existing system');
+        }
+        healthSystemId = data.existingHealthSystemId;
         console.log(`🏥 [RegistrationService] Joining existing health system ID: ${healthSystemId}`);
       }
 

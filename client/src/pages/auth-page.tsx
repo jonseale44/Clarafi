@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
@@ -51,6 +52,20 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [locationSelected, setLocationSelected] = useState(false);
+  const [registrationType, setRegistrationType] = useState<'individual' | 'join_existing'>('join_existing');
+  const [selectedHealthSystemId, setSelectedHealthSystemId] = useState<string>('');
+  const [availableHealthSystems, setAvailableHealthSystems] = useState<Array<{id: number, name: string}>>([]);
+
+  // Fetch available health systems for registration
+  const { data: healthSystemsData } = useQuery({
+    queryKey: ["/api/health-systems/public"],
+    enabled: activeTab === "register",
+  });
+
+  // Update available health systems when data loads
+  if (healthSystemsData && availableHealthSystems.length === 0) {
+    setAvailableHealthSystems(healthSystemsData);
+  }
 
   // Check if user has existing session location
   const { data: sessionLocation } = useQuery({
@@ -127,10 +142,21 @@ export default function AuthPage() {
   const onRegister = (data: RegisterData) => {
     const { confirmPassword, ...registerData } = data;
     
+    // Validate health system selection for join_existing
+    if (registrationType === 'join_existing' && !selectedHealthSystemId) {
+      toast({
+        title: "Health System Required",
+        description: "Please select a health system to join",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Pass all the data including registration type and practice info
     registerMutation.mutate({
       ...registerData,
-      registrationType: data.registrationType,
+      registrationType,
+      existingHealthSystemId: registrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
       practiceName: data.practiceName,
       practiceAddress: data.practiceAddress,
       practiceCity: data.practiceCity,
@@ -230,6 +256,85 @@ export default function AuthPage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                    {/* Registration Type Selection */}
+                    <div className="space-y-2">
+                      <Label>Registration Type</Label>
+                      <RadioGroup 
+                        value={registrationType} 
+                        onValueChange={setRegistrationType}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="individual" id="individual" />
+                          <Label htmlFor="individual" className="font-normal cursor-pointer">
+                            Create my own individual practice (Tier 1)
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="join_existing" id="join_existing" />
+                          <Label htmlFor="join_existing" className="font-normal cursor-pointer">
+                            Join an existing clinic/health system
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Health System Selection for joining existing */}
+                    {registrationType === 'join_existing' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="healthSystem">Select Health System</Label>
+                        <Select 
+                          value={selectedHealthSystemId} 
+                          onValueChange={setSelectedHealthSystemId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a health system to join" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableHealthSystems.map((hs) => (
+                              <SelectItem key={hs.id} value={hs.id.toString()}>
+                                {hs.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Practice Details for individual providers */}
+                    {registrationType === 'individual' && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                        <h4 className="font-medium text-sm">Practice Information</h4>
+                        <div className="space-y-2">
+                          <Label htmlFor="practiceName">Practice Name (Optional)</Label>
+                          <Input
+                            id="practiceName"
+                            {...registerForm.register("practiceName")}
+                            placeholder="e.g., Smith Family Medicine"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="practiceCity">City</Label>
+                            <Input
+                              id="practiceCity"
+                              {...registerForm.register("practiceCity")}
+                              placeholder="City"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="practiceState">State</Label>
+                            <Input
+                              id="practiceState"
+                              {...registerForm.register("practiceState")}
+                              placeholder="TX"
+                              maxLength={2}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
