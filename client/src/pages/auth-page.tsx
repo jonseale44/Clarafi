@@ -238,8 +238,15 @@ export default function AuthPage() {
                         <SelectContent>
                           <SelectItem value="provider">Provider</SelectItem>
                           <SelectItem value="nurse">Nurse</SelectItem>
+                          <SelectItem value="ma">Medical Assistant (MA)</SelectItem>
                           <SelectItem value="admin">Administrator</SelectItem>
                           <SelectItem value="staff">Staff</SelectItem>
+                          <SelectItem value="front_desk">Front Desk</SelectItem>
+                          <SelectItem value="billing">Billing</SelectItem>
+                          <SelectItem value="lab_tech">Lab Tech</SelectItem>
+                          <SelectItem value="referral_coordinator">Referral Coordinator</SelectItem>
+                          <SelectItem value="practice_manager">Practice Manager</SelectItem>
+                          <SelectItem value="read_only">Read Only</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
