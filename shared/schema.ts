@@ -118,7 +118,7 @@ export const userLocations = pgTable("user_locations", {
   locationId: integer("location_id").notNull().references(() => locations.id, { onDelete: "cascade" }),
   
   // Role at this location
-  roleAtLocation: text("role_at_location").notNull(), // 'primary_provider', 'covering_provider', 'specialist', 'nurse', 'staff'
+  roleAtLocation: text("role_at_location").notNull(), // 'primary_provider', 'covering_provider', 'specialist', 'nurse', 'ma', 'staff'
   isPrimary: boolean("is_primary").default(false), // User's primary/home location
   
   // Schedule and availability

@@ -240,6 +240,7 @@ export function AdminUserManagement() {
                   <SelectItem value="covering_provider">Covering Provider</SelectItem>
                   <SelectItem value="specialist">Specialist</SelectItem>
                   <SelectItem value="nurse">Nurse</SelectItem>
+                  <SelectItem value="ma">Medical Assistant (MA)</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
                 </SelectContent>
               </Select>
