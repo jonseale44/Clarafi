@@ -83,6 +83,11 @@ export function AdminUserManagement() {
     enabled: !!selectedUser,
   });
 
+  // Filter locations to only show ones from the selected user's health system
+  const availableLocations = selectedUser 
+    ? locations.filter(location => location.healthSystemId === selectedUser.healthSystemId)
+    : [];
+
   // Toggle user active status
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: number; active: boolean }) => {
@@ -215,7 +220,7 @@ export function AdminUserManagement() {
                   <SelectValue placeholder="Select a location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations.map((location) => (
+                  {availableLocations.map((location) => (
                     <SelectItem key={location.id} value={location.id.toString()}>
                       <div className="flex flex-col">
                         <span className="font-medium">{location.name}</span>
@@ -225,6 +230,11 @@ export function AdminUserManagement() {
                       </div>
                     </SelectItem>
                   ))}
+                  {availableLocations.length === 0 && (
+                    <div className="p-2 text-sm text-gray-500">
+                      No locations available in user's health system
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>

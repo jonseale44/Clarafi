@@ -139,6 +139,35 @@ export function registerAdminUserRoutes(app: Express) {
 
       const data = assignmentSchema.parse(req.body);
 
+      // CRITICAL: Verify user and location are in the same health system
+      const [user] = await db
+        .select({ healthSystemId: users.healthSystemId })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const [location] = await db
+        .select({ healthSystemId: locations.healthSystemId })
+        .from(locations)
+        .where(eq(locations.id, data.locationId))
+        .limit(1);
+
+      if (!location) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+
+      // Prevent cross-health-system assignments
+      if (user.healthSystemId !== location.healthSystemId) {
+        console.error(`❌ [AdminUserRoutes] SECURITY: Attempted cross-health-system assignment - User ${userId} (HS: ${user.healthSystemId}) to Location ${data.locationId} (HS: ${location.healthSystemId})`);
+        return res.status(403).json({ 
+          message: "Security violation: Cannot assign user to location in different health system" 
+        });
+      }
+
       // Check if assignment already exists
       const existing = await db
         .select()
