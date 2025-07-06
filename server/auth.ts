@@ -139,8 +139,26 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", passport.authenticate("local"), async (req, res) => {
+    try {
+      // After successful login, check if user has a remembered location
+      if (req.user && req.user.role !== 'admin') {
+        const rememberedLocation = await storage.getRememberedLocation(req.user.id);
+        if (rememberedLocation && rememberedLocation.rememberSelection) {
+          // Automatically restore the remembered location as active
+          await storage.setUserSessionLocation(
+            req.user.id, 
+            rememberedLocation.locationId, 
+            true // Keep it remembered
+          );
+        }
+      }
+      res.status(200).json(req.user);
+    } catch (error) {
+      console.error("Error restoring remembered location:", error);
+      // Still return user even if location restore fails
+      res.status(200).json(req.user);
+    }
   });
 
   app.post("/api/logout", (req, res, next) => {

@@ -68,7 +68,7 @@ export default function AuthPage() {
   }
 
   // Check if user has existing session location
-  const { data: sessionLocation } = useQuery({
+  const { data: sessionLocation, refetch: refetchSessionLocation } = useQuery({
     queryKey: ["/api/user/session-location"],
     enabled: !!user && !showLocationSelector,
   });
@@ -111,14 +111,26 @@ export default function AuthPage() {
       username: data.username,
       password: data.password,
     }, {
-      onSuccess: (userData) => {
+      onSuccess: async (userData) => {
         // Admin users don't need to select location - they have access to all locations in their health system
         if (userData.role === 'admin') {
           setLocationSelected(true);
           setShowLocationSelector(false);
         } else {
-          // Clinical staff need to select their working location
-          setShowLocationSelector(true);
+          // Wait a moment for the remembered location to be restored
+          setTimeout(async () => {
+            // Refetch session location to check if it was restored
+            const { data: restoredLocation } = await refetchSessionLocation();
+            
+            if (restoredLocation) {
+              // User has a remembered location that was restored
+              setLocationSelected(true);
+              setShowLocationSelector(false);
+            } else {
+              // No remembered location, show selector
+              setShowLocationSelector(true);
+            }
+          }, 100);
         }
       }
     });

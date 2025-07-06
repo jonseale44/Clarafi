@@ -156,6 +156,15 @@ Preferred communication style: Simple, everyday language.
 - **HIPAA COMPLIANCE**: Admin access remains properly scoped to their assigned health system only - no cross-health system access
 - **PRODUCTION IMPACT**: Admin users can now focus on administrative tasks without unnecessary location selection interruptions
 
+### Remember Location Checkbox Fix COMPLETED (January 15, 2025)
+- **CRITICAL BUG FIXED**: "Remember this location" checkbox now properly functions - users who check it won't see location selector on subsequent logins
+- **BACKEND SESSION RESTORATION**: Added automatic restoration of remembered locations in login endpoint - checks for previously remembered location and restores it
+- **STORAGE METHOD ADDED**: Created `getRememberedLocation` method to fetch user's last remembered location from userSessionLocations table
+- **AUTH FLOW ENHANCEMENT**: Updated login flow to check for restored session location after successful authentication before showing location selector
+- **SEAMLESS USER EXPERIENCE**: Users with remembered locations now go directly to dashboard after login without additional clicks
+- **DATABASE PERSISTENCE**: Remember selection is stored in database and persists across sessions until user manually clears or changes location
+- **PRODUCTION READY**: Clinical staff working primarily at one location can now avoid repetitive location selection on every login
+
 ### Critical Cross-Health-System Security Fix COMPLETED (January 13, 2025)
 - **CRITICAL SECURITY VULNERABILITY DISCOVERED**: Found 4 users from Waco Family Medicine incorrectly assigned to Mission Hillsboro Medical Clinic locations, violating multi-tenant isolation
 - **IMMEDIATE DATA CLEANUP**: Deleted all 4 cross-health-system user-location assignments (user_locations IDs: 12, 13, 14, 16) to restore data integrity

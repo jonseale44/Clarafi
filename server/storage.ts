@@ -37,6 +37,7 @@ export interface IStorage {
   setUserSessionLocation(userId: number, locationId: number, rememberSelection?: boolean): Promise<void>;
   getUserSessionLocation(userId: number): Promise<any>;
   clearUserSessionLocation(userId: number): Promise<void>;
+  getRememberedLocation(userId: number): Promise<any>;
   
   // User preferences management (note: now handled via getUserNotePreferences in auth.ts)
   
@@ -292,6 +293,26 @@ export class DatabaseStorage implements IStorage {
       .update(userSessionLocations)
       .set({ isActive: false })
       .where(eq(userSessionLocations.userId, userId));
+  }
+
+  async getRememberedLocation(userId: number): Promise<any> {
+    // Get the most recent location where rememberSelection was true
+    const [rememberedLocation] = await db
+      .select({
+        userId: userSessionLocations.userId,
+        locationId: userSessionLocations.locationId,
+        rememberSelection: userSessionLocations.rememberSelection,
+        selectedAt: userSessionLocations.selectedAt
+      })
+      .from(userSessionLocations)
+      .where(and(
+        eq(userSessionLocations.userId, userId),
+        eq(userSessionLocations.rememberSelection, true)
+      ))
+      .orderBy(desc(userSessionLocations.selectedAt))
+      .limit(1);
+
+    return rememberedLocation;
   }
 
   // User preferences management removed - now handled via getUserNotePreferences in auth.ts
