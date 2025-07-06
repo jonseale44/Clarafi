@@ -269,20 +269,103 @@ export function registerAdminUserRoutes(app: Express) {
   app.delete("/api/admin/users/:userId", requireAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      console.log(`🗑️ [AdminUserRoutes] Attempting to delete user ${userId}`);
 
       // Don't allow deleting the admin user
-      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-      if (user[0]?.username === "admin") {
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user) {
+        console.log(`❌ [AdminUserRoutes] User ${userId} not found`);
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.username === "admin") {
+        console.log(`❌ [AdminUserRoutes] Attempted to delete system admin user`);
         return res.status(400).json({ message: "Cannot delete the system admin user" });
       }
 
+      // Check for dependencies before deletion
+      console.log(`🔍 [AdminUserRoutes] Checking for user dependencies...`);
+      
+      // Check encounters
+      const encounterCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(encounters)
+        .where(eq(encounters.providerId, userId));
+      
+      console.log(`📊 [AdminUserRoutes] User ${userId} has ${encounterCount[0].count} encounters`);
+
+      // Check user locations
+      const locationCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(userLocations)
+        .where(eq(userLocations.userId, userId));
+      
+      console.log(`📊 [AdminUserRoutes] User ${userId} has ${locationCount[0].count} location assignments`);
+
+      // Check patient assignments (if they're a primary provider)
+      const patientCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(patients)
+        .where(eq(patients.primaryProviderId, userId));
+      
+      console.log(`📊 [AdminUserRoutes] User ${userId} is primary provider for ${patientCount[0].count} patients`);
+
+      // If there are dependencies, provide detailed error
+      const dependencies = [];
+      if (encounterCount[0].count > 0) {
+        dependencies.push(`${encounterCount[0].count} encounter(s)`);
+      }
+      if (patientCount[0].count > 0) {
+        dependencies.push(`primary provider for ${patientCount[0].count} patient(s)`);
+      }
+
+      if (dependencies.length > 0) {
+        const message = `Cannot delete user ${user.username}. They have: ${dependencies.join(', ')}. Please reassign these records before deletion.`;
+        console.log(`❌ [AdminUserRoutes] ${message}`);
+        return res.status(400).json({ 
+          message,
+          details: {
+            encounters: encounterCount[0].count,
+            patients: patientCount[0].count,
+            locations: locationCount[0].count
+          }
+        });
+      }
+
+      // Delete user locations first (no foreign key constraint)
+      if (locationCount[0].count > 0) {
+        console.log(`🗑️ [AdminUserRoutes] Deleting ${locationCount[0].count} location assignments for user ${userId}`);
+        await db.delete(userLocations).where(eq(userLocations.userId, userId));
+      }
+
+      // Now delete the user
+      console.log(`🗑️ [AdminUserRoutes] Deleting user ${userId} (${user.username})`);
       await db.delete(users).where(eq(users.id, userId));
 
-      console.log(`✅ [AdminUserRoutes] Deleted user ${userId}`);
+      console.log(`✅ [AdminUserRoutes] Successfully deleted user ${userId} (${user.username})`);
       res.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ [AdminUserRoutes] Error deleting user:", error);
-      res.status(500).json({ message: "Failed to delete user" });
+      
+      // Check for specific constraint violations
+      if (error.code === '23503') {
+        const constraintMessages: Record<string, string> = {
+          'encounters_provider_id_users_id_fk': 'User has associated encounters',
+          'patients_primary_provider_id_users_id_fk': 'User is a primary provider for patients',
+          'user_locations_user_id_users_id_fk': 'User has location assignments'
+        };
+        
+        const message = constraintMessages[error.constraint] || `Database constraint violation: ${error.constraint}`;
+        console.log(`❌ [AdminUserRoutes] Constraint violation: ${message}`);
+        
+        return res.status(400).json({ 
+          message: `Cannot delete user: ${message}. Please reassign or remove these associations first.`,
+          constraint: error.constraint,
+          detail: error.detail
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to delete user", error: error.message });
     }
   });
 

@@ -152,8 +152,14 @@ export function AdminUserManagement() {
       setUserToDelete(null);
       toast({ title: "User deleted successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete user", variant: "destructive" });
+    onError: (error: any) => {
+      // Display detailed error message from server
+      const message = error?.message || "Failed to delete user";
+      toast({ 
+        title: "Cannot Delete User", 
+        description: message,
+        variant: "destructive" 
+      });
     },
   });
 
