@@ -345,6 +345,11 @@ export default function Dashboard() {
                   Admin Prompts
                 </button>
               </Link>
+              <Link href="/admin/users">
+                <button className="px-3 py-2 rounded-md text-sm font-medium text-purple-600 hover:text-purple-900 hover:bg-purple-50 border border-purple-200">
+                  Admin Users
+                </button>
+              </Link>
               
 
             </nav>

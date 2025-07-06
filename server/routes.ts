@@ -29,6 +29,7 @@ import setupTemplateRoutes from "./template-routes";
 import { imagingRoutes } from "./imaging-api";
 import { setupUnifiedImagingRoutes } from "./unified-imaging-api";
 import { createRxNormRoutes } from "./rxnorm-routes";
+import { registerAdminUserRoutes } from "./admin-user-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -4253,6 +4254,9 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.use("/api/external-lab-mock", externalLabMockRouter);
 
   // Legacy dynamic vitals routes removed - now using static imports above
+
+  // Register admin user management routes
+  registerAdminUserRoutes(app);
 
   const httpServer = createServer(app);
 
