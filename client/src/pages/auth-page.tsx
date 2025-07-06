@@ -96,9 +96,15 @@ export default function AuthPage() {
       username: data.username,
       password: data.password,
     }, {
-      onSuccess: () => {
-        // After successful login, check if user needs to select location
-        setShowLocationSelector(true);
+      onSuccess: (userData) => {
+        // Admin users don't need to select location - they have access to all locations in their health system
+        if (userData.role === 'admin') {
+          setLocationSelected(true);
+          setShowLocationSelector(false);
+        } else {
+          // Clinical staff need to select their working location
+          setShowLocationSelector(true);
+        }
       }
     });
   };
@@ -108,13 +114,13 @@ export default function AuthPage() {
     setShowLocationSelector(false);
   };
 
-  // Show location selector after login but before main app
-  if (user && showLocationSelector) {
+  // Show location selector after login but before main app (only for non-admin users)
+  if (user && showLocationSelector && user.role !== 'admin') {
     return <LocationSelector onLocationSelected={handleLocationSelected} />;
   }
 
-  // Redirect to main app if user is logged in and has selected location
-  if (user && (locationSelected || sessionLocation)) {
+  // Redirect to main app if user is logged in and has selected location or is admin
+  if (user && (locationSelected || sessionLocation || user.role === 'admin')) {
     return <Redirect to="/" />;
   }
 

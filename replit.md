@@ -142,6 +142,20 @@ Preferred communication style: Simple, everyday language.
 - **UI/UX POLISH**: Professional interface with data tables, dialogs, loading states, empty states, and comprehensive user feedback
 - **PRODUCTION IMPACT**: System now ready for real clinic deployment with proper user onboarding, location assignment, and permission management workflows
 
+### Admin Location Selection Workflow Enhancement COMPLETED (January 15, 2025)
+- **ADMIN LOCATION WORKFLOW FIX**: Updated authentication flow to skip location selection for admin users - they no longer see "Select Your Working Location" prompt
+- **PRODUCTION EMR STANDARDS**: Aligned with Epic/Athena patterns where admin users have health system-wide access and don't need working location selection
+- **AUTH PAGE ENHANCEMENT**: Modified auth-page.tsx to automatically bypass location selection for users with 'admin' role
+- **ADMIN HIERARCHY CONCEPT**: Established proper admin hierarchy understanding:
+  - **System Admin**: Vendor level (Clarafi staff) - manages the EMR platform
+  - **Health System Admin**: Your "admin" users - manage entire health system
+  - **Practice/Location Admin**: Manage specific locations
+  - **Department Admin**: Manage specific departments within locations
+- **LOCATION ACCESS PATTERN**: Admin users automatically have access to all locations within their health system without selecting a working location
+- **CLINICAL STAFF WORKFLOW**: Location selection remains required for clinical staff (providers, nurses, MAs) who work at multiple sites
+- **HIPAA COMPLIANCE**: Admin access remains properly scoped to their assigned health system only - no cross-health system access
+- **PRODUCTION IMPACT**: Admin users can now focus on administrative tasks without unnecessary location selection interruptions
+
 ### Critical Cross-Health-System Security Fix COMPLETED (January 13, 2025)
 - **CRITICAL SECURITY VULNERABILITY DISCOVERED**: Found 4 users from Waco Family Medicine incorrectly assigned to Mission Hillsboro Medical Clinic locations, violating multi-tenant isolation
 - **IMMEDIATE DATA CLEANUP**: Deleted all 4 cross-health-system user-location assignments (user_locations IDs: 12, 13, 14, 16) to restore data integrity
