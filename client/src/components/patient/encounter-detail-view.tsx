@@ -2213,9 +2213,13 @@ export function EncounterDetailView({
           // Handle errors from proxy
           if (message.type === "error") {
             console.error("❌ [EncounterView] Proxy error:", message.error);
+            const errorMessage = typeof message.error === 'string' 
+              ? message.error 
+              : message.error?.message || "Failed to connect to transcription service";
+            
             toast({
               title: "Connection Error",
-              description: message.error || "Failed to connect to transcription service",
+              description: errorMessage,
               variant: "destructive",
             });
             return;

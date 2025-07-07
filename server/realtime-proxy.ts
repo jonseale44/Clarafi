@@ -202,6 +202,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               console.log('🌐 [RealtimeProxy] Connected to OpenAI WebSocket');
               console.log('🌐 [RealtimeProxy] WebSocket readyState:', openAiWs.readyState);
               console.log('🌐 [RealtimeProxy] WebSocket URL:', openAiWs.url);
+              console.log('🌐 [RealtimeProxy] Connection established at:', new Date().toISOString());
               sessionActive = true;
               
               // Send session configuration as first message with full API compliance
@@ -215,7 +216,6 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
                   input_audio_format: sessionConfig.input_audio_format || 'pcm16',
                   output_audio_format: 'pcm16',
                   input_audio_transcription: {
-                    enabled: true, // Add enabled field per API docs
                     model: sessionConfig.input_audio_transcription?.model || 'whisper-1'
                   },
                   turn_detection: sessionConfig.turn_detection || {
@@ -225,9 +225,8 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
                     silence_duration_ms: 500
                   },
                   temperature: sessionConfig.temperature || 0.7,
-                  max_output_tokens: sessionConfig.max_output_tokens || 4096, // Use correct field name
                   tools: [], // Explicitly set empty tools array
-                  tool_choice: 'none' // Disable function calling for transcription
+                  tool_choice: 'auto' // Use default tool choice setting
                 }
               };
               
@@ -252,6 +251,10 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               // Log specific message types for debugging
               if (message.type === 'session.updated') {
                 console.log('✅ [RealtimeProxy] Session updated successfully');
+                console.log('✅ [RealtimeProxy] Session details:', JSON.stringify(message.session, null, 2));
+              } else if (message.type === 'error') {
+                console.error('❌ [RealtimeProxy] OpenAI API Error:', JSON.stringify(message.error, null, 2));
+                console.error('❌ [RealtimeProxy] Error event_id:', message.event_id);
               } else if (message.type === 'input_audio_buffer.speech_started') {
                 console.log('🎤 [RealtimeProxy] Speech detected');
               } else if (message.type === 'input_audio_buffer.speech_stopped') {
@@ -281,6 +284,9 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               console.error('❌ [RealtimeProxy] Error stack:', (error as any)?.stack);
               console.error('❌ [RealtimeProxy] WebSocket readyState:', openAiWs?.readyState);
               console.error('❌ [RealtimeProxy] OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
+              console.error('❌ [RealtimeProxy] Session was active:', sessionActive);
+              console.error('❌ [RealtimeProxy] Messages buffered:', messageBuffer.length);
+              console.error('❌ [RealtimeProxy] Session config:', JSON.stringify(sessionConfig, null, 2));
               
               clientWs.send(JSON.stringify({
                 type: 'error',
