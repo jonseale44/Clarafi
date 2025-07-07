@@ -2392,7 +2392,7 @@ Please provide medical suggestions based on what the provider is saying in this 
               type: "session.update",
               session: {
                 model: "gpt-4o-realtime-preview-2024-10-01",
-                modalities: ["text", "audio"],
+                modalities: ["audio"],
                 instructions: `You are a medical transcription assistant specialized in clinical conversations. 
                 Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
                 Pay special attention to:
