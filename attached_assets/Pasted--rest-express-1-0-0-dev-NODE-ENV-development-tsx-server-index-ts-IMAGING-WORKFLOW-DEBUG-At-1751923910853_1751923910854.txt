@@ -1,0 +1,63 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+🔥 [IMAGING WORKFLOW DEBUG] AttachmentChartProcessor constructor - initializing all parsers including imaging
+🔥 [IMAGING WORKFLOW DEBUG] All 9 chart processors initialized successfully: vitals, medical problems, surgical history, family history, social history, allergies, medications, imaging, labs
+🚀 [LabBackground] Starting background lab order processor
+🔧 [UnifiedImagingAPI] Imaging API routes registered
+✅ [AdminUserRoutes] Admin user routes registered
+🔒 [RealtimeProxy] Setting up secure WebSocket proxy for OpenAI
+✅ [RealtimeProxy] WebSocket proxy initialized at /api/realtime/connect
+9:31:44 PM [express] serving on port 5000
+9:31:44 PM [express] Database ready - you can register a new account or use admin/admin123 if already created
+❌ [LabBackground] Error in background processor: error: column "order_status" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async Function.processOrders (/home/runner/workspace/server/lab-order-background-processor.ts:57:29) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '58',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345
+o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+                                                                         ^
+
+error: column health_systems.subscription_start_date does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getUser (/home/runner/workspace/server/storage.ts:134:20)
+    at async <anonymous> (/home/runner/workspace/server/auth.ts:61:18) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '640',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
