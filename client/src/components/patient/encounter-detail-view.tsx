@@ -2001,40 +2001,78 @@ export function EncounterDetailView({
 
   // Enhanced start recording with edit lock conflict detection
   const startRecording = async () => {
-    console.log(
-      "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
-      patient.id,
-    );
-    console.log(
-      "🎤 [EncounterView] Current AI mode:",
-      useRestAPI ? "REST API" : "WebSocket",
-    );
-
-    // Check for edit lock conflict and show modal if needed
-    if (userEditingLock) {
+    try {
       console.log(
-        "🔒 [UserEditLock] Edit lock active - showing conflict modal",
+        "🎤 [EncounterView] === START RECORDING BUTTON CLICKED ===",
       );
-      setPendingRecordingStart(() => () => proceedWithRecording());
-      setShowRecordingConflictModal(true);
-      return;
-    }
+      console.log(
+        "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
+        patient.id,
+      );
+      console.log(
+        "🎤 [EncounterView] Current AI mode:",
+        useRestAPI ? "REST API" : "WebSocket",
+      );
+      console.log(
+        "🎤 [EncounterView] Recording environment:",
+        {
+          isRecording,
+          userEditingLock,
+          recordingMode: getRecordingMode(),
+          hasNavigatorMediaDevices: !!navigator.mediaDevices,
+          hasGetUserMedia: !!(navigator.mediaDevices?.getUserMedia),
+          wsUrl: process.env.VITE_WS_URL || "/ws/openai-realtime"
+        }
+      );
 
-    // Proceed with normal recording
-    await proceedWithRecording();
+      // Check for edit lock conflict and show modal if needed
+      if (userEditingLock) {
+        console.log(
+          "🔒 [UserEditLock] Edit lock active - showing conflict modal",
+        );
+        setPendingRecordingStart(() => () => proceedWithRecording());
+        setShowRecordingConflictModal(true);
+        return;
+      }
+
+      // Proceed with normal recording
+      console.log("🎤 [EncounterView] No edit lock - proceeding with recording");
+      await proceedWithRecording();
+    } catch (error) {
+      console.error("❌ [EncounterView] StartRecording error:", error);
+      console.error("❌ [EncounterView] Error details:", {
+        message: (error as any)?.message,
+        stack: (error as any)?.stack,
+        name: (error as any)?.name
+      });
+      toast({
+        title: "Recording Error",
+        description: "Failed to start recording. Please check console for details.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Actual recording implementation (extracted from original startRecording)
   const proceedWithRecording = async () => {
     console.log("🎯 [EncounterView] === PROCEED WITH RECORDING STARTED ===");
+    console.log("🎯 [EncounterView] Function called at:", new Date().toISOString());
     console.log("🎯 [EncounterView] Current state:", {
       isRecording,
-      isProcessing,
       isTranscribing,
       useRestAPI,
       transcriptionLength: transcription?.length || 0,
-      soapNoteLength: soapNote?.length || 0
+      soapNoteLength: soapNote?.length || 0,
+      recordingMode: getRecordingMode(),
+      patientId: patient.id,
+      encounterId: encounter?.id
     });
+    
+    console.log("🎯 [EncounterView] About to check recording status...");
+    if (isRecording) {
+      console.log("⚠️ [EncounterView] Already recording - returning early");
+      return;
+    }
     
     // Clear previous suggestions when starting new recording (both WebSocket and REST API)
     setGptSuggestions("");
@@ -2075,12 +2113,26 @@ export function EncounterDetailView({
         const wsHost = window.location.host;
         const wsUrl = `${wsProtocol}//${wsHost}/ws/openai-realtime`;
         
-        console.log("🔧 [EncounterView] WebSocket URL:", wsUrl);
+        console.log("🔧 [EncounterView] WebSocket connection details:", {
+          protocol: wsProtocol,
+          host: wsHost,
+          url: wsUrl,
+          windowLocation: window.location.href
+        });
         
-        realtimeWs = new WebSocket(wsUrl);
+        console.log("🔧 [EncounterView] Creating WebSocket instance...");
+        try {
+          realtimeWs = new WebSocket(wsUrl);
+          console.log("🔧 [EncounterView] WebSocket instance created successfully");
+        } catch (wsError) {
+          console.error("❌ [EncounterView] Failed to create WebSocket:", wsError);
+          throw wsError;
+        }
         
         realtimeWs.onerror = (error) => {
           console.error("❌ [EncounterView] WebSocket connection error:", error);
+          console.error("❌ [EncounterView] WebSocket error type:", error.type);
+          console.error("❌ [EncounterView] WebSocket ready state:", realtimeWs?.readyState);
         };
 
         realtimeWs.onopen = () => {
