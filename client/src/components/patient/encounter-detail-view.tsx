@@ -2072,11 +2072,37 @@ export function EncounterDetailView({
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${wsProtocol}//${window.location.host}/api/realtime/connect?${params.toString()}`;
         
-        console.log("🔌 [EncounterView] Connecting to:", wsUrl);
-        realtimeWs = new WebSocket(wsUrl);
+        console.log("🔌 [EncounterView] WebSocket connection attempt:");
+        console.log("🔌 [EncounterView] - Protocol:", wsProtocol);
+        console.log("🔌 [EncounterView] - Host:", window.location.host);
+        console.log("🔌 [EncounterView] - Full URL:", wsUrl);
+        console.log("🔌 [EncounterView] - Patient ID:", patient.id);
+        console.log("🔌 [EncounterView] - Encounter ID:", encounter.id);
+        
+        try {
+          realtimeWs = new WebSocket(wsUrl);
+          console.log("🔌 [EncounterView] WebSocket object created successfully");
+        } catch (wsCreationError) {
+          console.error("❌ [EncounterView] WebSocket creation failed:", wsCreationError);
+          setWsConnected(false);
+          throw wsCreationError;
+        }
+
+        // Add connection timeout detection
+        const connectionTimeout = setTimeout(() => {
+          if (realtimeWs && realtimeWs.readyState !== WebSocket.OPEN) {
+            console.error("⏱️ [EncounterView] WebSocket connection timeout after 10 seconds");
+            console.error("⏱️ [EncounterView] - ReadyState:", realtimeWs.readyState);
+            console.error("⏱️ [EncounterView] - ReadyState meanings: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED");
+            setWsConnected(false);
+          }
+        }, 10000);
 
         realtimeWs.onopen = () => {
+          clearTimeout(connectionTimeout);
           console.log("🌐 [EncounterView] ✅ Connected to WebSocket proxy");
+          console.log("🌐 [EncounterView] - ReadyState:", realtimeWs?.readyState);
+          console.log("🌐 [EncounterView] - URL:", realtimeWs?.url);
 
           // Send session creation request to proxy
           const sessionConfig = {
@@ -2623,12 +2649,24 @@ Please provide medical suggestions based on this complete conversation context.`
         };
 
         realtimeWs.onerror = (error) => {
-          console.error("❌ [EncounterView] OpenAI WebSocket error:", error);
+          console.error("❌ [EncounterView] WebSocket error event triggered");
+          console.error("❌ [EncounterView] Error details:", error);
+          console.error("❌ [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
+          console.error("❌ [EncounterView] WebSocket URL:", realtimeWs?.url);
           setWsConnected(false);
         };
         
-        realtimeWs.onclose = () => {
+        realtimeWs.onclose = (event) => {
           console.log("🔌 [EncounterView] WebSocket disconnected");
+          console.log("🔌 [EncounterView] Close event code:", event.code);
+          console.log("🔌 [EncounterView] Close event reason:", event.reason);
+          console.log("🔌 [EncounterView] Was clean close:", event.wasClean);
+          console.log("🔌 [EncounterView] Common close codes:");
+          console.log("🔌 [EncounterView] - 1000: Normal closure");
+          console.log("🔌 [EncounterView] - 1001: Going away");
+          console.log("🔌 [EncounterView] - 1006: Abnormal closure (network error)");
+          console.log("🔌 [EncounterView] - 1015: TLS handshake failure");
+          clearTimeout(connectionTimeout);
           setWsConnected(false);
         };
       } catch (wsError) {

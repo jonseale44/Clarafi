@@ -39,12 +39,18 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
 
   // Handle WebSocket upgrade requests
   server.on('upgrade', async (request: IncomingMessage, socket: any, head: Buffer) => {
+    // Parse URL to handle query parameters
+    const url = new URL(request.url || '', `http://${request.headers.host}`);
+    
     // Only handle our realtime proxy path
-    if (request.url !== '/api/realtime/connect') {
+    if (url.pathname !== '/api/realtime/connect') {
       return;
     }
 
     console.log('🔌 [RealtimeProxy] WebSocket upgrade request received');
+    console.log('🔌 [RealtimeProxy] URL:', request.url);
+    console.log('🔌 [RealtimeProxy] Pathname:', url.pathname);
+    console.log('🔌 [RealtimeProxy] Query params:', url.searchParams.toString());
 
     // Verify authentication using session cookie
     const cookies = parseCookies(request.headers.cookie || '');
