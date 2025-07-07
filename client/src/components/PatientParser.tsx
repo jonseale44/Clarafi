@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, User, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, FileText, User, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { queryClient } from '@/lib/queryClient';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+// Validation schema for patient form
+const patientFormSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  gender: z.enum(['male', 'female', 'other', 'unknown'], {
+    required_error: 'Gender is required',
+  }),
+  phoneNumber: z.string().optional(),
+  email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  address: z.string().optional(),
+  emergencyContact: z.string().optional(),
+  insurancePrimary: z.string().optional(),
+  insuranceSecondary: z.string().optional(),
+  policyNumber: z.string().optional(),
+  groupNumber: z.string().optional(),
+});
+
+type PatientFormData = z.infer<typeof patientFormSchema>;
 
 interface ExtractedPatient {
   first_name: string;
@@ -23,6 +48,8 @@ interface ExtractedPatient {
   email?: string;
   emergency_contact?: string;
   insurance_info?: string;
+  insurance_provider?: string;
+  insurance_member_id?: string;
 }
 
 interface ParseResult {
@@ -43,43 +70,76 @@ interface PatientCreateResult {
 }
 
 export function PatientParser() {
-  const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'text'>('text');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [textContent, setTextContent] = useState('');
+  const [quickParseText, setQuickParseText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isParsingText, setIsParsingText] = useState(false);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedPatient | null>(null);
   const [createdPatient, setCreatedPatient] = useState<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
   const textDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const quickParseDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const [, setLocation] = useLocation();
 
-  // Auto-parse text content with debouncing
+  // Form for discrete fields
+  const form = useForm<PatientFormData>({
+    resolver: zodResolver(patientFormSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      gender: 'unknown',
+      phoneNumber: '',
+      email: '',
+      address: '',
+      emergencyContact: '',
+      insurancePrimary: '',
+      insuranceSecondary: '',
+      policyNumber: '',
+      groupNumber: '',
+    },
+  });
+
+  // Auto-parse quick parse text with debouncing (1.5 second delay like draft orders)
   useEffect(() => {
-    if (activeTab === 'text' && textContent.trim()) {
+    if (quickParseText.trim() && quickParseText.length > 5) {
       // Clear existing timeout
-      if (textDebounceRef.current) {
-        clearTimeout(textDebounceRef.current);
+      if (quickParseDebounceRef.current) {
+        clearTimeout(quickParseDebounceRef.current);
       }
       
       // Set new timeout for debounced parsing
-      textDebounceRef.current = setTimeout(() => {
-        parsePatientInfoFromText(textContent);
-      }, 2000); // 2 second delay
-    } else if (activeTab === 'text' && !textContent.trim()) {
-      // Clear results when text is empty
-      setParseResult(null);
-      setExtractedData(null);
-      setCreatedPatient(null);
+      quickParseDebounceRef.current = setTimeout(() => {
+        parseQuickText(quickParseText);
+      }, 1500); // 1.5 second delay like draft orders
     }
     
     return () => {
-      if (textDebounceRef.current) {
-        clearTimeout(textDebounceRef.current);
+      if (quickParseDebounceRef.current) {
+        clearTimeout(quickParseDebounceRef.current);
       }
     };
-  }, [textContent, activeTab]);
+  }, [quickParseText]);
+  
+  // When parsed data is received, populate the form
+  useEffect(() => {
+    if (extractedData) {
+      form.setValue('firstName', extractedData.first_name || '');
+      form.setValue('lastName', extractedData.last_name || '');
+      form.setValue('dateOfBirth', extractedData.date_of_birth || '');
+      form.setValue('gender', (extractedData.gender || 'unknown') as any);
+      form.setValue('phoneNumber', extractedData.contact_number || '');
+      form.setValue('email', extractedData.email || '');
+      form.setValue('address', extractedData.address || '');
+      form.setValue('emergencyContact', extractedData.emergency_contact || '');
+      form.setValue('insurancePrimary', extractedData.insurance_provider || extractedData.insurance_info || '');
+      form.setValue('policyNumber', extractedData.insurance_member_id || '');
+    }
+  }, [extractedData, form]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -188,6 +248,38 @@ export function PatientParser() {
     }
   };
 
+  const parseQuickText = async (text: string) => {
+    if (!text.trim()) return;
+    
+    setIsParsingText(true);
+    try {
+      const requestBody = {
+        textContent: text.trim(),
+        isTextContent: true
+      };
+
+      const response = await fetch('/api/parse-patient-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const result: ParseResult = await response.json();
+      setParseResult(result);
+
+      if (result.success && result.data) {
+        setExtractedData(result.data);
+        // No toast for auto-parse to avoid interrupting user typing
+      }
+    } catch (error) {
+      console.error('Parse error:', error);
+    } finally {
+      setIsParsingText(false);
+    }
+  };
+
   const parsePatientInfoFromText = async (text: string) => {
     if (!text.trim()) return;
     
@@ -234,27 +326,26 @@ export function PatientParser() {
     }
   };
 
-  const createPatient = async () => {
-    if (!extractedData) return;
-
+  const createPatient = async (data: PatientFormData) => {
     setIsProcessing(true);
     try {
-      let requestBody: any = {};
+      // Transform form data to match API expectations
+      const requestBody = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        contactNumber: data.phoneNumber,
+        email: data.email,
+        address: data.address,
+        emergencyContact: data.emergencyContact,
+        insurancePrimary: data.insurancePrimary,
+        insuranceSecondary: data.insuranceSecondary,
+        policyNumber: data.policyNumber,
+        groupNumber: data.groupNumber,
+      };
 
-      if (activeTab === 'upload' && selectedFile) {
-        const base64Data = await convertFileToBase64(selectedFile);
-        requestBody = {
-          imageData: base64Data,
-          isTextContent: false
-        };
-      } else if (activeTab === 'text' && textContent.trim()) {
-        requestBody = {
-          textContent: textContent.trim(),
-          isTextContent: true
-        };
-      }
-
-      const response = await fetch('/api/parse-and-create-patient', {
+      const response = await fetch('/api/patients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,30 +353,28 @@ export function PatientParser() {
         body: JSON.stringify(requestBody),
       });
 
-      const result: PatientCreateResult = await response.json();
-
-      if (result.success && result.patient) {
-        setCreatedPatient(result.patient);
-        // Invalidate patient queries to refresh patient lists
-        await queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
-        toast({
-          title: "Patient created successfully",
-          description: `Created patient record for ${result.patient.firstName} ${result.patient.lastName}`,
-        });
-      } else if (result.existingPatient) {
-        toast({
-          title: "Patient already exists",
-          description: "A patient with this information already exists in the system",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Creation failed",
-          description: result.error || "Failed to create patient record",
-          variant: "destructive",
-        });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create patient');
       }
-    } catch (error) {
+
+      const patient = await response.json();
+      setCreatedPatient(patient);
+      
+      // Invalidate patient queries to refresh patient lists
+      await queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      
+      toast({
+        title: "Patient created successfully",
+        description: `Created patient record for ${patient.firstName} ${patient.lastName}`,
+      });
+      
+      // Navigate to patient view after short delay
+      setTimeout(() => {
+        setLocation(`/patients/${patient.id}`);
+      }, 1000);
+      
+    } catch (error: any) {
       console.error('Create patient error:', error);
       toast({
         title: "Creation error",
@@ -479,25 +568,255 @@ export function PatientParser() {
               </div>
             </TabsContent>
 
-            <TabsContent value="text" className="space-y-4">
+            <TabsContent value="text" className="space-y-6">
+              {/* Quick Parse Text Section */}
               <div className="space-y-2">
-                <Label htmlFor="text-content">Patient Information Text</Label>
+                <Label htmlFor="quick-parse">Quick Parse Text</Label>
                 <div className="relative">
                   <Textarea
-                    id="text-content"
-                    placeholder="Paste or type patient demographic information here... (Auto-parses after 2 seconds)"
-                    value={textContent}
-                    onChange={(e) => setTextContent(e.target.value)}
-                    rows={6}
+                    id="quick-parse"
+                    placeholder="Paste or type patient information here... (Auto-parses after 1.5 seconds)"
+                    value={quickParseText}
+                    onChange={(e) => setQuickParseText(e.target.value)}
+                    rows={4}
                     className="resize-none"
                   />
-                  {activeTab === 'text' && textContent.trim() && !isProcessing && (
-                    <div className="absolute top-2 right-2 text-xs text-navy-blue-600 bg-navy-blue-50 px-2 py-1 rounded">
-                      Auto-parsing...
+                  {isParsingText && (
+                    <div className="absolute top-2 right-2 flex items-center gap-2">
+                      <RefreshCw className="w-3 h-3 animate-spin text-navy-blue-600" />
+                      <span className="text-xs text-navy-blue-600">Parsing...</span>
                     </div>
                   )}
                 </div>
+                <p className="text-sm text-gray-500">
+                  AI will automatically extract patient information and populate the fields below
+                </p>
               </div>
+
+              <Separator />
+
+              {/* Discrete Input Fields */}
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(createPatient)} className="space-y-6">
+                  {/* Name Fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* DOB and Gender */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="dateOfBirth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Date of Birth *</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gender *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select gender" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="unknown">Unknown</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="(555) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="john.doe@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Address */}
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="123 Main St, City, State ZIP" 
+                            rows={2}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Emergency Contact */}
+                  <FormField
+                    control={form.control}
+                    name="emergencyContact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emergency Contact</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Name and phone number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Insurance Information */}
+                  <Separator />
+                  <h3 className="font-medium text-sm">Insurance Information</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="insurancePrimary"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Insurance</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Blue Cross Blue Shield" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="insuranceSecondary"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Secondary Insurance</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Medicare" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="policyNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Policy Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="XXX123456" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="groupNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Group Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="GRP789" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex justify-end gap-3">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        form.reset();
+                        setQuickParseText('');
+                        setExtractedData(null);
+                      }}
+                    >
+                      Clear Form
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={isProcessing}
+                      className="bg-navy-blue-600 hover:bg-navy-blue-700"
+                    >
+                      {isProcessing ? 'Creating...' : 'Create Patient'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </TabsContent>
           </Tabs>
 
@@ -510,144 +829,7 @@ export function PatientParser() {
         </CardContent>
       </Card>
 
-      {/* Parse Results */}
-      {parseResult && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {parseResult.success ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-red-600" />
-              )}
-              Extraction Results
-            </CardTitle>
-            {parseResult.confidence && (
-              <div className="flex items-center gap-2">
-                <Badge variant={getConfidenceBadgeVariant(parseResult.confidence)}>
-                  {parseResult.confidence}% Confidence
-                </Badge>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
-            {parseResult.success && extractedData ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Name</Label>
-                    <p className="text-sm">{extractedData.first_name} {extractedData.last_name}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Date of Birth</Label>
-                    <p className="text-sm">{extractedData.date_of_birth}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Gender</Label>
-                    <p className="text-sm capitalize">{extractedData.gender}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Contact Number</Label>
-                    <p className="text-sm">{extractedData.contact_number || 'Not provided'}</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Email</Label>
-                    <p className="text-sm">{extractedData.email || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Address</Label>
-                    <p className="text-sm">{extractedData.address || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Emergency Contact</Label>
-                    <p className="text-sm">{extractedData.emergency_contact || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Insurance Info</Label>
-                    <p className="text-sm">{extractedData.insurance_info || 'Not provided'}</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {parseResult.error}
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {/* Action buttons below extraction results */}
-            {parseResult && (
-              <div className="flex gap-3 pt-4 border-t">
-                {extractedData && (
-                  <Button 
-                    onClick={createPatient}
-                    disabled={isProcessing}
-                    className="flex items-center gap-2"
-                  >
-                    <User className="h-4 w-4" />
-                    Create Patient
-                  </Button>
-                )}
-                
-                <Button 
-                  onClick={resetForm}
-                  variant="ghost"
-                  disabled={isProcessing}
-                >
-                  Reset
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Created Patient Success */}
-      {createdPatient && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-600">
-              <CheckCircle className="h-5 w-5" />
-              Patient Created Successfully
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <p><strong>MRN:</strong> {createdPatient.mrn}</p>
-                <p><strong>Name:</strong> {createdPatient.firstName} {createdPatient.lastName}</p>
-                <p><strong>Date of Birth:</strong> {createdPatient.dateOfBirth}</p>
-                <p><strong>Gender:</strong> {createdPatient.gender}</p>
-              </div>
-              
-              <div className="flex gap-3 pt-4 border-t">
-                <Button
-                  onClick={handleViewPatient}
-                  className="flex items-center gap-2"
-                  disabled={isProcessing}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  View Patient Chart
-                </Button>
-                
-                <Button
-                  onClick={handleStartEncounter}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  disabled={isProcessing}
-                >
-                  <Calendar className="h-4 w-4" />
-                  Start New Encounter
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
