@@ -2414,8 +2414,7 @@ Please provide medical suggestions based on what the provider is saying in this 
                   create_response: false,
                 },
                 temperature: 0.7,
-                max_output_tokens: 4096,
-                patientId: patient.id
+                max_output_tokens: 4096
               },
             };
 
