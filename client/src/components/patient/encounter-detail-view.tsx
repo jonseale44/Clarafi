@@ -2445,7 +2445,7 @@ Please provide medical suggestions based on what the provider is saying in this 
                 tools: [],
                 tool_choice: "auto",
                 temperature: 0.8,
-                max_response_output_tokens: "inf"
+                max_response_output_tokens: 4096
               },
             };
 

@@ -122,6 +122,9 @@ export class RealtimeProxyService {
         }
       });
 
+      // Track connection open time
+      const connectionOpenTime = Date.now();
+      
       openaiWs.on('close', (code, reason) => {
         const timestamp = new Date().toISOString();
         console.log(`🔌 [RealtimeProxy] OpenAI connection closed for ${connectionId}`);
@@ -148,10 +151,8 @@ export class RealtimeProxyService {
         };
         console.log(`🔌 [RealtimeProxy] Close code meaning: ${closeCodeMeanings[code] || 'Unknown/Custom code'}`);
         
-        // Calculate connection duration
-        const openTime = new Date(timestamp).getTime() - 10000; // Approximate
-        const closeTime = new Date(timestamp).getTime();
-        const duration = closeTime - openTime;
+        // Calculate actual connection duration
+        const duration = Date.now() - connectionOpenTime;
         console.log(`🔌 [RealtimeProxy] Connection duration: ${duration}ms`);
         
         this.activeConnections.delete(connectionId);
