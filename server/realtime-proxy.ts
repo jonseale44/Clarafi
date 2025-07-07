@@ -108,7 +108,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
           const sessionConfig = message.data || {};
           
           // Extract model from config or use default
-          const model = sessionConfig.model || 'gpt-4o-realtime-preview-2024-10-01';
+          const model = sessionConfig.model || 'gpt-4o-realtime-preview-2025-06-03';
           
           try {
             // Create direct WebSocket connection to OpenAI with model parameter (per official docs)

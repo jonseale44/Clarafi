@@ -109,6 +109,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### OpenAI Realtime API Model Update COMPLETED (January 10, 2025)
+- **CRITICAL MODEL FIX**: Updated all references from deprecated model "gpt-4o-realtime-preview-2024-10-01" to current model "gpt-4o-realtime-preview-2025-06-03"
+- **ROOT CAUSE**: OpenAI WebSocket connections were immediately closing due to invalid model name in session.update messages
+- **FIXED LOCATIONS**: Updated model references in encounter-detail-view.tsx, realtime-proxy-service.ts, and realtime-proxy.ts
+- **WEBSOCKET PARAMETERS**: Confirmed all WebSocket connections follow OpenAI documentation exactly:
+  - URL: `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03`
+  - Headers: `Authorization: Bearer API_KEY`, `OpenAI-Beta: realtime=v1`
+  - Session config: Correct modalities, audio formats (pcm16), and transcription settings
+- **NURSING VIEW**: Uses "gpt-4o-mini-realtime-preview" model which is valid per OpenAI documentation
+- **PRODUCTION IMPACT**: Voice transcription and AI suggestions now work correctly with proper WebSocket connections
+
 ### Critical WebSocket Security Implementation COMPLETED (January 7, 2025)
 - **CRITICAL SECURITY FIX**: Successfully removed all OpenAI API keys from frontend code
 - **REMOVED VITE_OPENAI_API_KEY**: Deleted from .env file and all client-side references in encounter-detail-view.tsx
