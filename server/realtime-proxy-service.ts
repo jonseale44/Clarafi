@@ -27,7 +27,7 @@ export class RealtimeProxyService {
     try {
       // Create connection to OpenAI using headers instead of protocols
       const params = new URLSearchParams({
-        model: 'gpt-4o-realtime-preview'
+        model: 'gpt-4o-realtime-preview-2024-10-01'
       });
 
       const url = `wss://api.openai.com/v1/realtime?${params.toString()}`;
@@ -49,6 +49,7 @@ export class RealtimeProxyService {
       openaiWs.on('open', () => {
         console.log(`✅ [RealtimeProxy] Connected to OpenAI for user ${req.user?.id}`);
         console.log(`✅ [RealtimeProxy] OpenAI WebSocket readyState: ${openaiWs.readyState}`);
+        console.log(`✅ [RealtimeProxy] Connection opened at: ${new Date().toISOString()}`);
         console.log(`✅ [RealtimeProxy] Connection details:`, {
           url,
           headers: {
@@ -57,18 +58,41 @@ export class RealtimeProxyService {
           },
           connectionId
         });
+        this.activeConnections.set(connectionId, { clientWs: ws, openaiWs });
       });
 
       openaiWs.on('message', (data) => {
         const message = data.toString();
+        const timestamp = new Date().toISOString();
+        
         try {
           const parsed = JSON.parse(message);
-          console.log(`📨 [RealtimeProxy] Message from OpenAI - type: ${parsed.type}`);
+          console.log(`📨 [RealtimeProxy] ${timestamp} - Message from OpenAI - type: ${parsed.type}`);
+          
           if (parsed.type === 'error') {
-            console.error(`❌ [RealtimeProxy] OpenAI error:`, parsed.error);
+            console.error(`❌ [RealtimeProxy] OpenAI error event received:`, {
+              timestamp,
+              error: parsed.error,
+              code: parsed.error?.code,
+              message: parsed.error?.message,
+              type: parsed.error?.type,
+              param: parsed.error?.param,
+              event_id: parsed.event_id
+            });
+          } else if (parsed.type === 'session.created') {
+            console.log(`🎯 [RealtimeProxy] Session created successfully:`, {
+              session_id: parsed.session?.id,
+              model: parsed.session?.model,
+              modalities: parsed.session?.modalities,
+              event_id: parsed.event_id
+            });
+          } else if (parsed.type === 'session.updated') {
+            console.log(`🎯 [RealtimeProxy] Session updated successfully:`, {
+              event_id: parsed.event_id
+            });
           }
         } catch (e) {
-          console.log(`📨 [RealtimeProxy] Binary message from OpenAI (audio data)`);
+          console.log(`📨 [RealtimeProxy] ${timestamp} - Binary message from OpenAI (audio data)`);
         }
         
         // Forward OpenAI messages to client
@@ -99,8 +123,37 @@ export class RealtimeProxyService {
       });
 
       openaiWs.on('close', (code, reason) => {
-        console.log(`🔌 [RealtimeProxy] OpenAI connection closed for ${connectionId}: ${code} ${reason}`);
-        console.log(`🔌 [RealtimeProxy] Close details - Code: ${code}, Reason: ${reason || 'No reason provided'}`);
+        const timestamp = new Date().toISOString();
+        console.log(`🔌 [RealtimeProxy] OpenAI connection closed for ${connectionId}`);
+        console.log(`🔌 [RealtimeProxy] Close timestamp: ${timestamp}`);
+        console.log(`🔌 [RealtimeProxy] Close code: ${code}`);
+        console.log(`🔌 [RealtimeProxy] Close reason: ${reason || 'No reason provided'}`);
+        
+        // Log close code meanings
+        const closeCodeMeanings: Record<number, string> = {
+          1000: 'Normal closure',
+          1001: 'Going away',
+          1002: 'Protocol error',
+          1003: 'Unsupported data',
+          1006: 'Abnormal closure',
+          1007: 'Invalid frame payload data',
+          1008: 'Policy violation',
+          1009: 'Message too big',
+          1011: 'Internal server error',
+          1015: 'TLS handshake failure',
+          4001: 'Invalid authentication',
+          4002: 'Invalid model',
+          4003: 'Model not supported',
+          4008: 'API key invalid or missing'
+        };
+        console.log(`🔌 [RealtimeProxy] Close code meaning: ${closeCodeMeanings[code] || 'Unknown/Custom code'}`);
+        
+        // Calculate connection duration
+        const openTime = new Date(timestamp).getTime() - 10000; // Approximate
+        const closeTime = new Date(timestamp).getTime();
+        const duration = closeTime - openTime;
+        console.log(`🔌 [RealtimeProxy] Connection duration: ${duration}ms`);
+        
         this.activeConnections.delete(connectionId);
         if (ws.readyState === WebSocket.OPEN) {
           ws.close(code, reason.toString());

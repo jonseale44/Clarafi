@@ -2166,8 +2166,36 @@ export function EncounterDetailView({
           console.log("⏳ [EncounterView] Do NOT send audio until session.update is sent and sessionReady=true");
         };
         
-        realtimeWs.onclose = () => {
+        realtimeWs.onclose = (event: CloseEvent) => {
+          const timestamp = new Date().toISOString();
           console.log("🔌 [EncounterView] WebSocket connection closed");
+          console.log("🔌 [EncounterView] Close event details:", {
+            timestamp,
+            code: event.code,
+            reason: event.reason || 'No reason provided',
+            wasClean: event.wasClean,
+            type: event.type
+          });
+          
+          // Log close code meanings
+          const closeCodeMeanings: Record<number, string> = {
+            1000: 'Normal closure',
+            1001: 'Going away',
+            1002: 'Protocol error',
+            1003: 'Unsupported data',
+            1006: 'Abnormal closure',
+            1007: 'Invalid frame payload data',
+            1008: 'Policy violation',
+            1009: 'Message too big',
+            1011: 'Internal server error',
+            1015: 'TLS handshake failure',
+            4001: 'Invalid authentication',
+            4002: 'Invalid model',
+            4003: 'Model not supported',
+            4008: 'API key invalid or missing'
+          };
+          console.log(`🔌 [EncounterView] Close code meaning: ${closeCodeMeanings[event.code] || 'Unknown/Custom code'}`);
+          
           setWsConnectionStatus('disconnected');
         };
 
@@ -2392,7 +2420,7 @@ Please provide medical suggestions based on what the provider is saying in this 
               event_id: `session_update_${Date.now()}`,
               type: "session.update",
               session: {
-                model: "gpt-4o-realtime-preview",
+                model: "gpt-4o-realtime-preview-2024-10-01",
                 modalities: ["text", "audio"],
                 instructions: `You are a medical transcription assistant specialized in clinical conversations. 
                 Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
