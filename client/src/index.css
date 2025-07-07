@@ -928,7 +928,94 @@
   backface-visibility: hidden;
 }
 
-/* Stagger the animation for the second letter */
+/* Stagger the falling animation for the second letter */
 .ai-letters-animate:last-child {
-  animation-delay: 0.1s;
+  animation-delay: 
+    0.1s,    /* ai-fall-away delay */
+    1.2s;    /* gold-shimmer delay (1.1s + 0.1s) */
+}
+
+/* Also stagger the sweep effect for the second letter */
+.ai-letters-animate:last-child::after {
+  animation-delay: 1.2s; /* metallic-sweep delay (1.1s + 0.1s) */
+}
+
+/* Metallic flashlight sweep effect */
+@keyframes metallic-sweep {
+  0% {
+    background-position: -200% center;
+  }
+  15% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Metallic shine overlay effect */
+.ai-letters-animate {
+  position: relative;
+  overflow: visible;
+}
+
+/* Create shine effect with pseudo-element */
+.ai-letters-animate::after {
+  content: attr(data-letter);
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: transparent;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.3) 40%,
+    rgba(255, 255, 255, 0.7) 45%,
+    rgba(255, 255, 200, 0.9) 47.5%,
+    #FFFFFF 50%,
+    rgba(255, 255, 200, 0.9) 52.5%,
+    rgba(255, 255, 255, 0.7) 55%,
+    rgba(255, 255, 255, 0.3) 60%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-position: -200% center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: metallic-sweep 3s ease-in-out 1.1s infinite;
+}
+
+/* Subtle color shift during sweep */
+@keyframes gold-shimmer {
+  0%, 10% {
+    color: #FFD700;
+  }
+  12% {
+    color: #FFE55C;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  13% {
+    color: #FFF8DC;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+  }
+  14% {
+    color: #FFE55C;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  16%, 100% {
+    color: #FFD700;
+    text-shadow: none;
+  }
+}
+
+/* Apply both animations to the letters */
+.ai-letters-animate {
+  animation: 
+    ai-fall-away 1.05s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    gold-shimmer 3s ease-in-out 1.1s infinite;
 }
