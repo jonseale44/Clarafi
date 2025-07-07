@@ -2054,96 +2054,32 @@ export function EncounterDetailView({
           );
         }
         console.log(
-          "🌐 [EncounterView] Connecting to OpenAI Realtime API for transcription...",
+          "🌐 [EncounterView] Connecting to secure WebSocket proxy for transcription...",
         );
 
-        // Get API key from environment
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        console.log("🔑 [EncounterView] API key check:", {
-          hasApiKey: !!apiKey,
-          keyLength: apiKey?.length || 0,
-          keyPrefix: apiKey?.substring(0, 7) || "none",
-        });
+        // Connect to secure WebSocket proxy
+        console.log("🔧 [EncounterView] Creating secure WebSocket connection...");
 
-        if (!apiKey) {
-          throw new Error("OpenAI API key not available in environment");
-        }
-
-        // Step 1: Create session exactly like your working code
-        console.log("🔧 [EncounterView] Creating OpenAI session...");
-        const sessionConfig = {
-          model: "gpt-4o-mini-realtime-preview",
-          modalities: ["text"],
-          instructions:
-            "You are a medical transcription assistant. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations. ",
-          input_audio_format: "pcm16",
-          input_audio_transcription: {
-            model: "whisper-1",
-            language: "en",
-          },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 300,
-            create_response: true,
-          },
-        };
-
-        console.log("📤 [API-OUT] Session config being sent to OpenAI:");
-        console.log(JSON.stringify(sessionConfig, null, 2));
-
-        const sessionResponse = await fetch(
-          "https://api.openai.com/v1/realtime/sessions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-              "OpenAI-Beta": "realtime=v1",
-            },
-            body: JSON.stringify(sessionConfig),
-          },
-        );
-
-        if (!sessionResponse.ok) {
-          const error = await sessionResponse.json();
-          console.log("❌ [API-IN] Session creation failed:");
-          console.log(JSON.stringify(error, null, 2));
-          throw new Error(
-            `Failed to create session: ${error.message || "Unknown error"}`,
-          );
-        }
-
-        const session = await sessionResponse.json();
-        console.log("✅ [EncounterView] Session created:", session.id);
-        console.log("📥 [API-IN] Session creation response:");
-        console.log(JSON.stringify(session, null, 2));
-
-        // Step 2: Connect via WebSocket with session token like your working code
-        const protocols = [
-          "realtime",
-          `openai-insecure-api-key.${apiKey}`,
-          "openai-beta.realtime-v1",
-        ];
-
+        // Connect via WebSocket proxy (no API key needed)
         const params = new URLSearchParams({
-          model: "gpt-4o-mini-realtime-preview",
+          patientId: patient.id.toString(),
+          encounterId: encounter.id.toString(),
         });
 
-        realtimeWs = new WebSocket(
-          `wss://api.openai.com/v1/realtime?${params.toString()}`,
-          protocols,
-        );
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/api/realtime/connect?${params.toString()}`;
+        
+        console.log("🔌 [EncounterView] Connecting to:", wsUrl);
+        realtimeWs = new WebSocket(wsUrl);
 
         realtimeWs.onopen = () => {
-          console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
+          console.log("🌐 [EncounterView] ✅ Connected to WebSocket proxy");
 
-          // Session configuration: Focus on transcription only, AI suggestions handled separately
-          const sessionUpdateMessage = {
-            type: "session.update",
-            session: {
-              instructions: `You are a medical transcription assistant specialized in clinical conversations. 
+          // Send session creation request to proxy
+          const sessionConfig = {
+            model: "gpt-4o-mini-realtime-preview",
+            modalities: ["text"],
+            instructions: `You are a medical transcription assistant specialized in clinical conversations. 
               Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
               Pay special attention to:
               - Medication names and dosages (e.g., "Metformin 500mg twice daily")
@@ -2151,34 +2087,43 @@ export function EncounterDetailView({
               - Anatomical terms and symptoms
               - Numbers and measurements (vital signs, lab values)
               Format with bullet points for natural conversation flow.`,
-              modalities: ["text", "audio"],
-              input_audio_format: "pcm16",
-              input_audio_transcription: {
-                model: "whisper-1",
-                language: "en",
-              },
-              turn_detection: {
-                type: "server_vad",
-                threshold: 0.3,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 300,
-                create_response: false,
-              },
+            input_audio_format: "pcm16",
+            input_audio_transcription: {
+              model: "whisper-1",
+              language: "en",
+            },
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 300,
+              create_response: false,
             },
           };
 
-          console.log("📤 [API-OUT] Session update message being sent:");
-          console.log(JSON.stringify(sessionUpdateMessage, null, 2));
+          const sessionCreateMessage = {
+            type: "session.create",
+            data: {
+              patientId: patient.id,
+              encounterId: encounter.id,
+              sessionConfig: sessionConfig,
+            },
+          };
 
-          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
+          console.log("📤 [Proxy] Session creation request:");
+          console.log(JSON.stringify(sessionCreateMessage, null, 2));
+
+          realtimeWs!.send(JSON.stringify(sessionCreateMessage));
         };
 
-        // ✅ ACTIVE AI SUGGESTIONS SYSTEM - WebSocket with Comprehensive Medical Prompt
-        // This is the primary AI suggestions implementation used by the UI
+        // [AI suggestions removed - handled via REST API only]
         const startSuggestionsConversation = async (
           ws: WebSocket | null,
           patientData: any,
         ) => {
+          // AI suggestions handled via REST API, not WebSocket
+          console.log("[EncounterView] AI suggestions handled via REST API only");
+          return;
           if (!ws) return;
 
           console.log("[EncounterView] Starting AI suggestions conversation");
@@ -2327,16 +2272,52 @@ Please provide medical suggestions based on what the provider is saying in this 
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log(
-            "📨 [EncounterView] WebSocket mode - OpenAI message type:",
+            "📨 [EncounterView] WebSocket proxy message type:",
             message.type,
-          );
-          console.log(
-            "🔍 [TokenMonitor] WebSocket activity detected - consuming tokens in background",
           );
 
           // Log all incoming messages for debugging
-          console.log("📥 [API-IN] Complete OpenAI message:");
+          console.log("📥 [Proxy] Message received:");
           console.log(JSON.stringify(message, null, 2));
+
+          // Handle session.created response from proxy
+          if (message.type === "session.created") {
+            console.log("✅ [EncounterView] Session created with proxy");
+            sessionId = message.data?.id || "";
+            setRealtimeConnected(true);
+            
+            // Send initial configuration after session is created
+            sendMessage({
+              type: "session.update",
+              session: {
+                modalities: ["text", "audio"],
+                input_audio_format: "pcm16",
+                input_audio_transcription: {
+                  model: "whisper-1",
+                  language: "en",
+                },
+                turn_detection: {
+                  type: "server_vad",
+                  threshold: 0.5,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 300,
+                  create_response: false,
+                },
+              },
+            });
+            return;
+          }
+
+          // Handle errors from proxy
+          if (message.type === "error") {
+            console.error("❌ [EncounterView] Proxy error:", message.error);
+            toast({
+              title: "Connection Error",
+              description: message.error || "Failed to connect to transcription service",
+              variant: "destructive",
+            });
+            return;
+          }
 
           // Add deduplication checks
           if (message.event_id && isEventProcessed(message.event_id)) {
@@ -2437,236 +2418,13 @@ Please provide medical suggestions based on what the provider is saying in this 
               (transcriptionBuffer.match(/\+/g) || []).length,
             );
 
-            // Start AI suggestions conversation when we have enough transcription (first time only)
-            if (
-              transcriptionBuffer.length > 20 &&
-              !suggestionsStarted &&
-              !conversationActive &&
-              realtimeWs
-            ) {
-              suggestionsStarted = true;
-              conversationActive = true;
-              console.log(
-                "🧠 [EncounterView] TRIGGERING AI suggestions conversation - transcription buffer length:",
-                transcriptionBuffer.length,
-              );
-              console.log(
-                "🧠 [EncounterView] Suggestions started:",
-                suggestionsStarted,
-                "Conversation active:",
-                conversationActive,
-              );
-              startSuggestionsConversation(realtimeWs, patient);
-            }
-
-            // REAL-TIME: Continuously update AI suggestions with live partial transcription
-            // CRITICAL: Only update AI suggestions in WebSocket mode, not REST API mode
-            if (
-              suggestionsStarted &&
-              transcriptionBuffer.length > 20 &&
-              realtimeWs &&
-              !useRestAPI
-            ) {
-              // Debounce to prevent too many rapid updates
-              if (suggestionDebounceTimer.current) {
-                clearTimeout(suggestionDebounceTimer.current);
-              }
-
-              suggestionDebounceTimer.current = setTimeout(() => {
-                console.log(
-                  "🧠 [EncounterView] WebSocket mode - Real-time AI context update with partial transcription",
-                );
-                console.log(
-                  "🔍 [TokenMonitor] WebSocket context update - consuming tokens for suggestions",
-                );
-
-                // Send live partial transcription to AI
-                const contextUpdate = {
-                  type: "conversation.item.create",
-                  item: {
-                    type: "message",
-                    role: "user",
-                    content: [
-                      {
-                        type: "input_text",
-                        text: `Live partial transcription: "${transcriptionBuffer}"\n\nProvide immediate medical insights based on this ongoing conversation.`,
-                      },
-                    ],
-                  },
-                };
-
-                realtimeWs?.send(JSON.stringify(contextUpdate));
-
-                // Request new AI response
-                const responseRequest = {
-                  type: "response.create",
-                  response: {
-                    modalities: ["text"],
-                    instructions: `You are a medical AI assistant attempting to help the provider during the conversation, but you only provide enthusiastic and aggressive responses. End each suggestion with 3 exclamation points (!!!).`,
-                    metadata: {
-                      type: "suggestions",
-                    },
-                  },
-                };
-
-                realtimeWs?.send(JSON.stringify(responseRequest));
-              }, 2000); // Reduced to 2-second debounce for faster real-time response
-            }
+            // AI suggestions handled via REST API only, not WebSocket
           }
 
-          // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
-          // CRITICAL: Only process AI suggestions in WebSocket mode
-          else if (message.type === "response.text.delta" && !useRestAPI) {
-            const deltaText = message.delta || "";
-            console.log(
-              "🧠 [EncounterView] WebSocket mode - AI suggestions delta received:",
-              deltaText,
-            );
-            console.log(
-              "🔍 [TokenMonitor] WebSocket delta received - tokens being consumed for suggestions",
-            );
-            console.log("🧠 [EncounterView] Delta length:", deltaText.length);
-            console.log(
-              "🧠 [EncounterView] Current suggestions buffer length:",
-              suggestionsBuffer.length,
-            );
-            console.log(
-              "🧠 [EncounterView] Current live suggestions length:",
-              liveSuggestions.length,
-            );
-
-            // Apply external system's content filtering to prevent cross-contamination
-            const shouldFilterContent = (content: string): boolean => {
-              // Filter out SOAP note patterns
-              const soapPatterns = [
-                "Patient Visit Summary",
-                "PATIENT VISIT SUMMARY",
-                "Visit Summary",
-                "VISIT SUMMARY",
-                "Chief Complaint:",
-                "**Chief Complaint:**",
-                "History of Present Illness:",
-                "**History of Present Illness:**",
-                "Vital Signs:",
-                "**Vital Signs:**",
-                "Review of Systems:",
-                "**Review of Systems:**",
-                "Physical Examination:",
-                "**Physical Examination:**",
-                "Assessment:",
-                "**Assessment:**",
-                "Plan:",
-                "**Plan:**",
-                "Diagnosis:",
-                "**Diagnosis:**",
-                "Impression:",
-                "**Impression:**",
-                "SUBJECTIVE:",
-                "OBJECTIVE:",
-                "ASSESSMENT:",
-                "PLAN:",
-                "S:",
-                "O:",
-                "A:",
-                "P:",
-                "SOAP Note",
-                "Clinical Note",
-                "Progress Note",
-              ];
-
-              // Filter out order patterns
-              const orderPatterns = [
-                "Lab: [",
-                "Imaging: [",
-                "Medication: [",
-                "Labs:",
-                "Imaging:",
-                "Medications:",
-                "Laboratory:",
-                "Radiology:",
-                "Prescriptions:",
-              ];
-
-              return (
-                soapPatterns.some((pattern) => content.includes(pattern)) ||
-                orderPatterns.some((pattern) => content.includes(pattern))
-              );
-            };
-
-            // Only process if content passes filtering
-            if (!shouldFilterContent(deltaText)) {
-              console.log(
-                "🧠 [EncounterView] Content passed filtering, processing delta",
-              );
-
-              // Accumulate suggestions buffer with delta text using state
-              setSuggestionsBuffer((prev) => {
-                const newBuffer = prev + deltaText;
-                console.log(
-                  "🧠 [EncounterView] Buffer updated from length",
-                  prev.length,
-                  "to",
-                  newBuffer.length,
-                );
-                console.log(
-                  "🧠 [EncounterView] New buffer content preview:",
-                  newBuffer.substring(0, 200),
-                );
-
-                // Format the complete accumulated suggestions with header and bullet point separation
-                let formattedSuggestions;
-                if (!newBuffer.includes("🩺 REAL-TIME CLINICAL INSIGHTS:")) {
-                  formattedSuggestions =
-                    "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n" + newBuffer;
-                  console.log("🧠 [EncounterView] Added header to suggestions");
-                } else {
-                  formattedSuggestions = newBuffer;
-                  console.log(
-                    "🧠 [EncounterView] Header already present, using buffer as-is",
-                  );
-                }
-
-                // Simple formatting - just ensure header spacing
-                formattedSuggestions = formattedSuggestions.replace(
-                  /🩺 REAL-TIME CLINICAL INSIGHTS:\n+/g,
-                  "🩺 REAL-TIME CLINICAL INSIGHTS:\n\n",
-                );
-
-                console.log(
-                  "🧠 [EncounterView] Applied bullet point formatting",
-                );
-
-                console.log(
-                  "🧠 [EncounterView] Final formatted suggestions length:",
-                  formattedSuggestions.length,
-                );
-                console.log(
-                  "🧠 [EncounterView] Final formatted suggestions preview:",
-                  formattedSuggestions.substring(0, 300),
-                );
-
-                // Update the display with accumulated content
-                setLiveSuggestions(formattedSuggestions);
-                setGptSuggestions(formattedSuggestions);
-                console.log(
-                  "🧠 [EncounterView] Updated both live and GPT suggestions display",
-                );
-
-                return newBuffer;
-              });
-            } else {
-              console.warn(
-                "🧠 [EncounterView] Content FILTERED OUT - contains SOAP/order patterns:",
-                deltaText.substring(0, 100),
-              );
-            }
-          }
-
-          // Handle AI suggestions completion
-          else if (message.type === "response.text.done") {
-            console.log("✅ [EncounterView] AI suggestions completed");
-            // Add line break after each completed response
-            setSuggestionsBuffer((prev) => prev + "\n");
+          // Skip AI suggestion messages completely
+          else if (message.type === "response.text.delta" || message.type === "response.text.done") {
+            // AI suggestions handled via REST API only
+            return;
           }
 
           // Handle transcription completion and trigger new AI suggestions
@@ -2958,16 +2716,14 @@ Please provide medical suggestions based on this complete conversation context.`
           audioContext.close();
         }
 
-        // Keep WebSocket connection open for ongoing AI suggestions
-        // Do NOT close the WebSocket - let it continue providing suggestions
-        console.log(
-          "🧠 [EncounterView] WebSocket remains open for ongoing AI suggestions",
-        );
+        // Close WebSocket connection when recording stops
+        if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+          realtimeWs.close();
+          console.log("🔌 [EncounterView] WebSocket connection closed");
+        }
 
-        // All AI suggestions are now handled by the WebSocket connection
-        // No fallback to Assistants API needed
         console.log(
-          "✅ [EncounterView] Recording complete. AI suggestions continue via WebSocket.",
+          "✅ [EncounterView] Recording complete. Transcription saved.",
         );
 
         stream.getTracks().forEach((track) => track.stop());

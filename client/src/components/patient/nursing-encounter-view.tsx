@@ -504,126 +504,26 @@ Format each bullet point on its own line with no extra spacing between them.`,
       let transcriptionBuffer = "";
 
       try {
-        console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
+        console.log("🌐 [NursingView] Connecting to secure WebSocket proxy...");
 
-        // Get API key from environment
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        console.log("🔑 [NursingView] API key check:", {
-          hasApiKey: !!apiKey,
-          keyLength: apiKey?.length || 0,
-          keyPrefix: apiKey?.substring(0, 7) || "none",
-        });
-
-        if (!apiKey) {
-          throw new Error("OpenAI API key not available in environment");
-        }
-
-        // Step 1: Create session exactly like provider view
-        console.log("🔧 [NursingView] Creating OpenAI session...");
-        const sessionConfig = {
-          model: "gpt-4o-mini-realtime-preview",
-          modalities: ["text"],
-          instructions:
-            "You are a medical transcription assistant for nursing documentation. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations with focus on nursing assessment details.",
-          input_audio_format: "pcm16",
-          input_audio_transcription: {
-            model: "whisper-1",
-            language: "en",
-          },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 300,
-            create_response: true,
-          },
-        };
-
-        const sessionResponse = await fetch(
-          "https://api.openai.com/v1/realtime/sessions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-              "OpenAI-Beta": "realtime=v1",
-            },
-            body: JSON.stringify(sessionConfig),
-          },
-        );
-
-        if (!sessionResponse.ok) {
-          const error = await sessionResponse.json();
-          console.log("❌ [NursingView] Session creation failed:", error);
-          throw new Error(
-            `Failed to create session: ${error.message || "Unknown error"}`,
-          );
-        }
-
-        const session = await sessionResponse.json();
-        console.log("✅ [NursingView] Session created:", session.id);
-
-        // Step 2: Connect via WebSocket with session token like provider view
-        const protocols = [
-          "realtime",
-          `openai-insecure-api-key.${apiKey}`,
-          "openai-beta.realtime-v1",
-        ];
-
-        const params = new URLSearchParams({
-          model: "gpt-4o-mini-realtime-preview",
-        });
-
-        realtimeWs = new WebSocket(
-          `wss://api.openai.com/v1/realtime?${params.toString()}`,
-          protocols,
-        );
+        // Use WebSocket proxy for secure API key handling
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect`;
+        
+        console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
+        
+        realtimeWs = new WebSocket(wsUrl);
 
         realtimeWs.onopen = () => {
-          console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API");
-
-          // Session configuration: Focus on transcription with medical abbreviations for nursing
+          console.log("🌐 [NursingView] ✅ Connected to secure WebSocket proxy");
+          
+          // Session configuration: Focus on transcription for nursing documentation
           const sessionUpdateMessage = {
             type: "session.update",
             session: {
-              instructions: `You are a medical transcription assistant specialized in nursing documentation using professional medical abbreviations and standardized formatting.
-
-CRITICAL TRANSCRIPTION STANDARDS:
-- Accurately transcribe medical terminology, drug names, dosages, and clinical observations
-- Translate all languages into English. Only output ENGLISH.
-- Use standard medical abbreviations consistently
-- Format with proper medical shorthand when appropriate
-
-STANDARD MEDICAL ABBREVIATIONS TO USE:
-- Hypertension → HTN
-- Diabetes Type 2 → DM2, Diabetes Type 1 → DM1
-- Coronary Artery Disease → CAD
-- Congestive Heart Failure → CHF
-- Chronic Obstructive Pulmonary Disease → COPD
-- Gastroesophageal Reflux Disease → GERD
-- Atrial Fibrillation → AFib
-- Myocardial Infarction → MI
-- Cerebrovascular Accident → CVA
-- Hyperlipidemia → HLD
-- Osteoarthritis → OA
-- Rheumatoid Arthritis → RA
-- Urinary Tract Infection → UTI
-- Blood Pressure → BP
-- Heart Rate → HR
-- Respiratory Rate → RR
-- Temperature → T
-- Oxygen Saturation → O2 Sat
-- Shortness of Breath → SOB
-- Chest Pain → CP
-- Nausea and Vomiting → N/V
-
-FOCUS AREAS:
-- Nursing assessment terminology and observations using proper abbreviations
-- Vital signs and measurements with standard formatting
-- Patient comfort and care interventions
-- Medication administration details with proper drug names
-- Patient education and communication
-- Format transcription with professional medical terminology`,
+              instructions: `You are a medical transcription assistant specialized in nursing documentation. 
+              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. 
+              Translate all languages into English. Only output ENGLISH.`,
               modalities: ["text", "audio"],
               input_audio_format: "pcm16",
               input_audio_transcription: {
@@ -643,110 +543,154 @@ FOCUS AREAS:
           realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
         };
 
-        // Add conversation state management like provider view
-        let conversationActive = false;
-        let suggestionsStarted = false;
-
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log("📨 [NursingView] OpenAI message type:", message.type);
+          console.log("📨 [NursingView] WebSocket message type:", message.type);
 
-          // Log all incoming messages for debugging
-          console.log("📥 [API-IN] Complete OpenAI message:");
-          console.log(JSON.stringify(message, null, 2));
-
-          // Add deduplication checks
-          if (message.event_id && isEventProcessed(message.event_id)) {
-            console.log(
-              "🚫 [NursingView] Skipping duplicate event:",
-              message.event_id,
-            );
-            return;
-          }
-
-          const content =
-            message.delta || message.transcript || message.text || "";
-          if (content && isContentProcessed(content)) {
-            console.log(
-              "🚫 [NursingView] Skipping duplicate content:",
-              content.substring(0, 30),
-            );
-            return;
-          }
-
-          // Mark as processed
-          if (message.event_id) markEventAsProcessed(message.event_id);
-          if (content) markContentAsProcessed(content);
-
-          // Handle transcription events - accumulate deltas exactly like provider view
-          if (
-            message.type === "conversation.item.input_audio_transcription.delta"
-          ) {
-            const deltaText = message.transcript || message.delta || "";
-            console.log(
-              "📝 [NursingView] Transcription delta received:",
-              deltaText,
-            );
-
-            // For delta updates, append the delta text to existing transcription
+          // Handle transcription delta messages
+          if (message.type === "audio.transcription.delta") {
+            const deltaText = message.delta || "";
+            console.log("📝 [NursingView] Transcription delta:", deltaText);
+            
+            // Accumulate transcription
             transcriptionBuffer += deltaText;
             setTranscriptionBuffer(transcriptionBuffer);
-
-            // Append delta to existing transcription (don't replace)
-            setTranscription((prev) => prev + deltaText);
-
-            // CRITICAL: Update unified transcription content for AI suggestions
-            setLiveTranscriptionContent((prev) => prev + deltaText);
-
-            console.log(
-              "📝 [NursingView] Updated transcription buffer:",
-              transcriptionBuffer,
-            );
-            console.log(
-              "📝 [NursingView] Buffer contains '+' symbols:",
-              (transcriptionBuffer.match(/\+/g) || []).length,
-            );
-
-            // Start AI suggestions conversation when we have enough transcription (first time only)
-            if (
-              transcriptionBuffer.length > 20 &&
-              !suggestionsStarted &&
-              !conversationActive &&
-              realtimeWs
-            ) {
-              suggestionsStarted = true;
-              conversationActive = true;
-              console.log(
-                "🧠 [NursingView] TRIGGERING AI suggestions conversation - transcription buffer length:",
-                transcriptionBuffer.length,
-              );
-              console.log(
-                "🧠 [NursingView] Suggestions started:",
-                suggestionsStarted,
-                "Conversation active:",
-                conversationActive,
-              );
-              startSuggestionsConversation(realtimeWs, patient);
+            setLiveTranscriptionContent(transcriptionBuffer);
+            setTranscription(transcriptionBuffer);
+            
+            console.log("📝 [NursingView] Updated transcription buffer:", transcriptionBuffer);
+          }
+          
+          // Handle transcription completion  
+          else if (message.type === "conversation.item.input_audio_transcription.completed") {
+            const finalText = message.transcript || "";
+            console.log("✅ [NursingView] Transcription completed:", finalText);
+            
+            // Update the transcription with the final text
+            if (finalText.trim()) {
+              setTranscription(finalText);
+              setLiveTranscriptionContent(finalText);
+              setTranscriptionBuffer(finalText);
+              transcriptionBuffer = finalText;
             }
+          }
+          
+          // Skip AI suggestion messages - handled via REST API only
+          else if (message.type === "response.text.delta" || message.type === "response.text.done") {
+            return;
+          }
+        };
+        
+        // Setup WebSocket error handling
+        realtimeWs.onerror = (error) => {
+          console.error("❌ [NursingView] WebSocket error:", error);
+        };
+        
+        realtimeWs.onclose = () => {
+          console.log("🔌 [NursingView] WebSocket connection closed");
+        };
 
-            // REAL-TIME: Continuously update AI suggestions with live partial transcription
-            if (
-              suggestionsStarted &&
-              transcriptionBuffer.length > 20 &&
-              realtimeWs
-            ) {
-              // Debounce to prevent too many rapid updates
-              if (suggestionDebounceTimer.current) {
-                clearTimeout(suggestionDebounceTimer.current);
-              }
+        console.log("✅ [NursingView] WebSocket setup complete");
 
-              suggestionDebounceTimer.current = setTimeout(() => {
-                console.log(
-                  "🧠 [NursingView] Sending real-time AI update for buffer length:",
-                  transcriptionBuffer.length,
-                );
+        // Set up audio recording
+        console.log("🎤 [NursingView] Requesting microphone access...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 16000,
+          },
+        });
+        console.log("🎤 [NursingView] ✅ Microphone access granted");
 
-                const currentTranscription =
+        // Set up audio processing
+        const audioContext = new AudioContext({ sampleRate: 16000 });
+        const source = audioContext.createMediaStreamSource(stream);
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+        // Set up MediaRecorder
+        const mediaRecorder = new MediaRecorder(stream);
+        
+        // Process audio data and send to WebSocket
+        processor.onaudioprocess = (e) => {
+          if (!isRecording || !realtimeWs) return;
+
+          const inputData = e.inputBuffer.getChannelData(0);
+          const pcm16 = new Int16Array(inputData.length);
+          
+          for (let i = 0; i < inputData.length; i++) {
+            const sample = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+          }
+          
+          const audioData = pcm16.buffer;
+          if (audioData.byteLength > 0) {
+            const base64Audio = btoa(
+              String.fromCharCode(...new Uint8Array(audioData))
+            );
+            
+            const audioMessage = {
+              type: "input_audio_buffer.append",
+              audio: base64Audio,
+            };
+            
+            realtimeWs.send(JSON.stringify(audioMessage));
+          }
+        };
+        
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+        
+        // Handle MediaRecorder data
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && audioChunksRef.current) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = () => {
+          console.log("🎤 [NursingView] MediaRecorder stopped");
+        };
+        
+        // Store MediaRecorder reference and start recording
+        (window as any).currentMediaRecorder = mediaRecorder;
+        mediaRecorder.start(100);
+        
+        setIsRecording(true);
+        console.log("✅ [NursingView] Recording started successfully");
+        
+      } catch (error) {
+        console.error("❌ [NursingView] Failed to start recording:", error);
+        setIsRecording(false);
+      }
+    } catch (error) {
+      console.error("❌ [NursingView] Failed to setup recording:", error);
+      setIsRecording(false);
+    }
+  };
+
+  const stopRecording = async () => {
+    console.log("🎤 [NursingView] === STOP RECORDING CALLED ===");
+    
+    // Stop the MediaRecorder
+    const mediaRecorder = (window as any).currentMediaRecorder;
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      console.log("🎤 [NursingView] Stopping MediaRecorder...");
+      mediaRecorder.stop();
+    }
+    
+    // Close WebSocket connection
+    const realtimeWs = realtimeWsRef.current;
+    if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+      console.log("🔌 [NursingView] Closing WebSocket connection...");
+      realtimeWs.close();
+      realtimeWsRef.current = null;
+    }
+    
+    setIsRecording(false);
+    console.log("✅ [NursingView] Recording stopped successfully");
+  };
                   liveTranscriptionContent || transcriptionBuffer || "";
 
                 const contextWithTranscription = `Patient context: ${patient.firstName} ${patient.lastName}, ${patient.gender}, Age: ${patient.dateOfBirth ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear() : "Unknown"}

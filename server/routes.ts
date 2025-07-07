@@ -31,6 +31,7 @@ import { imagingRoutes } from "./imaging-api";
 import { setupUnifiedImagingRoutes } from "./unified-imaging-api";
 import { createRxNormRoutes } from "./rxnorm-routes";
 import { registerAdminUserRoutes } from "./admin-user-routes";
+import { setupRealtimeProxy } from "./realtime-proxy";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -4358,6 +4359,9 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       res.status(500).json({ message: "Failed to activate prompt" });
     }
   });
+
+  // Register WebSocket proxy routes
+  setupRealtimeProxy(app, httpServer);
 
   return httpServer;
 }

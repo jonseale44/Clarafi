@@ -8,7 +8,7 @@
  * 4. HIPAA-compliant architecture
  */
 
-import WebSocket from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import { Express } from 'express';
 import { Server as HTTPServer } from 'http';
@@ -32,7 +32,7 @@ const activeSessions = new Map<string, {
 export function setupRealtimeProxy(app: Express, server: HTTPServer) {
   console.log('🔒 [RealtimeProxy] Setting up secure WebSocket proxy for OpenAI');
   
-  const wss = new WebSocket.Server({ 
+  const wss = new WebSocketServer({ 
     noServer: true,
     path: '/api/realtime/connect'
   });
@@ -282,22 +282,36 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 
 // Verify session with your session store
 async function verifySession(sessionId: string): Promise<number | null> {
-  // TODO: Implement actual session verification with your session store
-  // This is a placeholder - you need to check against your actual session store
+  // Import session store from auth module
+  const { sessionStore } = await import('./auth');
   
-  // For now, extract session from connect.sid format
+  // Extract session ID from connect.sid cookie format (s:sessionId.signature)
   const cleanSessionId = sessionId.split(':')[1]?.split('.')[0];
   
   if (!cleanSessionId) {
+    console.error('❌ [RealtimeProxy] Invalid session ID format:', sessionId);
     return null;
   }
 
-  // In production, you would:
-  // 1. Query your session store (Redis, PostgreSQL, etc.)
-  // 2. Verify the session is valid and not expired
-  // 3. Return the user ID associated with the session
-  
-  // Placeholder: assume session is valid and return a user ID
+  return new Promise((resolve) => {
+    sessionStore.get(cleanSessionId, (err: any, session: any) => {
+      if (err || !session) {
+        console.error('❌ [RealtimeProxy] Session not found or error:', err);
+        resolve(null);
+        return;
+      }
+
+      // Check if session has passport user
+      if (!session.passport?.user) {
+        console.error('❌ [RealtimeProxy] No user in session');
+        resolve(null);
+        return;
+      }
+
+      console.log('✅ [RealtimeProxy] Session verified for user:', session.passport.user);
+      resolve(session.passport.user);
+    });
+  });
   // You MUST implement proper session verification here
   console.warn('⚠️ [RealtimeProxy] Using placeholder session verification - implement proper verification!');
   return 1; // Placeholder user ID
