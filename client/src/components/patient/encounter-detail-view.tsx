@@ -181,6 +181,10 @@ export function EncounterDetailView({
     new Set(["encounters"]),
   );
   
+  // WebSocket connection state
+  const [wsConnectionStatus, setWsConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [wsErrorMessage, setWsErrorMessage] = useState<string>('');
+  
   // Accordion states for transcription and AI suggestions
   const [isTranscriptionExpanded, setIsTranscriptionExpanded] = useState(false);
   const [isAISuggestionsExpanded, setIsAISuggestionsExpanded] = useState(false);
@@ -2122,11 +2126,16 @@ export function EncounterDetailView({
         });
         
         console.log("🔧 [EncounterView] Creating WebSocket instance...");
+        setWsConnectionStatus('connecting');
+        setWsErrorMessage('');
+        
         try {
           realtimeWs = new WebSocket(wsUrl);
           console.log("🔧 [EncounterView] WebSocket instance created successfully");
         } catch (wsError) {
           console.error("❌ [EncounterView] Failed to create WebSocket:", wsError);
+          setWsConnectionStatus('error');
+          setWsErrorMessage('Failed to create WebSocket connection');
           throw wsError;
         }
         
@@ -2134,11 +2143,15 @@ export function EncounterDetailView({
           console.error("❌ [EncounterView] WebSocket connection error:", error);
           console.error("❌ [EncounterView] WebSocket error type:", error.type);
           console.error("❌ [EncounterView] WebSocket ready state:", realtimeWs?.readyState);
+          setWsConnectionStatus('error');
+          setWsErrorMessage('WebSocket connection error');
         };
 
         realtimeWs.onopen = () => {
           console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API proxy");
           console.log("🌐 [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
+          setWsConnectionStatus('connected');
+          setWsErrorMessage('');
 
           // First send session.create message that the proxy expects
           const sessionCreateMessage = {
@@ -2176,6 +2189,11 @@ export function EncounterDetailView({
           console.log(JSON.stringify(sessionCreateMessage, null, 2));
 
           realtimeWs!.send(JSON.stringify(sessionCreateMessage));
+        };
+        
+        realtimeWs.onclose = () => {
+          console.log("🔌 [EncounterView] WebSocket connection closed");
+          setWsConnectionStatus('disconnected');
         };
 
         // ✅ ACTIVE AI SUGGESTIONS SYSTEM - WebSocket with Comprehensive Medical Prompt
@@ -4211,7 +4229,18 @@ Please provide medical suggestions based on this complete conversation context.`
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-green-600">● Connected</span>
+                {wsConnectionStatus === 'connected' && (
+                  <span className="text-sm text-green-600">● Connected</span>
+                )}
+                {wsConnectionStatus === 'connecting' && (
+                  <span className="text-sm text-yellow-600">● Connecting...</span>
+                )}
+                {wsConnectionStatus === 'disconnected' && (
+                  <span className="text-sm text-gray-600">● Disconnected</span>
+                )}
+                {wsConnectionStatus === 'error' && (
+                  <span className="text-sm text-red-600" title={wsErrorMessage}>● Connection Error</span>
+                )}
               </div>
             </div>
 
