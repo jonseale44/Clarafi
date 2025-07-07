@@ -2389,10 +2389,11 @@ Please provide medical suggestions based on what the provider is saying in this 
             
             // Now send the session.update message
             const sessionUpdateMessage = {
+              event_id: `session_update_${Date.now()}`,
               type: "session.update",
               session: {
-                model: "gpt-4o-realtime-preview-2024-10-01",
-                modalities: ["audio"],
+                model: "gpt-4o-realtime-preview-2024-12-17",
+                modalities: ["text", "audio"],
                 instructions: `You are a medical transcription assistant specialized in clinical conversations. 
                 Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
                 Pay special attention to:
@@ -2401,20 +2402,22 @@ Please provide medical suggestions based on what the provider is saying in this 
                 - Anatomical terms and symptoms
                 - Numbers and measurements (vital signs, lab values)
                 Format with bullet points for natural conversation flow.`,
+                voice: "alloy",
                 input_audio_format: "pcm16",
+                output_audio_format: "pcm16",
                 input_audio_transcription: {
-                  model: "whisper-1",
-                  language: "en",
+                  model: "whisper-1"
                 },
                 turn_detection: {
                   type: "server_vad",
-                  threshold: 0.3,
+                  threshold: 0.5,
                   prefix_padding_ms: 300,
-                  silence_duration_ms: 300,
-                  create_response: false,
+                  silence_duration_ms: 500
                 },
-                temperature: 0.7,
-                max_output_tokens: 4096
+                tools: [],
+                tool_choice: "auto",
+                temperature: 0.8,
+                max_response_output_tokens: "inf"
               },
             };
 
