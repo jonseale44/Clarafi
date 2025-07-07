@@ -120,7 +120,8 @@ export class RealtimeProxyService {
           }
           
           if (parsed.type === 'session.update') {
-            console.log(`📤 [RealtimeProxy] Session update config:`, JSON.stringify(parsed.session || parsed.data, null, 2));
+            console.log(`📤 [RealtimeProxy] Full session.update message:`, JSON.stringify(parsed, null, 2));
+            console.log(`📤 [RealtimeProxy] Session config:`, JSON.stringify(parsed.session, null, 2));
           }
         } catch (e) {
           console.log(`📤 [RealtimeProxy] Binary message from client (audio data)`);
