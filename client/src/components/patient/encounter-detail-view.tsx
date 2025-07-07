@@ -266,6 +266,9 @@ export function EncounterDetailView({
   const [autoSaveStatus, setAutoSaveStatus] = useState<
     "saved" | "saving" | "unsaved" | ""
   >("");
+  
+  // WebSocket connection state
+  const [wsConnected, setWsConnected] = useState(false);
 
   // Transcription auto-save functionality
   const transcriptionAutoSaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -2284,7 +2287,7 @@ Please provide medical suggestions based on what the provider is saying in this 
           if (message.type === "session.created") {
             console.log("✅ [EncounterView] Session created with proxy");
             sessionId = message.data?.id || "";
-            setRealtimeConnected(true);
+            setWsConnected(true);
             
             // Send initial configuration after session is created
             sendMessage({
@@ -2621,6 +2624,12 @@ Please provide medical suggestions based on this complete conversation context.`
 
         realtimeWs.onerror = (error) => {
           console.error("❌ [EncounterView] OpenAI WebSocket error:", error);
+          setWsConnected(false);
+        };
+        
+        realtimeWs.onclose = () => {
+          console.log("🔌 [EncounterView] WebSocket disconnected");
+          setWsConnected(false);
         };
       } catch (wsError) {
         console.error(
@@ -3910,7 +3919,9 @@ Please provide medical suggestions based on this complete conversation context.`
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-green-600">● Connected</span>
+                <span className={`text-sm ${wsConnected ? 'text-green-600' : 'text-red-600'}`}>
+                  ● {wsConnected ? 'Connected' : 'Disconnected'}
+                </span>
               </div>
             </div>
 

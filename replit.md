@@ -194,6 +194,14 @@ Preferred communication style: Simple, everyday language.
 - **CODE QUALITY**: Clean separation of concerns with voice transcription isolated from AI suggestions
 - **PRODUCTION READY**: Both provider and nursing views now use secure WebSocket proxy without exposing OpenAI API key
 
+### WebSocket Connection Indicator Fix COMPLETED (July 7, 2025)
+- **HARDCODED INDICATOR FIX**: Fixed connection status indicator that was hardcoded to always show "● Connected" regardless of actual WebSocket state
+- **DYNAMIC CONNECTION STATE**: Added `wsConnected` state variable to track real WebSocket connection status
+- **VISUAL CONNECTION FEEDBACK**: Indicator now shows "● Connected" in green when connected, "● Disconnected" in red when disconnected
+- **PROPER EVENT HANDLING**: WebSocket state properly updated on connection open, error, and close events
+- **STATE MANAGEMENT**: setWsConnected(true) on successful session creation, setWsConnected(false) on error or disconnection
+- **PRODUCTION READY**: Connection indicator now accurately reflects real WebSocket connection status for voice transcription
+
 ### Medical Assistant (MA) Chart Access Fix COMPLETED (January 12, 2025)
 - **CRITICAL PERMISSION FIX**: Fixed issue where MA users couldn't see any chart sections - all sections were empty/hidden
 - **ROOT CAUSE**: Chart sections in chart-sections.ts only allowed ['admin', 'provider', 'nurse'] roles, excluding 'ma' role
