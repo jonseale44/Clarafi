@@ -2095,6 +2095,7 @@ export function EncounterDetailView({
       let suggestionsStarted = false;
       let conversationActive = false; // Track active conversation state
       let sessionId = "";
+      let sessionReady = false; // Track when session is ready to receive audio
 
       try {
         if (useRestAPI) {
@@ -2152,43 +2153,9 @@ export function EncounterDetailView({
           console.log("🌐 [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
           setWsConnectionStatus('connected');
           setWsErrorMessage('');
-
-          // First send session.create message that the proxy expects
-          const sessionCreateMessage = {
-            type: "session.create",
-            data: {
-              model: "gpt-4o-mini-realtime-preview",
-              modalities: ["text", "audio"],
-              instructions: `You are a medical transcription assistant specialized in clinical conversations. 
-              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
-              Pay special attention to:
-              - Medication names and dosages (e.g., "Metformin 500mg twice daily")
-              - Medical abbreviations (e.g., "BP", "HR", "HEENT")
-              - Anatomical terms and symptoms
-              - Numbers and measurements (vital signs, lab values)
-              Format with bullet points for natural conversation flow.`,
-              input_audio_format: "pcm16",
-              input_audio_transcription: {
-                model: "whisper-1",
-                language: "en",
-              },
-              turn_detection: {
-                type: "server_vad",
-                threshold: 0.3,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 300,
-                create_response: false,
-              },
-              temperature: 0.7,
-              max_output_tokens: 4096,
-              patientId: patient.id
-            },
-          };
-
-          console.log("📤 [API-OUT] Session create message being sent:");
-          console.log(JSON.stringify(sessionCreateMessage, null, 2));
-
-          realtimeWs!.send(JSON.stringify(sessionCreateMessage));
+          
+          // According to OpenAI docs, we need to wait for session.created before sending session.update
+          console.log("⏳ [EncounterView] Waiting for session.created event before sending session.update...");
         };
         
         realtimeWs.onclose = () => {
@@ -2398,6 +2365,55 @@ Please provide medical suggestions based on what the provider is saying in this 
           // Mark as processed
           if (message.event_id) markEventAsProcessed(message.event_id);
           if (content) markContentAsProcessed(content);
+
+          // Handle session.created event and send session.update
+          if (message.type === "session.created") {
+            console.log("🔧 [EncounterView] Session event:", message.type);
+            console.log("📝 [EncounterView] Session created, now sending session.update...");
+            
+            // Now send the session.update message
+            const sessionUpdateMessage = {
+              type: "session.update",
+              session: {
+                model: "gpt-4o-realtime-preview-2024-10-01",
+                modalities: ["text", "audio"],
+                instructions: `You are a medical transcription assistant specialized in clinical conversations. 
+                Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
+                Pay special attention to:
+                - Medication names and dosages (e.g., "Metformin 500mg twice daily")
+                - Medical abbreviations (e.g., "BP", "HR", "HEENT")
+                - Anatomical terms and symptoms
+                - Numbers and measurements (vital signs, lab values)
+                Format with bullet points for natural conversation flow.`,
+                input_audio_format: "pcm16",
+                input_audio_transcription: {
+                  model: "whisper-1",
+                  language: "en",
+                },
+                turn_detection: {
+                  type: "server_vad",
+                  threshold: 0.3,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 300,
+                  create_response: false,
+                },
+                temperature: 0.7,
+                max_output_tokens: 4096,
+                patientId: patient.id
+              },
+            };
+
+            console.log("📤 [API-OUT] Session update message being sent:");
+            console.log(JSON.stringify(sessionUpdateMessage, null, 2));
+
+            if (realtimeWsRef.current && realtimeWsRef.current.readyState === WebSocket.OPEN) {
+              realtimeWsRef.current.send(JSON.stringify(sessionUpdateMessage));
+              // Mark session as ready to receive audio
+              sessionReady = true;
+              console.log("✅ [EncounterView] Session is now ready to receive audio");
+            }
+            return;
+          }
 
           // Handle transcription events - accumulate deltas
           if (
@@ -2940,10 +2956,11 @@ Please provide medical suggestions based on this complete conversation context.`
       console.log("🎤 [EncounterView] Created ScriptProcessor with buffer size:", bufferSize);
 
       processor.onaudioprocess = async (e) => {
-        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) {
-          console.log("🎤 [EncounterView] Skipping audio process - WebSocket not ready:", {
+        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN || !sessionReady) {
+          console.log("🎤 [EncounterView] Skipping audio process - WebSocket or session not ready:", {
             wsExists: !!realtimeWs,
-            wsState: realtimeWs?.readyState
+            wsState: realtimeWs?.readyState,
+            sessionReady: sessionReady
           });
           return;
         }
