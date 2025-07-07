@@ -305,10 +305,11 @@ Preferred communication style: Simple, everyday language.
 - **METALLIC SHINE GRADIENT**: Implemented wide wash of light with soft edges using multi-stop gradient (gold → white-gold → gold)
 - **COLOR TRANSFORMATION**: Letters shift from #FFD700 gold to nearly white (#FFF8DC) at peak of light pass with subtle glow effect
 - **SPECULAR HIGHLIGHTS**: Added secondary pseudo-element layer with white gradient for realistic metallic specular reflections
-- **TIMING PRECISION**: Light sweep starts 1.1s after page load (immediately after 1.05s landing) and takes 0.5s to complete
-- **REPEATING EFFECT**: Flashlight sweep repeats every 3 seconds to maintain visual interest
-- **BLEND MODE OPTIMIZATION**: Used mix-blend-mode: screen for realistic light overlay without color distortion
+- **TIMING PRECISION**: Light sweep starts 1.1s after page load (immediately after 1.05s landing) and takes 2s to complete (slowed from 0.5s)
+- **REPEATING EFFECT**: Flashlight sweep repeats every 5 seconds to maintain visual interest (extended from 3s)
+- **BLEND MODE OPTIMIZATION**: Used mix-blend-mode: overlay for realistic light overlay without white corner artifacts
 - **STAGGERED COORDINATION**: Both letters' animations properly staggered to maintain visual coherence during sweep
+- **DIRECTION CORRECTION**: Fixed animation to sweep left-to-right as expected (was incorrectly right-to-left initially)
 
 ### User Note Type Preference System Implementation COMPLETED (July 4, 2025)
 - **PREFERENCE PERSISTENCE ADDED**: Successfully implemented system to remember each user's last selected SOAP note type as their default for future encounters
