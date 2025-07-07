@@ -1,0 +1,65 @@
+Acute Renal Failure (N17.9)
+
+•	Ongoing AKI with improvement in creatinine (2.71 → 2.08), but still above baseline.
+
+•	Continue IV NS fluids and monitor renal function.
+
+Hyponatremia (E87.1)
+
+•	Chronic, now improving hyponatremia (119 → 129); gradual sodium correction.
+
+•	Continue slow correction with IV NS, monitor sodium closely.
+
+New Onset Atrial Fibrillation (I48.91)
+
+•	Prior irregularly irregular rhythm, now normal rate/rhythm on exam; CHA2DS2-VASc = 1.
+
+•	Continue monitoring cardiac rhythm, no anticoagulation indicated at this time.
+
+Urinary Retention (R33.9)
+
+•	Significant retention after Foley removal, unable to void, no urge to urinate.
+
+•	Reinsert Foley catheter for retention and monitor for post-obstructive diuresis.
+
+Urinary Tract Infection (N39.0)
+
+•	UTI with improved but persistent leukocytosis; on ceftriaxone IV, culture results pending.
+
+•	Continue IV ceftriaxone, adjust therapy per sensitivity if culture results available.
+
+Generalized Weakness, Recurrent Falls (R53.1)
+
+•	Persistent fatigue and confusion, ongoing fall risk due to weakness and electrolyte issues.
+
+•	Maintain fall precautions and continue PT/OT therapy.
+
+Morbid Obesity (E66.01)
+
+•	Obesity (BMI >40), ongoing risk for hospitalization complications.
+
+•	Continue nutritional consult and weight management counseling.
+
+Chronic Back Pain (M54.5)
+
+•	Chronic pain and instability, likely contributing to falls and debility.
+
+•	Continue pain management (avoid NSAIDs due to renal impairment), monitor pain.
+
+Electrolyte Imbalance: Hypokalemia (E87.6)
+
+•	Persistent hypokalemia despite repletion (K 3.2).
+
+•	Continue oral KCl supplementation, monitor potassium and adjust dose as needed.
+
+Hydronephrosis and Hydroureter (N13.39)
+
+•	Left-sided hydronephrosis/hydroureter seen on imaging, related to outlet obstruction with retention.
+
+•	Monitor for signs of worsening obstruction or infection, reassess after resolution of retention.
+
+Anemia, chronic (D64.9)
+
+•	Chronic normocytic anemia (Hgb 10.6), stable, likely multifactorial.
+
+•	Monitor CBC, no transfusion indicated.
