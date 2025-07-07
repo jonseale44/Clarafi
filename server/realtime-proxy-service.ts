@@ -27,7 +27,7 @@ export class RealtimeProxyService {
     try {
       // Create connection to OpenAI using headers instead of protocols
       const params = new URLSearchParams({
-        model: 'gpt-4o-realtime-preview-2024-12-17'
+        model: 'gpt-4o-realtime-preview'
       });
 
       const url = `wss://api.openai.com/v1/realtime?${params.toString()}`;
