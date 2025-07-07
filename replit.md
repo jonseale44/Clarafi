@@ -109,36 +109,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### OpenAI Realtime API Model Update COMPLETED (January 10, 2025)
-- **CRITICAL MODEL FIX**: Updated all references from deprecated model "gpt-4o-realtime-preview-2024-10-01" to current model "gpt-4o-realtime-preview-2025-06-03"
-- **ROOT CAUSE**: OpenAI WebSocket connections were immediately closing due to invalid model name in session.update messages
-- **FIXED LOCATIONS**: Updated model references in encounter-detail-view.tsx, realtime-proxy-service.ts, and realtime-proxy.ts
-- **WEBSOCKET PARAMETERS**: Confirmed all WebSocket connections follow OpenAI documentation exactly:
-  - URL: `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03`
-  - Headers: `Authorization: Bearer API_KEY`, `OpenAI-Beta: realtime=v1`
-  - Session config: Correct modalities, audio formats (pcm16), and transcription settings
-- **NURSING VIEW**: Uses "gpt-4o-mini-realtime-preview" model which is valid per OpenAI documentation
-- **PRODUCTION IMPACT**: Voice transcription and AI suggestions now work correctly with proper WebSocket connections
-
-### Critical WebSocket Authentication Fix & Technical Debt Cleanup COMPLETED (January 10, 2025)
-- **CRITICAL AUTHENTICATION BUG FIXED**: Fixed hardcoded user ID in `extractUserIdFromSession` function that was returning `1` for all users
-- **ROOT CAUSE**: WebSocket connections were failing when logged-in user's ID wasn't 1 due to authentication mismatch
-- **PROPER SESSION LOOKUP**: Implemented actual PostgreSQL session store lookup to retrieve correct user ID from session cookie
-- **AUTHENTICATION FLOW**: WebSocket proxy now properly parses connect.sid cookie, queries session store, and authenticates with actual user ID
-- **TECHNICAL DEBT REMOVED**: Deleted unused legacy `realtime-proxy.ts` file - system uses `realtime-proxy-routes.ts` and `realtime-proxy-service.ts`
-- **PRODUCTION IMPACT**: Voice transcription WebSocket connections now authenticate correctly for all users regardless of their user ID
-
-### Critical WebSocket Security Implementation COMPLETED (January 7, 2025)
-- **CRITICAL SECURITY FIX**: Successfully removed all OpenAI API keys from frontend code
-- **REMOVED VITE_OPENAI_API_KEY**: Deleted from .env file and all client-side references in encounter-detail-view.tsx
-- **SIMPLIFIED API SETTINGS**: Updated RealtimeAPISettings.tsx to remove all API key handling functionality
-- **SECURE WEBSOCKET PROXY**: System now uses server-side WebSocket proxy at `/ws/openai-realtime` endpoint
-- **HEALTHCARE COMPLIANCE**: All OpenAI connections now route through secure backend proxy meeting HIPAA standards
-- **PRESERVED FUNCTIONALITY**: All AI features (transcription, suggestions, SOAP generation) continue working identically
-- **ZERO FRONTEND KEYS**: No API keys or credentials exposed in browser - complete security implementation
-- **BLOB DATA HANDLING FIX**: Fixed JSON parsing error by adding proper handling for both JSON strings and Blob data in WebSocket message handlers
-- **BINARY DATA SUPPORT**: WebSocket connections now properly handle OpenAI's binary audio data without throwing JSON parse errors
-
 ### Multi-Tenant SaaS Architecture Implementation COMPLETED (January 10, 2025)
 - **CRITICAL SECURITY ENHANCEMENT**: Added multi-tenant data isolation architecture for SaaS deployment model supporting individual providers, group practices, and enterprise health systems
 - **DATABASE MIGRATION COMPLETED**: Successfully added healthSystemId columns to users and patients tables with proper foreign key constraints using default healthSystemId=2 (Waco Family Medicine)

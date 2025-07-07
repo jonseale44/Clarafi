@@ -506,27 +506,86 @@ Format each bullet point on its own line with no extra spacing between them.`,
       try {
         console.log("🌐 [NursingView] Connecting to OpenAI Realtime API...");
 
-        // No API key needed - using secure WebSocket proxy
-        console.log("🔑 [NursingView] Using secure WebSocket proxy - no API key in frontend");
+        // Get API key from environment
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        console.log("🔑 [NursingView] API key check:", {
+          hasApiKey: !!apiKey,
+          keyLength: apiKey?.length || 0,
+          keyPrefix: apiKey?.substring(0, 7) || "none",
+        });
 
-        // Connect via secure WebSocket proxy
-        console.log("🔧 [NursingView] Connecting to secure WebSocket proxy...");
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.host;
-        
+        if (!apiKey) {
+          throw new Error("OpenAI API key not available in environment");
+        }
+
+        // Step 1: Create session exactly like provider view
+        console.log("🔧 [NursingView] Creating OpenAI session...");
+        const sessionConfig = {
+          model: "gpt-4o-mini-realtime-preview",
+          modalities: ["text"],
+          instructions:
+            "You are a medical transcription assistant for nursing documentation. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations with focus on nursing assessment details.",
+          input_audio_format: "pcm16",
+          input_audio_transcription: {
+            model: "whisper-1",
+            language: "en",
+          },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 300,
+            create_response: true,
+          },
+        };
+
+        const sessionResponse = await fetch(
+          "https://api.openai.com/v1/realtime/sessions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+              "OpenAI-Beta": "realtime=v1",
+            },
+            body: JSON.stringify(sessionConfig),
+          },
+        );
+
+        if (!sessionResponse.ok) {
+          const error = await sessionResponse.json();
+          console.log("❌ [NursingView] Session creation failed:", error);
+          throw new Error(
+            `Failed to create session: ${error.message || "Unknown error"}`,
+          );
+        }
+
+        const session = await sessionResponse.json();
+        console.log("✅ [NursingView] Session created:", session.id);
+
+        // Step 2: Connect via WebSocket with session token like provider view
+        const protocols = [
+          "realtime",
+          `openai-insecure-api-key.${apiKey}`,
+          "openai-beta.realtime-v1",
+        ];
+
+        const params = new URLSearchParams({
+          model: "gpt-4o-mini-realtime-preview",
+        });
+
         realtimeWs = new WebSocket(
-          `${wsProtocol}//${wsHost}/ws/openai-realtime`
+          `wss://api.openai.com/v1/realtime?${params.toString()}`,
+          protocols,
         );
 
         realtimeWs.onopen = () => {
-          console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API proxy");
+          console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API");
 
-          // First send session.create message that the proxy expects
-          const sessionCreateMessage = {
-            type: "session.create",
-            data: {
-              model: "gpt-4o-mini-realtime-preview",
-              modalities: ["text", "audio"],
+          // Session configuration: Focus on transcription with medical abbreviations for nursing
+          const sessionUpdateMessage = {
+            type: "session.update",
+            session: {
               instructions: `You are a medical transcription assistant specialized in nursing documentation using professional medical abbreviations and standardized formatting.
 
 CRITICAL TRANSCRIPTION STANDARDS:
@@ -588,23 +647,8 @@ FOCUS AREAS:
         let conversationActive = false;
         let suggestionsStarted = false;
 
-        realtimeWs.onmessage = async (event) => {
-          // Handle both JSON strings and Blob data
-          let message;
-          if (event.data instanceof Blob) {
-            // Convert Blob to text first
-            const text = await event.data.text();
-            try {
-              message = JSON.parse(text);
-            } catch (e) {
-              console.log("📨 [NursingView] Received binary data (audio/non-JSON)");
-              return; // Skip non-JSON binary data
-            }
-          } else {
-            // Regular JSON string
-            message = JSON.parse(event.data);
-          }
-          
+        realtimeWs.onmessage = (event) => {
+          const message = JSON.parse(event.data);
           console.log("📨 [NursingView] OpenAI message type:", message.type);
 
           // Log all incoming messages for debugging

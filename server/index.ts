@@ -3,7 +3,6 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./init-db";
 import { seedLabData } from "./lab-sample-data";
-import { initializeWebSocketServer, closeWebSocketServer } from "./realtime-proxy-routes";
 import "./lab-order-background-processor.js"; // Auto-start background processor
 
 const app = express();
@@ -71,19 +70,5 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     log("Database ready - you can register a new account or use admin/admin123 if already created");
-    
-    // Initialize WebSocket server for secure OpenAI proxy
-    initializeWebSocketServer(server);
-  });
-  
-  // Handle graceful shutdown
-  process.on('SIGTERM', () => {
-    console.log('SIGTERM received, closing WebSocket connections...');
-    closeWebSocketServer();
-  });
-  
-  process.on('SIGINT', () => {
-    console.log('SIGINT received, closing WebSocket connections...');
-    closeWebSocketServer();
   });
 })();

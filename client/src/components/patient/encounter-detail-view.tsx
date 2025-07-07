@@ -176,14 +176,9 @@ export function EncounterDetailView({
   const [transcription, setTranscription] = useState("");
   const [mediaRecorderRef, setMediaRecorderRef] =
     useState<MediaRecorder | null>(null);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
-  
-  // WebSocket connection state
-  const [wsConnectionStatus, setWsConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
-  const [wsErrorMessage, setWsErrorMessage] = useState<string>('');
   
   // Accordion states for transcription and AI suggestions
   const [isTranscriptionExpanded, setIsTranscriptionExpanded] = useState(false);
@@ -380,6 +375,9 @@ export function EncounterDetailView({
   const [lastRecordingStopTime, setLastRecordingStopTime] = useState<number>(0);
 
   // Function removed - GPT unified parser now handles all medical problem processing decisions
+
+  // Get OpenAI API key from environment
+  const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
@@ -2006,79 +2004,31 @@ export function EncounterDetailView({
 
   // Enhanced start recording with edit lock conflict detection
   const startRecording = async () => {
-    try {
-      console.log(
-        "🎤 [EncounterView] === START RECORDING BUTTON CLICKED ===",
-      );
-      console.log(
-        "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
-        patient.id,
-      );
-      console.log(
-        "🎤 [EncounterView] Current AI mode:",
-        useRestAPI ? "REST API" : "WebSocket",
-      );
-      console.log(
-        "🎤 [EncounterView] Recording environment:",
-        {
-          isRecording,
-          userEditingLock,
-          recordingMode: useRestAPI ? "rest" : "websocket",
-          hasNavigatorMediaDevices: !!navigator.mediaDevices,
-          hasGetUserMedia: !!(navigator.mediaDevices?.getUserMedia),
-          wsUrl: import.meta.env.VITE_WS_URL || "/ws/openai-realtime"
-        }
-      );
+    console.log(
+      "🎤 [EncounterView] Starting REAL-TIME voice recording for patient:",
+      patient.id,
+    );
+    console.log(
+      "🎤 [EncounterView] Current AI mode:",
+      useRestAPI ? "REST API" : "WebSocket",
+    );
 
-      // Check for edit lock conflict and show modal if needed
-      if (userEditingLock) {
-        console.log(
-          "🔒 [UserEditLock] Edit lock active - showing conflict modal",
-        );
-        setPendingRecordingStart(() => () => proceedWithRecording());
-        setShowRecordingConflictModal(true);
-        return;
-      }
-
-      // Proceed with normal recording
-      console.log("🎤 [EncounterView] No edit lock - proceeding with recording");
-      await proceedWithRecording();
-    } catch (error) {
-      console.error("❌ [EncounterView] StartRecording error:", error);
-      console.error("❌ [EncounterView] Error details:", {
-        message: (error as any)?.message,
-        stack: (error as any)?.stack,
-        name: (error as any)?.name
-      });
-      toast({
-        title: "Recording Error",
-        description: "Failed to start recording. Please check console for details.",
-        variant: "destructive"
-      });
+    // Check for edit lock conflict and show modal if needed
+    if (userEditingLock) {
+      console.log(
+        "🔒 [UserEditLock] Edit lock active - showing conflict modal",
+      );
+      setPendingRecordingStart(() => () => proceedWithRecording());
+      setShowRecordingConflictModal(true);
+      return;
     }
+
+    // Proceed with normal recording
+    await proceedWithRecording();
   };
 
   // Actual recording implementation (extracted from original startRecording)
   const proceedWithRecording = async () => {
-    console.log("🎯 [EncounterView] === PROCEED WITH RECORDING STARTED ===");
-    console.log("🎯 [EncounterView] Function called at:", new Date().toISOString());
-    console.log("🎯 [EncounterView] Current state:", {
-      isRecording,
-      isTranscribing,
-      useRestAPI,
-      transcriptionLength: transcription?.length || 0,
-      soapNoteLength: soapNote?.length || 0,
-      recordingMode: useRestAPI ? "rest" : "websocket",
-      patientId: patient.id,
-      encounterId: encounter?.id
-    });
-    
-    console.log("🎯 [EncounterView] About to check recording status...");
-    if (isRecording) {
-      console.log("⚠️ [EncounterView] Already recording - returning early");
-      return;
-    }
-    
     // Clear previous suggestions when starting new recording (both WebSocket and REST API)
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
@@ -2086,8 +2036,6 @@ export function EncounterDetailView({
     // NOTE: Don't clear transcription here - let it accumulate for intelligent streaming
 
     try {
-      console.log("🎯 [EncounterView] Requesting microphone access...");
-      
       // CRITICAL FIX: Only create WebSocket connection in WebSocket mode
       let realtimeWs: WebSocket | null = null;
       let transcriptionBuffer = "";
@@ -2095,7 +2043,6 @@ export function EncounterDetailView({
       let suggestionsStarted = false;
       let conversationActive = false; // Track active conversation state
       let sessionId = "";
-      let sessionReady = false; // Track when session is ready to receive audio
 
       try {
         if (useRestAPI) {
@@ -2110,93 +2057,120 @@ export function EncounterDetailView({
           "🌐 [EncounterView] Connecting to OpenAI Realtime API for transcription...",
         );
 
-        // No API key needed - using secure WebSocket proxy
-        console.log("🔑 [EncounterView] Using secure WebSocket proxy - no API key in frontend");
-
-        // Connect via secure WebSocket proxy
-        console.log("🔧 [EncounterView] Connecting to secure WebSocket proxy...");
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.host;
-        const wsUrl = `${wsProtocol}//${wsHost}/ws/openai-realtime`;
-        
-        console.log("🔧 [EncounterView] WebSocket connection details:", {
-          protocol: wsProtocol,
-          host: wsHost,
-          url: wsUrl,
-          windowLocation: window.location.href
+        // Get API key from environment
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        console.log("🔑 [EncounterView] API key check:", {
+          hasApiKey: !!apiKey,
+          keyLength: apiKey?.length || 0,
+          keyPrefix: apiKey?.substring(0, 7) || "none",
         });
-        
-        console.log("🔧 [EncounterView] Creating WebSocket instance...");
-        setWsConnectionStatus('connecting');
-        setWsErrorMessage('');
-        
-        try {
-          realtimeWs = new WebSocket(wsUrl);
-          console.log("🔧 [EncounterView] WebSocket instance created successfully");
-        } catch (wsError) {
-          console.error("❌ [EncounterView] Failed to create WebSocket:", wsError);
-          setWsConnectionStatus('error');
-          setWsErrorMessage('Failed to create WebSocket connection');
-          throw wsError;
+
+        if (!apiKey) {
+          throw new Error("OpenAI API key not available in environment");
         }
-        
-        realtimeWs.onerror = (error) => {
-          console.error("❌ [EncounterView] WebSocket connection error:", error);
-          console.error("❌ [EncounterView] WebSocket error type:", error.type);
-          console.error("❌ [EncounterView] WebSocket ready state:", realtimeWs?.readyState);
-          setWsConnectionStatus('error');
-          setWsErrorMessage('WebSocket connection error');
+
+        // Step 1: Create session exactly like your working code
+        console.log("🔧 [EncounterView] Creating OpenAI session...");
+        const sessionConfig = {
+          model: "gpt-4o-mini-realtime-preview",
+          modalities: ["text"],
+          instructions:
+            "You are a medical transcription assistant. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations. ",
+          input_audio_format: "pcm16",
+          input_audio_transcription: {
+            model: "whisper-1",
+            language: "en",
+          },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 300,
+            create_response: true,
+          },
         };
+
+        console.log("📤 [API-OUT] Session config being sent to OpenAI:");
+        console.log(JSON.stringify(sessionConfig, null, 2));
+
+        const sessionResponse = await fetch(
+          "https://api.openai.com/v1/realtime/sessions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+              "OpenAI-Beta": "realtime=v1",
+            },
+            body: JSON.stringify(sessionConfig),
+          },
+        );
+
+        if (!sessionResponse.ok) {
+          const error = await sessionResponse.json();
+          console.log("❌ [API-IN] Session creation failed:");
+          console.log(JSON.stringify(error, null, 2));
+          throw new Error(
+            `Failed to create session: ${error.message || "Unknown error"}`,
+          );
+        }
+
+        const session = await sessionResponse.json();
+        console.log("✅ [EncounterView] Session created:", session.id);
+        console.log("📥 [API-IN] Session creation response:");
+        console.log(JSON.stringify(session, null, 2));
+
+        // Step 2: Connect via WebSocket with session token like your working code
+        const protocols = [
+          "realtime",
+          `openai-insecure-api-key.${apiKey}`,
+          "openai-beta.realtime-v1",
+        ];
+
+        const params = new URLSearchParams({
+          model: "gpt-4o-mini-realtime-preview",
+        });
+
+        realtimeWs = new WebSocket(
+          `wss://api.openai.com/v1/realtime?${params.toString()}`,
+          protocols,
+        );
 
         realtimeWs.onopen = () => {
-          console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API proxy");
-          console.log("🌐 [EncounterView] WebSocket details:", {
-            readyState: realtimeWs?.readyState,
-            url: realtimeWs?.url,
-            protocol: realtimeWs?.protocol,
-            bufferedAmount: realtimeWs?.bufferedAmount,
-            extensions: realtimeWs?.extensions
-          });
-          console.log("🔍 [EncounterView] Session ready state before connection:", sessionReady);
-          setWsConnectionStatus('connected');
-          setWsErrorMessage('');
-          
-          // According to OpenAI docs, we need to wait for session.created before sending session.update
-          console.log("⏳ [EncounterView] Waiting for session.created event before sending session.update...");
-          console.log("⏳ [EncounterView] Do NOT send audio until session.update is sent and sessionReady=true");
-        };
-        
-        realtimeWs.onclose = (event: CloseEvent) => {
-          const timestamp = new Date().toISOString();
-          console.log("🔌 [EncounterView] WebSocket connection closed");
-          console.log("🔌 [EncounterView] Close event details:", {
-            timestamp,
-            code: event.code,
-            reason: event.reason || 'No reason provided',
-            wasClean: event.wasClean,
-            type: event.type
-          });
-          
-          // Log close code meanings
-          const closeCodeMeanings: Record<number, string> = {
-            1000: 'Normal closure',
-            1001: 'Going away',
-            1002: 'Protocol error',
-            1003: 'Unsupported data',
-            1006: 'Abnormal closure',
-            1007: 'Invalid frame payload data',
-            1008: 'Policy violation',
-            1009: 'Message too big',
-            1011: 'Internal server error',
-            1015: 'TLS handshake failure',
-            4001: 'Invalid authentication',
-            4002: 'Invalid model',
-            4003: 'Model not supported',
-            4008: 'API key invalid or missing'
+          console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
+
+          // Session configuration: Focus on transcription only, AI suggestions handled separately
+          const sessionUpdateMessage = {
+            type: "session.update",
+            session: {
+              instructions: `You are a medical transcription assistant specialized in clinical conversations. 
+              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
+              Pay special attention to:
+              - Medication names and dosages (e.g., "Metformin 500mg twice daily")
+              - Medical abbreviations (e.g., "BP", "HR", "HEENT")
+              - Anatomical terms and symptoms
+              - Numbers and measurements (vital signs, lab values)
+              Format with bullet points for natural conversation flow.`,
+              modalities: ["text", "audio"],
+              input_audio_format: "pcm16",
+              input_audio_transcription: {
+                model: "whisper-1",
+                language: "en",
+              },
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.3,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 300,
+                create_response: false,
+              },
+            },
           };
-          console.log(`🔌 [EncounterView] Close code meaning: ${closeCodeMeanings[event.code] || 'Unknown/Custom code'}`);
-          
-          setWsConnectionStatus('disconnected');
+
+          console.log("📤 [API-OUT] Session update message being sent:");
+          console.log(JSON.stringify(sessionUpdateMessage, null, 2));
+
+          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
         };
 
         // ✅ ACTIVE AI SUGGESTIONS SYSTEM - WebSocket with Comprehensive Medical Prompt
@@ -2350,33 +2324,12 @@ Please provide medical suggestions based on what the provider is saying in this 
           ws.send(JSON.stringify(suggestionsMessage));
         };
 
-        realtimeWs.onmessage = async (event) => {
-          // Handle both JSON strings and Blob data
-          let message;
-          if (event.data instanceof Blob) {
-            // Convert Blob to text first
-            const text = await event.data.text();
-            try {
-              message = JSON.parse(text);
-            } catch (e) {
-              console.log("📨 [EncounterView] Received binary data (audio/non-JSON)");
-              return; // Skip non-JSON binary data
-            }
-          } else {
-            // Regular JSON string
-            message = JSON.parse(event.data);
-          }
-          
+        realtimeWs.onmessage = (event) => {
+          const message = JSON.parse(event.data);
           console.log(
             "📨 [EncounterView] WebSocket mode - OpenAI message type:",
             message.type,
           );
-          console.log("📨 [EncounterView] Message details:", {
-            type: message.type,
-            event_id: message.event_id,
-            hasSession: !!message.session,
-            sessionReady: sessionReady
-          });
           console.log(
             "🔍 [TokenMonitor] WebSocket activity detected - consuming tokens in background",
           );
@@ -2407,67 +2360,6 @@ Please provide medical suggestions based on what the provider is saying in this 
           // Mark as processed
           if (message.event_id) markEventAsProcessed(message.event_id);
           if (content) markContentAsProcessed(content);
-
-          // Handle session.created event and send session.update
-          if (message.type === "session.created") {
-            console.log("🔧 [EncounterView] Session event:", message.type);
-            console.log("📝 [EncounterView] Full session.created message:", JSON.stringify(message, null, 2));
-            console.log("📝 [EncounterView] Session created, now sending session.update...");
-            console.log("📝 [EncounterView] Current sessionReady state:", sessionReady);
-            
-            // Now send the session.update message
-            const sessionUpdateMessage = {
-              event_id: `session_update_${Date.now()}`,
-              type: "session.update",
-              session: {
-                model: "gpt-4o-realtime-preview-2025-06-03",
-                modalities: ["text", "audio"],
-                instructions: `You are a medical transcription assistant specialized in clinical conversations. 
-                Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
-                Pay special attention to:
-                - Medication names and dosages (e.g., "Metformin 500mg twice daily")
-                - Medical abbreviations (e.g., "BP", "HR", "HEENT")
-                - Anatomical terms and symptoms
-                - Numbers and measurements (vital signs, lab values)
-                Format with bullet points for natural conversation flow.`,
-                voice: "alloy",
-                input_audio_format: "pcm16",
-                output_audio_format: "pcm16",
-                input_audio_transcription: {
-                  enabled: true,
-                  model: "whisper-1"
-                },
-                turn_detection: {
-                  type: "server_vad",
-                  threshold: 0.1,
-                  prefix_padding_ms: 10,
-                  silence_duration_ms: 999
-                },
-                tools: [],
-                tool_choice: "auto",
-                temperature: 0.8,
-                max_response_output_tokens: 4096
-              },
-            };
-
-            console.log("📤 [API-OUT] Session update message being sent:");
-            console.log(JSON.stringify(sessionUpdateMessage, null, 2));
-
-            if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
-              console.log("📤 [EncounterView] Sending session.update message to OpenAI...");
-              realtimeWs.send(JSON.stringify(sessionUpdateMessage));
-              // Mark session as ready to receive audio
-              sessionReady = true;
-              console.log("✅ [EncounterView] Session is now ready to receive audio");
-              console.log("🎤 [EncounterView] Audio can now be transmitted to OpenAI");
-            } else {
-              console.error("❌ [EncounterView] Cannot send session.update - WebSocket not ready:", {
-                wsExists: !!realtimeWs,
-                wsState: realtimeWs?.readyState
-              });
-            }
-            return;
-          }
 
           // Handle transcription events - accumulate deltas
           if (
@@ -2990,45 +2882,15 @@ Please provide medical suggestions based on this complete conversation context.`
         },
       });
       console.log("🎤 [EncounterView] ✅ Microphone access granted");
-      console.log("🎤 [EncounterView] Stream tracks:", stream.getTracks().map(t => ({
-        kind: t.kind,
-        label: t.label,
-        enabled: t.enabled,
-        readyState: t.readyState
-      })));
 
       // Set up audio processing exactly like your working AudioRecorder
-      console.log("🎤 [EncounterView] Creating AudioContext...");
       const audioContext = new AudioContext({ sampleRate: 16000 });
-      console.log("🎤 [EncounterView] AudioContext state:", audioContext.state);
-      
       const source = audioContext.createMediaStreamSource(stream);
-      console.log("🎤 [EncounterView] Created MediaStreamSource");
-      
       const bufferSize = 4096; // Same as your working code
       const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
-      console.log("🎤 [EncounterView] Created ScriptProcessor with buffer size:", bufferSize);
-      console.log("🎤 [EncounterView] Initial sessionReady state:", sessionReady);
 
-      let audioProcessCount = 0;
       processor.onaudioprocess = async (e) => {
-        audioProcessCount++;
-        
-        // Log first 5 times and then every 100th time
-        if (audioProcessCount <= 5 || audioProcessCount % 100 === 0) {
-          console.log(`🎵 [AudioProcessor] Audio chunk #${audioProcessCount}`, {
-            wsExists: !!realtimeWs,
-            wsState: realtimeWs?.readyState,
-            sessionReady: sessionReady
-          });
-        }
-        
-        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN || !sessionReady) {
-          if (audioProcessCount <= 5) {
-            console.log(`⚠️ [AudioProcessor] Skipping chunk #${audioProcessCount} - WebSocket or session not ready`);
-          }
-          return;
-        }
+        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
 
@@ -3055,23 +2917,17 @@ Please provide medical suggestions based on this complete conversation context.`
             const base64Audio = btoa(binary);
 
             // Send audio buffer exactly like your working code
-            const audioMessage = {
-              type: "input_audio_buffer.append",
-              audio: base64Audio,
-            };
-            
-            console.log(
-              "🎵 [EncounterView] Sending audio buffer:",
-              base64Audio.length,
-              "characters, WebSocket state:",
-              realtimeWs?.readyState
+            realtimeWs!.send(
+              JSON.stringify({
+                type: "input_audio_buffer.append",
+                audio: base64Audio,
+              }),
             );
-            
-            realtimeWs!.send(JSON.stringify(audioMessage));
-            
+
             console.log(
-              "🎵 [EncounterView] Successfully sent audio buffer, message preview:",
-              JSON.stringify(audioMessage).substring(0, 100) + "..."
+              "🎵 [EncounterView] Sent audio buffer:",
+              base64Audio.length,
+              "bytes",
             );
           } catch (error) {
             console.error("❌ [EncounterView] Error processing audio:", error);
@@ -3083,17 +2939,12 @@ Please provide medical suggestions based on this complete conversation context.`
       source.connect(processor);
       processor.connect(audioContext.destination);
 
-      console.log("🎙️ [EncounterView] Creating MediaRecorder...");
       const mediaRecorder = new MediaRecorder(stream);
-      console.log("🎙️ [EncounterView] MediaRecorder created, state:", mediaRecorder.state);
-      
       const audioChunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        console.log("📼 [EncounterView] MediaRecorder ondataavailable fired, size:", event.data.size);
         if (event.data.size > 0) {
           audioChunks.push(event.data);
-          console.log("📼 [EncounterView] Audio chunk collected, total chunks:", audioChunks.length);
         }
       };
 
@@ -3122,15 +2973,7 @@ Please provide medical suggestions based on this complete conversation context.`
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      console.log("🎙️ [EncounterView] Starting MediaRecorder...");
-      try {
-        mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
-        console.log("🎙️ [EncounterView] MediaRecorder started successfully");
-      } catch (startError) {
-        console.error("❌ [EncounterView] Failed to start MediaRecorder:", startError);
-        throw startError;
-      }
-      
+      mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
       setIsRecording(true);
 
       // Clear all edit locks when starting new recording
@@ -4311,18 +4154,7 @@ Please provide medical suggestions based on this complete conversation context.`
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Real-Time Transcription</h2>
               <div className="flex items-center space-x-2">
-                {wsConnectionStatus === 'connected' && (
-                  <span className="text-sm text-green-600">● Connected</span>
-                )}
-                {wsConnectionStatus === 'connecting' && (
-                  <span className="text-sm text-yellow-600">● Connecting...</span>
-                )}
-                {wsConnectionStatus === 'disconnected' && (
-                  <span className="text-sm text-gray-600">● Disconnected</span>
-                )}
-                {wsConnectionStatus === 'error' && (
-                  <span className="text-sm text-red-600" title={wsErrorMessage}>● Connection Error</span>
-                )}
+                <span className="text-sm text-green-600">● Connected</span>
               </div>
             </div>
 
