@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { db } from "./db";
 import { users, userLocations, locations, healthSystems, organizations, encounters, patients } from "@shared/schema";
-import { eq, sql, and, isNull, desc } from "drizzle-orm";
+import { eq, sql, and, isNull, desc, ne } from "drizzle-orm";
 import { z } from "zod";
 
 export function registerAdminUserRoutes(app: Express) {
@@ -236,6 +236,91 @@ export function registerAdminUserRoutes(app: Express) {
       }
       console.error("❌ [AdminUserRoutes] Error assigning location:", error);
       res.status(500).json({ message: "Failed to assign location" });
+    }
+  });
+
+  // Update user location assignment
+  app.put("/api/admin/users/:userId/locations/:locationId", requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const locationId = parseInt(req.params.locationId);
+
+      const updateSchema = z.object({
+        roleAtLocation: z.string(),
+        isPrimary: z.boolean(),
+        permissions: z.object({
+          canSchedule: z.boolean(),
+          canViewAllPatients: z.boolean(),
+          canCreateOrders: z.boolean(),
+        }),
+        workSchedule: z.object({
+          monday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
+          tuesday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
+          wednesday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
+          thursday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
+          friday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
+          saturday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
+          sunday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
+        }).optional(),
+      });
+
+      const data = updateSchema.parse(req.body);
+
+      // Check if assignment exists
+      const [existing] = await db
+        .select()
+        .from(userLocations)
+        .where(
+          and(
+            eq(userLocations.userId, userId),
+            eq(userLocations.locationId, locationId)
+          )
+        );
+
+      if (!existing) {
+        return res.status(404).json({ message: "User location assignment not found" });
+      }
+
+      // If setting as primary, unset other primary locations
+      if (data.isPrimary) {
+        await db
+          .update(userLocations)
+          .set({ isPrimary: false })
+          .where(
+            and(
+              eq(userLocations.userId, userId),
+              ne(userLocations.locationId, locationId)
+            )
+          );
+      }
+
+      // Update the assignment
+      const [updated] = await db
+        .update(userLocations)
+        .set({
+          roleAtLocation: data.roleAtLocation,
+          isPrimary: data.isPrimary,
+          canSchedule: data.permissions.canSchedule,
+          canViewAllPatients: data.permissions.canViewAllPatients,
+          canCreateOrders: data.permissions.canCreateOrders,
+          workSchedule: data.workSchedule || null,
+        })
+        .where(
+          and(
+            eq(userLocations.userId, userId),
+            eq(userLocations.locationId, locationId)
+          )
+        )
+        .returning();
+
+      console.log(`✅ [AdminUserRoutes] Updated user ${userId} location ${locationId} assignment`);
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("❌ [AdminUserRoutes] Error updating location assignment:", error);
+      res.status(500).json({ message: "Failed to update location assignment" });
     }
   });
 

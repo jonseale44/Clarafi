@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Admin User Location Update Endpoint Implementation COMPLETED (July 7, 2025)
+- **CRITICAL BUG FIX**: Added missing PUT endpoint `/api/admin/users/:userId/locations/:locationId` for updating existing user location assignments
+- **WORK SCHEDULE SUPPORT**: Endpoint now properly handles workSchedule updates with full day-by-day scheduling (Monday-Sunday)
+- **COMPREHENSIVE UPDATES**: Supports updating roleAtLocation, isPrimary status, permissions (canSchedule, canViewAllPatients, canCreateOrders), and work schedules
+- **SECURITY MAINTAINED**: Preserves cross-health-system assignment prevention with proper validation
+- **PRIMARY LOCATION LOGIC**: When setting a location as primary, automatically unsets other primary locations for the user
+- **COMPLETE CRUD OPERATIONS**: System now supports full CRUD operations for user location assignments (POST create, PUT update, DELETE remove)
+- **DATABASE FIELD COMPATIBILITY**: Properly handles camelCase to snake_case mapping (workSchedule → work_schedule) for database compatibility
+- **PRODUCTION READY**: Admin users can now fully manage user location assignments including complex work schedules
+
 ### OpenAI Realtime API WebSocket Error Fixes COMPLETED (July 7, 2025)
 - **REACT RENDERING ERROR FIXED**: Fixed critical error where error objects were being rendered directly in toast messages causing "Objects are not valid as a React child" error
 - **ERROR MESSAGE EXTRACTION**: Updated error handling to properly extract message strings from error objects before displaying in toasts
