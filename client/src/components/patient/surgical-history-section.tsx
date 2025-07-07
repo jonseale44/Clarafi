@@ -311,7 +311,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
   const getSourceBadge = (source: string, confidence?: number, attachmentId?: number, encounterId?: number) => {
     switch (source) {
       case "encounter": {
-        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+        const confidencePercent = confidence ? Math.round(confidence) : 0;
         const handleEncounterClick = () => {
           if (encounterId) {
             navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "surgical-history", mode);
@@ -329,7 +329,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
         );
       }
       case "attachment": {
-        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
+        const confidencePercent = confidence ? Math.round(confidence) : 0;
         const handleDocumentClick = () => {
           if (attachmentId) {
             navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "surgical-history", mode);
@@ -589,11 +589,6 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
               
               return (
                 <div key={surgery.id} className="dense-list-item group flex items-center justify-between py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-sm transition-colors relative">
-                  {/* Hover-only procedure category label */}
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 text-white text-xs px-2 py-0.5 rounded-r-md pointer-events-none z-10">
-                    {procedureAbbrev}
-                  </div>
-                  
                   <div className="flex items-center space-x-3 flex-1">
                     {/* Main content - removed the visible procedure abbreviation label */}
                     <div className="flex-1 min-w-0">
