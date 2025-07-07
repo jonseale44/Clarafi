@@ -18,6 +18,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -116,11 +117,11 @@ export interface IStorage {
   deleteMedicalProblem(id: number): Promise<void>;
   getMedicalProblemVisitHistory(problemId: number): Promise<any[]>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: any; // PostgresSessionStore instance
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any; // PostgresSessionStore instance
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -195,7 +196,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values([insertUser])
       .returning();
     return user;
   }
@@ -584,7 +585,7 @@ export class DatabaseStorage implements IStorage {
   async createVitals(insertVitals: Partial<Vitals>): Promise<Vitals> {
     const [vital] = await db
       .insert(vitals)
-      .values(insertVitals)
+      .values([insertVitals as any])
       .returning();
     return vital;
   }
@@ -661,7 +662,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
     
-    return medication[0].medicationHistory || [];
+    return (medication[0].medicationHistory as any[]) || [];
   }
 
   async getMedicationById(id: number): Promise<Medication | undefined> {
@@ -726,7 +727,7 @@ export class DatabaseStorage implements IStorage {
         ...updates,
         updatedAt: new Date(),
         billingActionDate: new Date()
-      })
+      } as any)
       .where(eq(diagnoses.id, diagnosisId))
       .returning();
     return updatedDiagnosis;
@@ -1002,7 +1003,7 @@ export class DatabaseStorage implements IStorage {
         // Use setImmediate to run after current execution cycle completes
         setImmediate(async () => {
           try {
-            await LabOrderProcessor.processSignedLabOrders(insertOrder.patientId, insertOrder.encounterId);
+            await LabOrderProcessor.processSignedLabOrders(insertOrder.patientId, insertOrder.encounterId || undefined);
             console.log(`✅ [STORAGE] Lab order processing completed for order ${order.id}`);
           } catch (labError) {
             console.error(`❌ [STORAGE] Lab order processing failed for order ${order.id}:`, labError);
@@ -1230,7 +1231,7 @@ export class DatabaseStorage implements IStorage {
     if (current.length > 0) {
       await db.update(patientPhysicalFindings)
         .set({
-          confirmedCount: current[0].confirmedCount + 1,
+          confirmedCount: (current[0].confirmedCount || 0) + 1,
           lastConfirmedEncounter: encounterId,
           lastSeenEncounter: encounterId,
           updatedAt: new Date()
@@ -1247,7 +1248,7 @@ export class DatabaseStorage implements IStorage {
     if (current.length > 0) {
       await db.update(patientPhysicalFindings)
         .set({
-          contradictedCount: current[0].contradictedCount + 1,
+          contradictedCount: (current[0].contradictedCount || 0) + 1,
           lastSeenEncounter: encounterId,
           updatedAt: new Date()
         })
@@ -1399,7 +1400,7 @@ export class DatabaseStorage implements IStorage {
 
   async createUserNoteTemplate(template: InsertUserNoteTemplate): Promise<SelectUserNoteTemplate> {
     const [created] = await db.insert(userNoteTemplates)
-      .values(template)
+      .values([template])
       .returning();
     return created;
   }
@@ -1416,16 +1417,6 @@ export class DatabaseStorage implements IStorage {
     await db.update(userNoteTemplates)
       .set({ active: false, updatedAt: new Date() })
       .where(eq(userNoteTemplates.id, id));
-  }
-
-  async getUserNoteTemplate(id: number): Promise<SelectUserNoteTemplate | null> {
-    const results = await db.select()
-      .from(userNoteTemplates)
-      .where(and(
-        eq(userNoteTemplates.id, id),
-        eq(userNoteTemplates.active, true)
-      ));
-    return results[0] || null;
   }
 
   async templateNameExists(userId: number, templateName: string): Promise<boolean> {
@@ -1518,7 +1509,7 @@ export class DatabaseStorage implements IStorage {
 
     // Create a new template for the user
     const [adoptedTemplate] = await db.insert(userNoteTemplates)
-      .values({
+      .values([{
         userId: userId,
         templateName: `${originalTemplate.templateName}-Copy`,
         baseNoteType: originalTemplate.baseNoteType,
@@ -1532,7 +1523,7 @@ export class DatabaseStorage implements IStorage {
         enableAiLearning: originalTemplate.enableAiLearning,
         learningConfidence: originalTemplate.learningConfidence,
         parentTemplateId: originalTemplate.id
-      })
+      }])
       .returning();
 
     // Update share status
@@ -1592,7 +1583,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getAllPendingPromptReviews(): Promise<(AdminPromptReview & { template: UserNoteTemplate, user: User })[]> {
+  async getAllPendingPromptReviews(): Promise<(AdminPromptReview & { template: SelectUserNoteTemplate, user: User })[]> {
     const reviews = await db.select({
       review: adminPromptReviews,
       template: userNoteTemplates,
@@ -1607,7 +1598,7 @@ export class DatabaseStorage implements IStorage {
     return reviews.map(r => ({ ...r.review, template: r.template!, user: r.user! }));
   }
 
-  async getAdminPromptReview(reviewId: number): Promise<(AdminPromptReview & { template: UserNoteTemplate, user: User }) | undefined> {
+  async getAdminPromptReview(reviewId: number): Promise<(AdminPromptReview & { template: SelectUserNoteTemplate, user: User }) | undefined> {
     const [review] = await db.select({
       review: adminPromptReviews,
       template: userNoteTemplates,

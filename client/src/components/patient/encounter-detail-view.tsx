@@ -379,9 +379,6 @@ export function EncounterDetailView({
 
   // Function removed - GPT unified parser now handles all medical problem processing decisions
 
-  // Get OpenAI API key from environment
-  const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
   // Query client for cache invalidation
   const queryClient = useQueryClient();
 
