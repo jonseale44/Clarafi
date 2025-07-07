@@ -847,8 +847,8 @@ export function VitalsFlowsheet({
         </CardContent>
       </Card>
 
-      {/* Critical Alerts */}
-      {vitalsEntries.some((entry) => entry.alerts && entry.alerts.length > 0) && (
+      {/* Critical Alerts - Temporarily hidden per user request */}
+      {/* {vitalsEntries.some((entry) => entry.alerts && entry.alerts.length > 0) && (
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
@@ -864,7 +864,7 @@ export function VitalsFlowsheet({
             </ul>
           </AlertDescription>
         </Alert>
-      )}
+      )} */}
 
       {/* Edit Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
