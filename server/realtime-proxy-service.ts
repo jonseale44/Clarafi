@@ -59,6 +59,35 @@ export class RealtimeProxyService {
           connectionId
         });
         this.activeConnections.set(connectionId, { clientWs: ws, openaiWs });
+        
+        // Send initial session configuration to OpenAI immediately after connection
+        const sessionConfig = {
+          type: "session.update",
+          session: {
+            model: "gpt-4o-realtime-preview-2025-06-03",
+            modalities: ["text", "audio"],
+            voice: "alloy",
+            input_audio_format: "pcm16",
+            output_audio_format: "pcm16",
+            input_audio_transcription: {
+              enabled: true,
+              model: "whisper-1"
+            },
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.1,
+              prefix_padding_ms: 10,
+              silence_duration_ms: 999
+            },
+            tools: [],
+            tool_choice: "auto",
+            temperature: 0.8,
+            max_response_output_tokens: 4096
+          }
+        };
+        
+        console.log(`📤 [RealtimeProxy] Sending initial session configuration to OpenAI:`, JSON.stringify(sessionConfig, null, 2));
+        openaiWs.send(JSON.stringify(sessionConfig));
       });
 
       openaiWs.on('message', (data) => {
