@@ -131,13 +131,46 @@ export function PatientParser() {
       form.setValue('firstName', extractedData.first_name || '');
       form.setValue('lastName', extractedData.last_name || '');
       form.setValue('dateOfBirth', extractedData.date_of_birth || '');
-      form.setValue('gender', (extractedData.gender || 'unknown') as any);
+      
+      // Handle gender field - normalize to lowercase and validate
+      if (extractedData.gender) {
+        const normalizedGender = extractedData.gender.toLowerCase().trim();
+        // Map common variations to valid select values
+        const genderMap: Record<string, 'male' | 'female' | 'other' | 'unknown'> = {
+          'male': 'male',
+          'm': 'male',
+          'female': 'female',
+          'f': 'female',
+          'other': 'other',
+          'unknown': 'unknown',
+          'u': 'unknown'
+        };
+        const mappedGender = genderMap[normalizedGender] || 'unknown';
+        form.setValue('gender', mappedGender);
+      } else {
+        form.setValue('gender', 'unknown');
+      }
+      
       form.setValue('phoneNumber', extractedData.contact_number || '');
       form.setValue('email', extractedData.email || '');
       form.setValue('address', extractedData.address || '');
       form.setValue('emergencyContact', extractedData.emergency_contact || '');
-      form.setValue('insurancePrimary', extractedData.insurance_provider || extractedData.insurance_info || '');
-      form.setValue('policyNumber', extractedData.insurance_member_id || '');
+      
+      // Handle insurance info more robustly
+      if (extractedData.insurance_info) {
+        if (typeof extractedData.insurance_info === 'string') {
+          form.setValue('insurancePrimary', extractedData.insurance_info);
+        } else if (typeof extractedData.insurance_info === 'object') {
+          const insurance = extractedData.insurance_info as any;
+          form.setValue('insurancePrimary', insurance.primary || insurance.insurance_provider || '');
+          form.setValue('insuranceSecondary', insurance.secondary || '');
+          form.setValue('policyNumber', insurance.policy_number || insurance.member_id || '');
+          form.setValue('groupNumber', insurance.group_number || '');
+        }
+      } else if (extractedData.insurance_provider) {
+        form.setValue('insurancePrimary', extractedData.insurance_provider);
+        form.setValue('policyNumber', extractedData.insurance_member_id || '');
+      }
     }
   }, [extractedData, form]);
 
@@ -649,7 +682,10 @@ export function PatientParser() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Gender *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select gender" />
