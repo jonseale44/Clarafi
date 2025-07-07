@@ -519,12 +519,14 @@ Format each bullet point on its own line with no extra spacing between them.`,
         );
 
         realtimeWs.onopen = () => {
-          console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API");
+          console.log("🌐 [NursingView] ✅ Connected to OpenAI Realtime API proxy");
 
-          // Session configuration: Focus on transcription with medical abbreviations for nursing
-          const sessionUpdateMessage = {
-            type: "session.update",
-            session: {
+          // First send session.create message that the proxy expects
+          const sessionCreateMessage = {
+            type: "session.create",
+            data: {
+              model: "gpt-4o-mini-realtime-preview",
+              modalities: ["text", "audio"],
               instructions: `You are a medical transcription assistant specialized in nursing documentation using professional medical abbreviations and standardized formatting.
 
 CRITICAL TRANSCRIPTION STANDARDS:

@@ -2137,13 +2137,15 @@ export function EncounterDetailView({
         };
 
         realtimeWs.onopen = () => {
-          console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
+          console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API proxy");
           console.log("🌐 [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
 
-          // Session configuration: Focus on transcription only, AI suggestions handled separately
-          const sessionUpdateMessage = {
-            type: "session.update",
-            session: {
+          // First send session.create message that the proxy expects
+          const sessionCreateMessage = {
+            type: "session.create",
+            data: {
+              model: "gpt-4o-mini-realtime-preview",
+              modalities: ["text", "audio"],
               instructions: `You are a medical transcription assistant specialized in clinical conversations. 
               Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
               Pay special attention to:
@@ -2152,7 +2154,6 @@ export function EncounterDetailView({
               - Anatomical terms and symptoms
               - Numbers and measurements (vital signs, lab values)
               Format with bullet points for natural conversation flow.`,
-              modalities: ["text", "audio"],
               input_audio_format: "pcm16",
               input_audio_transcription: {
                 model: "whisper-1",
@@ -2165,13 +2166,16 @@ export function EncounterDetailView({
                 silence_duration_ms: 300,
                 create_response: false,
               },
+              temperature: 0.7,
+              max_output_tokens: 4096,
+              patientId: patient.id
             },
           };
 
-          console.log("📤 [API-OUT] Session update message being sent:");
-          console.log(JSON.stringify(sessionUpdateMessage, null, 2));
+          console.log("📤 [API-OUT] Session create message being sent:");
+          console.log(JSON.stringify(sessionCreateMessage, null, 2));
 
-          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
+          realtimeWs!.send(JSON.stringify(sessionCreateMessage));
         };
 
         // ✅ ACTIVE AI SUGGESTIONS SYSTEM - WebSocket with Comprehensive Medical Prompt
