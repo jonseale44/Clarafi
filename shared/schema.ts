@@ -1961,6 +1961,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertPatientSchema = createInsertSchema(patients).pick({
   mrn: true,
+  healthSystemId: true,
   firstName: true,
   lastName: true,
   dateOfBirth: true,
@@ -1969,6 +1970,11 @@ export const insertPatientSchema = createInsertSchema(patients).pick({
   email: true,
   address: true,
   emergencyContact: true,
+  insurancePrimary: true,
+  insuranceSecondary: true,
+  policyNumber: true,
+  groupNumber: true,
+  preferredLocationId: true,
 });
 
 export const insertEncounterSchema = createInsertSchema(encounters).pick({

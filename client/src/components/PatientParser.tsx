@@ -362,8 +362,16 @@ export function PatientParser() {
   const createPatient = async (data: PatientFormData) => {
     setIsProcessing(true);
     try {
+      // Generate MRN
+      const generateMRN = () => {
+        const prefix = "MRN";
+        const timestamp = Date.now().toString().slice(-9);
+        return `${prefix}${timestamp}`;
+      };
+
       // Transform form data to match API expectations
       const requestBody = {
+        mrn: generateMRN(),
         firstName: data.firstName,
         lastName: data.lastName,
         dateOfBirth: data.dateOfBirth,

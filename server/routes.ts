@@ -873,7 +873,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .join(" ");
       };
 
-      const validatedData = insertPatientSchema.parse(req.body);
+      // Add the healthSystemId from the user's context to the request body
+      const healthSystemId = req.userHealthSystemId!;
+      const patientDataWithHealthSystem = {
+        ...req.body,
+        healthSystemId
+      };
+
+      // Parse with the complete data including healthSystemId
+      const validatedData = insertPatientSchema.parse(patientDataWithHealthSystem);
 
       // Normalize name capitalization if firstName and lastName are provided
       if (validatedData.firstName) {
@@ -887,14 +895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
 
-      // Add the healthSystemId from the user's context
-      const healthSystemId = req.userHealthSystemId!;
-      const patientData = {
-        ...validatedData,
-        healthSystemId
-      };
-
-      const patient = await storage.createPatient(patientData);
+      const patient = await storage.createPatient(validatedData);
       res.status(201).json(patient);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
