@@ -943,13 +943,13 @@
 /* Metallic flashlight sweep effect */
 @keyframes metallic-sweep {
   0% {
-    background-position: -200% center;
+    background-position: 200% center;
   }
   40% {
-    background-position: 200% center;
+    background-position: -200% center;
   }
   100% {
-    background-position: 200% center;
+    background-position: -200% center;
   }
 }
 
@@ -978,7 +978,7 @@
     transparent 100%
   );
   background-size: 200% 100%;
-  background-position: -200% center;
+  background-position: 200% center;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
