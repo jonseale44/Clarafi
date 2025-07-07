@@ -2150,12 +2150,20 @@ export function EncounterDetailView({
 
         realtimeWs.onopen = () => {
           console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API proxy");
-          console.log("🌐 [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
+          console.log("🌐 [EncounterView] WebSocket details:", {
+            readyState: realtimeWs?.readyState,
+            url: realtimeWs?.url,
+            protocol: realtimeWs?.protocol,
+            bufferedAmount: realtimeWs?.bufferedAmount,
+            extensions: realtimeWs?.extensions
+          });
+          console.log("🔍 [EncounterView] Session ready state before connection:", sessionReady);
           setWsConnectionStatus('connected');
           setWsErrorMessage('');
           
           // According to OpenAI docs, we need to wait for session.created before sending session.update
           console.log("⏳ [EncounterView] Waiting for session.created event before sending session.update...");
+          console.log("⏳ [EncounterView] Do NOT send audio until session.update is sent and sessionReady=true");
         };
         
         realtimeWs.onclose = () => {
@@ -2335,6 +2343,12 @@ Please provide medical suggestions based on what the provider is saying in this 
             "📨 [EncounterView] WebSocket mode - OpenAI message type:",
             message.type,
           );
+          console.log("📨 [EncounterView] Message details:", {
+            type: message.type,
+            event_id: message.event_id,
+            hasSession: !!message.session,
+            sessionReady: sessionReady
+          });
           console.log(
             "🔍 [TokenMonitor] WebSocket activity detected - consuming tokens in background",
           );
@@ -2369,7 +2383,9 @@ Please provide medical suggestions based on what the provider is saying in this 
           // Handle session.created event and send session.update
           if (message.type === "session.created") {
             console.log("🔧 [EncounterView] Session event:", message.type);
+            console.log("📝 [EncounterView] Full session.created message:", JSON.stringify(message, null, 2));
             console.log("📝 [EncounterView] Session created, now sending session.update...");
+            console.log("📝 [EncounterView] Current sessionReady state:", sessionReady);
             
             // Now send the session.update message
             const sessionUpdateMessage = {
@@ -2406,11 +2422,18 @@ Please provide medical suggestions based on what the provider is saying in this 
             console.log("📤 [API-OUT] Session update message being sent:");
             console.log(JSON.stringify(sessionUpdateMessage, null, 2));
 
-            if (realtimeWsRef.current && realtimeWsRef.current.readyState === WebSocket.OPEN) {
-              realtimeWsRef.current.send(JSON.stringify(sessionUpdateMessage));
+            if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+              console.log("📤 [EncounterView] Sending session.update message to OpenAI...");
+              realtimeWs.send(JSON.stringify(sessionUpdateMessage));
               // Mark session as ready to receive audio
               sessionReady = true;
               console.log("✅ [EncounterView] Session is now ready to receive audio");
+              console.log("🎤 [EncounterView] Audio can now be transmitted to OpenAI");
+            } else {
+              console.error("❌ [EncounterView] Cannot send session.update - WebSocket not ready:", {
+                wsExists: !!realtimeWs,
+                wsState: realtimeWs?.readyState
+              });
             }
             return;
           }
@@ -2954,14 +2977,25 @@ Please provide medical suggestions based on this complete conversation context.`
       const bufferSize = 4096; // Same as your working code
       const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
       console.log("🎤 [EncounterView] Created ScriptProcessor with buffer size:", bufferSize);
+      console.log("🎤 [EncounterView] Initial sessionReady state:", sessionReady);
 
+      let audioProcessCount = 0;
       processor.onaudioprocess = async (e) => {
-        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN || !sessionReady) {
-          console.log("🎤 [EncounterView] Skipping audio process - WebSocket or session not ready:", {
+        audioProcessCount++;
+        
+        // Log first 5 times and then every 100th time
+        if (audioProcessCount <= 5 || audioProcessCount % 100 === 0) {
+          console.log(`🎵 [AudioProcessor] Audio chunk #${audioProcessCount}`, {
             wsExists: !!realtimeWs,
             wsState: realtimeWs?.readyState,
             sessionReady: sessionReady
           });
+        }
+        
+        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN || !sessionReady) {
+          if (audioProcessCount <= 5) {
+            console.log(`⚠️ [AudioProcessor] Skipping chunk #${audioProcessCount} - WebSocket or session not ready`);
+          }
           return;
         }
 
