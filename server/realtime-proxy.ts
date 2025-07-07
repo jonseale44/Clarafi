@@ -236,6 +236,27 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
             });
 
             openAiWs.on('message', (data) => {
+              const message = JSON.parse(data.toString());
+              console.log('📨 [RealtimeProxy] Message from OpenAI:', message.type);
+              
+              // Log specific message types for debugging
+              if (message.type === 'session.updated') {
+                console.log('✅ [RealtimeProxy] Session updated successfully');
+              } else if (message.type === 'input_audio_buffer.speech_started') {
+                console.log('🎤 [RealtimeProxy] Speech detected');
+              } else if (message.type === 'input_audio_buffer.speech_stopped') {
+                console.log('🔇 [RealtimeProxy] Speech ended');
+              } else if (message.type === 'conversation.item.created') {
+                console.log('💬 [RealtimeProxy] New conversation item:', message.item?.type);
+                if (message.item?.transcript) {
+                  console.log('📝 [RealtimeProxy] Transcript:', message.item.transcript);
+                }
+              } else if (message.type === 'response.text.delta') {
+                console.log('✍️ [RealtimeProxy] Text delta:', message.delta);
+              } else if (message.type === 'error') {
+                console.error('❌ [RealtimeProxy] OpenAI error:', message.error);
+              }
+              
               // Relay messages from OpenAI to client
               if (clientWs.readyState === WebSocket.OPEN) {
                 clientWs.send(data.toString());
