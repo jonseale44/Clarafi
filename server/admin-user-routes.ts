@@ -24,12 +24,7 @@ export function registerAdminUserRoutes(app: Express) {
           systemType: healthSystems.systemType,
         })
         .from(healthSystems)
-        .where(
-          and(
-            eq(healthSystems.subscriptionStatus, 'active'),
-            isNull(healthSystems.mergedIntoHealthSystemId)
-          )
-        )
+        .where(eq(healthSystems.subscriptionStatus, 'active'))
         .orderBy(healthSystems.name);
 
       res.json(publicHealthSystems);
