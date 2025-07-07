@@ -176,6 +176,7 @@ export function EncounterDetailView({
   const [transcription, setTranscription] = useState("");
   const [mediaRecorderRef, setMediaRecorderRef] =
     useState<MediaRecorder | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
