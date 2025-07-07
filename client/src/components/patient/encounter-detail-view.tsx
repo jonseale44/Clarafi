@@ -2672,8 +2672,14 @@ Please provide medical suggestions based on this complete conversation context.`
       } catch (wsError) {
         console.error(
           "❌ [EncounterView] Failed to connect to OpenAI Realtime API:",
-          wsError,
+          wsError
         );
+        console.error("❌ [EncounterView] Error type:", typeof wsError);
+        console.error("❌ [EncounterView] Error stringified:", JSON.stringify(wsError, null, 2));
+        console.error("❌ [EncounterView] Error message:", (wsError as any)?.message);
+        console.error("❌ [EncounterView] Error stack:", (wsError as any)?.stack);
+        console.error("❌ [EncounterView] Error name:", (wsError as any)?.name);
+        console.error("❌ [EncounterView] Error code:", (wsError as any)?.code);
         // Fall back to chunked processing if direct connection fails
       }
 
