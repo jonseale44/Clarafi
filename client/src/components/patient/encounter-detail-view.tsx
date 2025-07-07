@@ -2021,7 +2021,7 @@ export function EncounterDetailView({
           recordingMode: useRestAPI ? "rest" : "websocket",
           hasNavigatorMediaDevices: !!navigator.mediaDevices,
           hasGetUserMedia: !!(navigator.mediaDevices?.getUserMedia),
-          wsUrl: process.env.VITE_WS_URL || "/ws/openai-realtime"
+          wsUrl: import.meta.env.VITE_WS_URL || "/ws/openai-realtime"
         }
       );
 
