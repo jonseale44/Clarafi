@@ -36,6 +36,11 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch current user data
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
+  });
+
   // Fetch all patients to select the first one
   const { data: allPatients = [] } = useQuery({
     queryKey: ["/api/patients"],
@@ -185,23 +190,10 @@ export default function Dashboard() {
         if (!patient) return <div className="text-center py-8">Select a patient to view encounters</div>;
         return <PatientChartView patient={patient} patientId={selectedPatientId!} />;
       
-      case "voice-recording":
-        return (
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-4">AI Voice Recording</h2>
-            <p className="text-gray-600 mb-4">Voice recording functionality has been removed.</p>
-          </Card>
-        );
-      
 
       
-      case "imaging":
-        return (
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Imaging Orders</h2>
-            <p className="text-gray-600">Radiology and imaging order management.</p>
-          </Card>
-        );
+
+
       
       default:
         return <div>Content not found</div>;
@@ -267,37 +259,29 @@ export default function Dashboard() {
               >
                 Encounters
               </button>
-              <button
-                onClick={() => setActiveTab("voice-recording")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "voice-recording" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                Voice Recording
-              </button>
-
-              <button
-                onClick={() => setActiveTab("imaging")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "imaging" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                Imaging
-              </button>
-              <Link href="/admin/prompts">
-                <button className="px-3 py-2 rounded-md text-sm font-medium text-orange-600 hover:text-orange-900 hover:bg-orange-50 border border-orange-200">
-                  Admin Prompts
-                </button>
-              </Link>
-              <Link href="/admin/users">
-                <button className="px-3 py-2 rounded-md text-sm font-medium text-purple-600 hover:text-purple-900 hover:bg-purple-50 border border-purple-200">
-                  Admin Users
-                </button>
-              </Link>
+              {/* Admin-only navigation items */}
+              {currentUser?.role === 'admin' && (
+                <>
+                  <Link href="/admin/prompts">
+                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      false // Admin pages don't have active state in dashboard
+                        ? "bg-primary text-white" 
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}>
+                      Admin Prompts
+                    </button>
+                  </Link>
+                  <Link href="/admin/users">
+                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      false // Admin pages don't have active state in dashboard
+                        ? "bg-primary text-white" 
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}>
+                      Admin Users
+                    </button>
+                  </Link>
+                </>
+              )}
               
 
             </nav>
