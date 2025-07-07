@@ -4363,8 +4363,5 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
-  // Register WebSocket proxy routes
-  setupRealtimeProxy(app, httpServer);
-
   return httpServer;
 }

@@ -51,13 +51,28 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
     console.log('🔌 [RealtimeProxy] URL:', request.url);
     console.log('🔌 [RealtimeProxy] Pathname:', url.pathname);
     console.log('🔌 [RealtimeProxy] Query params:', url.searchParams.toString());
+    console.log('🔌 [RealtimeProxy] Request headers:', {
+      host: request.headers.host,
+      cookie: request.headers.cookie ? 'Present' : 'Missing',
+      upgrade: request.headers.upgrade,
+      connection: request.headers.connection,
+      'sec-websocket-version': request.headers['sec-websocket-version'],
+      'sec-websocket-key': request.headers['sec-websocket-key'] ? 'Present' : 'Missing'
+    });
 
     // Verify authentication using session cookie
     const cookies = parseCookies(request.headers.cookie || '');
+    console.log('🔌 [RealtimeProxy] Parsed cookies:', {
+      hasConnectSid: !!cookies['connect.sid'],
+      cookieKeys: Object.keys(cookies),
+      rawCookie: request.headers.cookie?.substring(0, 100) + '...'
+    });
+    
     const sessionId = cookies['connect.sid'];
     
     if (!sessionId) {
       console.error('❌ [RealtimeProxy] No session cookie found');
+      console.error('❌ [RealtimeProxy] Available cookies:', Object.keys(cookies));
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
       return;
@@ -151,13 +166,36 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
             });
             
             console.log('🔧 [RealtimeProxy] Creating WebSocket connection to OpenAI...');
-            openAiWs = new WebSocket(wsUrl, {
-              headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'OpenAI-Beta': 'realtime=v1'
-              }
-            });
-            console.log('🔧 [RealtimeProxy] OpenAI WebSocket instance created');
+            
+            try {
+              openAiWs = new WebSocket(wsUrl, {
+                headers: {
+                  'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                  'OpenAI-Beta': 'realtime=v1'
+                }
+              });
+              console.log('🔧 [RealtimeProxy] OpenAI WebSocket instance created successfully');
+              console.log('🔧 [RealtimeProxy] WebSocket instance properties:', {
+                url: openAiWs.url,
+                readyState: openAiWs.readyState,
+                protocol: openAiWs.protocol
+              });
+            } catch (wsCreateError) {
+              console.error('❌ [RealtimeProxy] Failed to create WebSocket instance:', wsCreateError);
+              console.error('❌ [RealtimeProxy] Error details:', {
+                message: (wsCreateError as any).message,
+                stack: (wsCreateError as any).stack,
+                code: (wsCreateError as any).code
+              });
+              clientWs.send(JSON.stringify({
+                type: 'error',
+                error: {
+                  type: 'websocket_creation_error',
+                  message: `Failed to create WebSocket: ${(wsCreateError as any).message}`
+                }
+              }));
+              return;
+            }
 
             // Set up OpenAI WebSocket handlers
             openAiWs.on('open', () => {
