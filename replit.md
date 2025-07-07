@@ -120,6 +120,14 @@ Preferred communication style: Simple, everyday language.
 - **NURSING VIEW**: Uses "gpt-4o-mini-realtime-preview" model which is valid per OpenAI documentation
 - **PRODUCTION IMPACT**: Voice transcription and AI suggestions now work correctly with proper WebSocket connections
 
+### Critical WebSocket Authentication Fix & Technical Debt Cleanup COMPLETED (January 10, 2025)
+- **CRITICAL AUTHENTICATION BUG FIXED**: Fixed hardcoded user ID in `extractUserIdFromSession` function that was returning `1` for all users
+- **ROOT CAUSE**: WebSocket connections were failing when logged-in user's ID wasn't 1 due to authentication mismatch
+- **PROPER SESSION LOOKUP**: Implemented actual PostgreSQL session store lookup to retrieve correct user ID from session cookie
+- **AUTHENTICATION FLOW**: WebSocket proxy now properly parses connect.sid cookie, queries session store, and authenticates with actual user ID
+- **TECHNICAL DEBT REMOVED**: Deleted unused legacy `realtime-proxy.ts` file - system uses `realtime-proxy-routes.ts` and `realtime-proxy-service.ts`
+- **PRODUCTION IMPACT**: Voice transcription WebSocket connections now authenticate correctly for all users regardless of their user ID
+
 ### Critical WebSocket Security Implementation COMPLETED (January 7, 2025)
 - **CRITICAL SECURITY FIX**: Successfully removed all OpenAI API keys from frontend code
 - **REMOVED VITE_OPENAI_API_KEY**: Deleted from .env file and all client-side references in encounter-detail-view.tsx
