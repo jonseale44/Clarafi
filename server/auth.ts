@@ -5,7 +5,9 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { User as SelectUser, users } from "@shared/schema";
 
 declare global {
   namespace Express {
@@ -141,6 +143,14 @@ export function setupAuth(app: Express) {
 
   app.post("/api/login", passport.authenticate("local"), async (req, res) => {
     try {
+      // Update the user's lastLogin timestamp
+      if (req.user) {
+        await db
+          .update(users)
+          .set({ lastLogin: new Date() })
+          .where(eq(users.id, req.user.id));
+      }
+
       // After successful login, check if user has a remembered location
       if (req.user && req.user.role !== 'admin') {
         const rememberedLocation = await storage.getRememberedLocation(req.user.id);
@@ -155,7 +165,7 @@ export function setupAuth(app: Express) {
       }
       res.status(200).json(req.user);
     } catch (error) {
-      console.error("Error restoring remembered location:", error);
+      console.error("Error during login process:", error);
       // Still return user even if location restore fails
       res.status(200).json(req.user);
     }
