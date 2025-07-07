@@ -886,19 +886,49 @@
 
 /* CLARAFI AI falling animation */
 @keyframes ai-fall-away {
-  from {
-    transform: scale(80);
-    opacity: 0.7;
+  0% {
+    transform: perspective(800px) translateZ(1000px) scale(3) rotateX(-15deg) rotateY(10deg);
+    opacity: 0;
+    filter: blur(3px);
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
   }
-  to {
-    transform: scale(1);
+  20% {
+    opacity: 0.6;
+    filter: blur(2px);
+  }
+  60% {
+    transform: perspective(800px) translateZ(200px) scale(1.5) rotateX(-5deg) rotateY(3deg);
+    opacity: 0.9;
+    filter: blur(0.5px);
+    text-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  }
+  85% {
+    transform: perspective(800px) translateZ(0) scale(1.1) rotateX(0deg) rotateY(0deg);
+    filter: blur(0);
+  }
+  92% {
+    transform: perspective(800px) translateZ(0) scale(0.97) rotateX(0deg) rotateY(0deg);
+  }
+  96% {
+    transform: perspective(800px) translateZ(0) scale(1.02) rotateX(0deg) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(800px) translateZ(0) scale(1) rotateX(0deg) rotateY(0deg);
     opacity: 1;
+    filter: blur(0);
+    text-shadow: none;
   }
 }
 
 .ai-letters-animate {
   display: inline-block;
-  animation: ai-fall-away 1.5s ease-out forwards;
+  animation: ai-fall-away 1.05s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   transform-origin: center center;
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+/* Stagger the animation for the second letter */
+.ai-letters-animate:last-child {
+  animation-delay: 0.1s;
 }
