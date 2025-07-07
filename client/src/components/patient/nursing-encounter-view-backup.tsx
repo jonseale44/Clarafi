@@ -824,3 +824,669 @@ Format each bullet point on its own line with no extra spacing between them.`,
     </div>
   );
 };
+- Focus on patient safety and nursing interventions
+- Use evidence-based nursing practice terminology
+- Respond only at logical questioning intervals to avoid distraction
+
+RESPONSE FORMAT EXAMPLES:
+
+Patient with CP:
+- Assessment: Duration? Quality? Radiation? Associated SOB?
+- History: Prior CAD? Recent cardiac interventions? Current meds?
+
+Patient with SOB:
+- Assessment: O2 Sat? RR? Accessory muscle use? Lung sounds?
+- History: COPD? CHF? Recent URI? Current respiratory meds?
+
+Patient with HTN concerns:
+- Assessment: Current BP? Symptoms? Medication compliance?
+- History: Target BP goals? Recent medication changes?
+
+INFORMATION ACCESS:
+- Provide succinct details using abbreviations: PMH, meds, allergies, vitals
+- If unavailable: "Information not available"
+
+IMPORTANT: Return only 1-2 insights maximum. Use dashes (-) to prefix each insight. Keep responses concise with proper medical abbreviations.`,
+                    metadata: {
+                      type: "suggestions",
+                    },
+                  },
+                };
+
+                realtimeWs.send(JSON.stringify(responseRequest));
+              }, 2000); // Reduced to 2-second debounce for faster real-time response
+            }
+
+            // Trigger live AI suggestions exactly like provider view
+            if (transcriptionBuffer.length > 15) {
+              getLiveAISuggestions(transcriptionBuffer);
+            }
+          }
+
+          // ✅ ACTIVE AI SUGGESTIONS STREAMING - Handles real-time clinical insights
+          else if (message.type === "response.text.delta") {
+            const deltaText = message.delta || "";
+            console.log(
+              "🧠 [NursingView] AI suggestions delta received:",
+              deltaText,
+            );
+            console.log("🧠 [NursingView] Delta length:", deltaText.length);
+            console.log(
+              "🧠 [NursingView] Current suggestions buffer length:",
+              suggestionsBuffer.length,
+            );
+            console.log(
+              "🧠 [NursingView] Current live suggestions length:",
+              liveSuggestions.length,
+            );
+
+            // Apply external system's content filtering to prevent cross-contamination
+            const shouldFilterContent = (content: string): boolean => {
+              // Filter out SOAP note patterns
+              const soapPatterns = [
+                "Patient Visit Summary",
+                "PATIENT VISIT SUMMARY",
+                "Visit Summary",
+                "VISIT SUMMARY",
+                "Chief Complaint:",
+                "**Chief Complaint:**",
+                "History of Present Illness:",
+                "**History of Present Illness:**",
+                "Vital Signs:",
+                "**Vital Signs:**",
+                "Review of Systems:",
+                "**Review of Systems:**",
+                "Physical Examination:",
+                "**Physical Examination:**",
+                "Assessment:",
+                "**Assessment:**",
+                "Plan:",
+                "**Plan:**",
+                "Diagnosis:",
+                "**Diagnosis:**",
+                "Impression:",
+                "**Impression:**",
+                "SUBJECTIVE:",
+                "OBJECTIVE:",
+                "ASSESSMENT:",
+                "PLAN:",
+                "S:",
+                "O:",
+                "A:",
+                "P:",
+                "SOAP Note",
+                "Clinical Note",
+                "Progress Note",
+              ];
+
+              // Filter out order patterns
+              const orderPatterns = [
+                "Lab: [",
+                "Imaging: [",
+                "Medication: [",
+                "Labs:",
+                "Imaging:",
+                "Medications:",
+                "Laboratory:",
+                "Radiology:",
+                "Prescriptions:",
+              ];
+
+              return (
+                soapPatterns.some((pattern) => content.includes(pattern)) ||
+                orderPatterns.some((pattern) => content.includes(pattern))
+              );
+            };
+
+            // Only process if content passes filtering
+            if (!shouldFilterContent(deltaText)) {
+              console.log(
+                "🧠 [NursingView] Content passed filtering, processing delta",
+              );
+
+              // Accumulate suggestions buffer with delta text using state
+              setSuggestionsBuffer((prev) => {
+                const newBuffer = prev + deltaText;
+                console.log(
+                  "🧠 [NursingView] Buffer updated from length",
+                  prev.length,
+                  "to",
+                  newBuffer.length,
+                );
+                console.log(
+                  "🧠 [NursingView] New buffer content preview:",
+                  newBuffer.substring(0, 200),
+                );
+
+                // Format the complete accumulated suggestions with header and bullet point separation
+                let formattedSuggestions;
+                if (!newBuffer.includes("🩺 REAL-TIME NURSING INSIGHTS:")) {
+                  formattedSuggestions =
+                    "🩺 REAL-TIME NURSING INSIGHTS:\n\n" + newBuffer;
+                  console.log("🧠 [NursingView] Added header to suggestions");
+                } else {
+                  formattedSuggestions = newBuffer;
+                  console.log(
+                    "🧠 [NursingView] Header already present, using buffer as-is",
+                  );
+                }
+
+                // Enhanced formatting - ensure header spacing and proper bullet points
+                formattedSuggestions = formattedSuggestions.replace(
+                  /🩺 REAL-TIME NURSING INSIGHTS:\n+/g,
+                  "🩺 REAL-TIME NURSING INSIGHTS:\n\n",
+                );
+
+                // Enhanced formatting for nursing suggestions with punctuation and structure
+                const lines = formattedSuggestions.split("\n");
+                const formattedLines = lines.map((line, index) => {
+                  // Skip header lines and empty lines
+                  if (
+                    line.includes("🩺 REAL-TIME NURSING INSIGHTS:") ||
+                    line.trim() === ""
+                  ) {
+                    return line;
+                  }
+
+                  let trimmedLine = line.trim();
+
+                  // If line has content but no bullet, add one
+                  if (
+                    trimmedLine &&
+                    !trimmedLine.startsWith("•") &&
+                    !trimmedLine.startsWith("-") &&
+                    !trimmedLine.startsWith("*")
+                  ) {
+                    // Fix common formatting issues in AI responses
+
+                    // Add proper punctuation to questions that are missing it
+                    if (
+                      trimmedLine.includes("Duration") ||
+                      trimmedLine.includes("Location") ||
+                      trimmedLine.includes("Quality") ||
+                      trimmedLine.includes("Any ") ||
+                      trimmedLine.includes("History") ||
+                      trimmedLine.includes("Associated")
+                    ) {
+                      // Split on capital letters that should be separate questions
+                      const parts = trimmedLine.split(/(?=[A-Z][a-z])/);
+                      const formattedParts = parts
+                        .map((part) => {
+                          const cleanPart = part.trim();
+                          if (
+                            cleanPart &&
+                            !cleanPart.endsWith("?") &&
+                            !cleanPart.endsWith(".")
+                          ) {
+                            return cleanPart + "?";
+                          }
+                          return cleanPart;
+                        })
+                        .filter((part) => part.length > 0);
+
+                      // Return as separate bullet points
+                      return formattedParts
+                        .map((part) => `• ${part}`)
+                        .join("\n");
+                    }
+
+                    // Ensure proper punctuation for other lines
+                    if (
+                      !trimmedLine.endsWith("?") &&
+                      !trimmedLine.endsWith(".") &&
+                      !trimmedLine.endsWith(":")
+                    ) {
+                      trimmedLine += ".";
+                    }
+
+                    return `• ${trimmedLine}`;
+                  }
+
+                  return line;
+                });
+
+                formattedSuggestions = formattedLines.join("\n");
+
+                console.log(
+                  "🧠 [NursingView] Applied enhanced bullet point formatting",
+                );
+
+                console.log(
+                  "🧠 [NursingView] Final formatted suggestions length:",
+                  formattedSuggestions.length,
+                );
+                console.log(
+                  "🧠 [NursingView] Final formatted suggestions preview:",
+                  formattedSuggestions.substring(0, 300),
+                );
+
+                // Update the display with accumulated content
+                setLiveSuggestions(formattedSuggestions);
+                setGptSuggestions(formattedSuggestions);
+                console.log(
+                  "🧠 [NursingView] Updated both live and GPT suggestions display",
+                );
+
+                return newBuffer;
+              });
+            } else {
+              console.warn(
+                "🧠 [NursingView] Content FILTERED OUT - contains SOAP/order patterns:",
+                deltaText.substring(0, 100),
+              );
+            }
+          }
+
+          // Handle AI suggestions completion
+          else if (message.type === "response.text.done") {
+            console.log("✅ [NursingView] AI suggestions completed");
+            // Add line break after each completed response
+            setSuggestionsBuffer((prev) => prev + "\n");
+          }
+
+          // Handle complete response completion
+          else if (message.type === "response.done") {
+            console.log("✅ [NursingView] Response completely finished - marking as complete");
+            markResponseComplete();
+          }
+
+          if (
+            message.type ===
+            "conversation.item.input_audio_transcription.completed"
+          ) {
+            console.log("✅ [NursingView] Transcription segment completed");
+            const completedText = message.transcript || "";
+            if (completedText && completedText !== transcriptionBuffer) {
+              transcriptionBuffer = completedText;
+              setTranscriptionBuffer(transcriptionBuffer);
+              setTranscription(completedText);
+              setLiveTranscriptionContent(completedText);
+            }
+          }
+
+          if (message.type === "session.created") {
+            console.log("✅ [NursingView] Session created successfully");
+          }
+
+          if (message.type === "session.updated") {
+            console.log("✅ [NursingView] Session updated successfully");
+          }
+
+          if (message.type === "error") {
+            console.error("❌ [NursingView] OpenAI error:", message.error);
+            if (
+              message.error?.code === "conversation_already_has_active_response"
+            ) {
+              console.log(
+                "🔄 [NursingView] Resetting conversation state due to race condition",
+              );
+              conversationActive = false;
+              suggestionsStarted = false;
+            }
+            toast({
+              variant: "destructive",
+              title: "Transcription Error",
+              description: message.error?.message || "Unknown error occurred",
+            });
+          }
+        };
+
+        realtimeWs.onerror = (error) => {
+          console.error("❌ [NursingView] WebSocket error:", error);
+          toast({
+            variant: "destructive",
+            title: "Connection Error",
+            description: "Failed to connect to transcription service",
+          });
+        };
+
+        realtimeWs.onclose = (event) => {
+          console.log(
+            "🔌 [NursingView] WebSocket closed:",
+            event.code,
+            event.reason,
+          );
+          setIsRecording(false);
+        };
+
+        // Step 3: Start audio capture using exact same method as provider view
+        console.log("🎤 [NursingView] Requesting microphone access...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 16000,
+          },
+        });
+        console.log("🎤 [NursingView] ✅ Microphone access granted");
+
+        // Set up audio processing exactly like provider view
+        const audioContext = new AudioContext({ sampleRate: 16000 });
+        const source = audioContext.createMediaStreamSource(stream);
+        const bufferSize = 4096; // Same as provider view
+        const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+        processor.onaudioprocess = async (e) => {
+          if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
+
+          const inputData = e.inputBuffer.getChannelData(0);
+
+          // Convert to PCM16 exactly like provider view
+          const pcm16Data = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            const sample = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16Data[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+          }
+
+          // Create audio blob and send exactly like provider view
+          const audioBlob = new Blob([pcm16Data], { type: "audio/pcm" });
+
+          // Convert to base64 exactly like provider view
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const arrayBuffer = reader.result as ArrayBuffer;
+              const uint8Array = new Uint8Array(arrayBuffer);
+              let binary = "";
+              for (let i = 0; i < uint8Array.length; i++) {
+                binary += String.fromCharCode(uint8Array[i]);
+              }
+              const base64Audio = btoa(binary);
+
+              // Send audio buffer exactly like provider view
+              realtimeWs!.send(
+                JSON.stringify({
+                  type: "input_audio_buffer.append",
+                  audio: base64Audio,
+                }),
+              );
+
+              console.log(
+                "🎵 [NursingView] Sent audio buffer:",
+                base64Audio.length,
+                "bytes",
+              );
+            } catch (error) {
+              console.error("❌ [NursingView] Error processing audio:", error);
+            }
+          };
+          reader.readAsArrayBuffer(audioBlob);
+        };
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+
+        const mediaRecorder = new MediaRecorder(stream);
+        const audioChunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          console.log("🎤 [NursingView] Recording stopped");
+
+          // Clean up audio processing
+          if (processor) {
+            processor.disconnect();
+            source.disconnect();
+            audioContext.close();
+          }
+
+          stream.getTracks().forEach((track) => track.stop());
+        };
+
+        mediaRecorder.start(1500); // Collect chunks every 1.5 seconds like provider view
+        setIsRecording(true);
+
+        (window as any).currentMediaRecorder = mediaRecorder;
+        (window as any).currentRealtimeWs = realtimeWs;
+
+        console.log("🎬 [NursingView] Recording started successfully");
+
+        toast({
+          title: "Recording Started",
+          description: "Nursing transcription active",
+        });
+      } catch (error) {
+        console.error("❌ [NursingView] DETAILED ERROR in recording:", {
+          error,
+          message: (error as any)?.message,
+          name: (error as any)?.name,
+          stack: (error as any)?.stack,
+          patientId: patient.id,
+        });
+
+        let errorMessage = "Unknown error occurred";
+        if ((error as any)?.message) {
+          errorMessage = (error as any).message;
+        } else if (typeof error === "string") {
+          errorMessage = error;
+        }
+
+        toast({
+          title: "Recording Failed",
+          description: `Transcription error: ${errorMessage}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("❌ [NursingView] Failed to start recording:", error);
+      toast({
+        variant: "destructive",
+        title: "Recording Failed",
+        description: "Unable to start voice transcription",
+      });
+      setIsRecording(false);
+    }
+  };
+
+  const stopRecording = async () => {
+    console.log("🎤 [NursingView] Stopping recording...");
+    const mediaRecorder = (window as any).currentMediaRecorder;
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      console.log("🎤 [NursingView] MediaRecorder stopped");
+    }
+
+    setIsRecording(false);
+
+    // Trigger nursing assessment generation after recording stops
+    if (transcriptionBuffer && transcriptionBuffer.trim()) {
+      console.log(
+        "🩺 [NursingView] Triggering nursing assessment generation after recording...",
+      );
+
+      // Set transcription for Real-time nursing component
+      setTranscription(transcriptionBuffer);
+
+      // Trigger template-based nursing assessment generation
+      if (nursingTemplateRef.current) {
+        nursingTemplateRef.current.startTemplateAssessment();
+      }
+    } else {
+      toast({
+        title: "Recording Stopped",
+        description: "Processing audio...",
+      });
+    }
+  };
+
+  // Helper functions for left panel
+  const toggleSection = (sectionId: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split("-").map(Number);
+    const localDate = new Date(year, month - 1, day);
+    return localDate.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const handleStartRecording = () => {
+    startRecording();
+    toast({
+      title: "Recording Started",
+      description: "Your voice is being transcribed in real-time",
+    });
+  };
+
+  const handleStopRecording = () => {
+    stopRecording();
+    toast({
+      title: "Recording Stopped",
+      description: "Processing nursing assessment template...",
+    });
+  };
+
+  const generateAIAssessment = () => {
+    // Trigger template-based nursing assessment
+    nursingTemplateRef.current?.startTemplateAssessment();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading nursing encounter...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full">
+      {/* Left Chart Panel - Unified Expandable */}
+      <UnifiedChartPanel
+        patient={patient}
+        config={{
+          context: 'nurse-encounter',
+          userRole: currentUser?.role,
+          allowResize: true,
+          defaultWidth: "w-80",
+          maxExpandedWidth: "90vw",
+          enableSearch: true
+        }}
+        encounterId={encounterId}
+        encounter={encounter}
+        onBackToChart={onBackToChart}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Navigation */}
+        <div className="bg-white border-b border-gray-200 emr-nav-compact">
+          <div className="flex items-center justify-between">
+            <h1 className="emr-header-title">Nursing Documentation</h1>
+            <div className="text-sm text-gray-600">
+              Encounter ID: {encounterId}
+            </div>
+          </div>
+          <div className="text-sm text-gray-500 mt-1">
+            Nursing assessments, interventions, and care planning for this
+            encounter.
+          </div>
+        </div>
+
+        {/* Content Area - Two Column Layout */}
+        <div className="flex-1 overflow-y-auto emr-content-padding">
+          <div className="flex emr-grid-gap h-full">
+            {/* Left Column - Assessment and Summary */}
+            <div className="w-1/2 emr-tight-spacing">
+              {/* Nursing Template Assessment Section */}
+              <Card className="emr-ultra-compact-card">
+                <NursingTemplateAssessment
+                  ref={nursingTemplateRef}
+                  patientId={patient.id.toString()}
+                  encounterId={encounterId.toString()}
+                  isRecording={isRecording}
+                  transcription={transcription}
+                  onTemplateUpdate={(template) => {
+                    setTemplateData(template);
+                  }}
+                  autoStart={true}
+                />
+              </Card>
+            </div>
+
+            {/* Right Column - Transcription and AI Suggestions */}
+            <div className="w-1/2 emr-tight-spacing">
+              {/* Voice Recording and Transcription Section */}
+              <Card className="emr-ultra-compact-card">
+                <div className="flex items-center justify-between emr-ultra-compact-spacing">
+                  <h2 className="emr-section-title">
+                    Transcription
+                  </h2>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-green-600">● Connected</span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} text-white`}
+                    >
+                      {isRecording ? (
+                        <MicOff className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Mic className="h-4 w-4 mr-2" />
+                      )}
+                      {isRecording ? "Stop Recording" : "Start Recording"}
+                    </Button>
+                  </div>
+
+                  {/* Transcription Content */}
+                  <div className="space-y-2">
+                    <div className="border border-gray-200 rounded-lg p-4 min-h-[200px] bg-gray-50">
+                      <div className="whitespace-pre-line text-sm leading-relaxed">
+                        {transcription ||
+                          (isRecording
+                            ? "Listening..."
+                            : "Transcription will appear here during recording")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* AI Suggestions */}
+              <Card className="emr-ultra-compact-card">
+                <div className="flex items-center justify-between emr-ultra-compact-spacing">
+                  <h2 className="emr-section-title">
+                    AI Suggestions
+                  </h2>
+                  <Button
+                    onClick={generateSmartSuggestions}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Generate Suggestions
+                  </Button>
+                </div>
+                <div className="text-gray-500 text-sm whitespace-pre-line min-h-[200px]">
+                  {gptSuggestions || "AI analysis will appear here..."}
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

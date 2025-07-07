@@ -184,6 +184,16 @@ Preferred communication style: Simple, everyday language.
 - **NO PERMISSION RESTRICTIONS**: System currently has no role-based restrictions on order signing - all authenticated users can sign orders
 - **PRODUCTION READY**: Cleaned codebase with expanded role system ready for outpatient clinic operations
 
+### WebSocket Proxy Security Implementation & Nursing View Cleanup COMPLETED (July 7, 2025)
+- **COMPLETE WEBSOCKET SECURITY IMPLEMENTATION**: Successfully implemented secure WebSocket proxy for OpenAI voice transcription in both provider and nursing views with API key hidden on server
+- **NURSING VIEW CLEANUP**: Removed extensive duplicate AI suggestion code (~700 lines) from nursing-encounter-view.tsx that was causing syntax errors
+- **SECURITY ARCHITECTURE**: Browser → Server WebSocket Proxy → OpenAI (API key never exposed to client)
+- **PRESERVED FUNCTIONALITY**: Voice transcription (Whisper) functionality maintained with identical user experience
+- **REMOVED REAL-TIME AI SUGGESTIONS**: WebSocket proxy handles ONLY voice transcription, real-time AI suggestions completely removed from both views
+- **REST API SUGGESTIONS MAINTAINED**: "Add Suggestions" button still available for REST API-based clinical suggestions
+- **CODE QUALITY**: Clean separation of concerns with voice transcription isolated from AI suggestions
+- **PRODUCTION READY**: Both provider and nursing views now use secure WebSocket proxy without exposing OpenAI API key
+
 ### Medical Assistant (MA) Chart Access Fix COMPLETED (January 12, 2025)
 - **CRITICAL PERMISSION FIX**: Fixed issue where MA users couldn't see any chart sections - all sections were empty/hidden
 - **ROOT CAUSE**: Chart sections in chart-sections.ts only allowed ['admin', 'provider', 'nurse'] roles, excluding 'ma' role
