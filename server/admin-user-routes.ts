@@ -4,6 +4,25 @@ import { users, userLocations, locations, healthSystems, organizations, encounte
 import { eq, sql, and, isNull, desc, ne } from "drizzle-orm";
 import { z } from "zod";
 
+// Validate that a location role is appropriate for a user's system role
+function validateLocationRoleForSystemRole(systemRole: string, locationRole: string): boolean {
+  const validRolesMap: Record<string, string[]> = {
+    provider: ['primary_provider', 'covering_provider', 'specialist'],
+    nurse: ['nurse'],
+    ma: ['ma'],
+    admin: ['staff'],
+    front_desk: ['staff'],
+    billing: ['staff'],
+    lab_tech: ['staff'],
+    referral_coordinator: ['staff'],
+    practice_manager: ['staff'],
+    read_only: ['staff'],
+  };
+
+  const validRoles = validRolesMap[systemRole] || ['staff'];
+  return validRoles.includes(locationRole);
+}
+
 export function registerAdminUserRoutes(app: Express) {
   // Middleware to check if user is admin
   const requireAdmin = (req: any, res: any, next: any) => {
@@ -162,13 +181,22 @@ export function registerAdminUserRoutes(app: Express) {
 
       // CRITICAL: Verify user and location are in the same health system
       const [user] = await db
-        .select({ healthSystemId: users.healthSystemId })
+        .select({ healthSystemId: users.healthSystemId, role: users.role })
         .from(users)
         .where(eq(users.id, userId))
         .limit(1);
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
+      }
+
+      // Validate location role matches user's system role
+      const isValidLocationRole = validateLocationRoleForSystemRole(user.role, data.roleAtLocation);
+      if (!isValidLocationRole) {
+        console.error(`❌ [AdminUserRoutes] SECURITY: Invalid location role assignment - User ${userId} with role '${user.role}' cannot have location role '${data.roleAtLocation}'`);
+        return res.status(403).json({ 
+          message: `Users with role '${user.role}' cannot be assigned as '${data.roleAtLocation}' at locations` 
+        });
       }
 
       const [location] = await db
@@ -265,6 +293,26 @@ export function registerAdminUserRoutes(app: Express) {
       });
 
       const data = updateSchema.parse(req.body);
+
+      // Get user's system role
+      const [user] = await db
+        .select({ role: users.role })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Validate location role matches user's system role
+      const isValidLocationRole = validateLocationRoleForSystemRole(user.role, data.roleAtLocation);
+      if (!isValidLocationRole) {
+        console.error(`❌ [AdminUserRoutes] SECURITY: Invalid location role update - User ${userId} with role '${user.role}' cannot have location role '${data.roleAtLocation}'`);
+        return res.status(403).json({ 
+          message: `Users with role '${user.role}' cannot be assigned as '${data.roleAtLocation}' at locations` 
+        });
+      }
 
       // Check if assignment exists
       const [existing] = await db

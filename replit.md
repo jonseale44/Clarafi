@@ -166,6 +166,22 @@ Preferred communication style: Simple, everyday language.
 - **UI/UX POLISH**: Professional interface with data tables, dialogs, loading states, empty states, and comprehensive user feedback
 - **PRODUCTION IMPACT**: System now ready for real clinic deployment with proper user onboarding, location assignment, and permission management workflows
 
+### Role-Based Location Assignment Security COMPLETED (January 15, 2025)
+- **ROLE-BASED FILTERING IMPLEMENTATION**: Added comprehensive security filtering to prevent inappropriate location role assignments based on user's system role
+- **FRONTEND UI FILTERING**: Created `getLocationRolesForSystemRole` function in AdminUserManagement.tsx that filters location role dropdown options:
+  - **Providers**: Can only be assigned clinical roles (Primary Provider, Covering Provider, Specialist)
+  - **Nurses**: Can only be assigned as Nurse
+  - **MAs**: Can only be assigned as MA
+  - **All Other Roles**: Can only be assigned as Staff (admin, front_desk, billing, lab_tech, referral_coordinator, practice_manager, read_only)
+- **AUTOMATIC DEFAULT ROLE**: Dialog automatically sets appropriate default role when opened based on selected user's system role
+- **DYNAMIC ROLE RESET**: Added useEffect to update role selection when switching between users in the assignment dialog
+- **BACKEND VALIDATION ENFORCEMENT**: Created `validateLocationRoleForSystemRole` function in admin-user-routes.ts for server-side security
+- **COMPREHENSIVE API PROTECTION**: Both POST (create) and PUT (update) endpoints validate location role appropriateness, returning 403 Forbidden for violations
+- **SECURITY LOGGING**: Backend logs security violations when inappropriate role assignments are attempted (e.g., "MA cannot have location role 'primary_provider'")
+- **MEDICAL PRACTICE COMPLIANCE**: System now enforces proper clinical responsibility boundaries following standard medical practice hierarchy
+- **TWO-TIER ROLE CLARITY**: System roles determine application access level, while location roles determine function at specific clinic sites
+- **PRODUCTION IMPACT**: Prevents dangerous scenarios where non-clinical staff could be assigned clinical provider roles at locations
+
 ### Admin Location Selection Workflow Enhancement COMPLETED (January 15, 2025)
 - **ADMIN LOCATION WORKFLOW FIX**: Updated authentication flow to skip location selection for admin users - they no longer see "Select Your Working Location" prompt
 - **PRODUCTION EMR STANDARDS**: Aligned with Epic/Athena patterns where admin users have health system-wide access and don't need working location selection
