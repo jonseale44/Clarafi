@@ -109,9 +109,13 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
           }
 
           console.log('🔧 [RealtimeProxy] Creating OpenAI session');
+          console.log('🔧 [RealtimeProxy] Message data:', JSON.stringify(message.data, null, 2));
           
-          // Create session with OpenAI using backend API key
-          const sessionConfig = message.data || {};
+          // Extract session config from client message
+          const clientData = message.data || {};
+          const sessionConfig = clientData.sessionConfig || {};
+          
+          console.log('🔧 [RealtimeProxy] Session config:', JSON.stringify(sessionConfig, null, 2));
           
           // Ensure we use server-side API key, never client-provided
           const openai = new OpenAI({
@@ -119,35 +123,14 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
           });
 
           try {
-            // Create session via REST API first
-            const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'OpenAI-Beta': 'realtime=v1'
-              },
-              body: JSON.stringify({
-                model: sessionConfig.model || 'gpt-4o-mini-realtime-preview',
-                modalities: sessionConfig.modalities || ['text'],
-                instructions: sessionConfig.instructions || 'You are a helpful medical transcription assistant.',
-                input_audio_format: sessionConfig.input_audio_format || 'pcm16',
-                input_audio_transcription: sessionConfig.input_audio_transcription,
-                turn_detection: sessionConfig.turn_detection,
-                temperature: sessionConfig.temperature || 0.7,
-                max_output_tokens: sessionConfig.max_output_tokens || 4096
-              })
-            });
-
-            if (!response.ok) {
-              throw new Error(`OpenAI session creation failed: ${response.statusText}`);
-            }
-
-            const sessionData = await response.json();
-            console.log('✅ [RealtimeProxy] OpenAI session created:', sessionData.id);
-
-            // Create WebSocket connection to OpenAI
-            openAiWs = new WebSocket('wss://api.openai.com/v1/realtime', {
+            // Connect directly to OpenAI WebSocket
+            console.log('🔧 [RealtimeProxy] Connecting to OpenAI WebSocket...');
+            console.log('🔧 [RealtimeProxy] Using model:', sessionConfig.model || 'gpt-4o-realtime-preview-2024-10-01');
+            
+            const wsUrl = `wss://api.openai.com/v1/realtime?model=${sessionConfig.model || 'gpt-4o-realtime-preview-2024-10-01'}`;
+            console.log('🔧 [RealtimeProxy] WebSocket URL:', wsUrl);
+            
+            openAiWs = new WebSocket(wsUrl, {
               headers: {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
                 'OpenAI-Beta': 'realtime=v1'
@@ -159,10 +142,30 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               console.log('🌐 [RealtimeProxy] Connected to OpenAI WebSocket');
               sessionActive = true;
               
+              // Send session configuration as first message
+              const sessionUpdate = {
+                type: 'session.update',
+                session: {
+                  modalities: sessionConfig.modalities || ["text", "audio"],
+                  instructions: sessionConfig.instructions || 'You are a helpful medical transcription assistant.',
+                  input_audio_format: sessionConfig.input_audio_format || 'pcm16',
+                  output_audio_format: 'pcm16',
+                  input_audio_transcription: sessionConfig.input_audio_transcription || {
+                    model: 'whisper-1'
+                  },
+                  turn_detection: sessionConfig.turn_detection || null,
+                  temperature: sessionConfig.temperature || 0.7,
+                  max_response_output_tokens: sessionConfig.max_output_tokens || 4096
+                }
+              };
+              
+              console.log('📤 [RealtimeProxy] Sending session configuration:', JSON.stringify(sessionUpdate, null, 2));
+              openAiWs!.send(JSON.stringify(sessionUpdate));
+              
               // Send session.created event to client
               clientWs.send(JSON.stringify({
                 type: 'session.created',
-                data: sessionData
+                session: sessionUpdate.session
               }));
 
               // Process any buffered messages

@@ -2079,11 +2079,31 @@ export function EncounterDetailView({
         console.log("🔌 [EncounterView] - Patient ID:", patient.id);
         console.log("🔌 [EncounterView] - Encounter ID:", encounter.id);
         
+        console.log("🔧 [EncounterView] About to create WebSocket with URL:", wsUrl);
+        console.log("🔧 [EncounterView] Window location:", {
+          protocol: window.location.protocol,
+          host: window.location.host,
+          hostname: window.location.hostname,
+          port: window.location.port,
+          pathname: window.location.pathname
+        });
+        
         try {
+          console.log("🔧 [EncounterView] Creating WebSocket instance...");
           realtimeWs = new WebSocket(wsUrl);
           console.log("🔌 [EncounterView] WebSocket object created successfully");
+          console.log("🔌 [EncounterView] WebSocket readyState after creation:", realtimeWs.readyState);
+          console.log("🔌 [EncounterView] WebSocket URL property:", realtimeWs.url);
+          console.log("🔌 [EncounterView] WebSocket protocol property:", realtimeWs.protocol);
         } catch (wsCreationError) {
           console.error("❌ [EncounterView] WebSocket creation failed:", wsCreationError);
+          console.error("❌ [EncounterView] Error details:", {
+            name: (wsCreationError as any)?.name,
+            message: (wsCreationError as any)?.message,
+            stack: (wsCreationError as any)?.stack,
+            code: (wsCreationError as any)?.code,
+            type: typeof wsCreationError
+          });
           setWsConnected(false);
           throw wsCreationError;
         }
@@ -2106,8 +2126,8 @@ export function EncounterDetailView({
 
           // Send session creation request to proxy
           const sessionConfig = {
-            model: "gpt-4o-mini-realtime-preview",
-            modalities: ["text"],
+            model: "gpt-4o-realtime-preview-2024-10-01",
+            modalities: ["text", "audio"],
             instructions: `You are a medical transcription assistant specialized in clinical conversations. 
               Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH.
               Pay special attention to:
@@ -2134,7 +2154,7 @@ export function EncounterDetailView({
             type: "session.create",
             data: {
               patientId: patient.id,
-              encounterId: encounter.id,
+              encounterId: encounterId, // Use encounterId prop directly
               sessionConfig: sessionConfig,
             },
           };

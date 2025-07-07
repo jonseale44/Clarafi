@@ -1,0 +1,19 @@
+ncounterView] Failed to connect to OpenAI Realtime API: 
+TypeError {}
+
+❌ [EncounterView] Error type: object
+❌ [EncounterView] Error stringified: {}
+❌ [EncounterView] Error message: Cannot read properties of undefined (reading 'id')
+❌ [EncounterView] Error stack: TypeError: Cannot read properties of undefined (reading 'id')
+    at proceedWithRecording (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/src/components/patient/encounter-detail-view.tsx?t=1751912221005:1713:34)
+    at startRecording (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/src/components/patient/encounter-detail-view.tsx?t=1751912221005:1685:11)
+    at HTMLUnknownElement.callCallback2 (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:3674:22)
+    at Object.invokeGuardedCallbackDev (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:3699:24)
+    at invokeGuardedCallback (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:3736:33)
+    at executeDispatch (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:7014:11)
+    at processDispatchQueueItemsInOrder (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:7034:15)
+    at processDispatchQueue (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:7043:13)
+    at dispatchEventsForPlugins (https://76b4a2a2-b14c-4d0d-99a6-3b32843b8502-00-4idegp2tdc4u.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=41553b10:7051:11)
+❌ [EncounterView] Error name: TypeError
+❌ [EncounterView] Error code: undefined

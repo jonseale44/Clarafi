@@ -4281,6 +4281,9 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
   const httpServer = createServer(app);
 
+  // Set up WebSocket proxy for OpenAI Realtime API
+  setupRealtimeProxy(app, httpServer);
+
   // Legacy real-time transcription service removed - AI suggestions now use direct client WebSocket connection
 
   // Enhanced Real-time service removed - AI suggestions now use direct client WebSocket connection
