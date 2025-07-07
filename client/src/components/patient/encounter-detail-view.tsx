@@ -2026,6 +2026,16 @@ export function EncounterDetailView({
 
   // Actual recording implementation (extracted from original startRecording)
   const proceedWithRecording = async () => {
+    console.log("🎯 [EncounterView] === PROCEED WITH RECORDING STARTED ===");
+    console.log("🎯 [EncounterView] Current state:", {
+      isRecording,
+      isProcessing,
+      isTranscribing,
+      useRestAPI,
+      transcriptionLength: transcription?.length || 0,
+      soapNoteLength: soapNote?.length || 0
+    });
+    
     // Clear previous suggestions when starting new recording (both WebSocket and REST API)
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
@@ -2033,6 +2043,8 @@ export function EncounterDetailView({
     // NOTE: Don't clear transcription here - let it accumulate for intelligent streaming
 
     try {
+      console.log("🎯 [EncounterView] Requesting microphone access...");
+      
       // CRITICAL FIX: Only create WebSocket connection in WebSocket mode
       let realtimeWs: WebSocket | null = null;
       let transcriptionBuffer = "";
@@ -2061,13 +2073,19 @@ export function EncounterDetailView({
         console.log("🔧 [EncounterView] Connecting to secure WebSocket proxy...");
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsHost = window.location.host;
+        const wsUrl = `${wsProtocol}//${wsHost}/ws/openai-realtime`;
         
-        realtimeWs = new WebSocket(
-          `${wsProtocol}//${wsHost}/ws/openai-realtime`
-        );
+        console.log("🔧 [EncounterView] WebSocket URL:", wsUrl);
+        
+        realtimeWs = new WebSocket(wsUrl);
+        
+        realtimeWs.onerror = (error) => {
+          console.error("❌ [EncounterView] WebSocket connection error:", error);
+        };
 
         realtimeWs.onopen = () => {
           console.log("🌐 [EncounterView] ✅ Connected to OpenAI Realtime API");
+          console.log("🌐 [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
 
           // Session configuration: Focus on transcription only, AI suggestions handled separately
           const sessionUpdateMessage = {
@@ -2827,15 +2845,33 @@ Please provide medical suggestions based on this complete conversation context.`
         },
       });
       console.log("🎤 [EncounterView] ✅ Microphone access granted");
+      console.log("🎤 [EncounterView] Stream tracks:", stream.getTracks().map(t => ({
+        kind: t.kind,
+        label: t.label,
+        enabled: t.enabled,
+        readyState: t.readyState
+      })));
 
       // Set up audio processing exactly like your working AudioRecorder
+      console.log("🎤 [EncounterView] Creating AudioContext...");
       const audioContext = new AudioContext({ sampleRate: 16000 });
+      console.log("🎤 [EncounterView] AudioContext state:", audioContext.state);
+      
       const source = audioContext.createMediaStreamSource(stream);
+      console.log("🎤 [EncounterView] Created MediaStreamSource");
+      
       const bufferSize = 4096; // Same as your working code
       const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+      console.log("🎤 [EncounterView] Created ScriptProcessor with buffer size:", bufferSize);
 
       processor.onaudioprocess = async (e) => {
-        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
+        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) {
+          console.log("🎤 [EncounterView] Skipping audio process - WebSocket not ready:", {
+            wsExists: !!realtimeWs,
+            wsState: realtimeWs?.readyState
+          });
+          return;
+        }
 
         const inputData = e.inputBuffer.getChannelData(0);
 
@@ -2862,17 +2898,23 @@ Please provide medical suggestions based on this complete conversation context.`
             const base64Audio = btoa(binary);
 
             // Send audio buffer exactly like your working code
-            realtimeWs!.send(
-              JSON.stringify({
-                type: "input_audio_buffer.append",
-                audio: base64Audio,
-              }),
-            );
-
+            const audioMessage = {
+              type: "input_audio_buffer.append",
+              audio: base64Audio,
+            };
+            
             console.log(
-              "🎵 [EncounterView] Sent audio buffer:",
+              "🎵 [EncounterView] Sending audio buffer:",
               base64Audio.length,
-              "bytes",
+              "characters, WebSocket state:",
+              realtimeWs?.readyState
+            );
+            
+            realtimeWs!.send(JSON.stringify(audioMessage));
+            
+            console.log(
+              "🎵 [EncounterView] Successfully sent audio buffer, message preview:",
+              JSON.stringify(audioMessage).substring(0, 100) + "..."
             );
           } catch (error) {
             console.error("❌ [EncounterView] Error processing audio:", error);
@@ -2884,12 +2926,17 @@ Please provide medical suggestions based on this complete conversation context.`
       source.connect(processor);
       processor.connect(audioContext.destination);
 
+      console.log("🎙️ [EncounterView] Creating MediaRecorder...");
       const mediaRecorder = new MediaRecorder(stream);
+      console.log("🎙️ [EncounterView] MediaRecorder created, state:", mediaRecorder.state);
+      
       const audioChunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = (event) => {
+        console.log("📼 [EncounterView] MediaRecorder ondataavailable fired, size:", event.data.size);
         if (event.data.size > 0) {
           audioChunks.push(event.data);
+          console.log("📼 [EncounterView] Audio chunk collected, total chunks:", audioChunks.length);
         }
       };
 
@@ -2918,7 +2965,15 @@ Please provide medical suggestions based on this complete conversation context.`
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
+      console.log("🎙️ [EncounterView] Starting MediaRecorder...");
+      try {
+        mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
+        console.log("🎙️ [EncounterView] MediaRecorder started successfully");
+      } catch (startError) {
+        console.error("❌ [EncounterView] Failed to start MediaRecorder:", startError);
+        throw startError;
+      }
+      
       setIsRecording(true);
 
       // Clear all edit locks when starting new recording
