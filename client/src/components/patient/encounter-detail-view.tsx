@@ -2068,6 +2068,13 @@ export function EncounterDetailView({
         // Connect to secure WebSocket proxy
         console.log("🔧 [EncounterView] Creating secure WebSocket connection...");
 
+        // Check if patient exists before proceeding
+        if (!patient || !patient.id) {
+          console.error("❌ [EncounterView] Patient is undefined or missing ID!");
+          console.error("❌ [EncounterView] Patient object:", patient);
+          throw new Error("Patient information is not available");
+        }
+
         // Connect via WebSocket proxy (no API key needed)
         const params = new URLSearchParams({
           patientId: patient.id.toString(),
@@ -2963,6 +2970,13 @@ Please provide medical suggestions based on this complete conversation context.`
         console.log(
           "🏥 [StopRecording] Starting TRUE parallel processing: medical problems, surgical history, medications, orders, CPT codes, allergies, family history, and social history...",
         );
+        
+        // Double-check patient exists before using in API calls
+        if (!patient || !patient.id) {
+          console.error("❌ [StopRecording] Patient is undefined or missing ID!");
+          throw new Error("Patient information is not available for processing");
+        }
+        
         console.log(
           "🏥 [StopRecording] CPT extraction URL:",
           `/api/patients/${patient.id}/encounters/${encounterId}/extract-cpt`,
@@ -4019,6 +4033,8 @@ Please provide medical suggestions based on this complete conversation context.`
                 <Button
                   onClick={isRecording ? stopRecording : startRecording}
                   className={`${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-navy-blue-600 hover:bg-navy-blue-700"} text-white`}
+                  disabled={!patient || !patient.id}
+                  title={!patient || !patient.id ? "Patient data is loading..." : ""}
                 >
                   {isRecording ? (
                     <MicOff className="h-4 w-4 mr-2" />
