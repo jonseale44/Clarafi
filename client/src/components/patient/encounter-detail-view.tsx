@@ -2018,7 +2018,7 @@ export function EncounterDetailView({
         {
           isRecording,
           userEditingLock,
-          recordingMode: getRecordingMode(),
+          recordingMode: useRestAPI ? "rest" : "websocket",
           hasNavigatorMediaDevices: !!navigator.mediaDevices,
           hasGetUserMedia: !!(navigator.mediaDevices?.getUserMedia),
           wsUrl: process.env.VITE_WS_URL || "/ws/openai-realtime"
@@ -2063,7 +2063,7 @@ export function EncounterDetailView({
       useRestAPI,
       transcriptionLength: transcription?.length || 0,
       soapNoteLength: soapNote?.length || 0,
-      recordingMode: getRecordingMode(),
+      recordingMode: useRestAPI ? "rest" : "websocket",
       patientId: patient.id,
       encounterId: encounter?.id
     });
