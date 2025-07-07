@@ -376,9 +376,6 @@ export function EncounterDetailView({
 
   // Function removed - GPT unified parser now handles all medical problem processing decisions
 
-  // Get OpenAI API key from environment
-  const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
   // Query client for cache invalidation
   const queryClient = useQueryClient();
 
@@ -2057,83 +2054,16 @@ export function EncounterDetailView({
           "🌐 [EncounterView] Connecting to OpenAI Realtime API for transcription...",
         );
 
-        // Get API key from environment
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        console.log("🔑 [EncounterView] API key check:", {
-          hasApiKey: !!apiKey,
-          keyLength: apiKey?.length || 0,
-          keyPrefix: apiKey?.substring(0, 7) || "none",
-        });
+        // No API key needed - using secure WebSocket proxy
+        console.log("🔑 [EncounterView] Using secure WebSocket proxy - no API key in frontend");
 
-        if (!apiKey) {
-          throw new Error("OpenAI API key not available in environment");
-        }
-
-        // Step 1: Create session exactly like your working code
-        console.log("🔧 [EncounterView] Creating OpenAI session...");
-        const sessionConfig = {
-          model: "gpt-4o-mini-realtime-preview",
-          modalities: ["text"],
-          instructions:
-            "You are a medical transcription assistant. Provide accurate transcription of medical conversations. Translate all languages into English. Only output ENGLISH. Under no circumstances should you output anything besides ENGLISH. Accurately transcribe medical terminology, drug names, dosages, and clinical observations. ",
-          input_audio_format: "pcm16",
-          input_audio_transcription: {
-            model: "whisper-1",
-            language: "en",
-          },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 300,
-            create_response: true,
-          },
-        };
-
-        console.log("📤 [API-OUT] Session config being sent to OpenAI:");
-        console.log(JSON.stringify(sessionConfig, null, 2));
-
-        const sessionResponse = await fetch(
-          "https://api.openai.com/v1/realtime/sessions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-              "OpenAI-Beta": "realtime=v1",
-            },
-            body: JSON.stringify(sessionConfig),
-          },
-        );
-
-        if (!sessionResponse.ok) {
-          const error = await sessionResponse.json();
-          console.log("❌ [API-IN] Session creation failed:");
-          console.log(JSON.stringify(error, null, 2));
-          throw new Error(
-            `Failed to create session: ${error.message || "Unknown error"}`,
-          );
-        }
-
-        const session = await sessionResponse.json();
-        console.log("✅ [EncounterView] Session created:", session.id);
-        console.log("📥 [API-IN] Session creation response:");
-        console.log(JSON.stringify(session, null, 2));
-
-        // Step 2: Connect via WebSocket with session token like your working code
-        const protocols = [
-          "realtime",
-          `openai-insecure-api-key.${apiKey}`,
-          "openai-beta.realtime-v1",
-        ];
-
-        const params = new URLSearchParams({
-          model: "gpt-4o-mini-realtime-preview",
-        });
-
+        // Connect via secure WebSocket proxy
+        console.log("🔧 [EncounterView] Connecting to secure WebSocket proxy...");
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = window.location.host;
+        
         realtimeWs = new WebSocket(
-          `wss://api.openai.com/v1/realtime?${params.toString()}`,
-          protocols,
+          `${wsProtocol}//${wsHost}/ws/openai-realtime`
         );
 
         realtimeWs.onopen = () => {
