@@ -2186,158 +2186,7 @@ export function EncounterDetailView({
           realtimeWs!.send(JSON.stringify(sessionCreateMessage));
         };
 
-        // [AI suggestions removed - handled via REST API only]
-        const startSuggestionsConversation = async (
-          ws: WebSocket | null,
-          patientData: any,
-        ) => {
-          // AI suggestions handled via REST API, not WebSocket
-          console.log("[EncounterView] AI suggestions handled via REST API only");
-          return;
-          if (!ws) return;
-
-          console.log("[EncounterView] Starting AI suggestions conversation");
-
-          // 1. Fetch full patient chart data like external implementation
-          let patientChart = null;
-          try {
-            console.log(
-              "[EncounterView] Fetching patient chart data for context injection",
-            );
-            const chartResponse = await fetch(
-              `/api/patients/${patientData.id}/chart`,
-            );
-            if (chartResponse.ok) {
-              patientChart = await chartResponse.json();
-              console.log(
-                "[EncounterView] Patient chart data fetched successfully",
-              );
-            } else {
-              console.warn(
-                "[EncounterView] Failed to fetch patient chart, using basic data only",
-              );
-            }
-          } catch (error) {
-            console.warn(
-              "[EncounterView] Error fetching patient chart:",
-              error,
-            );
-          }
-
-          // 2. Format patient context with full chart data for direct question responses
-          const formatPatientContext = (chart: any, basicData: any): string => {
-            const basicInfo = `Patient: ${basicData.firstName} ${basicData.lastName}
-Age: ${basicData.age || "Unknown"} 
-Gender: ${basicData.gender || "Unknown"}
-MRN: ${basicData.mrn || "Unknown"}
-
-${
-  chart
-    ? `
-MEDICAL PROBLEMS:
-${
-  chart.medicalProblems?.length > 0
-    ? chart.medicalProblems
-        .map((p: any) => `- ${p.problemTitle} (${p.problemStatus})`)
-        .join("\n")
-    : "- No active medical problems documented"
-}
-
-CURRENT MEDICATIONS:
-${
-  chart.currentMedications?.length > 0
-    ? chart.currentMedications
-        .map((m: any) => `- ${m.medicationName} ${m.dosage} ${m.frequency}`)
-        .join("\n")
-    : "- No current medications documented"
-}
-
-ALLERGIES:
-${
-  chart.allergies?.length > 0
-    ? chart.allergies
-        .map((a: any) => `- ${a.allergen}: ${a.reaction} (${a.severity})`)
-        .join("\n")
-    : "- NKDA (No Known Drug Allergies)"
-}
-
-RECENT VITALS:
-${
-  chart.vitals?.length > 0
-    ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
-- HR: ${chart.vitals[0].heartRate} bpm
-- Temp: ${chart.vitals[0].temperature}°F
-- RR: ${chart.vitals[0].respiratoryRate || "Not recorded"}
-- O2 Sat: ${chart.vitals[0].oxygenSaturation || "Not recorded"}%`
-    : "- No recent vitals available"
-}
-`
-    : "Limited patient data available - chart context not accessible"
-}`;
-
-            return basicInfo;
-          };
-
-          const patientContext = formatPatientContext(
-            patientChart,
-            patientData,
-          );
-
-          // 3. Inject patient context AND current live transcription
-          const currentTranscription =
-            liveTranscriptionContent || transcriptionBuffer || "";
-          const contextWithTranscription = `${patientContext}
-
-CURRENT LIVE CONVERSATION:
-${currentTranscription}
-
-CRITICAL: If the provider is asking direct questions about patient chart information, provide SPECIFIC facts from the chart data above, NOT generic suggestions.
-
-Examples:
-- Question: "Does the patient have medical problems?" → Answer: "Medical problems: HTN, DM2, CKD stage 3, AFib, CHF"
-- Question: "What medications is the patient on?" → Answer: "Current medications: Lisinopril 10mg daily, Metformin 500mg BID"
-- Question: "Any allergies?" → Answer: "NKDA (No Known Drug Allergies)"
-
-DO NOT say "Assess" or "Evaluate" - give the actual chart facts directly.
-
-Please provide medical suggestions based on what the provider is saying in this current conversation.`;
-
-          const contextMessage = {
-            type: "conversation.item.create",
-            item: {
-              type: "message",
-              role: "user",
-              content: [
-                {
-                  type: "input_text",
-                  text: contextWithTranscription,
-                },
-              ],
-            },
-          };
-
-          console.log(
-            "🧠 [EncounterView] Injecting patient context for AI suggestions",
-          );
-          ws.send(JSON.stringify(contextMessage));
-
-          // 4. Create response for AI suggestions with metadata like external system
-          const suggestionsMessage = {
-            type: "response.create", //SUPPOSEDLY THE INITIAL "REST API RESPONSE"
-            response: {
-              modalities: ["text"],
-              instructions: `You are a medical AI assistant attempting to help the provider during the conversation, but you are always confused so you always respond with 3 question marks. Always end each suggestion with 3 question marks (???).`,
-              metadata: {
-                type: "suggestions",
-              },
-            },
-          };
-
-          console.log(
-            "🧠 [EncounterView] Creating AI suggestions conversation",
-          );
-          ws.send(JSON.stringify(suggestionsMessage));
-        };
+        // AI suggestions handled via REST API only, not WebSocket
 
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
@@ -2356,25 +2205,8 @@ Please provide medical suggestions based on what the provider is saying in this 
             sessionId = message.data?.id || "";
             setWsConnected(true);
             
-            // Send initial configuration after session is created
-            sendMessage({
-              type: "session.update",
-              session: {
-                modalities: ["text", "audio"],
-                input_audio_format: "pcm16",
-                input_audio_transcription: {
-                  model: "whisper-1",
-                  language: "en",
-                },
-                turn_detection: {
-                  type: "server_vad",
-                  threshold: 0.5,
-                  prefix_padding_ms: 300,
-                  silence_duration_ms: 300,
-                  create_response: false,
-                },
-              },
-            });
+            // Session configuration is handled by the proxy server
+            console.log("✅ [EncounterView] Session configured by proxy");
             return;
           }
 
@@ -2768,9 +2600,10 @@ Please provide medical suggestions based on this complete conversation context.`
             }
             const base64Audio = btoa(binary);
 
-            // Send audio buffer exactly like your working code
+            // Send audio buffer with event_id for API compliance
             realtimeWs!.send(
               JSON.stringify({
+                event_id: `event_${Date.now()}_${Math.random().toString(36).substring(7)}`,
                 type: "input_audio_buffer.append",
                 audio: base64Audio,
               }),

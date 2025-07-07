@@ -204,20 +204,30 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               console.log('🌐 [RealtimeProxy] WebSocket URL:', openAiWs.url);
               sessionActive = true;
               
-              // Send session configuration as first message
+              // Send session configuration as first message with full API compliance
               const sessionUpdate = {
+                event_id: `event_${Date.now()}_${Math.random().toString(36).substring(7)}`,
                 type: 'session.update',
                 session: {
                   modalities: sessionConfig.modalities || ["text", "audio"],
                   instructions: sessionConfig.instructions || 'You are a helpful medical transcription assistant.',
+                  voice: 'alloy', // Add voice selection for audio output
                   input_audio_format: sessionConfig.input_audio_format || 'pcm16',
                   output_audio_format: 'pcm16',
-                  input_audio_transcription: sessionConfig.input_audio_transcription || {
-                    model: 'whisper-1'
+                  input_audio_transcription: {
+                    enabled: true, // Add enabled field per API docs
+                    model: sessionConfig.input_audio_transcription?.model || 'whisper-1'
                   },
-                  turn_detection: sessionConfig.turn_detection || null,
+                  turn_detection: sessionConfig.turn_detection || {
+                    type: 'server_vad',
+                    threshold: 0.5,
+                    prefix_padding_ms: 300,
+                    silence_duration_ms: 500
+                  },
                   temperature: sessionConfig.temperature || 0.7,
-                  max_response_output_tokens: sessionConfig.max_output_tokens || 4096
+                  max_output_tokens: sessionConfig.max_output_tokens || 4096, // Use correct field name
+                  tools: [], // Explicitly set empty tools array
+                  tool_choice: 'none' // Disable function calling for transcription
                 }
               };
               
