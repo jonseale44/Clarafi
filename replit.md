@@ -117,6 +117,8 @@ Preferred communication style: Simple, everyday language.
 - **HEALTHCARE COMPLIANCE**: All OpenAI connections now route through secure backend proxy meeting HIPAA standards
 - **PRESERVED FUNCTIONALITY**: All AI features (transcription, suggestions, SOAP generation) continue working identically
 - **ZERO FRONTEND KEYS**: No API keys or credentials exposed in browser - complete security implementation
+- **BLOB DATA HANDLING FIX**: Fixed JSON parsing error by adding proper handling for both JSON strings and Blob data in WebSocket message handlers
+- **BINARY DATA SUPPORT**: WebSocket connections now properly handle OpenAI's binary audio data without throwing JSON parse errors
 
 ### Multi-Tenant SaaS Architecture Implementation COMPLETED (January 10, 2025)
 - **CRITICAL SECURITY ENHANCEMENT**: Added multi-tenant data isolation architecture for SaaS deployment model supporting individual providers, group practices, and enterprise health systems

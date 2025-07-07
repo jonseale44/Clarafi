@@ -2254,8 +2254,23 @@ Please provide medical suggestions based on what the provider is saying in this 
           ws.send(JSON.stringify(suggestionsMessage));
         };
 
-        realtimeWs.onmessage = (event) => {
-          const message = JSON.parse(event.data);
+        realtimeWs.onmessage = async (event) => {
+          // Handle both JSON strings and Blob data
+          let message;
+          if (event.data instanceof Blob) {
+            // Convert Blob to text first
+            const text = await event.data.text();
+            try {
+              message = JSON.parse(text);
+            } catch (e) {
+              console.log("📨 [EncounterView] Received binary data (audio/non-JSON)");
+              return; // Skip non-JSON binary data
+            }
+          } else {
+            // Regular JSON string
+            message = JSON.parse(event.data);
+          }
+          
           console.log(
             "📨 [EncounterView] WebSocket mode - OpenAI message type:",
             message.type,
