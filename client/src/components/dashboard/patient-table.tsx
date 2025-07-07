@@ -34,6 +34,14 @@ interface PatientTableProps {
 type SortKey = 'name' | 'mrn' | 'dob' | 'address' | 'location';
 type SortDirection = 'asc' | 'desc';
 
+// Helper function to format dates without timezone conversion
+const formatDate = (dateString: string): string => {
+  // Parse as YYYY-MM-DD and create date in local time
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day); // month is 0-indexed
+  return format(date, 'MM/dd/yyyy');
+};
+
 export function PatientTable({ patients }: PatientTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -200,7 +208,7 @@ export function PatientTable({ patients }: PatientTableProps) {
                 </Link>
               </TableCell>
               <TableCell>{patient.mrn}</TableCell>
-              <TableCell>{format(new Date(patient.dateOfBirth), 'MM/dd/yyyy')}</TableCell>
+              <TableCell>{formatDate(patient.dateOfBirth)}</TableCell>
               <TableCell>{formatAddress(patient)}</TableCell>
               <TableCell>
                 <span className={patient.preferredLocationId ? '' : 'text-gray-500 italic'}>
