@@ -1466,6 +1466,73 @@ async function comprehensiveDatabaseFix() {
       );
     `);
     
+    // 38. Signed Orders Table
+    console.log("Checking signed_orders table...");
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS signed_orders (
+        id serial PRIMARY KEY,
+        order_id integer NOT NULL REFERENCES orders(id),
+        patient_id integer NOT NULL REFERENCES patients(id),
+        encounter_id integer REFERENCES encounters(id),
+        order_type varchar(50) NOT NULL,
+        delivery_method varchar(50) NOT NULL,
+        delivery_status varchar(50) NOT NULL DEFAULT 'pending',
+        delivery_attempts integer NOT NULL DEFAULT 0,
+        last_delivery_attempt timestamp,
+        delivery_error text,
+        can_change_delivery boolean NOT NULL DEFAULT true,
+        delivery_lock_reason varchar(255),
+        original_delivery_method varchar(50) NOT NULL,
+        delivery_changes jsonb DEFAULT '[]',
+        signed_at timestamp NOT NULL,
+        signed_by integer NOT NULL REFERENCES users(id),
+        created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // 39. Imaging Orders Table
+    console.log("Checking imaging_orders table...");
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS imaging_orders (
+        id serial PRIMARY KEY,
+        patient_id integer NOT NULL REFERENCES patients(id),
+        encounter_id integer NOT NULL REFERENCES encounters(id),
+        study_type text NOT NULL,
+        body_part text NOT NULL,
+        laterality text,
+        contrast_needed boolean DEFAULT false,
+        clinical_indication text NOT NULL,
+        clinical_history text,
+        relevant_symptoms text,
+        ordered_by integer NOT NULL REFERENCES users(id),
+        ordered_at timestamp DEFAULT CURRENT_TIMESTAMP,
+        external_facility_id text,
+        external_order_id text,
+        dicom_accession_number text,
+        order_status text DEFAULT 'pending',
+        scheduled_at timestamp,
+        completed_at timestamp,
+        prep_instructions text,
+        scheduling_notes text,
+        created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+        updated_at timestamp DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // 40. Document Processing Queue Table
+    console.log("Checking document_processing_queue table...");
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS document_processing_queue (
+        id serial PRIMARY KEY,
+        attachment_id integer NOT NULL REFERENCES patient_attachments(id),
+        status text DEFAULT 'queued',
+        attempts integer DEFAULT 0,
+        last_attempt timestamp,
+        created_at timestamp DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
     // ==================== COMMIT TRANSACTION ====================
     
     await db.execute(sql`COMMIT`);
