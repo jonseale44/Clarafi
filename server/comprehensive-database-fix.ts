@@ -1433,6 +1433,39 @@ async function comprehensiveDatabaseFix() {
       );
     `);
     
+    // 37. GPT Lab Review Notes Table
+    console.log("Checking gpt_lab_review_notes table...");
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS gpt_lab_review_notes (
+        id serial PRIMARY KEY,
+        patient_id integer NOT NULL REFERENCES patients(id),
+        encounter_id integer REFERENCES encounters(id),
+        result_ids integer[] NOT NULL,
+        clinical_review text NOT NULL,
+        patient_message text NOT NULL,
+        nurse_message text NOT NULL,
+        patient_context jsonb,
+        gpt_model text DEFAULT 'gpt-4',
+        prompt_version text DEFAULT 'v1.0',
+        revised_by integer REFERENCES users(id),
+        revision_reason text,
+        processing_time integer,
+        tokens_used integer,
+        status text DEFAULT 'draft',
+        generated_by integer NOT NULL REFERENCES users(id),
+        reviewed_by integer REFERENCES users(id),
+        generated_at timestamp DEFAULT CURRENT_TIMESTAMP,
+        reviewed_at timestamp,
+        patient_message_sent boolean DEFAULT false,
+        nurse_message_sent boolean DEFAULT false,
+        patient_message_sent_at timestamp,
+        nurse_message_sent_at timestamp,
+        revision_history jsonb DEFAULT '[]',
+        created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+        updated_at timestamp DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
     // ==================== COMMIT TRANSACTION ====================
     
     await db.execute(sql`COMMIT`);
