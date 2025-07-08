@@ -9,13 +9,15 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~5.0.4",
+    "@react-native-async-storage/async-storage": "2.1.2",
     "expo": "~53.0.17",
+    "expo-av": "~15.1.7",
+    "expo-file-system": "~18.1.11",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-native": "0.79.5",
-    "expo-av": "~15.1.7",
-    "expo-file-system": "~18.1.11",
-    "@react-native-async-storage/async-storage": "2.1.2"
+    "react-native-web": "^0.19.12"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
