@@ -65,6 +65,11 @@ export default function AuthPage() {
   // Update available health systems when data loads
   if (healthSystemsData && availableHealthSystems.length === 0) {
     setAvailableHealthSystems(healthSystemsData);
+    // Set default health system if not already selected
+    if (!selectedHealthSystemId && healthSystemsData.length > 0) {
+      setSelectedHealthSystemId(healthSystemsData[0].id.toString());
+      console.log("Setting default health system:", healthSystemsData[0]);
+    }
   }
 
   // Check if user has existing session location
@@ -152,6 +157,9 @@ export default function AuthPage() {
   }
 
   const onRegister = (data: RegisterData) => {
+    console.log("Registration form submitted with data:", data);
+    console.log("Form errors:", registerForm.formState.errors);
+    
     const { confirmPassword, ...registerData } = data;
     
     // Validate health system selection for join_existing
@@ -164,8 +172,7 @@ export default function AuthPage() {
       return;
     }
     
-    // Pass all the data including registration type and practice info
-    registerMutation.mutate({
+    const submissionData = {
       ...registerData,
       registrationType,
       existingHealthSystemId: registrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
@@ -175,7 +182,12 @@ export default function AuthPage() {
       practiceState: data.practiceState,
       practiceZipCode: data.practiceZipCode,
       practicePhone: data.practicePhone,
-    });
+    };
+    
+    console.log("Submitting registration data:", submissionData);
+    
+    // Pass all the data including registration type and practice info
+    registerMutation.mutate(submissionData);
   };
 
   return (
@@ -355,7 +367,10 @@ export default function AuthPage() {
                     
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
-                      <Select onValueChange={(value) => registerForm.setValue("role", value)}>
+                      <Select 
+                        value={registerForm.watch("role")}
+                        onValueChange={(value) => registerForm.setValue("role", value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select your role" />
                         </SelectTrigger>
@@ -373,6 +388,11 @@ export default function AuthPage() {
                           <SelectItem value="read_only">Read Only</SelectItem>
                         </SelectContent>
                       </Select>
+                      {registerForm.formState.errors.role && (
+                        <p className="text-sm text-red-600">
+                          {registerForm.formState.errors.role.message}
+                        </p>
+                      )}
                     </div>
 
 
