@@ -759,6 +759,54 @@ async function comprehensiveDatabaseFix() {
       );
     `);
     
+    // Add missing columns to medications table
+    console.log("Adding missing columns to medications table...");
+    
+    // Add all missing columns one by one
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS dosage_form text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS total_refills integer`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS refills_remaining integer`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS surescripts_id text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS source_order_id integer`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS problem_mappings jsonb DEFAULT '[]'`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS prescriber_id integer REFERENCES users(id)`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS first_encounter_id integer REFERENCES encounters(id) ON DELETE SET NULL`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS last_updated_encounter_id integer REFERENCES encounters(id) ON DELETE SET NULL`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS reason_for_change text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS change_log jsonb DEFAULT '[]'`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS pharmacy_instructions text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS manufacturer text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS reconciliation_status text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS reconciliation_date timestamp`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS reconciled_by integer REFERENCES users(id)`);
+    
+    // Add more missing columns that were found
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS prescriber text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS prescribed_date timestamp`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS prescriber_name text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS pharmacy text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS prescribed_by integer REFERENCES users(id)`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS discontinued_by integer REFERENCES users(id)`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS discontinuation_reason text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS notes text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS lot_number text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS expiration_date date`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS dea_schedule text`);
+    
+    // Add remaining missing columns from the schema
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS source_confidence decimal(3,2)`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS source_notes text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS extracted_from_attachment_id integer REFERENCES patient_attachments(id)`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS source_type text DEFAULT 'manual'`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS confidence integer`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS entered_by integer REFERENCES users(id)`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS grouping_strategy text DEFAULT 'medical_problem'`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS related_medications jsonb DEFAULT '[]'`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS drug_interactions jsonb DEFAULT '[]'`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS pharmacy_order_id text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS insurance_auth_status text`);
+    await db.execute(sql`ALTER TABLE medications ADD COLUMN IF NOT EXISTS prior_auth_required boolean DEFAULT false`);
+    
     // 24. Medical Problems Table
     console.log("Checking medical_problems table...");
     await db.execute(sql`

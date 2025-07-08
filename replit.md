@@ -111,7 +111,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Comprehensive Database Schema Fix for Patient Deletion COMPLETED (January 15, 2025)
 - **CRITICAL PATIENT DELETION FIX**: Fixed all missing tables preventing patient deletion operations
-- **MISSING TABLES ADDED**: Created 5 additional critical tables:
+- **MISSING TABLES ADDED**: Created 6 additional critical tables:
   - `gpt_lab_review_notes` - GPT-generated lab result review notes
   - `signed_orders` - Post-signature order tracking and delivery management
   - `imaging_orders` - Radiology and imaging order management
@@ -121,6 +121,9 @@ Preferred communication style: Simple, everyday language.
 - **COMPREHENSIVE FIX SCRIPT**: Updated `comprehensive-database-fix.ts` to check and create 42 total tables
 - **ROOT CAUSE**: Patient deletion touches many tables; database was missing several that weren't immediately obvious
 - **PRODUCTION IMPACT**: Patient deletion now works without errors, all table dependencies resolved
+- **MISSING COLUMNS DISCOVERED**: Found extensive column drift - medications table alone was missing 27 columns!
+- **ENHANCED FIX SCRIPT**: Added ALTER TABLE statements to add missing columns to existing tables, not just create missing tables
+- **COLUMNS ADDED**: dosage_form, total_refills, prescriber, source_confidence, and 23 other critical columns to medications table
 
 ### Critical Database Schema Restoration COMPLETED (January 14, 2025)
 - **MAJOR DATABASE SYNC ISSUE RESOLVED**: Fixed critical database drift where multiple tables were missing and column names were mismatched
