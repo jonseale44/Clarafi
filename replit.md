@@ -109,70 +109,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Database Migration System Analysis & Column Name Fix COMPLETED (July 8, 2025)
-- **ROOT CAUSE IDENTIFIED**: Database drift was caused by not using proper migration system - only one migration file exists (0000_high_freak.sql) despite months of schema evolution
-- **PATTERN DISCOVERED**: Team was updating schema.ts continuously but not generating corresponding database migrations using Drizzle's migration system
-- **COLUMN NAME MISMATCH FIXED**: Fixed patient_attachments table where database had 'filename' but schema expected 'file_name' - renamed column to match schema
-- **COMPREHENSIVE FIX ENHANCED**: Updated comprehensive-database-fix.ts to also handle column name mismatches in addition to missing tables and columns
-- **PROPER WORKFLOW**: Should have been: schema.ts changes → npm run db:generate → new migration file → npm run db:push
-- **ACTUAL WORKFLOW**: What happened: schema.ts changes → manual fix scripts → temporary solutions → accumulating technical debt
-- **MIGRATION BEST PRACTICES**: Every schema change should generate a new migration file (0001_xxx.sql, 0002_xxx.sql, etc.) for proper version control
-- **PRODUCTION IMPACT**: Database now fully synchronized with schema, all CRUD operations working correctly
-
-### Comprehensive Database Schema Fix for Patient Deletion COMPLETED (January 15, 2025)
-- **CRITICAL PATIENT DELETION FIX**: Fixed all missing tables preventing patient deletion operations
-- **MISSING TABLES ADDED**: Created 6 additional critical tables:
-  - `gpt_lab_review_notes` - GPT-generated lab result review notes
-  - `signed_orders` - Post-signature order tracking and delivery management
-  - `imaging_orders` - Radiology and imaging order management
-  - `document_processing_queue` - OCR document processing queue
-  - `patient_order_preferences` - Patient-specific order delivery preferences
-  - `attachment_extracted_content` - OCR extracted content from attachments
-- **COMPREHENSIVE FIX SCRIPT**: Updated `comprehensive-database-fix.ts` to check and create 42 total tables
-- **ROOT CAUSE**: Patient deletion touches many tables; database was missing several that weren't immediately obvious
-- **PRODUCTION IMPACT**: Patient deletion now works without errors, all table dependencies resolved
-- **MISSING COLUMNS DISCOVERED**: Found extensive column drift - medications table alone was missing 27 columns!
-- **ENHANCED FIX SCRIPT**: Added ALTER TABLE statements to add missing columns to existing tables, not just create missing tables
-- **COLUMNS ADDED**: dosage_form, total_refills, prescriber, source_confidence, and 23 other critical columns to medications table
-
-### Critical Database Schema Restoration COMPLETED (January 14, 2025)
-- **MAJOR DATABASE SYNC ISSUE RESOLVED**: Fixed critical database drift where multiple tables were missing and column names were mismatched
-- **VITALS TABLE FIX**: Renamed columns from `systolic`/`diastolic` to `systolic_bp`/`diastolic_bp` to match schema definition
-- **MEDICATIONS TABLE FIX**: Added missing `strength` column that was causing 500 errors when loading medications
-- **MISSING TABLES CREATED**: Created 6 missing tables that existed in schema but not in database:
-  - `family_history` - Complete family medical history tracking
-  - `social_history` - Patient lifestyle and social factors
-  - `surgical_history` - Past surgical procedures and outcomes
-  - `medical_problems` - Active and resolved medical conditions
-  - `imaging_results` - Radiology and imaging study results
-  - `allergies` - Fixed missing `source_confidence` column
-- **ROOT CAUSE**: Database had drifted from schema definition, likely due to incomplete migrations or database recreation
-- **SOLUTION SCRIPT**: Created `fix-database-schema.ts` script that intelligently checks and fixes schema mismatches
-- **PRODUCTION IMPACT**: All patient chart sections now load without errors, system fully operational
-
-### TypeScript Error Cleanup & Code Maintenance COMPLETED (July 7, 2025)
-- **STORAGE.TS CLEANUP**: Fixed multiple TypeScript errors in server/storage.ts including null checks, duplicate functions, and type mismatches
-- **INSERTUSER SCHEMA FIX**: Added missing `healthSystemId` field to insertUserSchema in shared/schema.ts to match database requirements
-- **TYPE REFERENCE FIXES**: Updated all UserNoteTemplate references to SelectUserNoteTemplate for proper type consistency
-- **DRIZZLE ARRAY FIXES**: Wrapped single values in arrays for db.insert().values() calls to match Drizzle ORM requirements
-- **ALIAS IMPORT FIX**: Added missing `alias` import from drizzle-orm/pg-core for SQL table aliasing functionality
-- **UNUSED CODE REMOVAL**: Removed unused `openaiApiKey` variable from encounter-detail-view.tsx as WebSocket proxy handles authentication
-- **SECURITY VERIFICATION**: Confirmed WebSocket proxy correctly implemented at /api/realtime/connect with server-side API key management
-- **DATABASE SCHEMA FIX**: Fixed critical schema mismatch where orders table had `diagnosis_codes` (plural) in database but `diagnosis_code` (singular) in schema
-- **PRODUCTION READY**: Application starts successfully with clean TypeScript compilation and all database queries functioning properly
-
-### Critical Database Schema Synchronization COMPLETED (July 7, 2025)
-- **MAJOR DATABASE SCHEMA SYNC**: Fixed critical schema drift where database tables were missing numerous columns defined in Drizzle schema
-- **ENCOUNTERS TABLE**: Added 20+ missing columns including encounter_type, encounter_status, nurse documentation fields, transcription fields, and metadata
-- **ORDERS TABLE**: Added missing columns including test_code, fasting_required, imaging fields, referral fields, and prior authorization fields
-- **LAB_RESULTS TABLE**: Created entirely missing lab_results table with 50+ columns for comprehensive lab result management
-- **LAB_ORDERS TABLE**: Created entirely missing lab_orders table with complete production EMR lab ordering workflow support
-- **COLUMN NAME FIX**: Fixed critical mismatch where database had `diagnosis_codes` (plural) but schema expected `diagnosis_code` (singular)
-- **ADDITIONAL COLUMNS**: Added collected_at timestamp to lab_orders for specimen collection tracking
-- **ROOT CAUSE**: Database was likely created from an older migration before schema evolved, causing significant drift
-- **PRODUCTION IMPACT**: System now fully operational with all expected database columns and tables in place
-- **DATA INTEGRITY**: All fixes were applied using IF NOT EXISTS clauses to preserve any existing data
-
 ### Critical Database Schema Fix & User Location Management COMPLETED (July 7, 2025)
 - **DATABASE SCHEMA FIX**: Fixed critical missing `work_schedule` column in user_locations table preventing any location assignments
 - **COLUMN ADDITION**: Successfully added `work_schedule jsonb` column to user_locations table via ALTER TABLE command
@@ -403,13 +339,6 @@ Preferred communication style: Simple, everyday language.
 - **BLEND MODE OPTIMIZATION**: Used mix-blend-mode: overlay for realistic light overlay without white corner artifacts
 - **STAGGERED COORDINATION**: Both letters' animations properly staggered to maintain visual coherence during sweep
 - **DIRECTION CORRECTION**: Fixed animation to sweep left-to-right as expected (was incorrectly right-to-left initially)
-
-### Missing Database Table Fix for Location Selection COMPLETED (July 7, 2025)
-- **CRITICAL BUG FIXED**: Fixed "Start Working Here" button not functioning due to missing `user_session_locations` table in database
-- **ROOT CAUSE**: Database table wasn't created despite being defined in schema, causing 500 errors when trying to save location selection
-- **SOLUTION IMPLEMENTED**: Created missing table with proper structure including user_id, location_id, session tracking, and remember selection fields
-- **FOREIGN KEY CONSTRAINTS**: Properly configured CASCADE delete on user_id and standard reference on location_id for data integrity
-- **PRODUCTION IMPACT**: Location selection workflow now fully functional, allowing clinical staff to select their working location and proceed to dashboard
 
 ### User Note Type Preference System Implementation COMPLETED (July 4, 2025)
 - **PREFERENCE PERSISTENCE ADDED**: Successfully implemented system to remember each user's last selected SOAP note type as their default for future encounters
@@ -704,19 +633,6 @@ Preferred communication style: Simple, everyday language.
 - **PRODUCTION VALIDATION**: Thomas Molloy's cocaine information now properly appears in unified "drugs" category instead of creating conflicting entries
 - **PERFECT UI FORMAT MATCHING**: Updated date format from "Jul 3, 2025" to "7/3/25" and restructured visit history layout to match medical problems format exactly with date, badge, and notes on same line
 - **CLEAN VISIT HISTORY DISPLAY**: Removed redundant "Changes" and "Provider" sections from visit history display for streamlined clinical interface
-
-### Comprehensive Database Schema Synchronization Fix COMPLETED (January 15, 2025)
-- **CRITICAL DATABASE FIX**: Created comprehensive database fix script that thoroughly checks and repairs all database tables
-- **SYSTEMATIC APPROACH**: Script checks all 36+ tables in the schema including organizational hierarchy, users, patients, clinical data, orders, labs, and attachments
-- **TRANSACTION SAFETY**: All fixes wrapped in database transaction for consistency - rolls back on any error
-- **MISSING TABLES CREATED**: Script creates any missing tables with complete column definitions and foreign key constraints
-- **MISSING COLUMNS ADDED**: Uses ALTER TABLE ADD COLUMN IF NOT EXISTS to safely add any missing columns without data loss
-- **FOREIGN KEY CONSTRAINTS**: Verifies and adds all required foreign key relationships between tables
-- **DEFAULT DATA**: Inserts required default records (e.g., default external lab) for system functionality
-- **COMPREHENSIVE COVERAGE**: Fixed critical tables including lab_results, lab_orders, encounters, orders, and all clinical data tables
-- **PRODUCTION IMPACT**: Resolved all database schema drift issues preventing patient deletion and other operations
-- **SCRIPT LOCATION**: server/comprehensive-database-fix.ts can be run anytime to ensure database schema matches application requirements
-- **ROOT CAUSE**: Database schema had drifted significantly from Drizzle schema definitions, likely due to incomplete migrations or manual database changes
 
 ### Chart Update Button Repositioning & UI Enhancement COMPLETED (July 2, 2025)
 - **OPTIMAL WORKFLOW POSITIONING**: Successfully moved "Chart Update Available" button to appear between SOAP note and Orders section for improved clinical workflow logic

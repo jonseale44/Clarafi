@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,11 +65,6 @@ export default function AuthPage() {
   // Update available health systems when data loads
   if (healthSystemsData && availableHealthSystems.length === 0) {
     setAvailableHealthSystems(healthSystemsData);
-    // Set default health system if not already selected
-    if (!selectedHealthSystemId && healthSystemsData.length > 0) {
-      setSelectedHealthSystemId(healthSystemsData[0].id.toString());
-      console.log("Setting default health system:", healthSystemsData[0]);
-    }
   }
 
   // Check if user has existing session location
@@ -109,15 +104,6 @@ export default function AuthPage() {
       practicePhone: "",
     },
   });
-
-  // Sync healthSystemId with form when it changes
-  useEffect(() => {
-    if (registrationType === 'join_existing' && selectedHealthSystemId) {
-      registerForm.setValue('healthSystemId', parseInt(selectedHealthSystemId));
-    } else {
-      registerForm.setValue('healthSystemId', 0);
-    }
-  }, [selectedHealthSystemId, registrationType, registerForm]);
 
   // Handle login success and location selection flow
   const onLogin = (data: LoginData) => {
@@ -166,13 +152,6 @@ export default function AuthPage() {
   }
 
   const onRegister = (data: RegisterData) => {
-    console.log("=== onRegister FUNCTION CALLED ===");
-    console.log("Registration form submitted with data:", data);
-    console.log("Form errors:", registerForm.formState.errors);
-    console.log("Form state:", registerForm.formState);
-    console.log("Registration type:", registrationType);
-    console.log("Selected health system ID:", selectedHealthSystemId);
-    
     const { confirmPassword, ...registerData } = data;
     
     // Validate health system selection for join_existing
@@ -185,7 +164,8 @@ export default function AuthPage() {
       return;
     }
     
-    const submissionData = {
+    // Pass all the data including registration type and practice info
+    registerMutation.mutate({
       ...registerData,
       registrationType,
       existingHealthSystemId: registrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
@@ -195,12 +175,7 @@ export default function AuthPage() {
       practiceState: data.practiceState,
       practiceZipCode: data.practiceZipCode,
       practicePhone: data.practicePhone,
-    };
-    
-    console.log("Submitting registration data:", submissionData);
-    
-    // Pass all the data including registration type and practice info
-    registerMutation.mutate(submissionData);
+    });
   };
 
   return (
@@ -292,27 +267,7 @@ export default function AuthPage() {
                   <CardTitle>Create Account</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={(e) => {
-                    console.log("=== FORM SUBMIT EVENT TRIGGERED ===");
-                    console.log("Event type:", e.type);
-                    console.log("Form values:", registerForm.getValues());
-                    console.log("Form errors:", registerForm.formState.errors);
-                    console.log("Form isValid:", registerForm.formState.isValid);
-                    console.log("Form isDirty:", registerForm.formState.isDirty);
-                    console.log("Form isSubmitting:", registerForm.formState.isSubmitting);
-                    console.log("Mutation isPending:", registerMutation.isPending);
-                    console.log("Registration type:", registrationType);
-                    console.log("Selected health system:", selectedHealthSystemId);
-                    
-                    // Log each field value
-                    const values = registerForm.getValues();
-                    console.log("Field values:");
-                    Object.entries(values).forEach(([key, value]) => {
-                      console.log(`  ${key}:`, value);
-                    });
-                    
-                    registerForm.handleSubmit(onRegister)(e);
-                  }} className="space-y-4">
+                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
                     {/* Registration Type Selection */}
                     <div className="space-y-2">
                       <Label>Registration Type</Label>
@@ -400,10 +355,7 @@ export default function AuthPage() {
                     
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
-                      <Select 
-                        value={registerForm.watch("role")}
-                        onValueChange={(value) => registerForm.setValue("role", value)}
-                      >
+                      <Select onValueChange={(value) => registerForm.setValue("role", value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select your role" />
                         </SelectTrigger>
@@ -421,11 +373,6 @@ export default function AuthPage() {
                           <SelectItem value="read_only">Read Only</SelectItem>
                         </SelectContent>
                       </Select>
-                      {registerForm.formState.errors.role && (
-                        <p className="text-sm text-red-600">
-                          {registerForm.formState.errors.role.message}
-                        </p>
-                      )}
                     </div>
 
 
@@ -529,14 +476,6 @@ export default function AuthPage() {
                       type="submit" 
                       className="w-full" 
                       disabled={registerMutation.isPending}
-                      onClick={(e) => {
-                        console.log("=== BUTTON CLICK EVENT ===");
-                        console.log("Button type:", e.currentTarget.type);
-                        console.log("Button disabled:", registerMutation.isPending);
-                        console.log("Form state at click:", registerForm.formState);
-                        console.log("All form errors:", registerForm.formState.errors);
-                        console.log("Is default prevented:", e.defaultPrevented);
-                      }}
                     >
                       {registerMutation.isPending ? (
                         <>

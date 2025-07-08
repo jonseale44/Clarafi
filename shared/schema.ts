@@ -1539,7 +1539,7 @@ export const orders = pgTable("orders", {
   form: text("form"), // 'tablet', 'capsule', 'liquid', etc.
   routeOfAdministration: text("route_of_administration"),
   daysSupply: integer("days_supply"),
-  diagnosisCode: text("diagnosis_codes"),
+  diagnosisCode: text("diagnosis_code"),
   requiresPriorAuth: boolean("requires_prior_auth").default(false),
   priorAuthNumber: text("prior_auth_number"),
   
@@ -1950,7 +1950,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
   password: true,
-  healthSystemId: true,
   firstName: true,
   lastName: true,
   role: true,
