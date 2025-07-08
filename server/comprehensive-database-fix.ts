@@ -1617,6 +1617,48 @@ async function comprehensiveDatabaseFix() {
       );
     `);
     
+    // ==================== PATIENT ATTACHMENTS TABLE COLUMN FIX ====================
+    
+    console.log("\nChecking patient_attachments table columns...");
+    
+    // The database has 'filename' but schema expects 'file_name'
+    // Rename column to match schema
+    try {
+      await db.execute(sql`
+        ALTER TABLE patient_attachments 
+        RENAME COLUMN filename TO file_name;
+      `);
+      console.log("✅ Renamed filename to file_name in patient_attachments table");
+    } catch (error: any) {
+      if (error.code === '42703') { // column does not exist
+        // Column might already be correctly named, try adding it if missing
+        await db.execute(sql`
+          ALTER TABLE patient_attachments 
+          ADD COLUMN IF NOT EXISTS file_name text;
+        `);
+      } else if (error.code !== '42701') { // column already exists
+        throw error;
+      }
+    }
+    
+    // Check for other potential column name mismatches
+    const attachmentColumns = [
+      { name: 'original_file_name', type: 'text' },
+      { name: 'file_size', type: 'integer' },
+      { name: 'mime_type', type: 'text' },
+      { name: 'file_extension', type: 'text' },
+      { name: 'file_path', type: 'text' },
+      { name: 'thumbnail_path', type: 'text' },
+      { name: 'content_hash', type: 'text' }
+    ];
+    
+    for (const col of attachmentColumns) {
+      await db.execute(sql.raw(`
+        ALTER TABLE patient_attachments 
+        ADD COLUMN IF NOT EXISTS ${col.name} ${col.type};
+      `));
+    }
+    
     // ==================== COMMIT TRANSACTION ====================
     
     await db.execute(sql`COMMIT`);

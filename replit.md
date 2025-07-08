@@ -109,6 +109,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Database Migration System Analysis & Column Name Fix COMPLETED (July 8, 2025)
+- **ROOT CAUSE IDENTIFIED**: Database drift was caused by not using proper migration system - only one migration file exists (0000_high_freak.sql) despite months of schema evolution
+- **PATTERN DISCOVERED**: Team was updating schema.ts continuously but not generating corresponding database migrations using Drizzle's migration system
+- **COLUMN NAME MISMATCH FIXED**: Fixed patient_attachments table where database had 'filename' but schema expected 'file_name' - renamed column to match schema
+- **COMPREHENSIVE FIX ENHANCED**: Updated comprehensive-database-fix.ts to also handle column name mismatches in addition to missing tables and columns
+- **PROPER WORKFLOW**: Should have been: schema.ts changes → npm run db:generate → new migration file → npm run db:push
+- **ACTUAL WORKFLOW**: What happened: schema.ts changes → manual fix scripts → temporary solutions → accumulating technical debt
+- **MIGRATION BEST PRACTICES**: Every schema change should generate a new migration file (0001_xxx.sql, 0002_xxx.sql, etc.) for proper version control
+- **PRODUCTION IMPACT**: Database now fully synchronized with schema, all CRUD operations working correctly
+
 ### Comprehensive Database Schema Fix for Patient Deletion COMPLETED (January 15, 2025)
 - **CRITICAL PATIENT DELETION FIX**: Fixed all missing tables preventing patient deletion operations
 - **MISSING TABLES ADDED**: Created 6 additional critical tables:
