@@ -30,21 +30,27 @@ export const VoiceRecordingScreen = () => {
       console.log('WebSocket connected');
       setIsConnected(true);
       
-      // Send session configuration
+      // Send session configuration matching your web app
       websocket.send(JSON.stringify({
         type: 'session.update',
         session: {
           modalities: ['text', 'audio'],
-          instructions: 'You are a medical scribe. Transcribe the audio clearly.',
+          instructions: 'You are a medical scribe assisting with patient documentation. Listen carefully and transcribe what you hear.',
           voice: 'alloy',
           input_audio_format: 'pcm16',
           output_audio_format: 'pcm16',
+          input_audio_transcription: {
+            model: 'whisper-1'
+          },
           turn_detection: {
             type: 'server_vad',
             threshold: 0.5,
+            prefix_padding_ms: 300,
             silence_duration_ms: 500
           },
-          tool_choice: 'auto'
+          tool_choice: 'auto',
+          temperature: 0.1,
+          max_tokens: 4096
         }
       }));
     };
