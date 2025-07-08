@@ -157,8 +157,12 @@ export default function AuthPage() {
   }
 
   const onRegister = (data: RegisterData) => {
+    console.log("=== onRegister FUNCTION CALLED ===");
     console.log("Registration form submitted with data:", data);
     console.log("Form errors:", registerForm.formState.errors);
+    console.log("Form state:", registerForm.formState);
+    console.log("Registration type:", registrationType);
+    console.log("Selected health system ID:", selectedHealthSystemId);
     
     const { confirmPassword, ...registerData } = data;
     
@@ -279,7 +283,27 @@ export default function AuthPage() {
                   <CardTitle>Create Account</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                  <form onSubmit={(e) => {
+                    console.log("=== FORM SUBMIT EVENT TRIGGERED ===");
+                    console.log("Event type:", e.type);
+                    console.log("Form values:", registerForm.getValues());
+                    console.log("Form errors:", registerForm.formState.errors);
+                    console.log("Form isValid:", registerForm.formState.isValid);
+                    console.log("Form isDirty:", registerForm.formState.isDirty);
+                    console.log("Form isSubmitting:", registerForm.formState.isSubmitting);
+                    console.log("Mutation isPending:", registerMutation.isPending);
+                    console.log("Registration type:", registrationType);
+                    console.log("Selected health system:", selectedHealthSystemId);
+                    
+                    // Log each field value
+                    const values = registerForm.getValues();
+                    console.log("Field values:");
+                    Object.entries(values).forEach(([key, value]) => {
+                      console.log(`  ${key}:`, value);
+                    });
+                    
+                    registerForm.handleSubmit(onRegister)(e);
+                  }} className="space-y-4">
                     {/* Registration Type Selection */}
                     <div className="space-y-2">
                       <Label>Registration Type</Label>
@@ -496,6 +520,14 @@ export default function AuthPage() {
                       type="submit" 
                       className="w-full" 
                       disabled={registerMutation.isPending}
+                      onClick={(e) => {
+                        console.log("=== BUTTON CLICK EVENT ===");
+                        console.log("Button type:", e.currentTarget.type);
+                        console.log("Button disabled:", registerMutation.isPending);
+                        console.log("Form state at click:", registerForm.formState);
+                        console.log("All form errors:", registerForm.formState.errors);
+                        console.log("Is default prevented:", e.defaultPrevented);
+                      }}
                     >
                       {registerMutation.isPending ? (
                         <>
