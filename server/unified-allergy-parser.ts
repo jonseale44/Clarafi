@@ -271,6 +271,7 @@ CORE ALLERGY PROCESSING INSTRUCTIONS:
    - moderate: Notable symptoms but manageable
    - mild: Minor reactions, limited impact
    - unknown: Severity not specified
+   - IMPORTANT: For NKDA entries, do NOT specify severity field (omit from JSON)
 
 5. ALLERGY TYPES:
    - drug: Medications, including drug classes
@@ -339,7 +340,7 @@ EXAMPLE SCENARIOS:
 2. Existing: PCN allergy (ID: 30) from 5/1/24 → New document 7/1/24 states "NKDA"  
    RESPONSE: Two actions:
    - {"action": "resolve_conflict", "existingRecordId": 30, "allergen": "Penicillin", "status": "resolved", ...}
-   - {"action": "document_nkda", "existingRecordId": null, "allergen": "No Known Drug Allergies", "status": "active", ...}
+   - {"action": "document_nkda", "existingRecordId": null, "allergen": "No Known Drug Allergies", "status": "active", "reaction": null, "allergyType": "drug", ...}
 
 3. Existing: NKDA (ID: 40) → New document states "Sulfa - rash"
    RESPONSE: Two actions:
@@ -442,7 +443,7 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
               patientId,
               allergen: change.allergen,
               reaction: change.reaction || null,
-              severity: change.severity || null,
+              severity: change.action === "document_nkda" ? null : (change.severity || null),
               allergyType: change.allergyType || null,
               status: change.status || "active",
               verificationStatus: "unconfirmed",

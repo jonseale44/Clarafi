@@ -109,6 +109,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical Allergy Database Constraint Fix COMPLETED (July 8, 2025)
+- **CRITICAL BUG FIXED**: Fixed database constraint violation error when processing "No Known Drug Allergies" (NKDA) entries
+- **ROOT CAUSE**: allergies_severity_check constraint only allowed ['mild', 'moderate', 'severe', 'life-threatening'] values but not NULL
+- **CONSTRAINT UPDATE**: Updated allergies_severity_check to allow NULL values for NKDA entries: `CHECK (severity IS NULL OR severity = ANY (ARRAY['mild', 'moderate', 'severe', 'life-threatening', 'unknown']))`
+- **CODE ENHANCEMENT**: Modified UnifiedAllergyParser to explicitly set severity to NULL for document_nkda actions
+- **GPT PROMPT UPDATE**: Enhanced GPT prompt to clarify that NKDA entries should not have severity values
+- **PRODUCTION READY**: NKDA processing now works correctly without violating database constraints
+
 ### Critical Database Schema Migration COMPLETED (July 8, 2025)
 - **CATASTROPHIC SCHEMA DRIFT RESOLVED**: Fixed critical database schema discrepancies that were causing system-wide failures
 - **ORDERS TABLE SCHEMA FIX**: Corrected `diagnosis_codes` (plural) to `diagnosis_code` (singular) to match schema definition
