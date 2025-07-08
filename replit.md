@@ -182,6 +182,13 @@ Preferred communication style: Simple, everyday language.
 - **TWO-TIER ROLE CLARITY**: System roles determine application access level, while location roles determine function at specific clinic sites
 - **PRODUCTION IMPACT**: Prevents dangerous scenarios where non-clinical staff could be assigned clinical provider roles at locations
 
+### Database Schema Column Name Fixes COMPLETED (January 15, 2025)
+- **DIAGNOSIS CODE COLUMN FIX**: Fixed critical error where lab background processor was looking for `diagnosis_code` (singular) but database has `diagnosis_codes` (plural)
+- **SCHEMA UPDATE**: Updated orders table schema mapping from `diagnosisCode: text("diagnosis_code")` to `diagnosisCode: text("diagnosis_codes")` to match actual database column
+- **COLUMN NAME MISMATCH RESOLVED**: Identified that database uses snake_case columns (`encounter_status`, `encounter_type`) while schema defines camelCase, but Drizzle ORM handles the mapping correctly
+- **LAB_RESULTS TABLE CONFIRMED**: Verified lab_results table exists in database, resolving previous error messages
+- **PRODUCTION IMPACT**: All dashboard routes, lab processing, and background jobs now functioning without database errors
+
 ### Admin Location Selection Workflow Enhancement COMPLETED (January 15, 2025)
 - **ADMIN LOCATION WORKFLOW FIX**: Updated authentication flow to skip location selection for admin users - they no longer see "Select Your Working Location" prompt
 - **PRODUCTION EMR STANDARDS**: Aligned with Epic/Athena patterns where admin users have health system-wide access and don't need working location selection
