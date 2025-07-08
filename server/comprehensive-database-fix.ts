@@ -1641,7 +1641,7 @@ async function comprehensiveDatabaseFix() {
       }
     }
     
-    // Check for other potential column name mismatches
+    // Check for all missing columns in patient_attachments table
     const attachmentColumns = [
       { name: 'original_file_name', type: 'text' },
       { name: 'file_size', type: 'integer' },
@@ -1649,14 +1649,30 @@ async function comprehensiveDatabaseFix() {
       { name: 'file_extension', type: 'text' },
       { name: 'file_path', type: 'text' },
       { name: 'thumbnail_path', type: 'text' },
-      { name: 'content_hash', type: 'text' }
+      { name: 'content_hash', type: 'text' },
+      { name: 'category', type: 'text DEFAULT \'general\'' },
+      { name: 'title', type: 'text' },
+      { name: 'description', type: 'text' },
+      { name: 'tags', type: 'text[]' },
+      { name: 'uploaded_by', type: 'integer' },
+      { name: 'is_confidential', type: 'boolean DEFAULT false' },
+      { name: 'access_level', type: 'text DEFAULT \'standard\'' },
+      { name: 'processing_status', type: 'text DEFAULT \'completed\'' },
+      { name: 'virus_scan_status', type: 'text DEFAULT \'pending\'' }
     ];
     
     for (const col of attachmentColumns) {
-      await db.execute(sql.raw(`
-        ALTER TABLE patient_attachments 
-        ADD COLUMN IF NOT EXISTS ${col.name} ${col.type};
-      `));
+      try {
+        await db.execute(sql.raw(`
+          ALTER TABLE patient_attachments 
+          ADD COLUMN IF NOT EXISTS ${col.name} ${col.type};
+        `));
+      } catch (error: any) {
+        // Ignore if column already exists
+        if (error.code !== '42701') {
+          console.error(`Error adding column ${col.name}:`, error.message);
+        }
+      }
     }
     
     // ==================== COMMIT TRANSACTION ====================
