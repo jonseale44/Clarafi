@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,6 +109,15 @@ export default function AuthPage() {
       practicePhone: "",
     },
   });
+
+  // Sync healthSystemId with form when it changes
+  useEffect(() => {
+    if (registrationType === 'join_existing' && selectedHealthSystemId) {
+      registerForm.setValue('healthSystemId', parseInt(selectedHealthSystemId));
+    } else {
+      registerForm.setValue('healthSystemId', 0);
+    }
+  }, [selectedHealthSystemId, registrationType, registerForm]);
 
   // Handle login success and location selection flow
   const onLogin = (data: LoginData) => {
