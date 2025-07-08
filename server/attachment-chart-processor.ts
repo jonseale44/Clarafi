@@ -301,9 +301,32 @@ export class AttachmentChartProcessor {
           const vitalSet = vitalsResult.data[i];
           console.log(`🩺 [AttachmentChartProcessor] Saving vitals set ${i + 1}/${vitalsResult.data.length}`);
           
+          // Debug logging for attachment encounterId
+          console.log(`📋 [AttachmentChartProcessor] DEBUG - Processing vitals for attachment:`, {
+            attachmentId: attachment.id,
+            patientId: attachment.patientId,
+            encounterIdRaw: attachment.encounterId,
+            encounterIdType: typeof attachment.encounterId,
+            encounterIdIsString: typeof attachment.encounterId === 'string',
+            encounterIdValue: attachment.encounterId
+          });
+          
+          // Ensure encounterId is either a valid number or null
+          let safeEncounterId = null;
+          if (attachment.encounterId) {
+            if (typeof attachment.encounterId === 'number') {
+              safeEncounterId = attachment.encounterId;
+            } else if (typeof attachment.encounterId === 'string' && !isNaN(parseInt(attachment.encounterId))) {
+              safeEncounterId = parseInt(attachment.encounterId);
+              console.log(`📋 [AttachmentChartProcessor] Converted string encounterId to number: ${safeEncounterId}`);
+            } else {
+              console.warn(`⚠️ [AttachmentChartProcessor] Invalid encounterId value: "${attachment.encounterId}" - using null instead`);
+            }
+          }
+          
           await this.saveExtractedVitalSet(
             attachment.patientId,
-            attachment.encounterId,
+            safeEncounterId,
             vitalSet,
             attachment.id,
             vitalsResult.confidence,
@@ -585,9 +608,16 @@ export class AttachmentChartProcessor {
         sourceNotes += ` - Set ${setNumber} of ${totalSets}`;
       }
       
+      // Fix encounterId to ensure it's either a valid number or null (not undefined)
+      const validEncounterId = encounterId && !isNaN(encounterId) ? encounterId : null;
+      
+      console.log(`💾 [AttachmentChartProcessor] DEBUG - encounterId raw value: ${encounterId}`);
+      console.log(`💾 [AttachmentChartProcessor] DEBUG - encounterId type: ${typeof encounterId}`);
+      console.log(`💾 [AttachmentChartProcessor] DEBUG - validEncounterId: ${validEncounterId}`);
+      
       const vitalsEntry = {
         patientId: patientId,
-        encounterId: encounterId || undefined,
+        encounterId: validEncounterId,
         recordedAt: recordedAt,
         recordedBy: "System Extract",
         entryType: "routine" as const,

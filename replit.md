@@ -109,6 +109,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Vitals Extraction Data Type Error Fix COMPLETED (January 8, 2025)
+- **CRITICAL BUG FIXED**: Resolved error where "System Extract" string was being passed to integer encounterId field during vitals extraction
+- **ROOT CAUSE**: `attachment.encounterId` was containing invalid string values instead of proper integers or null
+- **COMPREHENSIVE FIX**: Added validation in AttachmentChartProcessor to ensure encounterId is either a valid number or null:
+  - Converts string encounter IDs to numbers when possible
+  - Uses null for invalid values like "System Extract"
+  - Added detailed debug logging for troubleshooting
+- **PRODUCTION READY**: Vitals extraction from attachments now works without database type errors
+
 ### Complete Database-Schema Alignment COMPLETED (January 8, 2025)
 - **COMPREHENSIVE ALIGNMENT ACHIEVED**: Successfully synchronized all 19 critical tables between database and schema.ts
 - **SYSTEMATIC APPROACH**: Created targeted scripts to address schema drift without timeouts:
