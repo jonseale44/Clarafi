@@ -109,6 +109,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Comprehensive Database Schema Fix for Patient Deletion COMPLETED (January 15, 2025)
+- **CRITICAL PATIENT DELETION FIX**: Fixed all missing tables preventing patient deletion operations
+- **MISSING TABLES ADDED**: Created 5 additional critical tables:
+  - `gpt_lab_review_notes` - GPT-generated lab result review notes
+  - `signed_orders` - Post-signature order tracking and delivery management
+  - `imaging_orders` - Radiology and imaging order management
+  - `document_processing_queue` - OCR document processing queue
+  - `patient_order_preferences` - Patient-specific order delivery preferences
+  - `attachment_extracted_content` - OCR extracted content from attachments
+- **COMPREHENSIVE FIX SCRIPT**: Updated `comprehensive-database-fix.ts` to check and create 42 total tables
+- **ROOT CAUSE**: Patient deletion touches many tables; database was missing several that weren't immediately obvious
+- **PRODUCTION IMPACT**: Patient deletion now works without errors, all table dependencies resolved
+
 ### Critical Database Schema Restoration COMPLETED (January 14, 2025)
 - **MAJOR DATABASE SYNC ISSUE RESOLVED**: Fixed critical database drift where multiple tables were missing and column names were mismatched
 - **VITALS TABLE FIX**: Renamed columns from `systolic`/`diastolic` to `systolic_bp`/`diastolic_bp` to match schema definition

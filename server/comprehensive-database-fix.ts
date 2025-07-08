@@ -1533,6 +1533,42 @@ async function comprehensiveDatabaseFix() {
       );
     `);
     
+    // 41. Patient Order Preferences Table
+    console.log("Checking patient_order_preferences table...");
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS patient_order_preferences (
+        id serial PRIMARY KEY,
+        patient_id integer NOT NULL REFERENCES patients(id) UNIQUE,
+        lab_delivery_method text DEFAULT 'mock_service',
+        lab_service_provider text,
+        imaging_delivery_method text DEFAULT 'print_pdf',
+        imaging_service_provider text,
+        medication_delivery_method text DEFAULT 'preferred_pharmacy',
+        preferred_pharmacy text,
+        pharmacy_phone text,
+        pharmacy_fax text,
+        created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+        updated_at timestamp DEFAULT CURRENT_TIMESTAMP,
+        last_updated_by integer REFERENCES users(id)
+      );
+    `);
+    
+    // 42. Attachment Extracted Content Table
+    console.log("Checking attachment_extracted_content table...");
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS attachment_extracted_content (
+        id serial PRIMARY KEY,
+        attachment_id integer NOT NULL REFERENCES patient_attachments(id) UNIQUE,
+        extracted_text text,
+        ai_generated_title text,
+        document_type text,
+        processing_status text DEFAULT 'pending',
+        error_message text,
+        processed_at timestamp,
+        created_at timestamp DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
     // ==================== COMMIT TRANSACTION ====================
     
     await db.execute(sql`COMMIT`);
