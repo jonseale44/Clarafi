@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileText, User, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar, RefreshCw } from 'lucide-react';
+import { Upload, FileText, User, UserPlus, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { queryClient } from '@/lib/queryClient';
@@ -84,6 +84,7 @@ export function PatientParser() {
   const textDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const quickParseDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const [, setLocation] = useLocation();
+  const formRef = useRef<HTMLDivElement>(null);
 
   // Form for discrete fields
   const form = useForm<PatientFormData>({
@@ -262,6 +263,10 @@ export function PatientParser() {
           title: "Information extracted",
           description: `Patient data parsed with ${result.confidence}% confidence`,
         });
+        // Automatically scroll to the form
+        setTimeout(() => {
+          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       } else {
         toast({
           title: "Parsing failed",
@@ -340,6 +345,10 @@ export function PatientParser() {
           title: "Information extracted",
           description: `Patient data parsed with ${result.confidence}% confidence`,
         });
+        // Automatically scroll to the form
+        setTimeout(() => {
+          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       } else {
         toast({
           title: "Parsing failed",
@@ -630,249 +639,268 @@ export function PatientParser() {
                   )}
                 </div>
                 <p className="text-sm text-gray-500">
-                  AI will automatically extract patient information and populate the fields below
+                  AI will automatically extract patient information and populate the form below
                 </p>
               </div>
-
-              <Separator />
-
-              {/* Discrete Input Fields */}
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(createPatient)} className="space-y-6">
-                  {/* Name Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* DOB and Gender */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Birth *</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="gender"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Gender *</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select gender" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                              <SelectItem value="unknown">Unknown</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Contact Information */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="phoneNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="(555) 123-4567" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="john.doe@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Address */}
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="123 Main St, City, State ZIP" 
-                            rows={2}
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Emergency Contact */}
-                  <FormField
-                    control={form.control}
-                    name="emergencyContact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Emergency Contact</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Name and phone number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Insurance Information */}
-                  <Separator />
-                  <h3 className="font-medium text-sm">Insurance Information</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="insurancePrimary"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Primary Insurance</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Blue Cross Blue Shield" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="insuranceSecondary"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Secondary Insurance</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Medicare" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="policyNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Policy Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="XXX123456" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="groupNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Group Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="GRP789" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="flex justify-end gap-3">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => {
-                        form.reset();
-                        setQuickParseText('');
-                        setExtractedData(null);
-                      }}
-                    >
-                      Clear Form
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={isProcessing}
-                      className="bg-navy-blue-600 hover:bg-navy-blue-700"
-                    >
-                      {isProcessing ? 'Creating...' : 'Create Patient'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
             </TabsContent>
           </Tabs>
 
+          {/* Processing Loading State */}
           {isProcessing && (
-            <div className="flex items-center justify-center gap-2 text-navy-blue-600 py-4">
-              <div className="w-4 h-4 border-2 border-navy-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Processing...</span>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white p-4 rounded-lg flex items-center gap-3">
+                <RefreshCw className="w-5 h-5 animate-spin" />
+                <span className="text-sm">Processing...</span>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Show form when data is extracted */}
+      {extractedData && (
+        <Card ref={formRef}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Create New Patient
+            </CardTitle>
+            <CardDescription>
+              Review and complete the extracted patient information
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(createPatient)} className="space-y-6">
+                {/* Name Fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* DOB and Gender */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date of Birth *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gender *</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="unknown">Unknown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Phone and Email */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(555) 123-4567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="john.doe@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Address */}
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="123 Main St, City, State ZIP" 
+                          rows={3}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Emergency Contact */}
+                <FormField
+                  control={form.control}
+                  name="emergencyContact"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Emergency Contact</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Name and phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Insurance Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Insurance Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="insurancePrimary"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Primary Insurance</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Blue Cross Blue Shield" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="insuranceSecondary"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Secondary Insurance</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Medicare" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="policyNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Policy Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="XXX123456" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="groupNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Group Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="GRP789" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Submit Button */}
+                <div className="flex justify-end gap-3">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      form.reset();
+                      setQuickParseText('');
+                      setExtractedData(null);
+                      setSelectedFile(null);
+                    }}
+                  >
+                    Clear Form
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isProcessing}
+                    className="bg-navy-blue-600 hover:bg-navy-blue-700"
+                  >
+                    {isProcessing ? 'Creating...' : 'Create Patient'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
 
     </div>
   );
