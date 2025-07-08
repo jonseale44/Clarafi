@@ -301,14 +301,30 @@ export class AttachmentChartProcessor {
           const vitalSet = vitalsResult.data[i];
           console.log(`🩺 [AttachmentChartProcessor] Saving vitals set ${i + 1}/${vitalsResult.data.length}`);
           
-          // Debug logging for attachment encounterId
+          // Debug logging for attachment data and parameters
           console.log(`📋 [AttachmentChartProcessor] DEBUG - Processing vitals for attachment:`, {
             attachmentId: attachment.id,
+            attachmentIdType: typeof attachment.id,
             patientId: attachment.patientId,
+            patientIdType: typeof attachment.patientId,
             encounterIdRaw: attachment.encounterId,
             encounterIdType: typeof attachment.encounterId,
             encounterIdIsString: typeof attachment.encounterId === 'string',
-            encounterIdValue: attachment.encounterId
+            encounterIdValue: attachment.encounterId,
+            confidence: vitalsResult.confidence,
+            documentType: extractedContent.documentType
+          });
+          
+          // Log the exact parameters being passed to saveExtractedVitalSet
+          console.log(`📋 [AttachmentChartProcessor] DEBUG - Function parameters:`, {
+            param1_patientId: attachment.patientId,
+            param2_encounterId: safeEncounterId,
+            param3_vitalSet: typeof vitalSet,
+            param4_attachmentId: attachment.id,
+            param4_attachmentIdType: typeof attachment.id,
+            param4_attachmentIdValue: attachment.id === "System Extract" ? "ERROR: attachment.id is 'System Extract'" : attachment.id,
+            param5_confidence: vitalsResult.confidence,
+            param6_documentType: extractedContent.documentType
           });
           
           // Ensure encounterId is either a valid number or null
@@ -324,11 +340,18 @@ export class AttachmentChartProcessor {
             }
           }
           
+          // Ensure attachment.id is a valid number
+          const safeAttachmentId = typeof attachment.id === 'number' ? attachment.id : parseInt(attachment.id);
+          if (isNaN(safeAttachmentId)) {
+            console.error(`❌ [AttachmentChartProcessor] CRITICAL ERROR: Invalid attachment ID: "${attachment.id}" (type: ${typeof attachment.id})`);
+            throw new Error(`Invalid attachment ID: "${attachment.id}" - expected a number`);
+          }
+          
           await this.saveExtractedVitalSet(
             attachment.patientId,
             safeEncounterId,
             vitalSet,
-            attachment.id,
+            safeAttachmentId,
             vitalsResult.confidence,
             extractedContent.documentType,
             i + 1,

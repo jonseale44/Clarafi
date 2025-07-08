@@ -1,0 +1,45 @@
+'617',
+  routine: 'pg_strtoint32_safe'
+}
+📋 [AttachmentChartProcessor] Error extracting vitals from document: error: invalid input syntax for type integer: "System Extract"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async AttachmentChartProcessor.saveExtractedVitalSet (/home/runner/workspace/server/attachment-chart-processor.ts:725:30)
+    at async AttachmentChartProcessor.processDocumentForVitals (/home/runner/workspace/server/attachment-chart-processor.ts:327:11)
+    at async Promise.allSettled (index 0)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9) {
+  length: 157,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $4 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '617',
+  routine: 'pg_strtoint32_safe'
+}
+🔄 [UnifiedSurgicalHistory] 🤖 GPT Response: [
+  {
+    "surgery_id": null,
+    "action": "NEW_SURGERY",
+    "procedure_name": "Pacemaker/defibrillator implantation",
+    "confidence": 95,
+    "source_type": "attachment",
+    "extracted_date": "2010-01-01",
+    "consolidation_reasoning": "No prior surgical history recorded; procedure explicitly mentioned with date 2010"
+  },
+  {
+    "surgery_id": null,
+    "action": "NEW_SURGERY",
+    "procedure
