@@ -301,6 +301,19 @@ export class AttachmentChartProcessor {
           const vitalSet = vitalsResult.data[i];
           console.log(`🩺 [AttachmentChartProcessor] Saving vitals set ${i + 1}/${vitalsResult.data.length}`);
           
+          // Ensure encounterId is either a valid number or null
+          let safeEncounterId = null;
+          if (attachment.encounterId) {
+            if (typeof attachment.encounterId === 'number') {
+              safeEncounterId = attachment.encounterId;
+            } else if (typeof attachment.encounterId === 'string' && !isNaN(parseInt(attachment.encounterId))) {
+              safeEncounterId = parseInt(attachment.encounterId);
+              console.log(`📋 [AttachmentChartProcessor] Converted string encounterId to number: ${safeEncounterId}`);
+            } else {
+              console.warn(`⚠️ [AttachmentChartProcessor] Invalid encounterId value: "${attachment.encounterId}" - using null instead`);
+            }
+          }
+          
           // Debug logging for attachment data and parameters
           console.log(`📋 [AttachmentChartProcessor] DEBUG - Processing vitals for attachment:`, {
             attachmentId: attachment.id,
@@ -326,19 +339,6 @@ export class AttachmentChartProcessor {
             param5_confidence: vitalsResult.confidence,
             param6_documentType: extractedContent.documentType
           });
-          
-          // Ensure encounterId is either a valid number or null
-          let safeEncounterId = null;
-          if (attachment.encounterId) {
-            if (typeof attachment.encounterId === 'number') {
-              safeEncounterId = attachment.encounterId;
-            } else if (typeof attachment.encounterId === 'string' && !isNaN(parseInt(attachment.encounterId))) {
-              safeEncounterId = parseInt(attachment.encounterId);
-              console.log(`📋 [AttachmentChartProcessor] Converted string encounterId to number: ${safeEncounterId}`);
-            } else {
-              console.warn(`⚠️ [AttachmentChartProcessor] Invalid encounterId value: "${attachment.encounterId}" - using null instead`);
-            }
-          }
           
           // Ensure attachment.id is a valid number
           const safeAttachmentId = typeof attachment.id === 'number' ? attachment.id : parseInt(attachment.id);
@@ -642,7 +642,7 @@ export class AttachmentChartProcessor {
         patientId: patientId,
         encounterId: validEncounterId,
         recordedAt: recordedAt,
-        recordedBy: "System Extract",
+        recordedBy: 1, // Using system user ID instead of string
         entryType: "routine" as const,
         
         // Vital signs data from individual set
