@@ -453,6 +453,11 @@ export class ProductionLabIntegrationService {
     
     // Set up monitoring webhook for production integration
     await this.setupWorkflowMonitoring(labOrderId, submission, cumulativeDelay);
+    
+    } catch (error) {
+      console.error(`❌ [ProductionLab] Error in lab workflow for order ${labOrderId}:`, error);
+      throw error;
+    }
   }
 
   /**
