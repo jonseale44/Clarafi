@@ -1,27 +1,8 @@
 import { Express } from "express";
 import { db } from "./db";
 import { users, userLocations, locations, healthSystems, organizations, encounters, patients } from "@shared/schema";
-import { eq, sql, and, isNull, desc, ne } from "drizzle-orm";
+import { eq, sql, and, isNull, desc } from "drizzle-orm";
 import { z } from "zod";
-
-// Validate that a location role is appropriate for a user's system role
-function validateLocationRoleForSystemRole(systemRole: string, locationRole: string): boolean {
-  const validRolesMap: Record<string, string[]> = {
-    provider: ['primary_provider', 'covering_provider', 'specialist'],
-    nurse: ['nurse'],
-    ma: ['ma'],
-    admin: ['staff'],
-    front_desk: ['staff'],
-    billing: ['staff'],
-    lab_tech: ['staff'],
-    referral_coordinator: ['staff'],
-    practice_manager: ['staff'],
-    read_only: ['staff'],
-  };
-
-  const validRoles = validRolesMap[systemRole] || ['staff'];
-  return validRoles.includes(locationRole);
-}
 
 export function registerAdminUserRoutes(app: Express) {
   // Middleware to check if user is admin
@@ -181,22 +162,13 @@ export function registerAdminUserRoutes(app: Express) {
 
       // CRITICAL: Verify user and location are in the same health system
       const [user] = await db
-        .select({ healthSystemId: users.healthSystemId, role: users.role })
+        .select({ healthSystemId: users.healthSystemId })
         .from(users)
         .where(eq(users.id, userId))
         .limit(1);
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
-      }
-
-      // Validate location role matches user's system role
-      const isValidLocationRole = validateLocationRoleForSystemRole(user.role, data.roleAtLocation);
-      if (!isValidLocationRole) {
-        console.error(`❌ [AdminUserRoutes] SECURITY: Invalid location role assignment - User ${userId} with role '${user.role}' cannot have location role '${data.roleAtLocation}'`);
-        return res.status(403).json({ 
-          message: `Users with role '${user.role}' cannot be assigned as '${data.roleAtLocation}' at locations` 
-        });
       }
 
       const [location] = await db
@@ -264,111 +236,6 @@ export function registerAdminUserRoutes(app: Express) {
       }
       console.error("❌ [AdminUserRoutes] Error assigning location:", error);
       res.status(500).json({ message: "Failed to assign location" });
-    }
-  });
-
-  // Update user location assignment
-  app.put("/api/admin/users/:userId/locations/:locationId", requireAdmin, async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const locationId = parseInt(req.params.locationId);
-
-      const updateSchema = z.object({
-        roleAtLocation: z.string(),
-        isPrimary: z.boolean(),
-        permissions: z.object({
-          canSchedule: z.boolean(),
-          canViewAllPatients: z.boolean(),
-          canCreateOrders: z.boolean(),
-        }),
-        workSchedule: z.object({
-          monday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
-          tuesday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
-          wednesday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
-          thursday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
-          friday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
-          saturday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
-          sunday: z.object({ start: z.string(), end: z.string(), unavailable: z.boolean().optional() }).optional(),
-        }).optional(),
-      });
-
-      const data = updateSchema.parse(req.body);
-
-      // Get user's system role
-      const [user] = await db
-        .select({ role: users.role })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Validate location role matches user's system role
-      const isValidLocationRole = validateLocationRoleForSystemRole(user.role, data.roleAtLocation);
-      if (!isValidLocationRole) {
-        console.error(`❌ [AdminUserRoutes] SECURITY: Invalid location role update - User ${userId} with role '${user.role}' cannot have location role '${data.roleAtLocation}'`);
-        return res.status(403).json({ 
-          message: `Users with role '${user.role}' cannot be assigned as '${data.roleAtLocation}' at locations` 
-        });
-      }
-
-      // Check if assignment exists
-      const [existing] = await db
-        .select()
-        .from(userLocations)
-        .where(
-          and(
-            eq(userLocations.userId, userId),
-            eq(userLocations.locationId, locationId)
-          )
-        );
-
-      if (!existing) {
-        return res.status(404).json({ message: "User location assignment not found" });
-      }
-
-      // If setting as primary, unset other primary locations
-      if (data.isPrimary) {
-        await db
-          .update(userLocations)
-          .set({ isPrimary: false })
-          .where(
-            and(
-              eq(userLocations.userId, userId),
-              ne(userLocations.locationId, locationId)
-            )
-          );
-      }
-
-      // Update the assignment
-      const [updated] = await db
-        .update(userLocations)
-        .set({
-          roleAtLocation: data.roleAtLocation,
-          isPrimary: data.isPrimary,
-          canSchedule: data.permissions.canSchedule,
-          canViewAllPatients: data.permissions.canViewAllPatients,
-          canCreateOrders: data.permissions.canCreateOrders,
-          workSchedule: data.workSchedule || null,
-        })
-        .where(
-          and(
-            eq(userLocations.userId, userId),
-            eq(userLocations.locationId, locationId)
-          )
-        )
-        .returning();
-
-      console.log(`✅ [AdminUserRoutes] Updated user ${userId} location ${locationId} assignment`);
-      res.json(updated);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      console.error("❌ [AdminUserRoutes] Error updating location assignment:", error);
-      res.status(500).json({ message: "Failed to update location assignment" });
     }
   });
 

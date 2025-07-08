@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -186,62 +186,15 @@ export function AdminUserManagement() {
     return colors[role] || "bg-gray-100 text-gray-800";
   };
 
-  // Get appropriate location roles based on system role
-  const getLocationRolesForSystemRole = (systemRole: string): Array<{value: string, label: string}> => {
-    switch (systemRole) {
-      case 'provider':
-        return [
-          { value: 'primary_provider', label: 'Primary Provider' },
-          { value: 'covering_provider', label: 'Covering Provider' },
-          { value: 'specialist', label: 'Specialist' }
-        ];
-      case 'nurse':
-        return [
-          { value: 'nurse', label: 'Nurse' }
-        ];
-      case 'ma':
-        return [
-          { value: 'ma', label: 'Medical Assistant (MA)' }
-        ];
-      case 'admin':
-      case 'front_desk':
-      case 'billing':
-      case 'lab_tech':
-      case 'referral_coordinator':
-      case 'practice_manager':
-      case 'read_only':
-      default:
-        return [
-          { value: 'staff', label: 'Staff' }
-        ];
-    }
-  };
-
   const LocationAssignmentDialog = () => {
     const [selectedLocationId, setSelectedLocationId] = useState<string>("");
-    const [roleAtLocation, setRoleAtLocation] = useState(() => {
-      if (selectedUser) {
-        const roles = getLocationRolesForSystemRole(selectedUser.role);
-        return roles.length > 0 ? roles[0].value : "staff";
-      }
-      return "staff";
-    });
+    const [roleAtLocation, setRoleAtLocation] = useState("staff");
     const [isPrimary, setIsPrimary] = useState(false);
     const [permissions, setPermissions] = useState({
       canSchedule: true,
       canViewAllPatients: true,
       canCreateOrders: true,
     });
-
-    // Update default role when dialog opens or user changes
-    useEffect(() => {
-      if (showLocationDialog && selectedUser) {
-        const roles = getLocationRolesForSystemRole(selectedUser.role);
-        if (roles.length > 0) {
-          setRoleAtLocation(roles[0].value);
-        }
-      }
-    }, [showLocationDialog, selectedUser]);
 
     const handleAssign = () => {
       if (!selectedUser || !selectedLocationId) return;
@@ -299,11 +252,12 @@ export function AdminUserManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectedUser && getLocationRolesForSystemRole(selectedUser.role).map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="primary_provider">Primary Provider</SelectItem>
+                  <SelectItem value="covering_provider">Covering Provider</SelectItem>
+                  <SelectItem value="specialist">Specialist</SelectItem>
+                  <SelectItem value="nurse">Nurse</SelectItem>
+                  <SelectItem value="ma">Medical Assistant (MA)</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
                 </SelectContent>
               </Select>
             </div>
