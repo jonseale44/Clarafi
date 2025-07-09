@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,24 +13,55 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import { Loader2, Hospital, Shield, Activity, Users } from "lucide-react";
+import { Loader2, Hospital, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { LocationSelector } from "@/components/location-selector";
 import { useQuery } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { toast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
+const phoneRegex = /^\d{3}-?\d{3}-?\d{4}$/;
+const zipRegex = /^\d{5}(-\d{4})?$/;
+
 const registerSchema = insertUserSchema.extend({
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(20, "Username must be less than 20 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+  email: z.string()
+    .email("Please enter a valid email address")
+    .toLowerCase(),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
+      "Password must include uppercase, lowercase, number, and special character"),
   confirmPassword: z.string(),
+  npi: z.string()
+    .optional()
+    .refine((val) => !val || /^\d{10}$/.test(val), "NPI must be exactly 10 digits"),
+  licenseNumber: z.string()
+    .optional()
+    .refine((val) => !val || val.length >= 5, "License number must be at least 5 characters"),
   registrationType: z.enum(["individual", "join_existing"]).default("join_existing"),
   practiceName: z.string().optional(),
   practiceAddress: z.string().optional(),
   practiceCity: z.string().optional(),
-  practiceState: z.string().optional(),
-  practiceZipCode: z.string().optional(),
-  practicePhone: z.string().optional(),
+  practiceState: z.string().length(2, "State must be 2-letter code").optional(),
+  practiceZipCode: z.string()
+    .optional()
+    .refine((val) => !val || zipRegex.test(val), "Invalid ZIP code format"),
+  practicePhone: z.string()
+    .optional()
+    .refine((val) => !val || phoneRegex.test(val), "Phone must be format: 123-456-7890 or 1234567890"),
+  termsAccepted: z.boolean().refine((val) => val === true, "You must accept the terms of service"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -47,6 +78,26 @@ const registerSchema = insertUserSchema.extend({
 type LoginData = z.infer<typeof loginSchema>;
 type RegisterData = z.infer<typeof registerSchema>;
 
+// Custom hook for debounced validation
+function useDebouncedValidation(value: string, delay: number = 500) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [isValidating, setIsValidating] = useState(false);
+
+  useEffect(() => {
+    setIsValidating(true);
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+      setIsValidating(false);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return { debouncedValue, isValidating };
+}
+
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
@@ -55,6 +106,15 @@ export default function AuthPage() {
   const [registrationType, setRegistrationType] = useState<'individual' | 'join_existing'>('join_existing');
   const [selectedHealthSystemId, setSelectedHealthSystemId] = useState<string>('');
   const [availableHealthSystems, setAvailableHealthSystems] = useState<Array<{id: number, name: string}>>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  
+  // Validation states
+  const [usernameValidation, setUsernameValidation] = useState<{available?: boolean; message?: string}>({});
+  const [emailValidation, setEmailValidation] = useState<{available?: boolean; message?: string}>({});
+  const [npiValidation, setNpiValidation] = useState<{available?: boolean; message?: string}>({});
+  const [passwordStrength, setPasswordStrength] = useState<{valid?: boolean; strength?: string; message?: string}>({});
 
   // Fetch available health systems for registration
   const { data: healthSystemsData } = useQuery({
@@ -102,8 +162,84 @@ export default function AuthPage() {
       practiceState: "",
       practiceZipCode: "",
       practicePhone: "",
+      termsAccepted: false,
     },
   });
+
+  // Watch form fields for real-time validation
+  const watchedUsername = registerForm.watch("username");
+  const watchedEmail = registerForm.watch("email");
+  const watchedPassword = registerForm.watch("password");
+  const watchedNpi = registerForm.watch("npi");
+
+  // Debounced values for API calls
+  const { debouncedValue: debouncedUsername, isValidating: isValidatingUsername } = useDebouncedValidation(watchedUsername);
+  const { debouncedValue: debouncedEmail, isValidating: isValidatingEmail } = useDebouncedValidation(watchedEmail);
+  const { debouncedValue: debouncedNpi, isValidating: isValidatingNpi } = useDebouncedValidation(watchedNpi || "");
+
+  // Real-time username validation
+  useEffect(() => {
+    if (debouncedUsername && debouncedUsername.length >= 3) {
+      apiRequest("/api/check-username", {
+        method: "POST",
+        body: JSON.stringify({ username: debouncedUsername }),
+      }).then((response) => {
+        setUsernameValidation(response);
+      }).catch(() => {
+        setUsernameValidation({ available: false, message: "Error checking username" });
+      });
+    } else {
+      setUsernameValidation({});
+    }
+  }, [debouncedUsername]);
+
+  // Real-time email validation
+  useEffect(() => {
+    if (debouncedEmail && debouncedEmail.includes("@")) {
+      apiRequest("/api/check-email", {
+        method: "POST",
+        body: JSON.stringify({ email: debouncedEmail }),
+      }).then((response) => {
+        setEmailValidation(response);
+      }).catch(() => {
+        setEmailValidation({ available: false, message: "Error checking email" });
+      });
+    } else {
+      setEmailValidation({});
+    }
+  }, [debouncedEmail]);
+
+  // Real-time NPI validation
+  useEffect(() => {
+    if (debouncedNpi) {
+      apiRequest("/api/check-npi", {
+        method: "POST",
+        body: JSON.stringify({ npi: debouncedNpi }),
+      }).then((response) => {
+        setNpiValidation(response);
+      }).catch(() => {
+        setNpiValidation({ available: false, message: "Error checking NPI" });
+      });
+    } else {
+      setNpiValidation({});
+    }
+  }, [debouncedNpi]);
+
+  // Real-time password strength check
+  useEffect(() => {
+    if (watchedPassword) {
+      apiRequest("/api/validate-password", {
+        method: "POST",
+        body: JSON.stringify({ password: watchedPassword }),
+      }).then((response) => {
+        setPasswordStrength(response);
+      }).catch(() => {
+        setPasswordStrength({ valid: false, message: "Error checking password" });
+      });
+    } else {
+      setPasswordStrength({});
+    }
+  }, [watchedPassword]);
 
   // Handle login success and location selection flow
   const onLogin = (data: LoginData) => {
@@ -179,7 +315,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <TooltipProvider>
+      <div className="min-h-screen bg-background flex">
       {/* Left side - Authentication Forms */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
@@ -335,27 +472,112 @@ export default function AuthPage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        id="username"
-                        {...registerForm.register("username")}
-                        placeholder="Choose a username"
-                      />
+                      <Label htmlFor="username" className="flex items-center gap-2">
+                        Username
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>3-20 characters, letters, numbers, and underscores only</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="username"
+                          {...registerForm.register("username")}
+                          placeholder="Choose a username"
+                          className={cn(
+                            "pr-10",
+                            usernameValidation.available === true && "border-green-500",
+                            usernameValidation.available === false && "border-red-500"
+                          )}
+                        />
+                        <div className="absolute right-2 top-2.5 flex items-center">
+                          {isValidatingUsername && (
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                          )}
+                          {!isValidatingUsername && usernameValidation.available === true && (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          )}
+                          {!isValidatingUsername && usernameValidation.available === false && (
+                            <X className="h-4 w-4 text-red-500" />
+                          )}
+                        </div>
+                      </div>
+                      {usernameValidation.message && (
+                        <p className={cn(
+                          "text-sm",
+                          usernameValidation.available ? "text-green-600" : "text-red-600"
+                        )}>
+                          {usernameValidation.message}
+                        </p>
+                      )}
+                      {registerForm.formState.errors.username && !usernameValidation.message && (
+                        <p className="text-sm text-red-600">
+                          {registerForm.formState.errors.username.message}
+                        </p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        {...registerForm.register("email")}
-                        placeholder="your.email@hospital.com"
-                      />
+                      <Label htmlFor="email" className="flex items-center gap-2">
+                        Email
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Professional email address for your account</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="email"
+                          type="email"
+                          {...registerForm.register("email")}
+                          placeholder="your.email@hospital.com"
+                          className={cn(
+                            "pr-10",
+                            emailValidation.available === true && "border-green-500",
+                            emailValidation.available === false && "border-red-500"
+                          )}
+                        />
+                        <div className="absolute right-2 top-2.5 flex items-center">
+                          {isValidatingEmail && (
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                          )}
+                          {!isValidatingEmail && emailValidation.available === true && (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          )}
+                          {!isValidatingEmail && emailValidation.available === false && (
+                            <X className="h-4 w-4 text-red-500" />
+                          )}
+                        </div>
+                      </div>
+                      {emailValidation.message && (
+                        <p className={cn(
+                          "text-sm",
+                          emailValidation.available ? "text-green-600" : "text-red-600"
+                        )}>
+                          {emailValidation.message}
+                        </p>
+                      )}
+                      {registerForm.formState.errors.email && !emailValidation.message && (
+                        <p className="text-sm text-red-600">
+                          {registerForm.formState.errors.email.message}
+                        </p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
-                      <Select onValueChange={(value) => registerForm.setValue("role", value)}>
+                      <Select 
+                        defaultValue={registerForm.getValues("role")}
+                        onValueChange={(value) => registerForm.setValue("role", value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select your role" />
                         </SelectTrigger>
@@ -442,25 +664,89 @@ export default function AuthPage() {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="flex items-center gap-2">
+                        Password
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Must contain at least 8 characters including uppercase, lowercase, number, and special character</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
+                      <div className="relative">
                         <Input
                           id="password"
-                          type="password"
+                          type={showPassword ? "text" : "password"}
                           {...registerForm.register("password")}
-                          placeholder="Create password"
+                          placeholder="Create a strong password"
+                          className="pr-10"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      {watchedPassword && passwordStrength.strength && (
+                        <div className="space-y-1">
+                          <Progress 
+                            value={
+                              passwordStrength.strength === "weak" ? 33 :
+                              passwordStrength.strength === "fair" ? 66 :
+                              passwordStrength.strength === "strong" ? 100 : 0
+                            }
+                            className={cn(
+                              "h-2",
+                              passwordStrength.strength === "weak" && "[&>div]:bg-red-500",
+                              passwordStrength.strength === "fair" && "[&>div]:bg-yellow-500",
+                              passwordStrength.strength === "strong" && "[&>div]:bg-green-500"
+                            )}
+                          />
+                          <p className={cn(
+                            "text-sm",
+                            passwordStrength.strength === "weak" && "text-red-600",
+                            passwordStrength.strength === "fair" && "text-yellow-600",
+                            passwordStrength.strength === "strong" && "text-green-600"
+                          )}>
+                            Password strength: {passwordStrength.strength}
+                          </p>
+                        </div>
+                      )}
+                      {registerForm.formState.errors.password && (
+                        <p className="text-sm text-red-600">
+                          {registerForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <div className="relative">
                         <Input
                           id="confirmPassword"
-                          type="password"
+                          type={showConfirmPassword ? "text" : "password"}
                           {...registerForm.register("confirmPassword")}
-                          placeholder="Confirm password"
+                          placeholder="Confirm your password"
+                          className="pr-10"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
+                      {registerForm.formState.errors.confirmPassword && (
+                        <p className="text-sm text-red-600">
+                          {registerForm.formState.errors.confirmPassword.message}
+                        </p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">
@@ -471,11 +757,110 @@ export default function AuthPage() {
                         placeholder="MD, RN, NP, etc."
                       />
                     </div>
+
+                    {registerForm.watch("role") === "provider" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="npi" className="flex items-center gap-2">
+                            NPI Number
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>10-digit National Provider Identifier for billing</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="npi"
+                              {...registerForm.register("npi")}
+                              placeholder="1234567890"
+                              maxLength={10}
+                              className={cn(
+                                "pr-10",
+                                npiValidation.available === true && "border-green-500",
+                                npiValidation.available === false && "border-red-500"
+                              )}
+                            />
+                            <div className="absolute right-2 top-2.5 flex items-center">
+                              {isValidatingNpi && (
+                                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                              )}
+                              {!isValidatingNpi && npiValidation.available === true && (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              )}
+                              {!isValidatingNpi && npiValidation.available === false && (
+                                <X className="h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                          </div>
+                          {npiValidation.message && (
+                            <p className={cn(
+                              "text-sm",
+                              npiValidation.available ? "text-green-600" : "text-red-600"
+                            )}>
+                              {npiValidation.message}
+                            </p>
+                          )}
+                          {registerForm.formState.errors.npi && !npiValidation.message && (
+                            <p className="text-sm text-red-600">
+                              {registerForm.formState.errors.npi.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="licenseNumber">
+                            License Number
+                            <span className="text-gray-400 text-sm ml-2">(Optional)</span>
+                          </Label>
+                          <Input
+                            id="licenseNumber"
+                            {...registerForm.register("licenseNumber")}
+                            placeholder="State medical license number"
+                          />
+                          {registerForm.formState.errors.licenseNumber && (
+                            <p className="text-sm text-red-600">
+                              {registerForm.formState.errors.licenseNumber.message}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex items-start space-x-2 pt-4">
+                      <Checkbox
+                        id="terms"
+                        checked={termsAccepted}
+                        onCheckedChange={(checked) => {
+                          setTermsAccepted(checked as boolean);
+                          registerForm.setValue("termsAccepted", checked as boolean);
+                        }}
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <label
+                          htmlFor="terms"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Accept terms and conditions
+                        </label>
+                        <p className="text-sm text-muted-foreground">
+                          I agree to the <a href="#" className="underline hover:text-primary">Terms of Service</a> and <a href="#" className="underline hover:text-primary">Privacy Policy</a>
+                        </p>
+                      </div>
+                    </div>
+                    {registerForm.formState.errors.termsAccepted && (
+                      <p className="text-sm text-red-600 -mt-2">
+                        {registerForm.formState.errors.termsAccepted.message}
+                      </p>
+                    )}
                     
                     <Button 
                       type="submit" 
                       className="w-full" 
-                      disabled={registerMutation.isPending}
+                      disabled={registerMutation.isPending || !termsAccepted}
                     >
                       {registerMutation.isPending ? (
                         <>
@@ -559,5 +944,6 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }

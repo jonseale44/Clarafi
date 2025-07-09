@@ -157,6 +157,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByNPI(npi: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.npi, npi));
+    return user || undefined;
+  }
+
   async updateUserProfile(
     userId: number,
     updates: {

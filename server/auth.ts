@@ -62,6 +62,246 @@ export function setupAuth(app: Express) {
     done(null, user);
   });
 
+  // Real-time validation endpoints
+  app.post("/api/check-username", async (req, res) => {
+    try {
+      const { username } = req.body;
+      
+      if (!username || username.length < 3) {
+        return res.json({ 
+          available: false, 
+          message: "Username must be at least 3 characters long" 
+        });
+      }
+      
+      const existingUser = await storage.getUserByUsername(username);
+      
+      if (existingUser) {
+        return res.json({ 
+          available: false, 
+          message: "This username is already taken. Try adding numbers or use a different name." 
+        });
+      }
+      
+      return res.json({ 
+        available: true, 
+        message: "Username is available!" 
+      });
+    } catch (error) {
+      console.error("❌ [CheckUsername] Error:", error);
+      return res.status(500).json({ 
+        available: false, 
+        message: "Unable to check username availability. Please try again." 
+      });
+    }
+  });
+
+  app.post("/api/check-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        return res.json({ 
+          available: false, 
+          message: "Please enter a valid email address" 
+        });
+      }
+      
+      const existingUser = await storage.getUserByEmail(email);
+      
+      if (existingUser) {
+        return res.json({ 
+          available: false, 
+          message: "This email is already registered. Try logging in or use a different email." 
+        });
+      }
+      
+      return res.json({ 
+        available: true, 
+        message: "Email is available!" 
+      });
+    } catch (error) {
+      console.error("❌ [CheckEmail] Error:", error);
+      return res.status(500).json({ 
+        available: false, 
+        message: "Unable to check email availability. Please try again." 
+      });
+    }
+  });
+
+  app.post("/api/check-npi", async (req, res) => {
+    try {
+      const { npi } = req.body;
+      
+      if (!npi) {
+        return res.json({ 
+          available: true, 
+          message: "NPI is optional" 
+        });
+      }
+      
+      // Validate NPI format (10 digits)
+      const npiRegex = /^\d{10}$/;
+      if (!npiRegex.test(npi)) {
+        return res.json({ 
+          available: false, 
+          message: "NPI must be exactly 10 digits" 
+        });
+      }
+      
+      // Check if NPI exists
+      const existingUser = await storage.getUserByNPI(npi);
+      
+      if (existingUser) {
+        return res.json({ 
+          available: false, 
+          message: "This NPI is already registered in our system" 
+        });
+      }
+      
+      return res.json({ 
+        available: true, 
+        message: "NPI is valid and available!" 
+      });
+    } catch (error) {
+      console.error("❌ [CheckNPI] Error:", error);
+      return res.status(500).json({ 
+        available: false, 
+        message: "Unable to validate NPI. Please try again." 
+      });
+    }
+  });
+
+  app.post("/api/validate-password", async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      const checks = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /\d/.test(password),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+      };
+      
+      const strength = Object.values(checks).filter(Boolean).length;
+      const isValid = strength >= 4; // At least 4 out of 5 criteria
+      
+      let message = "";
+      if (!checks.length) message = "Password must be at least 8 characters";
+      else if (!checks.uppercase) message = "Add an uppercase letter";
+      else if (!checks.lowercase) message = "Add a lowercase letter";
+      else if (!checks.number) message = "Add a number";
+      else if (!checks.special) message = "Add a special character (!@#$%^&*)";
+      else message = "Strong password!";
+      
+      return res.json({
+        valid: isValid,
+        strength: strength === 5 ? "strong" : strength >= 4 ? "good" : strength >= 3 ? "fair" : "weak",
+        checks,
+        message
+      });
+    } catch (error) {
+      console.error("❌ [ValidatePassword] Error:", error);
+      return res.status(500).json({ 
+        valid: false, 
+        message: "Unable to validate password" 
+      });
+    }
+  });
+
+  // Real-time validation endpoints
+  app.post("/api/check-username", async (req, res) => {
+    try {
+      const { username } = req.body;
+      
+      if (!username || username.length < 3) {
+        return res.json({ available: false, message: "Username too short" });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      
+      if (existingUser) {
+        res.json({ available: false, message: "This username is already taken. Try adding numbers or use a different name." });
+      } else {
+        res.json({ available: true, message: "Username available" });
+      }
+    } catch (error) {
+      res.json({ available: false, message: "Error checking username" });
+    }
+  });
+
+  app.post("/api/check-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || !email.includes("@")) {
+        return res.json({ available: false, message: "Invalid email format" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email.toLowerCase());
+      
+      if (existingUser) {
+        res.json({ available: false, message: "This email is already registered. Please use a different email or sign in instead." });
+      } else {
+        res.json({ available: true, message: "Email available for registration" });
+      }
+    } catch (error) {
+      res.json({ available: false, message: "Error checking email" });
+    }
+  });
+
+  app.post("/api/check-npi", async (req, res) => {
+    try {
+      const { npi } = req.body;
+      
+      if (!npi || !/^\d{10}$/.test(npi)) {
+        return res.json({ available: false, message: "NPI must be 10 digits" });
+      }
+
+      const existingUser = await storage.getUserByNPI(npi);
+      
+      if (existingUser) {
+        res.json({ available: false, message: "This NPI is already registered to another account. Please verify your NPI or contact support." });
+      } else {
+        res.json({ available: true, message: "NPI is valid and available" });
+      }
+    } catch (error) {
+      res.json({ available: false, message: "Error checking NPI" });
+    }
+  });
+
+  app.post("/api/validate-password", async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      if (!password) {
+        return res.json({ valid: false, strength: "weak", message: "Password required" });
+      }
+
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecial = /[@$!%*?&]/.test(password);
+      const isLongEnough = password.length >= 8;
+
+      const requirements = [hasUppercase, hasLowercase, hasNumber, hasSpecial, isLongEnough];
+      const metRequirements = requirements.filter(Boolean).length;
+
+      if (metRequirements === 5) {
+        res.json({ valid: true, strength: "strong", message: "Strong password" });
+      } else if (metRequirements >= 3 && isLongEnough) {
+        res.json({ valid: true, strength: "fair", message: "Fair password" });
+      } else {
+        res.json({ valid: false, strength: "weak", message: "Weak password - add more complexity" });
+      }
+    } catch (error) {
+      res.json({ valid: false, strength: "weak", message: "Error checking password" });
+    }
+  });
+
   app.post("/api/register", async (req, res, next) => {
     try {
       console.log("🔐 [Registration] Starting registration process for:", req.body.username);
