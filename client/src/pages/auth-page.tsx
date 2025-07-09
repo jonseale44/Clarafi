@@ -303,6 +303,7 @@ export default function AuthPage() {
   }
 
   const onRegister = (data: RegisterData) => {
+    console.log("onRegister called with data:", data);
     const { confirmPassword, ...registerData } = data;
     
     // Validate health system selection for join_existing
@@ -316,6 +317,18 @@ export default function AuthPage() {
     }
     
     // Pass all the data including registration type and practice info
+    console.log("Calling registerMutation.mutate with:", {
+      ...registerData,
+      registrationType,
+      existingHealthSystemId: registrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
+      practiceName: data.practiceName,
+      practiceAddress: data.practiceAddress,
+      practiceCity: data.practiceCity,
+      practiceState: data.practiceState,
+      practiceZipCode: data.practiceZipCode,
+      practicePhone: data.practicePhone,
+    });
+    
     registerMutation.mutate({
       ...registerData,
       registrationType,
@@ -419,7 +432,12 @@ export default function AuthPage() {
                   <CardTitle>Create Account</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                  <form onSubmit={(e) => {
+                    console.log("Form submit attempted");
+                    console.log("Form errors:", registerForm.formState.errors);
+                    console.log("Form values:", registerForm.getValues());
+                    registerForm.handleSubmit(onRegister)(e);
+                  }} className="space-y-4">
                     {/* Registration Type Selection */}
                     <div className="space-y-2">
                       <Label>Registration Type</Label>
