@@ -9,7 +9,8 @@ pkill -f "expo start" 2>/dev/null
 # Wait a moment
 sleep 2
 
-# Start Expo with web support and proper host configuration
-EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0 npx expo start --web --host 0.0.0.0 --port 8081
+# Start Expo with web support for Replit
+# Using localhost which Replit will proxy correctly
+npx expo start --web --port 8081
 
 echo "Mobile app should now be accessible!"
