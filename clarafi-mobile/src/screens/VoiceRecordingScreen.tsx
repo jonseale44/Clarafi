@@ -5,109 +5,61 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import { apiClient } from '../services/api';
+import { VoiceRecordingState } from '../types';
 
-export const VoiceRecordingScreen = () => {
+interface VoiceRecordingScreenProps {
+  navigation: any;
+  route?: any;
+}
+
+export const VoiceRecordingScreen: React.FC<VoiceRecordingScreenProps> = ({ navigation, route }) => {
+  const [recordingState, setRecordingState] = useState<VoiceRecordingState>({
+    isRecording: false,
+    recordingUri: undefined,
+    transcription: undefined,
+    isTranscribing: false,
+    error: undefined,
+  });
+  
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [transcription, setTranscription] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [generatedNote, setGeneratedNote] = useState<string>('');
+  const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+  
+  const patientId = route?.params?.patientId;
+  const encounterId = route?.params?.encounterId;
 
-  // Request audio permissions on mount
   useEffect(() => {
-    Audio.requestPermissionsAsync();
-  }, []);
-
-  const connectWebSocket = () => {
-    // Connect to your existing WebSocket proxy
-    const websocket = new WebSocket('ws://localhost:5000/api/realtime/connect');
-    
-    websocket.onopen = () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-      
-      // Send session configuration matching your web app
-      websocket.send(JSON.stringify({
-        type: 'session.update',
-        session: {
-          modalities: ['text', 'audio'],
-          instructions: 'You are a medical scribe assisting with patient documentation. Listen carefully and transcribe what you hear.',
-          voice: 'alloy',
-          input_audio_format: 'pcm16',
-          output_audio_format: 'pcm16',
-          input_audio_transcription: {
-            model: 'whisper-1'
-          },
-          turn_detection: {
-            type: 'server_vad',
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 500
-          },
-          tool_choice: 'auto',
-          temperature: 0.1,
-          max_tokens: 4096
-        }
-      }));
-    };
-
-    websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      if (data.type === 'conversation.item.created' && data.item.type === 'message') {
-        // Update transcription with new text
-        if (data.item.content?.[0]?.transcript) {
-          setTranscription(prev => prev + ' ' + data.item.content[0].transcript);
-        }
+    // Request permissions on mount
+    (async () => {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Microphone access is required for voice recording');
       }
-    };
-
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setIsConnected(false);
-    };
-
-    websocket.onclose = () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
-    };
-
-    setWs(websocket);
-  };
+    })();
+  }, []);
 
   const startRecording = async () => {
     try {
-      // Connect WebSocket first
-      connectWebSocket();
-
-      // Configure audio
+      // Configure audio session
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
-      // Start recording
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       
       setRecording(recording);
-      setIsRecording(true);
-
-      // Start monitoring recording status
-      recording.setOnRecordingStatusUpdate((status) => {
-        if (status.isRecording && ws && ws.readyState === WebSocket.OPEN) {
-          // In a real implementation, we'd stream audio chunks here
-          console.log('Recording...', status.durationMillis);
-        }
-      });
-
-    } catch (err) {
-      console.error('Failed to start recording', err);
+      setRecordingState(prev => ({ ...prev, isRecording: true, error: undefined }));
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      Alert.alert('Recording Error', 'Failed to start recording');
     }
   };
 
@@ -115,68 +67,157 @@ export const VoiceRecordingScreen = () => {
     if (!recording) return;
 
     try {
-      setIsRecording(false);
+      setRecordingState(prev => ({ ...prev, isRecording: false }));
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-      console.log('Recording saved to', uri);
-
-      // In production, we'd upload this to server for processing
-      // For now, let's simulate transcription completion
-      setTimeout(() => {
-        setTranscription(prev => prev + '\n\n[Recording completed]');
-      }, 1000);
-
-      // Close WebSocket
-      if (ws) {
-        ws.close();
+      
+      if (uri) {
+        setRecordingState(prev => ({ ...prev, recordingUri: uri }));
+        // TODO: Upload audio and get transcription
+        // For now, simulate transcription
+        await transcribeAudio(uri);
       }
-
+      
       setRecording(null);
-    } catch (err) {
-      console.error('Failed to stop recording', err);
+    } catch (error) {
+      console.error('Failed to stop recording:', error);
+      Alert.alert('Recording Error', 'Failed to stop recording');
+    }
+  };
+
+  const transcribeAudio = async (uri: string) => {
+    setRecordingState(prev => ({ ...prev, isTranscribing: true }));
+    
+    try {
+      // TODO: Implement actual audio upload and transcription
+      // For now, simulate with a delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const mockTranscription = `Patient presents with chest pain that started 3 days ago. 
+The pain is described as sharp, located in the center of the chest, radiating to the left arm. 
+Pain is 7 out of 10 in severity. Associated with shortness of breath and mild nausea. 
+No fever or cough. Patient has history of hypertension, currently on lisinopril 10mg daily.
+Vital signs: BP 145/90, HR 88, RR 18, Temp 98.6F, O2 sat 97% on room air.`;
+      
+      setRecordingState(prev => ({
+        ...prev,
+        transcription: mockTranscription,
+        isTranscribing: false,
+      }));
+    } catch (error) {
+      console.error('Transcription failed:', error);
+      setRecordingState(prev => ({
+        ...prev,
+        isTranscribing: false,
+        error: 'Failed to transcribe audio',
+      }));
+    }
+  };
+
+  const generateSOAPNote = async () => {
+    if (!recordingState.transcription) return;
+
+    setIsGeneratingNote(true);
+    try {
+      const result = await apiClient.generateSOAPNote(
+        recordingState.transcription,
+        encounterId
+      );
+      setGeneratedNote(result.soapNote || '');
+    } catch (error) {
+      console.error('Failed to generate SOAP note:', error);
+      Alert.alert('Error', 'Failed to generate SOAP note');
+    } finally {
+      setIsGeneratingNote(false);
+    }
+  };
+
+  const updateChart = async () => {
+    if (!generatedNote) return;
+
+    try {
+      await apiClient.updateChartFromNote(generatedNote, encounterId || 0);
+      Alert.alert('Success', 'Chart updated successfully');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Failed to update chart:', error);
+      Alert.alert('Error', 'Failed to update chart');
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Voice Recording</Text>
-        <View style={styles.connectionStatus}>
-          <View style={[styles.statusDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
-          <Text style={styles.statusText}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </Text>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={[styles.recordButton, isRecording && styles.recordingButton]}
-        onPress={isRecording ? stopRecording : startRecording}
-      >
-        <View style={[styles.recordIcon, isRecording && styles.recordingIcon]} />
-        <Text style={styles.recordText}>
-          {isRecording ? 'Stop Recording' : 'Start Recording'}
-        </Text>
-      </TouchableOpacity>
-
-      <View style={styles.transcriptionContainer}>
-        <Text style={styles.sectionTitle}>Live Transcription</Text>
-        <View style={styles.transcriptionBox}>
-          {transcription ? (
-            <Text style={styles.transcriptionText}>{transcription}</Text>
-          ) : (
-            <Text style={styles.placeholderText}>
-              Transcription will appear here as you speak...
+      <View style={styles.content}>
+        {/* Recording Controls */}
+        <View style={styles.recordingSection}>
+          <TouchableOpacity
+            style={[
+              styles.recordButton,
+              recordingState.isRecording && styles.recordButtonActive
+            ]}
+            onPress={recordingState.isRecording ? stopRecording : startRecording}
+          >
+            <Text style={styles.recordButtonIcon}>
+              {recordingState.isRecording ? '⏹️' : '🎙️'}
             </Text>
+            <Text style={styles.recordButtonText}>
+              {recordingState.isRecording ? 'Stop Recording' : 'Start Recording'}
+            </Text>
+          </TouchableOpacity>
+
+          {recordingState.isRecording && (
+            <Text style={styles.recordingIndicator}>Recording...</Text>
           )}
         </View>
-      </View>
 
-      {transcription && (
-        <TouchableOpacity style={styles.generateButton}>
-          <Text style={styles.generateButtonText}>Generate SOAP Note</Text>
-        </TouchableOpacity>
-      )}
+        {/* Transcription Section */}
+        {(recordingState.isTranscribing || recordingState.transcription) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Transcription</Text>
+            {recordingState.isTranscribing ? (
+              <ActivityIndicator size="large" color="#003366" />
+            ) : (
+              <View style={styles.transcriptionBox}>
+                <Text style={styles.transcriptionText}>
+                  {recordingState.transcription}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Generate SOAP Note Button */}
+        {recordingState.transcription && !generatedNote && (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={generateSOAPNote}
+            disabled={isGeneratingNote}
+          >
+            {isGeneratingNote ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.actionButtonText}>Generate SOAP Note</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* Generated SOAP Note */}
+        {generatedNote && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Generated SOAP Note</Text>
+            <View style={styles.soapBox}>
+              <Text style={styles.soapText}>{generatedNote}</Text>
+            </View>
+            
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={updateChart}
+            >
+              <Text style={styles.actionButtonText}>Update Patient Chart</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 };
@@ -184,111 +225,90 @@ export const VoiceRecordingScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 20,
+    backgroundColor: '#F5F7FA',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  content: {
+    padding: 16,
+  },
+  recordingSection: {
     alignItems: 'center',
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#003366',
-  },
-  connectionStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 14,
-    color: '#666',
+    marginVertical: 32,
   },
   recordButton: {
-    backgroundColor: '#003366',
-    borderRadius: 100,
     width: 120,
     height: 120,
+    borderRadius: 60,
+    backgroundColor: '#003366',
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: 40,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  recordingButton: {
-    backgroundColor: '#ef4444',
+  recordButtonActive: {
+    backgroundColor: '#DC2626',
   },
-  recordIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    marginBottom: 10,
+  recordButtonIcon: {
+    fontSize: 36,
+    marginBottom: 8,
   },
-  recordingIcon: {
-    borderRadius: 5,
-  },
-  recordText: {
-    color: '#fff',
+  recordButtonText: {
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
-  transcriptionContainer: {
-    marginBottom: 20,
+  recordingIndicator: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  section: {
+    marginVertical: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#003366',
-    marginBottom: 10,
+    color: '#1F2937',
+    marginBottom: 12,
   },
   transcriptionBox: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    padding: 15,
-    minHeight: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   transcriptionText: {
     fontSize: 16,
+    color: '#374151',
     lineHeight: 24,
-    color: '#333',
   },
-  placeholderText: {
-    fontSize: 16,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  generateButton: {
-    backgroundColor: '#FFD700',
-    paddingVertical: 15,
+  soapBox: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  generateButtonText: {
+  soapText: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+  },
+  actionButton: {
+    backgroundColor: '#003366',
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    color: '#003366',
   },
 });

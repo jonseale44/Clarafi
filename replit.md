@@ -103,6 +103,56 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 - Error handling with standardized API responses
 - Background service monitoring for lab processing
 
+## Mobile App Architecture
+
+### Clarafi Mobile - Native EMR Application
+
+#### Overview
+Successfully initiated development of a full-featured native mobile EMR application using React Native/Expo with complete feature parity to the web application. This is NOT a simplified companion app but a complete EMR system optimized for mobile workflows.
+
+#### Technical Stack
+- **Framework**: React Native with Expo
+- **Navigation**: React Navigation with Stack and Tab navigators
+- **State Management**: React Context API for authentication
+- **API Integration**: Connects to existing Express.js backend
+- **Voice Recording**: Expo AV for audio capture and transcription
+
+#### Completed Components
+
+##### Core Infrastructure
+- **Authentication System**: Complete auth flow with session management using React Context
+- **API Service**: Comprehensive API client connecting to all backend endpoints
+- **Type System**: Complete TypeScript types migrated from main EMR schema
+- **Navigation Structure**: Tab-based main navigation with stack navigation for detailed screens
+
+##### Implemented Screens
+1. **Login Screen**: CLARAFI-branded authentication with navy blue and gold theme
+2. **Patient List Screen**: Searchable patient list with pull-to-refresh and FAB for new encounters
+3. **Voice Recording Screen**: Complete voice capture, transcription, and SOAP note generation workflow
+4. **Patient Chart Screen**: Comprehensive patient information display including allergies, medical problems, medications, vitals, and lab results
+5. **Order Entry Screen**: Natural language order entry with AI-powered parsing for medications, labs, imaging, and referrals
+
+#### Mobile-Specific Features
+- **Touch-Optimized UI**: Large touch targets, gesture support, and mobile-friendly layouts
+- **Offline Capability**: Foundation for offline data access (to be implemented)
+- **Native Voice Recording**: Direct microphone access for clinical documentation
+- **Push Notifications**: Architecture ready for critical lab results and alerts
+
+#### Migration Strategy
+Following a methodical 4-phase approach:
+1. **Phase 1** (In Progress): Foundation, authentication, and core screens
+2. **Phase 2**: Chart sections, clinical workflows, and real-time features
+3. **Phase 3**: Advanced features, WebSocket integration, document management
+4. **Phase 4**: Performance optimization, offline support, deployment
+
+#### API Integration Points
+- Authentication endpoints with cookie-based sessions
+- Patient data retrieval and search
+- Voice transcription via WebSocket proxy
+- Natural language order parsing
+- Chart section updates (medical problems, medications, allergies, etc.)
+- SOAP note generation from transcriptions
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

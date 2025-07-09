@@ -1,7 +1,8 @@
 // API Service for Clarafi Mobile
 // Connects to your existing Express backend
 
-const API_BASE_URL = 'http://localhost:5000';
+// Use Replit URL in production, localhost for local development
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
 
 export class ApiClient {
   private token: string | null = null;
