@@ -1,16 +1,19 @@
 #!/bin/bash
-# Start Clarafi Mobile with proper Replit configuration
 
-echo "Starting Clarafi Mobile for Replit..."
+echo "=== Clarafi Mobile App Setup ==="
+echo ""
+echo "Cleaning up old dependencies..."
+rm -rf node_modules package-lock.json
 
-# Kill any existing Expo processes
-pkill -f "expo start" 2>/dev/null
+echo ""
+echo "Installing fresh dependencies..."
+npm install --legacy-peer-deps
 
-# Wait a moment
-sleep 2
+echo ""
+echo "Starting the mobile app in web mode..."
+echo "Note: The warning about expo-cli is expected - we're using npx instead"
+echo ""
+npx expo start --web --port 19006
 
-# Start Expo with web support for Replit
-# Using localhost which Replit will proxy correctly
-npx expo start --web --port 8081
-
-echo "Mobile app should now be accessible!"
+# If the above doesn't work, try:
+# npx expo start --web

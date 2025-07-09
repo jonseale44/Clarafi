@@ -4,28 +4,28 @@ This is the native mobile version of the Clarafi EMR system with full functional
 
 ## How to Run the Mobile App
 
-### Option 1: Run in Web Browser (Easiest)
+### Quick Start (Recommended)
 1. Open a new terminal in Replit
-2. Type these commands:
+2. Run these commands:
    ```
    cd clarafi-mobile
+   rm -rf node_modules package-lock.json
    npm install
-   npm run web
+   npx expo start --web
    ```
-3. The app will open in a web preview window
+3. The app will open in the web preview
 
-### Option 2: Run on Your Phone (Using Expo Go)
-1. Install "Expo Go" app on your phone (from App Store or Play Store)
-2. In the terminal, run:
-   ```
-   cd clarafi-mobile
-   npm install
-   npm start
-   ```
-3. Scan the QR code with your phone
+### Alternative: Using npm scripts
+```
+cd clarafi-mobile
+npm install
+npm run web
+```
 
-### Option 3: Open in a New Browser Tab
-After running `npm run web`, you can click the external link icon to open the mobile app in a full browser tab.
+### Run on Your Phone (Using Expo Go)
+1. Install "Expo Go" app on your phone
+2. Run `npx expo start` (without --web)
+3. Scan the QR code
 
 ## Features Available
 
@@ -40,13 +40,14 @@ After running `npm run web`, you can click the external link icon to open the mo
 - Username: `admin`
 - Password: `admin123`
 
+## Note about Expo CLI
+The warning about expo-cli being deprecated is expected. We're using the local Expo SDK which is the recommended approach.
+
 ## Troubleshooting
 
-If you see dependency errors, run:
-```
-cd clarafi-mobile
-rm -rf node_modules
-npm install
-```
+If you get dependency errors:
+1. Delete node_modules and package-lock.json
+2. Run `npm install` again
+3. Use `npx expo` instead of global expo
 
 The mobile app connects to your existing EMR backend on port 5000.
