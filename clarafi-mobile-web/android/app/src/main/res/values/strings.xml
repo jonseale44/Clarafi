@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Clarafi Mobile</string>
+    <string name="title_activity_main">Clarafi Mobile</string>
+    <string name="package_name">com.clarafi.mobile</string>
+    <string name="custom_url_scheme">com.clarafi.mobile</string>
+</resources>

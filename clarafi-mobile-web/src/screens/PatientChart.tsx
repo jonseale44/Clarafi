@@ -1,7 +1,7 @@
 import React from 'react'
 import { useRoute, Link } from 'wouter'
 import { useQuery } from '@tanstack/react-query'
-import { Home, ChevronRight, AlertTriangle, Pill, Flask, Activity } from 'lucide-react'
+import { Home, ChevronRight, AlertTriangle, Pill, TestTube, Activity } from 'lucide-react'
 
 export default function PatientChart() {
   const [, params] = useRoute('/patient/:id')
@@ -172,7 +172,7 @@ export default function PatientChart() {
         {/* Lab Results */}
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="flex items-center mb-3">
-            <Flask className="w-5 h-5 text-purple-500 mr-2" />
+            <TestTube className="w-5 h-5 text-purple-500 mr-2" />
             <h3 className="text-lg font-semibold">Recent Labs</h3>
           </div>
           {labs.length > 0 ? (
