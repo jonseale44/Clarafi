@@ -1,60 +1,30 @@
 import React, { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Router, Route, Switch } from 'wouter'
 import LoginScreen from './screens/LoginScreen'
-import PatientListScreen from './screens/PatientListScreen'
-import VoiceRecordingScreen from './screens/VoiceRecordingScreen'
-import PatientChartScreen from './screens/PatientChartScreen'
-import OrderEntryScreen from './screens/OrderEntryScreen'
+import PatientList from './screens/PatientList'
+import VoiceRecording from './screens/VoiceRecording'
+import PatientChart from './screens/PatientChart'
+import OrderEntry from './screens/OrderEntry'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState(null)
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={(user) => {
+      setIsAuthenticated(true)
+      setUser(user)
+    }} />
+  }
 
   return (
     <Router>
-      <div className="mobile-container">
-        <Routes>
-          <Route 
-            path="/login" 
-            element={
-              <LoginScreen 
-                onLogin={(userData) => {
-                  setUser(userData)
-                  setIsAuthenticated(true)
-                }}
-              />
-            } 
-          />
-          <Route
-            path="/patients"
-            element={
-              isAuthenticated ? <PatientListScreen user={user} /> : <Navigate to="/login" />
-            }
-          />
-          <Route
-            path="/voice-recording/:patientId"
-            element={
-              isAuthenticated ? <VoiceRecordingScreen /> : <Navigate to="/login" />
-            }
-          />
-          <Route
-            path="/patient/:patientId"
-            element={
-              isAuthenticated ? <PatientChartScreen /> : <Navigate to="/login" />
-            }
-          />
-          <Route
-            path="/order-entry/:patientId/:encounterId"
-            element={
-              isAuthenticated ? <OrderEntryScreen /> : <Navigate to="/login" />
-            }
-          />
-          <Route 
-            path="/" 
-            element={<Navigate to={isAuthenticated ? "/patients" : "/login"} />} 
-          />
-        </Routes>
-      </div>
+      <Switch>
+        <Route path="/" component={PatientList} />
+        <Route path="/voice" component={VoiceRecording} />
+        <Route path="/patient/:id" component={PatientChart} />
+        <Route path="/patient/:id/orders" component={OrderEntry} />
+      </Switch>
     </Router>
   )
 }

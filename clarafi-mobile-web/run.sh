@@ -1,10 +1,6 @@
 #!/bin/bash
-
-echo "=== Clarafi Mobile Web App ==="
-echo ""
 echo "Installing dependencies..."
 npm install
 
-echo ""
-echo "Starting the mobile web app..."
+echo "Starting Clarafi Mobile Web on port 3001..."
 npm run dev

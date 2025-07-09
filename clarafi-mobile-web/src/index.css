@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --navy-blue: #003366;
-  --gold: #FFD700;
-}
-
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -16,17 +11,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Mobile-optimized styles */
-.mobile-container {
-  max-width: 100%;
-  min-height: 100vh;
-  overflow-x: hidden;
+/* Mobile-specific styles */
+* {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-@media (min-width: 768px) {
-  .mobile-container {
-    max-width: 480px;
-    margin: 0 auto;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  }
+input, textarea {
+  user-select: text;
+}
+
+/* Prevent bounce scrolling on iOS */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
