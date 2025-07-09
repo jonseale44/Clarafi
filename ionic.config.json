@@ -1,0 +1,8 @@
+{
+  "name": "Clarafi Mobile",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react",
+  "root": "clarafi-mobile-web"
+}
