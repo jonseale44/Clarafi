@@ -170,6 +170,7 @@ export default function AuthPage() {
   const watchedUsername = registerForm.watch("username");
   const watchedEmail = registerForm.watch("email");
   const watchedPassword = registerForm.watch("password");
+  const watchedConfirmPassword = registerForm.watch("confirmPassword");
   const watchedNpi = registerForm.watch("npi");
 
   // Debounced values for API calls
@@ -728,17 +729,42 @@ export default function AuthPage() {
                           type={showConfirmPassword ? "text" : "password"}
                           {...registerForm.register("confirmPassword")}
                           placeholder="Confirm your password"
-                          className="pr-10"
+                          className={cn(
+                            "pr-16",
+                            watchedConfirmPassword && watchedPassword && watchedConfirmPassword === watchedPassword && "border-green-500",
+                            watchedConfirmPassword && watchedPassword && watchedConfirmPassword !== watchedPassword && "border-red-500"
+                          )}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                        <div className="absolute right-2 top-2.5 flex items-center gap-2">
+                          {watchedConfirmPassword && watchedPassword && (
+                            <div className="flex items-center">
+                              {watchedConfirmPassword === watchedPassword ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <X className="h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
-                      {registerForm.formState.errors.confirmPassword && (
+                      {watchedConfirmPassword && watchedPassword && watchedConfirmPassword !== watchedPassword && (
+                        <p className="text-sm text-red-600">
+                          Passwords do not match
+                        </p>
+                      )}
+                      {watchedConfirmPassword && watchedPassword && watchedConfirmPassword === watchedPassword && (
+                        <p className="text-sm text-green-600">
+                          Passwords match
+                        </p>
+                      )}
+                      {registerForm.formState.errors.confirmPassword && !watchedConfirmPassword && (
                         <p className="text-sm text-red-600">
                           {registerForm.formState.errors.confirmPassword.message}
                         </p>
