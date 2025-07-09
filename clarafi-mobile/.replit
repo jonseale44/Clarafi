@@ -1,0 +1,12 @@
+entrypoint = "index.ts"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_11"
+
+[deployment]
+run = ["npm", "run", "web"]
+
+[[ports]]
+localPort = 8081
+externalPort = 80
