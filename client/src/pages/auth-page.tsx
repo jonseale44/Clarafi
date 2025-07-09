@@ -180,14 +180,13 @@ export default function AuthPage() {
   // Real-time username validation
   useEffect(() => {
     if (debouncedUsername && debouncedUsername.length >= 3) {
-      apiRequest("/api/check-username", {
-        method: "POST",
-        body: JSON.stringify({ username: debouncedUsername }),
-      }).then((response) => {
-        setUsernameValidation(response);
-      }).catch(() => {
-        setUsernameValidation({ available: false, message: "Error checking username" });
-      });
+      apiRequest("POST", "/api/check-username", { username: debouncedUsername })
+        .then((response) => response.json())
+        .then((data) => {
+          setUsernameValidation(data);
+        }).catch(() => {
+          setUsernameValidation({ available: false, message: "Error checking username" });
+        });
     } else {
       setUsernameValidation({});
     }
@@ -196,14 +195,13 @@ export default function AuthPage() {
   // Real-time email validation
   useEffect(() => {
     if (debouncedEmail && debouncedEmail.includes("@")) {
-      apiRequest("/api/check-email", {
-        method: "POST",
-        body: JSON.stringify({ email: debouncedEmail }),
-      }).then((response) => {
-        setEmailValidation(response);
-      }).catch(() => {
-        setEmailValidation({ available: false, message: "Error checking email" });
-      });
+      apiRequest("POST", "/api/check-email", { email: debouncedEmail })
+        .then((response) => response.json())
+        .then((data) => {
+          setEmailValidation(data);
+        }).catch(() => {
+          setEmailValidation({ available: false, message: "Error checking email" });
+        });
     } else {
       setEmailValidation({});
     }
@@ -212,14 +210,13 @@ export default function AuthPage() {
   // Real-time NPI validation
   useEffect(() => {
     if (debouncedNpi) {
-      apiRequest("/api/check-npi", {
-        method: "POST",
-        body: JSON.stringify({ npi: debouncedNpi }),
-      }).then((response) => {
-        setNpiValidation(response);
-      }).catch(() => {
-        setNpiValidation({ available: false, message: "Error checking NPI" });
-      });
+      apiRequest("POST", "/api/check-npi", { npi: debouncedNpi })
+        .then((response) => response.json())
+        .then((data) => {
+          setNpiValidation(data);
+        }).catch(() => {
+          setNpiValidation({ available: false, message: "Error checking NPI" });
+        });
     } else {
       setNpiValidation({});
     }
@@ -228,14 +225,13 @@ export default function AuthPage() {
   // Real-time password strength check
   useEffect(() => {
     if (watchedPassword) {
-      apiRequest("/api/validate-password", {
-        method: "POST",
-        body: JSON.stringify({ password: watchedPassword }),
-      }).then((response) => {
-        setPasswordStrength(response);
-      }).catch(() => {
-        setPasswordStrength({ valid: false, message: "Error checking password" });
-      });
+      apiRequest("POST", "/api/validate-password", { password: watchedPassword })
+        .then((response) => response.json())
+        .then((data) => {
+          setPasswordStrength(data);
+        }).catch(() => {
+          setPasswordStrength({ valid: false, message: "Error checking password" });
+        });
     } else {
       setPasswordStrength({});
     }
