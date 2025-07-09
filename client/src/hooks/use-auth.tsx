@@ -64,8 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registration successful",
-        description: "Welcome to Clarafi!",
+        description: "Please check your email to verify your account. You'll need to verify your email before you can log in.",
         variant: "default",
+        duration: 7000,
       });
     },
     onError: (error: Error) => {

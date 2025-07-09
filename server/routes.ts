@@ -4364,5 +4364,69 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Email verification routes
+  app.get("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Invalid verification token" });
+      }
+
+      const { EmailVerificationService } = await import("./email-verification-service");
+      const result = await EmailVerificationService.verifyEmail(token);
+      
+      if (result.success) {
+        // Redirect to login page with success message
+        res.redirect(`/auth?verified=true&email=${encodeURIComponent(result.email || '')}`);
+      } else {
+        res.status(400).json({ message: result.message });
+      }
+    } catch (error: any) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: "Error verifying email" });
+    }
+  });
+
+  app.post("/api/resend-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email required" });
+      }
+
+      const { EmailVerificationService } = await import("./email-verification-service");
+      const result = await EmailVerificationService.resendVerificationEmail(email);
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error resending verification:", error);
+      res.status(500).json({ message: "Error resending verification email" });
+    }
+  });
+
+  // Development endpoint: Delete test user
+  if (process.env.NODE_ENV === "development") {
+    app.delete("/api/dev/delete-test-user/:email", async (req, res) => {
+      try {
+        const email = decodeURIComponent(req.params.email);
+        console.log(`🧹 [Dev] Request to delete test user: ${email}`);
+        
+        const { EmailVerificationService } = await import("./email-verification-service");
+        const result = await EmailVerificationService.deleteTestUser(email);
+        
+        if (result.success) {
+          res.json(result);
+        } else {
+          res.status(404).json(result);
+        }
+      } catch (error: any) {
+        console.error("Error deleting test user:", error);
+        res.status(500).json({ message: "Error deleting test user" });
+      }
+    });
+  }
+
   return httpServer;
 }

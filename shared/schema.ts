@@ -192,6 +192,11 @@ export const users = pgTable("users", {
   specialties: text("specialties").array(),
   licenseNumber: text("license_number"),
   
+  // Email verification
+  emailVerified: boolean("email_verified").default(false),
+  emailVerificationToken: text("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
+  
   // Security
   mfaEnabled: boolean("mfa_enabled").default(false),
   mfaSecret: text("mfa_secret"),

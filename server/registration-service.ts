@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { healthSystems, organizations, locations, users, userLocations } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { EmailVerificationService } from "./email-verification-service";
 
 export interface RegistrationData {
   username: string;
@@ -142,6 +143,16 @@ export class RegistrationService {
       const newUser = newUserResult[0];
 
       console.log(`✅ [RegistrationService] Created user ID: ${newUser.id} in health system: ${healthSystemId}`);
+
+      // Send email verification
+      try {
+        const verificationToken = await EmailVerificationService.createVerificationToken(newUser.id);
+        await EmailVerificationService.sendVerificationEmail(newUser.email, verificationToken);
+        console.log(`📧 [RegistrationService] Verification email sent to ${newUser.email}`);
+      } catch (emailError) {
+        console.error(`❌ [RegistrationService] Failed to send verification email:`, emailError);
+        // Don't fail registration if email sending fails
+      }
 
       // If individual provider, assign them to their location
       if (registrationType === 'individual' && primaryLocationId) {

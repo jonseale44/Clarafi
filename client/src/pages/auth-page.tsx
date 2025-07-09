@@ -21,7 +21,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -115,6 +115,24 @@ export default function AuthPage() {
   const [emailValidation, setEmailValidation] = useState<{available?: boolean; message?: string}>({});
   const [npiValidation, setNpiValidation] = useState<{available?: boolean; message?: string}>({});
   const [passwordStrength, setPasswordStrength] = useState<{valid?: boolean; strength?: string; message?: string}>({});
+  const { toast } = useToast();
+
+  // Check for email verification success
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get('verified');
+    const email = urlParams.get('email');
+    
+    if (verified === 'true' && email) {
+      toast({
+        title: "Email Verified!",
+        description: `Your email ${decodeURIComponent(email)} has been successfully verified. You can now log in.`,
+        duration: 5000,
+      });
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
 
   // Fetch available health systems for registration
   const { data: healthSystemsData } = useQuery({
