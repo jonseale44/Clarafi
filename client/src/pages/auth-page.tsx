@@ -785,12 +785,13 @@ export default function AuthPage() {
                         <div className="space-y-2">
                           <Label htmlFor="npi" className="flex items-center gap-2">
                             NPI Number
+                            <span className="text-sm font-normal text-gray-500">(Optional but recommended)</span>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Info className="h-3 w-3 text-gray-400" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>10-digit National Provider Identifier for billing</p>
+                                <p>10-digit National Provider Identifier for billing. While optional for registration, you'll need it for insurance claims and e-prescribing.</p>
                               </TooltipContent>
                             </Tooltip>
                           </Label>
