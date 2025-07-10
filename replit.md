@@ -718,7 +718,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Development Testing Tools Enhancement (January 10, 2025)
 - **GMAIL ALIAS TESTING**: Added prominent tip to /dev/test page showing how to use Gmail aliases (user+test1@gmail.com) for multiple test registrations
-- **CLEAR ALL USERS ENDPOINT**: Created DELETE /api/dev/clear-all-users endpoint to remove all users except admin for fresh testing
+- **CLEAR ALL USERS ENDPOINT**: Created GET /api/dev/clear-users endpoint to remove all users except admin for fresh testing
 - **ENHANCED TEST PAGE UI**: Updated development test page with:
   - Gmail alias testing tip with examples
   - Individual user deletion by email
@@ -726,6 +726,8 @@ Preferred communication style: Simple, everyday language.
   - New "Clear All Users" button in danger zone
 - **SAFETY FEATURES**: Clear all users operation requires confirmation and preserves system admin account
 - **DEVELOPMENT ONLY**: All test endpoints are restricted to development environment only
+- **ENDPOINT IMPLEMENTATION FIX**: Fixed routing issues by using GET method at `/api/dev/clear-users` with direct SQL execution for reliable user deletion
+- **FOREIGN KEY HANDLING**: Properly deletes related records (user_locations, user_note_preferences, user_session_locations) before deleting users to avoid constraint violations
 
 ### Complete System Rebranding from MediFlow to Clarafi Implementation (July 3, 2025)
 - **COMPLETE BRAND TRANSFORMATION**: Successfully rebranded entire EMR system from "MediFlow" to "Clarafi" with navy blue and gold color scheme

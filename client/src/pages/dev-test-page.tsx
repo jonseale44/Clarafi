@@ -95,8 +95,8 @@ export default function DevTestPage() {
     }
 
     try {
-      const response = await fetch("/api/dev/clear-all-users", {
-        method: "DELETE",
+      const response = await fetch("/api/dev/clear-users", {
+        method: "GET",
       });
       
       const data = await response.json();
