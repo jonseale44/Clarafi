@@ -52,15 +52,10 @@ export function setupAuth(app: Express) {
         return done(null, false);
       } 
       
-      // Check if email is verified (skip in development for testing)
-      if (!user.emailVerified && process.env.NODE_ENV !== 'development') {
+      // Check if email is verified
+      if (!user.emailVerified) {
         console.log(`❌ [Auth] User ${username} attempted login without email verification`);
         return done(null, false, { message: 'Please verify your email before logging in.' });
-      }
-      
-      // In development, show warning if email not verified
-      if (!user.emailVerified && process.env.NODE_ENV === 'development') {
-        console.log(`⚠️  [Auth Dev Mode] User ${username} logged in without email verification (allowed in dev)`);
       }
       
       return done(null, user);
