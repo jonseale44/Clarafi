@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { db } from './db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { MailService } from '@sendgrid/mail';
 
 export class EmailVerificationService {
   /**
@@ -66,20 +67,65 @@ export class EmailVerificationService {
   }
 
   /**
-   * Send verification email (placeholder - needs SMTP configuration)
+   * Send verification email using SendGrid
    */
   static async sendVerificationEmail(email: string, token: string): Promise<void> {
-    // In development, log the verification link
+    if (!process.env.SENDGRID_API_KEY) {
+      console.error('❌ [EmailVerification] SENDGRID_API_KEY not configured');
+      throw new Error('Email service not configured');
+    }
+
+    const mailService = new MailService();
+    mailService.setApiKey(process.env.SENDGRID_API_KEY);
+
     const verificationUrl = `${process.env.APP_URL || 'http://localhost:5000'}/verify-email?token=${token}`;
     
-    console.log('📧 [EmailVerification] Verification email would be sent to:', email);
-    console.log('🔗 [EmailVerification] Verification link:', verificationUrl);
-    
-    // TODO: Implement actual email sending with SMTP
-    // This will require SMTP configuration (host, port, user, pass)
-    // You can use libraries like nodemailer or sendgrid
-    
-    // For now, in development, we'll just log the link
+    const emailContent = {
+      to: email,
+      from: 'noreply@clarafi.com', // You can customize this sender email
+      subject: 'Verify Your Clarafi Account',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #003366;">Welcome to Clarafi!</h2>
+          <p>Thank you for registering with Clarafi EMR. To complete your registration, please verify your email address by clicking the button below:</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="background-color: #FFD700; color: #003366; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Verify Email Address
+            </a>
+          </div>
+          
+          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+          
+          <p>This verification link will expire in 24 hours.</p>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #666; font-size: 12px;">
+            If you didn't create a Clarafi account, please ignore this email.
+          </p>
+        </div>
+      `,
+      text: `
+        Welcome to Clarafi!
+        
+        Thank you for registering with Clarafi EMR. To complete your registration, please verify your email address by visiting this link:
+        
+        ${verificationUrl}
+        
+        This verification link will expire in 24 hours.
+        
+        If you didn't create a Clarafi account, please ignore this email.
+      `
+    };
+
+    try {
+      await mailService.send(emailContent);
+      console.log('✅ [EmailVerification] Verification email sent successfully to:', email);
+    } catch (error) {
+      console.error('❌ [EmailVerification] Failed to send email:', error);
+      throw new Error('Failed to send verification email');
+    }
   }
 
   /**
