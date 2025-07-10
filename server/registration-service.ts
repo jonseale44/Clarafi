@@ -123,6 +123,14 @@ export class RegistrationService {
         console.log(`🏥 [RegistrationService] Joining existing health system ID: ${healthSystemId}`);
       }
 
+      // Validate role - prevent admin creation through regular registration
+      const allowedRoles = ['provider', 'nurse', 'ma', 'front_desk', 'billing', 'lab_tech', 'referral_coordinator', 'practice_manager', 'read_only'];
+      const userRole = allowedRoles.includes(data.role) ? data.role : 'provider';
+      
+      if (data.role === 'admin') {
+        console.warn(`⚠️  [RegistrationService] Attempted to register admin role for ${data.username} - defaulting to provider`);
+      }
+
       // Create the user with the determined health system
       const newUserResult = await tx
         .insert(users)
@@ -132,7 +140,7 @@ export class RegistrationService {
           password: data.password, // Already hashed
           firstName: data.firstName,
           lastName: data.lastName,
-          role: data.role,
+          role: userRole, // Use validated role
           npi: data.npi,
           credentials: data.credentials,
           healthSystemId: healthSystemId,
