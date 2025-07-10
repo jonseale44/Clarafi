@@ -54,7 +54,9 @@ const registerSchema = insertUserSchema.extend({
   practiceName: z.string().optional(),
   practiceAddress: z.string().optional(),
   practiceCity: z.string().optional(),
-  practiceState: z.string().length(2, "State must be 2-letter code").optional(),
+  practiceState: z.string()
+    .optional()
+    .refine((val) => !val || val.length === 2, "State must be 2-letter code"),
   practiceZipCode: z.string()
     .optional()
     .refine((val) => !val || zipRegex.test(val), "Invalid ZIP code format"),
