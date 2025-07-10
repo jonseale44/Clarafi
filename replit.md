@@ -716,6 +716,17 @@ Preferred communication style: Simple, everyday language.
 - **ADMIN HEALTH SYSTEM**: Admin accounts automatically assigned to "Clarafi System Admin" health system with enterprise tier privileges
 - **SECURITY BEST PRACTICES**: Admin creation requires server access, preventing unauthorized admin account creation through public registration
 
+### Development Testing Tools Enhancement (January 10, 2025)
+- **GMAIL ALIAS TESTING**: Added prominent tip to /dev/test page showing how to use Gmail aliases (user+test1@gmail.com) for multiple test registrations
+- **CLEAR ALL USERS ENDPOINT**: Created DELETE /api/dev/clear-all-users endpoint to remove all users except admin for fresh testing
+- **ENHANCED TEST PAGE UI**: Updated development test page with:
+  - Gmail alias testing tip with examples
+  - Individual user deletion by email
+  - Email verification resend functionality
+  - New "Clear All Users" button in danger zone
+- **SAFETY FEATURES**: Clear all users operation requires confirmation and preserves system admin account
+- **DEVELOPMENT ONLY**: All test endpoints are restricted to development environment only
+
 ### Complete System Rebranding from MediFlow to Clarafi Implementation (July 3, 2025)
 - **COMPLETE BRAND TRANSFORMATION**: Successfully rebranded entire EMR system from "MediFlow" to "Clarafi" with navy blue and gold color scheme
 - **BRAND LOGO REDESIGN**: Updated logo design with "CLAR" in navy blue (#003366) and "AFI" in gold (#FFD700) across all interface components

@@ -60,7 +60,7 @@ import {
   labResults,
 } from "../shared/schema.js";
 
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, ne } from "drizzle-orm";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -4424,6 +4424,28 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       } catch (error: any) {
         console.error("Error deleting test user:", error);
         res.status(500).json({ message: "Error deleting test user" });
+      }
+    });
+
+    // Development endpoint: Clear all users
+    app.delete("/api/dev/clear-all-users", async (req, res) => {
+      try {
+        console.log("🧹 [Dev] Request to clear all users");
+        
+        // Delete all users except the system admin
+        const deletedCount = await db.delete(users)
+          .where(ne(users.username, 'admin'))
+          .returning();
+        
+        console.log(`✅ [Dev] Deleted ${deletedCount.length} users (kept admin user)`);
+        res.json({ 
+          success: true, 
+          message: `Deleted ${deletedCount.length} users successfully`,
+          deletedCount: deletedCount.length
+        });
+      } catch (error: any) {
+        console.error("Error clearing users:", error);
+        res.status(500).json({ message: "Error clearing users" });
       }
     });
   }

@@ -89,6 +89,39 @@ export default function DevTestPage() {
     }
   };
 
+  const handleClearAllUsers = async () => {
+    if (!confirm("Are you sure you want to delete ALL users except the admin? This cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/dev/clear-all-users", {
+        method: "DELETE",
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: data.message,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear users",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (process.env.NODE_ENV !== "development") {
     return (
       <div className="container mx-auto p-4">
@@ -180,6 +213,21 @@ export default function DevTestPage() {
               <li>Click the link to verify your email</li>
               <li>Use "Delete Test User" to reset and test again</li>
             </ol>
+          </div>
+          
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-4 text-red-600">Danger Zone</h4>
+            <Button
+              onClick={handleClearAllUsers}
+              variant="destructive"
+              className="w-full"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All Users (Keep Admin Only)
+            </Button>
+            <p className="text-sm text-gray-500 mt-2">
+              This will delete all users except the system admin account. Use this to start fresh with testing.
+            </p>
           </div>
         </CardContent>
       </Card>
