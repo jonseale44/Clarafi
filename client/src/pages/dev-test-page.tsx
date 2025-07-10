@@ -108,6 +108,24 @@ export default function DevTestPage() {
           <CardTitle>Development Test Tools</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+              💡 Tip: Use Gmail Aliases for Testing!
+            </h4>
+            <p className="text-sm text-blue-800 mb-2">
+              If your email is <strong>user@gmail.com</strong>, you can use:
+            </p>
+            <ul className="text-sm text-blue-700 list-disc pl-5 space-y-1 mb-2">
+              <li>user+test1@gmail.com</li>
+              <li>user+provider@gmail.com</li>
+              <li>user+nurse@gmail.com</li>
+              <li>user+admin@gmail.com</li>
+            </ul>
+            <p className="text-xs text-blue-600">
+              All emails arrive in your same inbox but are treated as different addresses!
+            </p>
+          </div>
+
           <div>
             <h3 className="text-lg font-semibold mb-4">Email Verification Testing</h3>
             <div className="space-y-4">
