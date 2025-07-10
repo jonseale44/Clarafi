@@ -347,7 +347,12 @@ export function setupAuth(app: Express) {
           return next(err);
         }
         console.log("✅ [Registration] User created and logged in successfully:", user.username);
-        res.status(201).json(user);
+        
+        // Return user with registration type for payment flow
+        res.status(201).json({
+          user,
+          registrationType: req.body.registrationType || 'join_existing'
+        });
       });
 
     } catch (error: any) {

@@ -4428,5 +4428,129 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     });
   }
 
+  // Stripe Payment Routes
+  app.post("/api/stripe/create-subscription", async (req, res) => {
+    try {
+      const { StripeService } = await import("./stripe-service");
+      const result = await StripeService.createSubscription(req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ success: false, error: "Failed to create subscription" });
+    }
+  });
+
+  app.post("/api/stripe/webhook", async (req, res) => {
+    try {
+      const sig = req.headers['stripe-signature'] as string;
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+      
+      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      
+      const { StripeService } = await import("./stripe-service");
+      await StripeService.handleWebhook(event);
+      
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error("Webhook error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/stripe/subscription/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { StripeService } = await import("./stripe-service");
+      const subscription = await StripeService.getSubscription(req.params.id);
+      
+      if (subscription) {
+        res.json(subscription);
+      } else {
+        res.status(404).json({ error: "Subscription not found" });
+      }
+    } catch (error: any) {
+      console.error("Error fetching subscription:", error);
+      res.status(500).json({ error: "Failed to fetch subscription" });
+    }
+  });
+
+  app.post("/api/stripe/create-checkout-session", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { customerId, tier, billingPeriod } = req.body;
+      const successUrl = `${process.env.APP_URL || 'http://localhost:5000'}/dashboard?payment=success`;
+      const cancelUrl = `${process.env.APP_URL || 'http://localhost:5000'}/settings/billing?payment=cancelled`;
+      
+      const { StripeService } = await import("./stripe-service");
+      const sessionUrl = await StripeService.createCheckoutSession(
+        customerId,
+        tier,
+        billingPeriod,
+        successUrl,
+        cancelUrl
+      );
+      
+      if (sessionUrl) {
+        res.json({ url: sessionUrl });
+      } else {
+        res.status(500).json({ error: "Failed to create checkout session" });
+      }
+    } catch (error: any) {
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Subscription Configuration API
+  app.get("/api/subscription/config", async (req, res) => {
+    try {
+      const { subscriptionConfig } = await import("./subscription-config");
+      const config = subscriptionConfig.exportConfiguration();
+      res.json(config);
+    } catch (error: any) {
+      console.error("Error fetching subscription config:", error);
+      res.status(500).json({ error: "Failed to fetch configuration" });
+    }
+  });
+
+  app.put("/api/subscription/config", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const { subscriptionConfig } = await import("./subscription-config");
+      const { pricing, features } = req.body;
+      
+      // Update pricing if provided
+      if (pricing) {
+        subscriptionConfig.updatePricing(pricing);
+      }
+      
+      // Update features if provided
+      if (features) {
+        Object.entries(features).forEach(([feature, config]: [string, any]) => {
+          if (config.tier1 !== undefined) {
+            subscriptionConfig.updateFeature(feature as any, 1, config.tier1);
+          }
+          if (config.tier2 !== undefined) {
+            subscriptionConfig.updateFeature(feature as any, 2, config.tier2);
+          }
+          if (config.tier3 !== undefined) {
+            subscriptionConfig.updateFeature(feature as any, 3, config.tier3);
+          }
+        });
+      }
+      
+      res.json({ success: true, config: subscriptionConfig.exportConfiguration() });
+    } catch (error: any) {
+      console.error("Error updating subscription config:", error);
+      res.status(500).json({ error: "Failed to update configuration" });
+    }
+  });
+
   return httpServer;
 }

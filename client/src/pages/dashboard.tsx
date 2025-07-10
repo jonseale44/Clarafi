@@ -280,6 +280,15 @@ export default function Dashboard() {
                       Admin Users
                     </button>
                   </Link>
+                  <Link href="/admin/subscription-config">
+                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      false // Admin pages don't have active state in dashboard
+                        ? "bg-primary text-white" 
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}>
+                      Subscription Config
+                    </button>
+                  </Link>
                 </>
               )}
               

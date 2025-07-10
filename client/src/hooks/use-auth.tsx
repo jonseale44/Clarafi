@@ -60,14 +60,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return await res.json();
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: "Please check your email to verify your account. You'll need to verify your email before you can log in.",
-        variant: "default",
-        duration: 7000,
-      });
+    onSuccess: async (data: { user: SelectUser; registrationType?: string }) => {
+      // Store user data but don't log them in yet
+      queryClient.setQueryData(["/api/user"], null); // Keep them logged out
+      
+      // For individual registrations, redirect to payment
+      if (data.registrationType === 'individual') {
+        // Create Stripe subscription with trial
+        try {
+          const subscriptionRes = await apiRequest("POST", "/api/stripe/create-subscription", {
+            email: data.user.email,
+            name: `${data.user.firstName} ${data.user.lastName}`,
+            tier: 1, // Tier 1 for individual providers
+            billingPeriod: 'monthly',
+            healthSystemId: data.user.healthSystemId
+          });
+          
+          const subscriptionData = await subscriptionRes.json();
+          
+          if (subscriptionData.success && subscriptionData.clientSecret) {
+            // Store registration data for after payment
+            sessionStorage.setItem('pendingRegistration', JSON.stringify({
+              userId: data.user.id,
+              email: data.user.email
+            }));
+            
+            // Redirect to Stripe Checkout
+            toast({
+              title: "Registration successful",
+              description: "Redirecting to complete subscription setup...",
+              variant: "default",
+              duration: 3000,
+            });
+            
+            // Redirect to a payment page (we'll create this next)
+            setTimeout(() => {
+              window.location.href = `/payment?clientSecret=${subscriptionData.clientSecret}`;
+            }, 2000);
+          } else {
+            throw new Error("Failed to create subscription");
+          }
+        } catch (error) {
+          console.error("Subscription error:", error);
+          toast({
+            title: "Registration successful",
+            description: "Account created. Please contact support to complete subscription setup.",
+            variant: "default",
+            duration: 7000,
+          });
+        }
+      } else {
+        // For join_existing, show email verification message
+        toast({
+          title: "Registration successful", 
+          description: "Please check your email to verify your account. You'll need to verify your email before you can log in.",
+          variant: "default",
+          duration: 7000,
+        });
+      }
     },
     onError: (error: Error) => {
       console.error("Registration error:", error);
