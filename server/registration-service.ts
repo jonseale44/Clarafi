@@ -2,6 +2,7 @@ import { db } from "./db";
 import { healthSystems, organizations, locations, users, userLocations } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { EmailVerificationService } from "./email-verification-service";
+import { StripeService } from "./stripe-service";
 
 export interface RegistrationData {
   username: string;
@@ -12,7 +13,7 @@ export interface RegistrationData {
   role: string;
   npi?: string | null;
   credentials?: string;
-  registrationType?: 'individual' | 'join_existing';
+  registrationType?: 'create_new' | 'join_existing';
   existingHealthSystemId?: number;
   practiceName?: string;
   practiceAddress?: string;
@@ -39,7 +40,7 @@ export class RegistrationService {
       // Determine registration type (default to join_existing for backward compatibility)
       const registrationType = data.registrationType || 'join_existing';
 
-      if (registrationType === 'individual' && data.role === 'provider') {
+      if (registrationType === 'create_new' && data.role === 'provider') {
         // Create a new health system for individual provider
         console.log(`🏥 [RegistrationService] Creating individual provider health system for ${data.firstName} ${data.lastName}`);
         
@@ -53,7 +54,7 @@ export class RegistrationService {
             shortName: `Dr. ${data.lastName}`,
             systemType: 'individual_provider',
             subscriptionTier: 1, // Individual tier
-            subscriptionStatus: 'active',
+            subscriptionStatus: 'trial', // Start with trial status until payment
             subscriptionStartDate: new Date(),
             primaryContact: `${data.firstName} ${data.lastName}`,
             email: data.email,
@@ -155,7 +156,7 @@ export class RegistrationService {
       }
 
       // If individual provider, assign them to their location
-      if (registrationType === 'individual' && primaryLocationId) {
+      if (registrationType === 'create_new' && primaryLocationId) {
         await tx
           .insert(userLocations)
           .values({

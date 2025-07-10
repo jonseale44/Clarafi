@@ -228,6 +228,27 @@ export class StripeService {
   // Handle webhook events from Stripe
   static async handleWebhook(event: Stripe.Event): Promise<void> {
     switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log('💳 [Stripe] Checkout completed for session:', session.id);
+        
+        // Get metadata from the session
+        if (session.metadata?.userId && session.metadata?.healthSystemId) {
+          const userId = parseInt(session.metadata.userId);
+          const healthSystemId = parseInt(session.metadata.healthSystemId);
+          
+          // Update health system subscription status
+          await db.update(healthSystems)
+            .set({
+              subscriptionStatus: 'active',
+              subscriptionStartDate: new Date(),
+            })
+            .where(eq(healthSystems.id, healthSystemId));
+          
+          console.log(`✅ [Stripe] Activated health system ${healthSystemId} for user ${userId}`);
+        }
+        break;
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
         const subscription = event.data.object as Stripe.Subscription;

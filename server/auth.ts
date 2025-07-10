@@ -50,9 +50,15 @@ export function setupAuth(app: Express) {
       const user = await storage.getUserByUsername(username);
       if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
-      } else {
-        return done(null, user);
+      } 
+      
+      // Check if email is verified
+      if (!user.emailVerified) {
+        console.log(`❌ [Auth] User ${username} attempted login without email verification`);
+        return done(null, false, { message: 'Please verify your email before logging in.' });
       }
+      
+      return done(null, user);
     }),
   );
 
@@ -328,8 +334,9 @@ export function setupAuth(app: Express) {
         }
       }
 
-      // Import RegistrationService
+      // Import RegistrationService and StripeService
       const { RegistrationService } = await import("./registration-service.js");
+      const { StripeService } = await import("./stripe-service.js");
 
       // Prepare registration data with hashed password
       const registrationData = {
@@ -341,6 +348,43 @@ export function setupAuth(app: Express) {
       console.log("✅ [Registration] Creating new user:", registrationData.username);
       const user = await RegistrationService.registerUser(registrationData);
 
+      // For individual providers, create Stripe checkout session
+      if (req.body.registrationType === 'create_new' && user.role === 'provider') {
+        console.log("💳 [Registration] Creating Stripe checkout for individual provider");
+        
+        const checkoutResult = await StripeService.createCheckoutSession({
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`,
+          tier: 1,
+          billingPeriod: 'monthly',
+          healthSystemId: user.healthSystemId,
+          metadata: {
+            userId: user.id.toString(),
+            registrationType: 'individual'
+          }
+        });
+
+        if (checkoutResult.success && checkoutResult.sessionUrl) {
+          // Store pending registration info
+          console.log("✅ [Registration] Stripe checkout created, redirecting to payment");
+          
+          return res.status(201).json({
+            success: true,
+            registrationType: 'create_new',
+            requiresPayment: true,
+            paymentUrl: checkoutResult.sessionUrl,
+            message: "Registration successful! Please complete payment to activate your account."
+          });
+        } else {
+          console.error("❌ [Registration] Failed to create Stripe checkout:", checkoutResult.error);
+          return res.status(500).json({ 
+            message: "Registration succeeded but payment setup failed. Please contact support.",
+            error: checkoutResult.error
+          });
+        }
+      }
+
+      // For users joining existing systems, log them in normally
       req.login(user, (err) => {
         if (err) {
           console.error("❌ [Registration] Login error after creation:", err);
@@ -348,10 +392,11 @@ export function setupAuth(app: Express) {
         }
         console.log("✅ [Registration] User created and logged in successfully:", user.username);
         
-        // Return user with registration type for payment flow
         res.status(201).json({
+          success: true,
           user,
-          registrationType: req.body.registrationType || 'join_existing'
+          registrationType: req.body.registrationType || 'join_existing',
+          requiresPayment: false
         });
       });
 
@@ -386,34 +431,50 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), async (req, res) => {
-    try {
-      // Update the user's lastLogin timestamp
-      if (req.user) {
-        await db
-          .update(users)
-          .set({ lastLogin: new Date() })
-          .where(eq(users.id, req.user.id));
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
       }
-
-      // After successful login, check if user has a remembered location
-      if (req.user && req.user.role !== 'admin') {
-        const rememberedLocation = await storage.getRememberedLocation(req.user.id);
-        if (rememberedLocation && rememberedLocation.rememberSelection) {
-          // Automatically restore the remembered location as active
-          await storage.setUserSessionLocation(
-            req.user.id, 
-            rememberedLocation.locationId, 
-            true // Keep it remembered
-          );
+      if (!user) {
+        // Check if there's a specific error message (like email not verified)
+        if (info?.message) {
+          return res.status(401).json({ message: info.message });
         }
+        return res.status(401).json({ message: "Invalid username or password" });
       }
-      res.status(200).json(req.user);
-    } catch (error) {
-      console.error("Error during login process:", error);
-      // Still return user even if location restore fails
-      res.status(200).json(req.user);
-    }
+      req.logIn(user, async (err) => {
+        if (err) {
+          return next(err);
+        }
+        
+        try {
+          // Update the user's lastLogin timestamp
+          await db
+            .update(users)
+            .set({ lastLogin: new Date() })
+            .where(eq(users.id, user.id));
+
+          // After successful login, check if user has a remembered location
+          if (user.role !== 'admin') {
+            const rememberedLocation = await storage.getRememberedLocation(user.id);
+            if (rememberedLocation && rememberedLocation.rememberSelection) {
+              // Automatically restore the remembered location as active
+              await storage.setUserSessionLocation(
+                user.id, 
+                rememberedLocation.locationId, 
+                true // Keep it remembered
+              );
+            }
+          }
+          res.status(200).json(user);
+        } catch (error) {
+          console.error("Error during login process:", error);
+          // Still return user even if location restore fails
+          res.status(200).json(user);
+        }
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {

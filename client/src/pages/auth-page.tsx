@@ -105,7 +105,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [locationSelected, setLocationSelected] = useState(false);
-  const [registrationType, setRegistrationType] = useState<'individual' | 'join_existing'>('join_existing');
+  const [registrationType, setRegistrationType] = useState<'create_new' | 'join_existing'>('join_existing');
   const [selectedHealthSystemId, setSelectedHealthSystemId] = useState<string>('');
   const [availableHealthSystems, setAvailableHealthSystems] = useState<Array<{id: number, name: string}>>([]);
   const [showPassword, setShowPassword] = useState(false);
@@ -449,8 +449,8 @@ export default function AuthPage() {
                         className="space-y-2"
                       >
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="individual" id="individual" />
-                          <Label htmlFor="individual" className="font-normal cursor-pointer">
+                          <RadioGroupItem value="create_new" id="create_new" />
+                          <Label htmlFor="create_new" className="font-normal cursor-pointer">
                             Create my own individual practice (Tier 1)
                           </Label>
                         </div>
@@ -635,7 +635,7 @@ export default function AuthPage() {
 
 
                     {/* Show practice details for individual practice registration */}
-                    {registrationType === "individual" && (
+                    {registrationType === "create_new" && (
                       <div className="space-y-4 border-t pt-4">
                         <h3 className="font-medium">Practice Information</h3>
                         
