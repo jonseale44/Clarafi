@@ -1,0 +1,126 @@
+{
+  "// INSTRUCTIONS": "Modify this file to change tier features and pricing. Restart server to apply changes.",
+  
+  "pricing": {
+    "tier1": {
+      "monthly": 99,
+      "annual": 990,
+      "trialDays": 30,
+      "name": "Professional",
+      "description": "Perfect for individual providers"
+    },
+    "tier2": {
+      "monthlyPerUser": 299,
+      "annualPerUser": 2990,
+      "trialDays": 14,
+      "minUsers": 3,
+      "name": "Practice",
+      "description": "For small to medium practices"
+    },
+    "tier3": {
+      "pricing": "custom",
+      "trialDays": 30,
+      "minUsers": 20,
+      "name": "Enterprise",
+      "description": "For large health systems"
+    }
+  },
+  
+  "features": {
+    "// CORE FEATURES": "Always available to all tiers",
+    "aiSoapNotes": {
+      "tier1": true,
+      "tier2": true,
+      "tier3": true,
+      "description": "AI-powered SOAP note generation"
+    },
+    "voiceTranscription": {
+      "tier1": true,
+      "tier2": true,
+      "tier3": true,
+      "description": "Voice-to-text medical transcription"
+    },
+    "basicPatientManagement": {
+      "tier1": true,
+      "tier2": true,
+      "tier3": true,
+      "description": "Patient demographics and basic info"
+    },
+    
+    "// CHART SECTIONS": "Modify tier1 values to give/remove access",
+    "medicalProblems": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Problem list management"
+    },
+    "medications": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Medication list and reconciliation"
+    },
+    "allergies": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Allergy tracking"
+    },
+    "labResults": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Lab result viewing"
+    },
+    "vitals": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Vital signs tracking"
+    },
+    
+    "// AI CONTEXT": "Control what data AI can access",
+    "aiFullChartContext": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "AI access to complete patient history"
+    },
+    
+    "// INTEGRATIONS": "External system connections",
+    "ePrescribing": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Electronic prescribing"
+    },
+    "labOrdering": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Direct lab ordering"
+    },
+    
+    "// ADMIN FEATURES": "Practice management tools",
+    "userManagement": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Team management"
+    },
+    "multiLocation": {
+      "tier1": false,
+      "tier2": true,
+      "tier3": true,
+      "description": "Multiple locations"
+    }
+  },
+  
+  "// EXPERIMENTAL CONFIGS": "Test different feature combinations",
+  "experiments": {
+    "giveTier1Medications": false,
+    "giveTier1Allergies": false,
+    "reduceTier1TrialTo14Days": false,
+    "tier1PriceTest": null
+  }
+}
