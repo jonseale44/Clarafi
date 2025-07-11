@@ -126,10 +126,29 @@ router.post("/parse-and-create-patient", tenantIsolation, async (req: Request, r
     const userId = (req.user as any).id;
     const sessionLocation = await storage.getUserSessionLocation(userId);
     
+    // Get location data to determine creation context
+    const locationData = sessionLocation?.locationId 
+      ? await storage.getLocation(sessionLocation.locationId)
+      : null;
+    
+    // Determine creation context based on location type
+    let creationContext = 'private_practice';
+    if (locationData) {
+      if (locationData.locationType === 'hospital') {
+        creationContext = 'hospital_rounds';
+      } else if (locationData.locationType === 'clinic' || locationData.locationType === 'outpatient') {
+        creationContext = 'clinic_hours';
+      }
+    }
+    
     // Add healthSystemId and preferredLocationId to patient data
     const patientDataWithHealthSystem = {
       ...patientData,
       healthSystemId,
+      createdByProviderId: userId,
+      dataOriginType: 'document_import',
+      creationContext,
+      originalFacilityId: healthSystemId,
       // Automatically assign the user's current location as the patient's preferred location
       preferredLocationId: sessionLocation?.locationId || null
     };

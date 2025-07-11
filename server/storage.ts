@@ -34,6 +34,8 @@ export interface IStorage {
   
   // Location management
   getUserLocations(userId: number): Promise<any[]>;
+  getLocation(id: number): Promise<any>;
+  getHealthSystemLocations(healthSystemId: number): Promise<any[]>;
   setUserSessionLocation(userId: number, locationId: number, rememberSelection?: boolean): Promise<void>;
   getUserSessionLocation(userId: number): Promise<any>;
   clearUserSessionLocation(userId: number): Promise<void>;
@@ -233,6 +235,28 @@ export class DatabaseStorage implements IStorage {
       .orderBy(locations.name);
     
     return locationsList;
+  }
+
+  async getLocation(id: number): Promise<any> {
+    const [location] = await db
+      .select({
+        id: locations.id,
+        name: locations.name,
+        shortName: locations.shortName,
+        locationType: locations.locationType,
+        address: locations.address,
+        city: locations.city,
+        state: locations.state,
+        zipCode: locations.zipCode,
+        phone: locations.phone,
+        services: locations.services,
+        organizationId: locations.organizationId,
+        healthSystemId: locations.healthSystemId
+      })
+      .from(locations)
+      .where(eq(locations.id, id));
+    
+    return location;
   }
 
   async getUserLocations(userId: number): Promise<any[]> {

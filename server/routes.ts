@@ -32,6 +32,7 @@ import { setupUnifiedImagingRoutes } from "./unified-imaging-api";
 import { createRxNormRoutes } from "./rxnorm-routes";
 import { registerAdminUserRoutes } from "./admin-user-routes";
 import { setupRealtimeProxy } from "./realtime-proxy";
+import migrationRoutes from "./migration-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -621,6 +622,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Medication standardization routes
   app.use("/api/medications", medicationStandardizationRoutes);
+  
+  // Migration routes for provider practice transitions
+  app.use(migrationRoutes);
 
   // Intelligent diagnosis routes (GPT-powered autocompletion)
   app.use("/api/intelligent-diagnosis", intelligentDiagnosisRoutes);
@@ -875,9 +879,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add the healthSystemId from the user's context to the request body
       const healthSystemId = req.userHealthSystemId!;
+      const userId = (req.user as any).id;
+      
+      // Get user session location to determine creation context
+      const sessionLocation = await storage.getUserSessionLocation(userId);
+      const locationData = sessionLocation?.locationId 
+        ? await storage.getLocation(sessionLocation.locationId)
+        : null;
+      
+      // Determine creation context based on location type
+      let creationContext = 'private_practice';
+      if (locationData) {
+        if (locationData.locationType === 'hospital') {
+          creationContext = 'hospital_rounds';
+        } else if (locationData.locationType === 'clinic' || locationData.locationType === 'outpatient') {
+          creationContext = 'clinic_hours';
+        }
+      }
+      
       const patientDataWithHealthSystem = {
         ...req.body,
-        healthSystemId
+        healthSystemId,
+        createdByProviderId: userId,
+        dataOriginType: 'emr_direct',
+        creationContext,
+        originalFacilityId: healthSystemId, // Current facility where patient was created
       };
 
       // Parse with the complete data including healthSystemId

@@ -436,6 +436,22 @@ export const patients = pgTable("patients", {
   activeProblems: jsonb("active_problems").default([]),
   criticalAlerts: jsonb("critical_alerts").default([]),
   
+  // Data Origin Tracking for HIPAA Compliance
+  dataOriginType: text("data_origin_type").default("emr_direct"), // 'emr_direct', 'provider_scribe', 'external_import'
+  originalFacilityId: integer("original_facility_id").references(() => healthSystems.id), // Where patient was originally seen
+  createdByProviderId: integer("created_by_provider_id").references(() => users.id), // Provider who created the record
+  creationContext: text("creation_context"), // 'clinic_hours', 'hospital_rounds', 'private_practice'
+  derivativeWorkNote: text("derivative_work_note"), // Documentation about derivative work created
+  
+  // Migration and Consent Tracking
+  migrationConsent: jsonb("migration_consent").$type<{
+    consentGiven: boolean;
+    consentDate?: string;
+    consentMethod?: string; // 'email', 'in_person', 'portal'
+    consentDocumentId?: string;
+    excludedFromMigration?: boolean;
+  }>().default({ consentGiven: false }),
+  
   profilePhotoFilename: text("profile_photo_filename"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1980,6 +1996,12 @@ export const insertPatientSchema = createInsertSchema(patients).pick({
   policyNumber: true,
   groupNumber: true,
   preferredLocationId: true,
+  dataOriginType: true,
+  originalFacilityId: true,
+  createdByProviderId: true,
+  creationContext: true,
+  derivativeWorkNote: true,
+  migrationConsent: true,
 });
 
 export const insertEncounterSchema = createInsertSchema(encounters).pick({
