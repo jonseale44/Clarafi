@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,9 +96,19 @@ export function AdminUserManagement() {
   });
 
   // Fetch all health systems
-  const { data: healthSystems = [] } = useQuery({
+  const { data: healthSystems = [], isError: healthSystemsError } = useQuery({
     queryKey: ["/api/health-systems"],
   });
+
+  // Log health systems data for debugging
+  useEffect(() => {
+    if (healthSystems.length > 0) {
+      console.log("Health systems loaded:", healthSystems);
+    }
+    if (healthSystemsError) {
+      console.error("Failed to load health systems");
+    }
+  }, [healthSystems, healthSystemsError]);
 
   // Fetch user locations when a user is selected
   const { data: userLocations = [] } = useQuery<UserLocation[]>({

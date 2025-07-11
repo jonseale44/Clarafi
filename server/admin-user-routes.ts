@@ -36,7 +36,9 @@ export function registerAdminUserRoutes(app: Express) {
 
   // Get all health systems for admin - includes subscription tier info
   app.get("/api/health-systems", async (req, res) => {
+    console.log("[HealthSystems] Request from user:", req.user?.username, "Role:", req.user?.role);
     if (!req.isAuthenticated() || req.user.role !== 'admin') {
+      console.log("[HealthSystems] Access denied - not admin or not authenticated");
       return res.status(403).json({ message: "Admin access required" });
     }
     try {
@@ -515,6 +517,11 @@ export function registerAdminUserRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
       console.error("❌ [AdminUserRoutes] Error creating user:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
       res.status(500).json({ message: "Failed to create user" });
     }
   });
