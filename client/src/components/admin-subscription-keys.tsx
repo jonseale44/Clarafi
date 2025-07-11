@@ -38,6 +38,12 @@ export function AdminSubscriptionKeys() {
     enabled: isSystemAdmin,
   });
 
+  // Fetch current user's health system to check tier
+  const { data: userHealthSystemData } = useQuery({
+    queryKey: [`/api/health-systems/${userData?.healthSystemId}`],
+    enabled: !!userData?.healthSystemId && !isSystemAdmin,
+  });
+
   const generateKeysMutation = useMutation({
     mutationFn: async (data: typeof generateForm) => {
       return await apiRequest('POST', '/api/subscription-keys/generate', data);
@@ -123,6 +129,54 @@ export function AdminSubscriptionKeys() {
   const activeKeys = keysData?.keys?.filter((k: any) => k.status === 'active') || [];
   const usedKeys = keysData?.keys?.filter((k: any) => k.status === 'used') || [];
   const inactiveKeys = keysData?.keys?.filter((k: any) => ['expired', 'deactivated'].includes(k.status)) || [];
+
+  // Determine current health system tier
+  const currentTier = isSystemAdmin ? 3 : (userHealthSystemData?.subscriptionTier || 1);
+  const isTier3 = currentTier === 3;
+
+  // Show upgrade message for non-Tier 3 health systems
+  if (!isSystemAdmin && !isTier3) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Subscription Keys - Enterprise Feature
+            </CardTitle>
+            <CardDescription>
+              Subscription keys are only available for Enterprise (Tier 3) health systems
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+              <h3 className="text-lg font-semibold mb-2">Upgrade to Enterprise</h3>
+              <p className="text-gray-700 mb-4">
+                Subscription keys allow you to invite providers and staff to join your health system. 
+                This feature is exclusive to Enterprise (Tier 3) subscriptions.
+              </p>
+              <div className="space-y-2 mb-6">
+                <p className="font-medium">Enterprise benefits include:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                  <li>Unlimited subscription keys for providers and staff</li>
+                  <li>Multi-location support</li>
+                  <li>Advanced reporting and analytics</li>
+                  <li>Priority support</li>
+                  <li>Custom integrations</li>
+                </ul>
+              </div>
+              <Button 
+                onClick={() => window.location.href = '/admin/health-system-upgrade'}
+                className="w-full sm:w-auto"
+              >
+                Upgrade to Enterprise
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

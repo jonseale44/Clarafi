@@ -4903,6 +4903,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   // Subscription Key Routes
   app.use("/api/subscription-keys", subscriptionKeyRoutes);
 
+  // Health System Upgrade Routes
+  const { healthSystemUpgradeRoutes } = await import('./health-system-upgrade-routes');
+  app.use('/api/health-system-upgrade', healthSystemUpgradeRoutes);
+
   // Stripe tier upgrade endpoint
   app.post("/api/stripe/upgrade-to-tier3", async (req, res) => {
     try {

@@ -210,12 +210,26 @@ export class RegistrationService {
         }
       }
 
-      // Validate role - prevent admin creation through regular registration
-      const allowedRoles = ['provider', 'nurse', 'ma', 'front_desk', 'billing', 'lab_tech', 'referral_coordinator', 'practice_manager', 'read_only'];
+      // Validate role based on health system tier
+      let allowedRoles = ['provider', 'nurse', 'ma', 'front_desk', 'billing', 'lab_tech', 'referral_coordinator', 'practice_manager', 'read_only'];
+      
+      // Check if this health system is Tier 3 (enterprise)
+      const [healthSystem] = await tx
+        .select({ subscriptionTier: healthSystems.subscriptionTier })
+        .from(healthSystems)
+        .where(eq(healthSystems.id, healthSystemId));
+      
+      const isTier3 = healthSystem?.subscriptionTier === 3;
+      
+      // Only allow admin role for Tier 3 health systems
+      if (isTier3) {
+        allowedRoles.push('admin');
+      }
+      
       const userRole = allowedRoles.includes(data.role) ? data.role : 'provider';
       
-      if (data.role === 'admin') {
-        console.warn(`⚠️  [RegistrationService] Attempted to register admin role for ${data.username} - defaulting to provider`);
+      if (data.role === 'admin' && !isTier3) {
+        console.warn(`⚠️  [RegistrationService] Attempted to register admin role for ${data.username} in non-Tier 3 health system - defaulting to provider`);
       }
 
       // Create the user with the determined health system

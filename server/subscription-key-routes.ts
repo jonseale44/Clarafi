@@ -57,8 +57,21 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
       requestedTier: tier
     });
     
-    if (!healthSystem || healthSystem.subscriptionTier !== tier) {
-      console.error(`❌ [SubscriptionKeys] Tier mismatch - Health system tier: ${healthSystem?.subscriptionTier}, Requested tier: ${tier}`);
+    if (!healthSystem) {
+      console.error(`❌ [SubscriptionKeys] Health system not found`);
+      return res.status(404).json({ error: 'Health system not found' });
+    }
+    
+    // Only allow key generation for Tier 3 health systems
+    if (healthSystem.subscriptionTier !== 3) {
+      console.error(`❌ [SubscriptionKeys] Non-Tier 3 health system attempted key generation - Health system tier: ${healthSystem.subscriptionTier}`);
+      return res.status(403).json({ 
+        error: `Subscription keys are only available for Enterprise (Tier 3) health systems. ${healthSystem.name} is currently on Tier ${healthSystem.subscriptionTier}.` 
+      });
+    }
+    
+    if (healthSystem.subscriptionTier !== tier) {
+      console.error(`❌ [SubscriptionKeys] Tier mismatch - Health system tier: ${healthSystem.subscriptionTier}, Requested tier: ${tier}`);
       return res.status(400).json({ error: `Tier mismatch: ${healthSystem?.name} is tier ${healthSystem?.subscriptionTier}, but you requested tier ${tier} keys` });
     }
 

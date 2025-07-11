@@ -661,7 +661,10 @@ export default function AuthPage() {
                           <SelectItem value="provider">Provider</SelectItem>
                           <SelectItem value="nurse">Nurse</SelectItem>
                           <SelectItem value="ma">Medical Assistant (MA)</SelectItem>
-                          <SelectItem value="admin">Administrator</SelectItem>
+                          {/* Only show admin role for enterprise tier (when joining existing system with subscription key) */}
+                          {registrationType === 'join_existing' && selectedHealthSystemId && (
+                            <SelectItem value="admin">Administrator</SelectItem>
+                          )}
                           <SelectItem value="staff">Staff</SelectItem>
                           <SelectItem value="front_desk">Front Desk</SelectItem>
                           <SelectItem value="billing">Billing</SelectItem>
