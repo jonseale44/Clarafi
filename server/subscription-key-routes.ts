@@ -132,12 +132,16 @@ router.get('/list', ensureHealthSystemAdmin, async (req, res) => {
     
     // Get user's health system
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user || !user.healthSystemId) {
+    
+    // System admins (username: 'admin') can see all keys from all health systems
+    const isSystemAdmin = user?.username === 'admin';
+    
+    if (!isSystemAdmin && (!user || !user.healthSystemId)) {
       return res.status(400).json({ error: 'No health system associated with user' });
     }
 
-    // Get all keys for the health system
-    const keys = await db.select({
+    // Get all keys - system admins see all, others see only their health system
+    let keysQuery = db.select({
       id: subscriptionKeys.id,
       key: subscriptionKeys.key,
       keyType: subscriptionKeys.keyType,
@@ -148,14 +152,37 @@ router.get('/list', ensureHealthSystemAdmin, async (req, res) => {
       usedBy: subscriptionKeys.usedBy,
       userName: users.firstName,
       userLastName: users.lastName,
-      userEmail: users.email
+      userEmail: users.email,
+      healthSystemId: subscriptionKeys.healthSystemId,
+      subscriptionTier: subscriptionKeys.subscriptionTier
     })
     .from(subscriptionKeys)
-    .leftJoin(users, eq(subscriptionKeys.usedBy, users.id))
-    .where(eq(subscriptionKeys.healthSystemId, user.healthSystemId));
+    .leftJoin(users, eq(subscriptionKeys.usedBy, users.id));
+    
+    // Apply filter for non-system admins
+    let keys;
+    if (!isSystemAdmin) {
+      keys = await keysQuery.where(eq(subscriptionKeys.healthSystemId, user.healthSystemId));
+    } else {
+      keys = await keysQuery;
+    }
 
-    // Get counts
-    const counts = await SubscriptionKeyService.getActiveKeyCount(user.healthSystemId);
+    // Get counts - for system admins, show total across all systems
+    let counts;
+    if (isSystemAdmin) {
+      // Get total counts across all health systems
+      const allKeys = await db.select().from(subscriptionKeys);
+      const activeKeys = allKeys.filter(k => k.status === 'active');
+      counts = {
+        total: allKeys.length,
+        available: activeKeys.length,
+        used: allKeys.filter(k => k.status === 'used').length,
+        providers: activeKeys.filter(k => k.keyType === 'provider').length,
+        staff: activeKeys.filter(k => k.keyType === 'staff').length
+      };
+    } else {
+      counts = await SubscriptionKeyService.getActiveKeyCount(user.healthSystemId);
+    }
 
     res.json({ keys, counts });
   } catch (error) {

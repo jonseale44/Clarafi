@@ -38,11 +38,6 @@ export function AdminSubscriptionKeys() {
     enabled: isSystemAdmin,
   });
 
-  console.log('User data:', userData);
-  console.log('Health systems data:', healthSystemsData);
-  console.log('Is system admin:', isSystemAdmin);
-  console.log('Current form state:', generateForm);
-
   const generateKeysMutation = useMutation({
     mutationFn: async (data: typeof generateForm) => {
       return await apiRequest('POST', '/api/subscription-keys/generate', data);
