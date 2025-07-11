@@ -542,7 +542,30 @@ export function registerAdminUserRoutes(app: Express) {
       // Log more details about the error
       if (error instanceof Error) {
         console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
+        console.error("Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        
+        // Check for database constraint errors
+        if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+          if (error.message.includes('username')) {
+            return res.status(400).json({ 
+              message: "A user with this username already exists" 
+            });
+          }
+          if (error.message.includes('email')) {
+            return res.status(400).json({ 
+              message: "A user with this email already exists" 
+            });
+          }
+          return res.status(400).json({ 
+            message: "A user with this username or email already exists" 
+          });
+        }
+        
+        // Return actual error message for debugging
+        return res.status(500).json({ 
+          message: "Failed to create user",
+          error: error.message 
+        });
       }
       res.status(500).json({ message: "Failed to create user" });
     }
