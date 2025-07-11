@@ -301,6 +301,19 @@ export default function Dashboard() {
                 </>
               )}
               
+              {/* Test Migration for providers */}
+              {user.role === 'provider' && (
+                <Link href="/test-migration">
+                  <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    false
+                      ? "bg-primary text-white" 
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}>
+                    Test Migration
+                  </button>
+                </Link>
+              )}
+              
 
             </nav>
           </div>
