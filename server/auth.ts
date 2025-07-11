@@ -420,12 +420,25 @@ export function setupAuth(app: Express) {
             message: "Username already exists",
             field: "username"
           });
+        } else if (error.constraint === 'health_systems_pkey') {
+          return res.status(500).json({ 
+            message: "There was an issue creating your practice. Please try again or contact support if the problem persists.",
+            field: null
+          });
         }
+      }
+      
+      // Handle registration service errors
+      if (error.message?.includes('required')) {
+        return res.status(400).json({ 
+          message: error.message,
+          field: null
+        });
       }
       
       // Generic error for other issues
       return res.status(500).json({ 
-        message: "Registration failed. Please try again.",
+        message: "Registration failed. Please try again or contact support if the problem persists.",
         field: null
       });
     }
