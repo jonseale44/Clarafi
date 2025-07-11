@@ -58,6 +58,43 @@ export function registerAdminUserRoutes(app: Express) {
     }
   });
 
+  // Get specific health system by ID
+  app.get("/api/health-systems/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const healthSystemId = parseInt(req.params.id);
+    
+    // Verify user has access to this health system
+    if (req.user.role !== 'admin' && req.user.healthSystemId !== healthSystemId) {
+      return res.status(403).json({ message: "Access denied to this health system" });
+    }
+    
+    try {
+      const healthSystem = await db
+        .select({
+          id: healthSystems.id,
+          name: healthSystems.name,
+          systemType: healthSystems.systemType,
+          subscriptionTier: healthSystems.subscriptionTier,
+          subscriptionStatus: healthSystems.subscriptionStatus,
+        })
+        .from(healthSystems)
+        .where(eq(healthSystems.id, healthSystemId))
+        .limit(1);
+
+      if (healthSystem.length === 0) {
+        return res.status(404).json({ message: "Health system not found" });
+      }
+
+      res.json(healthSystem[0]);
+    } catch (error) {
+      console.error("Error fetching health system:", error);
+      res.status(500).json({ message: "Failed to fetch health system" });
+    }
+  });
+
   // Enhanced public endpoint that includes both health systems and their locations
   // Supports search and location-based sorting
   app.get("/api/health-systems/public-with-locations", async (req, res) => {

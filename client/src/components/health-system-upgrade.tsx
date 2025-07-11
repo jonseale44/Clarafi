@@ -98,8 +98,20 @@ export function HealthSystemUpgrade() {
     },
   });
 
-  if (!userData || !healthSystemData) {
-    return null;
+  if (!userData) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading user data...</div>
+      </div>
+    );
+  }
+
+  if (!healthSystemData) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading health system data...</div>
+      </div>
+    );
   }
 
   return (

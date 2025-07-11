@@ -369,6 +369,24 @@ export class DatabaseStorage implements IStorage {
     return rememberedLocation;
   }
 
+  // Health System management
+  async getHealthSystem(id: number): Promise<any> {
+    const [healthSystem] = await db
+      .select({
+        id: healthSystems.id,
+        name: healthSystems.name,
+        systemType: healthSystems.systemType,
+        subscriptionTier: healthSystems.subscriptionTier,
+        subscriptionStatus: healthSystems.subscriptionStatus,
+        subscriptionStartDate: healthSystems.subscriptionStartDate,
+        subscriptionEndDate: healthSystems.subscriptionEndDate,
+      })
+      .from(healthSystems)
+      .where(eq(healthSystems.id, id));
+    
+    return healthSystem;
+  }
+
   // User preferences management removed - now handled via getUserNotePreferences in auth.ts
 
   // Patient management - with tenant isolation
