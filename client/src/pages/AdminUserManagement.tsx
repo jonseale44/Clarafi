@@ -79,6 +79,9 @@ export function AdminUserManagement() {
     specialties: [] as string[],
     licenseNumber: '',
   });
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [checkingTimer, setCheckingTimer] = useState<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -108,6 +111,82 @@ export function AdminUserManagement() {
     ? locations
     : [];
 
+  // Check username availability
+  const checkUsernameAvailability = async (username: string) => {
+    if (!username || username.length < 3) {
+      setUsernameStatus('idle');
+      return;
+    }
+    
+    setUsernameStatus('checking');
+    try {
+      const response = await fetch('/api/check-username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+        credentials: 'include',
+      });
+      const data = await response.json();
+      setUsernameStatus(data.available ? 'available' : 'taken');
+    } catch (error) {
+      setUsernameStatus('idle');
+    }
+  };
+
+  // Check email availability
+  const checkEmailAvailability = async (email: string) => {
+    if (!email || !email.includes('@')) {
+      setEmailStatus('idle');
+      return;
+    }
+    
+    setEmailStatus('checking');
+    try {
+      const response = await fetch('/api/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+        credentials: 'include',
+      });
+      const data = await response.json();
+      setEmailStatus(data.available ? 'available' : 'taken');
+    } catch (error) {
+      setEmailStatus('idle');
+    }
+  };
+
+  // Handle username change with debounce
+  const handleUsernameChange = (value: string) => {
+    setCreateForm({ ...createForm, username: value });
+    setUsernameStatus('idle');
+    
+    if (checkingTimer) {
+      clearTimeout(checkingTimer);
+    }
+    
+    const timer = setTimeout(() => {
+      checkUsernameAvailability(value);
+    }, 500);
+    
+    setCheckingTimer(timer);
+  };
+
+  // Handle email change with debounce
+  const handleEmailChange = (value: string) => {
+    setCreateForm({ ...createForm, email: value });
+    setEmailStatus('idle');
+    
+    if (checkingTimer) {
+      clearTimeout(checkingTimer);
+    }
+    
+    const timer = setTimeout(() => {
+      checkEmailAvailability(value);
+    }, 500);
+    
+    setCheckingTimer(timer);
+  };
+
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (data: typeof createForm) => {
@@ -133,9 +212,10 @@ export function AdminUserManagement() {
       toast({ title: "User created successfully" });
     },
     onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create user";
       toast({ 
         title: "Failed to create user", 
-        description: error.message || "Please check the form data",
+        description: errorMessage,
         variant: "destructive" 
       });
     },
@@ -630,7 +710,27 @@ export function AdminUserManagement() {
       </Dialog>
 
       {/* Create user dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      <Dialog open={showCreateDialog} onOpenChange={(open) => {
+        setShowCreateDialog(open);
+        if (!open) {
+          // Reset form and validation states when dialog closes
+          setCreateForm({
+            username: '',
+            email: '',
+            password: '',
+            firstName: '',
+            lastName: '',
+            role: 'provider',
+            healthSystemId: undefined,
+            npi: '',
+            credentials: '',
+            specialties: [],
+            licenseNumber: '',
+          });
+          setUsernameStatus('idle');
+          setEmailStatus('idle');
+        }
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
@@ -642,22 +742,62 @@ export function AdminUserManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={createForm.username}
-                  onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
-                  placeholder="jdoe"
-                />
+                <div className="relative">
+                  <Input
+                    id="username"
+                    value={createForm.username}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
+                    placeholder="jdoe"
+                    className={
+                      usernameStatus === 'taken' ? 'border-red-500' : 
+                      usernameStatus === 'available' ? 'border-green-500' : ''
+                    }
+                  />
+                  {usernameStatus === 'checking' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                    </div>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500">✓</div>
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500">✗</div>
+                  )}
+                </div>
+                {usernameStatus === 'taken' && (
+                  <p className="text-xs text-red-500 mt-1">Username is already taken</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={createForm.email}
-                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  placeholder="john.doe@example.com"
-                />
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    value={createForm.email}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    placeholder="john.doe@example.com"
+                    className={
+                      emailStatus === 'taken' ? 'border-red-500' : 
+                      emailStatus === 'available' ? 'border-green-500' : ''
+                    }
+                  />
+                  {emailStatus === 'checking' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                    </div>
+                  )}
+                  {emailStatus === 'available' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500">✓</div>
+                  )}
+                  {emailStatus === 'taken' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500">✗</div>
+                  )}
+                </div>
+                {emailStatus === 'taken' && (
+                  <p className="text-xs text-red-500 mt-1">Email is already registered</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -766,7 +906,9 @@ export function AdminUserManagement() {
               onClick={() => createUserMutation.mutate(createForm)}
               disabled={!createForm.username || !createForm.email || !createForm.password || 
                        !createForm.firstName || !createForm.lastName || !createForm.role || 
-                       !createForm.healthSystemId}
+                       !createForm.healthSystemId || usernameStatus === 'taken' || 
+                       emailStatus === 'taken' || usernameStatus === 'checking' || 
+                       emailStatus === 'checking'}
             >
               Create User
             </Button>

@@ -451,8 +451,15 @@ export function registerAdminUserRoutes(app: Express) {
   // Create user
   app.post("/api/admin/users", requireAdmin, async (req, res) => {
     try {
-      const data = insertUserSchema.parse(req.body);
-      console.log(`➕ [AdminUserRoutes] Creating new user: ${data.username}`);
+      // Extract healthSystemId separately since it's not in insertUserSchema
+      const { healthSystemId, ...userData } = req.body;
+      const data = insertUserSchema.parse(userData);
+      console.log(`➕ [AdminUserRoutes] Creating new user: ${data.username} for health system ${healthSystemId}`);
+
+      // Validate healthSystemId
+      if (!healthSystemId) {
+        return res.status(400).json({ message: "Health system ID is required" });
+      }
 
       // Check if username already exists
       const existingUser = await db
@@ -492,8 +499,9 @@ export function registerAdminUserRoutes(app: Express) {
         .values({
           ...data,
           password: hashedPassword,
+          healthSystemId: healthSystemId,
           emailVerified: true, // Admin-created users are pre-verified
-          isActive: true,
+          active: true, // Use 'active' not 'isActive'
         })
         .returning();
 
