@@ -34,6 +34,30 @@ export function registerAdminUserRoutes(app: Express) {
     }
   });
 
+  // Get all health systems for admin - includes subscription tier info
+  app.get("/api/health-systems", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    try {
+      const allHealthSystems = await db
+        .select({
+          id: healthSystems.id,
+          name: healthSystems.name,
+          systemType: healthSystems.systemType,
+          subscriptionTier: healthSystems.subscriptionTier,
+          subscriptionStatus: healthSystems.subscriptionStatus,
+        })
+        .from(healthSystems)
+        .orderBy(healthSystems.name);
+
+      res.json(allHealthSystems);
+    } catch (error) {
+      console.error("Error fetching health systems:", error);
+      res.status(500).json({ message: "Failed to fetch health systems" });
+    }
+  });
+
   // Enhanced public endpoint that includes both health systems and their locations
   // Supports search and location-based sorting
   app.get("/api/health-systems/public-with-locations", async (req, res) => {

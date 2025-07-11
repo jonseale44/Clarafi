@@ -28,15 +28,20 @@ export function AdminSubscriptionKeys() {
   });
 
   const { data: userData } = useQuery({
-    queryKey: ['/api/users/me'],
-  });
-
-  const { data: healthSystemsData } = useQuery({
-    queryKey: ['/api/health-systems'],
-    enabled: userData?.username === 'admin',
+    queryKey: ['/api/user'],
   });
 
   const isSystemAdmin = userData?.username === 'admin';
+
+  const { data: healthSystemsData } = useQuery({
+    queryKey: ['/api/health-systems'],
+    enabled: isSystemAdmin,
+  });
+
+  console.log('User data:', userData);
+  console.log('Health systems data:', healthSystemsData);
+  console.log('Is system admin:', isSystemAdmin);
+  console.log('Current form state:', generateForm);
 
   const generateKeysMutation = useMutation({
     mutationFn: async (data: typeof generateForm) => {
