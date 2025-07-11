@@ -166,7 +166,7 @@ router.post('/quick-import/:preset', async (req, res) => {
 
 // Helper function to import real Texas clinics from production data
 async function importSampleTexasClinics() {
-  console.log('🏥 Starting production Texas clinic import...');
+  console.log('🏥 Starting production Texas clinic import from REAL NPPES data...');
   
   // Import the download function
   const { downloadNPPESData } = await import('./download-nppes-data');
@@ -184,9 +184,6 @@ async function importSampleTexasClinics() {
     });
     
     console.log('✅ Production Texas import completed:', stats);
-    
-    // Also create comprehensive Texas clinic data from known major systems
-    await createTexasMajorHealthSystems();
     
     return stats;
   } catch (error) {

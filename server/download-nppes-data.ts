@@ -4,6 +4,7 @@ import path from 'path';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { createGunzip } from 'zlib';
+import AdmZip from 'adm-zip';
 
 // NPPES data is available from CMS
 // This is the official government dataset of all healthcare providers in the US
@@ -20,7 +21,6 @@ export async function downloadNPPESData(): Promise<string> {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
-  const zipPath = path.join(dataDir, 'nppes_data.zip');
   const csvPath = path.join(dataDir, 'npidata_pfile.csv');
 
   // Check if we already have the data
@@ -31,20 +31,63 @@ export async function downloadNPPESData(): Promise<string> {
     return csvPath;
   }
 
-  // For production, we'll use a subset approach to avoid downloading the full 7GB file
-  // Instead, we'll create a targeted download script
-  console.log('🔍 Creating production data import strategy...');
+  // Download the actual NPPES weekly update file (smaller than full dataset)
+  console.log('🌐 Downloading real NPPES data from CMS.gov...');
+  console.log('📊 This file contains real healthcare provider data with actual NPI numbers');
   
-  // Create a sample of real NPPES data structure
-  const sampleData = `NPI,Entity Type Code,Replacement NPI,Employer Identification Number (EIN),Provider Organization Name (Legal Business Name),Provider Last Name (Legal Name),Provider First Name,Provider Middle Name,Provider Name Prefix Text,Provider Name Suffix Text,Provider Credential Text,Provider Other Organization Name,Provider Other Organization Name Type Code,Provider Other Last Name,Provider Other First Name,Provider Other Middle Name,Provider Other Name Prefix Text,Provider Other Name Suffix Text,Provider Other Credential Text,Provider Other Last Name Type Code,Provider First Line Business Mailing Address,Provider Second Line Business Mailing Address,Provider Business Mailing Address City Name,Provider Business Mailing Address State Name,Provider Business Mailing Address Postal Code,Provider Business Mailing Address Country Code (If outside U.S.),Provider Business Mailing Address Telephone Number,Provider Business Mailing Address Fax Number,Provider First Line Business Practice Location Address,Provider Second Line Business Practice Location Address,Provider Business Practice Location Address City Name,Provider Business Practice Location Address State Name,Provider Business Practice Location Address Postal Code,Provider Business Practice Location Address Country Code (If outside U.S.),Provider Business Practice Location Address Telephone Number,Provider Business Practice Location Address Fax Number,Provider Enumeration Date,Last Update Date,NPI Deactivation Reason Code,NPI Deactivation Date,NPI Reactivation Date,Provider Gender Code,Authorized Official Last Name,Authorized Official First Name,Authorized Official Middle Name,Authorized Official Title or Position,Authorized Official Telephone Number,Healthcare Provider Taxonomy Code_1,Provider License Number_1,Provider License Number State Code_1,Healthcare Provider Primary Taxonomy Switch_1
-1234567890,2,,123456789,Austin Family Medicine Center,,,,,,,,,,,,,,,,,123 Main Street,Suite 100,Austin,TX,78701,US,5125550100,5125550101,123 Main Street,Suite 100,Austin,TX,78701,US,5125550100,5125550101,01/01/2010,07/01/2025,,,,,Smith,John,D,Medical Director,5125550100,261QP2300X,TX12345,TX,Y
-1234567891,2,,234567890,Cedar Park Primary Care Associates,,,,,,,,,,,,,,,,,456 Oak Avenue,,Cedar Park,TX,78613,US,5125550200,5125550201,456 Oak Avenue,,Cedar Park,TX,78613,US,5125550200,5125550201,03/15/2011,07/01/2025,,,,,Johnson,Mary,L,CEO,5125550200,207Q00000X,TX23456,TX,Y
-1234567892,2,,345678901,Round Rock Community Health Center,,,,,,,,,,,,,,,,,789 Health Plaza,Building A,Round Rock,TX,78664,US,5125550300,5125550301,789 Health Plaza,Building A,Round Rock,TX,78664,US,5125550300,5125550301,06/20/2012,07/01/2025,,,,,Williams,Robert,E,Administrator,5125550300,261QF0400X,TX34567,TX,Y`;
-
-  fs.writeFileSync(csvPath, sampleData);
-  console.log('✅ Created production data structure for import');
+  // Use the weekly update file which is smaller but contains real data
+  const weeklyDataUrl = 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_Weekly_Monday_20250113.zip';
+  const zipPath = path.join(dataDir, 'nppes_weekly.zip');
+  
+  // Download the file
+  await downloadFile(weeklyDataUrl, zipPath);
+  
+  // Extract the CSV from the zip
+  const zip = new AdmZip(zipPath);
+  zip.extractAllTo(dataDir, true);
+  
+  // The extracted file should be npidata_pfile_20250113-20250119.csv or similar
+  const files = fs.readdirSync(dataDir);
+  const npiFile = files.find(f => f.startsWith('npidata_pfile') && f.endsWith('.csv'));
+  
+  if (npiFile) {
+    fs.renameSync(path.join(dataDir, npiFile), csvPath);
+    console.log('✅ Real NPPES data downloaded and extracted');
+  } else {
+    throw new Error('Could not find NPPES CSV file after extraction');
+  }
+  
+  // Clean up zip file
+  fs.unlinkSync(zipPath);
   
   return csvPath;
+}
+
+async function downloadFile(url: string, dest: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    https.get(url, (response) => {
+      if (response.statusCode === 302 || response.statusCode === 301) {
+        // Follow redirect
+        https.get(response.headers.location!, (redirectResponse) => {
+          redirectResponse.pipe(file);
+          file.on('finish', () => {
+            file.close();
+            resolve();
+          });
+        });
+      } else {
+        response.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          resolve();
+        });
+      }
+    }).on('error', (err) => {
+      fs.unlink(dest, () => {}); 
+      reject(err);
+    });
+  });
 }
 
 // Function to download and process real NPPES data in chunks

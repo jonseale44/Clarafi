@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./init-db";
 import { seedLabData } from "./lab-sample-data";
 import "./lab-order-background-processor.js"; // Auto-start background processor
+import { initializeSystemData } from "./system-initialization";
 
 const app = express();
 app.use(express.json());
@@ -70,5 +71,8 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     log("Database ready - you can register a new account or use admin/admin123 if already created");
+    
+    // Initialize system data (import real clinics from NPPES)
+    await initializeSystemData();
   });
 })();

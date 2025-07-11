@@ -9,22 +9,22 @@ import { createReadStream } from 'fs';
 
 interface NPPESProvider {
   NPI: string;
-  Entity_Type_Code: string; // '1' = Individual, '2' = Organization
-  Provider_Organization_Name_Legal_Business_Name: string;
-  Provider_First_Name: string;
-  Provider_Last_Name_Legal_Name: string;
-  Provider_First_Line_Business_Practice_Location_Address: string;
-  Provider_Second_Line_Business_Practice_Location_Address: string;
-  Provider_Business_Practice_Location_Address_City_Name: string;
-  Provider_Business_Practice_Location_Address_State_Name: string;
-  Provider_Business_Practice_Location_Address_Postal_Code: string;
-  Provider_Business_Practice_Location_Address_Telephone_Number: string;
-  Provider_Business_Practice_Location_Address_Fax_Number: string;
-  Healthcare_Provider_Taxonomy_Code_1: string;
-  Healthcare_Provider_Taxonomy_Group_1: string;
-  Is_Organization_Subpart: string;
-  Parent_Organization_LBN: string;
-  Parent_Organization_TIN: string;
+  'Entity Type Code': string; // '1' = Individual, '2' = Organization
+  'Provider Organization Name (Legal Business Name)': string;
+  'Provider First Name': string;
+  'Provider Last Name (Legal Name)': string;
+  'Provider First Line Business Practice Location Address': string;
+  'Provider Second Line Business Practice Location Address': string;
+  'Provider Business Practice Location Address City Name': string;
+  'Provider Business Practice Location Address State Name': string;
+  'Provider Business Practice Location Address Postal Code': string;
+  'Provider Business Practice Location Address Telephone Number': string;
+  'Provider Business Practice Location Address Fax Number': string;
+  'Healthcare Provider Taxonomy Code_1': string;
+  'Healthcare Provider Taxonomy Group_1'?: string;
+  'Is Organization Subpart': string;
+  'Parent Organization LBN': string;
+  'Parent Organization TIN': string;
 }
 
 // Primary care taxonomy codes from NUCC taxonomy
@@ -75,7 +75,7 @@ export class ClinicDataImportService {
 
           try {
             // Filter by state if specified
-            if (options.stateFilter && !options.stateFilter.includes(row.Provider_Business_Practice_Location_Address_State_Name)) {
+            if (options.stateFilter && !options.stateFilter.includes(row['Provider Business Practice Location Address State Name'])) {
               stats.skipped++;
               return;
             }
@@ -93,7 +93,7 @@ export class ClinicDataImportService {
             }
 
             // Process based on entity type
-            if (row.Entity_Type_Code === '2') {
+            if (row['Entity Type Code'] === '2') {
               // Organization
               await this.importOrganization(row);
               stats.clinicsImported++;
@@ -121,7 +121,7 @@ export class ClinicDataImportService {
   }
 
   private isPrimaryCareProvider(row: NPPESProvider): boolean {
-    return PRIMARY_CARE_TAXONOMIES.includes(row.Healthcare_Provider_Taxonomy_Code_1);
+    return PRIMARY_CARE_TAXONOMIES.includes(row['Healthcare Provider Taxonomy Code_1']);
   }
 
   private async importOrganization(row: NPPESProvider) {
@@ -137,15 +137,15 @@ export class ClinicDataImportService {
     const locationData: InsertLocation = {
       healthSystemId: healthSystemId,
       organizationId: null, // We're flattening the hierarchy for now
-      name: row.Provider_Organization_Name_Legal_Business_Name,
-      shortName: this.generateShortName(row.Provider_Organization_Name_Legal_Business_Name),
+      name: row['Provider Organization Name (Legal Business Name)'],
+      shortName: this.generateShortName(row['Provider Organization Name (Legal Business Name)']),
       locationType: this.determineLocationType(row),
-      address: row.Provider_First_Line_Business_Practice_Location_Address,
-      city: row.Provider_Business_Practice_Location_Address_City_Name,
-      state: row.Provider_Business_Practice_Location_Address_State_Name,
-      zipCode: row.Provider_Business_Practice_Location_Address_Postal_Code.substring(0, 5),
-      phone: this.formatPhone(row.Provider_Business_Practice_Location_Address_Telephone_Number),
-      fax: this.formatPhone(row.Provider_Business_Practice_Location_Address_Fax_Number),
+      address: row['Provider First Line Business Practice Location Address'],
+      city: row['Provider Business Practice Location Address City Name'],
+      state: row['Provider Business Practice Location Address State Name'],
+      zipCode: row['Provider Business Practice Location Address Postal Code'].substring(0, 5),
+      phone: this.formatPhone(row['Provider Business Practice Location Address Telephone Number']),
+      fax: this.formatPhone(row['Provider Business Practice Location Address Fax Number']),
       npi: row.NPI,
       facilityCode: row.NPI, // Using NPI as facility code
       services: this.extractServices(row),
@@ -167,7 +167,7 @@ export class ClinicDataImportService {
   }
 
   private extractHealthSystemInfo(row: NPPESProvider): { name: string; shortName: string } | null {
-    const orgName = row.Provider_Organization_Name_Legal_Business_Name.toUpperCase();
+    const orgName = row['Provider Organization Name (Legal Business Name)'].toUpperCase();
     
     // Known health system patterns
     const healthSystemPatterns = [
@@ -190,10 +190,10 @@ export class ClinicDataImportService {
     }
 
     // Check for parent organization
-    if (row.Parent_Organization_LBN) {
+    if (row['Parent Organization LBN']) {
       return {
-        name: row.Parent_Organization_LBN,
-        shortName: this.generateShortName(row.Parent_Organization_LBN)
+        name: row['Parent Organization LBN'],
+        shortName: this.generateShortName(row['Parent Organization LBN'])
       };
     }
 
