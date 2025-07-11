@@ -454,8 +454,13 @@ export function registerAdminUserRoutes(app: Express) {
   app.post("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       // Extract healthSystemId separately since it's not in insertUserSchema
-      const { healthSystemId, ...userData } = req.body;
-      const data = insertUserSchema.parse(userData);
+      const { healthSystemId, specialties = [], ...userData } = req.body;
+      // Ensure specialties is an array (might come as empty array from frontend)
+      const dataToValidate = {
+        ...userData,
+        specialties: Array.isArray(specialties) ? specialties : []
+      };
+      const data = insertUserSchema.parse(dataToValidate);
       console.log(`➕ [AdminUserRoutes] Creating new user: ${data.username} for health system ${healthSystemId}`);
 
       // Validate healthSystemId
@@ -496,15 +501,32 @@ export function registerAdminUserRoutes(app: Express) {
       const hashedPassword = await hashPassword(data.password);
 
       // Create user
+      console.log(`🔍 [AdminUserRoutes] Inserting user with data:`, {
+        ...data,
+        password: '[REDACTED]',
+        healthSystemId: healthSystemId,
+        emailVerified: true,
+        active: true,
+        specialties: data.specialties || []
+      });
+      
+      // Clean up empty strings for optional fields
+      const userDataToInsert = {
+        ...data,
+        password: hashedPassword,
+        healthSystemId: healthSystemId,
+        emailVerified: true, // Admin-created users are pre-verified
+        active: true, // Use 'active' not 'isActive'
+        specialties: data.specialties || [], // Ensure specialties is always an array
+        // Convert empty strings to null for optional fields
+        npi: data.npi || null,
+        credentials: data.credentials || null,
+        licenseNumber: data.licenseNumber || null
+      };
+      
       const [newUser] = await db
         .insert(users)
-        .values({
-          ...data,
-          password: hashedPassword,
-          healthSystemId: healthSystemId,
-          emailVerified: true, // Admin-created users are pre-verified
-          active: true, // Use 'active' not 'isActive'
-        })
+        .values(userDataToInsert)
         .returning();
 
       console.log(`✅ [AdminUserRoutes] Created user ${newUser.id} (${newUser.username}) with role ${newUser.role}`);
