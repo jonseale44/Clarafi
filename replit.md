@@ -167,6 +167,10 @@ Preferred communication style: Simple, everyday language.
 - **SENDER VERIFICATION**: Configured verified sender email (noreply@clarafi.ai) in SendGrid for production use
 - **COMPREHENSIVE TESTING**: Verified email sending works correctly with 202 status responses from SendGrid API
 - **PRODUCTION READY**: New user registration now sends actual verification emails that users can click to verify their accounts
+- **URL COMPATIBILITY FIX**: Changed verification URLs from query parameters (?token=) to path parameters (/token) for better email client compatibility
+- **TRANSACTION INTEGRITY**: Fixed critical bug where verification tokens weren't saved - now created within same database transaction as user
+- **STRIPE INTEGRATION FIX**: Fixed createCheckoutSession method overloading for "create my own individual practice" workflow
+- **SUBSCRIPTION CONFIG FIX**: Fixed tier 3 pricing handling where 'custom' string values were causing undefined errors
 
 ### Mobile Web App Implementation COMPLETED (January 15, 2025)
 - **SOLUTION IMPLEMENTED**: Created a simple React web version of the mobile EMR app to avoid Expo dependency issues

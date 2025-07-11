@@ -87,7 +87,12 @@ export class SubscriptionConfig {
   
   // Get pricing for a specific tier
   getPricing(tier: SubscriptionTier) {
-    const basePricing = TIER_PRICING[`tier${tier}`];
+    const tierKey = `tier${tier}` as keyof typeof TIER_PRICING;
+    const basePricing = TIER_PRICING[tierKey];
+    
+    if (!basePricing) {
+      throw new Error(`Invalid tier: ${tier}`);
+    }
     
     if (tier === 1) {
       return {
@@ -105,8 +110,11 @@ export class SubscriptionConfig {
       };
     }
     
+    // Tier 3 has 'custom' pricing, so we need to handle it differently
     return {
       ...basePricing,
+      monthly: typeof basePricing.monthly === 'string' ? 0 : basePricing.monthly,
+      annual: typeof basePricing.annual === 'string' ? 0 : basePricing.annual,
       trialDays: this.dynamicPricing.tier3TrialDays ?? basePricing.trialDays,
     };
   }

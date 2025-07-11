@@ -298,16 +298,81 @@ export class StripeService {
     }
   }
 
-  // Create a checkout session for upgrading
+  // Create a checkout session for new registration
+  static async createCheckoutSession(params: {
+    email: string;
+    name: string;
+    tier: 1 | 2 | 3;
+    billingPeriod: 'monthly' | 'annual';
+    healthSystemId: number;
+    metadata?: Record<string, string>;
+  }): Promise<{ success: boolean; sessionUrl?: string; error?: string }>;
+  
+  // Create a checkout session for upgrading (overloaded)
   static async createCheckoutSession(
     customerId: string,
     tier: 1 | 2 | 3,
     billingPeriod: 'monthly' | 'annual',
     successUrl: string,
     cancelUrl: string
-  ): Promise<string | null> {
+  ): Promise<string | null>;
+  
+  // Implementation
+  static async createCheckoutSession(
+    paramsOrCustomerId: any,
+    tier?: 1 | 2 | 3,
+    billingPeriod?: 'monthly' | 'annual',
+    successUrl?: string,
+    cancelUrl?: string
+  ): Promise<any> {
     try {
-      const pricing = subscriptionConfig.getPricing(tier);
+      // Handle object parameter (new registration)
+      if (typeof paramsOrCustomerId === 'object' && paramsOrCustomerId.email) {
+        const params = paramsOrCustomerId;
+        const pricing = subscriptionConfig.getPricing(params.tier);
+        const priceAmount = params.billingPeriod === 'annual' ? 
+          (typeof pricing.annual === 'number' ? pricing.annual : 0) : 
+          (typeof pricing.monthly === 'number' ? pricing.monthly : 0);
+
+        const session = await stripe.checkout.sessions.create({
+          customer_email: params.email,
+          payment_method_types: ['card'],
+          line_items: [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Clarafi ${pricing.name}`,
+                description: pricing.description,
+              },
+              unit_amount: priceAmount * 100,
+              recurring: {
+                interval: params.billingPeriod === 'annual' ? 'year' : 'month',
+              },
+            },
+            quantity: 1,
+          }],
+          mode: 'subscription',
+          subscription_data: {
+            trial_period_days: pricing.trialDays || 30,
+            metadata: params.metadata || {},
+          },
+          metadata: {
+            ...params.metadata,
+            healthSystemId: params.healthSystemId.toString(),
+          },
+          success_url: `${process.env.REPLIT_DEV_DOMAIN || 'https://your-app.replit.app'}/auth?payment=success`,
+          cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'https://your-app.replit.app'}/auth?payment=cancelled`,
+        });
+
+        return { 
+          success: true, 
+          sessionUrl: session.url 
+        };
+      }
+      
+      // Handle individual parameters (upgrade flow)
+      const customerId = paramsOrCustomerId;
+      const pricing = subscriptionConfig.getPricing(tier!);
       const priceAmount = billingPeriod === 'annual' ? 
         (typeof pricing.annual === 'number' ? pricing.annual : 0) : 
         (typeof pricing.monthly === 'number' ? pricing.monthly : 0);
@@ -330,13 +395,21 @@ export class StripeService {
           quantity: 1,
         }],
         mode: 'subscription',
-        success_url: successUrl,
-        cancel_url: cancelUrl,
+        success_url: successUrl!,
+        cancel_url: cancelUrl!,
       });
 
       return session.url;
     } catch (error) {
       console.error('Error creating checkout session:', error);
+      
+      // Return appropriate response based on call type
+      if (typeof paramsOrCustomerId === 'object' && paramsOrCustomerId.email) {
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Failed to create checkout session' 
+        };
+      }
       return null;
     }
   }
