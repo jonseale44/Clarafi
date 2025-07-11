@@ -81,7 +81,8 @@ export class EmailVerificationService {
     // Use Replit URL if available, otherwise fallback to localhost
     const replitUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null;
     const baseUrl = process.env.APP_URL || replitUrl || 'http://localhost:5000';
-    const verificationUrl = `${baseUrl}/api/verify-email?token=${token}`;
+    // Use path parameter format to avoid issues with email clients stripping query parameters
+    const verificationUrl = `${baseUrl}/api/verify-email/${token}`;
     
     // Get sender email from environment or use a default
     const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com';

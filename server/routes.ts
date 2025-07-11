@@ -4365,9 +4365,11 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   });
 
   // Email verification routes
-  app.get("/api/verify-email", async (req, res) => {
+  // Support both query parameter and path parameter formats
+  app.get("/api/verify-email/:token?", async (req, res) => {
     try {
-      const { token } = req.query;
+      // Try to get token from path parameter first, then query parameter
+      const token = req.params.token || req.query.token;
       
       if (!token || typeof token !== 'string') {
         return res.status(400).json({ message: "Invalid verification token" });
