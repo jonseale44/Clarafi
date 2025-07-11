@@ -84,9 +84,9 @@ export function HealthSystemUpgrade() {
       });
     },
     onSuccess: (data) => {
-      if (data.checkoutUrl) {
+      if (data.checkoutUrl || data.sessionUrl) {
         // Redirect to Stripe checkout
-        window.location.href = data.checkoutUrl;
+        window.location.href = data.checkoutUrl || data.sessionUrl;
       }
     },
     onError: (error: any) => {
