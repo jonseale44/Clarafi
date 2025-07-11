@@ -4592,8 +4592,88 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Get specific health system details
+  app.get("/api/health-systems/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const healthSystemId = parseInt(req.params.id);
+      const healthSystem = await storage.getHealthSystem(healthSystemId);
+      
+      if (!healthSystem) {
+        return res.status(404).json({ error: "Health system not found" });
+      }
+
+      res.json(healthSystem);
+    } catch (error: any) {
+      console.error("Error fetching health system:", error);
+      res.status(500).json({ error: "Failed to fetch health system" });
+    }
+  });
+
   // Subscription Key Routes
   app.use("/api/subscription-keys", subscriptionKeyRoutes);
+
+  // Stripe tier upgrade endpoint
+  app.post("/api/stripe/upgrade-to-tier3", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { healthSystemId } = req.body;
+      const user = req.user as AuthenticatedUser;
+
+      // Verify user is admin of the health system
+      if (user.role !== 'admin' || user.healthSystemId !== healthSystemId) {
+        return res.status(403).json({ error: "Unauthorized to upgrade this health system" });
+      }
+
+      // Get health system details
+      const healthSystem = await storage.getHealthSystem(healthSystemId);
+      if (!healthSystem) {
+        return res.status(404).json({ error: "Health system not found" });
+      }
+
+      // Check current tier
+      if (healthSystem.subscriptionTier === 3) {
+        return res.status(400).json({ error: "Already on Enterprise tier" });
+      }
+
+      // Import StripeService
+      const { StripeService } = await import("./stripe-service.js");
+
+      // Create Stripe checkout session for tier 3
+      const checkoutResult = await StripeService.createCheckoutSession({
+        email: user.email,
+        name: healthSystem.name,
+        tier: 3,
+        billingPeriod: 'monthly', // Enterprise is typically monthly
+        healthSystemId: healthSystemId,
+        metadata: {
+          upgradeType: 'tier3',
+          previousTier: healthSystem.subscriptionTier.toString(),
+          healthSystemId: healthSystemId.toString(),
+        }
+      });
+
+      if (checkoutResult.success && checkoutResult.sessionUrl) {
+        return res.json({
+          success: true,
+          checkoutUrl: checkoutResult.sessionUrl,
+        });
+      } else {
+        return res.status(500).json({
+          error: checkoutResult.error || "Failed to create checkout session"
+        });
+      }
+    } catch (error) {
+      console.error("Error creating tier 3 upgrade session:", error);
+      res.status(500).json({ error: "Failed to initiate upgrade" });
+    }
+  });
 
   // Subscription Configuration API
   app.get("/api/subscription/config", async (req, res) => {

@@ -233,19 +233,37 @@ export class StripeService {
         console.log('💳 [Stripe] Checkout completed for session:', session.id);
         
         // Get metadata from the session
-        if (session.metadata?.userId && session.metadata?.healthSystemId) {
-          const userId = parseInt(session.metadata.userId);
+        if (session.metadata?.healthSystemId) {
           const healthSystemId = parseInt(session.metadata.healthSystemId);
           
-          // Update health system subscription status
-          await db.update(healthSystems)
-            .set({
-              subscriptionStatus: 'active',
-              subscriptionStartDate: new Date(),
-            })
-            .where(eq(healthSystems.id, healthSystemId));
-          
-          console.log(`✅ [Stripe] Activated health system ${healthSystemId} for user ${userId}`);
+          // Check if this is a tier 3 upgrade
+          if (session.metadata?.upgradeType === 'tier3') {
+            console.log(`🚀 [Stripe] Processing tier 3 upgrade for health system ${healthSystemId}`);
+            
+            // Update health system to tier 3
+            await db.update(healthSystems)
+              .set({
+                subscriptionTier: 3,
+                subscriptionStatus: 'active',
+                subscriptionStartDate: new Date(),
+              })
+              .where(eq(healthSystems.id, healthSystemId));
+            
+            console.log(`✅ [Stripe] Upgraded health system ${healthSystemId} to tier 3`);
+          } else if (session.metadata?.userId) {
+            // Regular user subscription
+            const userId = parseInt(session.metadata.userId);
+            
+            // Update health system subscription status
+            await db.update(healthSystems)
+              .set({
+                subscriptionStatus: 'active',
+                subscriptionStartDate: new Date(),
+              })
+              .where(eq(healthSystems.id, healthSystemId));
+            
+            console.log(`✅ [Stripe] Activated health system ${healthSystemId} for user ${userId}`);
+          }
         }
         break;
 

@@ -289,6 +289,15 @@ export default function Dashboard() {
                       Subscription Config
                     </button>
                   </Link>
+                  <Link href="/admin/health-system-upgrade">
+                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      false // Admin pages don't have active state in dashboard
+                        ? "bg-primary text-white" 
+                        : "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                    }`}>
+                      🚀 Test Upgrade
+                    </button>
+                  </Link>
                   <Link href="/admin/subscription-keys">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
