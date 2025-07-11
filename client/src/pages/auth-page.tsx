@@ -67,14 +67,6 @@ const registerSchema = insertUserSchema.extend({
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
-}).refine((data) => {
-  if (data.registrationType === "create_new" && data.role === "provider") {
-    return !!(data.practiceName && data.practiceAddress && data.practiceCity && data.practiceState && data.practiceZipCode && data.practicePhone);
-  }
-  return true;
-}, {
-  message: "All practice information is required for individual providers",
-  path: ["practiceName"],
 });
 
 type LoginData = z.infer<typeof loginSchema>;

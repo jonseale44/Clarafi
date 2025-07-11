@@ -44,13 +44,19 @@ export class RegistrationService {
         // Create a new health system for individual provider
         console.log(`🏥 [RegistrationService] Creating individual provider health system for ${data.firstName} ${data.lastName}`);
         
-        const practiceName = data.practiceName || `${data.firstName} ${data.lastName}, ${data.credentials || 'MD'} - Private Practice`;
+        // Generate a unique practice name if not provided
+        const timestamp = Date.now();
+        const defaultPracticeName = `${data.firstName} ${data.lastName}, ${data.credentials || 'MD'} - Private Practice`;
+        const practiceName = data.practiceName || defaultPracticeName;
+        
+        // For uniqueness, append timestamp if using default name
+        const uniquePracticeName = data.practiceName ? practiceName : `${practiceName} (${timestamp})`;
         
         // Create health system
         const newHealthSystemResult = await tx
           .insert(healthSystems)
           .values({
-            name: practiceName,
+            name: uniquePracticeName,
             shortName: `Dr. ${data.lastName}`,
             systemType: 'individual_provider',
             subscriptionTier: 1, // Individual tier
@@ -58,8 +64,8 @@ export class RegistrationService {
             subscriptionStartDate: new Date(),
             primaryContact: `${data.firstName} ${data.lastName}`,
             email: data.email,
-            phone: data.practicePhone,
-            npi: data.npi,
+            phone: data.practicePhone || null,
+            npi: data.npi || null,
           })
           .returning();
         
@@ -73,7 +79,7 @@ export class RegistrationService {
           .insert(organizations)
           .values({
             healthSystemId: newHealthSystem.id,
-            name: practiceName,
+            name: uniquePracticeName,
             shortName: `Dr. ${data.lastName}`,
             organizationType: 'clinic',
           })
@@ -83,20 +89,20 @@ export class RegistrationService {
 
         console.log(`✅ [RegistrationService] Created organization ID: ${newOrganization.id}`);
 
-        // Create primary location
+        // Create primary location (with defaults if practice info not provided)
         const newLocationResult = await tx
           .insert(locations)
           .values({
             organizationId: newOrganization.id,
             healthSystemId: newHealthSystem.id,
-            name: practiceName,
+            name: uniquePracticeName,
             shortName: `Dr. ${data.lastName}'s Office`,
             locationType: 'clinic',
-            address: data.practiceAddress || '123 Main Street',
-            city: data.practiceCity || 'City',
+            address: data.practiceAddress || 'Address Not Provided',
+            city: data.practiceCity || 'City Not Provided',
             state: data.practiceState || 'TX',
             zipCode: data.practiceZipCode || '00000',
-            phone: data.practicePhone || '000-000-0000',
+            phone: data.practicePhone || null,
             operatingHours: {
               monday: { open: '09:00', close: '17:00' },
               tuesday: { open: '09:00', close: '17:00' },
