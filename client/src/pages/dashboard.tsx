@@ -289,6 +289,15 @@ export default function Dashboard() {
                       Subscription Config
                     </button>
                   </Link>
+                  <Link href="/test-migration">
+                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      false // Admin pages don't have active state in dashboard
+                        ? "bg-primary text-white" 
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}>
+                      Test Migration
+                    </button>
+                  </Link>
                 </>
               )}
               

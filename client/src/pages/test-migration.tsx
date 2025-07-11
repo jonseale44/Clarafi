@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Users, Hospital, Building2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { MigrationWizard } from '@/components/MigrationWizard';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function TestMigration() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [testPatientsCreated, setTestPatientsCreated] = useState(false);
+  const [selectedTargetHealthSystem, setSelectedTargetHealthSystem] = useState<number | null>(null);
+  const [availableHealthSystems, setAvailableHealthSystems] = useState<any[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // Fetch available health systems (excluding the user's current one)
+    const fetchHealthSystems = async () => {
+      try {
+        const response = await apiRequest('/api/health-systems/public', 'GET');
+        // Filter out the user's current health system
+        const otherSystems = response.filter((hs: any) => hs.id !== user?.healthSystemId);
+        setAvailableHealthSystems(otherSystems);
+      } catch (error) {
+        console.error('Failed to fetch health systems:', error);
+      }
+    };
+    
+    if (user) {
+      fetchHealthSystems();
+    }
+  }, [user]);
 
   const createTestPatients = async () => {
     setIsCreating(true);
@@ -100,7 +123,7 @@ export default function TestMigration() {
     }
   };
 
-  const targetHealthSystemId = 5; // Example: Mission Hillsboro Medical Clinic
+
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -113,10 +136,21 @@ export default function TestMigration() {
               <Users className="h-4 w-4" />
               <AlertTitle>Migration Testing Scenario</AlertTitle>
               <AlertDescription>
-                This page helps you test the patient migration system. We'll create test patients
-                with different origins to demonstrate how the migration categorization works.
+                This page simulates what happens when you transition from individual practice to joining 
+                a group practice. The system will analyze your patients and determine which ones can be 
+                automatically migrated based on their data origin and HIPAA requirements.
               </AlertDescription>
             </Alert>
+            
+            {user && (
+              <Alert className="mb-4">
+                <Building2 className="h-4 w-4" />
+                <AlertDescription>
+                  You're currently part of <strong>{user.healthSystemName || 'your practice'}</strong>. 
+                  The migration wizard will help you move appropriate patient data when joining a different practice.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="grid gap-6">
               <Card>
@@ -169,7 +203,47 @@ export default function TestMigration() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Step 2: Test Migration</CardTitle>
+                  <CardTitle>Step 2: Choose Target Practice</CardTitle>
+                  <CardDescription>
+                    Select which health system or practice you're joining
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Which practice are you joining?
+                    </label>
+                    <Select
+                      value={selectedTargetHealthSystem?.toString() || ""}
+                      onValueChange={(value) => setSelectedTargetHealthSystem(parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a health system" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableHealthSystems.map((hs) => (
+                          <SelectItem key={hs.id} value={hs.id.toString()}>
+                            {hs.name} {hs.systemType ? `(${hs.systemType})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedTargetHealthSystem && (
+                    <Alert>
+                      <AlertDescription>
+                        When you join a new practice, your patients will need to be migrated 
+                        based on their origin and HIPAA requirements.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 3: Test Migration</CardTitle>
                   <CardDescription>
                     Launch the migration wizard to see how patients are categorized
                   </CardDescription>
@@ -177,7 +251,7 @@ export default function TestMigration() {
                 <CardContent>
                   <Button 
                     onClick={() => setShowWizard(true)}
-                    disabled={!testPatientsCreated}
+                    disabled={!testPatientsCreated || !selectedTargetHealthSystem}
                     className="w-full"
                   >
                     Open Migration Wizard
@@ -217,9 +291,9 @@ export default function TestMigration() {
           </>
         )}
 
-        {showWizard && (
+        {showWizard && selectedTargetHealthSystem && (
           <MigrationWizard 
-            targetHealthSystemId={targetHealthSystemId}
+            targetHealthSystemId={selectedTargetHealthSystem}
             onComplete={() => {
               setShowWizard(false);
               toast({
