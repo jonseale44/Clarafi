@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { healthSystems, organizations, locations, users, userLocations } from "@shared/schema";
+import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { EmailVerificationService } from "./email-verification-service";
 import { StripeService } from "./stripe-service";
@@ -39,6 +39,7 @@ export class RegistrationService {
     return await db.transaction(async (tx) => {
       let healthSystemId: number;
       let primaryLocationId: number | null = null;
+      let validatedKeyId: number | null = null;
 
       // Determine registration type (default to join_existing for backward compatibility)
       const registrationType = data.registrationType || 'join_existing';
@@ -164,26 +165,47 @@ export class RegistrationService {
         console.log(`🔑 [RegistrationService] Health system tier: ${healthSystemTier}`);
         
         // If tier 3, validate subscription key
-        let validatedKeyId: number | null = null;
         if (healthSystemTier === 3) {
           if (!data.subscriptionKey) {
             throw new Error('Subscription key is required for enterprise health systems');
           }
           
           console.log(`🔑 [RegistrationService] Validating subscription key for tier 3 health system`);
-          const keyValidation = await SubscriptionKeyService.validateKey(data.subscriptionKey);
+          // Note: validateAndUseKey needs to be called AFTER user creation
+          // For now, just validate the key exists and is valid
+          const { SubscriptionKeyService } = await import('./subscription-key-service');
           
-          if (!keyValidation.isValid) {
-            throw new Error('Invalid or expired subscription key');
+          // First check if key exists and is valid (without using it yet)
+          const keyResult = await tx
+            .select()
+            .from(subscriptionKeys)
+            .where(eq(subscriptionKeys.key, data.subscriptionKey))
+            .limit(1);
+            
+          if (!keyResult || keyResult.length === 0) {
+            throw new Error('Invalid subscription key');
+          }
+          
+          const key = keyResult[0];
+          
+          // Check key status
+          if (key.status === 'used') {
+            throw new Error('Subscription key has already been used');
+          }
+          if (key.status === 'deactivated') {
+            throw new Error('Subscription key has been deactivated');
+          }
+          if (key.status === 'expired' || new Date() > key.expiresAt) {
+            throw new Error('Subscription key has expired');
           }
           
           // Check if key's health system matches the one being joined
-          if (keyValidation.healthSystemId !== healthSystemId) {
+          if (key.healthSystemId !== healthSystemId) {
             throw new Error('Subscription key is not valid for this health system');
           }
           
           // Store key ID to mark as used after user creation
-          validatedKeyId = keyValidation.keyId!;
+          validatedKeyId = key.id;
           console.log(`✅ [RegistrationService] Subscription key validated`);
         }
       }
@@ -241,7 +263,23 @@ export class RegistrationService {
       
       // Mark subscription key as used if this was a tier 3 registration
       if (validatedKeyId) {
-        await SubscriptionKeyService.markKeyAsUsed(validatedKeyId, newUser.id);
+        await tx.update(subscriptionKeys)
+          .set({
+            status: 'used',
+            usedBy: newUser.id,
+            usedAt: new Date()
+          })
+          .where(eq(subscriptionKeys.id, validatedKeyId));
+          
+        // Update user verification status
+        await tx.update(users)
+          .set({
+            verificationStatus: 'tier3_verified',
+            verifiedWithKeyId: validatedKeyId,
+            verifiedAt: new Date()
+          })
+          .where(eq(users.id, newUser.id));
+          
         console.log(`🔑 [RegistrationService] Subscription key marked as used for user ${newUser.id}`);
       }
 
