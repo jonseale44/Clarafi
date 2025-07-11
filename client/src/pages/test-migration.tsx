@@ -22,9 +22,10 @@ export default function TestMigration() {
     // Fetch available health systems (excluding the user's current one)
     const fetchHealthSystems = async () => {
       try {
-        const response = await apiRequest('/api/health-systems/public', 'GET');
+        const response = await apiRequest('GET', '/api/health-systems/public');
+        const data = await response.json();
         // Filter out the user's current health system
-        const otherSystems = response.filter((hs: any) => hs.id !== user?.healthSystemId);
+        const otherSystems = data.filter((hs: any) => hs.id !== user?.healthSystemId);
         setAvailableHealthSystems(otherSystems);
       } catch (error) {
         console.error('Failed to fetch health systems:', error);
