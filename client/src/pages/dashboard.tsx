@@ -302,7 +302,7 @@ export default function Dashboard() {
               )}
               
               {/* Test Migration for providers */}
-              {user.role === 'provider' && (
+              {currentUser?.role === 'provider' && (
                 <Link href="/test-migration">
                   <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     false
