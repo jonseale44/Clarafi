@@ -66,15 +66,22 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
     const currentKeys = await SubscriptionKeyService.getActiveKeyCount(targetHealthSystemId);
     const limits = healthSystem.subscriptionLimits as any || {};
     
+    console.log(`🔐 [SubscriptionKeys] Current key counts:`, currentKeys);
+    console.log(`📊 [SubscriptionKeys] Health system limits:`, limits);
+    console.log(`📋 [SubscriptionKeys] Requested: ${providerCount} provider keys, ${staffCount} staff keys`);
+    console.log(`📈 [SubscriptionKeys] Would result in: ${currentKeys.providers + providerCount} providers, ${currentKeys.staff + staffCount} staff`);
+    
     if (limits.providerKeys && currentKeys.providers + providerCount > limits.providerKeys) {
+      console.error(`❌ [SubscriptionKeys] Provider limit exceeded: ${currentKeys.providers} + ${providerCount} > ${limits.providerKeys}`);
       return res.status(400).json({ 
-        error: `Would exceed provider key limit (${limits.providerKeys})` 
+        error: `Would exceed provider key limit (${limits.providerKeys}). Current: ${currentKeys.providers}, Requested: ${providerCount}` 
       });
     }
     
     if (limits.staffKeys && currentKeys.staff + staffCount > limits.staffKeys) {
+      console.error(`❌ [SubscriptionKeys] Staff limit exceeded: ${currentKeys.staff} + ${staffCount} > ${limits.staffKeys}`);
       return res.status(400).json({ 
-        error: `Would exceed staff key limit (${limits.staffKeys})` 
+        error: `Would exceed staff key limit (${limits.staffKeys}). Current: ${currentKeys.staff}, Requested: ${staffCount}` 
       });
     }
 
