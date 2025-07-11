@@ -27,6 +27,7 @@ interface User {
   lastLogin?: string;
   createdAt: string;
   locationCount?: number;
+  healthSystemId?: number;
 }
 
 interface Location {
@@ -64,6 +65,20 @@ export function AdminUserManagement() {
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    role: 'provider' as string,
+    healthSystemId: undefined as number | undefined,
+    npi: '',
+    credentials: '',
+    specialties: [] as string[],
+    licenseNumber: '',
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -77,6 +92,11 @@ export function AdminUserManagement() {
     queryKey: ["/api/admin/locations"],
   });
 
+  // Fetch all health systems
+  const { data: healthSystems = [] } = useQuery({
+    queryKey: ["/api/health-systems"],
+  });
+
   // Fetch user locations when a user is selected
   const { data: userLocations = [] } = useQuery<UserLocation[]>({
     queryKey: ["/api/admin/users", selectedUser?.id, "locations"],
@@ -85,8 +105,41 @@ export function AdminUserManagement() {
 
   // Filter locations to only show ones from the selected user's health system
   const availableLocations = selectedUser 
-    ? locations.filter(location => location.healthSystemId === selectedUser.healthSystemId)
+    ? locations
     : [];
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (data: typeof createForm) => {
+      console.log('Creating user with data:', data);
+      return apiRequest("POST", "/api/admin/users", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setShowCreateDialog(false);
+      setCreateForm({
+        username: '',
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        role: 'provider',
+        healthSystemId: undefined,
+        npi: '',
+        credentials: '',
+        specialties: [],
+        licenseNumber: '',
+      });
+      toast({ title: "User created successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to create user", 
+        description: error.message || "Please check the form data",
+        variant: "destructive" 
+      });
+    },
+  });
 
   // Toggle user active status
   const toggleUserStatusMutation = useMutation({
@@ -352,7 +405,7 @@ export function AdminUserManagement() {
                 className="pl-10"
               />
             </div>
-            <Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
               Invite User
             </Button>
@@ -571,6 +624,151 @@ export function AdminUserManagement() {
               onClick={() => userToDelete && deleteUserMutation.mutate(userToDelete.id)}
             >
               Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create user dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account. Admin-created users are pre-verified and active.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={createForm.username}
+                  onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
+                  placeholder="jdoe"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  placeholder="john.doe@example.com"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={createForm.firstName}
+                  onChange={(e) => setCreateForm({ ...createForm, firstName: e.target.value })}
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={createForm.lastName}
+                  onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                  placeholder="Strong password"
+                />
+              </div>
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={createForm.role}
+                  onValueChange={(value) => setCreateForm({ ...createForm, role: value })}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin" className="text-red-600 font-semibold">
+                      Admin (Full System Access)
+                    </SelectItem>
+                    <SelectItem value="provider">Provider</SelectItem>
+                    <SelectItem value="nurse">Nurse</SelectItem>
+                    <SelectItem value="ma">Medical Assistant</SelectItem>
+                    <SelectItem value="practice_manager">Practice Manager</SelectItem>
+                    <SelectItem value="front_desk">Front Desk</SelectItem>
+                    <SelectItem value="billing">Billing</SelectItem>
+                    <SelectItem value="lab_tech">Lab Technician</SelectItem>
+                    <SelectItem value="referral_coordinator">Referral Coordinator</SelectItem>
+                    <SelectItem value="read_only">Read Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {(createForm.role === 'provider' || createForm.role === 'nurse' || createForm.role === 'ma') && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="npi">NPI (Optional)</Label>
+                  <Input
+                    id="npi"
+                    value={createForm.npi}
+                    onChange={(e) => setCreateForm({ ...createForm, npi: e.target.value })}
+                    placeholder="1234567890"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="credentials">Credentials (Optional)</Label>
+                  <Input
+                    id="credentials"
+                    value={createForm.credentials}
+                    onChange={(e) => setCreateForm({ ...createForm, credentials: e.target.value })}
+                    placeholder="MD, DO, NP, etc."
+                  />
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="healthSystemId">Health System</Label>
+              <Select
+                value={createForm.healthSystemId?.toString() || ""}
+                onValueChange={(value) => setCreateForm({ ...createForm, healthSystemId: parseInt(value) })}
+              >
+                <SelectTrigger id="healthSystemId">
+                  <SelectValue placeholder="Select health system" />
+                </SelectTrigger>
+                <SelectContent>
+                  {healthSystems.map((hs: any) => (
+                    <SelectItem key={hs.id} value={hs.id.toString()}>
+                      {hs.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => createUserMutation.mutate(createForm)}
+              disabled={!createForm.username || !createForm.email || !createForm.password || 
+                       !createForm.firstName || !createForm.lastName || !createForm.role || 
+                       !createForm.healthSystemId}
+            >
+              Create User
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -448,6 +448,69 @@ export function registerAdminUserRoutes(app: Express) {
     }
   });
 
+  // Create user
+  app.post("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      console.log(`➕ [AdminUserRoutes] Creating new user: ${data.username}`);
+
+      // Check if username already exists
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, data.username))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Check if email already exists
+      const existingEmail = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, data.email))
+        .limit(1);
+
+      if (existingEmail.length > 0) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      // Allow admin creation through admin interface
+      const allowedRoles = ['admin', 'provider', 'nurse', 'ma', 'front_desk', 'billing', 'lab_tech', 'referral_coordinator', 'practice_manager', 'read_only'];
+      if (!allowedRoles.includes(data.role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      // Hash password
+      const { hashPassword } = await import("./auth");
+      const hashedPassword = await hashPassword(data.password);
+
+      // Create user
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          ...data,
+          password: hashedPassword,
+          emailVerified: true, // Admin-created users are pre-verified
+          isActive: true,
+        })
+        .returning();
+
+      console.log(`✅ [AdminUserRoutes] Created user ${newUser.id} (${newUser.username}) with role ${newUser.role}`);
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = newUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("❌ [AdminUserRoutes] Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   // Delete user
   app.delete("/api/admin/users/:userId", requireAdmin, async (req, res) => {
     try {
