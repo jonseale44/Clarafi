@@ -4972,49 +4972,107 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
       // Create minimal Stripe checkout session to avoid loading issues
       const stripe = (await import('stripe')).default;
+      
+      console.log('[Tier3Upgrade] Stripe API Key present:', !!process.env.STRIPE_SECRET_KEY);
+      console.log('[Tier3Upgrade] Stripe API Key starts with:', process.env.STRIPE_SECRET_KEY?.substring(0, 7));
+      
       const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || '', {
         apiVersion: '2024-11-20.acacia',
       });
 
-      const session = await stripeInstance.checkout.sessions.create({
+      console.log('[Tier3Upgrade] Creating session with params:', {
         payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Clarafi Enterprise',
-              description: 'Complete EMR system with admin features',
-            },
-            unit_amount: 29900, // $299.00
-            recurring: {
-              interval: 'month',
-            },
-          },
-          quantity: 1,
-        }],
         mode: 'subscription',
         customer_email: user.email,
+        unit_amount: 29900,
+        currency: 'usd',
+        product_name: 'Clarafi Enterprise',
         success_url: `${baseUrl}/dashboard?upgrade=success`,
         cancel_url: `${baseUrl}/dashboard?upgrade=cancelled`,
-        metadata: {
-          healthSystemId: healthSystemId.toString(),
-          action: 'upgrade-to-tier3'
-        }
       });
+
+      let session;
+      try {
+        session = await stripeInstance.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Clarafi Enterprise',
+                description: 'Complete EMR system with admin features',
+              },
+              unit_amount: 29900, // $299.00
+              recurring: {
+                interval: 'month',
+              },
+            },
+            quantity: 1,
+          }],
+          mode: 'subscription',
+          customer_email: user.email,
+          success_url: `${baseUrl}/dashboard?upgrade=success`,
+          cancel_url: `${baseUrl}/dashboard?upgrade=cancelled`,
+          metadata: {
+            healthSystemId: healthSystemId.toString(),
+            action: 'upgrade-to-tier3'
+          }
+        });
+
+        console.log('[Tier3Upgrade] Session created successfully:', {
+          sessionId: session.id,
+          sessionUrl: session.url,
+          sessionUrlLength: session.url?.length,
+          sessionStatus: session.status,
+          sessionMode: session.mode,
+        });
+      } catch (stripeError: any) {
+        console.error('[Tier3Upgrade] Stripe session creation error:', {
+          message: stripeError.message,
+          type: stripeError.type,
+          code: stripeError.code,
+          statusCode: stripeError.statusCode,
+          raw: stripeError
+        });
+        throw stripeError;
+      }
+
+      if (!session.url) {
+        console.error('[Tier3Upgrade] Session created but no URL returned:', {
+          sessionId: session.id,
+          sessionObject: JSON.stringify(session, null, 2)
+        });
+        return res.status(500).json({
+          error: "Stripe session created but no checkout URL returned",
+          sessionId: session.id
+        });
+      }
 
       const checkoutResult = {
         success: true,
         sessionUrl: session.url
       };
 
-      console.log('[Tier3Upgrade] Stripe session result:', checkoutResult);
+      console.log('[Tier3Upgrade] Stripe session result:', {
+        success: checkoutResult.success,
+        sessionUrl: checkoutResult.sessionUrl,
+        urlValid: !!checkoutResult.sessionUrl,
+        urlStartsWith: checkoutResult.sessionUrl?.substring(0, 50)
+      });
 
       if (checkoutResult.success && checkoutResult.sessionUrl) {
         const responseData = {
           success: true,
           checkoutUrl: checkoutResult.sessionUrl,
+          stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+          sessionId: session.id
         };
-        console.log('[Tier3Upgrade] Sending response:', responseData);
+        console.log('[Tier3Upgrade] Sending response:', {
+          success: responseData.success,
+          hasCheckoutUrl: !!responseData.checkoutUrl,
+          checkoutUrlStart: responseData.checkoutUrl.substring(0, 50),
+          hasPublishableKey: !!responseData.stripePublishableKey
+        });
         return res.json(responseData);
       } else {
         console.error('[Tier3Upgrade] Failed to create checkout session:', checkoutResult);

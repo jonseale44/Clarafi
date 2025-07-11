@@ -79,20 +79,77 @@ export function HealthSystemUpgrade() {
 
   const upgradeMutation = useMutation({
     mutationFn: async () => {
+      console.log('[HealthSystemUpgrade] Starting upgrade mutation:', {
+        healthSystemId: userData?.healthSystemId,
+        endpoint: '/api/stripe/upgrade-to-tier3',
+      });
+      
       const response = await apiRequest('POST', '/api/stripe/upgrade-to-tier3', {
         healthSystemId: userData?.healthSystemId,
       });
-      return await response.json();
+      
+      console.log('[HealthSystemUpgrade] API response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: {
+          contentType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length'),
+        },
+      });
+      
+      const data = await response.json();
+      console.log('[HealthSystemUpgrade] API success response parsed:', {
+        data,
+        dataType: typeof data,
+        hasCheckoutUrl: !!data.checkoutUrl,
+        checkoutUrlPreview: data.checkoutUrl?.substring(0, 50),
+      });
+      
+      return data;
     },
     onSuccess: (data) => {
-      console.log('Upgrade success response:', data);
+      console.log('[HealthSystemUpgrade] Upgrade success response:', {
+        data,
+        hasCheckoutUrl: !!data.checkoutUrl,
+        hasSessionUrl: !!data.sessionUrl,
+        checkoutUrlLength: data.checkoutUrl?.length,
+        sessionUrlLength: data.sessionUrl?.length,
+        dataKeys: Object.keys(data),
+      });
+      
       if (data.checkoutUrl || data.sessionUrl) {
         const redirectUrl = data.checkoutUrl || data.sessionUrl;
-        console.log('Redirecting to:', redirectUrl);
-        // Redirect to Stripe checkout
-        window.location.href = redirectUrl;
+        console.log('[HealthSystemUpgrade] Preparing redirect:', {
+          redirectUrl,
+          urlStart: redirectUrl.substring(0, 50),
+          urlLength: redirectUrl.length,
+          isValidUrl: redirectUrl.startsWith('https://'),
+          currentLocation: window.location.href,
+        });
+        
+        // Add a small delay to ensure logs are captured
+        console.log('[HealthSystemUpgrade] Redirecting in 100ms...');
+        setTimeout(() => {
+          console.log('[HealthSystemUpgrade] Executing redirect to Stripe checkout');
+          try {
+            window.location.href = redirectUrl;
+            console.log('[HealthSystemUpgrade] Redirect command executed');
+          } catch (error) {
+            console.error('[HealthSystemUpgrade] Redirect error:', error);
+            toast({
+              title: 'Redirect Error',
+              description: 'Failed to redirect to payment page. Please try again.',
+              variant: 'destructive',
+            });
+          }
+        }, 100);
       } else {
-        console.error('No checkout URL received:', data);
+        console.error('[HealthSystemUpgrade] No checkout URL in response:', {
+          data,
+          dataType: typeof data,
+          dataStringified: JSON.stringify(data),
+        });
         toast({
           title: 'Error',
           description: 'No checkout URL received from server',
