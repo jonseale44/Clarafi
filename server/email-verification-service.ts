@@ -78,7 +78,10 @@ export class EmailVerificationService {
     const mailService = new MailService();
     mailService.setApiKey(process.env.SENDGRID_API_KEY);
 
-    const verificationUrl = `${process.env.APP_URL || 'http://localhost:5000'}/verify-email?token=${token}`;
+    // Use Replit URL if available, otherwise fallback to localhost
+    const replitUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null;
+    const baseUrl = process.env.APP_URL || replitUrl || 'http://localhost:5000';
+    const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
     
     // Get sender email from environment or use a default
     const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com';
