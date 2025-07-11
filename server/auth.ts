@@ -343,6 +343,7 @@ export function setupAuth(app: Express) {
         ...req.body,
         password: await hashPassword(req.body.password),
         npi: req.body.npi && req.body.npi.trim() ? req.body.npi.trim() : null,
+        selectedLocationId: req.body.selectedLocationId,
       };
 
       console.log("✅ [Registration] Creating new user:", registrationData.username);

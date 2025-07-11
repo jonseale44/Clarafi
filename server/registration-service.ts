@@ -15,6 +15,7 @@ export interface RegistrationData {
   credentials?: string;
   registrationType?: 'create_new' | 'join_existing';
   existingHealthSystemId?: number;
+  selectedLocationId?: number; // When user selects a specific location
   practiceName?: string;
   practiceAddress?: string;
   practiceCity?: string;
@@ -122,11 +123,29 @@ export class RegistrationService {
 
       } else {
         // Join existing health system (default behavior)
-        if (!data.existingHealthSystemId) {
-          throw new Error('Health system selection is required when joining an existing system');
+        if (data.selectedLocationId) {
+          // User selected a specific location - look up its health system
+          console.log(`🏥 [RegistrationService] Looking up health system for location ID: ${data.selectedLocationId}`);
+          const locationResult = await tx
+            .select({ healthSystemId: locations.healthSystemId })
+            .from(locations)
+            .where(eq(locations.id, data.selectedLocationId))
+            .limit(1);
+          
+          if (!locationResult || locationResult.length === 0) {
+            throw new Error('Invalid location selected');
+          }
+          
+          healthSystemId = locationResult[0].healthSystemId;
+          primaryLocationId = data.selectedLocationId;
+          console.log(`🏥 [RegistrationService] User selected location ${data.selectedLocationId}, joining health system ID: ${healthSystemId}`);
+        } else if (data.existingHealthSystemId) {
+          // User selected a health system directly
+          healthSystemId = data.existingHealthSystemId;
+          console.log(`🏥 [RegistrationService] Joining existing health system ID: ${healthSystemId}`);
+        } else {
+          throw new Error('Health system or clinic selection is required when joining an existing system');
         }
-        healthSystemId = data.existingHealthSystemId;
-        console.log(`🏥 [RegistrationService] Joining existing health system ID: ${healthSystemId}`);
       }
 
       // Validate role - prevent admin creation through regular registration
@@ -180,29 +199,38 @@ export class RegistrationService {
         // Don't fail registration if email sending fails
       }
 
-      // If individual provider, assign them to their location
-      if (registrationType === 'create_new' && primaryLocationId) {
+      // Assign user to location if one was selected
+      if (primaryLocationId) {
+        const roleAtLocation = registrationType === 'create_new' ? 'primary_provider' : 
+                              (userRole === 'provider' ? 'attending' : userRole);
+        
         await tx
           .insert(userLocations)
           .values({
             userId: newUser.id,
             locationId: primaryLocationId,
-            roleAtLocation: 'primary_provider',
+            roleAtLocation: roleAtLocation,
             isPrimary: true,
             canSchedule: true,
-            canViewAllPatients: true,
-            canCreateOrders: true,
+            canViewAllPatients: userRole === 'provider' || userRole === 'nurse' || userRole === 'ma',
+            canCreateOrders: userRole === 'provider' || userRole === 'nurse' || userRole === 'ma',
             active: true,
             startDate: new Date().toISOString().split('T')[0],
           });
 
-        console.log(`✅ [RegistrationService] Assigned user to primary location`);
+        console.log(`✅ [RegistrationService] Assigned user to location ${primaryLocationId} with role ${roleAtLocation}`);
 
-        // Update health system with original provider ID for future reference
-        await tx
-          .update(healthSystems)
-          .set({ originalProviderId: newUser.id })
-          .where(eq(healthSystems.id, healthSystemId));
+        // For individual providers, update health system with original provider ID
+        if (registrationType === 'create_new') {
+          await tx
+            .update(healthSystems)
+            .set({ originalProviderId: newUser.id })
+            .where(eq(healthSystems.id, healthSystemId));
+        }
+      } else if (registrationType === 'join_existing') {
+        // If no specific location was selected but joining existing system,
+        // we might want to notify admin to assign locations later
+        console.log(`⚠️  [RegistrationService] User ${newUser.username} joined health system ${healthSystemId} without specific location assignment`);
       }
 
       // Return the complete user object

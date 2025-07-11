@@ -16,21 +16,23 @@ export async function initializeSystemData() {
       return;
     }
     
-    console.log('📊 System needs clinic data - starting automatic import...');
+    console.log('📊 System needs clinic data - automatic import temporarily disabled');
+    console.log('💡 The searchable clinic dropdown will show existing health systems and their locations');
     
-    // Download real NPPES data
-    const csvPath = await downloadNPPESData();
+    // NPPES download temporarily disabled due to file format issues
+    // The full NPPES file is 8GB+ and requires special handling
+    // For now, users can search existing clinics in the database
     
-    // Import real clinics
-    const importService = new ClinicDataImportService();
-    const stats = await importService.importFromNPPES(csvPath, {
-      stateFilter: ['TX'], // Start with Texas
-      limit: 5000, // Import 5000 real clinics
-      skipExisting: true
-    });
+    // TODO: Re-enable when NPPES file format is resolved
+    // const csvPath = await downloadNPPESData();
+    // const importService = new ClinicDataImportService();
+    // const stats = await importService.importFromNPPES(csvPath, {
+    //   stateFilter: ['TX'],
+    //   limit: 5000,
+    //   skipExisting: true
+    // });
     
-    console.log('✅ Automatic clinic import completed:', stats);
-    console.log(`📍 System now has real clinic data from NPPES`);
+    console.log('✅ System ready with existing clinic data');
     
   } catch (error) {
     console.error('❌ System initialization error:', error);

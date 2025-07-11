@@ -15,6 +15,7 @@ import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { Loader2, Hospital, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { LocationSelector } from "@/components/location-selector";
+import SearchableHealthSystemSelector from "@/components/searchable-health-system-selector";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -304,7 +305,7 @@ export default function AuthPage() {
     if (registrationType === 'join_existing' && !selectedHealthSystemId) {
       toast({
         title: "Health System Required",
-        description: "Please select a health system to join",
+        description: "Please select a health system or clinic to join",
         variant: "destructive",
       });
       return;
@@ -313,11 +314,27 @@ export default function AuthPage() {
     // Force registration type to 'create_new' for individual practice
     const finalRegistrationType = registrationType === 'create_new' ? 'create_new' : 'join_existing';
     
+    // Parse the selected value - it could be a health system ID or "location-{id}"
+    let existingHealthSystemId: number | undefined;
+    let selectedLocationId: number | undefined;
+    
+    if (finalRegistrationType === 'join_existing' && selectedHealthSystemId) {
+      if (selectedHealthSystemId.startsWith('location-')) {
+        // User selected a specific location
+        selectedLocationId = parseInt(selectedHealthSystemId.replace('location-', ''));
+        // We'll need to get the health system ID from the location on the backend
+      } else {
+        // User selected a health system
+        existingHealthSystemId = parseInt(selectedHealthSystemId);
+      }
+    }
+    
     // Pass all the data including registration type and practice info
     console.log("Calling registerMutation.mutate with:", {
       ...registerData,
       registrationType: finalRegistrationType,
-      existingHealthSystemId: finalRegistrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
+      existingHealthSystemId,
+      selectedLocationId,
       practiceName: data.practiceName,
       practiceAddress: data.practiceAddress,
       practiceCity: data.practiceCity,
@@ -329,7 +346,8 @@ export default function AuthPage() {
     registerMutation.mutate({
       ...registerData,
       registrationType: finalRegistrationType,
-      existingHealthSystemId: finalRegistrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
+      existingHealthSystemId,
+      selectedLocationId,
       practiceName: data.practiceName,
       practiceAddress: data.practiceAddress,
       practiceCity: data.practiceCity,
@@ -464,22 +482,15 @@ export default function AuthPage() {
                     {/* Health System Selection for joining existing */}
                     {registrationType === 'join_existing' && (
                       <div className="space-y-2">
-                        <Label htmlFor="healthSystem">Select Health System</Label>
-                        <Select 
-                          value={selectedHealthSystemId} 
-                          onValueChange={setSelectedHealthSystemId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a health system to join" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableHealthSystems.map((hs) => (
-                              <SelectItem key={hs.id} value={hs.id.toString()}>
-                                {hs.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="healthSystem">Select Health System or Clinic</Label>
+                        <SearchableHealthSystemSelector
+                          value={selectedHealthSystemId}
+                          onChange={setSelectedHealthSystemId}
+                          placeholder="Search for clinics near you..."
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Search by clinic name, city, address, or NPI number. Click the location icon to find clinics near you.
+                        </p>
                       </div>
                     )}
 
