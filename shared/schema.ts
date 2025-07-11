@@ -2826,3 +2826,47 @@ export type InsertScheduleException = z.infer<typeof insertScheduleExceptionSche
 
 // User Preferences Types
 // Removed orphaned UserPreferences types - chartPanelWidth moved to userNotePreferences
+
+// Migration Invitations table
+export const migrationInvitations = pgTable('migration_invitations', {
+  id: serial('id').primaryKey(),
+  
+  // Who is being invited
+  invitedUserId: integer('invited_user_id').references(() => users.id),
+  invitedUserEmail: text('invited_user_email').notNull(), // For inviting users not yet in system
+  
+  // Which health system is inviting them
+  targetHealthSystemId: integer('target_health_system_id').notNull().references(() => healthSystems.id),
+  
+  // Who created the invitation (admin of target health system)
+  createdByUserId: integer('created_by_user_id').notNull().references(() => users.id),
+  
+  // Invitation details
+  invitationCode: text('invitation_code').notNull().unique(), // Secure random code
+  message: text('message'), // Optional message from inviting organization
+  
+  // Status tracking
+  status: text('status').notNull().default('pending'), // pending, accepted, rejected, expired
+  expiresAt: timestamp('expires_at').notNull(),
+  acceptedAt: timestamp('accepted_at'),
+  rejectedAt: timestamp('rejected_at'),
+  
+  // Audit
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Insert schema for migration invitations
+export const insertMigrationInvitationSchema = createInsertSchema(migrationInvitations)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    invitedUserEmail: z.string().email(),
+    status: z.enum(['pending', 'accepted', 'rejected', 'expired']).default('pending'),
+  });
+
+export type MigrationInvitation = typeof migrationInvitations.$inferSelect;
+export type InsertMigrationInvitation = z.infer<typeof insertMigrationInvitationSchema>;
