@@ -298,27 +298,27 @@ export default function Dashboard() {
                       Clinic Import
                     </button>
                   </Link>
-                  <Link href="/test-migration">
+                  <Link href="/practice-migration">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}>
-                      Test Migration
+                      Practice Migration
                     </button>
                   </Link>
                 </>
               )}
               
-              {/* Test Migration for providers */}
+              {/* Practice Migration for providers */}
               {currentUser?.role === 'provider' && (
-                <Link href="/test-migration">
+                <Link href="/practice-migration">
                   <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     false
                       ? "bg-primary text-white" 
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   }`}>
-                    Test Migration
+                    Practice Migration
                   </button>
                 </Link>
               )}

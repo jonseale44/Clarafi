@@ -22,6 +22,7 @@ import SubscriptionConfigPage from "@/pages/subscription-config-page";
 import PaymentPage from "@/pages/payment-page";
 import DevTestPage from "@/pages/dev-test-page";
 import TestMigration from "@/pages/test-migration";
+import PracticeMigration from "@/pages/practice-migration";
 import AdminClinicImport from "@/pages/admin-clinic-import";
 
 import NotFound from "@/pages/not-found";
@@ -48,6 +49,7 @@ function Router() {
       <ProtectedRoute path="/admin/clinic-import" component={AdminClinicImport} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />
+      <ProtectedRoute path="/practice-migration" component={PracticeMigration} />
 
       <Route path="/auth" component={AuthPage} />
       <Route path="/payment" component={PaymentPage} />
