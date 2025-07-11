@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { db } from "./db";
-import { users, userLocations, locations, healthSystems, organizations, encounters, patients } from "@shared/schema";
+import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema } from "@shared/schema";
 import { eq, sql, and, isNull, desc } from "drizzle-orm";
 import { z } from "zod";
 
