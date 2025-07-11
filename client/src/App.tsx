@@ -21,6 +21,7 @@ import { AdminUserManagement } from "@/pages/AdminUserManagement";
 import SubscriptionConfigPage from "@/pages/subscription-config-page";
 import PaymentPage from "@/pages/payment-page";
 import DevTestPage from "@/pages/dev-test-page";
+import TestMigration from "@/pages/test-migration";
 
 import NotFound from "@/pages/not-found";
 
@@ -44,6 +45,7 @@ function Router() {
       <ProtectedRoute path="/admin/users" component={AdminUserManagement} />
       <ProtectedRoute path="/admin/subscription-config" component={SubscriptionConfigPage} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
+      <ProtectedRoute path="/test-migration" component={TestMigration} />
 
       <Route path="/auth" component={AuthPage} />
       <Route path="/payment" component={PaymentPage} />
