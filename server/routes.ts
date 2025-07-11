@@ -4588,7 +4588,190 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           });
         }
         
-        // Delete all related data and users in one transaction
+        // Delete all related data and users in proper order to handle foreign key constraints
+        
+        // First clear all references to users in other tables
+        await db.execute(sql`
+          UPDATE health_systems SET original_provider_id = NULL WHERE original_provider_id IN (SELECT id FROM users WHERE username != 'admin');
+        `);
+        
+        await db.execute(sql`
+          UPDATE users SET verified_with_key_id = NULL WHERE username != 'admin';
+        `);
+        
+        // Delete all clinical data for patients created by non-admin users
+        // Using direct SQL queries with subqueries
+        await db.execute(sql`
+          DELETE FROM family_history WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM social_history WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM surgical_history WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM medical_problems WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM medications WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM allergies WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM vitals WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM lab_orders WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM lab_results WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM imaging_orders WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM imaging_results WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM orders WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        // Delete document processing queue entries first
+        await db.execute(sql`
+          DELETE FROM document_processing_queue WHERE attachment_id IN (
+            SELECT id FROM patient_attachments WHERE patient_id IN (
+              SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+              OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+              OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            )
+          )
+        `);
+        
+        // Delete attachment extracted content
+        await db.execute(sql`
+          DELETE FROM attachment_extracted_content WHERE attachment_id IN (
+            SELECT id FROM patient_attachments WHERE patient_id IN (
+              SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+              OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+              OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            )
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM patient_attachments WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM patient_order_preferences WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+
+        
+        await db.execute(sql`
+          DELETE FROM diagnoses WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        // Delete encounters
+        await db.execute(sql`
+          DELETE FROM encounters WHERE patient_id IN (
+            SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+            OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          )
+        `);
+        
+        // Delete encounters created by non-admin providers
+        await db.execute(sql`
+          DELETE FROM encounters WHERE provider_id IN (SELECT id FROM users WHERE username != 'admin');
+        `);
+        
+        // Now delete patients
+        await db.execute(sql`
+          DELETE FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
+          OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
+          OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin');
+        `);
+        
+        // Delete subscription keys
+        await db.execute(sql`
+          DELETE FROM subscription_keys WHERE used_by IN (SELECT id FROM users WHERE username != 'admin');
+        `);
+        
+        // Delete user related tables
         await db.execute(sql`
           DELETE FROM user_locations WHERE user_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
@@ -4601,6 +4784,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           DELETE FROM user_session_locations WHERE user_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
         
+        // Finally delete the users
         const deleteResult = await db.execute(sql`
           DELETE FROM users WHERE username != 'admin';
         `);

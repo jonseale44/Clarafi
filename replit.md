@@ -330,6 +330,15 @@ Preferred communication style: Simple, everyday language.
 - **DATABASE PERSISTENCE**: Remember selection is stored in database and persists across sessions until user manually clears or changes location
 - **PRODUCTION READY**: Clinical staff working primarily at one location can now avoid repetitive location selection on every login
 
+### Development Clear-Users Endpoint Enhancement COMPLETED (January 15, 2025)
+- **COMPLETE FOREIGN KEY CASCADE HANDLING**: Successfully enhanced /api/dev/clear-users endpoint to handle all foreign key constraints when deleting non-admin users
+- **COMPREHENSIVE DATA CLEANUP**: Endpoint now properly deletes in order: clinical data (family_history, social_history, etc.) → encounters → patients → subscription_keys → user data
+- **FIXED SCHEMA MISCONCEPTIONS**: Discovered cpt_codes is not a separate table but a JSONB column in encounters table - removed erroneous DELETE query
+- **DEVELOPMENT TESTING READY**: Clear-users endpoint now successfully clears all test data created during registration testing cycles
+- **FOREIGN KEY CHAIN**: Properly handles complex dependencies including document_processing_queue → attachment_extracted_content → patient_attachments → patients → users
+- **PRODUCTION SAFETY**: Endpoint only available in development mode and preserves admin accounts for system continuity
+- **TESTING EFFICIENCY**: Developers can now quickly reset user data between test cycles without manual database cleanup
+
 ### Critical Cross-Health-System Security Fix COMPLETED (January 13, 2025)
 - **CRITICAL SECURITY VULNERABILITY DISCOVERED**: Found 4 users from Waco Family Medicine incorrectly assigned to Mission Hillsboro Medical Clinic locations, violating multi-tenant isolation
 - **IMMEDIATE DATA CLEANUP**: Deleted all 4 cross-health-system user-location assignments (user_locations IDs: 12, 13, 14, 16) to restore data integrity
