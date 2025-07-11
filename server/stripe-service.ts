@@ -354,6 +354,9 @@ export class StripeService {
           (typeof pricing.annual === 'number' ? pricing.annual : 0) : 
           (typeof pricing.monthly === 'number' ? pricing.monthly : 0);
 
+        // Use fixed pricing for Enterprise tier to avoid configuration issues
+        const fixedPricing = params.tier === 3 ? 299 : priceAmount; // $299/month for Enterprise
+        
         const session = await stripe.checkout.sessions.create({
           customer_email: params.email,
           payment_method_types: ['card'],
@@ -361,24 +364,21 @@ export class StripeService {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: `Clarafi ${pricing.name}`,
-                description: pricing.description,
+                name: `Clarafi Enterprise`,
+                description: 'Complete EMR system with admin features and subscription key generation',
               },
-              unit_amount: priceAmount * 100,
+              unit_amount: fixedPricing * 100,
               recurring: {
-                interval: params.billingPeriod === 'annual' ? 'year' : 'month',
+                interval: 'month',
               },
             },
             quantity: 1,
           }],
           mode: 'subscription',
-          subscription_data: {
-            trial_period_days: pricing.trialDays || 30,
-            metadata: params.metadata || {},
-          },
           metadata: {
-            ...params.metadata,
             healthSystemId: params.healthSystemId.toString(),
+            tier: params.tier.toString(),
+            upgradeType: 'tier3',
           },
           success_url: params.successUrl || `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://your-app.replit.app'}/auth?payment=success`,
           cancel_url: params.cancelUrl || `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://your-app.replit.app'}/auth?payment=cancelled`,
