@@ -4308,6 +4308,109 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
   // Legacy dynamic vitals routes removed - now using static imports above
 
+  // Public health systems endpoint for registration
+  // This must be defined BEFORE registering admin routes
+  app.get("/api/health-systems/public-with-locations", async (req, res) => {
+    try {
+      console.log("📍 [Public Health Systems] Accessing public endpoint");
+      const search = (req.query.search as string)?.toLowerCase() || '';
+      
+      const { db } = await import("./db");
+      const { healthSystems, locations } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      // Get health systems with their locations
+      const healthSystemsWithLocations = await db
+        .select({
+          healthSystemId: healthSystems.id,
+          healthSystemName: healthSystems.name,
+          healthSystemType: healthSystems.systemType,
+          subscriptionTier: healthSystems.subscriptionTier,
+          locationId: locations.id,
+          locationName: locations.name,
+          locationAddress: locations.address,
+          locationCity: locations.city,
+          locationState: locations.state,
+          locationZipCode: locations.zipCode,
+          locationPhone: locations.phone,
+          locationNpi: locations.npi,
+          locationType: locations.locationType,
+        })
+        .from(healthSystems)
+        .leftJoin(locations, eq(locations.healthSystemId, healthSystems.id))
+        .where(eq(healthSystems.subscriptionStatus, 'active'))
+        .orderBy(healthSystems.name, locations.name);
+
+      // Group by health system
+      const groupedSystems = healthSystemsWithLocations.reduce((acc: any[], row) => {
+        const existing = acc.find(hs => hs.id === row.healthSystemId);
+        if (existing) {
+          if (row.locationId) {
+            existing.locations.push({
+              id: row.locationId,
+              name: row.locationName,
+              address: row.locationAddress,
+              city: row.locationCity,
+              state: row.locationState,
+              zipCode: row.locationZipCode,
+              phone: row.locationPhone,
+              npi: row.locationNpi,
+              locationType: row.locationType,
+            });
+          }
+        } else {
+          acc.push({
+            id: row.healthSystemId,
+            name: row.healthSystemName,
+            systemType: row.healthSystemType,
+            subscriptionTier: row.subscriptionTier,
+            locations: row.locationId ? [{
+              id: row.locationId,
+              name: row.locationName,
+              address: row.locationAddress,
+              city: row.locationCity,
+              state: row.locationState,
+              zipCode: row.locationZipCode,
+              phone: row.locationPhone,
+              npi: row.locationNpi,
+              locationType: row.locationType,
+            }] : []
+          });
+        }
+        return acc;
+      }, []);
+
+      // Filter by search term
+      let filtered = groupedSystems;
+      if (search) {
+        filtered = groupedSystems.filter(hs => {
+          // Check health system name
+          if (hs.name.toLowerCase().includes(search)) return true;
+          
+          // Check location names, cities, addresses
+          return hs.locations.some((loc: any) => 
+            loc.name.toLowerCase().includes(search) ||
+            loc.city.toLowerCase().includes(search) ||
+            loc.address.toLowerCase().includes(search) ||
+            loc.state.toLowerCase().includes(search) ||
+            loc.npi?.includes(search)
+          );
+        });
+      }
+
+      console.log(`✅ [Public Health Systems] Found ${filtered.length} health systems`);
+
+      res.json({
+        healthSystems: filtered,
+        totalLocations: filtered.reduce((sum, hs) => sum + hs.locations.length, 0),
+        userLocation: null
+      });
+    } catch (error) {
+      console.error("❌ [Public Health Systems] Error:", error);
+      res.status(500).json({ message: "Failed to fetch health systems with locations" });
+    }
+  });
+
   // Register admin user management routes
   registerAdminUserRoutes(app);
 
