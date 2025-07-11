@@ -524,10 +524,21 @@ export function registerAdminUserRoutes(app: Express) {
         licenseNumber: data.licenseNumber || null
       };
       
-      const [newUser] = await db
-        .insert(users)
-        .values(userDataToInsert)
-        .returning();
+      let newUser;
+      try {
+        const result = await db
+          .insert(users)
+          .values(userDataToInsert)
+          .returning();
+        newUser = result[0];
+      } catch (dbError) {
+        console.error("❌ [AdminUserRoutes] Database error during user insert:", dbError);
+        if (dbError instanceof Error) {
+          console.error("Database error message:", dbError.message);
+          console.error("Database error details:", JSON.stringify(dbError, null, 2));
+        }
+        throw dbError;
+      }
 
       console.log(`✅ [AdminUserRoutes] Created user ${newUser.id} (${newUser.username}) with role ${newUser.role}`);
 

@@ -1,0 +1,69 @@
+503: ‹!DOCTYPE html> <html lang="en"> <head > <titl
+this app to keep it running externally. </title> <link rel="
+href="https://fonts.googleapis.com/css?family=IBM+Pl
+height: 100vh; display: flex; justify-content: center; alig
+font-family: "IBM Plex Sans", "sans"; color: #f5f9fc; } .tit
+content; } .err-box { padding: 1em; max-width: 30em; w
+flex-direction: column; align-items: center; } @media (m
+direction: column; align-items: center; } } .ascii { font-si:
+console { background-color: #0e1628; color: #fff; font-
+1em; margin: 1em; } .footer { margin: 1em; display: flex;
+center; } .link-icon { margin-right: 20px; margin-top: 4p:
+var reload_timeout = setTimeout(function () { window.lc
+</head> <body > <div class="err-box"> < div class="me
+%%%%%%%%%%%##**++==-=-
+*@@@@@@@@@@Ф@@@@@@@@@@®@@@@@
+#@%**+++**##%@@@@@@@@@@@@@@@@@¢
+*######%%%%#**+￾
++++=+#@@%%#*#####*******›
++****######%%%%%%%%%%%@@@%##*#####****
+=+****########%%%%%%%%%@@@%##*####*****
+===+++**######
+##%%%%%%@@@@%#**#####***
+====+•
+##%%@@@%#*######*****
+5=++
+#####%@@@%#*#######******
+====
+*****#@@%%#*#####*********
++#@@%%#*######******
+=#@@%%#*##***********
+===#@@%#**#####*#*******
+=====%@@%#*########*******›
++@%%@#*+==============
+===@@@%#*###:
++@@@@@@@@@%%*==============-@@@%#*‡
++@@@@@@@@@@@@@@@@@@@#+======@@(
+*@@@@@@@@@@@@@@@@@@@@@@@@@@@I
+®®®®®®®®@@@
+@@@@@@@@@@@@@‡#@@@@@@@@@@@@
+#@%%@@@@@@@@@@@@@%#-:=*#%%@@@@%‡
+#@@@@@@@@@@@@@@@@@@@@@%=*@@@
++##%%@@@a
+@@@@@@@@
+aaaaaaaaaaaa
+*%#*#%##: :+####%%%@@@@@@@@@@@@@@@
+*##%%!
+-+#%%@@@@@@@@@@@%###*+##*=+##***%@¢
+*#%%@@@@@@@@@@@%##**%%%%%@@@@@@|
+:+##%%@@@@@@@@@@@@@@@@@@@@@@##›
++#%%%@@@@@@@@@@@@@@@%#**+-.+@@@(
+*##%%@@@@@@@@@%#**+:.=%@@@@@@@@@
+*@@@@@@@@@@@@@@%#*****:=*##**+-.=@@
++@@@@@@@@@@@#****+-.:+#%@@@@@#***+=
+app is currently not running. Deploy this app to keep it
+‹div class="footer"> <div class="link-icon"> <svg widt
+fill="none" xmins="http://www.w3.org/2000/svg"> <pa
+9.04942 7.31825 9.36612 7.73771 9.59529C8.15717 9.8
+9.99489C9.57454 10.029 10.0531 9.96024 10.5009 9.7
+11.6933 9.02666L13.6933 7.02666C14.3005 6.39799 1.
+3.808 14.2708 2.97196 13.6527 2.35394C13.0347 1.73:
+1.37775C10.4507 1.37016 9.60869 1.70614 8.98001 2.3
+7.33333C9.04704 6.95058 8.68177 6.63388 8.26231 6
+6.90224 6.00511C6.42548 5.97096 5.94695 6.03975 5
+6.63528 4.30668 6.97333L2.30668 8.97333C1.69948
+11.318C1.37869 12.192 1.72926 13.028 2.34728 13.646*
+4.67534 14.6222C5.54933 14.6298 6.39134 14.2939 7.
+stroke="#C2C8CC" stroke-linecap="round" stroke-linej
+class="repl-links"> <a href="https://docs.replit.com/clc
+deployments">Learn how to Deploy on Replit</a> </div
