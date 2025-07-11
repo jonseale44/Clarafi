@@ -44,6 +44,17 @@ export const healthSystems = pgTable("health_systems", {
     accent?: string;
   }>(),
   
+  // Subscription Key Management
+  subscriptionLimits: jsonb("subscription_limits").$type<{
+    providerKeys: number;
+    staffKeys: number;
+    totalUsers: number;
+  }>().default({
+    providerKeys: 0,
+    staffKeys: 0,
+    totalUsers: 0
+  }),
+  
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -204,6 +215,11 @@ export const users = pgTable("users", {
   lastLogin: timestamp("last_login"),
   failedLoginAttempts: integer("failed_login_attempts").default(0),
   accountLockedUntil: timestamp("account_locked_until"),
+  
+  // Subscription Key Verification
+  verificationStatus: text("verification_status").default("unverified"), // 'unverified', 'verified', 'tier3_verified'
+  verifiedWithKeyId: integer("verified_with_key_id"), // Will add reference after table creation
+  verifiedAt: timestamp("verified_at"),
   
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -423,6 +439,9 @@ export const patients = pgTable("patients", {
   // Insurance and Registration
   insurancePrimary: text("insurance_primary"),
   insuranceSecondary: text("insurance_secondary"),
+  
+  // Ownership Tracking
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
   policyNumber: text("policy_number"),
   groupNumber: text("group_number"),
   
@@ -2870,6 +2889,135 @@ export const insertMigrationInvitationSchema = createInsertSchema(migrationInvit
 
 export type MigrationInvitation = typeof migrationInvitations.$inferSelect;
 export type InsertMigrationInvitation = z.infer<typeof insertMigrationInvitationSchema>;
+
+// Subscription Keys System Tables
+
+// Subscription keys for tier-based access
+export const subscriptionKeys = pgTable("subscription_keys", {
+  id: serial("id").primaryKey(),
+  key: varchar("key", { length: 20 }).unique().notNull(),
+  healthSystemId: integer("health_system_id").notNull().references(() => healthSystems.id),
+  keyType: text("key_type").notNull(), // 'provider', 'staff', 'admin'
+  subscriptionTier: integer("subscription_tier").notNull(), // 1, 2, 3
+  status: text("status").default("active"), // 'active', 'used', 'expired', 'deactivated'
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(), // 72 hours from creation for unused keys
+  usedBy: integer("used_by").references(() => users.id),
+  usedAt: timestamp("used_at"),
+  deactivatedBy: integer("deactivated_by").references(() => users.id),
+  deactivatedAt: timestamp("deactivated_at"),
+  metadata: jsonb("metadata").$type<{
+    regenerationCount?: number;
+    notes?: string;
+    [key: string]: any;
+  }>().default({}),
+});
+
+// Subscription history for tracking changes and grace periods
+export const subscriptionHistory = pgTable("subscription_history", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").notNull().references(() => healthSystems.id),
+  previousTier: integer("previous_tier"),
+  newTier: integer("new_tier"),
+  changeType: text("change_type"), // 'upgrade', 'downgrade', 'expire', 'reactivate'
+  changedAt: timestamp("changed_at").defaultNow(),
+  gracePeriodEnds: timestamp("grace_period_ends"),
+  dataExpiresAt: timestamp("data_expires_at"), // 30 days after grace period ends
+  metadata: jsonb("metadata").$type<{
+    reason?: string;
+    adminNotes?: string;
+    [key: string]: any;
+  }>().default({}),
+});
+
+// Email notifications tracking
+export const emailNotifications = pgTable("email_notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  notificationType: varchar("notification_type", { length: 50 }).notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  emailAddress: varchar("email_address", { length: 255 }).notNull(),
+  subject: text("subject"),
+  metadata: jsonb("metadata").$type<{
+    templateUsed?: string;
+    sendStatus?: string;
+    [key: string]: any;
+  }>().default({}),
+});
+
+// Insert schemas for new tables
+export const insertSubscriptionKeySchema = createInsertSchema(subscriptionKeys).pick({
+  key: true,
+  healthSystemId: true,
+  keyType: true,
+  subscriptionTier: true,
+  expiresAt: true,
+  metadata: true,
+});
+
+export const insertSubscriptionHistorySchema = createInsertSchema(subscriptionHistory).pick({
+  healthSystemId: true,
+  previousTier: true,
+  newTier: true,
+  changeType: true,
+  gracePeriodEnds: true,
+  dataExpiresAt: true,
+  metadata: true,
+});
+
+export const insertEmailNotificationSchema = createInsertSchema(emailNotifications).pick({
+  userId: true,
+  healthSystemId: true,
+  notificationType: true,
+  emailAddress: true,
+  subject: true,
+  metadata: true,
+});
+
+// Export types
+export type SubscriptionKey = typeof subscriptionKeys.$inferSelect;
+export type InsertSubscriptionKey = z.infer<typeof insertSubscriptionKeySchema>;
+export type SubscriptionHistory = typeof subscriptionHistory.$inferSelect;
+export type InsertSubscriptionHistory = z.infer<typeof insertSubscriptionHistorySchema>;
+export type EmailNotification = typeof emailNotifications.$inferSelect;
+export type InsertEmailNotification = z.infer<typeof insertEmailNotificationSchema>;
+
+// Subscription keys relations
+export const subscriptionKeysRelations = relations(subscriptionKeys, ({ one }) => ({
+  healthSystem: one(healthSystems, {
+    fields: [subscriptionKeys.healthSystemId],
+    references: [healthSystems.id],
+  }),
+  usedByUser: one(users, {
+    fields: [subscriptionKeys.usedBy],
+    references: [users.id],
+  }),
+  deactivatedByUser: one(users, {
+    fields: [subscriptionKeys.deactivatedBy],
+    references: [users.id],
+  }),
+}));
+
+// Subscription history relations
+export const subscriptionHistoryRelations = relations(subscriptionHistory, ({ one }) => ({
+  healthSystem: one(healthSystems, {
+    fields: [subscriptionHistory.healthSystemId],
+    references: [healthSystems.id],
+  }),
+}));
+
+// Email notifications relations
+export const emailNotificationsRelations = relations(emailNotifications, ({ one }) => ({
+  user: one(users, {
+    fields: [emailNotifications.userId],
+    references: [users.id],
+  }),
+  healthSystem: one(healthSystems, {
+    fields: [emailNotifications.healthSystemId],
+    references: [healthSystems.id],
+  }),
+}));
 
 // Migration invitations relations
 export const migrationInvitationsRelations = relations(migrationInvitations, ({ one }) => ({

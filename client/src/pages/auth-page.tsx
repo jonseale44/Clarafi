@@ -64,6 +64,7 @@ const registerSchema = insertUserSchema.extend({
   practicePhone: z.string()
     .optional()
     .refine((val) => !val || phoneRegex.test(val), "Phone must be format: 123-456-7890 or 1234567890"),
+  subscriptionKey: z.string().optional(),
   termsAccepted: z.boolean().refine((val) => val === true, "You must accept the terms of service"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -175,6 +176,7 @@ export default function AuthPage() {
       practiceState: "",
       practiceZipCode: "",
       practicePhone: "",
+      subscriptionKey: "",
       termsAccepted: false,
     },
   });
@@ -354,6 +356,7 @@ export default function AuthPage() {
       practiceState: data.practiceState,
       practiceZipCode: data.practiceZipCode,
       practicePhone: data.practicePhone,
+      subscriptionKey: data.subscriptionKey,
     });
   };
 
@@ -481,17 +484,46 @@ export default function AuthPage() {
 
                     {/* Health System Selection for joining existing */}
                     {registrationType === 'join_existing' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="healthSystem">Select Health System or Clinic</Label>
-                        <SearchableHealthSystemSelector
-                          value={selectedHealthSystemId}
-                          onChange={setSelectedHealthSystemId}
-                          placeholder="Search for clinics near you..."
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Search by clinic name, city, address, or NPI number. Click the location icon to find clinics near you.
-                        </p>
-                      </div>
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="healthSystem">Select Health System or Clinic</Label>
+                          <SearchableHealthSystemSelector
+                            value={selectedHealthSystemId}
+                            onChange={setSelectedHealthSystemId}
+                            placeholder="Search for clinics near you..."
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Search by clinic name, city, address, or NPI number. Click the location icon to find clinics near you.
+                          </p>
+                        </div>
+                        
+                        {/* Subscription Key for Tier 3 Health Systems */}
+                        {selectedHealthSystemId && (
+                          <div className="space-y-2">
+                            <Label htmlFor="subscriptionKey" className="flex items-center gap-2">
+                              Subscription Key
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-3 w-3 text-gray-400" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Enter the subscription key provided by your clinic administrator</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </Label>
+                            <Input
+                              id="subscriptionKey"
+                              {...registerForm.register("subscriptionKey")}
+                              placeholder="XXX-YYYY-XXXX-XXXX"
+                              className="font-mono"
+                              style={{ textTransform: 'uppercase' }}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              For enterprise health systems, enter the key provided by your administrator.
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
 
 

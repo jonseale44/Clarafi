@@ -3,6 +3,7 @@ import { healthSystems, organizations, locations, users, userLocations } from "@
 import { eq } from "drizzle-orm";
 import { EmailVerificationService } from "./email-verification-service";
 import { StripeService } from "./stripe-service";
+import { SubscriptionKeyService } from "./subscription-key-service";
 
 export interface RegistrationData {
   username: string;
@@ -22,6 +23,7 @@ export interface RegistrationData {
   practiceState?: string;
   practiceZipCode?: string;
   practicePhone?: string;
+  subscriptionKey?: string; // For tier 3 registration
 }
 
 export class RegistrationService {
@@ -146,6 +148,44 @@ export class RegistrationService {
         } else {
           throw new Error('Health system or clinic selection is required when joining an existing system');
         }
+        
+        // Check if joining a tier 3 health system that requires subscription key
+        const healthSystemResult = await tx
+          .select({ subscriptionTier: healthSystems.subscriptionTier })
+          .from(healthSystems)
+          .where(eq(healthSystems.id, healthSystemId))
+          .limit(1);
+          
+        if (!healthSystemResult || healthSystemResult.length === 0) {
+          throw new Error('Invalid health system');
+        }
+        
+        const healthSystemTier = healthSystemResult[0].subscriptionTier;
+        console.log(`🔑 [RegistrationService] Health system tier: ${healthSystemTier}`);
+        
+        // If tier 3, validate subscription key
+        let validatedKeyId: number | null = null;
+        if (healthSystemTier === 3) {
+          if (!data.subscriptionKey) {
+            throw new Error('Subscription key is required for enterprise health systems');
+          }
+          
+          console.log(`🔑 [RegistrationService] Validating subscription key for tier 3 health system`);
+          const keyValidation = await SubscriptionKeyService.validateKey(data.subscriptionKey);
+          
+          if (!keyValidation.isValid) {
+            throw new Error('Invalid or expired subscription key');
+          }
+          
+          // Check if key's health system matches the one being joined
+          if (keyValidation.healthSystemId !== healthSystemId) {
+            throw new Error('Subscription key is not valid for this health system');
+          }
+          
+          // Store key ID to mark as used after user creation
+          validatedKeyId = keyValidation.keyId!;
+          console.log(`✅ [RegistrationService] Subscription key validated`);
+        }
       }
 
       // Validate role - prevent admin creation through regular registration
@@ -197,6 +237,12 @@ export class RegistrationService {
       } catch (emailError) {
         console.error(`❌ [RegistrationService] Failed to send verification email:`, emailError);
         // Don't fail registration if email sending fails
+      }
+      
+      // Mark subscription key as used if this was a tier 3 registration
+      if (validatedKeyId) {
+        await SubscriptionKeyService.markKeyAsUsed(validatedKeyId, newUser.id);
+        console.log(`🔑 [RegistrationService] Subscription key marked as used for user ${newUser.id}`);
       }
 
       // Assign user to location if one was selected

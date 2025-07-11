@@ -47,6 +47,7 @@ import gptLabReviewRoutes from "./gpt-lab-review-routes";
 import labSimulatorRoutes from "./lab-simulator-routes";
 import labStatusDashboardRoutes from "./lab-status-dashboard-routes";
 import { externalLabMockRouter } from "./external-lab-mock-service";
+import subscriptionKeyRoutes from "./subscription-key-routes";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -4590,6 +4591,9 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Subscription Key Routes
+  app.use("/api/subscription-keys", subscriptionKeyRoutes);
 
   // Subscription Configuration API
   app.get("/api/subscription/config", async (req, res) => {
