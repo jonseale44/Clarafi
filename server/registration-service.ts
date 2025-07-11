@@ -153,9 +153,20 @@ export class RegistrationService {
 
       console.log(`✅ [RegistrationService] Created user ID: ${newUser.id} in health system: ${healthSystemId}`);
 
-      // Send email verification
+      // Generate verification token and update user within the transaction
+      const verificationToken = EmailVerificationService.generateVerificationToken();
+      const expires = new Date();
+      expires.setHours(expires.getHours() + 24); // Token expires in 24 hours
+
+      await tx.update(users)
+        .set({
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: expires,
+        })
+        .where(eq(users.id, newUser.id));
+
+      // Send email verification (outside of transaction to avoid blocking)
       try {
-        const verificationToken = await EmailVerificationService.createVerificationToken(newUser.id);
         await EmailVerificationService.sendVerificationEmail(newUser.email, verificationToken);
         console.log(`📧 [RegistrationService] Verification email sent to ${newUser.email}`);
       } catch (emailError) {
