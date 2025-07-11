@@ -80,9 +80,12 @@ export class EmailVerificationService {
 
     const verificationUrl = `${process.env.APP_URL || 'http://localhost:5000'}/verify-email?token=${token}`;
     
+    // Get sender email from environment or use a default
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com';
+    
     const emailContent = {
       to: email,
-      from: 'noreply@clarafi.com', // You can customize this sender email
+      from: fromEmail, // This email must be verified in SendGrid
       subject: 'Verify Your Clarafi Account',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

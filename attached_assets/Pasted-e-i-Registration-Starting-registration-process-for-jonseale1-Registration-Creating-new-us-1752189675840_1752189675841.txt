@@ -1,0 +1,42 @@
+e i…
+🔐 [Registration] Starting registration process for: jonseale1
+✅ [Registration] Creating new user: jonseale1
+🏥 [RegistrationService] Starting registration for jonseale1 - Type: join_existing
+🏥 [RegistrationService] Joining existing health system ID: 2
+✅ [RegistrationService] Created user ID: 15 in health system: 2
+❌ [EmailVerification] Failed to send email: ResponseError: Forbidden
+    at node_modules/@sendgrid/client/src/classes/client.js:167:29
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  code: 403,
+  response: {
+    headers: Object [AxiosHeaders] {
+      server: 'nginx',
+      date: 'Thu, 10 Jul 2025 23:20:35 GMT',
+      'content-type': 'application/json',
+      'content-length': '281',
+      connection: 'keep-alive',
+      'access-control-allow-origin': 'https://sendgrid.api-docs.io',
+      'access-control-allow-methods': 'POST',
+      'access-control-allow-headers': 'Authorization, Content-Type, On-behalf-of, x-sg-elas-acl',
+      'access-control-max-age': '600',
+      'x-no-cors-reason': 'https://sendgrid.com/docs/Classroom/Basics/API/cors.html',
+      'strict-transport-security': 'max-age=31536000; includeSubDomains',
+      'content-security-policy': "frame-ancestors 'none'",
+      'cache-control': 'no-cache',
+      'x-content-type-options': 'no-sniff',
+      'referrer-policy': 'strict-origin-when-cross-origin'
+    },
+    body: { errors: [Array] }
+  }
+}
+❌ [RegistrationService] Failed to send verification email: Error: Failed to send verification email
+    at Function.sendVerificationEmail (/home/runner/workspace/server/email-verification-service.ts:127:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/registration-service.ts:159:9)
+    at async NeonSession.transaction (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:203:19)
+    at async Function.registerUser (/home/runner/workspace/server/registration-service.ts:36:12)
+    at async <anonymous> (/home/runner/workspace/server/auth.ts:349:20)
+✅ [Registration] User created and logged in successfully: jonseale1
+11:20:35 PM [express] POST /api/register 201 in 1208ms :: {"success":true,"user":{"id":15,"username":…
+❌ [Auth] User jonseale1 attempted login without email verification
+11:20:43 PM [express] POST /api/login 401 in 200ms :: {"message":"Please verify your email before log…
