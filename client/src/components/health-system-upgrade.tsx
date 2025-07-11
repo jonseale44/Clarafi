@@ -62,6 +62,8 @@ const tierFeatures = {
 export function HealthSystemUpgrade() {
   const { toast } = useToast();
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [lastSessionId, setLastSessionId] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   // Get current user and health system data
   const { data: userData } = useQuery({
@@ -132,9 +134,49 @@ export function HealthSystemUpgrade() {
         console.log('[HealthSystemUpgrade] Redirecting in 100ms...');
         setTimeout(() => {
           console.log('[HealthSystemUpgrade] Executing redirect to Stripe checkout');
+          console.log('[HealthSystemUpgrade] Window location before redirect:', window.location.href);
+          console.log('[HealthSystemUpgrade] Document ready state:', document.readyState);
+          console.log('[HealthSystemUpgrade] Browser info:', {
+            userAgent: navigator.userAgent,
+            onLine: navigator.onLine,
+            cookieEnabled: navigator.cookieEnabled,
+            language: navigator.language,
+          });
+          
           try {
+            // Test if we can open a new window first
+            const testWindow = window.open('', '_blank');
+            if (testWindow) {
+              console.log('[HealthSystemUpgrade] Popup test successful, closing test window');
+              testWindow.close();
+            } else {
+              console.warn('[HealthSystemUpgrade] Popup may be blocked by browser');
+            }
+            
+            // Store session info for debugging
+            if (data.sessionId) {
+              sessionStorage.setItem('stripe_session_debug', JSON.stringify({
+                sessionId: data.sessionId,
+                checkoutUrl: redirectUrl,
+                timestamp: new Date().toISOString(),
+                healthSystemId: userData?.healthSystemId,
+              }));
+            }
+            
+            console.log('[HealthSystemUpgrade] Attempting redirect via window.location.href');
             window.location.href = redirectUrl;
             console.log('[HealthSystemUpgrade] Redirect command executed');
+            
+            // Also try alternative redirect methods after a delay
+            setTimeout(() => {
+              console.log('[HealthSystemUpgrade] Checking if redirect occurred...');
+              if (window.location.href === redirectUrl) {
+                console.log('[HealthSystemUpgrade] Redirect successful');
+              } else {
+                console.warn('[HealthSystemUpgrade] Redirect may have failed, trying alternative method');
+                window.location.assign(redirectUrl);
+              }
+            }, 500);
           } catch (error) {
             console.error('[HealthSystemUpgrade] Redirect error:', error);
             toast({

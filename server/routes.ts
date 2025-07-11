@@ -4993,6 +4993,15 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
       let session;
       try {
+        // Test if Stripe instance is working
+        console.log('[Tier3Upgrade] Testing Stripe instance...');
+        try {
+          const testProduct = await stripeInstance.products.list({ limit: 1 });
+          console.log('[Tier3Upgrade] Stripe instance test successful, products access:', !!testProduct);
+        } catch (testError: any) {
+          console.error('[Tier3Upgrade] Stripe instance test failed:', testError.message);
+        }
+
         session = await stripeInstance.checkout.sessions.create({
           payment_method_types: ['card'],
           line_items: [{
@@ -5011,12 +5020,15 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           }],
           mode: 'subscription',
           customer_email: user.email,
-          success_url: `${baseUrl}/dashboard?upgrade=success`,
+          success_url: `${baseUrl}/dashboard?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/dashboard?upgrade=cancelled`,
           metadata: {
             healthSystemId: healthSystemId.toString(),
             action: 'upgrade-to-tier3'
-          }
+          },
+          // Simplified configuration for better compatibility
+          billing_address_collection: 'auto',
+          expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Expire after 30 minutes
         });
 
         console.log('[Tier3Upgrade] Session created successfully:', {
@@ -5083,6 +5095,72 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     } catch (error) {
       console.error("[Tier3Upgrade] Error creating tier 3 upgrade session:", error);
       res.status(500).json({ error: "Failed to initiate upgrade" });
+    }
+  });
+
+  // Stripe session debug endpoint
+  app.get("/api/stripe/debug-session/:sessionId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const stripe = (await import('stripe')).default;
+      const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || '', {
+        apiVersion: '2024-11-20.acacia',
+      });
+      
+      console.log('[StripeDebug] Fetching session:', req.params.sessionId);
+      
+      try {
+        const session = await stripeInstance.checkout.sessions.retrieve(
+          req.params.sessionId,
+          {
+            expand: ['line_items', 'customer', 'subscription', 'payment_intent']
+          }
+        );
+        
+        console.log('[StripeDebug] Session details:', {
+          id: session.id,
+          status: session.status,
+          payment_status: session.payment_status,
+          url: session.url,
+          expires_at: new Date(session.expires_at * 1000).toISOString(),
+          created: new Date(session.created * 1000).toISOString(),
+          mode: session.mode,
+          customer_email: session.customer_email,
+          amount_total: session.amount_total,
+          currency: session.currency,
+          line_items_count: session.line_items?.data?.length,
+        });
+        
+        res.json({
+          session: {
+            id: session.id,
+            status: session.status,
+            payment_status: session.payment_status,
+            url: session.url,
+            expires_at: new Date(session.expires_at * 1000).toISOString(),
+            created: new Date(session.created * 1000).toISOString(),
+            mode: session.mode,
+            customer_email: session.customer_email,
+            metadata: session.metadata,
+            amount_total: session.amount_total,
+            currency: session.currency,
+            line_items: session.line_items?.data,
+            payment_intent: session.payment_intent,
+            subscription: session.subscription,
+          }
+        });
+      } catch (stripeError: any) {
+        console.error('[StripeDebug] Error fetching session:', stripeError);
+        res.status(400).json({
+          error: stripeError.message,
+          type: stripeError.type,
+          code: stripeError.code,
+        });
+      }
+    } catch (error: any) {
+      console.error('[StripeDebug] Unexpected error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
