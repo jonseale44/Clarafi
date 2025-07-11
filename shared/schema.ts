@@ -2870,3 +2870,19 @@ export const insertMigrationInvitationSchema = createInsertSchema(migrationInvit
 
 export type MigrationInvitation = typeof migrationInvitations.$inferSelect;
 export type InsertMigrationInvitation = z.infer<typeof insertMigrationInvitationSchema>;
+
+// Migration invitations relations
+export const migrationInvitationsRelations = relations(migrationInvitations, ({ one }) => ({
+  invitedUser: one(users, {
+    fields: [migrationInvitations.invitedUserId],
+    references: [users.id],
+  }),
+  targetHealthSystem: one(healthSystems, {
+    fields: [migrationInvitations.targetHealthSystemId],
+    references: [healthSystems.id],
+  }),
+  createdByUser: one(users, {
+    fields: [migrationInvitations.createdByUserId],
+    references: [users.id],
+  }),
+}));
