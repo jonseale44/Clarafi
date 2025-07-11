@@ -84,9 +84,19 @@ export function HealthSystemUpgrade() {
       });
     },
     onSuccess: (data) => {
+      console.log('Upgrade success response:', data);
       if (data.checkoutUrl || data.sessionUrl) {
+        const redirectUrl = data.checkoutUrl || data.sessionUrl;
+        console.log('Redirecting to:', redirectUrl);
         // Redirect to Stripe checkout
-        window.location.href = data.checkoutUrl || data.sessionUrl;
+        window.location.href = redirectUrl;
+      } else {
+        console.error('No checkout URL received:', data);
+        toast({
+          title: 'Error',
+          description: 'No checkout URL received from server',
+          variant: 'destructive',
+        });
       }
     },
     onError: (error: any) => {
