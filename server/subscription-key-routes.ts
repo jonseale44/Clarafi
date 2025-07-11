@@ -17,34 +17,62 @@ const ensureHealthSystemAdmin = async (req: any, res: any, next: any) => {
 // Generate keys for health system (admin only)
 router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
   try {
-    const { providerCount, staffCount, tier } = req.body;
+    const { providerCount, staffCount, tier, healthSystemId } = req.body;
     const userId = req.user.id;
 
-    // Get user's health system
+    console.log(`🔑 [SubscriptionKeys] Generate request from user ${userId} - Providers: ${providerCount}, Staff: ${staffCount}, Tier: ${tier}`);
+
+    // Get user details
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user || !user.healthSystemId) {
-      return res.status(400).json({ error: 'No health system associated with user' });
+    if (!user) {
+      console.error(`❌ [SubscriptionKeys] User ${userId} not found`);
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    // Determine which health system to generate keys for
+    let targetHealthSystemId: number;
+    
+    // System admins (with username 'admin') can generate keys for any health system
+    if (user.username === 'admin' && healthSystemId) {
+      targetHealthSystemId = healthSystemId;
+      console.log(`🔑 [SubscriptionKeys] System admin generating keys for health system ${healthSystemId}`);
+    } else {
+      // Regular admins can only generate for their own health system
+      if (!user.healthSystemId) {
+        console.error(`❌ [SubscriptionKeys] User ${userId} has no health system`);
+        return res.status(400).json({ error: 'No health system associated with user' });
+      }
+      targetHealthSystemId = user.healthSystemId;
+      console.log(`🏥 [SubscriptionKeys] User ${userId} generating keys for their health system ${targetHealthSystemId}`);
     }
 
     // Validate tier matches health system subscription
     const [healthSystem] = await db.select().from(healthSystems)
-      .where(eq(healthSystems.id, user.healthSystemId));
+      .where(eq(healthSystems.id, targetHealthSystemId));
+    
+    console.log(`🏥 [SubscriptionKeys] Health system details:`, {
+      id: healthSystem?.id,
+      name: healthSystem?.name,
+      subscriptionTier: healthSystem?.subscriptionTier,
+      requestedTier: tier
+    });
     
     if (!healthSystem || healthSystem.subscriptionTier !== tier) {
-      return res.status(400).json({ error: 'Tier does not match health system subscription' });
+      console.error(`❌ [SubscriptionKeys] Tier mismatch - Health system tier: ${healthSystem?.subscriptionTier}, Requested tier: ${tier}`);
+      return res.status(400).json({ error: `Tier mismatch: ${healthSystem?.name} is tier ${healthSystem?.subscriptionTier}, but you requested tier ${tier} keys` });
     }
 
     // Check current key counts against limits
-    const currentKeys = await SubscriptionKeyService.getActiveKeyCount(user.healthSystemId);
+    const currentKeys = await SubscriptionKeyService.getActiveKeyCount(targetHealthSystemId);
     const limits = healthSystem.subscriptionLimits as any || {};
     
-    if (currentKeys.providers + providerCount > limits.providerKeys) {
+    if (limits.providerKeys && currentKeys.providers + providerCount > limits.providerKeys) {
       return res.status(400).json({ 
         error: `Would exceed provider key limit (${limits.providerKeys})` 
       });
     }
     
-    if (currentKeys.staff + staffCount > limits.staffKeys) {
+    if (limits.staffKeys && currentKeys.staff + staffCount > limits.staffKeys) {
       return res.status(400).json({ 
         error: `Would exceed staff key limit (${limits.staffKeys})` 
       });
@@ -52,7 +80,7 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
 
     // Generate keys
     const keys = await SubscriptionKeyService.createKeysForHealthSystem(
-      user.healthSystemId,
+      targetHealthSystemId,
       tier,
       providerCount,
       staffCount

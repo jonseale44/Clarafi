@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -19,11 +20,23 @@ export function AdminSubscriptionKeys() {
     providerCount: 5,
     staffCount: 10,
     tier: 3,
+    healthSystemId: undefined as number | undefined,
   });
 
   const { data: keysData, isLoading } = useQuery({
     queryKey: ['/api/subscription-keys/list'],
   });
+
+  const { data: userData } = useQuery({
+    queryKey: ['/api/users/me'],
+  });
+
+  const { data: healthSystemsData } = useQuery({
+    queryKey: ['/api/health-systems'],
+    enabled: userData?.username === 'admin',
+  });
+
+  const isSystemAdmin = userData?.username === 'admin';
 
   const generateKeysMutation = useMutation({
     mutationFn: async (data: typeof generateForm) => {
@@ -307,6 +320,36 @@ export function AdminSubscriptionKeys() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {isSystemAdmin && (
+              <div>
+                <Label htmlFor="health-system">Select Health System</Label>
+                <Select
+                  value={generateForm.healthSystemId?.toString()}
+                  onValueChange={(value) => {
+                    const healthSystem = healthSystemsData?.find((hs: any) => hs.id.toString() === value);
+                    setGenerateForm({
+                      ...generateForm,
+                      healthSystemId: healthSystem?.id,
+                      tier: healthSystem?.subscriptionTier || 3
+                    });
+                  }}
+                >
+                  <SelectTrigger id="health-system">
+                    <SelectValue placeholder="Select a health system" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {healthSystemsData?.filter((hs: any) => hs.subscriptionTier === 3).map((hs: any) => (
+                      <SelectItem key={hs.id} value={hs.id.toString()}>
+                        {hs.name} (Tier {hs.subscriptionTier})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Only Tier 3 health systems can generate subscription keys
+                </p>
+              </div>
+            )}
             <div>
               <Label htmlFor="provider-count">Number of Provider Keys</Label>
               <Input
