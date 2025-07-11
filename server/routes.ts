@@ -4910,6 +4910,12 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   // Stripe tier upgrade endpoint
   app.post("/api/stripe/upgrade-to-tier3", async (req, res) => {
     try {
+      console.log('[Tier3Upgrade] Request received:', { 
+        authenticated: req.isAuthenticated(), 
+        body: req.body,
+        user: req.user ? { id: req.user.id, role: req.user.role, email: req.user.email } : null
+      });
+
       if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -4917,38 +4923,71 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       const { healthSystemId } = req.body;
       const user = req.user as AuthenticatedUser;
 
+      console.log('[Tier3Upgrade] User details:', {
+        userId: user.id,
+        userRole: user.role,
+        userHealthSystemId: user.healthSystemId,
+        requestedHealthSystemId: healthSystemId
+      });
+
       // Verify user is admin of the health system
       if (user.role !== 'admin' || user.healthSystemId !== healthSystemId) {
+        console.log('[Tier3Upgrade] Authorization failed:', {
+          roleCheck: user.role !== 'admin',
+          healthSystemCheck: user.healthSystemId !== healthSystemId
+        });
         return res.status(403).json({ error: "Unauthorized to upgrade this health system" });
       }
 
       // Get health system details
       const healthSystem = await storage.getHealthSystem(healthSystemId);
       if (!healthSystem) {
+        console.log('[Tier3Upgrade] Health system not found:', healthSystemId);
         return res.status(404).json({ error: "Health system not found" });
       }
 
+      console.log('[Tier3Upgrade] Current health system:', {
+        id: healthSystem.id,
+        name: healthSystem.name,
+        currentTier: healthSystem.subscriptionTier
+      });
+
       // Check current tier
       if (healthSystem.subscriptionTier === 3) {
+        console.log('[Tier3Upgrade] Already on tier 3');
         return res.status(400).json({ error: "Already on Enterprise tier" });
       }
 
       // Import StripeService
       const { StripeService } = await import("./stripe-service.js");
 
-      // Create Stripe checkout session for tier 3
+      // Get the base URL from environment or use request origin
+      const protocol = req.get('x-forwarded-proto') || req.protocol;
+      const host = req.get('host');
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : `${protocol}://${host}`;
+
+      console.log('[Tier3Upgrade] Creating Stripe session for tier 3 upgrade with base URL:', baseUrl);
+
+      // Create Stripe checkout session for tier 3 using object parameters
       const checkoutResult = await StripeService.createCheckoutSession({
         email: user.email,
         name: healthSystem.name,
         tier: 3,
         billingPeriod: 'monthly', // Enterprise is typically monthly
         healthSystemId: healthSystemId,
+        successUrl: `${baseUrl}/dashboard?upgrade=success&healthSystemId=${healthSystemId}`,
+        cancelUrl: `${baseUrl}/admin/health-system-upgrade?upgrade=cancelled`,
         metadata: {
           upgradeType: 'tier3',
-          previousTier: healthSystem.subscriptionTier.toString(),
+          previousTier: healthSystem.subscriptionTier?.toString() || '1',
           healthSystemId: healthSystemId.toString(),
+          userId: user.id.toString(),
         }
       });
+
+      console.log('[Tier3Upgrade] Stripe session result:', checkoutResult);
 
       if (checkoutResult.success && checkoutResult.sessionUrl) {
         return res.json({
@@ -4956,12 +4995,13 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           checkoutUrl: checkoutResult.sessionUrl,
         });
       } else {
+        console.error('[Tier3Upgrade] Failed to create checkout session:', checkoutResult);
         return res.status(500).json({
           error: checkoutResult.error || "Failed to create checkout session"
         });
       }
     } catch (error) {
-      console.error("Error creating tier 3 upgrade session:", error);
+      console.error("[Tier3Upgrade] Error creating tier 3 upgrade session:", error);
       res.status(500).json({ error: "Failed to initiate upgrade" });
     }
   });

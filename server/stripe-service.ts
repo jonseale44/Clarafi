@@ -324,6 +324,8 @@ export class StripeService {
     billingPeriod: 'monthly' | 'annual';
     healthSystemId: number;
     metadata?: Record<string, string>;
+    successUrl?: string;
+    cancelUrl?: string;
   }): Promise<{ success: boolean; sessionUrl?: string; error?: string }>;
   
   // Create a checkout session for upgrading (overloaded)
@@ -378,8 +380,8 @@ export class StripeService {
             ...params.metadata,
             healthSystemId: params.healthSystemId.toString(),
           },
-          success_url: `${process.env.REPLIT_DEV_DOMAIN || 'https://your-app.replit.app'}/auth?payment=success`,
-          cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'https://your-app.replit.app'}/auth?payment=cancelled`,
+          success_url: params.successUrl || `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://your-app.replit.app'}/auth?payment=success`,
+          cancel_url: params.cancelUrl || `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://your-app.replit.app'}/auth?payment=cancelled`,
         });
 
         return { 
