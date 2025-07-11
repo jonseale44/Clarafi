@@ -50,7 +50,7 @@ const registerSchema = insertUserSchema.extend({
   licenseNumber: z.string()
     .optional()
     .refine((val) => !val || val.length >= 5, "License number must be at least 5 characters"),
-  registrationType: z.enum(["individual", "join_existing"]).default("join_existing"),
+  registrationType: z.enum(["create_new", "join_existing"]).default("join_existing"),
   practiceName: z.string().optional(),
   practiceAddress: z.string().optional(),
   practiceCity: z.string().optional(),
@@ -68,12 +68,12 @@ const registerSchema = insertUserSchema.extend({
   message: "Passwords don't match",
   path: ["confirmPassword"],
 }).refine((data) => {
-  if (data.registrationType === "individual" && data.role === "provider") {
-    return !!(data.practiceName && data.practiceAddress && data.practiceCity && data.practiceState && data.practiceZipCode);
+  if (data.registrationType === "create_new" && data.role === "provider") {
+    return !!(data.practiceName && data.practiceAddress && data.practiceCity && data.practiceState && data.practiceZipCode && data.practicePhone);
   }
   return true;
 }, {
-  message: "Practice information is required for individual providers",
+  message: "All practice information is required for individual providers",
   path: ["practiceName"],
 });
 
@@ -318,11 +318,14 @@ export default function AuthPage() {
       return;
     }
     
+    // Force registration type to 'create_new' for individual practice
+    const finalRegistrationType = registrationType === 'create_new' ? 'create_new' : 'join_existing';
+    
     // Pass all the data including registration type and practice info
     console.log("Calling registerMutation.mutate with:", {
       ...registerData,
-      registrationType,
-      existingHealthSystemId: registrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
+      registrationType: finalRegistrationType,
+      existingHealthSystemId: finalRegistrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
       practiceName: data.practiceName,
       practiceAddress: data.practiceAddress,
       practiceCity: data.practiceCity,
@@ -333,8 +336,8 @@ export default function AuthPage() {
     
     registerMutation.mutate({
       ...registerData,
-      registrationType,
-      existingHealthSystemId: registrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
+      registrationType: finalRegistrationType,
+      existingHealthSystemId: finalRegistrationType === 'join_existing' ? parseInt(selectedHealthSystemId) : undefined,
       practiceName: data.practiceName,
       practiceAddress: data.practiceAddress,
       practiceCity: data.practiceCity,
@@ -445,7 +448,10 @@ export default function AuthPage() {
                       <Label>Registration Type</Label>
                       <RadioGroup 
                         value={registrationType} 
-                        onValueChange={setRegistrationType}
+                        onValueChange={(value) => {
+                          setRegistrationType(value as 'create_new' | 'join_existing');
+                          registerForm.setValue('registrationType', value as 'create_new' | 'join_existing');
+                        }}
                         className="space-y-2"
                       >
                         <div className="flex items-center space-x-2">
@@ -646,6 +652,11 @@ export default function AuthPage() {
                             {...registerForm.register("practiceName")}
                             placeholder="Your Practice Name"
                           />
+                          {registerForm.formState.errors.practiceName && (
+                            <p className="text-sm text-red-600">
+                              {registerForm.formState.errors.practiceName.message}
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -694,6 +705,11 @@ export default function AuthPage() {
                               {...registerForm.register("practicePhone")}
                               placeholder="555-555-5555"
                             />
+                            {registerForm.formState.errors.practicePhone && (
+                              <p className="text-sm text-red-600">
+                                {registerForm.formState.errors.practicePhone.message}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
