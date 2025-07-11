@@ -4990,10 +4990,12 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       console.log('[Tier3Upgrade] Stripe session result:', checkoutResult);
 
       if (checkoutResult.success && checkoutResult.sessionUrl) {
-        return res.json({
+        const responseData = {
           success: true,
           checkoutUrl: checkoutResult.sessionUrl,
-        });
+        };
+        console.log('[Tier3Upgrade] Sending response:', responseData);
+        return res.json(responseData);
       } else {
         console.error('[Tier3Upgrade] Failed to create checkout session:', checkoutResult);
         return res.status(500).json({

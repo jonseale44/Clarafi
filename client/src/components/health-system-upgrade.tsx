@@ -79,9 +79,10 @@ export function HealthSystemUpgrade() {
 
   const upgradeMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('POST', '/api/stripe/upgrade-to-tier3', {
+      const response = await apiRequest('POST', '/api/stripe/upgrade-to-tier3', {
         healthSystemId: userData?.healthSystemId,
       });
+      return await response.json();
     },
     onSuccess: (data) => {
       console.log('Upgrade success response:', data);
