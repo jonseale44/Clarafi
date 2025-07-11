@@ -27,10 +27,7 @@ export function AdminSubscriptionKeys() {
 
   const generateKeysMutation = useMutation({
     mutationFn: async (data: typeof generateForm) => {
-      return await apiRequest('/api/subscription-keys/generate', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('POST', '/api/subscription-keys/generate', data);
     },
     onSuccess: () => {
       toast({
@@ -51,9 +48,7 @@ export function AdminSubscriptionKeys() {
 
   const deactivateKeyMutation = useMutation({
     mutationFn: async (keyId: number) => {
-      return await apiRequest(`/api/subscription-keys/deactivate/${keyId}`, {
-        method: 'POST',
-      });
+      return await apiRequest('POST', `/api/subscription-keys/deactivate/${keyId}`);
     },
     onSuccess: () => {
       toast({
@@ -66,9 +61,7 @@ export function AdminSubscriptionKeys() {
 
   const regenerateKeyMutation = useMutation({
     mutationFn: async (keyId: number) => {
-      return await apiRequest(`/api/subscription-keys/regenerate/${keyId}`, {
-        method: 'POST',
-      });
+      return await apiRequest('POST', `/api/subscription-keys/regenerate/${keyId}`);
     },
     onSuccess: () => {
       toast({
