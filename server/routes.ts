@@ -4970,22 +4970,42 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
       console.log('[Tier3Upgrade] Creating Stripe session for tier 3 upgrade with base URL:', baseUrl);
 
-      // Create Stripe checkout session for tier 3 using object parameters
-      const checkoutResult = await StripeService.createCheckoutSession({
-        email: user.email,
-        name: healthSystem.name,
-        tier: 3,
-        billingPeriod: 'monthly', // Enterprise is typically monthly
-        healthSystemId: healthSystemId,
-        successUrl: `${baseUrl}/dashboard?upgrade=success&healthSystemId=${healthSystemId}`,
-        cancelUrl: `${baseUrl}/admin/health-system-upgrade?upgrade=cancelled`,
+      // Create minimal Stripe checkout session to avoid loading issues
+      const stripe = (await import('stripe')).default;
+      const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || '', {
+        apiVersion: '2024-11-20.acacia',
+      });
+
+      const session = await stripeInstance.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Clarafi Enterprise',
+              description: 'Complete EMR system with admin features',
+            },
+            unit_amount: 29900, // $299.00
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        customer_email: user.email,
+        success_url: `${baseUrl}/dashboard?upgrade=success`,
+        cancel_url: `${baseUrl}/dashboard?upgrade=cancelled`,
         metadata: {
-          upgradeType: 'tier3',
-          previousTier: healthSystem.subscriptionTier?.toString() || '1',
           healthSystemId: healthSystemId.toString(),
-          userId: user.id.toString(),
+          action: 'upgrade-to-tier3'
         }
       });
+
+      const checkoutResult = {
+        success: true,
+        sessionUrl: session.url
+      };
 
       console.log('[Tier3Upgrade] Stripe session result:', checkoutResult);
 
