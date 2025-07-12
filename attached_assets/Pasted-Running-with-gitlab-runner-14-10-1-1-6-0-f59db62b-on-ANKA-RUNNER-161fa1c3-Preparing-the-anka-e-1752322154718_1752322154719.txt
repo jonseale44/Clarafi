@@ -1,0 +1,394 @@
+Running with gitlab-runner 14.10.1/1.6.0 (f59db62b)
+  on ANKA_RUNNER 161fa1c3
+Preparing the "anka" executor
+Opening a connection to the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443
+Starting Anka VM using:
+  - VM Template UUID: 9ced2d88-6f2c-4854-9cb8-28b35b753067
+  - VM Template Tag Name: v3
+Please be patient...
+You can check the status of starting your Instance on the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443/#/instances
+Verifying connectivity to the VM: build_stack_2024.12_arm64-1752322082235587000 (f71f9464-be25-4646-9938-521714b1defc) | Controller Instance ID: 656a7189-3718-4b22-5b6c-b13d5da5923a | Host: 10.2.160.242 | Port: 10000 
+VM "build_stack_2024.12_arm64-1752322082235587000" (f71f9464-be25-4646-9938-521714b1defc) / Controller Instance ID 656a7189-3718-4b22-5b6c-b13d5da5923a running on Node ip-10-2-160-242.us-west-2.compute.internal (10.2.160.242), is ready for work (10.2.160.242:10000)
+Preparing environment
+Running on ip-192-168-64-24.us-west-2.compute.internal via ip-10-2-128-124.us-west-2.compute.internal...
+Getting source from Git repository
+$ pre-clone
+[12:08:29]: Cloning repository...
+Fetching changes...
+Initialized empty Git repository in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/.git/
+Created fresh repository.
+Checking out db02ba26 as main...
+Updating/initializing submodules...
+$ post-clone
+[12:08:36]: Cloning complete...
+Restoring cache
+Not downloading cache 3d7e1956/node-cache-stack-package-ios-2024.12-arm64.zip due to policy
+Executing "step_script" stage of the job script
+$ pre-build
+[12:08:37]: Building project....
+$ fetch-updates || true
+Checking for build process updates...
+$ build-ios
+Building from: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[12:08:41]: ---------------------------------
+[12:08:41]: --- Step: add_extra_platforms ---
+[12:08:41]: ---------------------------------
+[12:08:41]: Setting '[:web]' as extra SupportedPlatforms
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:8: warning: character class has '-' without escape
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:15: warning: character class has '-' without escape
+[12:08:41]: ------------------------------
+[12:08:41]: --- Step: default_platform ---
+[12:08:41]: ------------------------------
+[12:08:41]: Driving the lane 'ios build_capacitor' 🚀
+[12:08:41]: ---------------------------------
+[12:08:41]: --- Step: prepare_environment ---
+[12:08:41]: ---------------------------------
+[12:08:41]: Setting default environment variables to tidy up logs. These can be overridden by setting them in Appflow.
+[12:08:41]: 
+[12:08:41]: No changes needed - logs are already tidy! 🧹
+[12:08:41]: -------------------------
+[12:08:41]: --- Step: sentry_init ---
+[12:08:41]: -------------------------
+[12:08:41]: ----------------------------
+[12:08:41]: --- Step: begin_building ---
+[12:08:41]: ----------------------------
+[12:08:41]: Began building @ 2025-07-12T12:08:41
+[12:08:41]: ---------------------------
+[12:08:41]: --- Step: build_summary ---
+[12:08:41]: ---------------------------
+
++---------------------------------------------------+
+|                   Build Summary                   |
++---------------------+-----------------------------+
+| Runners Revision    | f9ed312                     |
+| Job ID              | 10293986                    |
+| Node.js version     | v20.18.1                    |
+| Cordova CLI version | 12.0.0 (cordova-lib@12.0.2) |
+| npm version         | 10.8.2                      |
+| yarn version        | 1.22.19                     |
+| macOS version       | 14.6.1                      |
+| Xcode version       | Xcode 16.1                  |
+|                     | Build version 16B40         |
+| Fastlane version    | fastlane (2.225.0)          |
++---------------------+-----------------------------+
+
+[12:08:44]: -----------------------------
+[12:08:44]: --- Step: create_keychain ---
+[12:08:44]: -----------------------------
+[12:08:44]: $ security list-keychains -d user
+[12:08:44]: ▸ "/Users/ionic-cloud-team/Library/Keychains/login.keychain-db"
+[12:08:44]: ------------------------------------------
+[12:08:44]: --- Step: get_ios_credentials_from_api ---
+[12:08:44]: ------------------------------------------
+[12:08:44]: Fetching certificate and profile(s) from Ionic Appflow
+[12:08:45]: ---------------------------------
+[12:08:45]: --- Step: set_ios_credentials ---
+[12:08:45]: ---------------------------------
+[12:08:45]: Installing provisioning profile...
+[12:08:45]: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision
+
++-------------------------------------------------------------------+
+|                       Installed Certificate                       |
++-------------------+-----------------------------------------------+
+| User ID           | W5V9Y23C6X                                    |
+| Common Name       | iPhone Developer: Jonathan Seale (4298ARN5NU) |
+| Organization Unit | 3LCZ3S8HGP                                    |
+| Organization      | Jonathan Seale                                |
+| Country           | US                                            |
++-------------------+-----------------------------------------------+
+
+[12:08:45]: --------------------------------
+[12:08:45]: --- Step: import_certificate ---
+[12:08:45]: --------------------------------
+[12:08:45]: Setting key partition list... (this can take a minute if there are a lot of keys installed)
+[12:08:45]: ---------------------------
+[12:08:45]: --- Step: set_ionic_cli ---
+[12:08:45]: ---------------------------
+[12:08:46]: Preinstalled @ionic/cli compatible with project `react`
+[12:08:46]: ------------------------------------
+[12:08:46]: --- Step: detect_package_manager ---
+[12:08:46]: ------------------------------------
+[12:08:46]: Detecting package manager
+[12:08:46]: Defaulting to npm
+[12:08:46]: ---------------------------------
+[12:08:46]: --- Step: add_git_credentials ---
+[12:08:46]: ---------------------------------
+[12:08:46]: Writing git-credentials files
+[12:08:46]: git-credentials successfully added to project
+[12:08:46]: --------------------------------
+[12:08:46]: --- Step: get_appflow_config ---
+[12:08:46]: --------------------------------
+[12:08:46]: Checking for appflow.config.json
+[12:08:46]: Appflow config detected
+[12:08:46]: --------------------------------
+[12:08:46]: --- Step: dependency_install ---
+[12:08:46]: --------------------------------
+[12:08:46]: Installing Dependencies (in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor)
+[12:08:46]: $ npm ci --quiet 
+[12:08:51]: ▸ npm error code ERESOLVE
+[12:08:51]: ▸ npm error ERESOLVE could not resolve
+[12:08:51]: ▸ npm error
+[12:08:51]: ▸ npm error While resolving: @vitejs/plugin-react@4.6.0
+[12:08:51]: ▸ npm error Found: vite@6.3.5
+[12:08:51]: ▸ npm error node_modules/vite
+[12:08:51]: ▸ npm error   dev vite@"^6.0.3" from the root project
+[12:08:51]: ▸ npm error
+[12:08:51]: ▸ npm error Could not resolve dependency:
+[12:08:51]: ▸ npm error peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+[12:08:51]: ▸ npm error node_modules/@vitejs/plugin-react
+[12:08:51]: ▸ npm error   dev @vitejs/plugin-react@"^4.3.4" from the root project
+[12:08:51]: ▸ npm error
+[12:08:51]: ▸ npm error Conflicting peer dependency: vite@5.4.19
+[12:08:51]: ▸ npm error node_modules/vite
+[12:08:51]: ▸ npm error   peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+[12:08:51]: ▸ npm error   node_modules/@vitejs/plugin-react
+[12:08:51]: ▸ npm error     dev @vitejs/plugin-react@"^4.3.4" from the root project
+[12:08:51]: ▸ npm error
+[12:08:51]: ▸ npm error Fix the upstream dependency conflict, or retry
+[12:08:51]: ▸ npm error this command with --force or --legacy-peer-deps
+[12:08:51]: ▸ npm error to accept an incorrect (and potentially broken) dependency resolution.
+[12:08:51]: ▸ npm error
+[12:08:51]: ▸ npm error
+[12:08:51]: ▸ npm error For a full report see:
+[12:08:51]: ▸ npm error /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_47_039Z-eresolve-report.txt
+[12:08:51]: ▸ npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_47_039Z-debug-0.log
+[12:08:51]: `npm ci` failed falling back to `npm install`
+[12:08:51]: $ npm install --quiet
+[12:08:52]: ▸ npm error code ERESOLVE
+[12:08:52]: ▸ npm error ERESOLVE could not resolve
+[12:08:52]: ▸ npm error
+[12:08:52]: ▸ npm error While resolving: @vitejs/plugin-react@4.6.0
+[12:08:52]: ▸ npm error Found: vite@6.3.5
+[12:08:52]: ▸ npm error node_modules/vite
+[12:08:52]: ▸ npm error   dev vite@"^6.0.3" from the root project
+[12:08:52]: ▸ npm error
+[12:08:52]: ▸ npm error Could not resolve dependency:
+[12:08:52]: ▸ npm error peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+[12:08:52]: ▸ npm error node_modules/@vitejs/plugin-react
+[12:08:52]: ▸ npm error   dev @vitejs/plugin-react@"^4.3.4" from the root project
+[12:08:52]: ▸ npm error
+[12:08:52]: ▸ npm error Conflicting peer dependency: vite@5.4.19
+[12:08:52]: ▸ npm error node_modules/vite
+[12:08:52]: ▸ npm error   peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+[12:08:52]: ▸ npm error   node_modules/@vitejs/plugin-react
+[12:08:52]: ▸ npm error     dev @vitejs/plugin-react@"^4.3.4" from the root project
+[12:08:52]: ▸ npm error
+[12:08:52]: ▸ npm error Fix the upstream dependency conflict, or retry
+[12:08:52]: ▸ npm error this command with --force or --legacy-peer-deps
+[12:08:52]: ▸ npm error to accept an incorrect (and potentially broken) dependency resolution.
+[12:08:52]: ▸ npm error
+[12:08:52]: ▸ npm error
+[12:08:52]: ▸ npm error For a full report see:
+[12:08:52]: ▸ npm error /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-eresolve-report.txt
+[12:08:52]: ▸ npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-debug-0.log
+[12:08:52]: -------------------------
+[12:08:52]: --- Step: upload_logs ---
+[12:08:52]: -------------------------
+[12:08:53]: Unable to upload package list log. Skipping.
+[12:08:55]: --------------------------------------
+[12:08:55]: --- Step: sentry_capture_exception ---
+[12:08:55]: --------------------------------------
+I, [2025-07-12T12:08:55.492773 #2196]  INFO -- sentry: ** [Sentry] [Transport] Sending envelope with items [event] 7141fd240f6047e099972a5c22873751 to Sentry
+[12:08:55]: ---------------------------
+[12:08:55]: --- Step: shell command ---
+[12:08:55]: ---------------------------
+[12:08:55]: -----------------------------
+[12:08:55]: --- Step: delete_keychain ---
+[12:08:55]: -----------------------------
+[12:08:55]: Exit status of command 'npm install --quiet' was 1 instead of 0.
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @vitejs/plugin-react@4.6.0
+npm error Found: vite@6.3.5
+npm error node_modules/vite
+npm error   dev vite@"^6.0.3" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error node_modules/@vitejs/plugin-react
+npm error   dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Conflicting peer dependency: vite@5.4.19
+npm error node_modules/vite
+npm error   peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error   node_modules/@vitejs/plugin-react
+npm error     dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-debug-0.log
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                               Lane Context                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| DEFAULT_PLATFORM                    | ios                                                                                                                                 |
+| PLATFORM_NAME                       | ios                                                                                                                                 |
+| LANE_NAME                           | ios build_capacitor                                                                                                                 |
+| KEYCHAIN_PATH                       | ~/Library/Keychains/IonicKeychain                                                                                                   |
+| DOWNLOAD_CERTS_PROVISION_FILE_UUID  | 8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2                                                                                                |
+| DOWNLOAD_CERTS_CODESIGNING_IDENTITY | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                                                       |
+| DOWNLOAD_CERTS_TEAM_ID              | 3LCZ3S8HGP                                                                                                                          |
+| DOWNLOAD_CERTS_CERT_PATH            | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/cert_file.p12                                            |
+| SIGH_PROFILE_PATHS                  | ["/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision"] |
+| IONIC_CLI_VERSION                   | 7.2.0                                                                                                                               |
+| NODE_PACKAGE_MANAGER                | npm                                                                                                                                 |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+[12:08:55]: Exit status of command 'npm install --quiet' was 1 instead of 0.
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @vitejs/plugin-react@4.6.0
+npm error Found: vite@6.3.5
+npm error node_modules/vite
+npm error   dev vite@"^6.0.3" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error node_modules/@vitejs/plugin-react
+npm error   dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Conflicting peer dependency: vite@5.4.19
+npm error node_modules/vite
+npm error   peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error   node_modules/@vitejs/plugin-react
+npm error     dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-debug-0.log
+
+
++---------------------------------------------------+
+|                 fastlane summary                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | add_extra_platforms          | 0           |
+| 2    | default_platform             | 0           |
+| 3    | prepare_environment          | 0           |
+| 4    | sentry_init                  | 0           |
+| 5    | begin_building               | 0           |
+| 6    | build_summary                | 2           |
+| 7    | create_keychain              | 0           |
+| 8    | get_ios_credentials_from_api | 0           |
+| 9    | set_ios_credentials          | 0           |
+| 10   | import_certificate           | 0           |
+| 11   | set_ionic_cli                | 1           |
+| 12   | detect_package_manager       | 0           |
+| 13   | add_git_credentials          | 0           |
+| 14   | get_appflow_config           | 0           |
+| 💥   | dependency_install           | 5           |
+| 16   | upload_logs                  | 3           |
+| 17   | sentry_capture_exception     | 0           |
+| 18   | shell command                | 0           |
+| 19   | delete_keychain              | 0           |
++------+------------------------------+-------------+
+
+[12:08:55]: fastlane finished with errors
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane: [!] Exit status of command 'npm install --quiet' was 1 instead of 0. (FastlaneCore::Interface::FastlaneShellError)
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @vitejs/plugin-react@4.6.0
+npm error Found: vite@6.3.5
+npm error node_modules/vite
+npm error   dev vite@"^6.0.3" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error node_modules/@vitejs/plugin-react
+npm error   dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Conflicting peer dependency: vite@5.4.19
+npm error node_modules/vite
+npm error   peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error   node_modules/@vitejs/plugin-react
+npm error     dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_51_576Z-debug-0.log
+
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane_core/lib/fastlane_core/ui/interface.rb:153:in `shell_error!': Exit status of command 'npm ci --quiet ' was 1 instead of 0. (FastlaneCore::Interface::FastlaneShellError)
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @vitejs/plugin-react@4.6.0
+npm error Found: vite@6.3.5
+npm error node_modules/vite
+npm error   dev vite@"^6.0.3" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error node_modules/@vitejs/plugin-react
+npm error   dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Conflicting peer dependency: vite@5.4.19
+npm error node_modules/vite
+npm error   peer vite@"^4.2.0 || ^5.0.0" from @vitejs/plugin-react@4.6.0
+npm error   node_modules/@vitejs/plugin-react
+npm error     dev @vitejs/plugin-react@"^4.3.4" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_47_039Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T12_08_47_039Z-debug-0.log
+
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane_core/lib/fastlane_core/ui/ui.rb:17:in `method_missing'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/helper/sh_helper.rb:80:in `sh_control_output'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/helper/sh_helper.rb:12:in `sh'
+	from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/actions/dependency_install.rb:85:in `run_install_npm_dep'
+	from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/actions/dependency_install.rb:31:in `run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:263:in `block (2 levels) in execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/actions/actions_helper.rb:69:in `execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:255:in `block in execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:229:in `chdir'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:229:in `execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:157:in `trigger_action_by_name'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/fast_file.rb:159:in `method_missing'
+	from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/utils/setup_build.rb:9:in `setup_node_build'
+	from ios.Fastfile:33:in `block (2 levels) in parsing_binding'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/lane.rb:41:in `call'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:49:in `block in execute'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:45:in `chdir'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:45:in `execute'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/lane_manager.rb:46:in `cruise_lane'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/command_line_handler.rb:34:in `handle'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/commands_generator.rb:110:in `block (2 levels) in run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/command.rb:187:in `call'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/command.rb:157:in `run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/runner.rb:444:in `run_active_command'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane_core/lib/fastlane_core/ui/fastlane_runner.rb:124:in `run!'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/delegates.rb:18:in `run!'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/commands_generator.rb:363:in `run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/commands_generator.rb:43:in `start'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/cli_tools_distributor.rb:123:in `take_off'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/bin/fastlane:23:in `<top (required)>'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane:25:in `load'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane:25:in `<main>'
+Running after_script
+Running after script...
+$ clean-up
+Cleaning up project directory and file based variables
+Terminating VM: build_stack_2024.12_arm64-1752322082235587000 (f71f9464-be25-4646-9938-521714b1defc) | Controller Instance ID: 656a7189-3718-4b22-5b6c-b13d5da5923a | Host: 10.2.160.242
+ERROR: Job failed: Process exited with status 1
