@@ -1,4 +1,4 @@
-import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonSearchbar, IonRefresher, IonRefresherContent, IonSpinner, IonNote, IonFab, IonFabButton, IonIcon } from '@ionic/react';
+import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonSearchbar, IonRefresher, IonRefresherContent, IonSpinner, IonFab, IonFabButton, IonIcon } from '@ionic/react';
 import { addOutline } from 'ionicons/icons';
 import React, { useState, useEffect } from 'react';
 import { RefresherEventDetail } from '@ionic/react';
