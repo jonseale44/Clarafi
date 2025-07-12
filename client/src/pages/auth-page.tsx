@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import { Loader2, Building2, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Loader2, Hospital, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { LocationSelector } from "@/components/location-selector";
 import SearchableHealthSystemSelector from "@/components/searchable-health-system-selector";
 import { useQuery } from "@tanstack/react-query";
@@ -369,7 +369,7 @@ export default function AuthPage() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-12 h-12 bg-navy-blue rounded-lg flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-gold" />
+                <Hospital className="h-6 w-6 text-gold" />
               </div>
               <div>
                 <h1 className="text-5xl font-bold">

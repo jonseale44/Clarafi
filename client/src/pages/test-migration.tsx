@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Users, Building2, CheckCircle } from 'lucide-react';
+import { Loader2, Users, Hospital, Building2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { MigrationWizard } from '@/components/MigrationWizard';
@@ -169,7 +169,7 @@ export default function TestMigration() {
                       <span className="text-sm text-muted-foreground">- Can auto-migrate</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-orange-600" />
+                      <Hospital className="h-4 w-4 text-orange-600" />
                       <span className="font-medium">Hospital Patient</span>
                       <span className="text-sm text-muted-foreground">- Requires consent</span>
                     </div>
