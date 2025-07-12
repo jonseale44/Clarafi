@@ -1,0 +1,1086 @@
+Running with gitlab-runner 14.10.1/1.6.0 (f59db62b)
+  on ANKA_RUNNER 161fa1c3
+Preparing the "anka" executor
+Opening a connection to the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443
+Starting Anka VM using:
+  - VM Template UUID: 9ced2d88-6f2c-4854-9cb8-28b35b753067
+  - VM Template Tag Name: v3
+Please be patient...
+You can check the status of starting your Instance on the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443/#/instances
+Verifying connectivity to the VM: build_stack_2024.12_arm64-1752320662870934000 (fdbc65ff-9c1f-4538-950e-91480243bbc5) | Controller Instance ID: e9de971b-1c4b-4998-5e0c-c1e317197720 | Host: 10.2.181.103 | Port: 10000 
+VM "build_stack_2024.12_arm64-1752320662870934000" (fdbc65ff-9c1f-4538-950e-91480243bbc5) / Controller Instance ID e9de971b-1c4b-4998-5e0c-c1e317197720 running on Node ip-10-2-181-103.us-west-2.compute.internal (10.2.181.103), is ready for work (10.2.181.103:10000)
+Preparing environment
+Running on ip-192-168-64-23.us-west-2.compute.internal via ip-10-2-128-124.us-west-2.compute.internal...
+Getting source from Git repository
+$ pre-clone
+[11:44:50]: Cloning repository...
+Fetching changes...
+Initialized empty Git repository in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/.git/
+Created fresh repository.
+Checking out fc0d7032 as main...
+Updating/initializing submodules...
+$ post-clone
+[11:44:58]: Cloning complete...
+Restoring cache
+Not downloading cache 3d7e1956/node-cache-stack-package-ios-2024.12-arm64.zip due to policy
+Executing "step_script" stage of the job script
+$ pre-build
+[11:44:58]: Building project....
+$ fetch-updates || true
+Checking for build process updates...
+$ build-ios
+Building from: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[11:45:02]: ---------------------------------
+[11:45:02]: --- Step: add_extra_platforms ---
+[11:45:02]: ---------------------------------
+[11:45:02]: Setting '[:web]' as extra SupportedPlatforms
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:8: warning: character class has '-' without escape
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:15: warning: character class has '-' without escape
+[11:45:02]: ------------------------------
+[11:45:02]: --- Step: default_platform ---
+[11:45:02]: ------------------------------
+[11:45:02]: Driving the lane 'ios build_capacitor' 🚀
+[11:45:02]: ---------------------------------
+[11:45:02]: --- Step: prepare_environment ---
+[11:45:02]: ---------------------------------
+[11:45:02]: Setting default environment variables to tidy up logs. These can be overridden by setting them in Appflow.
+[11:45:02]: 
+[11:45:02]: No changes needed - logs are already tidy! 🧹
+[11:45:02]: -------------------------
+[11:45:02]: --- Step: sentry_init ---
+[11:45:02]: -------------------------
+[11:45:02]: ----------------------------
+[11:45:02]: --- Step: begin_building ---
+[11:45:02]: ----------------------------
+[11:45:02]: Began building @ 2025-07-12T11:45:02
+[11:45:02]: ---------------------------
+[11:45:02]: --- Step: build_summary ---
+[11:45:02]: ---------------------------
+
++---------------------------------------------------+
+|                   Build Summary                   |
++---------------------+-----------------------------+
+| Runners Revision    | f9ed312                     |
+| Job ID              | 10293980                    |
+| Node.js version     | v20.18.1                    |
+| Cordova CLI version | 12.0.0 (cordova-lib@12.0.2) |
+| npm version         | 10.8.2                      |
+| yarn version        | 1.22.19                     |
+| macOS version       | 14.6.1                      |
+| Xcode version       | Xcode 16.1                  |
+|                     | Build version 16B40         |
+| Fastlane version    | fastlane (2.225.0)          |
++---------------------+-----------------------------+
+
+[11:45:05]: -----------------------------
+[11:45:05]: --- Step: create_keychain ---
+[11:45:05]: -----------------------------
+[11:45:05]: $ security list-keychains -d user
+[11:45:05]: ▸ "/Users/ionic-cloud-team/Library/Keychains/login.keychain-db"
+[11:45:05]: ------------------------------------------
+[11:45:05]: --- Step: get_ios_credentials_from_api ---
+[11:45:05]: ------------------------------------------
+[11:45:05]: Fetching certificate and profile(s) from Ionic Appflow
+[11:45:06]: ---------------------------------
+[11:45:06]: --- Step: set_ios_credentials ---
+[11:45:06]: ---------------------------------
+[11:45:06]: Installing provisioning profile...
+[11:45:06]: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision
+
++-------------------------------------------------------------------+
+|                       Installed Certificate                       |
++-------------------+-----------------------------------------------+
+| User ID           | W5V9Y23C6X                                    |
+| Common Name       | iPhone Developer: Jonathan Seale (4298ARN5NU) |
+| Organization Unit | 3LCZ3S8HGP                                    |
+| Organization      | Jonathan Seale                                |
+| Country           | US                                            |
++-------------------+-----------------------------------------------+
+
+[11:45:06]: --------------------------------
+[11:45:06]: --- Step: import_certificate ---
+[11:45:06]: --------------------------------
+[11:45:07]: Setting key partition list... (this can take a minute if there are a lot of keys installed)
+[11:45:07]: ---------------------------
+[11:45:07]: --- Step: set_ionic_cli ---
+[11:45:07]: ---------------------------
+[11:45:08]: Preinstalled @ionic/cli compatible with project `react`
+[11:45:08]: ------------------------------------
+[11:45:08]: --- Step: detect_package_manager ---
+[11:45:08]: ------------------------------------
+[11:45:08]: Detecting package manager
+[11:45:08]: Defaulting to npm
+[11:45:08]: ---------------------------------
+[11:45:08]: --- Step: add_git_credentials ---
+[11:45:08]: ---------------------------------
+[11:45:08]: Writing git-credentials files
+[11:45:08]: git-credentials successfully added to project
+[11:45:08]: --------------------------------
+[11:45:08]: --- Step: get_appflow_config ---
+[11:45:08]: --------------------------------
+[11:45:08]: Checking for appflow.config.json
+[11:45:08]: Appflow config detected
+[11:45:08]: --------------------------------
+[11:45:08]: --- Step: dependency_install ---
+[11:45:08]: --------------------------------
+[11:45:08]: Installing Dependencies (in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor)
+[11:45:08]: $ npm ci --quiet 
+[11:45:34]: ▸ npm error code EUSAGE
+[11:45:34]: ▸ npm error
+[11:45:34]: ▸ npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+[11:45:34]: ▸ npm error
+[11:45:34]: ▸ npm error Missing: @capacitor/android@6.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: @capacitor/core@6.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: @capacitor/app@6.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: @capacitor/cli@6.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: @capacitor/haptics@6.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: @capacitor/ios@6.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: @capacitor/keyboard@6.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: @capacitor/status-bar@6.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint/js@9.31.0 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/react@7.8.6 from lock file
+[11:45:34]: ▸ npm error Missing: react@18.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: react-dom@18.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/react-router@7.8.6 from lock file
+[11:45:34]: ▸ npm error Missing: react-router@5.3.4 from lock file
+[11:45:34]: ▸ npm error Missing: react-router-dom@5.3.4 from lock file
+[11:45:34]: ▸ npm error Missing: @tanstack/react-query@5.83.0 from lock file
+[11:45:34]: ▸ npm error Missing: @types/react@18.3.23 from lock file
+[11:45:34]: ▸ npm error Missing: @types/react-dom@18.3.7 from lock file
+[11:45:34]: ▸ npm error Missing: @types/react-router@5.1.20 from lock file
+[11:45:34]: ▸ npm error Missing: @types/react-router-dom@5.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/eslint-plugin@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: eslint@9.31.0 from lock file
+[11:45:34]: ▸ npm error Missing: typescript@5.8.3 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/parser@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: @vitejs/plugin-legacy@6.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: vite@6.3.5 from lock file
+[11:45:34]: ▸ npm error Missing: terser@5.43.1 from lock file
+[11:45:34]: ▸ npm error Missing: @vitejs/plugin-react@4.6.0 from lock file
+[11:45:34]: ▸ npm error Missing: cypress@13.17.0 from lock file
+[11:45:34]: ▸ npm error Missing: eslint-plugin-react@7.37.5 from lock file
+[11:45:34]: ▸ npm error Missing: ionicons@7.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: jsdom@26.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: lucide-react@0.263.1 from lock file
+[11:45:34]: ▸ npm error Missing: typescript-eslint@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: vitest@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/cli-framework-output@2.2.8 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-fs@3.1.7 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-subprocess@2.1.11 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-terminal@2.3.5 from lock file
+[11:45:34]: ▸ npm error Missing: commander@9.5.0 from lock file
+[11:45:34]: ▸ npm error Missing: debug@4.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: env-paths@2.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: kleur@4.1.5 from lock file
+[11:45:34]: ▸ npm error Missing: native-run@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: open@8.4.2 from lock file
+[11:45:34]: ▸ npm error Missing: plist@3.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: prompts@2.4.2 from lock file
+[11:45:34]: ▸ npm error Missing: rimraf@4.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: semver@7.7.2 from lock file
+[11:45:34]: ▸ npm error Missing: tar@6.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: tslib@2.8.1 from lock file
+[11:45:34]: ▸ npm error Missing: xml2js@0.5.0 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/core@7.8.6 from lock file
+[11:45:34]: ▸ npm error Missing: @stencil/core@4.35.3 from lock file
+[11:45:34]: ▸ npm error Missing: @types/fs-extra@8.1.5 from lock file
+[11:45:34]: ▸ npm error Missing: fs-extra@9.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-array@2.1.5 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-fs@3.1.6 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-process@2.1.10 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-stream@3.1.5 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-terminal@2.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: cross-spawn@7.0.6 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-object@2.1.5 from lock file
+[11:45:34]: ▸ npm error Missing: @ionic/utils-terminal@2.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: signal-exit@3.0.7 from lock file
+[11:45:34]: ▸ npm error Missing: tree-kill@1.2.2 from lock file
+[11:45:34]: ▸ npm error Missing: @types/slice-ansi@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: slice-ansi@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: string-width@4.2.3 from lock file
+[11:45:34]: ▸ npm error Missing: strip-ansi@6.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: untildify@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: wrap-ansi@7.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-darwin-arm64@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-darwin-x64@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-arm64-gnu@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-arm64-musl@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-x64-gnu@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-x64-musl@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-win32-arm64-msvc@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-win32-x64-msvc@4.34.9 from lock file
+[11:45:34]: ▸ npm error Missing: @tanstack/query-core@5.83.0 from lock file
+[11:45:34]: ▸ npm error Missing: @types/node@24.0.13 from lock file
+[11:45:34]: ▸ npm error Missing: undici-types@7.8.0 from lock file
+[11:45:34]: ▸ npm error Missing: @types/prop-types@15.7.15 from lock file
+[11:45:34]: ▸ npm error Missing: csstype@3.1.3 from lock file
+[11:45:34]: ▸ npm error Missing: @types/history@4.7.11 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint-community/regexpp@4.12.1 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/scope-manager@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/type-utils@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/utils@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/visitor-keys@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: graphemer@1.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: ignore@7.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: natural-compare@1.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: ts-api-utils@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/types@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/typescript-estree@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/project-service@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: @typescript-eslint/tsconfig-utils@8.36.0 from lock file
+[11:45:34]: ▸ npm error Missing: fast-glob@3.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: is-glob@4.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: minimatch@9.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint-community/eslint-utils@4.7.0 from lock file
+[11:45:34]: ▸ npm error Missing: eslint-visitor-keys@3.4.3 from lock file
+[11:45:34]: ▸ npm error Missing: eslint-visitor-keys@4.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/core@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/preset-env@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: browserslist@4.25.1 from lock file
+[11:45:34]: ▸ npm error Missing: browserslist-to-esbuild@2.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: core-js@3.44.0 from lock file
+[11:45:34]: ▸ npm error Missing: magic-string@0.30.17 from lock file
+[11:45:34]: ▸ npm error Missing: regenerator-runtime@0.14.1 from lock file
+[11:45:34]: ▸ npm error Missing: systemjs@6.15.1 from lock file
+[11:45:34]: ▸ npm error Missing: @ampproject/remapping@2.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/code-frame@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/generator@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-compilation-targets@7.27.2 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-module-transforms@7.27.3 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helpers@7.27.6 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/parser@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/template@7.27.2 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/traverse@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/types@7.28.1 from lock file
+[11:45:34]: ▸ npm error Missing: convert-source-map@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: gensync@1.0.0-beta.2 from lock file
+[11:45:34]: ▸ npm error Missing: json5@2.2.3 from lock file
+[11:45:34]: ▸ npm error Missing: semver@6.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: @jridgewell/gen-mapping@0.3.12 from lock file
+[11:45:34]: ▸ npm error Missing: @jridgewell/trace-mapping@0.3.29 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-validator-identifier@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: js-tokens@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: picocolors@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: jsesc@3.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/compat-data@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-validator-option@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: lru-cache@5.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: semver@6.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-module-imports@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-plugin-utils@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-bugfix-firefox-class-in-computed-class-key@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-bugfix-safari-class-field-initializer-scope@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-proposal-private-property-in-object@7.21.0-placeholder-for-preset-env.2 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-syntax-import-assertions@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-syntax-import-attributes@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-syntax-unicode-sets-regex@7.18.6 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-arrow-functions@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-async-generator-functions@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-async-to-generator@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-block-scoped-functions@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-block-scoping@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-class-properties@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-class-static-block@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-classes@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-computed-properties@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-destructuring@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-dotall-regex@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-duplicate-keys@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-duplicate-named-capturing-groups-regex@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-dynamic-import@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-explicit-resource-management@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-exponentiation-operator@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-export-namespace-from@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-for-of@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-function-name@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-json-strings@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-literals@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-logical-assignment-operators@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-member-expression-literals@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-modules-amd@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-modules-commonjs@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-modules-systemjs@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-modules-umd@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-named-capturing-groups-regex@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-new-target@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-nullish-coalescing-operator@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-numeric-separator@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-object-rest-spread@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-object-super@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-optional-catch-binding@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-optional-chaining@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-parameters@7.27.7 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-private-methods@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-private-property-in-object@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-property-literals@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-regenerator@7.28.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-regexp-modifiers@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-reserved-words@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-shorthand-properties@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-spread@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-sticky-regex@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-template-literals@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-typeof-symbol@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-unicode-escapes@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-unicode-property-regex@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-unicode-regex@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-unicode-sets-regex@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/preset-modules@0.1.6-no-external-plugins from lock file
+[11:45:34]: ▸ npm error Missing: babel-plugin-polyfill-corejs2@0.4.14 from lock file
+[11:45:34]: ▸ npm error Missing: babel-plugin-polyfill-corejs3@0.13.0 from lock file
+[11:45:34]: ▸ npm error Missing: babel-plugin-polyfill-regenerator@0.6.5 from lock file
+[11:45:34]: ▸ npm error Missing: core-js-compat@3.44.0 from lock file
+[11:45:34]: ▸ npm error Missing: semver@6.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-skip-transparent-expression-wrappers@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-create-regexp-features-plugin@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-annotate-as-pure@7.27.3 from lock file
+[11:45:34]: ▸ npm error Missing: regexpu-core@6.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: semver@6.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-remap-async-to-generator@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-wrap-function@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-create-class-features-plugin@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-member-expression-to-functions@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-optimise-call-expression@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-replace-supers@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: semver@6.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-globals@7.28.0 from lock file
+[11:45:34]: ▸ npm error Missing: esutils@2.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-string-parser@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @jridgewell/sourcemap-codec@1.5.4 from lock file
+[11:45:34]: ▸ npm error Missing: @jridgewell/resolve-uri@3.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-react-jsx-self@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/plugin-transform-react-jsx-source@7.27.1 from lock file
+[11:45:34]: ▸ npm error Missing: @rolldown/pluginutils@1.0.0-beta.19 from lock file
+[11:45:34]: ▸ npm error Missing: @types/babel__core@7.20.5 from lock file
+[11:45:34]: ▸ npm error Missing: react-refresh@0.17.0 from lock file
+[11:45:34]: ▸ npm error Missing: @types/babel__generator@7.27.0 from lock file
+[11:45:34]: ▸ npm error Missing: @types/babel__template@7.4.4 from lock file
+[11:45:34]: ▸ npm error Missing: @types/babel__traverse@7.20.7 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/helper-define-polyfill-provider@0.6.5 from lock file
+[11:45:34]: ▸ npm error Missing: semver@6.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: lodash.debounce@4.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: resolve@1.22.10 from lock file
+[11:45:34]: ▸ npm error Missing: caniuse-lite@1.0.30001727 from lock file
+[11:45:34]: ▸ npm error Missing: electron-to-chromium@1.5.182 from lock file
+[11:45:34]: ▸ npm error Missing: node-releases@2.0.19 from lock file
+[11:45:34]: ▸ npm error Missing: update-browserslist-db@1.1.3 from lock file
+[11:45:34]: ▸ npm error Missing: meow@13.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: path-key@3.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: shebang-command@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: which@2.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: @cypress/request@3.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: @cypress/xvfb@1.2.4 from lock file
+[11:45:34]: ▸ npm error Missing: @types/sinonjs__fake-timers@8.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: @types/sizzle@2.3.9 from lock file
+[11:45:34]: ▸ npm error Missing: arch@2.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: blob-util@2.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: bluebird@3.7.2 from lock file
+[11:45:34]: ▸ npm error Missing: buffer@5.7.1 from lock file
+[11:45:34]: ▸ npm error Missing: cachedir@2.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: chalk@4.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: check-more-types@2.24.0 from lock file
+[11:45:34]: ▸ npm error Missing: ci-info@4.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: cli-cursor@3.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: cli-table3@0.6.5 from lock file
+[11:45:34]: ▸ npm error Missing: commander@6.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: common-tags@1.8.2 from lock file
+[11:45:34]: ▸ npm error Missing: dayjs@1.11.13 from lock file
+[11:45:34]: ▸ npm error Missing: enquirer@2.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: eventemitter2@6.4.7 from lock file
+[11:45:34]: ▸ npm error Missing: execa@4.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: executable@4.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: extract-zip@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: figures@3.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: getos@3.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-installed-globally@0.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: lazy-ass@1.6.0 from lock file
+[11:45:34]: ▸ npm error Missing: listr2@3.14.0 from lock file
+[11:45:34]: ▸ npm error Missing: lodash@4.17.21 from lock file
+[11:45:34]: ▸ npm error Missing: log-symbols@4.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: minimist@1.2.8 from lock file
+[11:45:34]: ▸ npm error Missing: ospath@1.2.2 from lock file
+[11:45:34]: ▸ npm error Missing: pretty-bytes@5.6.0 from lock file
+[11:45:34]: ▸ npm error Missing: process@0.11.10 from lock file
+[11:45:34]: ▸ npm error Missing: proxy-from-env@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: request-progress@3.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: supports-color@8.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: tmp@0.2.3 from lock file
+[11:45:34]: ▸ npm error Missing: yauzl@2.10.0 from lock file
+[11:45:34]: ▸ npm error Missing: aws-sign2@0.7.0 from lock file
+[11:45:34]: ▸ npm error Missing: aws4@1.13.2 from lock file
+[11:45:34]: ▸ npm error Missing: caseless@0.12.0 from lock file
+[11:45:34]: ▸ npm error Missing: combined-stream@1.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: extend@3.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: forever-agent@0.6.1 from lock file
+[11:45:34]: ▸ npm error Missing: form-data@4.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: http-signature@1.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-typedarray@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: isstream@0.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: json-stringify-safe@5.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: mime-types@2.1.35 from lock file
+[11:45:34]: ▸ npm error Missing: performance-now@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: qs@6.14.0 from lock file
+[11:45:34]: ▸ npm error Missing: safe-buffer@5.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: tough-cookie@5.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: tunnel-agent@0.6.0 from lock file
+[11:45:34]: ▸ npm error Missing: uuid@8.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: debug@3.2.7 from lock file
+[11:45:34]: ▸ npm error Missing: lodash.once@4.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: base64-js@1.5.1 from lock file
+[11:45:34]: ▸ npm error Missing: ieee754@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: ansi-styles@4.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: supports-color@7.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: color-convert@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: restore-cursor@3.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: @colors/colors@1.5.0 from lock file
+[11:45:34]: ▸ npm error Missing: color-name@1.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: delayed-stream@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: ms@2.1.3 from lock file
+[11:45:34]: ▸ npm error Missing: ansi-colors@4.1.3 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint/config-array@0.21.0 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint/config-helpers@0.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint/core@0.15.1 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint/eslintrc@3.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint/plugin-kit@0.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: @humanfs/node@0.16.6 from lock file
+[11:45:34]: ▸ npm error Missing: @humanwhocodes/module-importer@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: @humanwhocodes/retry@0.4.3 from lock file
+[11:45:34]: ▸ npm error Missing: @types/estree@1.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: @types/json-schema@7.0.15 from lock file
+[11:45:34]: ▸ npm error Missing: ajv@6.12.6 from lock file
+[11:45:34]: ▸ npm error Missing: escape-string-regexp@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: eslint-scope@8.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: eslint-visitor-keys@4.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: espree@10.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: esquery@1.6.0 from lock file
+[11:45:34]: ▸ npm error Missing: fast-deep-equal@3.1.3 from lock file
+[11:45:34]: ▸ npm error Missing: file-entry-cache@8.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: find-up@5.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: glob-parent@6.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: ignore@5.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: imurmurhash@0.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: json-stable-stringify-without-jsonify@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: lodash.merge@4.6.2 from lock file
+[11:45:34]: ▸ npm error Missing: minimatch@3.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: optionator@0.9.4 from lock file
+[11:45:34]: ▸ npm error Missing: @eslint/object-schema@2.1.6 from lock file
+[11:45:34]: ▸ npm error Missing: minimatch@3.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: globals@14.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: ignore@5.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: import-fresh@3.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: js-yaml@4.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: minimatch@3.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: strip-json-comments@3.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: levn@0.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: @humanfs/core@0.19.1 from lock file
+[11:45:34]: ▸ npm error Missing: @humanwhocodes/retry@0.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: fast-json-stable-stringify@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: json-schema-traverse@0.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: uri-js@4.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: array-includes@3.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: array.prototype.findlast@1.2.5 from lock file
+[11:45:34]: ▸ npm error Missing: array.prototype.flatmap@1.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: array.prototype.tosorted@1.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: doctrine@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: es-iterator-helpers@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: estraverse@5.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: hasown@2.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: jsx-ast-utils@3.3.5 from lock file
+[11:45:34]: ▸ npm error Missing: minimatch@3.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: object.entries@1.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: object.fromentries@2.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: object.values@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: prop-types@15.8.1 from lock file
+[11:45:34]: ▸ npm error Missing: resolve@2.0.0-next.5 from lock file
+[11:45:34]: ▸ npm error Missing: semver@6.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: string.prototype.matchall@4.0.12 from lock file
+[11:45:34]: ▸ npm error Missing: string.prototype.repeat@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: call-bind@1.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: call-bound@1.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: define-properties@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: es-abstract@1.24.0 from lock file
+[11:45:34]: ▸ npm error Missing: es-object-atoms@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: get-intrinsic@1.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-string@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: math-intrinsics@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: es-errors@1.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: es-shim-unscopables@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: call-bind-apply-helpers@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: es-define-property@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: set-function-length@1.2.2 from lock file
+[11:45:34]: ▸ npm error Missing: function-bind@1.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: define-data-property@1.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: has-property-descriptors@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: object-keys@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: gopd@1.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: array-buffer-byte-length@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: arraybuffer.prototype.slice@1.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: available-typed-arrays@1.0.7 from lock file
+[11:45:34]: ▸ npm error Missing: data-view-buffer@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: data-view-byte-length@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: data-view-byte-offset@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: es-set-tostringtag@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: es-to-primitive@1.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: function.prototype.name@1.1.8 from lock file
+[11:45:34]: ▸ npm error Missing: get-proto@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: get-symbol-description@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: globalthis@1.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: has-proto@1.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: has-symbols@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: internal-slot@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-array-buffer@3.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: is-callable@1.2.7 from lock file
+[11:45:34]: ▸ npm error Missing: is-data-view@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: is-negative-zero@2.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: is-regex@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-set@2.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: is-shared-array-buffer@1.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: is-typed-array@1.1.15 from lock file
+[11:45:34]: ▸ npm error Missing: is-weakref@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: object-inspect@1.13.4 from lock file
+[11:45:34]: ▸ npm error Missing: object.assign@4.1.7 from lock file
+[11:45:34]: ▸ npm error Missing: own-keys@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: regexp.prototype.flags@1.5.4 from lock file
+[11:45:34]: ▸ npm error Missing: safe-array-concat@1.1.3 from lock file
+[11:45:34]: ▸ npm error Missing: safe-push-apply@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: safe-regex-test@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: set-proto@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: stop-iteration-iterator@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: string.prototype.trim@1.2.10 from lock file
+[11:45:34]: ▸ npm error Missing: string.prototype.trimend@1.0.9 from lock file
+[11:45:34]: ▸ npm error Missing: string.prototype.trimstart@1.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: typed-array-buffer@1.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: typed-array-byte-length@1.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: typed-array-byte-offset@1.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: typed-array-length@1.0.7 from lock file
+[11:45:34]: ▸ npm error Missing: unbox-primitive@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: which-typed-array@1.1.19 from lock file
+[11:45:34]: ▸ npm error Missing: possible-typed-array-names@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: iterator.prototype@1.1.5 from lock file
+[11:45:34]: ▸ npm error Missing: has-tostringtag@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: is-date-object@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-symbol@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: esrecurse@4.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: acorn@8.15.0 from lock file
+[11:45:34]: ▸ npm error Missing: acorn-jsx@5.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: eslint-visitor-keys@4.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: get-stream@5.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: human-signals@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-stream@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: merge-stream@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: npm-run-path@4.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: onetime@5.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: strip-final-newline@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: pify@2.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: @types/yauzl@2.10.3 from lock file
+[11:45:34]: ▸ npm error Missing: @nodelib/fs.stat@2.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: @nodelib/fs.walk@1.2.8 from lock file
+[11:45:34]: ▸ npm error Missing: glob-parent@5.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: merge2@1.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: micromatch@4.0.8 from lock file
+[11:45:34]: ▸ npm error Missing: @nodelib/fs.scandir@2.1.5 from lock file
+[11:45:34]: ▸ npm error Missing: fastq@1.19.1 from lock file
+[11:45:34]: ▸ npm error Missing: run-parallel@1.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: reusify@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: escape-string-regexp@1.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: flat-cache@4.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: locate-path@6.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: path-exists@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: flatted@3.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: keyv@4.5.4 from lock file
+[11:45:34]: ▸ npm error Missing: asynckit@0.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: at-least-node@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: graceful-fs@4.2.11 from lock file
+[11:45:34]: ▸ npm error Missing: jsonfile@6.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: universalify@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: functions-have-names@1.2.3 from lock file
+[11:45:34]: ▸ npm error Missing: dunder-proto@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: pump@3.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: async@3.2.6 from lock file
+[11:45:34]: ▸ npm error Missing: assert-plus@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: jsprim@2.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: sshpk@1.18.0 from lock file
+[11:45:34]: ▸ npm error Missing: parent-module@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: resolve-from@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: side-channel@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-extglob@2.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: global-dirs@3.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-path-inside@3.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: ini@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: set-function-name@2.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: argparse@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: cssstyle@4.6.0 from lock file
+[11:45:34]: ▸ npm error Missing: data-urls@5.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: decimal.js@10.6.0 from lock file
+[11:45:34]: ▸ npm error Missing: html-encoding-sniffer@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: http-proxy-agent@7.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: https-proxy-agent@7.0.6 from lock file
+[11:45:34]: ▸ npm error Missing: is-potential-custom-element-name@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: nwsapi@2.2.20 from lock file
+[11:45:34]: ▸ npm error Missing: parse5@7.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: rrweb-cssom@0.8.0 from lock file
+[11:45:34]: ▸ npm error Missing: saxes@6.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: symbol-tree@3.2.4 from lock file
+[11:45:34]: ▸ npm error Missing: w3c-xmlserializer@5.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: webidl-conversions@7.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: whatwg-encoding@3.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: whatwg-mimetype@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: whatwg-url@14.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: ws@8.18.3 from lock file
+[11:45:34]: ▸ npm error Missing: xml-name-validator@5.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: @asamuzakjp/css-color@3.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: @csstools/css-calc@2.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: @csstools/css-parser-algorithms@3.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: @csstools/css-tokenizer@3.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: @csstools/css-color-parser@3.0.10 from lock file
+[11:45:34]: ▸ npm error Missing: lru-cache@10.4.3 from lock file
+[11:45:34]: ▸ npm error Missing: @csstools/color-helpers@5.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: agent-base@7.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: extsprintf@1.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: json-schema@0.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: verror@1.10.0 from lock file
+[11:45:34]: ▸ npm error Missing: array.prototype.flat@1.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: json-buffer@3.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: prelude-ls@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: type-check@0.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: cli-truncate@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: colorette@2.0.20 from lock file
+[11:45:34]: ▸ npm error Missing: log-update@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: p-map@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: rfdc@1.4.1 from lock file
+[11:45:34]: ▸ npm error Missing: rxjs@7.8.2 from lock file
+[11:45:34]: ▸ npm error Missing: through@2.3.8 from lock file
+[11:45:34]: ▸ npm error Missing: slice-ansi@3.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: p-locate@5.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-unicode-supported@0.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: ansi-escapes@4.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: wrap-ansi@6.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: type-fest@0.21.3 from lock file
+[11:45:34]: ▸ npm error Missing: yallist@3.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: braces@3.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: picomatch@2.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: fill-range@7.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: to-regex-range@5.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: mime-db@1.52.0 from lock file
+[11:45:34]: ▸ npm error Missing: brace-expansion@2.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: balanced-match@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: bplist-parser@0.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: elementtree@0.1.7 from lock file
+[11:45:34]: ▸ npm error Missing: ini@4.1.3 from lock file
+[11:45:34]: ▸ npm error Missing: split2@4.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: through2@4.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: big-integer@1.6.52 from lock file
+[11:45:34]: ▸ npm error Missing: sax@1.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: mimic-fn@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: define-lazy-prop@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-docker@2.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-wsl@2.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: deep-is@0.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: fast-levenshtein@2.0.6 from lock file
+[11:45:34]: ▸ npm error Missing: word-wrap@1.2.5 from lock file
+[11:45:34]: ▸ npm error Missing: p-limit@3.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: yocto-queue@0.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: aggregate-error@3.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: clean-stack@2.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: indent-string@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: callsites@3.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: entities@6.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: @xmldom/xmldom@0.8.10 from lock file
+[11:45:34]: ▸ npm error Missing: xmlbuilder@15.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: kleur@3.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: sisteransi@1.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: loose-envify@1.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: object-assign@4.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: react-is@16.13.1 from lock file
+[11:45:34]: ▸ npm error Missing: end-of-stream@1.4.5 from lock file
+[11:45:34]: ▸ npm error Missing: once@1.4.0 from lock file
+[11:45:34]: ▸ npm error Missing: wrappy@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: scheduler@0.23.2 from lock file
+[11:45:34]: ▸ npm error Missing: @babel/runtime@7.27.6 from lock file
+[11:45:34]: ▸ npm error Missing: history@4.10.1 from lock file
+[11:45:34]: ▸ npm error Missing: hoist-non-react-statics@3.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: path-to-regexp@1.9.0 from lock file
+[11:45:34]: ▸ npm error Missing: tiny-invariant@1.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: tiny-warning@1.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: resolve-pathname@3.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: value-equal@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: isarray@0.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: regenerate@1.4.2 from lock file
+[11:45:34]: ▸ npm error Missing: regenerate-unicode-properties@10.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: regjsgen@0.8.0 from lock file
+[11:45:34]: ▸ npm error Missing: regjsparser@0.12.0 from lock file
+[11:45:34]: ▸ npm error Missing: unicode-match-property-ecmascript@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: unicode-match-property-value-ecmascript@2.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: jsesc@3.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: throttleit@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-core-module@2.16.1 from lock file
+[11:45:34]: ▸ npm error Missing: path-parse@1.0.7 from lock file
+[11:45:34]: ▸ npm error Missing: supports-preserve-symlinks-flag@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: glob@9.3.5 from lock file
+[11:45:34]: ▸ npm error Missing: fs.realpath@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: minimatch@8.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: minipass@4.2.8 from lock file
+[11:45:34]: ▸ npm error Missing: path-scurry@1.11.1 from lock file
+[11:45:34]: ▸ npm error Missing: lru-cache@10.4.3 from lock file
+[11:45:34]: ▸ npm error Missing: minipass@7.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: queue-microtask@1.2.3 from lock file
+[11:45:34]: ▸ npm error Missing: isarray@2.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: isarray@2.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: xmlchars@2.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: shebang-regex@3.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: side-channel-list@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: side-channel-map@1.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: side-channel-weakmap@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: astral-regex@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-fullwidth-code-point@3.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: asn1@0.2.6 from lock file
+[11:45:34]: ▸ npm error Missing: bcrypt-pbkdf@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: dashdash@1.14.1 from lock file
+[11:45:34]: ▸ npm error Missing: ecc-jsbn@0.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: getpass@0.1.7 from lock file
+[11:45:34]: ▸ npm error Missing: jsbn@0.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: safer-buffer@2.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: tweetnacl@0.14.5 from lock file
+[11:45:34]: ▸ npm error Missing: emoji-regex@8.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: ansi-regex@5.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: has-flag@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: chownr@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: fs-minipass@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: minipass@5.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: minizlib@2.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: mkdirp@1.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: yallist@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: minipass@3.3.6 from lock file
+[11:45:34]: ▸ npm error Missing: minipass@3.3.6 from lock file
+[11:45:34]: ▸ npm error Missing: yallist@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: @jridgewell/source-map@0.3.10 from lock file
+[11:45:34]: ▸ npm error Missing: commander@2.20.3 from lock file
+[11:45:34]: ▸ npm error Missing: source-map-support@0.5.21 from lock file
+[11:45:34]: ▸ npm error Missing: buffer-from@1.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: source-map@0.6.1 from lock file
+[11:45:34]: ▸ npm error Missing: readable-stream@3.6.2 from lock file
+[11:45:34]: ▸ npm error Missing: inherits@2.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: string_decoder@1.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: util-deprecate@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: is-number@7.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: tldts@6.1.86 from lock file
+[11:45:34]: ▸ npm error Missing: tldts-core@6.1.86 from lock file
+[11:45:34]: ▸ npm error Missing: for-each@0.3.5 from lock file
+[11:45:34]: ▸ npm error Missing: reflect.getprototypeof@1.0.10 from lock file
+[11:45:34]: ▸ npm error Missing: which-builtin-type@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: has-bigints@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: which-boxed-primitive@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: unicode-canonical-property-names-ecmascript@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: unicode-property-aliases-ecmascript@2.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: escalade@3.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: punycode@2.3.1 from lock file
+[11:45:34]: ▸ npm error Missing: core-util-is@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: esbuild@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: fdir@6.4.6 from lock file
+[11:45:34]: ▸ npm error Missing: picomatch@4.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: fsevents@2.3.3 from lock file
+[11:45:34]: ▸ npm error Missing: postcss@8.5.6 from lock file
+[11:45:34]: ▸ npm error Missing: rollup@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: tinyglobby@0.2.14 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/aix-ppc64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-arm@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/darwin-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/darwin-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/freebsd-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/freebsd-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-arm@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-ia32@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-loong64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-mips64el@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-ppc64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-riscv64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-s390x@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/netbsd-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/netbsd-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/openbsd-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/openbsd-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/openharmony-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/sunos-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-arm64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-ia32@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-x64@0.25.6 from lock file
+[11:45:34]: ▸ npm error Missing: nanoid@3.3.11 from lock file
+[11:45:34]: ▸ npm error Missing: source-map-js@1.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-android-arm-eabi@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-android-arm64@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-darwin-arm64@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-darwin-x64@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-freebsd-arm64@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-freebsd-x64@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-arm-gnueabihf@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-arm-musleabihf@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-arm64-gnu@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-arm64-musl@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-loongarch64-gnu@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-powerpc64le-gnu@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-riscv64-gnu@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-riscv64-musl@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-s390x-gnu@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-x64-gnu@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-linux-x64-musl@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-win32-arm64-msvc@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-win32-ia32-msvc@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: @rollup/rollup-win32-x64-msvc@4.45.0 from lock file
+[11:45:34]: ▸ npm error Missing: fdir@6.4.6 from lock file
+[11:45:34]: ▸ npm error Missing: picomatch@4.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: @vitest/expect@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: @vitest/mocker@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: vite@5.4.19 from lock file
+[11:45:34]: ▸ npm error Missing: @vitest/pretty-format@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: @vitest/runner@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: @vitest/snapshot@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: @vitest/spy@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: @vitest/utils@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: chai@5.2.1 from lock file
+[11:45:34]: ▸ npm error Missing: expect-type@1.2.2 from lock file
+[11:45:34]: ▸ npm error Missing: pathe@1.1.2 from lock file
+[11:45:34]: ▸ npm error Missing: std-env@3.9.0 from lock file
+[11:45:34]: ▸ npm error Missing: tinybench@2.9.0 from lock file
+[11:45:34]: ▸ npm error Missing: tinyexec@0.3.2 from lock file
+[11:45:34]: ▸ npm error Missing: tinypool@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: tinyrainbow@1.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: vite-node@2.1.9 from lock file
+[11:45:34]: ▸ npm error Missing: why-is-node-running@2.3.0 from lock file
+[11:45:34]: ▸ npm error Missing: tinyspy@3.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: loupe@3.1.4 from lock file
+[11:45:34]: ▸ npm error Missing: assertion-error@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: check-error@2.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: deep-eql@5.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: pathval@2.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: cac@6.7.14 from lock file
+[11:45:34]: ▸ npm error Missing: es-module-lexer@1.7.0 from lock file
+[11:45:34]: ▸ npm error Missing: vite@5.4.19 from lock file
+[11:45:34]: ▸ npm error Missing: iconv-lite@0.6.3 from lock file
+[11:45:34]: ▸ npm error Missing: tr46@5.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: isexe@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-bigint@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-boolean-object@1.2.2 from lock file
+[11:45:34]: ▸ npm error Missing: is-number-object@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-async-function@2.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-finalizationregistry@1.1.1 from lock file
+[11:45:34]: ▸ npm error Missing: is-generator-function@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: isarray@2.0.5 from lock file
+[11:45:34]: ▸ npm error Missing: which-collection@1.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: async-function@1.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: is-map@2.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: is-weakmap@2.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: is-weakset@2.0.4 from lock file
+[11:45:34]: ▸ npm error Missing: siginfo@2.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: stackback@0.0.2 from lock file
+[11:45:34]: ▸ npm error Missing: xmlbuilder@11.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: buffer-crc32@0.2.13 from lock file
+[11:45:34]: ▸ npm error Missing: fd-slicer@1.1.0 from lock file
+[11:45:34]: ▸ npm error Missing: pend@1.2.0 from lock file
+[11:45:34]: ▸ npm error Missing: brace-expansion@1.1.12 from lock file
+[11:45:34]: ▸ npm error Missing: concat-map@0.0.1 from lock file
+[11:45:34]: ▸ npm error Missing: brace-expansion@1.1.12 from lock file
+[11:45:34]: ▸ npm error Missing: brace-expansion@1.1.12 from lock file
+[11:45:34]: ▸ npm error Missing: brace-expansion@1.1.12 from lock file
+[11:45:34]: ▸ npm error Missing: yallist@4.0.0 from lock file
+[11:45:34]: ▸ npm error Missing: esbuild@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/aix-ppc64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-arm@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/darwin-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/darwin-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/freebsd-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/freebsd-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-arm@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-ia32@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-loong64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-mips64el@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-ppc64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-riscv64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-s390x@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/netbsd-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/openbsd-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/sunos-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-ia32@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: estree-walker@3.0.3 from lock file
+[11:45:34]: ▸ npm error Missing: esbuild@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/aix-ppc64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-arm@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/android-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/darwin-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/darwin-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/freebsd-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/freebsd-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-arm@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-ia32@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-loong64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-mips64el@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-ppc64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-riscv64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-s390x@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/linux-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/netbsd-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/openbsd-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/sunos-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-arm64@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-ia32@0.21.5 from lock file
+[11:45:34]: ▸ npm error Missing: @esbuild/win32-x64@0.21.5 from lock file
+[11:45:34]: ▸ npm error
+[11:45:34]: ▸ npm error Clean install a project
+[11:45:34]: ▸ npm error
+[11:45:34]: ▸ npm error Usage:
+[11:45:34]: ▸ npm error npm ci
+[11:45:34]: ▸ npm error
+[11:45:34]: ▸ npm error Options:
+[11:45:34]: ▸ npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+[11:45:34]: ▸ npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+[11:45:34]: ▸ npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+[11:45:34]: ▸ npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+[11:45:34]: ▸ npm error [--no-bin-links] [--no-fund] [--dry-run]
+[11:45:34]: ▸ npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+[11:45:34]: ▸ npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+[11:45:34]: ▸ npm error
+[11:45:34]: ▸ npm error aliases: clean-install, ic, install-clean, isntall-clean
+[11:45:34]: ▸ npm error
+[11:45:34]: ▸ npm error Run "npm help ci" for more info
+[11:45:34]: ▸ npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T11_45_08_336Z-debug-0.log
+[11:45:34]: `npm ci` failed falling back to `npm install`
+[11:45:34]: $ npm install --quiet
+[11:46:05]: ▸ added 713 packages, and audited 714 packages in 31s
+[11:46:05]: ▸ 183 packages are looking for funding
+[11:46:05]: ▸ run `npm fund` for details
+[11:46:05]: ▸ 5 moderate severity vulnerabilities
+[11:46:05]: ▸ To address all issues (including breaking changes), run:
+[11:46:05]: ▸ npm audit fix --force
+[11:46:05]: ▸ Run `npm audit` for details.
+[11:46:05]: -------------------------------------
+[11:46:05]: --- Step: create_capacitor_config ---
+[11:46:05]: -------------------------------------
+[11:46:05]: Created capacitor.config.json from capacitor.config.ts/js
+[11:46:05]: -------------------------
+[11:46:05]: --- Step: get_web_dir ---
+[11:46:05]: -------------------------
+[11:46:05]: webDir is `dist`
+[11:46:05]: -----------------------------------
+[11:46:05]: --- Step: modify_cap_web_config ---
+[11:46:05]: -----------------------------------
+[11:46:05]: No custom native config detected.
+[11:46:05]: ---------------------------
+[11:46:05]: --- Step: build_pro_app ---
+[11:46:05]: ---------------------------
+[11:46:05]: Building app from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[11:46:05]: Build script detected...
+[11:46:05]: $ npm run build
+[11:46:06]: ▸ > clarafi-mobile-capacitor@0.0.1 build
+[11:46:06]: ▸ > tsc && vite build
+[11:46:07]: ▸ src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+[11:46:07]: ▸ src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+[11:46:07]: ▸ src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+[11:46:07]: -------------------------
+[11:46:07]: --- Step: upload_logs ---
+[11:46:07]: -------------------------
+[11:46:10]: --------------------------------------
+[11:46:10]: --- Step: sentry_capture_exception ---
+[11:46:10]: --------------------------------------
+I, [2025-07-12T11:46:10.771956 #2192]  INFO -- sentry: ** [Sentry] [Transport] Sending envelope with items [event] fc904f1567444b8299c1ae0dd81dc517 to Sentry
+[11:46:10]: ---------------------------
+[11:46:10]: --- Step: shell command ---
+[11:46:10]: ---------------------------
+[11:46:10]: -----------------------------
+[11:46:10]: --- Step: delete_keychain ---
+[11:46:10]: -----------------------------
+[11:46:10]: Exit status of command 'npm run build' was 2 instead of 0.
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                               Lane Context                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| DEFAULT_PLATFORM                    | ios                                                                                                                                 |
+| PLATFORM_NAME                       | ios                                                                                                                                 |
+| LANE_NAME                           | ios build_capacitor                                                                                                                 |
+| KEYCHAIN_PATH                       | ~/Library/Keychains/IonicKeychain                                                                                                   |
+| DOWNLOAD_CERTS_PROVISION_FILE_UUID  | 8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2                                                                                                |
+| DOWNLOAD_CERTS_CODESIGNING_IDENTITY | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                                                       |
+| DOWNLOAD_CERTS_TEAM_ID              | 3LCZ3S8HGP                                                                                                                          |
+| DOWNLOAD_CERTS_CERT_PATH            | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/cert_file.p12                                            |
+| SIGH_PROFILE_PATHS                  | ["/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision"] |
+| IONIC_CLI_VERSION                   | 7.2.0                                                                                                                               |
+| NODE_PACKAGE_MANAGER                | npm                                                                                                                                 |
+| CAP_IOS_PATH                        | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios                                                      |
+| PROJECT_WEB_DIR                     | dist                                                                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+[11:46:10]: Exit status of command 'npm run build' was 2 instead of 0.
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+
+
++---------------------------------------------------+
+|                 fastlane summary                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | add_extra_platforms          | 0           |
+| 2    | default_platform             | 0           |
+| 3    | prepare_environment          | 0           |
+| 4    | sentry_init                  | 0           |
+| 5    | begin_building               | 0           |
+| 6    | build_summary                | 2           |
+| 7    | create_keychain              | 0           |
+| 8    | get_ios_credentials_from_api | 0           |
+| 9    | set_ios_credentials          | 0           |
+| 10   | import_certificate           | 0           |
+| 11   | set_ionic_cli                | 1           |
+| 12   | detect_package_manager       | 0           |
+| 13   | add_git_credentials          | 0           |
+| 14   | get_appflow_config           | 0           |
+| 15   | dependency_install           | 57          |
+| 16   | create_capacitor_config      | 0           |
+| 17   | get_web_dir                  | 0           |
+| 18   | modify_cap_web_config        | 0           |
+| 💥   | build_pro_app                | 1           |
+| 20   | upload_logs                  | 3           |
+| 21   | sentry_capture_exception     | 0           |
+| 22   | shell command                | 0           |
+| 23   | delete_keychain              | 0           |
++------+------------------------------+-------------+
+
+[11:46:10]: fastlane finished with errors
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane: [!] Exit status of command 'npm run build' was 2 instead of 0. (FastlaneCore::Interface::FastlaneShellError)
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+
+Running after_script
+Running after script...
+$ clean-up
+Cleaning up project directory and file based variables
+Terminating VM: build_stack_2024.12_arm64-1752320662870934000 (fdbc65ff-9c1f-4538-950e-91480243bbc5) | Controller Instance ID: e9de971b-1c4b-4998-5e0c-c1e317197720 | Host: 10.2.181.103
+ERROR: Job failed: Process exited with status 1
