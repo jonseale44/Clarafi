@@ -212,23 +212,23 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-navy-blue px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Left side - Brand and Navigation */}
-          <div className="flex items-center space-x-10">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-navy-blue rounded-lg flex items-center justify-center">
-                <span className="text-gold font-bold text-lg">C</span>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
+                <span className="text-navy-blue font-bold text-sm">C</span>
               </div>
-              <span className="font-bold text-2xl">
-                <span className="text-navy-blue">CLAR</span><span className="text-gold">A</span><span className="text-navy-blue">F</span><span className="text-gold">I</span>
+              <span className="font-bold text-lg text-white">
+                CLAR<span className="text-gold">A</span>F<span className="text-gold">I</span>
               </span>
             </div>
             
             {/* Main Navigation */}
-            <nav className="flex items-center space-x-2">
+            <nav className="flex items-center space-x-1">
               <button
                 onClick={() => setActiveTab("dashboard")}
                 className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
