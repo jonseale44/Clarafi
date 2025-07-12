@@ -1089,7 +1089,7 @@ export const diagnoses = pgTable("diagnoses", {
   resolution_date: date("resolution_date"),
   notes: text("notes"),
   severity: text("severity"),
-  clinician_id: integer("clinician_id").references(() => users.id)
+  clinician_id: integer("clinician_id").references(() => users.id),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
