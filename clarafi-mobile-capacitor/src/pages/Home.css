@@ -1,0 +1,19 @@
+.home-container {
+  padding: 1rem;
+}
+
+.dashboard-card {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+  font-size: 3rem;
+  color: var(--clarafi-navy);
+  margin-bottom: 1rem;
+}

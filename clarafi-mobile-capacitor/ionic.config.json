@@ -1,0 +1,7 @@
+{
+  "name": "clarafi-mobile-capacitor",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}

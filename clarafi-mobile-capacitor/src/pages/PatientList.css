@@ -1,0 +1,17 @@
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.no-patients {
+  text-align: center;
+  color: var(--ion-color-medium);
+  font-style: italic;
+}
+
+ion-fab-button {
+  --background: var(--clarafi-navy);
+  --background-activated: var(--ion-color-primary-shade);
+}
