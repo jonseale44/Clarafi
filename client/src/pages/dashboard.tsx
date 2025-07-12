@@ -214,47 +214,47 @@ export default function Dashboard() {
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3">
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Left side - Brand and Navigation */}
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-10">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-navy-blue rounded-lg flex items-center justify-center">
-                <span className="text-gold font-bold text-sm">C</span>
+              <div className="w-10 h-10 bg-navy-blue rounded-lg flex items-center justify-center">
+                <span className="text-gold font-bold text-lg">C</span>
               </div>
-              <span className="font-bold text-xl">
+              <span className="font-bold text-2xl">
                 <span className="text-navy-blue">CLAR</span><span className="text-gold">A</span><span className="text-navy-blue">F</span><span className="text-gold">I</span>
               </span>
             </div>
             
             {/* Main Navigation */}
-            <nav className="flex items-center space-x-6">
+            <nav className="flex items-center space-x-2">
               <button
                 onClick={() => setActiveTab("dashboard")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
                   activeTab === "dashboard" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-navy-blue text-white" 
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 Dashboard
               </button>
               <button
                 onClick={() => setActiveTab("patients")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
                   activeTab === "patients" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-navy-blue text-white" 
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 Patients
               </button>
               <button
                 onClick={() => setActiveTab("encounters")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
                   activeTab === "encounters" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-navy-blue text-white" 
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 Encounters
@@ -263,65 +263,37 @@ export default function Dashboard() {
               {currentUser?.role === 'admin' && (
                 <>
                   <Link href="/admin/prompts">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
+                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
                       Admin Prompts
                     </button>
                   </Link>
                   <Link href="/admin/users">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
+                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-purple-700 hover:text-purple-900 hover:bg-purple-50`}>
                       Admin Users
                     </button>
                   </Link>
                   <Link href="/admin/subscription-config">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
+                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
                       Subscription Config
                     </button>
                   </Link>
                   <Link href="/admin/health-system-upgrade">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-                    }`}>
+                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50`}>
                       🚀 Test Upgrade
                     </button>
                   </Link>
                   <Link href="/admin/subscription-keys">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
+                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
                       Subscription Keys
                     </button>
                   </Link>
                   <Link href="/admin/clinic-import">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
+                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
                       Clinic Import
                     </button>
                   </Link>
                   <Link href="/practice-migration">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
+                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
                       Practice Migration
                     </button>
                   </Link>
@@ -331,11 +303,7 @@ export default function Dashboard() {
               {/* Practice Migration for providers */}
               {currentUser?.role === 'provider' && (
                 <Link href="/practice-migration">
-                  <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    false
-                      ? "bg-primary text-white" 
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}>
+                  <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
                     Practice Migration
                   </button>
                 </Link>
@@ -346,10 +314,10 @@ export default function Dashboard() {
           </div>
           
           {/* Right side - User info and actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <Link href="/patients/create">
-              <Button className="flex items-center gap-2" size="sm">
-                <UserPlus className="h-4 w-4" />
+              <Button className="flex items-center gap-2 px-5 py-2.5 text-base bg-navy-blue hover:bg-navy-blue-dark">
+                <UserPlus className="h-5 w-5" />
                 Create Patient
               </Button>
             </Link>
