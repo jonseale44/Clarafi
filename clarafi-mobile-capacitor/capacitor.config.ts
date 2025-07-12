@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.clarafi.mobile',
-  appName: 'Clarafi Mobile',
+  appId: 'ai.clarafi',
+  appName: 'Clarafi EMR',
   webDir: 'dist',
   server: {
     androidScheme: 'https'
