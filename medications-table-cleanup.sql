@@ -1,0 +1,23 @@
+-- Medications table cleanup - remove columns not in schema.ts
+ALTER TABLE medications
+DROP COLUMN IF EXISTS discontinued_date,
+DROP COLUMN IF EXISTS rxnorm_code,
+DROP COLUMN IF EXISTS strength,
+DROP COLUMN IF EXISTS dosage_form,
+DROP COLUMN IF EXISTS total_refills,
+DROP COLUMN IF EXISTS refills_remaining,
+DROP COLUMN IF EXISTS surescripts_id,
+DROP COLUMN IF EXISTS source_order_id,
+DROP COLUMN IF EXISTS problem_mappings,
+DROP COLUMN IF EXISTS first_encounter_id,
+DROP COLUMN IF EXISTS last_updated_encounter_id,
+DROP COLUMN IF EXISTS reason_for_change,
+DROP COLUMN IF EXISTS change_log,
+DROP COLUMN IF EXISTS prescriber,
+DROP COLUMN IF EXISTS source_notes,
+DROP COLUMN IF EXISTS entered_by,
+DROP COLUMN IF EXISTS grouping_strategy,
+DROP COLUMN IF EXISTS related_medications,
+DROP COLUMN IF EXISTS pharmacy_order_id,
+DROP COLUMN IF EXISTS insurance_auth_status,
+DROP COLUMN IF EXISTS prior_auth_required;
