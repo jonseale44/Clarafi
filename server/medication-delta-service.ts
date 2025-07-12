@@ -747,20 +747,6 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       `💊 [CreateMedication] Patient ID: ${patientId}, Encounter ID: ${encounterId}`,
     );
 
-    // CRITICAL: Check if medication already exists with this order ID to prevent duplicates
-    if (change.order_id) {
-      const existingWithOrderId = await storage.getMedicationsByOrderId(change.order_id);
-      if (existingWithOrderId && existingWithOrderId.length > 0) {
-        console.log(
-          `💊 [CreateMedication] ⚠️ DUPLICATE PREVENTION: Medication already exists for order ${change.order_id}`,
-        );
-        console.log(
-          `💊 [CreateMedication] Existing medication ID: ${existingWithOrderId[0].id}`,
-        );
-        return; // Skip creation to prevent duplicate
-      }
-    }
-
     // Look for matching medication order to get complete prescription details
     const relatedOrder = await this.findMatchingMedicationOrder(
       change.medication_name!,

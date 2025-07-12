@@ -75,7 +75,6 @@ export interface IStorage {
   updateMedication(id: number, updates: Partial<Medication>): Promise<Medication>;
   deleteMedication(id: number): Promise<void>;
   getMedicationHistory(medicationId: number): Promise<any[]>;
-  getMedicationsByOrderId(orderId: number): Promise<Medication[]>;
   getDraftOrdersByEncounter(encounterId: number): Promise<Order[]>;
   getOrdersByEncounter(encounterId: number): Promise<Order[]>;
   getPatientDiagnoses(patientId: number): Promise<any[]>;
@@ -710,17 +709,6 @@ export class DatabaseStorage implements IStorage {
     }
     
     return medication[0].medicationHistory || [];
-  }
-
-  async getMedicationsByOrderId(orderId: number): Promise<Medication[]> {
-    console.log(`🔍 [STORAGE] Fetching medications by order ID: ${orderId}`);
-    
-    const meds = await db.select()
-      .from(medications)
-      .where(eq(medications.sourceOrderId, orderId));
-    
-    console.log(`✅ [STORAGE] Found ${meds.length} medications for order ID ${orderId}`);
-    return meds;
   }
 
   async getMedicationById(id: number): Promise<Medication | undefined> {
