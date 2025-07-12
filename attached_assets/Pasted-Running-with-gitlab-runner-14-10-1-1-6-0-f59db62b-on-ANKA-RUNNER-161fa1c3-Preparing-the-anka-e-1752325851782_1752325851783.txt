@@ -1,0 +1,523 @@
+Running with gitlab-runner 14.10.1/1.6.0 (f59db62b)
+  on ANKA_RUNNER 161fa1c3
+Preparing the "anka" executor
+Opening a connection to the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443
+Starting Anka VM using:
+  - VM Template UUID: 9ced2d88-6f2c-4854-9cb8-28b35b753067
+  - VM Template Tag Name: v3
+Please be patient...
+You can check the status of starting your Instance on the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443/#/instances
+Verifying connectivity to the VM: build_stack_2024.12_arm64-1752325759079793000 (683ee3ef-fe67-4235-8541-c2294d6e9177) | Controller Instance ID: 00e652ab-4f98-4605-7f43-1fd78e66e360 | Host: 10.2.183.162 | Port: 10000 
+VM "build_stack_2024.12_arm64-1752325759079793000" (683ee3ef-fe67-4235-8541-c2294d6e9177) / Controller Instance ID 00e652ab-4f98-4605-7f43-1fd78e66e360 running on Node ip-10-2-183-162.us-west-2.compute.internal (10.2.183.162), is ready for work (10.2.183.162:10000)
+Preparing environment
+Running on ip-192-168-64-23.us-west-2.compute.internal via ip-10-2-128-124.us-west-2.compute.internal...
+Getting source from Git repository
+$ pre-clone
+[13:09:48]: Cloning repository...
+Fetching changes...
+Initialized empty Git repository in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/.git/
+Created fresh repository.
+Checking out 93e7dbe7 as main...
+Updating/initializing submodules...
+$ post-clone
+[13:09:55]: Cloning complete...
+Restoring cache
+Not downloading cache 3d7e1956/node-cache-stack-package-ios-2024.12-arm64.zip due to policy
+Executing "step_script" stage of the job script
+$ pre-build
+[13:09:55]: Building project....
+$ fetch-updates || true
+Checking for build process updates...
+$ build-ios
+Building from: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[13:10:00]: ---------------------------------
+[13:10:00]: --- Step: add_extra_platforms ---
+[13:10:00]: ---------------------------------
+[13:10:00]: Setting '[:web]' as extra SupportedPlatforms
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:8: warning: character class has '-' without escape
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:15: warning: character class has '-' without escape
+[13:10:00]: ------------------------------
+[13:10:00]: --- Step: default_platform ---
+[13:10:00]: ------------------------------
+[13:10:00]: Driving the lane 'ios build_capacitor' 🚀
+[13:10:00]: ---------------------------------
+[13:10:00]: --- Step: prepare_environment ---
+[13:10:00]: ---------------------------------
+[13:10:00]: Setting default environment variables to tidy up logs. These can be overridden by setting them in Appflow.
+[13:10:00]: 
+[13:10:00]: No changes needed - logs are already tidy! 🧹
+[13:10:00]: -------------------------
+[13:10:00]: --- Step: sentry_init ---
+[13:10:00]: -------------------------
+[13:10:00]: ----------------------------
+[13:10:00]: --- Step: begin_building ---
+[13:10:00]: ----------------------------
+[13:10:00]: Began building @ 2025-07-12T13:10:00
+[13:10:00]: ---------------------------
+[13:10:00]: --- Step: build_summary ---
+[13:10:00]: ---------------------------
+
++---------------------------------------------------+
+|                   Build Summary                   |
++---------------------+-----------------------------+
+| Runners Revision    | f9ed312                     |
+| Job ID              | 10293995                    |
+| Node.js version     | v20.18.1                    |
+| Cordova CLI version | 12.0.0 (cordova-lib@12.0.2) |
+| npm version         | 10.8.2                      |
+| yarn version        | 1.22.19                     |
+| macOS version       | 14.6.1                      |
+| Xcode version       | Xcode 16.1                  |
+|                     | Build version 16B40         |
+| Fastlane version    | fastlane (2.225.0)          |
++---------------------+-----------------------------+
+
+[13:10:03]: -----------------------------
+[13:10:03]: --- Step: create_keychain ---
+[13:10:03]: -----------------------------
+[13:10:03]: $ security list-keychains -d user
+[13:10:03]: ▸ "/Users/ionic-cloud-team/Library/Keychains/login.keychain-db"
+[13:10:03]: ------------------------------------------
+[13:10:03]: --- Step: get_ios_credentials_from_api ---
+[13:10:03]: ------------------------------------------
+[13:10:03]: Fetching certificate and profile(s) from Ionic Appflow
+[13:10:04]: ---------------------------------
+[13:10:04]: --- Step: set_ios_credentials ---
+[13:10:04]: ---------------------------------
+[13:10:04]: Installing provisioning profile...
+[13:10:05]: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision
+
++-------------------------------------------------------------------+
+|                       Installed Certificate                       |
++-------------------+-----------------------------------------------+
+| User ID           | W5V9Y23C6X                                    |
+| Common Name       | iPhone Developer: Jonathan Seale (4298ARN5NU) |
+| Organization Unit | 3LCZ3S8HGP                                    |
+| Organization      | Jonathan Seale                                |
+| Country           | US                                            |
++-------------------+-----------------------------------------------+
+
+[13:10:05]: --------------------------------
+[13:10:05]: --- Step: import_certificate ---
+[13:10:05]: --------------------------------
+[13:10:05]: Setting key partition list... (this can take a minute if there are a lot of keys installed)
+[13:10:05]: ---------------------------
+[13:10:05]: --- Step: set_ionic_cli ---
+[13:10:05]: ---------------------------
+[13:10:06]: Preinstalled @ionic/cli compatible with project `react`
+[13:10:06]: ------------------------------------
+[13:10:06]: --- Step: detect_package_manager ---
+[13:10:06]: ------------------------------------
+[13:10:06]: Detecting package manager
+[13:10:06]: Defaulting to npm
+[13:10:06]: ---------------------------------
+[13:10:06]: --- Step: add_git_credentials ---
+[13:10:06]: ---------------------------------
+[13:10:06]: Writing git-credentials files
+[13:10:06]: git-credentials successfully added to project
+[13:10:06]: --------------------------------
+[13:10:06]: --- Step: get_appflow_config ---
+[13:10:06]: --------------------------------
+[13:10:06]: Checking for appflow.config.json
+[13:10:06]: Appflow config detected
+[13:10:06]: --------------------------------
+[13:10:06]: --- Step: dependency_install ---
+[13:10:06]: --------------------------------
+[13:10:06]: Installing Dependencies (in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor)
+[13:10:06]: $ npm ci --quiet 
+[13:10:20]: ▸ npm error code EUSAGE
+[13:10:20]: ▸ npm error
+[13:10:20]: ▸ npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+[13:10:20]: ▸ npm error
+[13:10:20]: ▸ npm error Missing: @capacitor/android@6.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: @capacitor/core@6.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: @capacitor/app@6.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: @capacitor/cli@6.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: @capacitor/haptics@6.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: @capacitor/ios@6.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: @capacitor/keyboard@6.0.3 from lock file
+[13:10:20]: ▸ npm error Missing: @capacitor/status-bar@6.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/react@7.8.6 from lock file
+[13:10:20]: ▸ npm error Missing: react@18.3.1 from lock file
+[13:10:20]: ▸ npm error Missing: react-dom@18.3.1 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/react-router@7.8.6 from lock file
+[13:10:20]: ▸ npm error Missing: react-router@5.3.4 from lock file
+[13:10:20]: ▸ npm error Missing: react-router-dom@5.3.4 from lock file
+[13:10:20]: ▸ npm error Missing: @tanstack/react-query@5.83.0 from lock file
+[13:10:20]: ▸ npm error Missing: @types/react@18.3.23 from lock file
+[13:10:20]: ▸ npm error Missing: @types/react-dom@18.3.7 from lock file
+[13:10:20]: ▸ npm error Missing: @types/react-router@5.1.20 from lock file
+[13:10:20]: ▸ npm error Missing: @types/react-router-dom@5.3.3 from lock file
+[13:10:20]: ▸ npm error Missing: @vitejs/plugin-react@4.6.0 from lock file
+[13:10:20]: ▸ npm error Missing: vite@5.4.19 from lock file
+[13:10:20]: ▸ npm error Missing: ionicons@7.4.0 from lock file
+[13:10:20]: ▸ npm error Missing: lucide-react@0.263.1 from lock file
+[13:10:20]: ▸ npm error Missing: typescript@5.8.3 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/cli-framework-output@2.2.8 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-fs@3.1.7 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-subprocess@2.1.11 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-terminal@2.3.5 from lock file
+[13:10:20]: ▸ npm error Missing: commander@9.5.0 from lock file
+[13:10:20]: ▸ npm error Missing: debug@4.4.1 from lock file
+[13:10:20]: ▸ npm error Missing: env-paths@2.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: kleur@4.1.5 from lock file
+[13:10:20]: ▸ npm error Missing: native-run@2.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: open@8.4.2 from lock file
+[13:10:20]: ▸ npm error Missing: plist@3.1.0 from lock file
+[13:10:20]: ▸ npm error Missing: prompts@2.4.2 from lock file
+[13:10:20]: ▸ npm error Missing: rimraf@4.4.1 from lock file
+[13:10:20]: ▸ npm error Missing: semver@7.7.2 from lock file
+[13:10:20]: ▸ npm error Missing: tar@6.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: tslib@2.8.1 from lock file
+[13:10:20]: ▸ npm error Missing: xml2js@0.5.0 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/core@7.8.6 from lock file
+[13:10:20]: ▸ npm error Missing: @stencil/core@4.35.3 from lock file
+[13:10:20]: ▸ npm error Missing: @types/fs-extra@8.1.5 from lock file
+[13:10:20]: ▸ npm error Missing: fs-extra@9.1.0 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-array@2.1.5 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-fs@3.1.6 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-process@2.1.10 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-stream@3.1.5 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-terminal@2.3.3 from lock file
+[13:10:20]: ▸ npm error Missing: cross-spawn@7.0.6 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-object@2.1.5 from lock file
+[13:10:20]: ▸ npm error Missing: @ionic/utils-terminal@2.3.3 from lock file
+[13:10:20]: ▸ npm error Missing: signal-exit@3.0.7 from lock file
+[13:10:20]: ▸ npm error Missing: tree-kill@1.2.2 from lock file
+[13:10:20]: ▸ npm error Missing: @types/slice-ansi@4.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: slice-ansi@4.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: string-width@4.2.3 from lock file
+[13:10:20]: ▸ npm error Missing: strip-ansi@6.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: untildify@4.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: wrap-ansi@7.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-darwin-arm64@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-darwin-x64@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-arm64-gnu@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-arm64-musl@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-x64-gnu@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-x64-musl@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-win32-arm64-msvc@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-win32-x64-msvc@4.34.9 from lock file
+[13:10:20]: ▸ npm error Missing: @tanstack/query-core@5.83.0 from lock file
+[13:10:20]: ▸ npm error Missing: @types/node@24.0.13 from lock file
+[13:10:20]: ▸ npm error Missing: undici-types@7.8.0 from lock file
+[13:10:20]: ▸ npm error Missing: @types/prop-types@15.7.15 from lock file
+[13:10:20]: ▸ npm error Missing: csstype@3.1.3 from lock file
+[13:10:20]: ▸ npm error Missing: @types/history@4.7.11 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/core@7.28.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/plugin-transform-react-jsx-self@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/plugin-transform-react-jsx-source@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: @rolldown/pluginutils@1.0.0-beta.19 from lock file
+[13:10:20]: ▸ npm error Missing: @types/babel__core@7.20.5 from lock file
+[13:10:20]: ▸ npm error Missing: react-refresh@0.17.0 from lock file
+[13:10:20]: ▸ npm error Missing: @ampproject/remapping@2.3.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/code-frame@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/generator@7.28.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-compilation-targets@7.27.2 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-module-transforms@7.27.3 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helpers@7.27.6 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/parser@7.28.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/template@7.27.2 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/traverse@7.28.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/types@7.28.1 from lock file
+[13:10:20]: ▸ npm error Missing: convert-source-map@2.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: gensync@1.0.0-beta.2 from lock file
+[13:10:20]: ▸ npm error Missing: json5@2.2.3 from lock file
+[13:10:20]: ▸ npm error Missing: semver@6.3.1 from lock file
+[13:10:20]: ▸ npm error Missing: @jridgewell/gen-mapping@0.3.12 from lock file
+[13:10:20]: ▸ npm error Missing: @jridgewell/trace-mapping@0.3.29 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-validator-identifier@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: js-tokens@4.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: picocolors@1.1.1 from lock file
+[13:10:20]: ▸ npm error Missing: jsesc@3.1.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/compat-data@7.28.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-validator-option@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: browserslist@4.25.1 from lock file
+[13:10:20]: ▸ npm error Missing: lru-cache@5.1.1 from lock file
+[13:10:20]: ▸ npm error Missing: semver@6.3.1 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-module-imports@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-plugin-utils@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-globals@7.28.0 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/helper-string-parser@7.27.1 from lock file
+[13:10:20]: ▸ npm error Missing: @jridgewell/sourcemap-codec@1.5.4 from lock file
+[13:10:20]: ▸ npm error Missing: @jridgewell/resolve-uri@3.1.2 from lock file
+[13:10:20]: ▸ npm error Missing: @types/babel__generator@7.27.0 from lock file
+[13:10:20]: ▸ npm error Missing: @types/babel__template@7.4.4 from lock file
+[13:10:20]: ▸ npm error Missing: @types/babel__traverse@7.20.7 from lock file
+[13:10:20]: ▸ npm error Missing: caniuse-lite@1.0.30001727 from lock file
+[13:10:20]: ▸ npm error Missing: electron-to-chromium@1.5.182 from lock file
+[13:10:20]: ▸ npm error Missing: node-releases@2.0.19 from lock file
+[13:10:20]: ▸ npm error Missing: update-browserslist-db@1.1.3 from lock file
+[13:10:20]: ▸ npm error Missing: path-key@3.1.1 from lock file
+[13:10:20]: ▸ npm error Missing: shebang-command@2.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: which@2.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: ms@2.1.3 from lock file
+[13:10:20]: ▸ npm error Missing: at-least-node@1.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: graceful-fs@4.2.11 from lock file
+[13:10:20]: ▸ npm error Missing: jsonfile@6.1.0 from lock file
+[13:10:20]: ▸ npm error Missing: universalify@2.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: yallist@3.1.1 from lock file
+[13:10:20]: ▸ npm error Missing: bplist-parser@0.3.2 from lock file
+[13:10:20]: ▸ npm error Missing: elementtree@0.1.7 from lock file
+[13:10:20]: ▸ npm error Missing: ini@4.1.3 from lock file
+[13:10:20]: ▸ npm error Missing: split2@4.2.0 from lock file
+[13:10:20]: ▸ npm error Missing: through2@4.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: yauzl@2.10.0 from lock file
+[13:10:20]: ▸ npm error Missing: big-integer@1.6.52 from lock file
+[13:10:20]: ▸ npm error Missing: sax@1.1.4 from lock file
+[13:10:20]: ▸ npm error Missing: define-lazy-prop@2.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: is-docker@2.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: is-wsl@2.2.0 from lock file
+[13:10:20]: ▸ npm error Missing: @xmldom/xmldom@0.8.10 from lock file
+[13:10:20]: ▸ npm error Missing: base64-js@1.5.1 from lock file
+[13:10:20]: ▸ npm error Missing: xmlbuilder@15.1.1 from lock file
+[13:10:20]: ▸ npm error Missing: kleur@3.0.3 from lock file
+[13:10:20]: ▸ npm error Missing: sisteransi@1.0.5 from lock file
+[13:10:20]: ▸ npm error Missing: loose-envify@1.4.0 from lock file
+[13:10:20]: ▸ npm error Missing: scheduler@0.23.2 from lock file
+[13:10:20]: ▸ npm error Missing: @babel/runtime@7.27.6 from lock file
+[13:10:20]: ▸ npm error Missing: history@4.10.1 from lock file
+[13:10:20]: ▸ npm error Missing: hoist-non-react-statics@3.3.2 from lock file
+[13:10:20]: ▸ npm error Missing: path-to-regexp@1.9.0 from lock file
+[13:10:20]: ▸ npm error Missing: prop-types@15.8.1 from lock file
+[13:10:20]: ▸ npm error Missing: react-is@16.13.1 from lock file
+[13:10:20]: ▸ npm error Missing: tiny-invariant@1.3.3 from lock file
+[13:10:20]: ▸ npm error Missing: tiny-warning@1.0.3 from lock file
+[13:10:20]: ▸ npm error Missing: resolve-pathname@3.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: value-equal@1.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: isarray@0.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: object-assign@4.1.1 from lock file
+[13:10:20]: ▸ npm error Missing: glob@9.3.5 from lock file
+[13:10:20]: ▸ npm error Missing: fs.realpath@1.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: minimatch@8.0.4 from lock file
+[13:10:20]: ▸ npm error Missing: minipass@4.2.8 from lock file
+[13:10:20]: ▸ npm error Missing: path-scurry@1.11.1 from lock file
+[13:10:20]: ▸ npm error Missing: brace-expansion@2.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: balanced-match@1.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: lru-cache@10.4.3 from lock file
+[13:10:20]: ▸ npm error Missing: minipass@7.1.2 from lock file
+[13:10:20]: ▸ npm error Missing: shebang-regex@3.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: ansi-styles@4.3.0 from lock file
+[13:10:20]: ▸ npm error Missing: astral-regex@2.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: is-fullwidth-code-point@3.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: color-convert@2.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: color-name@1.1.4 from lock file
+[13:10:20]: ▸ npm error Missing: emoji-regex@8.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: ansi-regex@5.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: chownr@2.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: fs-minipass@2.1.0 from lock file
+[13:10:20]: ▸ npm error Missing: minipass@5.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: minizlib@2.1.2 from lock file
+[13:10:20]: ▸ npm error Missing: mkdirp@1.0.4 from lock file
+[13:10:20]: ▸ npm error Missing: yallist@4.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: minipass@3.3.6 from lock file
+[13:10:20]: ▸ npm error Missing: minipass@3.3.6 from lock file
+[13:10:20]: ▸ npm error Missing: yallist@4.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: readable-stream@3.6.2 from lock file
+[13:10:20]: ▸ npm error Missing: inherits@2.0.4 from lock file
+[13:10:20]: ▸ npm error Missing: string_decoder@1.3.0 from lock file
+[13:10:20]: ▸ npm error Missing: util-deprecate@1.0.2 from lock file
+[13:10:20]: ▸ npm error Missing: safe-buffer@5.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: escalade@3.2.0 from lock file
+[13:10:20]: ▸ npm error Missing: esbuild@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: fsevents@2.3.3 from lock file
+[13:10:20]: ▸ npm error Missing: postcss@8.5.6 from lock file
+[13:10:20]: ▸ npm error Missing: rollup@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/aix-ppc64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/android-arm@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/android-arm64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/android-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/darwin-arm64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/darwin-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/freebsd-arm64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/freebsd-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-arm@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-arm64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-ia32@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-loong64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-mips64el@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-ppc64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-riscv64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-s390x@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/linux-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/netbsd-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/openbsd-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/sunos-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/win32-arm64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/win32-ia32@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: @esbuild/win32-x64@0.21.5 from lock file
+[13:10:20]: ▸ npm error Missing: nanoid@3.3.11 from lock file
+[13:10:20]: ▸ npm error Missing: source-map-js@1.2.1 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-android-arm-eabi@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-android-arm64@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-darwin-arm64@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-darwin-x64@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-freebsd-arm64@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-freebsd-x64@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-arm-gnueabihf@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-arm-musleabihf@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-arm64-gnu@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-arm64-musl@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-loongarch64-gnu@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-powerpc64le-gnu@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-riscv64-gnu@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-riscv64-musl@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-s390x-gnu@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-x64-gnu@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-linux-x64-musl@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-win32-arm64-msvc@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-win32-ia32-msvc@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @rollup/rollup-win32-x64-msvc@4.45.0 from lock file
+[13:10:20]: ▸ npm error Missing: @types/estree@1.0.8 from lock file
+[13:10:20]: ▸ npm error Missing: isexe@2.0.0 from lock file
+[13:10:20]: ▸ npm error Missing: xmlbuilder@11.0.1 from lock file
+[13:10:20]: ▸ npm error Missing: buffer-crc32@0.2.13 from lock file
+[13:10:20]: ▸ npm error Missing: fd-slicer@1.1.0 from lock file
+[13:10:20]: ▸ npm error Missing: pend@1.2.0 from lock file
+[13:10:20]: ▸ npm error Missing: yallist@4.0.0 from lock file
+[13:10:20]: ▸ npm error
+[13:10:20]: ▸ npm error Clean install a project
+[13:10:20]: ▸ npm error
+[13:10:20]: ▸ npm error Usage:
+[13:10:20]: ▸ npm error npm ci
+[13:10:20]: ▸ npm error
+[13:10:20]: ▸ npm error Options:
+[13:10:20]: ▸ npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+[13:10:20]: ▸ npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+[13:10:20]: ▸ npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+[13:10:20]: ▸ npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+[13:10:20]: ▸ npm error [--no-bin-links] [--no-fund] [--dry-run]
+[13:10:20]: ▸ npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+[13:10:20]: ▸ npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+[13:10:20]: ▸ npm error
+[13:10:20]: ▸ npm error aliases: clean-install, ic, install-clean, isntall-clean
+[13:10:20]: ▸ npm error
+[13:10:20]: ▸ npm error Run "npm help ci" for more info
+[13:10:20]: ▸ npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T13_10_06_457Z-debug-0.log
+[13:10:20]: `npm ci` failed falling back to `npm install`
+[13:10:20]: $ npm install --quiet
+[13:10:26]: ▸ added 197 packages, and audited 198 packages in 6s
+[13:10:26]: ▸ 20 packages are looking for funding
+[13:10:26]: ▸ run `npm fund` for details
+[13:10:26]: ▸ 2 moderate severity vulnerabilities
+[13:10:26]: ▸ To address all issues (including breaking changes), run:
+[13:10:26]: ▸ npm audit fix --force
+[13:10:26]: ▸ Run `npm audit` for details.
+[13:10:26]: -------------------------------------
+[13:10:26]: --- Step: create_capacitor_config ---
+[13:10:26]: -------------------------------------
+[13:10:26]: Created capacitor.config.json from capacitor.config.ts/js
+[13:10:26]: -------------------------
+[13:10:26]: --- Step: get_web_dir ---
+[13:10:26]: -------------------------
+[13:10:26]: webDir is `dist`
+[13:10:26]: -----------------------------------
+[13:10:26]: --- Step: modify_cap_web_config ---
+[13:10:26]: -----------------------------------
+[13:10:26]: No custom native config detected.
+[13:10:26]: ---------------------------
+[13:10:26]: --- Step: build_pro_app ---
+[13:10:26]: ---------------------------
+[13:10:26]: Building app from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[13:10:26]: Build script detected...
+[13:10:26]: $ npm run build
+[13:10:26]: ▸ > clarafi-mobile-capacitor@0.0.1 build
+[13:10:26]: ▸ > tsc && vite build
+[13:10:27]: ▸ src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+[13:10:27]: ▸ src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+[13:10:27]: ▸ src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+[13:10:27]: -------------------------
+[13:10:27]: --- Step: upload_logs ---
+[13:10:27]: -------------------------
+[13:10:31]: --------------------------------------
+[13:10:31]: --- Step: sentry_capture_exception ---
+[13:10:31]: --------------------------------------
+I, [2025-07-12T13:10:31.200757 #2201]  INFO -- sentry: ** [Sentry] [Transport] Sending envelope with items [event] 40d56e2ec8dd4cb58e08196a545b07ac to Sentry
+[13:10:31]: ---------------------------
+[13:10:31]: --- Step: shell command ---
+[13:10:31]: ---------------------------
+[13:10:31]: -----------------------------
+[13:10:31]: --- Step: delete_keychain ---
+[13:10:31]: -----------------------------
+[13:10:31]: Exit status of command 'npm run build' was 2 instead of 0.
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                               Lane Context                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| DEFAULT_PLATFORM                    | ios                                                                                                                                 |
+| PLATFORM_NAME                       | ios                                                                                                                                 |
+| LANE_NAME                           | ios build_capacitor                                                                                                                 |
+| KEYCHAIN_PATH                       | ~/Library/Keychains/IonicKeychain                                                                                                   |
+| DOWNLOAD_CERTS_PROVISION_FILE_UUID  | 8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2                                                                                                |
+| DOWNLOAD_CERTS_CODESIGNING_IDENTITY | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                                                       |
+| DOWNLOAD_CERTS_TEAM_ID              | 3LCZ3S8HGP                                                                                                                          |
+| DOWNLOAD_CERTS_CERT_PATH            | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/cert_file.p12                                            |
+| SIGH_PROFILE_PATHS                  | ["/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision"] |
+| IONIC_CLI_VERSION                   | 7.2.0                                                                                                                               |
+| NODE_PACKAGE_MANAGER                | npm                                                                                                                                 |
+| CAP_IOS_PATH                        | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios                                                      |
+| PROJECT_WEB_DIR                     | dist                                                                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+[13:10:31]: Exit status of command 'npm run build' was 2 instead of 0.
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+
+
++---------------------------------------------------+
+|                 fastlane summary                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | add_extra_platforms          | 0           |
+| 2    | default_platform             | 0           |
+| 3    | prepare_environment          | 0           |
+| 4    | sentry_init                  | 0           |
+| 5    | begin_building               | 0           |
+| 6    | build_summary                | 2           |
+| 7    | create_keychain              | 0           |
+| 8    | get_ios_credentials_from_api | 0           |
+| 9    | set_ios_credentials          | 0           |
+| 10   | import_certificate           | 0           |
+| 11   | set_ionic_cli                | 0           |
+| 12   | detect_package_manager       | 0           |
+| 13   | add_git_credentials          | 0           |
+| 14   | get_appflow_config           | 0           |
+| 15   | dependency_install           | 19          |
+| 16   | create_capacitor_config      | 0           |
+| 17   | get_web_dir                  | 0           |
+| 18   | modify_cap_web_config        | 0           |
+| 💥   | build_pro_app                | 1           |
+| 20   | upload_logs                  | 3           |
+| 21   | sentry_capture_exception     | 0           |
+| 22   | shell command                | 0           |
+| 23   | delete_keychain              | 0           |
++------+------------------------------+-------------+
+
+[13:10:31]: fastlane finished with errors
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane: [!] Exit status of command 'npm run build' was 2 instead of 0. (FastlaneCore::Interface::FastlaneShellError)
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+src/pages/Home.tsx(1,100): error TS6133: 'IonCardContent' is declared but its value is never read.
+src/pages/Home.tsx(1,187): error TS6133: 'IonButton' is declared but its value is never read.
+src/pages/PatientList.tsx(1,180): error TS6133: 'IonNote' is declared but its value is never read.
+
+Running after_script
+Running after script...
+$ clean-up
+Cleaning up project directory and file based variables
+Terminating VM: build_stack_2024.12_arm64-1752325759079793000 (683ee3ef-fe67-4235-8541-c2294d6e9177) | Controller Instance ID: 00e652ab-4f98-4605-7f43-1fd78e66e360 | Host: 10.2.183.162
+ERROR: Job failed: Process exited with status 1
