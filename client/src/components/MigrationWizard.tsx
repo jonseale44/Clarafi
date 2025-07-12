@@ -325,7 +325,7 @@ export function MigrationWizard({ targetHealthSystemId, onComplete, onCancel }: 
 
           <TabsContent value="hospital" className="space-y-4">
             <Alert variant="destructive">
-              <Hospital className="h-4 w-4" />
+              <Building2 className="h-4 w-4" />
               <AlertTitle>Hospital Patients</AlertTitle>
               <AlertDescription>
                 These patients require explicit consent before migration. Email notifications will be sent.
