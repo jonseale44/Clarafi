@@ -138,6 +138,8 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
     }
     const startTime = Date.now();
     
+    console.log(`🔄 [MedicationAPI] Manually triggering medication processing for encounter ${encounterId}, patient ${patientId}`);
+    
     // Process medications based on orders using new order-driven approach
     const result = await medicationDelta.processOrderDelta(
       patientId,
@@ -151,6 +153,8 @@ router.post("/encounters/:encounterId/process-medications", async (req: Request,
       processingTimeMs: result.processing_time_ms,
       medicationsAffected: result.total_medications_affected
     };
+    
+    console.log(`✅ [MedicationAPI] Manual medication processing completed:`, response);
     
     res.json(response);
 
