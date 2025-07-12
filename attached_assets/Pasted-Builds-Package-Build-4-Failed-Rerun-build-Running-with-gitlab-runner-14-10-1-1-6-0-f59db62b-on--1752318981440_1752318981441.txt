@@ -1,0 +1,266 @@
+Builds
+Package Build #4
+Failed
+Rerun build
+Running with gitlab-runner 14.10.1/1.6.0 (f59db62b)
+  on ANKA_RUNNER 161fa1c3
+Preparing the "anka" executor
+Opening a connection to the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443
+Starting Anka VM using:
+  - VM Template UUID: 9ced2d88-6f2c-4854-9cb8-28b35b753067
+  - VM Template Tag Name: v3
+Please be patient...
+You can check the status of starting your Instance on the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443/#/instances
+Verifying connectivity to the VM: build_stack_2024.12_arm64-1752318883468479000 (94b3a44a-a6d7-400a-bca1-d1fc0686620e) | Controller Instance ID: e42f8313-cf41-45ab-794e-bde4d75bf344 | Host: 10.2.183.162 | Port: 10000 
+VM "build_stack_2024.12_arm64-1752318883468479000" (94b3a44a-a6d7-400a-bca1-d1fc0686620e) / Controller Instance ID e42f8313-cf41-45ab-794e-bde4d75bf344 running on Node ip-10-2-183-162.us-west-2.compute.internal (10.2.183.162), is ready for work (10.2.183.162:10000)
+Preparing environment
+Running on ip-192-168-64-24.us-west-2.compute.internal via ip-10-2-128-124.us-west-2.compute.internal...
+Getting source from Git repository
+$ pre-clone
+[11:15:11]: Cloning repository...
+Fetching changes...
+Initialized empty Git repository in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/.git/
+Created fresh repository.
+Checking out df6fd24b as main...
+Updating/initializing submodules...
+$ post-clone
+[11:15:17]: Cloning complete...
+Restoring cache
+Not downloading cache 3d7e1956/node-cache-stack-package-ios-2024.12-arm64.zip due to policy
+Executing "step_script" stage of the job script
+$ pre-build
+[11:15:17]: Building project....
+$ fetch-updates || true
+Checking for build process updates...
+$ build-ios
+Building from: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[11:15:22]: ---------------------------------
+[11:15:22]: --- Step: add_extra_platforms ---
+[11:15:22]: ---------------------------------
+[11:15:22]: Setting '[:web]' as extra SupportedPlatforms
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:8: warning: character class has '-' without escape
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:15: warning: character class has '-' without escape
+[11:15:22]: ------------------------------
+[11:15:22]: --- Step: default_platform ---
+[11:15:22]: ------------------------------
+[11:15:22]: Driving the lane 'ios build_capacitor' 🚀
+[11:15:22]: ---------------------------------
+[11:15:22]: --- Step: prepare_environment ---
+[11:15:22]: ---------------------------------
+[11:15:22]: Setting default environment variables to tidy up logs. These can be overridden by setting them in Appflow.
+[11:15:22]: 
+[11:15:22]: No changes needed - logs are already tidy! 🧹
+[11:15:22]: -------------------------
+[11:15:22]: --- Step: sentry_init ---
+[11:15:22]: -------------------------
+[11:15:22]: ----------------------------
+[11:15:22]: --- Step: begin_building ---
+[11:15:22]: ----------------------------
+[11:15:22]: Began building @ 2025-07-12T11:15:22
+[11:15:22]: ---------------------------
+[11:15:22]: --- Step: build_summary ---
+[11:15:22]: ---------------------------
+
++---------------------------------------------------+
+|                   Build Summary                   |
++---------------------+-----------------------------+
+| Runners Revision    | f9ed312                     |
+| Job ID              | 10293972                    |
+| Node.js version     | v20.18.1                    |
+| Cordova CLI version | 12.0.0 (cordova-lib@12.0.2) |
+| npm version         | 10.8.2                      |
+| yarn version        | 1.22.19                     |
+| macOS version       | 14.6.1                      |
+| Xcode version       | Xcode 16.1                  |
+|                     | Build version 16B40         |
+| Fastlane version    | fastlane (2.225.0)          |
++---------------------+-----------------------------+
+
+[11:15:25]: -----------------------------
+[11:15:25]: --- Step: create_keychain ---
+[11:15:25]: -----------------------------
+[11:15:25]: $ security list-keychains -d user
+[11:15:25]: ▸ "/Users/ionic-cloud-team/Library/Keychains/login.keychain-db"
+[11:15:25]: ------------------------------------------
+[11:15:25]: --- Step: get_ios_credentials_from_api ---
+[11:15:25]: ------------------------------------------
+[11:15:25]: Fetching certificate and profile(s) from Ionic Appflow
+[11:15:25]: ---------------------------------
+[11:15:25]: --- Step: set_ios_credentials ---
+[11:15:25]: ---------------------------------
+[11:15:26]: Installing provisioning profile...
+[11:15:26]: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision
+
++-------------------------------------------------------------------+
+|                       Installed Certificate                       |
++-------------------+-----------------------------------------------+
+| User ID           | W5V9Y23C6X                                    |
+| Common Name       | iPhone Developer: Jonathan Seale (4298ARN5NU) |
+| Organization Unit | 3LCZ3S8HGP                                    |
+| Organization      | Jonathan Seale                                |
+| Country           | US                                            |
++-------------------+-----------------------------------------------+
+
+[11:15:26]: --------------------------------
+[11:15:26]: --- Step: import_certificate ---
+[11:15:26]: --------------------------------
+[11:15:26]: Setting key partition list... (this can take a minute if there are a lot of keys installed)
+[11:15:26]: ---------------------------
+[11:15:26]: --- Step: set_ionic_cli ---
+[11:15:26]: ---------------------------
+[11:15:27]: Preinstalled @ionic/cli compatible with project `react`
+[11:15:27]: ------------------------------------
+[11:15:27]: --- Step: detect_package_manager ---
+[11:15:27]: ------------------------------------
+[11:15:27]: Detecting package manager
+[11:15:27]: Defaulting to npm
+[11:15:27]: ---------------------------------
+[11:15:27]: --- Step: add_git_credentials ---
+[11:15:27]: ---------------------------------
+[11:15:27]: Writing git-credentials files
+[11:15:27]: git-credentials successfully added to project
+[11:15:27]: --------------------------------
+[11:15:27]: --- Step: get_appflow_config ---
+[11:15:27]: --------------------------------
+[11:15:27]: Checking for appflow.config.json
+[11:15:27]: Appflow config detected
+[11:15:27]: --------------------------------
+[11:15:27]: --- Step: dependency_install ---
+[11:15:27]: --------------------------------
+[11:15:27]: Installing Dependencies (in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor)
+[11:15:27]: $ npm ci --quiet 
+[11:15:48]: ▸ npm error code ETARGET
+[11:15:48]: ▸ npm error notarget No matching version found for cypress@^13.18.0.
+[11:15:48]: ▸ npm error notarget In most cases you or one of your dependencies are requesting
+[11:15:48]: ▸ npm error notarget a package version that doesn't exist.
+[11:15:48]: ▸ npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T11_15_27_259Z-debug-0.log
+[11:15:48]: `npm ci` failed falling back to `npm install`
+[11:15:48]: $ npm install --quiet
+[11:15:52]: ▸ npm error code ETARGET
+[11:15:52]: ▸ npm error notarget No matching version found for cypress@^13.18.0.
+[11:15:52]: ▸ npm error notarget In most cases you or one of your dependencies are requesting
+[11:15:52]: ▸ npm error notarget a package version that doesn't exist.
+[11:15:52]: ▸ npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T11_15_48_160Z-debug-0.log
+[11:15:52]: -------------------------
+[11:15:52]: --- Step: upload_logs ---
+[11:15:52]: -------------------------
+[11:15:53]: Unable to upload package list log. Skipping.
+[11:15:55]: --------------------------------------
+[11:15:55]: --- Step: sentry_capture_exception ---
+[11:15:55]: --------------------------------------
+I, [2025-07-12T11:15:55.581868 #2185]  INFO -- sentry: ** [Sentry] [Transport] Sending envelope with items [event] 7011de045cd24e3c8568c627692babc7 to Sentry
+[11:15:55]: ---------------------------
+[11:15:55]: --- Step: shell command ---
+[11:15:55]: ---------------------------
+[11:15:55]: -----------------------------
+[11:15:55]: --- Step: delete_keychain ---
+[11:15:55]: -----------------------------
+[11:15:55]: Exit status of command 'npm install --quiet' was 1 instead of 0.
+npm error code ETARGET
+npm error notarget No matching version found for cypress@^13.18.0.
+npm error notarget In most cases you or one of your dependencies are requesting
+npm error notarget a package version that doesn't exist.
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T11_15_48_160Z-debug-0.log
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                               Lane Context                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| DEFAULT_PLATFORM                    | ios                                                                                                                                 |
+| PLATFORM_NAME                       | ios                                                                                                                                 |
+| LANE_NAME                           | ios build_capacitor                                                                                                                 |
+| KEYCHAIN_PATH                       | ~/Library/Keychains/IonicKeychain                                                                                                   |
+| DOWNLOAD_CERTS_PROVISION_FILE_UUID  | 8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2                                                                                                |
+| DOWNLOAD_CERTS_CODESIGNING_IDENTITY | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                                                       |
+| DOWNLOAD_CERTS_TEAM_ID              | 3LCZ3S8HGP                                                                                                                          |
+| DOWNLOAD_CERTS_CERT_PATH            | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/cert_file.p12                                            |
+| SIGH_PROFILE_PATHS                  | ["/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision"] |
+| IONIC_CLI_VERSION                   | 7.2.0                                                                                                                               |
+| NODE_PACKAGE_MANAGER                | npm                                                                                                                                 |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+[11:15:55]: Exit status of command 'npm install --quiet' was 1 instead of 0.
+npm error code ETARGET
+npm error notarget No matching version found for cypress@^13.18.0.
+npm error notarget In most cases you or one of your dependencies are requesting
+npm error notarget a package version that doesn't exist.
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T11_15_48_160Z-debug-0.log
+
+
++---------------------------------------------------+
+|                 fastlane summary                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | add_extra_platforms          | 0           |
+| 2    | default_platform             | 0           |
+| 3    | prepare_environment          | 0           |
+| 4    | sentry_init                  | 0           |
+| 5    | begin_building               | 0           |
+| 6    | build_summary                | 2           |
+| 7    | create_keychain              | 0           |
+| 8    | get_ios_credentials_from_api | 0           |
+| 9    | set_ios_credentials          | 0           |
+| 10   | import_certificate           | 0           |
+| 11   | set_ionic_cli                | 0           |
+| 12   | detect_package_manager       | 0           |
+| 13   | add_git_credentials          | 0           |
+| 14   | get_appflow_config           | 0           |
+| 💥   | dependency_install           | 24          |
+| 16   | upload_logs                  | 3           |
+| 17   | sentry_capture_exception     | 0           |
+| 18   | shell command                | 0           |
+| 19   | delete_keychain              | 0           |
++------+------------------------------+-------------+
+
+[11:15:55]: fastlane finished with errors
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane: [!] Exit status of command 'npm install --quiet' was 1 instead of 0. (FastlaneCore::Interface::FastlaneShellError)
+npm error code ETARGET
+npm error notarget No matching version found for cypress@^13.18.0.
+npm error notarget In most cases you or one of your dependencies are requesting
+npm error notarget a package version that doesn't exist.
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T11_15_48_160Z-debug-0.log
+
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane_core/lib/fastlane_core/ui/interface.rb:153:in `shell_error!': Exit status of command 'npm ci --quiet ' was 1 instead of 0. (FastlaneCore::Interface::FastlaneShellError)
+npm error code ETARGET
+npm error notarget No matching version found for cypress@^13.18.0.
+npm error notarget In most cases you or one of your dependencies are requesting
+npm error notarget a package version that doesn't exist.
+npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T11_15_27_259Z-debug-0.log
+
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane_core/lib/fastlane_core/ui/ui.rb:17:in `method_missing'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/helper/sh_helper.rb:80:in `sh_control_output'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/helper/sh_helper.rb:12:in `sh'
+	from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/actions/dependency_install.rb:85:in `run_install_npm_dep'
+	from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/actions/dependency_install.rb:31:in `run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:263:in `block (2 levels) in execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/actions/actions_helper.rb:69:in `execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:255:in `block in execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:229:in `chdir'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:229:in `execute_action'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:157:in `trigger_action_by_name'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/fast_file.rb:159:in `method_missing'
+	from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/utils/setup_build.rb:9:in `setup_node_build'
+	from ios.Fastfile:33:in `block (2 levels) in parsing_binding'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/lane.rb:41:in `call'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:49:in `block in execute'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:45:in `chdir'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/runner.rb:45:in `execute'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/lane_manager.rb:46:in `cruise_lane'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/command_line_handler.rb:34:in `handle'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/commands_generator.rb:110:in `block (2 levels) in run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/command.rb:187:in `call'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/command.rb:157:in `run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/runner.rb:444:in `run_active_command'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane_core/lib/fastlane_core/ui/fastlane_runner.rb:124:in `run!'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/commander-4.6.0/lib/commander/delegates.rb:18:in `run!'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/commands_generator.rb:363:in `run'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/commands_generator.rb:43:in `start'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/fastlane/lib/fastlane/cli_tools_distributor.rb:123:in `take_off'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/gems/fastlane-2.225.0/bin/fastlane:23:in `<top (required)>'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane:25:in `load'
+	from /opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane:25:in `<main>'
+Running after_script
+Running after script...
+$ clean-up
+Cleaning up project directory and file based variables
+Terminating VM: build_stack_2024.12_arm64-1752318883468479000 (94b3a44a-a6d7-400a-bca1-d1fc0686620e) | Controller Instance ID: e42f8313-cf41-45ab-794e-bde4d75bf344 | Host: 10.2.183.162
+ERROR: Job failed: Process exited with status 1
