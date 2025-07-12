@@ -117,27 +117,68 @@ The discrepancies suggest several scenarios:
 2. **Data Loss Risk**: Running db:push could drop production columns not in schema
 3. **Feature Loss**: Production features in database (RCM billing, external lab integration) not accessible via ORM
 
-## Recommended Resolution Strategy
+## Functional Code Analysis - Correct Structure Determination
+
+Based on analysis of the actual functional code, here's which structure is correct for each major discrepancy:
+
+### 1. **diagnoses table** - DATABASE IS CORRECT ✓
+- **Functional code expects**: `diagnosis`, `icd10Code` (camelCase)
+- **Evidence**: 
+  - `cpt-codes-diagnoses.tsx` interface uses `diagnosis` and `icd10Code`
+  - `routes.ts` creates diagnoses with these field names
+  - `storage.ts` already has workaround mapping database fields
+- **Action**: Update schema.ts to use `diagnosis` and `icd10_code` instead of `diagnosis_code`/`diagnosis_description`
+
+### 2. **medical_problems table** - SCHEMA IS CORRECT ✓
+- **Functional code expects**: Complex structure with `problemTitle`, `currentIcd10Code`, `problemStatus`, `visitHistory`, etc.
+- **Evidence**:
+  - All unified medical problems services expect these fields
+  - `enhanced-medical-problems-dialog.tsx` uses full structure
+  - `patient-chart-service.ts` queries for complex fields
+- **Action**: Database needs migration to add missing columns
+
+### 3. **patients table** - MIXED
+- **profile_photo_filename**: DATABASE IS CORRECT - Used in `patient-header.tsx` and `unified-chart-panel.tsx`
+- **created_by_user_id**: NEITHER - Code uses `createdByProviderId` (camelCase in schema, snake_case would be `created_by_provider_id`)
+- **Action**: Keep `profile_photo_filename`, ensure `createdByProviderId` mapping works
+
+### 4. **external_labs table** - SCHEMA IS CORRECT ✓
+- **Functional code expects**: camelCase columns (`labName`, `labIdentifier`)
+- **Evidence**: Schema references in code expect camelCase
+- **Database has**: snake_case columns (`lab_name`, `lab_identifier`) plus many extra production features
+- **Action**: Either update database columns to camelCase OR update all code to use snake_case
+
+### 5. **Missing Tables** - SCHEMA IS CORRECT ✓
+- Tables like `migrationInvitations`, `labReferenceRanges`, etc. are defined in schema but missing from database
+- These are likely new features that haven't been deployed
+- **Action**: Create these tables in database
+
+## Recommended Resolution Strategy (UPDATED)
 
 ### Phase 1: Immediate Fixes (Prevent Errors)
-1. **DO NOT run db:push** until schema is updated - it could drop production data
-2. **Update storage.ts** methods to handle column name differences (as done for getPatientDiagnoses)
-3. **Document all discrepancies** for team awareness
+1. **DO NOT run db:push** - it will drop production data
+2. **Fix critical errors blocking functionality**:
+   - Add temporary column mappings in storage.ts (like done for diagnoses)
+   - Handle missing columns gracefully
 
-### Phase 2: Schema Alignment (Preserve Production Features)  
-1. **Audit production usage** - determine which database columns are actively used
-2. **Update schema.ts** to include all necessary production columns
-3. **Add missing snake_case column names** where database uses different conventions
-4. **Preserve billing/RCM columns** in diagnoses table if actively used
+### Phase 2: Schema Updates (Match Functional Code)
+1. **Update diagnoses table schema** to match database/code expectations:
+   ```typescript
+   diagnosis: text("diagnosis"),
+   icd10Code: text("icd10_code"),
+   diagnosisDate: date("diagnosis_date"),
+   ```
+2. **Keep medical_problems schema** as-is (it's correct)
+3. **Add missing production columns** to schema where actively used
 
-### Phase 3: Safe Migration
-1. **Create backup** of production database
-2. **Test migration** in staging environment first
-3. **Use Drizzle migrations** instead of db:push for controlled changes
-4. **Migrate incrementally** - one table at a time if needed
+### Phase 3: Safe Database Migration
+1. **For medical_problems table**: Add missing columns via SQL migration
+2. **For external_labs**: Decide on naming convention and migrate accordingly
+3. **Create missing tables** from schema
+4. **Test thoroughly** before production deployment
 
-### Phase 4: Prevention
-1. **Establish schema.ts as single source of truth**
-2. **Require all database changes** to go through schema.ts first
-3. **Set up CI/CD checks** to detect schema drift
-4. **Document the purpose** of each table clearly in schema.ts
+### Phase 4: Long-term Solution
+1. **Single source of truth**: schema.ts should define all structures
+2. **Automated drift detection**: CI/CD to compare schema vs database
+3. **Document Replit limitation**: Add warning that rollbacks don't affect database
+4. **Migration-first approach**: Never use db:push in production

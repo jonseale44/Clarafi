@@ -440,8 +440,7 @@ export const patients = pgTable("patients", {
   insurancePrimary: text("insurance_primary"),
   insuranceSecondary: text("insurance_secondary"),
   
-  // Ownership Tracking
-  createdByUserId: integer("created_by_user_id").references(() => users.id),
+  // Insurance Fields
   policyNumber: text("policy_number"),
   groupNumber: text("group_number"),
   
