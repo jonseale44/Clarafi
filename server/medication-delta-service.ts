@@ -796,7 +796,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       status: "active", // Medications from orders are already approved/signed
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
-      sourceOrderId: relatedOrder?.id || null, // Link to source order
+      sourceOrderId: change.order_id || relatedOrder?.id || null, // Link to source order - use change.order_id first
       medicationHistory: [historyEntry],
       // Add visit history in the format expected by the UI
       visitHistory: [

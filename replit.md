@@ -811,6 +811,15 @@ Preferred communication style: Simple, everyday language.
   - **Ultra-Deterministic (0.1 temp)**: Medical Problems (GPT-4.1), Surgical History (GPT-4.1-mini), Social History (GPT-4.1-mini), Family History (GPT-4.1-mini), Medication Delta (GPT-4.1), Allergy Parser (GPT-4.1-nano), Vitals Parser (GPT-4.1-mini), Order Processing (GPT-4.1-mini)
   - **Moderate Deterministic (0.3 temp)**: Imaging Parser (GPT-4.1-nano)
 - **CRITICAL MEDICATION PROCESSING FIX**: Resolved JSON parsing errors for large medication files by increasing max_tokens from 2000 to 30,000 in attachment medication processing
+
+### Critical Medication Duplication Bug Fix COMPLETED (July 12, 2025)
+- **CRITICAL BUG FIXED**: Resolved medication duplication issue where every medication order created duplicate entries in the medication section
+- **ROOT CAUSE**: When creating new medications from orders, the `sourceOrderId` field was not being properly set with the order ID
+- **TECHNICAL DETAILS**: The code was looking for a related order using `findMatchingMedicationOrder` method, but if no match was found, `sourceOrderId` was set to null
+- **IMPACT**: Without `sourceOrderId`, the `findMatchingExistingMedication` method couldn't match future orders to existing medications, causing duplicates
+- **SOLUTION**: Updated `createNewMedication` method to use `change.order_id` first when setting `sourceOrderId`, ensuring proper linkage between orders and medications
+- **CODE CHANGE**: Modified line 802 in medication-delta-service.ts from `sourceOrderId: relatedOrder?.id || null` to `sourceOrderId: change.order_id || relatedOrder?.id || null`
+- **PRODUCTION READY**: Medication orders now properly link to created medications, preventing duplicate entries when processing multiple orders for the same medication
 - **TECHNICAL DEBT RESOLUTION**: All previously identified GPT model inconsistencies and token limit issues have been resolved and configurations are now properly aligned
 - **ARCHITECTURE VALIDATION**: Confirmed consistent architectural patterns using chart-section-orchestrator.ts with proper parallel processing infrastructure
 - **TEMPERATURE ANALYSIS**: Validated medical data extraction requires precision (0.1-0.3) with temperatures >0.5 inappropriate for clinical contexts
