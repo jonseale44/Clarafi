@@ -1,0 +1,240 @@
+Search my apps
+
+Search apps  /
+Updates
+Help
+Account
+
+Clarafi Mobile Capacitor
+Capacitor 3d7e1956
+Overview
+Commits
+Build
+Builds
+Environments
+Native Configs
+Signing Certificates
+Deploy
+Automate
+Settings
+EXPLORE
+Cloud Services
+CI/CD Integrations
+Enterprise SDK
+0 / 100
+Builds
+Package Build #2
+Failed
+Rerun build
+Running with gitlab-runner 14.10.1/1.6.0 (f59db62b)
+  on ANKA_RUNNER 161fa1c3
+Preparing the "anka" executor
+Opening a connection to the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443
+Starting Anka VM using:
+  - VM Template UUID: 9ced2d88-6f2c-4854-9cb8-28b35b753067
+  - VM Template Tag Name: v3
+Please be patient...
+You can check the status of starting your Instance on the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443/#/instances
+Verifying connectivity to the VM: build_stack_2024.12_arm64-1752317546659000000 (202c41c2-bc06-4b45-ad29-f89e6a82e1c0) | Controller Instance ID: ddc6786b-9403-4c06-7017-ff9353db0a44 | Host: 10.2.189.24 | Port: 10000 
+VM "build_stack_2024.12_arm64-1752317546659000000" (202c41c2-bc06-4b45-ad29-f89e6a82e1c0) / Controller Instance ID ddc6786b-9403-4c06-7017-ff9353db0a44 running on Node ip-10-2-189-24.us-west-2.compute.internal (10.2.189.24), is ready for work (10.2.189.24:10000)
+Preparing environment
+Running on ip-192-168-64-23.us-west-2.compute.internal via ip-10-2-128-124.us-west-2.compute.internal...
+Getting source from Git repository
+$ pre-clone
+[10:52:52]: Cloning repository...
+Fetching changes...
+Initialized empty Git repository in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/.git/
+Created fresh repository.
+Checking out 555857c0 as main...
+Updating/initializing submodules...
+$ post-clone
+[10:52:58]: Cloning complete...
+Executing "step_script" stage of the job script
+$ pre-build
+[10:52:58]: Building project....
+$ fetch-updates || true
+Checking for build process updates...
+$ build-ios
+Building from: /Users/ionic-cloud-team/builds/jonseale44/Clarafi
+[10:53:02]: ---------------------------------
+[10:53:02]: --- Step: add_extra_platforms ---
+[10:53:02]: ---------------------------------
+[10:53:02]: Setting '[:web]' as extra SupportedPlatforms
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/fastlane/outsystems/errors/detectors/pdm_plugins.rb:8: warning: character class has '-' without escape
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/fastlane/outsystems/errors/detectors/pdm_plugins.rb:15: warning: character class has '-' without escape
+[10:53:02]: ------------------------------
+[10:53:02]: --- Step: default_platform ---
+[10:53:02]: ------------------------------
+[10:53:02]: Driving the lane 'ios build_capacitor' 🚀
+[10:53:02]: ---------------------------------
+[10:53:02]: --- Step: prepare_environment ---
+[10:53:02]: ---------------------------------
+[10:53:02]: Setting default environment variables to tidy up logs. These can be overridden by setting them in Appflow.
+[10:53:02]: 
+[10:53:02]: No changes needed - logs are already tidy! 🧹
+[10:53:02]: -------------------------
+[10:53:02]: --- Step: sentry_init ---
+[10:53:02]: -------------------------
+[10:53:02]: ----------------------------
+[10:53:02]: --- Step: begin_building ---
+[10:53:02]: ----------------------------
+[10:53:02]: Began building @ 2025-07-12T10:53:02
+[10:53:02]: ---------------------------
+[10:53:02]: --- Step: build_summary ---
+[10:53:02]: ---------------------------
+
++---------------------------------------------------+
+|                   Build Summary                   |
++---------------------+-----------------------------+
+| Runners Revision    | f9ed312                     |
+| Job ID              | 10293952                    |
+| Node.js version     | v20.18.1                    |
+| Cordova CLI version | 12.0.0 (cordova-lib@12.0.2) |
+| npm version         | 10.8.2                      |
+| yarn version        | 1.22.19                     |
+| macOS version       | 14.6.1                      |
+| Xcode version       | Xcode 16.1                  |
+|                     | Build version 16B40         |
+| Fastlane version    | fastlane (2.225.0)          |
++---------------------+-----------------------------+
+
+[10:53:05]: -----------------------------
+[10:53:05]: --- Step: create_keychain ---
+[10:53:05]: -----------------------------
+[10:53:05]: $ security list-keychains -d user
+[10:53:05]: ▸ "/Users/ionic-cloud-team/Library/Keychains/login.keychain-db"
+[10:53:05]: ------------------------------------------
+[10:53:05]: --- Step: get_ios_credentials_from_api ---
+[10:53:05]: ------------------------------------------
+[10:53:05]: Fetching certificate and profile(s) from Ionic Appflow
+[10:53:06]: ---------------------------------
+[10:53:06]: --- Step: set_ios_credentials ---
+[10:53:06]: ---------------------------------
+[10:53:06]: Installing provisioning profile...
+[10:53:07]: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision
+
++-------------------------------------------------------------------+
+|                       Installed Certificate                       |
++-------------------+-----------------------------------------------+
+| User ID           | W5V9Y23C6X                                    |
+| Common Name       | iPhone Developer: Jonathan Seale (4298ARN5NU) |
+| Organization Unit | 3LCZ3S8HGP                                    |
+| Organization      | Jonathan Seale                                |
+| Country           | US                                            |
++-------------------+-----------------------------------------------+
+
+[10:53:07]: --------------------------------
+[10:53:07]: --- Step: import_certificate ---
+[10:53:07]: --------------------------------
+[10:53:07]: Setting key partition list... (this can take a minute if there are a lot of keys installed)
+[10:53:07]: ---------------------------
+[10:53:07]: --- Step: set_ionic_cli ---
+[10:53:07]: ---------------------------
+[10:53:08]: Preinstalled @ionic/cli compatible with project `react`
+[10:53:08]: ------------------------------------
+[10:53:08]: --- Step: detect_package_manager ---
+[10:53:08]: ------------------------------------
+[10:53:08]: Detecting package manager
+[10:53:08]: Defaulting to npm
+[10:53:08]: ---------------------------------
+[10:53:08]: --- Step: add_git_credentials ---
+[10:53:08]: ---------------------------------
+[10:53:08]: Writing git-credentials files
+[10:53:08]: git-credentials successfully added to project
+[10:53:08]: --------------------------------
+[10:53:08]: --- Step: get_appflow_config ---
+[10:53:08]: --------------------------------
+[10:53:08]: Checking for appflow.config.json
+[10:53:08]: Appflow config detected
+[10:53:08]: -------------------------
+[10:53:08]: --- Step: upload_logs ---
+[10:53:08]: -------------------------
+[10:53:10]: Unable to upload package list log. Skipping.
+[10:53:11]: --------------------------------------
+[10:53:11]: --- Step: sentry_capture_exception ---
+[10:53:11]: --------------------------------------
+I, [2025-07-12T10:53:11.978904 #1942]  INFO -- sentry: ** [Sentry] [Transport] Sending envelope with items [event] 9e9b55bfab0f426cba210a4fd64bb371 to Sentry
+[10:53:11]: ---------------------------
+[10:53:11]: --- Step: shell command ---
+[10:53:11]: ---------------------------
+[10:53:11]: -----------------------------
+[10:53:11]: --- Step: delete_keychain ---
+[10:53:11]: -----------------------------
+[10:53:11]: 'appflow.config.json' missing entry for appId: 3d7e1956
++--------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                   Lane Context                                                                   |
++-------------------------------------+------------------------------------------------------------------------------------------------------------+
+| DEFAULT_PLATFORM                    | ios                                                                                                        |
+| PLATFORM_NAME                       | ios                                                                                                        |
+| LANE_NAME                           | ios build_capacitor                                                                                        |
+| KEYCHAIN_PATH                       | ~/Library/Keychains/IonicKeychain                                                                          |
+| DOWNLOAD_CERTS_PROVISION_FILE_UUID  | 8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2                                                                       |
+| DOWNLOAD_CERTS_CODESIGNING_IDENTITY | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                              |
+| DOWNLOAD_CERTS_TEAM_ID              | 3LCZ3S8HGP                                                                                                 |
+| DOWNLOAD_CERTS_CERT_PATH            | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/cert_file.p12                                            |
+| SIGH_PROFILE_PATHS                  | ["/Users/ionic-cloud-team/builds/jonseale44/Clarafi/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision"] |
+| IONIC_CLI_VERSION                   | 7.2.0                                                                                                      |
+| NODE_PACKAGE_MANAGER                | npm                                                                                                        |
++-------------------------------------+------------------------------------------------------------------------------------------------------------+
+[10:53:11]: 'appflow.config.json' missing entry for appId: 3d7e1956
+
++---------------------------------------------------+
+|                 fastlane summary                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | add_extra_platforms          | 0           |
+| 2    | default_platform             | 0           |
+| 3    | prepare_environment          | 0           |
+| 4    | sentry_init                  | 0           |
+| 5    | begin_building               | 0           |
+| 6    | build_summary                | 2           |
+| 7    | create_keychain              | 0           |
+| 8    | get_ios_credentials_from_api | 0           |
+| 9    | set_ios_credentials          | 1           |
+| 10   | import_certificate           | 0           |
+| 11   | set_ionic_cli                | 0           |
+| 12   | detect_package_manager       | 0           |
+| 13   | add_git_credentials          | 0           |
+| 💥   | get_appflow_config           | 0           |
+| 15   | upload_logs                  | 3           |
+| 16   | sentry_capture_exception     | 0           |
+| 17   | shell command                | 0           |
+| 18   | delete_keychain              | 0           |
++------+------------------------------+-------------+
+
+[10:53:12]: fastlane finished with errors
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane: [!] 'appflow.config.json' missing entry for appId: 3d7e1956 (RuntimeError)
+Running after_script
+Running after script...
+$ clean-up
+Cleaning up project directory and file based variables
+Terminating VM: build_stack_2024.12_arm64-1752317546659000000 (202c41c2-bc06-4b45-ad29-f89e6a82e1c0) | Controller Instance ID: ddc6786b-9403-4c06-7017-ff9353db0a44 | Host: 10.2.189.24
+ERROR: Job failed: Process exited with status 1
+
+Duration
+10s
+Credits
+2
+Build ID
+10293952 • Rerun of 10293682
+Platform
+iOS
+iOS
+Type
+development
+Build Stack
+macOS - 2024.12 - Apple silicon
+Latest
+More Details
+Commit
+555857
+View on GitHub
+Connect the mobile app to the cloud services for streamlined data handling Adds Appflow configuration to link the Capacitor mobile app to its cloud backend. Replit-Commit-Author: Agent Replit-Commit-Session-Id: 19863006-6b0f-4630-8d2e-941cc03f3352
+jonseale44 · about 10 hours agoJul 11, 2025, 7:57:05 PM from  main 
+Triggered By
+
+Jonathan Seale
+1 minute agoJul 12, 2025, 5:52:20 AM
+Signing Certificate
+Clarafi EMR
