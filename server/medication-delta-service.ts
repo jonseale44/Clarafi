@@ -793,7 +793,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         change.indication_change?.to ||
         null,
       startDate: new Date().toISOString().split("T")[0],
-      status: "pending", // Start as pending until order is signed
+      status: "active", // Medications from orders are already approved/signed
       firstEncounterId: encounterId,
       lastUpdatedEncounterId: encounterId,
       sourceOrderId: relatedOrder?.id || null, // Link to source order

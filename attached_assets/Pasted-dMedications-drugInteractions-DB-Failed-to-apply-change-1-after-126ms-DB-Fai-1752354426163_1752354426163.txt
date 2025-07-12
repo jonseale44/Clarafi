@@ -1,0 +1,37 @@
+dMedications": [],
+  "drugInteractions": []
+}
+❌ [DB] Failed to apply change 1 after 126ms
+❌ [DB] Failed change: NEW_MEDICATION for Ibuprofen
+❌ [DB] Error details: error: new row for relation "medications" violates check constraint "medications_status_check"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.createMedication (/home/runner/workspace/server/storage.ts:670:29)
+    at async MedicationDeltaService.createNewMedication (/home/runner/workspace/server/medication-delta-service.ts:845:7)
+    at async MedicationDeltaService.applyIndividualChange (/home/runner/workspace/server/medication-delta-service.ts:711:9)
+    at async MedicationDeltaService.applyChangesToDatabase (/home/runner/workspace/server/medication-delta-service.ts:625:9)
+    at async MedicationDeltaService.processOrderDelta (/home/runner/workspace/server/medication-delta-service.ts:155:7)
+    at async Immediate.<anonymous> (/home/runner/workspace/server/storage.ts:1038:13) {
+  length: 894,
+  severity: 'ERROR',
+  code: '23514',
+  detail: 'Failing row contains (152, 24, Ibuprofen, null, null, 400 mg, daily, oral, 2025-07-12, null, pending, 30, 10, Take 1 tablet by mouth every 6 to 8 hours as needed for pain and..., Inflammation, null, [{"date": "2025-07-12T21:06:45.735Z", "notes": "Started Ibuprofe..., [{"date": "2025-07-12T21:06:45.735Z", "notes": "Started Ibuprofe..., manual, null, 2025-07-12 21:06:45.797144, 2025-07-12 21:06:45.797144, 16, null, null, [], null, tablet, null, null, 100, [], null, null, 16, 16, null, [{"timestamp": "2025-07-12T21:06:45.776Z", "change_type": "medic..., 1, 1, null, null, null, f, f, null, null, null, null, f, null, t, null, null, null, null, null, null, medical_problem, [], null, null, f).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'medications',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'medications_status_check',
+  file: 'execMain.c',
+  line: '2058',
+  routine: 'ExecConstraints'
+}
+❌ [DB] Error stack: error: new row for relation "medications" violates check constraint "medications_status_check"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute 
