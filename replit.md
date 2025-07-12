@@ -165,7 +165,7 @@ Preferred communication style: Simple, everyday language.
 - **TABLES FIXED**: 
   - medical_problems: Added 20+ clinical columns (problem_title, current_icd10_code, ranking factors, etc.)
   - medications: Added all missing columns (strength, grouping_strategy, visit_history, etc.)
-  - diagnoses: Added diagnosis_code column for CPT billing workflows
+  - diagnoses: Added diagnosis_code and diagnosis_description columns for CPT billing workflows
   - Created 5 missing tables: migration_invitations, lab_reference_ranges, patient_physical_findings, problem_rank_overrides, user_problem_list_preferences
 - **API FUNCTIONALITY RESTORED**: Both medical problems and medications APIs now fully functional
 - **STRATEGY**: Chose additive approach (extra columns) over destructive approach to preserve all features
