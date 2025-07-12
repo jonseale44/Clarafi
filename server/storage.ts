@@ -731,15 +731,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPatientDiagnoses(patientId: number): Promise<any[]> {
-    const results = await db.select().from(diagnoses)
+    return await db.select().from(diagnoses)
       .where(eq(diagnoses.patientId, patientId))
       .orderBy(desc(diagnoses.createdAt));
-    
-    // Map the database fields to expected format for CPT extraction
-    return results.map(d => ({
-      ...d,
-      diagnosis: d.diagnosis_description || d.diagnosis_code, // Use description first, fallback to code
-    }));
   }
 
   async createDiagnosis(insertDiagnosis: any): Promise<any> {

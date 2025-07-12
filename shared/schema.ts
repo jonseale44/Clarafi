@@ -1081,15 +1081,46 @@ export const diagnoses = pgTable("diagnoses", {
   encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
   
   // Core diagnosis information
-  diagnosis_code: text("diagnosis_code"),
-  diagnosis_description: text("diagnosis_description"),
-  diagnosis_type: text("diagnosis_type"),
+  diagnosis: text("diagnosis").notNull(),
+  icd10Code: text("icd10_code"),
+  diagnosisDate: date("diagnosis_date"),
   status: text("status").notNull(), // 'active', 'resolved', 'chronic', 'rule_out'
-  onset_date: date("onset_date"),
-  resolution_date: date("resolution_date"),
   notes: text("notes"),
-  severity: text("severity"),
-  clinician_id: integer("clinician_id").references(() => users.id)
+  
+  // Billing hierarchy and priority
+  isPrimary: boolean("is_primary").default(false), // Primary diagnosis for billing
+  diagnosisPointer: text("diagnosis_pointer"), // A, B, C, D for CPT linking
+  billingSequence: integer("billing_sequence"), // Order for claim submission
+  
+  // RCM and Claims Processing Fields
+  claimSubmissionStatus: text("claim_submission_status").default("pending"), // 'pending', 'submitted', 'paid', 'denied', 'appealed'
+  claimId: text("claim_id"), // External claim reference number
+  clearinghouseId: text("clearinghouse_id"), // EDI clearinghouse reference
+  payerId: text("payer_id"), // Insurance payer identifier
+  
+  // Reimbursement Tracking
+  allowedAmount: decimal("allowed_amount", { precision: 10, scale: 2 }), // Insurance allowed amount
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }), // Amount actually paid
+  patientResponsibility: decimal("patient_responsibility", { precision: 10, scale: 2 }), // Patient portion
+  adjustmentAmount: decimal("adjustment_amount", { precision: 10, scale: 2 }), // Write-offs/adjustments
+  
+  // Denial Management
+  denialReason: text("denial_reason"), // Reason for claim denial
+  denialCode: text("denial_code"), // Insurance denial code
+  appealStatus: text("appeal_status"), // 'none', 'first_appeal', 'second_appeal', 'external_review'
+  appealDeadline: date("appeal_deadline"), // Deadline for appeal submission
+  
+  // Workflow and Audit Trail
+  billingNotes: text("billing_notes"), // Billing team notes
+  lastBillingAction: text("last_billing_action"), // Last action taken
+  billingActionDate: timestamp("billing_action_date"), // When last action occurred
+  assignedBiller: integer("assigned_biller").references(() => users.id), // Assigned billing staff
+  
+  // Compliance and Documentation
+  medicalNecessityDocumented: boolean("medical_necessity_documented").default(false),
+  priorAuthorizationRequired: boolean("prior_authorization_required").default(false),
+  priorAuthNumber: text("prior_auth_number"),
+  modifierApplied: text("modifier_applied"), // Any applicable modifiers
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
