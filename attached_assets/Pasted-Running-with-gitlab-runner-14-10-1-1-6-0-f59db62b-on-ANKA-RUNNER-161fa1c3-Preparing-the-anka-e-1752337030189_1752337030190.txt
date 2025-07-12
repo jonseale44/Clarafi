@@ -1,0 +1,503 @@
+Running with gitlab-runner 14.10.1/1.6.0 (f59db62b)
+  on ANKA_RUNNER 161fa1c3
+Preparing the "anka" executor
+Opening a connection to the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443
+Starting Anka VM using:
+  - VM Template UUID: 9ced2d88-6f2c-4854-9cb8-28b35b753067
+  - VM Template Tag Name: v3
+Please be patient...
+You can check the status of starting your Instance on the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443/#/instances
+Verifying connectivity to the VM: build_stack_2024.12_arm64-1752336691098538000 (af727c77-98bc-49fa-aad9-1bc050f5f475) | Controller Instance ID: 14be3fe1-b4ed-4f35-755a-7ff07cf835e4 | Host: 10.2.146.105 | Port: 10000 
+VM "build_stack_2024.12_arm64-1752336691098538000" (af727c77-98bc-49fa-aad9-1bc050f5f475) / Controller Instance ID 14be3fe1-b4ed-4f35-755a-7ff07cf835e4 running on Node ip-10-2-146-105.us-west-2.compute.internal (10.2.146.105), is ready for work (10.2.146.105:10000)
+Preparing environment
+Running on ip-192-168-64-24.us-west-2.compute.internal via ip-10-2-128-124.us-west-2.compute.internal...
+Getting source from Git repository
+$ pre-clone
+[16:11:59]: Cloning repository...
+Fetching changes...
+Initialized empty Git repository in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/.git/
+Created fresh repository.
+Checking out 572b93d0 as main...
+Updating/initializing submodules...
+$ post-clone
+[16:12:06]: Cloning complete...
+Restoring cache
+Not downloading cache 3d7e1956/node-cache-stack-package-ios-2024.12-arm64.zip due to policy
+Executing "step_script" stage of the job script
+$ pre-build
+[16:12:06]: Building project....
+$ fetch-updates || true
+Checking for build process updates...
+$ build-ios
+Building from: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[16:12:10]: ---------------------------------
+[16:12:10]: --- Step: add_extra_platforms ---
+[16:12:10]: ---------------------------------
+[16:12:10]: Setting '[:web]' as extra SupportedPlatforms
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:8: warning: character class has '-' without escape
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:15: warning: character class has '-' without escape
+[16:12:10]: ------------------------------
+[16:12:10]: --- Step: default_platform ---
+[16:12:10]: ------------------------------
+[16:12:10]: Driving the lane 'ios build_capacitor' 🚀
+[16:12:10]: ---------------------------------
+[16:12:10]: --- Step: prepare_environment ---
+[16:12:10]: ---------------------------------
+[16:12:10]: Setting default environment variables to tidy up logs. These can be overridden by setting them in Appflow.
+[16:12:10]: 
+[16:12:10]: No changes needed - logs are already tidy! 🧹
+[16:12:10]: -------------------------
+[16:12:10]: --- Step: sentry_init ---
+[16:12:10]: -------------------------
+[16:12:10]: ----------------------------
+[16:12:10]: --- Step: begin_building ---
+[16:12:10]: ----------------------------
+[16:12:10]: Began building @ 2025-07-12T16:12:10
+[16:12:10]: ---------------------------
+[16:12:10]: --- Step: build_summary ---
+[16:12:10]: ---------------------------
+
++---------------------------------------------------+
+|                   Build Summary                   |
++---------------------+-----------------------------+
+| Runners Revision    | f9ed312                     |
+| Job ID              | 10294077                    |
+| Node.js version     | v20.18.1                    |
+| Cordova CLI version | 12.0.0 (cordova-lib@12.0.2) |
+| npm version         | 10.8.2                      |
+| yarn version        | 1.22.19                     |
+| macOS version       | 14.6.1                      |
+| Xcode version       | Xcode 16.1                  |
+|                     | Build version 16B40         |
+| Fastlane version    | fastlane (2.225.0)          |
++---------------------+-----------------------------+
+
+[16:12:13]: -----------------------------
+[16:12:13]: --- Step: create_keychain ---
+[16:12:13]: -----------------------------
+[16:12:13]: $ security list-keychains -d user
+[16:12:13]: ▸ "/Users/ionic-cloud-team/Library/Keychains/login.keychain-db"
+[16:12:13]: ------------------------------------------
+[16:12:13]: --- Step: get_ios_credentials_from_api ---
+[16:12:13]: ------------------------------------------
+[16:12:13]: Fetching certificate and profile(s) from Ionic Appflow
+[16:12:14]: ---------------------------------
+[16:12:14]: --- Step: set_ios_credentials ---
+[16:12:14]: ---------------------------------
+[16:12:14]: Installing provisioning profile...
+[16:12:16]: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision
+
++-------------------------------------------------------------------+
+|                       Installed Certificate                       |
++-------------------+-----------------------------------------------+
+| User ID           | W5V9Y23C6X                                    |
+| Common Name       | iPhone Developer: Jonathan Seale (4298ARN5NU) |
+| Organization Unit | 3LCZ3S8HGP                                    |
+| Organization      | Jonathan Seale                                |
+| Country           | US                                            |
++-------------------+-----------------------------------------------+
+
+[16:12:16]: --------------------------------
+[16:12:16]: --- Step: import_certificate ---
+[16:12:16]: --------------------------------
+[16:12:16]: Setting key partition list... (this can take a minute if there are a lot of keys installed)
+[16:12:16]: ---------------------------
+[16:12:16]: --- Step: set_ionic_cli ---
+[16:12:16]: ---------------------------
+[16:12:17]: Preinstalled @ionic/cli compatible with project `react`
+[16:12:17]: ------------------------------------
+[16:12:17]: --- Step: detect_package_manager ---
+[16:12:17]: ------------------------------------
+[16:12:17]: Detecting package manager
+[16:12:17]: Defaulting to npm
+[16:12:17]: ---------------------------------
+[16:12:17]: --- Step: add_git_credentials ---
+[16:12:17]: ---------------------------------
+[16:12:17]: Writing git-credentials files
+[16:12:17]: git-credentials successfully added to project
+[16:12:17]: --------------------------------
+[16:12:17]: --- Step: get_appflow_config ---
+[16:12:17]: --------------------------------
+[16:12:17]: Checking for appflow.config.json
+[16:12:17]: Appflow config detected
+[16:12:17]: --------------------------------
+[16:12:17]: --- Step: dependency_install ---
+[16:12:17]: --------------------------------
+[16:12:17]: Installing Dependencies (in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor)
+[16:12:17]: $ npm ci --quiet 
+[16:12:20]: ▸ npm error code EUSAGE
+[16:12:20]: ▸ npm error
+[16:12:20]: ▸ npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+[16:12:20]: ▸ npm error
+[16:12:20]: ▸ npm error Missing: @tailwindcss/postcss@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @alloc/quick-lru@5.2.0 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/node@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: enhanced-resolve@5.18.2 from lock file
+[16:12:20]: ▸ npm error Missing: jiti@2.4.2 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: magic-string@0.30.17 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-android-arm64@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-darwin-arm64@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-darwin-x64@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-freebsd-x64@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-linux-arm-gnueabihf@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-linux-arm64-gnu@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-linux-arm64-musl@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-linux-x64-gnu@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-linux-x64-musl@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-wasm32-wasi@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-win32-arm64-msvc@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: @tailwindcss/oxide-win32-x64-msvc@4.1.11 from lock file
+[16:12:20]: ▸ npm error Missing: detect-libc@2.0.4 from lock file
+[16:12:20]: ▸ npm error Missing: tar@7.4.3 from lock file
+[16:12:20]: ▸ npm error Missing: tapable@2.2.2 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-darwin-arm64@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-darwin-x64@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-freebsd-x64@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-linux-arm-gnueabihf@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-linux-arm64-gnu@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-linux-arm64-musl@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-linux-x64-gnu@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-linux-x64-musl@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-win32-arm64-msvc@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: lightningcss-win32-x64-msvc@1.30.1 from lock file
+[16:12:20]: ▸ npm error Missing: @isaacs/fs-minipass@4.0.1 from lock file
+[16:12:20]: ▸ npm error Missing: chownr@3.0.0 from lock file
+[16:12:20]: ▸ npm error Missing: minipass@7.1.2 from lock file
+[16:12:20]: ▸ npm error Missing: minizlib@3.0.2 from lock file
+[16:12:20]: ▸ npm error Missing: mkdirp@3.0.1 from lock file
+[16:12:20]: ▸ npm error Missing: yallist@5.0.0 from lock file
+[16:12:20]: ▸ npm error Missing: minipass@7.1.2 from lock file
+[16:12:20]: ▸ npm error
+[16:12:20]: ▸ npm error Clean install a project
+[16:12:20]: ▸ npm error
+[16:12:20]: ▸ npm error Usage:
+[16:12:20]: ▸ npm error npm ci
+[16:12:20]: ▸ npm error
+[16:12:20]: ▸ npm error Options:
+[16:12:20]: ▸ npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+[16:12:20]: ▸ npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+[16:12:20]: ▸ npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+[16:12:20]: ▸ npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+[16:12:20]: ▸ npm error [--no-bin-links] [--no-fund] [--dry-run]
+[16:12:20]: ▸ npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+[16:12:20]: ▸ npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+[16:12:20]: ▸ npm error
+[16:12:20]: ▸ npm error aliases: clean-install, ic, install-clean, isntall-clean
+[16:12:20]: ▸ npm error
+[16:12:20]: ▸ npm error Run "npm help ci" for more info
+[16:12:20]: ▸ npm error A complete log of this run can be found in: /Users/ionic-cloud-team/.npm/_logs/2025-07-12T16_12_17_735Z-debug-0.log
+[16:12:20]: `npm ci` failed falling back to `npm install`
+[16:12:20]: $ npm install --quiet
+[16:12:23]: ▸ added 223 packages, and audited 224 packages in 3s
+[16:12:23]: ▸ 26 packages are looking for funding
+[16:12:23]: ▸ run `npm fund` for details
+[16:12:23]: ▸ 2 moderate severity vulnerabilities
+[16:12:23]: ▸ To address all issues (including breaking changes), run:
+[16:12:23]: ▸ npm audit fix --force
+[16:12:23]: ▸ Run `npm audit` for details.
+[16:12:23]: -------------------------------------
+[16:12:23]: --- Step: create_capacitor_config ---
+[16:12:23]: -------------------------------------
+[16:12:23]: Created capacitor.config.json from capacitor.config.ts/js
+[16:12:23]: -------------------------
+[16:12:23]: --- Step: get_web_dir ---
+[16:12:23]: -------------------------
+[16:12:23]: webDir is `dist`
+[16:12:23]: -----------------------------------
+[16:12:23]: --- Step: modify_cap_web_config ---
+[16:12:23]: -----------------------------------
+[16:12:23]: No custom native config detected.
+[16:12:23]: ---------------------------
+[16:12:23]: --- Step: build_pro_app ---
+[16:12:23]: ---------------------------
+[16:12:23]: Building app from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[16:12:23]: Build script detected...
+[16:12:23]: $ npm run build
+[16:12:24]: ▸ > clarafi-mobile-capacitor@0.0.1 build
+[16:12:24]: ▸ > tsc && vite build
+[16:12:25]: ▸ The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+[16:12:25]: ▸ vite v5.4.19 building for production...
+[16:12:25]: ▸ transforming...
+[16:12:26]: ▸ ✓ 232 modules transformed.
+[16:12:26]: ▸ rendering chunks...
+[16:12:26]: ▸ computing gzip size...
+[16:12:26]: ▸ dist/index.html                           1.08 kB │ gzip:   0.51 kB
+[16:12:26]: ▸ dist/assets/index-CYF9cXhc.css           25.70 kB │ gzip:   5.07 kB
+[16:12:26]: ▸ dist/assets/status-tap-Da-Gv1Nt.js        0.48 kB │ gzip:   0.34 kB
+[16:12:26]: ▸ dist/assets/swipe-back-D6A6x6Ul.js        0.68 kB │ gzip:   0.48 kB
+[16:12:26]: ▸ dist/assets/focus-visible-supuXXMI.js     0.99 kB │ gzip:   0.51 kB
+[16:12:26]: ▸ dist/assets/md.transition-4zQHLx8r.js     1.03 kB │ gzip:   0.57 kB
+[16:12:26]: ▸ dist/assets/keyboard2-Dh-j7pYZ.js         1.28 kB │ gzip:   0.66 kB
+[16:12:26]: ▸ dist/assets/index9-E3_y7pZO.js            1.87 kB │ gzip:   0.91 kB
+[16:12:26]: ▸ dist/assets/input-shims-CYOEtFCq.js       4.79 kB │ gzip:   2.07 kB
+[16:12:26]: ▸ dist/assets/ios.transition-DNoBxjbt.js   10.34 kB │ gzip:   3.03 kB
+[16:12:26]: ▸ dist/assets/index-MX6q8q08.js           699.95 kB │ gzip: 167.28 kB
+[16:12:26]: ▸ 
+[16:12:26]: ▸ (!) Some chunks are larger than 500 kB after minification. Consider:
+[16:12:26]: ▸ - Using dynamic import() to code-split the application
+[16:12:26]: ▸ - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[16:12:26]: ▸ - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[16:12:26]: ▸ ✓ built in 1.36s
+[16:12:26]: $ ionic info
+[16:12:27]: ▸ Ionic:
+[16:12:27]: ▸ Ionic CLI       : 7.2.0 (/Users/ionic-cloud-team/.nvm/versions/node/v20.18.1/lib/node_modules/@ionic/cli)
+[16:12:27]: ▸ Ionic Framework : @ionic/react 7.8.6
+[16:12:27]: ▸ Capacitor:
+[16:12:27]: ▸ Capacitor CLI      : 6.2.1
+[16:12:27]: ▸ @capacitor/android : 6.2.1
+[16:12:27]: ▸ @capacitor/core    : 6.2.1
+[16:12:27]: ▸ @capacitor/ios     : 6.2.1
+[16:12:27]: ▸ Utility:
+[16:12:27]: ▸ cordova-res : 0.15.4
+[16:12:27]: ▸ native-run  : 2.0.1
+[16:12:27]: ▸ System:
+[16:12:27]: ▸ NodeJS : v20.18.1 (/Users/ionic-cloud-team/.nvm/versions/node/v20.18.1/bin/node)
+[16:12:27]: ▸ npm    : 10.8.2
+[16:12:27]: ▸ OS     : macOS Unknown
+[16:12:27]: Generating app manifest...
+[16:12:28]: -------------------------------------
+[16:12:28]: --- Step: get_xcode_project_paths ---
+[16:12:28]: -------------------------------------
+[16:12:28]: -------------------------------
+[16:12:28]: --- Step: modify_ios_config ---
+[16:12:28]: -------------------------------
+[16:12:28]: No custom native config detected.
+[16:12:28]: -------------------------------
+[16:12:28]: --- Step: install_cocoapods ---
+[16:12:28]: -------------------------------
+[16:12:28]: ----------------------
+[16:12:28]: --- Step: cap_sync ---
+[16:12:28]: ----------------------
+[16:12:28]: $ npx cap sync ios
+[16:12:29]: ▸ ✔ Copying web assets from dist to ios/App/App/public in 7.29ms
+[16:12:29]: ▸ ✔ Creating capacitor.config.json in ios/App/App in 618.83μs
+[16:12:29]: ▸ ✔ copy ios in 23.29ms
+[16:12:29]: ▸ ✔ Updating iOS plugins in 1.76ms
+[16:12:33]: ▸ ✔ Updating iOS native dependencies with pod install in 3.84s
+[16:12:33]: ▸ [info] Found 4 Capacitor plugins for ios:
+[16:12:33]: ▸ @capacitor/app@6.0.2
+[16:12:33]: ▸ @capacitor/haptics@6.0.2
+[16:12:33]: ▸ @capacitor/keyboard@6.0.3
+[16:12:33]: ▸ @capacitor/status-bar@6.0.2
+[16:12:33]: ▸ ✔ update ios in 3.87s
+[16:12:33]: ▸ [info] Sync finished in 4.097s
+[16:12:33]: -------------------------------
+[16:12:33]: --- Step: cap_custom_deploy ---
+[16:12:33]: -------------------------------
+[16:12:33]: No custom native config detected.
+[16:12:33]: ------------------------------------------
+[16:12:33]: --- Step: update_code_signing_settings ---
+[16:12:33]: ------------------------------------------
+
++--------------------------------------------------------------------------------------------------------------------------+
+|                                            Summary for code signing settings                                             |
++-----------------------+--------------------------------------------------------------------------------------------------+
+| path                  | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcodeproj |
+| use_automatic_signing | false                                                                                            |
+| team_id               | 3LCZ3S8HGP                                                                                       |
+| code_sign_identity    | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                    |
++-----------------------+--------------------------------------------------------------------------------------------------+
+
+[16:12:33]: Updating the Automatic Codesigning flag to disabled for the given project '/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcodeproj/project.pbxproj'
+[16:12:33]: Set Team id to: 3LCZ3S8HGP for target: App for build configuration: Debug
+[16:12:33]: Set Code Sign identity to: iPhone Developer: Jonathan Seale (4298ARN5NU) for target: App for build configuration: Debug
+[16:12:33]: Set Team id to: 3LCZ3S8HGP for target: App for build configuration: Release
+[16:12:33]: Set Code Sign identity to: iPhone Developer: Jonathan Seale (4298ARN5NU) for target: App for build configuration: Release
+[16:12:33]: Successfully updated project settings to use Code Sign Style = 'Manual'
+[16:12:33]: Modified Targets:
+[16:12:33]: 	 * App
+[16:12:33]: Modified Build Configurations:
+[16:12:33]: 	 * Debug
+[16:12:33]: 	 * Release
+[16:12:33]: ------------------------------------------
+[16:12:33]: --- Step: update_provisioning_profiles ---
+[16:12:33]: ------------------------------------------
+[16:12:33]: ---------------------------
+[16:12:33]: --- Step: build_ios_app ---
+[16:12:33]: ---------------------------
+[16:12:33]: Resolving Swift Package Manager dependencies...
+[16:12:33]: $ xcodebuild -resolvePackageDependencies -workspace /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcworkspace -scheme App -configuration Debug
+[16:12:33]: ▸ Command line invocation:
+[16:12:33]: ▸     /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -resolvePackageDependencies -workspace /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcworkspace -scheme App -configuration Debug
+[16:12:33]: ▸ User defaults from command line:
+[16:12:33]: ▸     IDEPackageSupportUseBuiltinSCM = YES
+[16:12:34]: ▸ resolved source packages: 
+[16:12:34]: $ xcodebuild -showBuildSettings -workspace /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcworkspace -scheme App -configuration Debug 2>&1
+[16:12:34]: Detected provisioning profile mapping: {:"ai.clarafi"=>"Clarafi EMR Scribe"}
+
++-----------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                               Summary for gym 2.225.0                                                               |
++------------------------------------------------+----------------------------------------------------------------------------------------------------+
+| workspace                                      | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcworkspace |
+| output_directory                               | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor                         |
+| output_name                                    | 3a2421b7-dcd6-438b-b974-23504332c3c8-development                                                   |
+| archive_path                                   | 3a2421b7-dcd6-438b-b974-23504332c3c8-development.xcarchive                                         |
+| scheme                                         | App                                                                                                |
+| codesigning_identity                           | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                      |
+| export_team_id                                 | 3LCZ3S8HGP                                                                                         |
+| configuration                                  | Debug                                                                                              |
+| catalyst_platform                              | ios                                                                                                |
+| export_options.provisioningProfiles.ai.clarafi | Clarafi EMR Scribe                                                                                 |
+| clean                                          | false                                                                                              |
+| silent                                         | false                                                                                              |
+| skip_package_ipa                               | false                                                                                              |
+| export_method                                  | development                                                                                        |
+| build_path                                     | /Users/ionic-cloud-team/Library/Developer/Xcode/Archives/2025-07-12                                |
+| result_bundle                                  | false                                                                                              |
+| buildlog_path                                  | ~/Library/Logs/gym                                                                                 |
+| destination                                    | generic/platform=iOS                                                                               |
+| xcodebuild_formatter                           | xcbeautify                                                                                         |
+| build_timing_summary                           | false                                                                                              |
+| skip_profile_detection                         | false                                                                                              |
+| xcodebuild_command                             | xcodebuild                                                                                         |
+| skip_package_dependencies_resolution           | false                                                                                              |
+| disable_package_automatic_updates              | false                                                                                              |
+| use_system_scm                                 | false                                                                                              |
+| skip_package_pkg                               | false                                                                                              |
+| xcode_path                                     | /Applications/Xcode.app                                                                            |
++------------------------------------------------+----------------------------------------------------------------------------------------------------+
+
+[16:12:34]: $ set -o pipefail && xcodebuild -workspace /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcworkspace -scheme App -configuration Debug -destination 'generic/platform=iOS' -archivePath 3a2421b7-dcd6-438b-b974-23504332c3c8-development.xcarchive archive CODE_SIGN_IDENTITY=iPhone\ Developer:\ Jonathan\ Seale\ \(4298ARN5NU\) | tee /Users/ionic-cloud-team/Library/Logs/gym/App-App.log | xcbeautify
+[16:12:34]: ▸ ----- xcbeautify -----
+[16:12:34]: ▸ Version: 2.15.0
+[16:12:34]: ▸ ----------------------
+[16:12:39]: ▸ ❌ /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcodeproj: error: "App" requires a provisioning profile. Select a provisioning profile in the Signing & Capabilities editor. (in target 'App' from project 'App')
+[16:12:39]: ▸ ⚠️ Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+[16:12:39]: ▸ ** ARCHIVE FAILED **
+[16:12:39]: ▸ The following build commands failed:
+[16:12:39]: ▸ 	Archiving workspace App with scheme App
+[16:12:39]: ▸ (1 failure)
+
+----- xcbeautify -----
+Version: 2.15.0
+----------------------
+
+❌ /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcodeproj: error: "App" requires a provisioning profile. Select a provisioning profile in the Signing & Capabilities editor. (in target 'App' from project 'App')
+⚠️ Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+** ARCHIVE FAILED **
+
+
+The following build commands failed:
+	Archiving workspace App with scheme App
+(1 failure)
+[16:12:39]: Exit status: 65
+
++-----------------------------------------+
+|            Build environment            |
++---------------+-------------------------+
+| xcode_path    | /Applications/Xcode.app |
+| gym_version   | 2.225.0                 |
+| export_method | development             |
+| sdk           | iPhoneOS18.1.sdk        |
++---------------+-------------------------+
+
+[16:12:39]: ▸ Build description signature: e66e95a14e1fb4efdeb4e21bf6c43f16
+[16:12:39]: ▸ Build description path: /Users/ionic-cloud-team/Library/Developer/Xcode/DerivedData/App-dwghlijumiaahdbhxrcszpudalaz/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/XCBuildData/e66e95a14e1fb4efdeb4e21bf6c43f16.xcbuilddata
+[16:12:39]: ▸ /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcodeproj: error: "App" requires a provisioning profile. Select a provisioning profile in the Signing & Capabilities editor. (in target 'App' from project 'App')
+[16:12:39]: ▸ warning: Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+[16:12:39]: 
+[16:12:39]: ⬆️  Check out the few lines of raw `xcodebuild` output above for potential hints on how to solve this error
+[16:12:39]: 📋  For the complete and more detailed error log, check the full log at:
+[16:12:39]: 📋  /Users/ionic-cloud-team/Library/Logs/gym/App-App.log
+[16:12:39]: 
+[16:12:39]: Your `export_method` in gym is defined as `development`
+[16:12:39]: which might cause problems when signing your application
+[16:12:39]: Are you sure want to build and export for development?
+[16:12:39]: Please make sure to define the correct export methods when calling
+[16:12:39]: gym in your Fastfile or from the command line
+[16:12:39]: 
+[16:12:39]: 
+[16:12:39]: Looks like fastlane ran into a build/archive error with your project
+[16:12:39]: It's hard to tell what's causing the error, so we wrote some guides on how
+[16:12:39]: to troubleshoot build and signing issues: https://docs.fastlane.tools/codesigning/getting-started/
+[16:12:39]: Before submitting an issue on GitHub, please follow the guide above and make
+[16:12:39]: sure your project is set up correctly.
+[16:12:39]: fastlane uses `xcodebuild` commands to generate your binary, you can see the
+[16:12:39]: the full commands printed out in yellow in the above log.
+[16:12:39]: Make sure to inspect the output above, as usually you'll find more error information there
+[16:12:39]: 
+[16:12:39]: -------------------------
+[16:12:39]: --- Step: upload_logs ---
+[16:12:39]: -------------------------
+[16:12:43]: --------------------------------------
+[16:12:43]: --- Step: sentry_capture_exception ---
+[16:12:43]: --------------------------------------
+I, [2025-07-12T16:12:43.130078 #2168]  INFO -- sentry: ** [Sentry] [Transport] Sending envelope with items [event] 82102ac0904a4532baa89e202afd0dbb to Sentry
+[16:12:43]: ---------------------------
+[16:12:43]: --- Step: shell command ---
+[16:12:43]: ---------------------------
+[16:12:43]: -----------------------------
+[16:12:43]: --- Step: delete_keychain ---
+[16:12:43]: -----------------------------
+[16:12:43]: Error building the application - see the log above
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                               Lane Context                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| DEFAULT_PLATFORM                    | ios                                                                                                                                 |
+| PLATFORM_NAME                       | ios                                                                                                                                 |
+| LANE_NAME                           | ios build_capacitor                                                                                                                 |
+| KEYCHAIN_PATH                       | ~/Library/Keychains/IonicKeychain                                                                                                   |
+| DOWNLOAD_CERTS_PROVISION_FILE_UUID  | 8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2                                                                                                |
+| DOWNLOAD_CERTS_CODESIGNING_IDENTITY | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                                                       |
+| DOWNLOAD_CERTS_TEAM_ID              | 3LCZ3S8HGP                                                                                                                          |
+| DOWNLOAD_CERTS_CERT_PATH            | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/cert_file.p12                                            |
+| SIGH_PROFILE_PATHS                  | ["/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision"] |
+| IONIC_CLI_VERSION                   | 7.2.0                                                                                                                               |
+| NODE_PACKAGE_MANAGER                | npm                                                                                                                                 |
+| CAP_IOS_PATH                        | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios                                                      |
+| PROJECT_WEB_DIR                     | dist                                                                                                                                |
+| XCODE_PROJECT_NAME                  | App                                                                                                                                 |
+| XCODE_PROJECT_PATH                  | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcodeproj                                    |
+| XCODE_WORKSPACE_PATH                | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios/App/App.xcworkspace                                  |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+[16:12:43]: Error building the application - see the log above
+
+
+[!] Error building the application - see the log above
++---------------------------------------------------+
+|                 fastlane summary                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | add_extra_platforms          | 0           |
+| 2    | default_platform             | 0           |
+| 3    | prepare_environment          | 0           |
+| 4    | sentry_init                  | 0           |
+| 5    | begin_building               | 0           |
+| 6    | build_summary                | 2           |
+| 7    | create_keychain              | 0           |
+| 8    | get_ios_credentials_from_api | 0           |
+| 9    | set_ios_credentials          | 2           |
+| 10   | import_certificate           | 0           |
+| 11   | set_ionic_cli                | 0           |
+| 12   | detect_package_manager       | 0           |
+| 13   | add_git_credentials          | 0           |
+| 14   | get_appflow_config           | 0           |
+| 15   | dependency_install           | 5           |
+| 16   | create_capacitor_config      | 0           |
+| 17   | get_web_dir                  | 0           |
+| 18   | modify_cap_web_config        | 0           |
+| 19   | build_pro_app                | 4           |
+| 20   | get_xcode_project_paths      | 0           |
+| 21   | modify_ios_config            | 0           |
+| 22   | install_cocoapods            | 0           |
+| 23   | cap_sync                     | 4           |
+| 24   | cap_custom_deploy            | 0           |
+| 25   | update_code_signing_settings | 0           |
+| 26   | update_provisioning_profiles | 0           |
+| 💥   | build_ios_app                | 6           |
+| 28   | upload_logs                  | 3           |
+| 29   | sentry_capture_exception     | 0           |
+| 30   | shell command                | 0           |
+| 31   | delete_keychain              | 0           |
++------+------------------------------+-------------+
+
+[16:12:43]: fastlane finished with errors
+Running after_script
+Running after script...
+$ clean-up
+Cleaning up project directory and file based variables
+Terminating VM: build_stack_2024.12_arm64-1752336691098538000 (af727c77-98bc-49fa-aad9-1bc050f5f475) | Controller Instance ID: 14be3fe1-b4ed-4f35-755a-7ff07cf835e4 | Host: 10.2.146.105
+ERROR: Job failed: Process exited with status 1
