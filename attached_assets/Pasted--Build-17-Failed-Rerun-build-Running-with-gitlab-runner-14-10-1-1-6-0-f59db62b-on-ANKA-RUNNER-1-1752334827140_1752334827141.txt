@@ -1,0 +1,295 @@
+ Build #17
+Failed
+Rerun build
+Running with gitlab-runner 14.10.1/1.6.0 (f59db62b)
+  on ANKA_RUNNER 161fa1c3
+Preparing the "anka" executor
+Opening a connection to the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443
+Starting Anka VM using:
+  - VM Template UUID: 9ced2d88-6f2c-4854-9cb8-28b35b753067
+  - VM Template Tag Name: v3
+Please be patient...
+You can check the status of starting your Instance on the Anka Cloud Controller: https://controller.red.us-west-2.apple-orchard.net:443/#/instances
+Verifying connectivity to the VM: build_stack_2024.12_arm64-1752334752133243000 (393c57b2-7b67-45b7-8d63-6ccdc6a21a77) | Controller Instance ID: 090090e7-2bdd-46c1-49b0-5f0f2448749e | Host: 10.2.183.162 | Port: 10000 
+VM "build_stack_2024.12_arm64-1752334752133243000" (393c57b2-7b67-45b7-8d63-6ccdc6a21a77) / Controller Instance ID 090090e7-2bdd-46c1-49b0-5f0f2448749e running on Node ip-10-2-183-162.us-west-2.compute.internal (10.2.183.162), is ready for work (10.2.183.162:10000)
+Preparing environment
+Running on ip-192-168-64-23.us-west-2.compute.internal via ip-10-2-128-124.us-west-2.compute.internal...
+Getting source from Git repository
+$ pre-clone
+[15:39:38]: Cloning repository...
+Fetching changes...
+Initialized empty Git repository in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/.git/
+Created fresh repository.
+Checking out eb296da6 as main...
+Updating/initializing submodules...
+$ post-clone
+[15:39:45]: Cloning complete...
+Restoring cache
+Not downloading cache 3d7e1956/node-cache-stack-package-ios-2024.12-arm64.zip due to policy
+Executing "step_script" stage of the job script
+$ pre-build
+[15:39:45]: Building project....
+$ fetch-updates || true
+Checking for build process updates...
+$ build-ios
+Building from: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[15:39:50]: ---------------------------------
+[15:39:50]: --- Step: add_extra_platforms ---
+[15:39:50]: ---------------------------------
+[15:39:50]: Setting '[:web]' as extra SupportedPlatforms
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:8: warning: character class has '-' without escape
+/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/fastlane/outsystems/errors/detectors/pdm_plugins.rb:15: warning: character class has '-' without escape
+[15:39:50]: ------------------------------
+[15:39:50]: --- Step: default_platform ---
+[15:39:50]: ------------------------------
+[15:39:50]: Driving the lane 'ios build_capacitor' 🚀
+[15:39:50]: ---------------------------------
+[15:39:50]: --- Step: prepare_environment ---
+[15:39:50]: ---------------------------------
+[15:39:50]: Setting default environment variables to tidy up logs. These can be overridden by setting them in Appflow.
+[15:39:50]: 
+[15:39:50]: No changes needed - logs are already tidy! 🧹
+[15:39:50]: -------------------------
+[15:39:50]: --- Step: sentry_init ---
+[15:39:50]: -------------------------
+[15:39:50]: ----------------------------
+[15:39:50]: --- Step: begin_building ---
+[15:39:50]: ----------------------------
+[15:39:50]: Began building @ 2025-07-12T15:39:50
+[15:39:50]: ---------------------------
+[15:39:50]: --- Step: build_summary ---
+[15:39:50]: ---------------------------
+
++---------------------------------------------------+
+|                   Build Summary                   |
++---------------------+-----------------------------+
+| Runners Revision    | f9ed312                     |
+| Job ID              | 10294057                    |
+| Node.js version     | v20.18.1                    |
+| Cordova CLI version | 12.0.0 (cordova-lib@12.0.2) |
+| npm version         | 10.8.2                      |
+| yarn version        | 1.22.19                     |
+| macOS version       | 14.6.1                      |
+| Xcode version       | Xcode 16.1                  |
+|                     | Build version 16B40         |
+| Fastlane version    | fastlane (2.225.0)          |
++---------------------+-----------------------------+
+
+[15:39:53]: -----------------------------
+[15:39:53]: --- Step: create_keychain ---
+[15:39:53]: -----------------------------
+[15:39:53]: $ security list-keychains -d user
+[15:39:53]: ▸ "/Users/ionic-cloud-team/Library/Keychains/login.keychain-db"
+[15:39:53]: ------------------------------------------
+[15:39:53]: --- Step: get_ios_credentials_from_api ---
+[15:39:53]: ------------------------------------------
+[15:39:53]: Fetching certificate and profile(s) from Ionic Appflow
+[15:39:53]: ---------------------------------
+[15:39:53]: --- Step: set_ios_credentials ---
+[15:39:53]: ---------------------------------
+[15:39:53]: Installing provisioning profile...
+[15:39:54]: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision
+
++-------------------------------------------------------------------+
+|                       Installed Certificate                       |
++-------------------+-----------------------------------------------+
+| User ID           | W5V9Y23C6X                                    |
+| Common Name       | iPhone Developer: Jonathan Seale (4298ARN5NU) |
+| Organization Unit | 3LCZ3S8HGP                                    |
+| Organization      | Jonathan Seale                                |
+| Country           | US                                            |
++-------------------+-----------------------------------------------+
+
+[15:39:54]: --------------------------------
+[15:39:54]: --- Step: import_certificate ---
+[15:39:54]: --------------------------------
+[15:39:54]: Setting key partition list... (this can take a minute if there are a lot of keys installed)
+[15:39:54]: ---------------------------
+[15:39:54]: --- Step: set_ionic_cli ---
+[15:39:54]: ---------------------------
+[15:39:55]: Preinstalled @ionic/cli compatible with project `react`
+[15:39:55]: ------------------------------------
+[15:39:55]: --- Step: detect_package_manager ---
+[15:39:55]: ------------------------------------
+[15:39:55]: Detecting package manager
+[15:39:55]: Defaulting to npm
+[15:39:55]: ---------------------------------
+[15:39:55]: --- Step: add_git_credentials ---
+[15:39:55]: ---------------------------------
+[15:39:55]: Writing git-credentials files
+[15:39:55]: git-credentials successfully added to project
+[15:39:55]: --------------------------------
+[15:39:55]: --- Step: get_appflow_config ---
+[15:39:55]: --------------------------------
+[15:39:55]: Checking for appflow.config.json
+[15:39:55]: Appflow config detected
+[15:39:55]: --------------------------------
+[15:39:55]: --- Step: dependency_install ---
+[15:39:55]: --------------------------------
+[15:39:55]: Installing Dependencies (in /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor)
+[15:39:55]: $ npm ci --quiet 
+[15:39:58]: ▸ added 203 packages, and audited 204 packages in 3s
+[15:39:58]: ▸ 22 packages are looking for funding
+[15:39:58]: ▸ run `npm fund` for details
+[15:39:58]: ▸ 2 moderate severity vulnerabilities
+[15:39:58]: ▸ To address all issues (including breaking changes), run:
+[15:39:58]: ▸ npm audit fix --force
+[15:39:58]: ▸ Run `npm audit` for details.
+[15:39:58]: -------------------------------------
+[15:39:58]: --- Step: create_capacitor_config ---
+[15:39:58]: -------------------------------------
+[15:39:58]: Created capacitor.config.json from capacitor.config.ts/js
+[15:39:58]: -------------------------
+[15:39:58]: --- Step: get_web_dir ---
+[15:39:58]: -------------------------
+[15:39:58]: webDir is `dist`
+[15:39:58]: -----------------------------------
+[15:39:58]: --- Step: modify_cap_web_config ---
+[15:39:58]: -----------------------------------
+[15:39:58]: No custom native config detected.
+[15:39:58]: ---------------------------
+[15:39:58]: --- Step: build_pro_app ---
+[15:39:58]: ---------------------------
+[15:39:58]: Building app from /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor
+[15:39:58]: Build script detected...
+[15:39:58]: $ npm run build
+[15:39:58]: ▸ > clarafi-mobile-capacitor@0.0.1 build
+[15:39:58]: ▸ > tsc && vite build
+[15:39:59]: ▸ The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+[15:40:00]: ▸ vite v5.4.19 building for production...
+[15:40:00]: ▸ transforming...
+[15:40:00]: ▸ ✓ 9 modules transformed.
+[15:40:00]: ▸ x Build failed in 138ms
+[15:40:00]: ▸ error during build:
+[15:40:00]: ▸ [vite:css] [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+[15:40:00]: ▸ file: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/@ionic/react/css/core.css:undefined:NaN
+[15:40:00]: ▸ at We (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/tailwindcss/dist/lib.js:35:2121)
+[15:40:00]: ▸ at LazyResult.runOnRoot (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:361:16)
+[15:40:00]: ▸ at LazyResult.runAsync (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:290:26)
+[15:40:00]: ▸ at LazyResult.async (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:192:30)
+[15:40:00]: ▸ at LazyResult.then (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:436:17)
+[15:40:00]: -------------------------
+[15:40:00]: --- Step: upload_logs ---
+[15:40:00]: -------------------------
+[15:40:04]: --------------------------------------
+[15:40:04]: --- Step: sentry_capture_exception ---
+[15:40:04]: --------------------------------------
+I, [2025-07-12T15:40:04.427639 #2192]  INFO -- sentry: ** [Sentry] [Transport] Sending envelope with items [event] 7bc20e213f2e476f9390bd82ed5caf95 to Sentry
+[15:40:04]: ---------------------------
+[15:40:04]: --- Step: shell command ---
+[15:40:04]: ---------------------------
+[15:40:04]: -----------------------------
+[15:40:04]: --- Step: delete_keychain ---
+[15:40:04]: -----------------------------
+[15:40:04]: Exit status of command 'npm run build' was 1 instead of 0.
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.19 building for production...
+transforming...
+✓ 9 modules transformed.
+x Build failed in 138ms
+error during build:
+[vite:css] [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+file: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/@ionic/react/css/core.css:undefined:NaN
+    at We (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/tailwindcss/dist/lib.js:35:2121)
+    at LazyResult.runOnRoot (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:361:16)
+    at LazyResult.runAsync (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:290:26)
+    at LazyResult.async (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:192:30)
+    at LazyResult.then (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:436:17)
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                               Lane Context                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| DEFAULT_PLATFORM                    | ios                                                                                                                                 |
+| PLATFORM_NAME                       | ios                                                                                                                                 |
+| LANE_NAME                           | ios build_capacitor                                                                                                                 |
+| KEYCHAIN_PATH                       | ~/Library/Keychains/IonicKeychain                                                                                                   |
+| DOWNLOAD_CERTS_PROVISION_FILE_UUID  | 8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2                                                                                                |
+| DOWNLOAD_CERTS_CODESIGNING_IDENTITY | iPhone Developer: Jonathan Seale (4298ARN5NU)                                                                                       |
+| DOWNLOAD_CERTS_TEAM_ID              | 3LCZ3S8HGP                                                                                                                          |
+| DOWNLOAD_CERTS_CERT_PATH            | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/cert_file.p12                                            |
+| SIGH_PROFILE_PATHS                  | ["/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/8cb6b497-2e74-4e4f-8a2f-240c23f9b7f2.mobileprovision"] |
+| IONIC_CLI_VERSION                   | 7.2.0                                                                                                                               |
+| NODE_PACKAGE_MANAGER                | npm                                                                                                                                 |
+| CAP_IOS_PATH                        | /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/ios                                                      |
+| PROJECT_WEB_DIR                     | dist                                                                                                                                |
++-------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+[15:40:04]: Exit status of command 'npm run build' was 1 instead of 0.
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.19 building for production...
+transforming...
+✓ 9 modules transformed.
+x Build failed in 138ms
+error during build:
+[vite:css] [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+file: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/@ionic/react/css/core.css:undefined:NaN
+    at We (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/tailwindcss/dist/lib.js:35:2121)
+    at LazyResult.runOnRoot (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:361:16)
+    at LazyResult.runAsync (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:290:26)
+    at LazyResult.async (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:192:30)
+    at LazyResult.then (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:436:17)
+
+
++---------------------------------------------------+
+|                 fastlane summary                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | add_extra_platforms          | 0           |
+| 2    | default_platform             | 0           |
+| 3    | prepare_environment          | 0           |
+| 4    | sentry_init                  | 0           |
+| 5    | begin_building               | 0           |
+| 6    | build_summary                | 2           |
+| 7    | create_keychain              | 0           |
+| 8    | get_ios_credentials_from_api | 0           |
+| 9    | set_ios_credentials          | 0           |
+| 10   | import_certificate           | 0           |
+| 11   | set_ionic_cli                | 0           |
+| 12   | detect_package_manager       | 0           |
+| 13   | add_git_credentials          | 0           |
+| 14   | get_appflow_config           | 0           |
+| 15   | dependency_install           | 3           |
+| 16   | create_capacitor_config      | 0           |
+| 17   | get_web_dir                  | 0           |
+| 18   | modify_cap_web_config        | 0           |
+| 💥   | build_pro_app                | 1           |
+| 20   | upload_logs                  | 3           |
+| 21   | sentry_capture_exception     | 0           |
+| 22   | shell command                | 0           |
+| 23   | delete_keychain              | 0           |
++------+------------------------------+-------------+
+
+[15:40:04]: fastlane finished with errors
+/opt/homebrew/Cellar/fastlane/2.225.0/libexec/bin/fastlane: [!] Exit status of command 'npm run build' was 1 instead of 0. (FastlaneCore::Interface::FastlaneShellError)
+
+> clarafi-mobile-capacitor@0.0.1 build
+> tsc && vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.19 building for production...
+transforming...
+✓ 9 modules transformed.
+x Build failed in 138ms
+error during build:
+[vite:css] [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+file: /Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/@ionic/react/css/core.css:undefined:NaN
+    at We (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/tailwindcss/dist/lib.js:35:2121)
+    at LazyResult.runOnRoot (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:361:16)
+    at LazyResult.runAsync (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:290:26)
+    at LazyResult.async (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:192:30)
+    at LazyResult.then (/Users/ionic-cloud-team/builds/jonseale44/Clarafi/clarafi-mobile-capacitor/node_modules/postcss/lib/lazy-result.js:436:17)
+
+Running after_script
+Running after script...
+$ clean-up
+Cleaning up project directory and file based variables
+Terminating VM: build_stack_2024.12_arm64-1752334752133243000 (393c57b2-7b67-45b7-8d63-6ccdc6a21a77) | Controller Instance ID: 090090e7-2bdd-46c1-49b0-5f0f2448749e | Host: 10.2.183.162
+ERROR: Job failed: Process exited with status 1
