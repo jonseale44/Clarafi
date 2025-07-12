@@ -363,78 +363,90 @@ export function ProviderDashboard() {
     <div className="space-y-6">
       {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-        <Card className="bg-yellow-50 border-yellow-200 hover:shadow-md transition-shadow">
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <Clock className="h-10 w-10 text-yellow-600" />
+              <div className="p-3 bg-yellow-100 rounded-lg">
+                <Clock className="h-6 w-6 text-yellow-600" />
+              </div>
               <div>
-                <p className="text-base font-medium text-yellow-800">Pending Encounters</p>
-                <p className="text-3xl font-bold text-yellow-900 mt-1">{stats?.pendingEncounters || 0}</p>
+                <p className="text-sm text-gray-600">Pending Encounters</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.pendingEncounters || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-navy-blue-50 border-navy-blue-200 cursor-pointer hover:shadow-md transition-all" onClick={() => setIsReviewDialogOpen(true)}>
+        <Card className="bg-white shadow-sm cursor-pointer hover:shadow-md transition-all" onClick={() => setIsReviewDialogOpen(true)}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <TestTube className="h-10 w-10 text-navy-blue-600" />
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <TestTube className="h-6 w-6 text-blue-600" />
+                </div>
                 <div>
-                  <p className="text-base font-medium text-navy-blue-800">Lab Orders to Review</p>
-                  <p className="text-3xl font-bold text-navy-blue-900 mt-1">{stats?.labOrdersToReview || 0}</p>
+                  <p className="text-sm text-gray-600">Lab Orders to Review</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.labOrdersToReview || 0}</p>
                 </div>
               </div>
-              <Button size="default" variant="outline" className="bg-white hover:bg-navy-blue-50">
+              <Button size="sm" variant="outline" className="text-xs">
                 Review
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-green-50 border-green-200 hover:shadow-md transition-shadow">
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <CheckCircle className="h-10 w-10 text-green-600" />
+              <div className="p-3 bg-green-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
               <div>
-                <p className="text-base font-medium text-green-800">Completed Today</p>
-                <p className="text-3xl font-bold text-green-900 mt-1">{stats?.completedToday || 0}</p>
+                <p className="text-sm text-gray-600">Completed Today</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.completedToday || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-purple-50 border-purple-200 hover:shadow-md transition-shadow">
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <FileText className="h-10 w-10 text-purple-600" />
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <FileText className="h-6 w-6 text-purple-600" />
+              </div>
               <div>
-                <p className="text-base font-medium text-purple-800">Imaging to Review</p>
-                <p className="text-3xl font-bold text-purple-900 mt-1">{stats?.imagingToReview || 0}</p>
+                <p className="text-sm text-gray-600">Imaging to Review</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.imagingToReview || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-orange-50 border-orange-200 hover:shadow-md transition-shadow">
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <PenTool className="h-10 w-10 text-orange-600" />
+              <div className="p-3 bg-orange-100 rounded-lg">
+                <PenTool className="h-6 w-6 text-orange-600" />
+              </div>
               <div>
-                <p className="text-base font-medium text-orange-800">Prescriptions to Sign</p>
-                <p className="text-3xl font-bold text-orange-900 mt-1">{stats?.prescriptionsToSign || 0}</p>
+                <p className="text-sm text-gray-600">Prescriptions to Sign</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.prescriptionsToSign || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-red-50 border-red-200 hover:shadow-md transition-shadow">
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <AlertTriangle className="h-10 w-10 text-red-600" />
+              <div className="p-3 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
               <div>
-                <p className="text-base font-medium text-red-800">Unread Messages</p>
-                <p className="text-3xl font-bold text-red-900 mt-1">{stats?.messagesUnread || 0}</p>
+                <p className="text-sm text-gray-600">Unread Messages</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.messagesUnread || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -443,18 +455,18 @@ export function ProviderDashboard() {
 
       {/* Detailed Views */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 gap-2 p-1 h-14">
-          <TabsTrigger value="overview" className="text-base font-medium py-3">Overview</TabsTrigger>
-          <TabsTrigger value="pending-encounters" className="text-base font-medium py-3">Pending Encounters</TabsTrigger>
-          <TabsTrigger value="signatures" className="text-base font-medium py-3">Signatures Needed</TabsTrigger>
+        <TabsList className="w-fit bg-gray-100 p-1 h-11">
+          <TabsTrigger value="overview" className="text-sm font-medium px-6">Overview</TabsTrigger>
+          <TabsTrigger value="pending-encounters" className="text-sm font-medium px-6">Pending Encounters</TabsTrigger>
+          <TabsTrigger value="signatures" className="text-sm font-medium px-6">Signatures Needed</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Pending Encounters */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+            <Card className="bg-white shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-lg">
                   <Clock className="h-5 w-5" />
                   <span>Recent Pending Encounters</span>
                 </CardTitle>
@@ -491,10 +503,9 @@ export function ProviderDashboard() {
                     </div>
                   ))}
                   {pendingEncounters.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                      <Clock className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">No pending encounters</h3>
-                      <p className="text-base text-gray-500">Your schedule is clear right now</p>
+                    <div className="text-center py-8 text-gray-500">
+                      <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm text-gray-500">No pending encounters</p>
                     </div>
                   )}
                 </div>

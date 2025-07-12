@@ -214,16 +214,16 @@ export default function Dashboard() {
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-navy-blue px-6 py-3">
+      <div className="bg-[#003366] px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Left side - Brand and Navigation */}
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                <span className="text-navy-blue font-bold text-sm">C</span>
+                <span className="text-[#003366] font-bold text-sm">C</span>
               </div>
               <span className="font-bold text-lg text-white">
-                CLAR<span className="text-gold">A</span>F<span className="text-gold">I</span>
+                CLAR<span className="text-[#FFD700]">A</span>F<span className="text-[#FFD700]">I</span>
               </span>
             </div>
             
@@ -231,30 +231,30 @@ export default function Dashboard() {
             <nav className="flex items-center space-x-1">
               <button
                 onClick={() => setActiveTab("dashboard")}
-                className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "dashboard" 
-                    ? "bg-navy-blue text-white" 
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-white text-[#003366]" 
+                    : "text-white hover:bg-white/10"
                 }`}
               >
                 Dashboard
               </button>
               <button
                 onClick={() => setActiveTab("patients")}
-                className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "patients" 
-                    ? "bg-navy-blue text-white" 
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-white text-[#003366]" 
+                    : "text-white hover:bg-white/10"
                 }`}
               >
                 Patients
               </button>
               <button
                 onClick={() => setActiveTab("encounters")}
-                className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === "encounters" 
-                    ? "bg-navy-blue text-white" 
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-white text-[#003366]" 
+                    : "text-white hover:bg-white/10"
                 }`}
               >
                 Encounters
@@ -263,38 +263,13 @@ export default function Dashboard() {
               {currentUser?.role === 'admin' && (
                 <>
                   <Link href="/admin/prompts">
-                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
+                    <button className="px-4 py-2 rounded-md text-sm font-medium text-white hover:bg-white/10 transition-colors">
                       Admin Prompts
                     </button>
                   </Link>
                   <Link href="/admin/users">
-                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-purple-700 hover:text-purple-900 hover:bg-purple-50`}>
+                    <button className="px-4 py-2 rounded-md text-sm font-medium text-white hover:bg-white/10 transition-colors">
                       Admin Users
-                    </button>
-                  </Link>
-                  <Link href="/admin/subscription-config">
-                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
-                      Subscription Config
-                    </button>
-                  </Link>
-                  <Link href="/admin/health-system-upgrade">
-                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50`}>
-                      🚀 Test Upgrade
-                    </button>
-                  </Link>
-                  <Link href="/admin/subscription-keys">
-                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
-                      Subscription Keys
-                    </button>
-                  </Link>
-                  <Link href="/admin/clinic-import">
-                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
-                      Clinic Import
-                    </button>
-                  </Link>
-                  <Link href="/practice-migration">
-                    <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
-                      Practice Migration
                     </button>
                   </Link>
                 </>
@@ -303,7 +278,7 @@ export default function Dashboard() {
               {/* Practice Migration for providers */}
               {currentUser?.role === 'provider' && (
                 <Link href="/practice-migration">
-                  <button className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors text-gray-700 hover:text-gray-900 hover:bg-gray-100`}>
+                  <button className="px-4 py-2 rounded-md text-sm font-medium text-white hover:bg-white/10 transition-colors">
                     Practice Migration
                   </button>
                 </Link>
@@ -314,10 +289,10 @@ export default function Dashboard() {
           </div>
           
           {/* Right side - User info and actions */}
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             <Link href="/patients/create">
-              <Button className="flex items-center gap-2 px-5 py-2.5 text-base bg-navy-blue hover:bg-navy-blue-dark">
-                <UserPlus className="h-5 w-5" />
+              <Button className="flex items-center gap-2 px-4 py-2 text-sm bg-white text-[#003366] hover:bg-gray-100">
+                <UserPlus className="h-4 w-4" />
                 Create Patient
               </Button>
             </Link>

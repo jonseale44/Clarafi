@@ -107,22 +107,22 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
         <DropdownMenuTrigger asChild>
           <Button 
             variant="ghost" 
-            className={`flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 ${className}`}
+            className={`flex items-center space-x-2 px-3 py-2 hover:bg-white/10 ${className}`}
           >
-            <Avatar className="w-10 h-10">
-              <AvatarFallback className="text-sm bg-navy-blue text-white font-medium">
+            <Avatar className="w-8 h-8">
+              <AvatarFallback className="text-xs bg-white text-[#003366] font-medium">
                 {user?.firstName?.[0] || 'U'}{user?.lastName?.[0] || 'U'}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex flex-col items-start">
-              <span className="text-base font-semibold text-gray-900">
+              <span className="text-sm font-medium text-white">
                 {user?.firstName} {user?.lastName}
               </span>
               <div className="flex items-center space-x-1 mt-0.5">
                 <Badge 
                   variant="outline" 
-                  className={`text-xs px-2 py-0.5 h-5 ${getRoleColor(user?.role || '')}`}
+                  className="text-xs px-2 py-0 h-4 bg-white/20 text-white border-white/30"
                 >
                   {getRoleIcon(user?.role || '')}
                   <span className="ml-1 capitalize">
@@ -132,7 +132,7 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
               </div>
             </div>
             
-            <ChevronDown className="w-5 h-5 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-white" />
           </Button>
         </DropdownMenuTrigger>
         
