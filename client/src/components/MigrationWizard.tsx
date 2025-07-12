@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Users, Building2, Hospital, UserCheck, AlertCircle, Send } from 'lucide-react';
+import { Loader2, Users, Building2, UserCheck, AlertCircle, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -289,7 +289,7 @@ export function MigrationWizard({ targetHealthSystemId, onComplete, onCancel }: 
               Clinic ({analysis.categories.clinicPatients.length})
             </TabsTrigger>
             <TabsTrigger value="hospital" className="flex items-center gap-2">
-              <Hospital className="h-4 w-4" />
+              <Building2 className="h-4 w-4" />
               Hospital ({analysis.categories.hospitalPatients.length})
             </TabsTrigger>
             <TabsTrigger value="private" className="flex items-center gap-2">
