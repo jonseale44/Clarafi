@@ -103,15 +103,35 @@ export class MedicationDeltaService {
     const startTime = Date.now();
 
     try {
+      console.log(`💊 [MedicationDelta] === STARTING ORDER PROCESSING ===`);
+      console.log(`💊 [MedicationDelta] Patient ID: ${patientId}, Encounter ID: ${encounterId}, Provider ID: ${providerId}`);
+      
       // Get medication orders for this encounter
       const medicationOrders = await this.getMedicationOrders(encounterId);
+      console.log(`💊 [MedicationDelta] Found ${medicationOrders.length} medication orders for encounter ${encounterId}`);
+      
+      if (medicationOrders.length === 0) {
+        console.log(`⚠️ [MedicationDelta] No medication orders found for encounter ${encounterId}`);
+        return {
+          changes: [],
+          processing_time_ms: Date.now() - startTime,
+          total_medications_affected: 0,
+        };
+      }
+
+      // Log all medication orders
+      medicationOrders.forEach((order, index) => {
+        console.log(`💊 [MedicationDelta] Order ${index + 1}: ${order.medicationName || order.orderDescription} (ID: ${order.id}, Status: ${order.orderStatus})`);
+      });
 
       // Get existing medications for context
       const existingMedications = await this.getExistingMedications(patientId);
+      console.log(`💊 [MedicationDelta] Found ${existingMedications.length} existing medications for patient ${patientId}`);
 
       // Process each medication order
       const changes: MedicationChange[] = [];
       for (const order of medicationOrders) {
+        console.log(`💊 [MedicationDelta] Processing order ID ${order.id}: ${order.medicationName || order.orderDescription}`);
         const change = await this.processIndividualMedicationOrder(
           order,
           existingMedications,
@@ -121,13 +141,17 @@ export class MedicationDeltaService {
         );
 
         if (change) {
+          console.log(`💊 [MedicationDelta] Generated change for order ${order.id}: ${change.action} - ${change.medication_name}`);
           changes.push(change);
+        } else {
+          console.log(`⚠️ [MedicationDelta] No change generated for order ${order.id}`);
         }
       }
 
       changes.forEach((change, index) => {});
 
       // Apply changes to database
+      console.log(`💊 [MedicationDelta] Applying ${changes.length} changes to database`);
       await this.applyChangesToDatabase(
         changes,
         patientId,

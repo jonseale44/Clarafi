@@ -1035,7 +1035,11 @@ export class DatabaseStorage implements IStorage {
         // Use setImmediate to run after current execution cycle completes
         setImmediate(async () => {
           try {
-            await medicationDelta.processOrderDelta(insertOrder.patientId, insertOrder.encounterId || 0, 1);
+            await medicationDelta.processOrderDelta(
+              insertOrder.patientId, 
+              insertOrder.encounterId || 0, 
+              insertOrder.orderedBy || 1  // Use actual provider ID from order
+            );
             console.log(`✅ [STORAGE] Medication processing completed for order ${order.id}`);
           } catch (medicationError) {
             console.error(`❌ [STORAGE] Medication processing failed for order ${order.id}:`, medicationError);

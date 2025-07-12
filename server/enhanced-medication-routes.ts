@@ -570,4 +570,66 @@ router.post("/medications/calculate-days-supply", async (req: Request, res: Resp
   }
 });
 
+/**
+ * POST /api/medication-fix/process-existing-order/:orderId
+ * Manual endpoint to process an existing medication order that failed automatic processing
+ */
+router.post("/medication-fix/process-existing-order/:orderId", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const orderId = parseInt(req.params.orderId);
+    console.log(`🔧 [MedicationFix] Processing existing medication order ${orderId}`);
+
+    // Get the order details
+    const order = await storage.getOrderById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    if (order.orderType !== "medication") {
+      return res.status(400).json({ error: "Order is not a medication order" });
+    }
+
+    console.log(`🔧 [MedicationFix] Found order: ${order.medicationName} for patient ${order.patientId}, encounter ${order.encounterId}`);
+
+    // Check if medication already exists
+    const existingMedications = await storage.getPatientMedications(order.patientId);
+    const existingMedication = existingMedications.find(
+      med => med.medicationName?.toLowerCase() === order.medicationName?.toLowerCase()
+    );
+
+    if (existingMedication) {
+      console.log(`⚠️ [MedicationFix] Medication ${order.medicationName} already exists for patient`);
+      return res.json({
+        success: false,
+        message: "Medication already exists",
+        medication: existingMedication
+      });
+    }
+
+    // Process the order to create medication
+    const result = await medicationDelta.processOrderDelta(
+      order.patientId,
+      order.encounterId || 0,
+      req.user!.id
+    );
+
+    console.log(`✅ [MedicationFix] Successfully processed order ${orderId}, created ${result.total_medications_affected} medications`);
+
+    res.json({
+      success: true,
+      orderId: orderId,
+      medicationsCreated: result.total_medications_affected,
+      changes: result.changes
+    });
+
+  } catch (error) {
+    console.error(`❌ [MedicationFix] Error processing existing order:`, error);
+    res.status(500).json({ error: "Failed to process existing order" });
+  }
+});
+
 export default router;

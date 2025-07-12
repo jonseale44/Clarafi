@@ -2733,6 +2733,33 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
     },
   );
 
+  // Test endpoint to manually trigger medication processing
+  app.post("/api/test/process-medications/:encounterId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const encounterId = parseInt(req.params.encounterId);
+      const { patientId } = req.body;
+      
+      console.log(`🧪 [TEST] Manually triggering medication processing for encounter ${encounterId}, patient ${patientId}`);
+      
+      const { medicationDelta } = await import("./medication-delta-service.js");
+      const result = await medicationDelta.processOrderDelta(
+        patientId,
+        encounterId,
+        req.user!.id
+      );
+      
+      res.json({
+        message: "Medication processing triggered",
+        result
+      });
+    } catch (error: any) {
+      console.error("❌ [TEST] Error in test medication processing:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Unified Orders API routes for draft orders processing system
   app.get("/api/patients/:patientId/orders/draft", async (req, res) => {
     try {
