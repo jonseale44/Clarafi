@@ -159,6 +159,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical Database Schema Drift Resolution COMPLETED (January 12, 2025)
+- **ROOT CAUSE IDENTIFIED**: Replit rollbacks don't rollback database changes, causing massive schema drift between code and database
+- **COMPREHENSIVE FIX**: Added all missing columns from schema.ts to database using additive migration strategy
+- **TABLES FIXED**: 
+  - medical_problems: Added 20+ clinical columns (problem_title, current_icd10_code, ranking factors, etc.)
+  - medications: Added all missing columns (strength, grouping_strategy, visit_history, etc.)
+  - Created 5 missing tables: migration_invitations, lab_reference_ranges, patient_physical_findings, problem_rank_overrides, user_problem_list_preferences
+- **API FUNCTIONALITY RESTORED**: Both medical problems and medications APIs now fully functional
+- **STRATEGY**: Chose additive approach (extra columns) over destructive approach to preserve all features
+- **PRODUCTION READY**: System now has complete schema alignment between database and code
+
 ### SendGrid Email Verification Integration COMPLETED (January 15, 2025)
 - **PRODUCTION EMAIL SYSTEM**: Successfully implemented SendGrid email verification with professional email templates
 - **COMPLETE INTEGRATION**: EmailVerificationService now sends real verification emails instead of console logging
