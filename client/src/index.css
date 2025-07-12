@@ -80,18 +80,21 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground text-sm;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     font-size: 13px; /* EMR industry standard base font size */
     line-height: 1.4; /* Tighter line height for density */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold;
+    font-weight: 600;
   }
 
   /* Custom scrollbar for modern medical interface */
@@ -101,7 +104,7 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-muted;
+    background-color: hsl(var(--muted));
   }
 
   /* SOAP Note Editor Styling - Consistent line spacing using br tags only */
@@ -136,16 +139,18 @@
   /* All legacy .soap-note styles completely removed - using .soap-editor instead */
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground;
+    background-color: hsl(var(--muted-foreground));
   }
 
   /* Focus styles for accessibility */
   .focus-visible:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2;
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
   }
 
   /* Medical interface specific styles */
@@ -176,28 +181,28 @@
 
   /* Status indicators */
   .status-online {
-    @apply bg-green-500;
+    background-color: rgb(34, 197, 94);
   }
 
   .status-warning {
-    @apply bg-yellow-500;
+    background-color: rgb(234, 179, 8);
   }
 
   .status-error {
-    @apply bg-red-500;
+    background-color: rgb(239, 68, 68);
   }
 
   /* Medical data styling */
   .vital-normal {
-    @apply text-green-600;
+    color: rgb(22, 163, 74);
   }
 
   .vital-warning {
-    @apply text-yellow-600;
+    color: rgb(202, 138, 4);
   }
 
   .vital-critical {
-    @apply text-red-600;
+    color: rgb(220, 38, 38);
   }
 
   /* Animation for voice recording */
@@ -216,101 +221,168 @@
 
   /* EMR specific component styling */
   .emr-card {
-    @apply bg-card border border-border rounded-lg shadow-sm;
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
 
   .emr-header {
-    @apply bg-card border-b border-border px-6 py-4;
+    background-color: hsl(var(--card));
+    border-bottom: 1px solid hsl(var(--border));
+    padding: 1rem 1.5rem;
   }
 
   .emr-sidebar {
-    @apply w-64 bg-sidebar border-r border-sidebar-border;
+    width: 16rem;
+    background-color: hsl(var(--sidebar-background));
+    border-right: 1px solid hsl(var(--sidebar-border));
   }
 
   .emr-content {
-    @apply flex-1 bg-background;
+    flex: 1;
+    background-color: hsl(var(--background));
   }
 
   /* Medical alert styles */
   .alert-critical {
-    @apply bg-red-50 border border-red-200 text-red-800;
+    background-color: rgb(254, 242, 242);
+    border: 1px solid rgb(254, 202, 202);
+    color: rgb(153, 27, 27);
   }
 
   .alert-warning {
-    @apply bg-orange-50 border border-orange-200 text-orange-800;
+    background-color: rgb(255, 251, 235);
+    border: 1px solid rgb(254, 215, 170);
+    color: rgb(154, 52, 18);
   }
 
   .alert-info {
-    @apply bg-blue-50 border border-navy-blue-200 text-navy-blue-800;
+    background-color: rgb(239, 246, 255);
+    border: 1px solid rgb(191, 219, 254);
+    color: rgb(30, 58, 138);
   }
 
   .alert-success {
-    @apply bg-green-50 border border-green-200 text-green-800;
+    background-color: rgb(240, 253, 244);
+    border: 1px solid rgb(187, 247, 208);
+    color: rgb(22, 101, 52);
   }
 
   /* Tab styling for medical interface */
   .emr-tabs {
-    @apply border-b border-border;
+    border-bottom: 1px solid hsl(var(--border));
   }
 
   .emr-tab {
-    @apply py-4 px-1 border-b-2 border-transparent text-muted-foreground hover:text-foreground font-medium text-sm transition-colors;
+    padding: 1rem 0.25rem;
+    border-bottom: 2px solid transparent;
+    color: hsl(var(--muted-foreground));
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: color 0.2s ease;
+  }
+
+  .emr-tab:hover {
+    color: hsl(var(--foreground));
   }
 
   .emr-tab-active {
-    @apply border-primary text-primary;
+    border-bottom-color: hsl(var(--primary));
+    color: hsl(var(--primary));
   }
 
   /* Button variants for medical interface */
   .btn-medical-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .btn-medical-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
   }
 
   .btn-medical-secondary {
-    @apply bg-secondary text-white hover:bg-secondary/90;
+    background-color: hsl(142 76% 36%);
+    color: white;
+  }
+
+  .btn-medical-secondary:hover {
+    background-color: hsl(142 76% 32%);
   }
 
   .btn-medical-danger {
-    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+    background-color: hsl(var(--destructive));
+    color: hsl(var(--destructive-foreground));
+  }
+
+  .btn-medical-danger:hover {
+    background-color: hsl(var(--destructive) / 0.9);
   }
 
   /* Form styling for medical data entry */
   .medical-form-field {
-    @apply space-y-2;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .medical-form-label {
-    @apply text-sm font-medium text-foreground;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: hsl(var(--foreground));
   }
 
   .medical-form-input {
-    @apply w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid hsl(var(--input));
+    border-radius: 0.375rem;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  .medical-form-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+    border-color: hsl(var(--ring));
   }
 
   /* Status badge styling */
   .status-badge-active {
-    @apply bg-green-100 text-green-800;
+    background-color: rgb(220, 252, 231);
+    color: rgb(22, 101, 52);
   }
 
   .status-badge-pending {
-    @apply bg-yellow-100 text-yellow-800;
+    background-color: rgb(254, 249, 195);
+    color: rgb(133, 77, 14);
   }
 
   .status-badge-completed {
-    @apply bg-blue-100 text-navy-blue-800;
+    background-color: rgb(219, 234, 254);
+    color: rgb(30, 58, 138);
   }
 
   .status-badge-cancelled {
-    @apply bg-red-100 text-red-800;
+    background-color: rgb(254, 226, 226);
+    color: rgb(153, 27, 27);
   }
 
   /* Voice recording specific styles */
   .voice-modal {
-    @apply max-w-2xl w-full;
+    max-width: 42rem;
+    width: 100%;
   }
 
   .voice-recording-indicator {
-    @apply w-24 h-24 bg-red-100 rounded-full flex items-center justify-center;
+    width: 6rem;
+    height: 6rem;
+    background-color: rgb(254, 226, 226);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .voice-recording-active {
@@ -319,95 +391,140 @@
 
   /* AI suggestions styling */
   .ai-suggestions {
-    @apply bg-blue-50 border border-navy-blue-200 rounded-lg p-4;
+    background-color: rgb(239, 246, 255);
+    border: 1px solid rgb(191, 219, 254);
+    border-radius: 0.5rem;
+    padding: 1rem;
   }
 
   .ai-suggestion-title {
-    @apply font-medium text-navy-blue-900 mb-2 flex items-center;
+    font-weight: 500;
+    color: rgb(30, 58, 138);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
   }
 
   .ai-suggestion-list {
-    @apply text-sm text-navy-blue-800 space-y-1;
+    font-size: 0.875rem;
+    color: rgb(30, 58, 138);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   /* Patient chart styling */
   .patient-header {
-    @apply bg-card border border-border rounded-lg p-6 mb-6;
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
   .patient-avatar {
-    @apply w-20 h-20 border-2 border-border rounded-lg;
+    width: 5rem;
+    height: 5rem;
+    border: 2px solid hsl(var(--border));
+    border-radius: 0.5rem;
   }
 
   .patient-info-grid {
-    @apply grid grid-cols-4 gap-6 text-sm;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    font-size: 0.875rem;
   }
 
   /* Vital signs grid */
   .vitals-grid {
-    @apply grid grid-cols-6 gap-4 mb-6;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
   }
 
   .vital-card {
-    @apply bg-card border border-border rounded-lg p-4;
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 1rem;
   }
 
   /* Encounter list styling */
   .encounter-card {
-    @apply border border-border rounded-lg p-4 hover:shadow-md transition-shadow;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .encounter-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   .encounter-header {
-    @apply flex items-center space-x-3 mb-2;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .encounter-meta {
-    @apply grid grid-cols-4 gap-4 text-sm text-muted-foreground mb-3;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 0.75rem;
   }
 
   /* Medical history styling */
   .medical-history-item {
-    @apply border-l-4 border-primary pl-4 py-2;
+    border-left: 4px solid hsl(var(--primary));
+    padding-left: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
   }
 
   /* Lab results styling */
   .lab-result-normal {
-    @apply text-green-600;
+    color: rgb(22, 163, 74);
   }
 
   .lab-result-abnormal {
-    @apply text-red-600;
+    color: rgb(220, 38, 38);
   }
 
   .lab-result-critical {
-    @apply text-red-800 font-semibold;
+    
   }
 
   /* Medication list styling */
   .medication-active {
-    @apply bg-green-50 border-l-4 border-green-500;
+    
   }
 
   .medication-discontinued {
-    @apply bg-gray-50 border-l-4 border-gray-400 opacity-75;
+    
   }
 
   /* Responsive adjustments for mobile medical interface */
   @media (max-width: 768px) {
     .emr-sidebar {
-      @apply w-full;
+      
     }
 
     .patient-info-grid {
-      @apply grid-cols-2;
+      
     }
 
     .vitals-grid {
-      @apply grid-cols-2;
+      
     }
 
     .encounter-meta {
-      @apply grid-cols-2;
+      
     }
   }
 
@@ -419,31 +536,31 @@
 
   /* New EMR compact classes for dense information display */
   .emr-compact-spacing {
-    @apply p-3;
+    
   }
 
   .emr-compact-small {
-    @apply p-2;
+    
   }
 
   .emr-compact-text {
-    @apply text-sm leading-tight p-3;
+    
   }
   
   .emr-section-header {
-    @apply py-2 px-3 text-sm font-medium;
+    
   }
   
   .emr-card-compact {
-    @apply p-2 space-y-1;
+    
   }
   
   .emr-list-item {
-    @apply py-1 px-2 text-xs;
+    
   }
   
   .emr-badge-small {
-    @apply text-xs px-1.5 py-0.5;
+    
     font-size: 10px;
   }
   
@@ -454,59 +571,59 @@
 
   /* Ultra-compact EMR spacing for EPIC-level density */
   .emr-ultra-compact {
-    @apply p-1 space-y-0.5;
+    
   }
 
   .emr-ultra-compact-card {
-    @apply p-2 space-y-1;
+    
   }
 
   .emr-minimal-padding {
-    @apply p-1;
+    
   }
 
   .emr-tight-spacing {
-    @apply space-y-0.5;
+    
   }
 
   .emr-no-gap {
-    @apply gap-0;
+    
   }
 
   .emr-micro-gap {
-    @apply gap-1;
+    
   }
 
   .emr-compact-header {
-    @apply py-1 px-2;
+    
   }
 
   .emr-dense-list {
-    @apply space-y-0.5;
+    
   }
 
   .emr-micro-margin {
-    @apply my-0.5;
+    
   }
 
   /* Card content with minimal padding */
   .emr-card-content-tight {
-    @apply px-3 py-2;
+    
   }
 
   /* Button spacing reduction */
   .emr-button-compact {
-    @apply px-2 py-1 text-xs;
+    
   }
 
   /* Tab content with reduced padding */
   .emr-tab-content-compact {
-    @apply pt-2 px-0;
+    
   }
 
   /* List items with minimal spacing */
   .emr-list-item-tight {
-    @apply py-0.5 px-1;
+    
   }
 
   /* === PROPORTIONAL SPACING SYSTEM === */
@@ -589,7 +706,7 @@
 
   /* Section dividers with minimal margin */
   .emr-divider-tight {
-    @apply my-1;
+    
   }
 
   /* Medication grouping styles */
@@ -656,74 +773,74 @@
   
   /* Dense list container - removes card styling and uses minimal spacing */
   .dense-list-container {
-    @apply space-y-1;
+    
   }
   
   /* Dense list items - single line format with essential info only */
   .dense-list-item {
-    @apply flex items-center justify-between px-3 py-1.5 border-l-2 bg-gray-50 dark:bg-gray-800/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors cursor-pointer;
+    
     border-radius: 4px;
     min-height: 32px;
   }
   
   /* Dense list item content - compact layout */
   .dense-list-content {
-    @apply flex items-center gap-2 flex-1 min-w-0;
+    
   }
   
   /* Dense list primary text - problem name, medication name, etc. */
   .dense-list-primary {
-    @apply text-sm font-medium text-gray-900 dark:text-gray-100 truncate;
+    
   }
   
   /* Dense list secondary text - status, dates, etc. */
   .dense-list-secondary {
-    @apply text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1;
+    
   }
   
   /* Dense list badges - minimal size */
   .dense-list-badge {
-    @apply text-xs px-1.5 py-0.5 rounded;
+    
     font-size: 10px;
   }
   
   /* Dense list actions - compact buttons */
   .dense-list-actions {
-    @apply flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity;
+    
   }
   
   /* Dense list expandable content */
   .dense-list-expanded {
-    @apply mt-1 px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm;
+    
   }
   
   /* Status-specific border colors for dense lists */
   .dense-list-item.status-active {
-    @apply border-l-green-500;
+    
   }
   
   .dense-list-item.status-chronic {
-    @apply border-l-amber-500;
+    
   }
   
   .dense-list-item.status-resolved {
-    @apply border-l-gray-400;
+    
   }
   
   .dense-list-item.status-discontinued {
-    @apply border-l-red-400;
+    
   }
   
   .dense-list-item.priority-high {
-    @apply border-l-red-500;
+    
   }
   
   .dense-list-item.priority-medium {
-    @apply border-l-amber-500;
+    
   }
   
   .dense-list-item.priority-low {
-    @apply border-l-gray-400;
+    
   }
   
   /* Dense view toggle animations */
@@ -753,76 +870,76 @@
   
   /* Medical problems compact styling */
   .medical-problem-card {
-    @apply border-l-2; /* Reduced from border-l-4 */
+     /* Reduced from border-l-4 */
   }
   
   .medical-problem-header {
-    @apply py-2 px-3; /* Reduced from p-3 */
+     /* Reduced from p-3 */
   }
   
   .medical-problem-content {
-    @apply px-3 pb-2; /* Reduced padding */
+     /* Reduced padding */
   }
   
   /* Chart panel compact styling */
   .chart-section-trigger {
-    @apply p-2; /* Reduced from p-3 */
+     /* Reduced from p-3 */
   }
   
   .chart-section-label {
-    @apply text-base font-medium; /* Updated from text-xs (12px) to text-base (16px) */
+     /* Updated from text-xs (12px) to text-base (16px) */
   }
   
   /* Patient header compact styling */
   .patient-header {
-    @apply p-4; /* Reduced from p-6 */
+     /* Reduced from p-6 */
   }
   
   .patient-title {
-    @apply text-xl; /* Reduced from text-2xl */
+     /* Reduced from text-2xl */
   }
   
   /* Button compact styling */
   .btn-compact {
-    @apply px-2 py-1 text-xs;
+    
   }
   
   /* Missing EMR Ultra-Compact Font Classes */
   .emr-section-title {
-    @apply text-sm font-medium;
+    
     font-size: 12px;
   }
   
   .emr-header-title {
-    @apply text-lg font-semibold;
+    
     font-size: 16px;
   }
   
   .emr-ultra-compact-header {
-    @apply py-1 px-2 text-xs font-medium;
+    
     font-size: 11px;
   }
   
   .emr-ultra-compact-content {
-    @apply px-2 py-1 text-xs;
+    
     font-size: 11px;
     line-height: 1.3;
   }
   
   .emr-content-padding {
-    @apply p-3;
+    
   }
   
   .emr-grid-gap {
-    @apply gap-3;
+    
   }
   
   .emr-nav-compact {
-    @apply p-3;
+    
   }
   
   .emr-ultra-compact-spacing {
-    @apply mb-2;
+    
   }
 
   @media (max-width: 640px) {
