@@ -362,91 +362,79 @@ export function ProviderDashboard() {
   return (
     <div className="space-y-6">
       {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Clock className="h-8 w-8 text-yellow-600" />
               <div>
-                <p className="text-sm text-gray-600">Pending Encounters</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.pendingEncounters || 0}</p>
+                <p className="text-sm font-medium text-yellow-800">Pending Encounters</p>
+                <p className="text-2xl font-bold text-yellow-900">{stats?.pendingEncounters || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm cursor-pointer hover:shadow-md transition-all" onClick={() => setIsReviewDialogOpen(true)}>
-          <CardContent className="p-6">
+        <Card className="bg-navy-blue-50 border-navy-blue-200 cursor-pointer hover:bg-navy-blue-100 transition-colors" onClick={() => setIsReviewDialogOpen(true)}>
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <TestTube className="h-6 w-6 text-blue-600" />
-                </div>
+              <div className="flex items-center space-x-3">
+                <TestTube className="h-8 w-8 text-navy-blue-600" />
                 <div>
-                  <p className="text-sm text-gray-600">Lab Orders to Review</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.labOrdersToReview || 0}</p>
+                  <p className="text-sm font-medium text-navy-blue-800">Lab Orders to Review</p>
+                  <p className="text-2xl font-bold text-navy-blue-900">{stats?.labOrdersToReview || 0}</p>
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="text-xs">
+              <Button size="sm" variant="outline" className="bg-white hover:bg-navy-blue-50">
                 Review
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-8 w-8 text-green-600" />
               <div>
-                <p className="text-sm text-gray-600">Completed Today</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.completedToday || 0}</p>
+                <p className="text-sm font-medium text-green-800">Completed Today</p>
+                <p className="text-2xl font-bold text-green-900">{stats?.completedToday || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <FileText className="h-6 w-6 text-purple-600" />
-              </div>
+        <Card className="bg-purple-50 border-purple-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <FileText className="h-8 w-8 text-purple-600" />
               <div>
-                <p className="text-sm text-gray-600">Imaging to Review</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.imagingToReview || 0}</p>
+                <p className="text-sm font-medium text-purple-800">Imaging to Review</p>
+                <p className="text-2xl font-bold text-purple-900">{stats?.imagingToReview || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <PenTool className="h-6 w-6 text-orange-600" />
-              </div>
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <PenTool className="h-8 w-8 text-orange-600" />
               <div>
-                <p className="text-sm text-gray-600">Prescriptions to Sign</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.prescriptionsToSign || 0}</p>
+                <p className="text-sm font-medium text-orange-800">Prescriptions to Sign</p>
+                <p className="text-2xl font-bold text-orange-900">{stats?.prescriptionsToSign || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-              </div>
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
               <div>
-                <p className="text-sm text-gray-600">Unread Messages</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.messagesUnread || 0}</p>
+                <p className="text-sm font-medium text-red-800">Unread Messages</p>
+                <p className="text-2xl font-bold text-red-900">{stats?.messagesUnread || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -455,57 +443,57 @@ export function ProviderDashboard() {
 
       {/* Detailed Views */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-fit bg-gray-100 p-1 h-11">
-          <TabsTrigger value="overview" className="text-sm font-medium px-6">Overview</TabsTrigger>
-          <TabsTrigger value="pending-encounters" className="text-sm font-medium px-6">Pending Encounters</TabsTrigger>
-          <TabsTrigger value="signatures" className="text-sm font-medium px-6">Signatures Needed</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pending-encounters">Pending Encounters</TabsTrigger>
+          <TabsTrigger value="signatures">Signatures Needed</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Pending Encounters */}
-            <Card className="bg-white shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center space-x-2 text-lg">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
                   <Clock className="h-5 w-5" />
                   <span>Recent Pending Encounters</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {pendingEncounters.slice(0, 5).map((encounter) => (
-                    <div key={encounter.id} className="flex items-center justify-between p-5 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={encounter.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="font-semibold text-lg">{encounter.patientName}</h4>
-                          <Badge className={`${getPriorityColor(encounter.priority)} text-sm px-3 py-1`}>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-medium">{encounter.patientName}</h4>
+                          <Badge className={getPriorityColor(encounter.priority)}>
                             {encounter.priority}
                           </Badge>
                         </div>
-                        <p className="text-base text-gray-600 mb-1">{encounter.encounterType}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-600">{encounter.encounterType}</p>
+                        <p className="text-xs text-gray-500">
                           {encounter.roomNumber && `Room ${encounter.roomNumber} • `}
                           {formatDistanceToNow(new Date(encounter.startTime), { addSuffix: true })}
                         </p>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <Badge variant="secondary" className={`${getStatusColor(encounter.status)} text-sm px-3 py-1`}>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary" className={getStatusColor(encounter.status)}>
                           {encounter.status.replace("_", " ")}
                         </Badge>
                         <Button 
-                          size="default" 
+                          size="sm" 
                           variant="outline"
                           onClick={() => handleStartEncounter(encounter.id)}
                         >
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
                   {pendingEncounters.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
-                      <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p className="text-sm text-gray-500">No pending encounters</p>
+                      <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No pending encounters</p>
                     </div>
                   )}
                 </div>
@@ -521,11 +509,11 @@ export function ProviderDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center py-12 text-gray-500">
-                    <TestTube className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">No Critical Lab Results</h3>
-                    <p className="text-base text-gray-500">Critical lab results will appear here when lab orders are placed and results are received from external laboratories.</p>
+                <div className="space-y-3">
+                  <div className="text-center py-8 text-gray-500">
+                    <TestTube className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Critical Lab Results</h3>
+                    <p className="text-sm">Critical lab results will appear here when lab orders are placed and results are received from external laboratories.</p>
                   </div>
                 </div>
               </CardContent>
