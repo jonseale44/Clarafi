@@ -468,11 +468,11 @@ export function registerAdminUserRoutes(app: Express) {
         return res.status(400).json({ message: "Health system ID is required" });
       }
 
-      // Check if username already exists
+      // Check if username already exists (case-insensitive)
       const existingUser = await db
         .select()
         .from(users)
-        .where(eq(users.username, data.username))
+        .where(sql`LOWER(${users.username}) = LOWER(${data.username})`)
         .limit(1);
 
       if (existingUser.length > 0) {

@@ -159,6 +159,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Username Case-Insensitive Authentication COMPLETED (January 14, 2025)
+- **USER EXPERIENCE IMPROVEMENT**: Made usernames case-insensitive throughout the system to match industry EMR standards
+- **LOGIN CONSISTENCY**: Users can now log in with any case variation of their username (e.g., "jonseale", "Jonseale", "JONSEALE" all work)
+- **DATABASE QUERY UPDATE**: Modified `getUserByUsername` in storage.ts to use `LOWER()` SQL function for case-insensitive comparison
+- **ADMIN USER CREATION**: Updated admin user creation route to check for existing usernames case-insensitively to prevent duplicate accounts
+- **PRODUCTION EMR ALIGNMENT**: System now matches Epic, Cerner, and Athena behavior where clinical staff don't need to remember exact username capitalization
+- **BACKWARD COMPATIBLE**: Existing usernames continue to work exactly as before - only the comparison logic changed
+
 ### Critical Database Schema Drift Resolution COMPLETED (January 12, 2025)
 - **ROOT CAUSE IDENTIFIED**: Replit rollbacks don't rollback database changes, causing massive schema drift between code and database
 - **COMPREHENSIVE FIX**: Added all missing columns from schema.ts to database using additive migration strategy
