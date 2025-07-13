@@ -249,7 +249,7 @@ export class UnifiedImagingParser {
 PATIENT CONTEXT:
 ${this.formatPatientChartForGPT(patientChartData)}
 
-EXISTING IMAGING HISTORY:
+EXISTING IMAGING HISTORY (with real database IDs for consolidation):
 ${this.formatExistingImagingForGPT(existingImaging)}
 
 PROCESSING CONTEXT:
@@ -592,20 +592,60 @@ Return a JSON object with this exact structure:
           console.log(
             `✅ [UnifiedImagingParser] Created new imaging result: ${change.modality} ${change.body_part}`,
           );
-        } else if (change.action === "ADD_VISIT" && change.imaging_id) {
-          // Add visit history to existing imaging
-          console.log(`🔍 [UnifiedImagingParser] Looking for existing imaging result with ID: ${change.imaging_id}`);
+        } else if (change.action === "ADD_VISIT" || change.action === "CONSOLIDATE_WITH_ENHANCED_INTERPRETATION") {
+          // Add visit history to existing imaging - find by matching criteria if ID not valid
+          console.log(`🔍 [UnifiedImagingParser] Processing consolidation/visit for: ${change.modality} ${change.body_part} on ${change.study_date}`);
           
-          const existing = await db
-            .select()
-            .from(imagingResults)
-            .where(eq(imagingResults.id, change.imaging_id))
-            .limit(1);
+          let existingImaging = null;
+          
+          // First try the provided imaging_id if available
+          if (change.imaging_id) {
+            const byId = await db
+              .select()
+              .from(imagingResults)
+              .where(eq(imagingResults.id, change.imaging_id))
+              .limit(1);
+            
+            if (byId.length) {
+              existingImaging = byId[0];
+              console.log(`✅ [UnifiedImagingParser] Found imaging by ID: ${change.imaging_id}`);
+            }
+          }
+          
+          // If no valid ID or not found, search by matching criteria (like medical problems does)
+          if (!existingImaging && change.modality && change.body_part && change.study_date) {
+            console.log(`🔍 [UnifiedImagingParser] Searching for matching imaging by modality/body part/date...`);
+            
+            // Parse the study date to handle date variations
+            const targetDate = new Date(change.study_date);
+            const dateRangeStart = new Date(targetDate);
+            dateRangeStart.setDate(targetDate.getDate() - 7); // ±7 days tolerance
+            const dateRangeEnd = new Date(targetDate);
+            dateRangeEnd.setDate(targetDate.getDate() + 7);
+            
+            const candidates = await db
+              .select()
+              .from(imagingResults)
+              .where(
+                and(
+                  eq(imagingResults.patientId, patientId),
+                  eq(imagingResults.modality, change.modality),
+                  eq(imagingResults.bodyPart, change.body_part),
+                  gte(imagingResults.studyDate, dateRangeStart),
+                  lte(imagingResults.studyDate, dateRangeEnd)
+                )
+              )
+              .orderBy(desc(imagingResults.createdAt));
+            
+            if (candidates.length > 0) {
+              existingImaging = candidates[0]; // Take the most recent match
+              console.log(`✅ [UnifiedImagingParser] Found matching imaging: ${existingImaging.id} - ${existingImaging.modality} ${existingImaging.bodyPart} from ${existingImaging.studyDate}`);
+              console.log(`✅ [UnifiedImagingParser] Consolidation reasoning: ${change.consolidation_reasoning}`);
+            }
+          }
 
-          console.log(`🔍 [UnifiedImagingParser] Found ${existing.length} existing records for ID: ${change.imaging_id}`);
-
-          if (existing.length) {
-            const currentHistory = existing[0].visitHistory || [];
+          if (existingImaging) {
+            const currentHistory = existingImaging.visitHistory || [];
             
             // Filter out duplicate visits using surgical history pattern
             const filteredHistory = this.filterDuplicateVisitEntries(
@@ -616,34 +656,57 @@ Return a JSON object with this exact structure:
             );
             
             const newVisit: UnifiedImagingVisitHistoryEntry = {
-              date: new Date().toISOString().split("T")[0],
-              notes: change.visit_notes || "Study reviewed",
+              date: change.study_date || new Date().toISOString().split("T")[0],
+              notes: change.visit_notes || `Enhanced interpretation: ${change.clinical_summary}`,
               source: sourceType,
               encounterId: encounterId || undefined,
               attachmentId: attachmentId || undefined,
               confidence: change.confidence,
             };
 
+            // Update with enhanced interpretation if provided
+            const updateData: any = {
+              visitHistory: [...filteredHistory, newVisit],
+              updatedAt: new Date(),
+            };
+            
+            // If this is a consolidation with enhanced data, update the summary
+            if (change.action === "CONSOLIDATE_WITH_ENHANCED_INTERPRETATION" && change.clinical_summary) {
+              updateData.clinicalSummary = change.clinical_summary;
+              if (change.findings) updateData.findings = change.findings;
+              if (change.impression) updateData.impression = change.impression;
+              if (change.result_status) updateData.resultStatus = change.result_status;
+              console.log(`🔄 [UnifiedImagingParser] Updating imaging with enhanced interpretation`);
+            }
+
             await db
               .update(imagingResults)
-              .set({
-                visitHistory: [...filteredHistory, newVisit],
-                updatedAt: new Date(),
-              })
-              .where(eq(imagingResults.id, change.imaging_id));
+              .set(updateData)
+              .where(eq(imagingResults.id, existingImaging.id));
 
             totalAffected++;
             console.log(
-              `✅ [UnifiedImagingParser] Added visit history to imaging ID: ${change.imaging_id}`,
+              `✅ [UnifiedImagingParser] Successfully consolidated/updated imaging ID: ${existingImaging.id}`,
             );
-          } else {
-            console.error(`❌ [UnifiedImagingParser] CRITICAL: GPT referenced non-existent imaging_id: ${change.imaging_id}`);
-            console.error(`❌ [UnifiedImagingParser] This means GPT consolidation logic failed - should create NEW_IMAGING instead`);
-            console.error(`❌ [UnifiedImagingParser] Converting ADD_VISIT to NEW_IMAGING to recover from GPT error`);
             
-            // Convert to NEW_IMAGING since the referenced ID doesn't exist
+            // If we're transferring history from another imaging, mark the old one as superseded (like medical problems)
+            if (change.transfer_visit_history_from && change.transfer_visit_history_from !== existingImaging.id) {
+              console.log(`🔄 [UnifiedImagingParser] Marking old imaging ${change.transfer_visit_history_from} as superseded`);
+              await db
+                .update(imagingResults)
+                .set({
+                  resultStatus: "superseded",
+                  updatedAt: new Date(),
+                })
+                .where(eq(imagingResults.id, change.transfer_visit_history_from));
+            }
+          } else {
+            // No existing imaging found - create new entry
+            console.log(`⚠️ [UnifiedImagingParser] No existing imaging found for consolidation - creating new entry`);
+            console.log(`⚠️ [UnifiedImagingParser] Modality: ${change.modality}, Body Part: ${change.body_part}, Date: ${change.study_date}`);
+            
             const visitHistoryEntry: UnifiedImagingVisitHistoryEntry = {
-              date: new Date().toISOString().split("T")[0],
+              date: change.study_date || new Date().toISOString().split("T")[0],
               notes: change.visit_notes || `Initial ${change.modality} ${change.body_part} study`,
               source: sourceType,
               encounterId: encounterId || undefined,

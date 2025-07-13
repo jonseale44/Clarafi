@@ -1394,7 +1394,7 @@ RESPONSE STYLE
 Insights must be brief, phrase-based; never full sentences.
 Each line is its own bullet ("•") and self-contained insight.
 No pleasantries, explanations, or generic knowledge a physician already knows.
-Never exceed 5 insights/lines per response.
+Never exceed 5 insights/lines per response. 
 No repeats during a session.
 If no new info, reply: • No new insights
 CONTENT FOCUS AND PRIORITIZATION

@@ -540,6 +540,20 @@ Preferred communication style: Simple, everyday language.
 - **USER FEEDBACK**: API returns existing attachment with `isDuplicate: true` flag and informative message when duplicate upload attempted
 - **PRODUCTION IMPACT**: Prevents duplicate visit history entries from being created when same document is uploaded multiple times, solving the medical problems deduplication issue at its source
 
+### Imaging Section Consolidation Logic Implementation COMPLETED (July 13, 2025)
+- **CRITICAL BUG FIXED**: Imaging parser was creating duplicate entries instead of consolidating, even though GPT correctly identified duplicates
+- **ROOT CAUSE**: When GPT referenced non-existent imaging_id (using example IDs like 8, 15, 20 from prompt), code fell back to creating NEW entries instead of finding existing ones to consolidate
+- **SOLUTION IMPLEMENTED**: Added intelligent matching logic similar to medical problems' `evolveProblemWithHistoryTransfer` pattern
+- **MATCHING ALGORITHM**: System now searches for existing imaging by modality + body part + date (±7 days tolerance) when provided ID doesn't exist
+- **CONSOLIDATION WORKFLOW**: 
+  - First tries GPT-provided imaging_id
+  - Falls back to intelligent search by clinical criteria
+  - Consolidates visit history into existing imaging entry
+  - Marks old entries as "superseded" when transferring history
+- **PRODUCTION STANDARDS**: Imaging section now meets Epic/Athena EMR consolidation standards matching medical problems functionality
+- **VISIT HISTORY PRESERVATION**: All historical visit entries properly transferred during consolidation, maintaining complete audit trail
+- **DUPLICATE PREVENTION**: Prevents creation of duplicate "chest XR showing cardiomegaly" entries from multiple document sources
+
 ### Critical Medication Safety System Implementation COMPLETED (July 5, 2025)
 - **CRITICAL SAFETY BUG FIXED**: Insulin was being classified as "tablet" form when imported from medical documents, creating dangerous patient safety risk
 - **MULTI-LAYERED SAFETY SYSTEM IMPLEMENTED**: Built comprehensive medication safety system comparable to Athena/Epic EMR standards
