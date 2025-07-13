@@ -383,8 +383,18 @@ export function setupAuth(app: Express) {
           });
         } else {
           console.error("❌ [Registration] Failed to create Stripe checkout:", checkoutResult.error);
+          
+          // Cleanup: Delete the user that was just created since payment setup failed
+          try {
+            console.log("🧹 [Registration] Cleaning up user after Stripe failure:", user.id);
+            await storage.deleteUser(user.id);
+            console.log("✅ [Registration] User cleaned up successfully");
+          } catch (cleanupError) {
+            console.error("❌ [Registration] Failed to cleanup user:", cleanupError);
+          }
+          
           return res.status(500).json({ 
-            message: "Registration succeeded but payment setup failed. Please contact support.",
+            message: "Payment setup failed. Please try registering again.",
             error: checkoutResult.error
           });
         }

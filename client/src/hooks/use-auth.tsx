@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return await res.json();
     },
-    onSuccess: async (data: any) => {
+    onSuccess: async (data: any, variables: any) => {
       // Store user data but don't log them in yet
       queryClient.setQueryData(["/api/user"], null); // Keep them logged out
       
