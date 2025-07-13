@@ -275,6 +275,19 @@ Preferred communication style: Simple, everyday language.
 - **CONSOLIDATION WORKING**: Intelligent matching logic (modality + body part + ±7 days) now functioning as designed
 - **PRODUCTION IMPACT**: Imaging section now properly extracts and consolidates imaging studies from medical documents matching Epic/Athena EMR standards
 
+### Vitals Extraction Database Persistence Fix COMPLETED (July 13, 2025)
+- **CRITICAL BUG FIXED**: Vitals were being successfully parsed from attachments but not saved to database due to missing `saveExtractedVitalSet` method
+- **ROOT CAUSE**: AttachmentChartProcessor was calling `saveExtractedVitalSet` method that didn't exist, causing vitals extraction to fail silently
+- **SOLUTION IMPLEMENTED**: Added complete `saveExtractedVitalSet` method to AttachmentChartProcessor that:
+  - Converts parsed vitals data into database format
+  - Handles date extraction from parsed data
+  - Converts string values (temperature, O2 sat, weight, height, BMI) to numeric values
+  - Properly sets source tracking fields (extractedFromAttachmentId, sourceType)
+  - Includes comprehensive error handling and logging
+- **DATA CONVERSION**: Method intelligently extracts numeric values from strings (e.g., "98.2°F" → 98.2, "94%" → 94)
+- **PRODUCTION READY**: Vitals extraction from medical documents now works end-to-end with proper database persistence
+- **VERIFICATION**: Successfully tested with attachment reprocessing - vitals now properly saved to database
+
 ### Vitals Extraction Data Type Error Fix COMPLETED (January 8, 2025)
 - **CRITICAL BUG FIXED**: Resolved error where "System Extract" string was being passed to integer field (parameter $4) during vitals extraction
 - **ROOT CAUSE**: Both `attachment.encounterId` and `attachment.id` could contain invalid values instead of proper integers

@@ -290,11 +290,25 @@ export class AttachmentChartProcessor {
       }
 
       // Use enhanced vitals parser for any medical document (supports multiple vitals sets)
+      console.log(`🩺 [VitalsExtraction] 🔍 Calling parseVitalsText with:`, {
+        textLength: extractedContent.extractedText?.length || 0,
+        textPreview: extractedContent.extractedText?.substring(0, 200),
+        patientContext: patientContext,
+        patientId: attachment.patientId
+      });
+      
       const vitalsResult = await this.vitalsParser.parseVitalsText(
         extractedContent.extractedText, 
         patientContext,
         attachment.patientId
       );
+
+      console.log(`🩺 [VitalsExtraction] 📊 Parse result:`, {
+        success: vitalsResult.success,
+        dataLength: vitalsResult.data?.length || 0,
+        confidence: vitalsResult.confidence,
+        errors: vitalsResult.errors
+      });
 
       if (vitalsResult.success && vitalsResult.data && vitalsResult.data.length > 0) {
         console.log(`🩺 [AttachmentChartProcessor] Successfully parsed ${vitalsResult.data.length} vitals sets with ${vitalsResult.confidence}% confidence`);
@@ -779,11 +793,11 @@ export class AttachmentChartProcessor {
         systolicBp: vitalSet.systolicBp || undefined,
         diastolicBp: vitalSet.diastolicBp || undefined,
         heartRate: vitalSet.heartRate || undefined,
-        temperature: vitalSet.temperature ? vitalSet.temperature.toString() : undefined,
-        weight: vitalSet.weight ? vitalSet.weight.toString() : undefined,
-        height: vitalSet.height ? vitalSet.height.toString() : undefined,
-        bmi: vitalSet.bmi ? vitalSet.bmi.toString() : undefined,
-        oxygenSaturation: vitalSet.oxygenSaturation ? vitalSet.oxygenSaturation.toString() : undefined,
+        temperature: vitalSet.temperature ? parseFloat(vitalSet.temperature) : undefined,
+        weight: vitalSet.weight ? parseFloat(vitalSet.weight) : undefined,
+        height: vitalSet.height ? parseFloat(vitalSet.height) : undefined,
+        bmi: vitalSet.bmi ? parseFloat(vitalSet.bmi) : undefined,
+        oxygenSaturation: vitalSet.oxygenSaturation ? Math.round(parseFloat(vitalSet.oxygenSaturation)) : undefined,
         respiratoryRate: vitalSet.respiratoryRate || undefined,
         painScale: vitalSet.painScale || undefined,
         

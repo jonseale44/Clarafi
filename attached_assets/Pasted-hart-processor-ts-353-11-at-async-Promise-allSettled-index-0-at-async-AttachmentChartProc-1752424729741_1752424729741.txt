@@ -1,0 +1,89 @@
+hart-processor.ts:353:11)
+    at async Promise.allSettled (index 0)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9) {
+  length: 148,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $10 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '617',
+  routine: 'pg_strtoint32_safe'
+}
+❌ [AttachmentChartProcessor] Error code: 22P02
+❌ [AttachmentChartProcessor] Error message: invalid input syntax for type integer: "94.0"
+❌ [AttachmentChartProcessor] Error detail: No detail available
+❌ [AttachmentChartProcessor] Error constraint: No constraint available
+❌ [AttachmentChartProcessor] Error table: No table available
+❌ [AttachmentChartProcessor] Error column: No column available
+❌ [AttachmentChartProcessor] Error schema: No schema available
+❌ [AttachmentChartProcessor] Full error object: {
+  "length": 148,
+  "name": "error",
+  "severity": "ERROR",
+  "code": "22P02",
+  "where": "unnamed portal parameter $10 = '...'",
+  "file": "numutils.c",
+  "line": "617",
+  "routine": "pg_strtoint32_safe"
+}
+❌ [AttachmentChartProcessor] Values being inserted: {
+  "patientId": 37,
+  "encounterId": null,
+  "recordedAt": "2023-03-03T00:00:00.000Z",
+  "recordedBy": 1,
+  "entryType": "routine",
+  "systolicBp": 140,
+  "diastolicBp": 86,
+  "heartRate": 84,
+  "temperature": "98.2",
+  "oxygenSaturation": "94.0",
+  "respiratoryRate": 20,
+  "sourceType": "attachment_extracted",
+  "sourceConfidence": "0.99",
+  "sourceNotes": "Extracted from other (Confidence: 100%)",
+  "extractedFromAttachmentId": 43,
+  "enteredBy": 1,
+  "parsedFromText": true,
+  "originalText": "Vital signs recorded on 3/3/2023 including temperature, HR, BP, RR, and oxygen saturation",
+  "alerts": []
+}
+❌ [AttachmentChartProcessor] Error saving vitals: error: invalid input syntax for type integer: "94.0"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async AttachmentChartProcessor.saveExtractedVitalSet (/home/runner/workspace/server/attachment-chart-processor.ts:878:30)
+    at async AttachmentChartProcessor.processDocumentForVitals (/home/runner/workspace/server/attachment-chart-processor.ts:353:11)
+    at async Promise.allSettled (index 0)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:642:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:183:9) {
+  length: 148,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $10 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '617',
+  routine: 'pg_strtoint32_safe'
+}
