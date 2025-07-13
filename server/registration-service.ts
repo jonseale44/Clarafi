@@ -155,6 +155,9 @@ export class RegistrationService {
         const healthSystemResult = await tx
           .select({ 
             subscriptionTier: healthSystems.subscriptionTier,
+            subscriptionStatus: healthSystems.subscriptionStatus,
+            subscriptionStartDate: healthSystems.subscriptionStartDate,
+            subscriptionEndDate: healthSystems.subscriptionEndDate,
             name: healthSystems.name 
           })
           .from(healthSystems)
@@ -165,9 +168,17 @@ export class RegistrationService {
           throw new Error('Invalid health system');
         }
         
-        const healthSystemTier = healthSystemResult[0].subscriptionTier;
-        const healthSystemName = healthSystemResult[0].name;
-        console.log(`🔑 [RegistrationService] Health system tier: ${healthSystemTier}, name: ${healthSystemName}`);
+        const healthSystemData = healthSystemResult[0];
+        const healthSystemTier = healthSystemData.subscriptionTier;
+        const healthSystemName = healthSystemData.name;
+        
+        // Check if this is actually a PAID tier 2 system
+        const isPaidTier2 = healthSystemTier === 2 && 
+                           healthSystemData.subscriptionStatus === 'active' &&
+                           healthSystemData.subscriptionStartDate !== null &&
+                           (healthSystemData.subscriptionEndDate === null || healthSystemData.subscriptionEndDate > new Date());
+        
+        console.log(`🔑 [RegistrationService] Health system tier: ${healthSystemTier}, name: ${healthSystemName}, paid tier 2: ${isPaidTier2}`);
         
         // CRITICAL SECURITY CHECK: Check if this health system has any patients
         const patientCount = await tx
@@ -179,18 +190,18 @@ export class RegistrationService {
         const hasPatients = patientCount[0]?.count > 0;
         console.log(`🔒 [RegistrationService] Health system has patients: ${hasPatients} (count: ${patientCount[0]?.count})`);
         
-        // SECURITY RULE: If health system has patients, subscription key is ALWAYS required
-        const requiresSubscriptionKey = healthSystemTier === 2 || hasPatients;
+        // SECURITY RULE: If health system has patients OR is a paid tier 2 system, subscription key is required
+        const requiresSubscriptionKey = isPaidTier2 || hasPatients;
         
         if (requiresSubscriptionKey) {
           if (!data.subscriptionKey) {
             const errorMsg = hasPatients 
               ? `Subscription key is required. This health system contains protected patient data. Please contact your administrator for access.`
-              : `Subscription key is required for enterprise health systems`;
+              : `Subscription key is required for this health system. Please contact your administrator for access.`;
             throw new Error(errorMsg);
           }
           
-          console.log(`🔑 [RegistrationService] Validating subscription key (Tier 2: ${healthSystemTier === 2}, Has Patients: ${hasPatients})`);
+          console.log(`🔑 [RegistrationService] Validating subscription key (Paid Tier 2: ${isPaidTier2}, Has Patients: ${hasPatients})`);
           
           // Validate the subscription key
           const keyResult = await tx
@@ -226,8 +237,9 @@ export class RegistrationService {
           console.log(`✅ [RegistrationService] Subscription key validated`);
         }
         
-        // Set payment requirement flag for Tier 1 systems and Tier 2 systems without patients
-        requiresPayment = healthSystemTier === 1 || (!hasPatients && healthSystemTier === 2);
+        // Set payment requirement flag only for new tier 1 individual practices
+        // Unpaid tier 2 systems allow free registration (they haven't paid yet)
+        requiresPayment = false; // We'll set this later based on registration type
       }
 
       // Validate role based on health system tier
