@@ -17,7 +17,7 @@ import {
   patients,
   patientAttachments,
 } from "../shared/schema.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte, lte } from "drizzle-orm";
 import { PatientChartService } from "./patient-chart-service.js";
 
 export interface UnifiedImagingVisitHistoryEntry {

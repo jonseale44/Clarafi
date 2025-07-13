@@ -189,8 +189,11 @@ export class AttachmentChartProcessor {
         } else {
           console.log(`✅ [AttachmentChartProcessor] Imaging processing completed successfully`);
           console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULT VALUE:`, imagingResult.value);
-          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING EXTRACTION COUNT:`, imagingResult.value?.total_imaging_affected || 0);
-          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULTS CREATED:`, imagingResult.value?.changes?.length || 0);
+          // Count actual changes, not just "total_imaging_affected" which can be 0 for consolidations
+          const actualChanges = imagingResult.value?.changes?.length || 0;
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING EXTRACTION COUNT:`, actualChanges);
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] IMAGING RESULTS CREATED:`, actualChanges);
+          console.log(`🏥 [IMAGING WORKFLOW DEBUG] Total affected (may be 0 for consolidations):`, imagingResult.value?.total_imaging_affected || 0);
         }
         
         if (labsResult.status === 'rejected') {
