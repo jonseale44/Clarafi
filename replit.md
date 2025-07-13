@@ -159,6 +159,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medication Status Database Constraint Fix COMPLETED (January 13, 2025)
+- **CRITICAL BUG FIXED**: Medications were failing to create with "pending" status due to database constraint mismatch
+- **ROOT CAUSE**: Database constraint `medications_status_check` only allowed ['active', 'discontinued', 'completed', 'on-hold'] but code was trying to create medications with 'pending' status
+- **SOLUTION**: Updated constraint to allow all status values: ['active', 'discontinued', 'completed', 'on-hold', 'pending', 'held', 'historical']
+- **IMPACT**: Medication workflow now works correctly - draft orders create pending medications that become active when signed
+- **PREVENTED DUPLICATE MEDICATIONS**: This fix also prevents the duplicate medication issue by allowing the proper pending→active workflow
+
 ### Username Case-Insensitive Authentication COMPLETED (January 14, 2025)
 - **USER EXPERIENCE IMPROVEMENT**: Made usernames case-insensitive throughout the system to match industry EMR standards
 - **LOGIN CONSISTENCY**: Users can now log in with any case variation of their username (e.g., "jonseale", "Jonseale", "JONSEALE" all work)
