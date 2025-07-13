@@ -299,6 +299,26 @@ Preferred communication style: Simple, everyday language.
 - **VARIABLE INITIALIZATION FIX**: Fixed ReferenceError where `safeEncounterId` was used before initialization by moving declaration before debug logging
 - **PRODUCTION READY**: Vitals extraction from attachments now works perfectly - successfully extracted 10 vitals sets from test attachment with dates spanning 2022-2024
 
+### Medical Problems Confidence Scoring Methodology Implementation COMPLETED (January 13, 2025)
+- **CRITICAL CLARIFICATION**: Confidence scores represent GPT's self-assessment of extraction/inference accuracy, NOT clinical validity of diagnoses
+- **PURPOSE**: Helps users decide whether to review source documents based on extraction confidence
+- **COMPREHENSIVE FRAMEWORK ADDED**: 
+  - 95-100%: Explicit statements ("Known history of AFib" → 0.98)
+  - 85-94%: Clear clinical documentation with specific findings
+  - 70-84%: Strong implications but not explicit (medication implies diagnosis)
+  - 50-69%: Reasonable inferences with uncertainty ("irregularly irregular pulse" → 0.55 for AFib)
+  - 30-49%: Weak evidence or patient uncertainty ("thinks he might have AFib" → 0.40)
+  - 10-29%: Minimal or highly uncertain information
+  - 1-9%: Contradictory or parsing errors
+- **KEY PRINCIPLES ESTABLISHED**:
+  - Rate extraction accuracy, not diagnosis quality
+  - Clear explicit statements = high confidence
+  - Inferences from symptoms/meds = medium confidence
+  - Words like "thinks", "might", "possible" significantly lower confidence
+  - Patient self-reports without clinical confirmation = lower confidence
+- **EXAMPLES UPDATED**: All GPT prompt examples now include appropriate confidence scores
+- **USER BENEFIT**: Intuitive confidence levels prompt appropriate source document review when needed
+
 ### Complete Database-Schema Alignment COMPLETED (January 8, 2025)
 - **COMPREHENSIVE ALIGNMENT ACHIEVED**: Successfully synchronized all 19 critical tables between database and schema.ts
 - **SYSTEMATIC APPROACH**: Created targeted scripts to address schema drift without timeouts:

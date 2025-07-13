@@ -333,6 +333,61 @@ Conditions sharing ICD-10 prefixes are often the same underlying problem:
 - J44.x = COPD family
 - I50.x = Heart failure family
 
+CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+The confidence score (0.0-1.0) represents YOUR CONFIDENCE IN YOUR OWN EXTRACTION/INFERENCE ACCURACY, 
+NOT the clinical validity of the diagnosis. This helps users decide if they need to review source documents.
+
+CONFIDENCE SCORING FRAMEWORK:
+
+95-100% - EXPLICIT STATEMENTS WITH CLEAR LANGUAGE:
+- "Known history of atrial fibrillation" → 0.98
+- "Diagnosed with Type 2 diabetes in 2019" → 0.99
+- "Patient has hypertension" → 0.97
+- "Confirmed diagnosis of CHF" → 0.98
+
+85-94% - CLEAR CLINICAL DOCUMENTATION:
+- "A1c 10.2%, diagnosed with diabetes" → 0.90
+- "ECG shows atrial fibrillation" → 0.92
+- "Chest X-ray: cardiomegaly consistent with CHF" → 0.91
+- Professional documentation with specific findings → 0.85-0.94
+
+70-84% - STRONG IMPLICATIONS BUT NOT EXPLICIT:
+- "On metformin for blood sugar control" → 0.80 (implies diabetes)
+- "Taking warfarin for irregular heartbeat" → 0.75 (implies AFib)
+- "Patient on lisinopril and HCTZ" → 0.72 (implies hypertension)
+- Multiple corroborating details → 0.70-0.84
+
+50-69% - REASONABLE INFERENCES WITH SOME UNCERTAINTY:
+- "Irregularly irregular pulse noted" → 0.55 (suggests AFib but not definitive)
+- "Blood sugars running high" → 0.60 (suggests diabetes)
+- "History of heart problems" → 0.50 (vague, could be many things)
+- Clinical findings suggesting diagnosis → 0.50-0.69
+
+30-49% - WEAK EVIDENCE OR CONFLICTING INFORMATION:
+- "Patient thinks he might have AFib" → 0.40
+- "Possible history of diabetes per family" → 0.35
+- "Questionable cardiac history" → 0.30
+- Uncertain patient reports → 0.30-0.49
+
+10-29% - MINIMAL OR HIGHLY UNCERTAIN INFORMATION:
+- "Concerned about heart condition" → 0.20
+- "Family mentioned something about sugar problems" → 0.15
+- "Unclear medical history" → 0.10
+- Vague references → 0.10-0.29
+
+1-9% - EXTREMELY UNCERTAIN OR CONTRADICTORY:
+- Conflicting information in document → 0.05
+- Parsing errors or unclear text → 0.01-0.09
+
+KEY PRINCIPLES FOR CONFIDENCE SCORING:
+1. Rate your extraction accuracy, NOT the diagnosis quality
+2. Clear explicit statements = high confidence
+3. Inferences from symptoms/meds = medium confidence  
+4. Vague or uncertain language = low confidence
+5. Words like "thinks", "might", "possible", "questionable" significantly lower confidence
+6. Patient self-reports without clinical confirmation = lower confidence
+7. Professional clinical documentation = higher confidence
+
 CONFIDENCE-BASED MATCHING THRESHOLDS:
 - 50%+ confidence: Likely match, consolidate with detailed reasoning
 - 30-49% confidence: Possible match, consolidate if reasonable clinical correlation exists
@@ -372,28 +427,34 @@ RESPONSE FORMAT - Return ONLY valid JSON:
   ]
 }
 
-ENHANCED EXAMPLES WITH RANKING:
+ENHANCED EXAMPLES WITH RANKING AND CONFIDENCE:
 
-1. SOAP has "Type 2 DM with neuropathy" + existing "Type 2 Diabetes" (E11.9):
-   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring", "ranking_factors": {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}}
+1. SOAP explicitly states "Type 2 DM with neuropathy" + existing "Type 2 Diabetes" (E11.9):
+   {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "confidence": 0.96, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring", "ranking_factors": {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}}
 
-2. Attachment with "HTN" + existing "Hypertension" (I10):
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Documented on 3/15/20: Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "ranking_reason": "Stable chronic hypertension with routine management requirements", "ranking_factors": {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}}
+2. Attachment clearly documents "HTN" + existing "Hypertension" (I10):
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Documented on 3/15/20: Historical documentation of hypertension management", "confidence": 0.95, "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "ranking_reason": "Stable chronic hypertension with routine management requirements", "ranking_factors": {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}}
 
-3. Attachment with "High Blood Pressure" + existing "Essential Hypertension":
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence", "ranking_reason": "Well-documented stable hypertension with good historical context", "ranking_factors": {"clinical_severity": 17, "treatment_complexity": 11, "patient_frequency": 9, "clinical_relevance": 4}}
+3. Document mentions "patient on lisinopril for blood pressure" (no explicit HTN diagnosis):
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "On lisinopril for BP control", "confidence": 0.75, "source_type": "attachment", "consolidation_reasoning": "Lisinopril prescription strongly implies hypertension diagnosis, though not explicitly stated", "ranking_reason": "Well-documented stable hypertension with good historical context", "ranking_factors": {"clinical_severity": 17, "treatment_complexity": 11, "patient_frequency": 9, "clinical_relevance": 4}}
 
-4. Attachment with completely new condition "Atrial Fibrillation" + no existing cardiac rhythm problems:
-   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for A-Fib", "ranking_reason": "Significant cardiac arrhythmia requiring anticoagulation management and stroke prevention", "ranking_factors": {"clinical_severity": 30, "treatment_complexity": 24, "patient_frequency": 14, "clinical_relevance": 7}}
+4. Document states "known history of Atrial Fibrillation" + no existing cardiac rhythm problems:
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "confidence": 0.98, "source_type": "attachment", "extracted_date": "2019-08-22", "consolidation_reasoning": "No existing cardiac rhythm disorders found, creating new problem for explicitly stated A-Fib", "ranking_reason": "Significant cardiac arrhythmia requiring anticoagulation management and stroke prevention", "ranking_factors": {"clinical_severity": 30, "treatment_complexity": 24, "patient_frequency": 14, "clinical_relevance": 7}}
 
-5. SOAP note states "Shortness of breath on exertion resolved per patient report" + existing "Shortness of breath on exertion" problem:
-   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem", "ranking_reason": "Resolved condition with no ongoing clinical significance", "ranking_factors": {"clinical_severity": 5, "treatment_complexity": 2, "patient_frequency": 1, "clinical_relevance": 1}}
+5. Physical exam notes "irregularly irregular pulse" but no AFib diagnosis mentioned:
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "confidence": 0.55, "source_type": "encounter", "consolidation_reasoning": "Irregularly irregular pulse is classic for AFib but not definitive without ECG confirmation", "ranking_reason": "Possible cardiac arrhythmia requiring further evaluation", "ranking_factors": {"clinical_severity": 25, "treatment_complexity": 20, "patient_frequency": 10, "clinical_relevance": 15}}
 
-6. SOAP note mentions "Acute bronchitis resolved, patient feeling better" + existing "Acute bronchitis" problem:
-   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved", "ranking_reason": "Acute respiratory infection fully resolved with no sequelae", "ranking_factors": {"clinical_severity": 6, "treatment_complexity": 3, "patient_frequency": 2, "clinical_relevance": 1}}
+6. Patient states "I think I might have AFib" in HPI:
+   {"action": "NEW_PROBLEM", "problem_id": null, "problem_title": "Atrial fibrillation", "confidence": 0.35, "source_type": "encounter", "consolidation_reasoning": "Patient self-report of possible AFib without clinical confirmation - low confidence extraction", "ranking_reason": "Unconfirmed patient concern requiring evaluation", "ranking_factors": {"clinical_severity": 15, "treatment_complexity": 10, "patient_frequency": 5, "clinical_relevance": 8}}
 
-7. SOAP note documents "UTI treated successfully with antibiotics, symptoms resolved" + existing "Urinary tract infection":
-   {"action": "RESOLVE", "problem_id": 8, "visit_notes": "Treated successfully with antibiotics, symptoms resolved", "source_type": "encounter", "consolidation_reasoning": "UTI treatment completed with resolution documented", "ranking_reason": "Successfully treated acute infection with complete symptom resolution", "ranking_factors": {"clinical_severity": 7, "treatment_complexity": 4, "patient_frequency": 3, "clinical_relevance": 1}}
+7. SOAP note clearly states "Shortness of breath on exertion resolved per patient report" + existing "Shortness of breath on exertion" problem:
+   {"action": "RESOLVE", "problem_id": 5, "visit_notes": "Resolved per patient report; no current symptoms", "confidence": 0.95, "source_type": "encounter", "consolidation_reasoning": "Patient explicitly reports resolution of existing SOB problem - high confidence in extraction", "ranking_reason": "Resolved condition with no ongoing clinical significance", "ranking_factors": {"clinical_severity": 5, "treatment_complexity": 2, "patient_frequency": 1, "clinical_relevance": 1}}
+
+8. SOAP note mentions "Acute bronchitis resolved, patient feeling better" + existing "Acute bronchitis" problem:
+   {"action": "RESOLVE", "problem_id": 3, "visit_notes": "Resolved, patient feeling better", "confidence": 0.94, "source_type": "encounter", "consolidation_reasoning": "Acute condition explicitly stated as resolved", "ranking_reason": "Acute respiratory infection fully resolved with no sequelae", "ranking_factors": {"clinical_severity": 6, "treatment_complexity": 3, "patient_frequency": 2, "clinical_relevance": 1}}
+
+9. Document vaguely mentions "that breathing problem from last year seems better now":
+   {"action": "ADD_VISIT", "problem_id": 5, "visit_notes": "Breathing problem seems better", "confidence": 0.45, "source_type": "attachment", "consolidation_reasoning": "Vague reference to improvement but unclear if fully resolved - low confidence", "ranking_reason": "Possibly improving respiratory condition", "ranking_factors": {"clinical_severity": 10, "treatment_complexity": 5, "patient_frequency": 3, "clinical_relevance": 5}}
 
 VISIT HISTORY CREATION RULE - CRITICAL:
 ONLY create visit history entries when the medical problem was ACTUALLY DISCUSSED, EVALUATED, or MANAGED during this encounter/document. 
