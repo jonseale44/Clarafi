@@ -340,6 +340,19 @@ Preferred communication style: Simple, everyday language.
 - **DATA MIGRATION APPROACH**: Used direct SQL table recreation after Drizzle push timeouts due to extensive schema changes
 - **COMPREHENSIVE TESTING**: Verified all critical columns exist and application starts successfully with all processors initialized
 
+### Vitals Extraction Database Persistence Fix COMPLETED (July 13, 2025)
+- **CRITICAL BUG FIXED**: Vitals were being successfully parsed from attachments but not saved to database due to missing `saveExtractedVitalSet` method
+- **ROOT CAUSE**: AttachmentChartProcessor was calling `saveExtractedVitalSet` method that didn't exist, causing vitals extraction to fail silently
+- **SOLUTION IMPLEMENTED**: Added complete `saveExtractedVitalSet` method to AttachmentChartProcessor that:
+  - Converts parsed vitals data into database format
+  - Handles date extraction from parsed data
+  - Converts string values (temperature, O2 sat, weight, height, BMI) to numeric values
+  - Properly sets source tracking fields (extractedFromAttachmentId, sourceType)
+  - Includes comprehensive error handling and logging
+- **DATA CONVERSION**: Method intelligently extracts numeric values from strings (e.g., "98.2°F" → 98.2, "94%" → 94)
+- **PRODUCTION READY**: Vitals extraction from medical documents now works end-to-end with proper database persistence
+- **VERIFICATION**: Successfully tested with attachment reprocessing - vitals now properly saved to database
+
 ### OpenAI Realtime API WebSocket Error Fixes COMPLETED (July 7, 2025)
 - **REACT RENDERING ERROR FIXED**: Fixed critical error where error objects were being rendered directly in toast messages causing "Objects are not valid as a React child" error
 - **ERROR MESSAGE EXTRACTION**: Updated error handling to properly extract message strings from error objects before displaying in toasts

@@ -379,6 +379,133 @@ export class AttachmentChartProcessor {
   }
 
   /**
+   * Save extracted vital set to database
+   */
+  private async saveExtractedVitalSet(
+    patientId: number,
+    encounterId: number | null,
+    vitalSet: any,
+    attachmentId: number,
+    confidence: number,
+    documentType: string,
+    setNumber: number,
+    totalSets: number
+  ): Promise<void> {
+    try {
+      console.log(`💾 [SaveVitals] Saving vitals set ${setNumber}/${totalSets} for patient ${patientId}`);
+      
+      // Determine the recorded date
+      let recordedAt = new Date();
+      if (vitalSet.extractedDate) {
+        const parsedDate = new Date(vitalSet.extractedDate);
+        if (!isNaN(parsedDate.getTime())) {
+          recordedAt = parsedDate;
+          console.log(`💾 [SaveVitals] Using extracted date: ${recordedAt.toISOString()}`);
+        }
+      }
+      
+      // Convert temperature from string to numeric
+      let temperatureValue = null;
+      if (vitalSet.temperature) {
+        const tempMatch = vitalSet.temperature.match(/([\d.]+)/);
+        if (tempMatch) {
+          temperatureValue = parseFloat(tempMatch[1]);
+        }
+      }
+      
+      // Convert oxygen saturation from string to integer
+      let oxygenSaturationValue = null;
+      if (vitalSet.oxygenSaturation) {
+        const o2Match = vitalSet.oxygenSaturation.match(/(\d+)/);
+        if (o2Match) {
+          oxygenSaturationValue = parseInt(o2Match[1]);
+        }
+      }
+      
+      // Convert weight from string to numeric
+      let weightValue = null;
+      if (vitalSet.weight) {
+        const weightMatch = vitalSet.weight.match(/([\d.]+)/);
+        if (weightMatch) {
+          weightValue = parseFloat(weightMatch[1]);
+        }
+      }
+      
+      // Convert height from string to numeric
+      let heightValue = null;
+      if (vitalSet.height) {
+        const heightMatch = vitalSet.height.match(/([\d.]+)/);
+        if (heightMatch) {
+          heightValue = parseFloat(heightMatch[1]);
+        }
+      }
+      
+      // Convert BMI from string to numeric
+      let bmiValue = null;
+      if (vitalSet.bmi) {
+        const bmiMatch = vitalSet.bmi.match(/([\d.]+)/);
+        if (bmiMatch) {
+          bmiValue = parseFloat(bmiMatch[1]);
+        }
+      }
+      
+      // Build notes including warnings and time context
+      let notes = vitalSet.parsedText || '';
+      if (vitalSet.timeContext) {
+        notes += `\nContext: ${vitalSet.timeContext}`;
+      }
+      if (vitalSet.warnings && vitalSet.warnings.length > 0) {
+        notes += `\nWarnings: ${vitalSet.warnings.join('; ')}`;
+      }
+      
+      const vitalsData = {
+        patientId: patientId,
+        encounterId: encounterId,
+        recordedAt: recordedAt,
+        temperature: temperatureValue,
+        heartRate: vitalSet.heartRate,
+        systolicBp: vitalSet.systolicBp,
+        diastolicBp: vitalSet.diastolicBp,
+        respiratoryRate: vitalSet.respiratoryRate,
+        oxygenSaturation: oxygenSaturationValue,
+        weight: weightValue,
+        height: heightValue,
+        bmi: bmiValue,
+        painScale: vitalSet.painScale,
+        sourceType: 'attachment_extract',
+        extractedFromAttachmentId: attachmentId,
+        parsedFromText: true,
+        originalText: vitalSet.parsedText,
+        sourceConfidence: confidence / 100, // Convert to decimal
+        sourceNotes: `Extracted from ${documentType} document (set ${setNumber}/${totalSets})`,
+        notes: notes.trim(),
+        entryType: 'parsed',
+        alerts: vitalSet.warnings || []
+      };
+      
+      console.log(`💾 [SaveVitals] Saving vitals with data:`, vitalsData);
+      
+      const [savedVital] = await db.insert(vitals).values(vitalsData).returning();
+      
+      console.log(`✅ [SaveVitals] Successfully saved vitals set with ID: ${savedVital.id}`);
+      console.log(`✅ [SaveVitals] Date: ${recordedAt.toISOString()}`);
+      if (vitalSet.systolicBp && vitalSet.diastolicBp) {
+        console.log(`✅ [SaveVitals] BP: ${vitalSet.systolicBp}/${vitalSet.diastolicBp}`);
+      }
+      if (vitalSet.heartRate) {
+        console.log(`✅ [SaveVitals] HR: ${vitalSet.heartRate}`);
+      }
+      if (temperatureValue) {
+        console.log(`✅ [SaveVitals] Temp: ${temperatureValue}°F`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ [SaveVitals] Error saving vitals set:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Process any medical document for medical problems extraction
    * Uses unified medical problems parser for consistent processing
    */

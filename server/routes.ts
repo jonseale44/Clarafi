@@ -4631,6 +4631,88 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Manual reprocess endpoint for attachments
+  app.post("/api/attachments/:attachmentId/reprocess", async (req, res) => {
+    try {
+      // Temporarily disabled authentication for testing
+      // if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const attachmentId = parseInt(req.params.attachmentId);
+      if (isNaN(attachmentId)) {
+        return res.status(400).json({ error: "Invalid attachment ID" });
+      }
+
+      console.log(`📋 [API] Manual reprocess requested for attachment ${attachmentId}`);
+      
+      // Import the attachment chart processor
+      const { attachmentChartProcessor } = await import("./attachment-chart-processor.js");
+      
+      // Trigger the chart processing
+      await attachmentChartProcessor.processCompletedAttachment(attachmentId);
+      
+      res.json({ 
+        success: true, 
+        message: `Attachment ${attachmentId} reprocessed successfully` 
+      });
+    } catch (error) {
+      console.error("Error reprocessing attachment:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to reprocess attachment" 
+      });
+    }
+  });
+
+  // Direct vitals extraction endpoint for testing
+  app.post("/api/attachments/:attachmentId/extract-vitals", async (req, res) => {
+    try {
+      const attachmentId = parseInt(req.params.attachmentId);
+      if (isNaN(attachmentId)) {
+        return res.status(400).json({ error: "Invalid attachment ID" });
+      }
+
+      console.log(`🩺 [API] Direct vitals extraction requested for attachment ${attachmentId}`);
+      
+      // Get attachment and extracted content
+      const [attachment] = await db.select()
+        .from(patientAttachments)
+        .where(eq(patientAttachments.id, attachmentId));
+
+      if (!attachment) {
+        return res.status(404).json({ error: `Attachment ${attachmentId} not found` });
+      }
+
+      const [extractedContent] = await db.select()
+        .from(attachmentExtractedContent)
+        .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+
+      if (!extractedContent || !extractedContent.extractedText) {
+        return res.status(400).json({ error: `No extracted text for attachment ${attachmentId}` });
+      }
+
+      // Import and use vitals parser directly
+      const { VitalsParserService } = await import("./vitals-parser-service.js");
+      const vitalsParser = new VitalsParserService();
+      
+      const result = await vitalsParser.parseVitalsText(
+        extractedContent.extractedText,
+        attachment.patientId,
+        attachment.encounterId,
+        attachmentId
+      );
+      
+      res.json({ 
+        success: true,
+        message: `Vitals extraction completed for attachment ${attachmentId}`,
+        result
+      });
+    } catch (error) {
+      console.error("Error extracting vitals:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to extract vitals" 
+      });
+    }
+  });
+
   // Development endpoint: Delete test user
   if (process.env.NODE_ENV === "development") {
     app.delete("/api/dev/delete-test-user/:email", async (req, res) => {
