@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical, RotateCcw, User, MessageSquare, Phone, Mail, Send, ChevronUp } from 'lucide-react';
+import { useNavigationContext } from '@/hooks/use-navigation-context';
 
 interface LabResultsMatrixProps {
   patientId: number;
@@ -57,6 +58,10 @@ interface MatrixData {
     isPending?: boolean;
     externalOrderId?: string;
     requisitionNumber?: string;
+    // Source tracking fields for badge display
+    sourceType?: string;
+    sourceConfidence?: string | number;
+    extractedFromAttachmentId?: number;
   }>;
 }
 
@@ -112,12 +117,58 @@ export function LabResultsMatrix({
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { navigateWithContext } = useNavigationContext();
 
   // Get current user for permission checks
   const { data: currentUser } = useQuery({
     queryKey: ['/api/user'],
     enabled: !!currentUserId
   });
+
+  // Function to get source badge for lab results
+  const getSourceBadge = (result: any) => {
+    if (!result.sourceType || result.sourceType === 'lab_order') {
+      return null; // Don't show badge for regular lab orders
+    }
+
+    const confidence = result.sourceConfidence ? 
+      (typeof result.sourceConfidence === 'string' ? parseFloat(result.sourceConfidence) : result.sourceConfidence) : 0;
+    const confidencePercent = Math.round(confidence * 100);
+    
+    if ((result.sourceType === 'attachment' || result.sourceType === 'attachment_extracted') && result.extractedFromAttachmentId) {
+      const handleDocumentClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent cell click
+        navigateWithContext(
+          `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId}`, 
+          "labs", 
+          mode || "patient-chart"
+        );
+      };
+      
+      return (
+        <span 
+          className="inline-flex ml-1 text-[10px] px-1 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded cursor-pointer hover:bg-amber-200 transition-colors"
+          onClick={handleDocumentClick}
+          title={`Extracted from attachment with ${confidencePercent}% confidence`}
+        >
+          MR {confidencePercent}%
+        </span>
+      );
+    }
+    
+    if (result.sourceType === 'provider_entered') {
+      return (
+        <span 
+          className="inline-flex ml-1 text-[10px] px-1 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded"
+          title="Manually entered by provider"
+        >
+          Manual
+        </span>
+      );
+    }
+    
+    return null;
+  };
 
   // Get staff members for assignment
   const { data: staffMembers = [] } = useQuery({
@@ -493,7 +544,11 @@ export function LabResultsMatrix({
         orderedBy: result.orderedBy,
         isPending: false,
         externalOrderId: result.externalOrderId,
-        requisitionNumber: result.requisitionNumber
+        requisitionNumber: result.requisitionNumber,
+        // Add source tracking fields for badge display
+        sourceType: result.sourceType,
+        sourceConfidence: result.sourceConfidence,
+        extractedFromAttachmentId: result.extractedFromAttachmentId
       });
     });
 
@@ -932,7 +987,7 @@ export function LabResultsMatrix({
                     onMouseLeave={() => setHoveredDate(null)}
                   >
                     <div className="flex flex-col items-center justify-center gap-1">
-                      <span className="text-sm font-medium">{format(new Date(dateCol.date), 'yyyy-MM-dd')}</span>
+                      <span className="text-sm font-medium">{format(new Date(dateCol.date), 'MM/dd/yy')}</span>
                       <span className="text-xs text-gray-600">{format(new Date(dateCol.date), 'HH:mm')}</span>
                     </div>
                   </th>
@@ -1023,6 +1078,7 @@ export function LabResultsMatrix({
                                 title={result.isPending ? `Order placed. External ID: ${result.externalOrderId || 'N/A'}` : undefined}
                               >
                                 {result.value}
+                                {getSourceBadge(result)}
                                 {result.isPending && (
                                   <span className="inline-block w-2 h-2 bg-navy-blue-500 rounded-full ml-1 animate-pulse" />
                                 )}
