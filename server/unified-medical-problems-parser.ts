@@ -378,7 +378,7 @@ ENHANCED EXAMPLES WITH RANKING:
    {"action": "EVOLVE_PROBLEM", "problem_id": null, "problem_title": "Type 2 diabetes mellitus with diabetic neuropathy", "icd10_change": {"from": "E11.9", "to": "E11.40"}, "source_type": "encounter", "transfer_visit_history_from": 1, "consolidation_reasoning": "Same underlying diabetes condition with complication development, evolved from E11.9 to E11.40", "ranking_reason": "Complex diabetes with neuropathy complication requiring active medication management and monitoring", "ranking_factors": {"clinical_severity": 32, "treatment_complexity": 25, "patient_frequency": 18, "clinical_relevance": 9}}
 
 2. Attachment with "HTN" + existing "Hypertension" (I10):
-   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "ranking_reason": "Stable chronic hypertension with routine management requirements", "ranking_factors": {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}}
+   {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Documented on 3/15/20: Historical documentation of hypertension management", "source_type": "attachment", "extracted_date": "2020-03-15", "consolidation_reasoning": "HTN is medical abbreviation for existing Hypertension problem, adding historical context", "ranking_reason": "Stable chronic hypertension with routine management requirements", "ranking_factors": {"clinical_severity": 18, "treatment_complexity": 12, "patient_frequency": 8, "clinical_relevance": 4}}
 
 3. Attachment with "High Blood Pressure" + existing "Essential Hypertension":
    {"action": "ADD_VISIT", "problem_id": 2, "visit_notes": "Previous documentation of elevated blood pressure", "source_type": "attachment", "consolidation_reasoning": "High Blood Pressure is synonym for existing Essential Hypertension, consolidated based on medical intelligence", "ranking_reason": "Well-documented stable hypertension with good historical context", "ranking_factors": {"clinical_severity": 17, "treatment_complexity": 11, "patient_frequency": 9, "clinical_relevance": 4}}
@@ -399,6 +399,14 @@ VISIT HISTORY CREATION RULE - CRITICAL:
 ONLY create visit history entries when the medical problem was ACTUALLY DISCUSSED, EVALUATED, or MANAGED during this encounter/document. 
 
 DO NOT create empty, generic, or placeholder visit entries. If a problem was not addressed in this encounter, DO NOT include it in your response.
+
+DATE FORMATTING IN VISIT NOTES - CRITICAL:
+When writing dates within visit_notes text, ALWAYS use MM/DD/YY format (not YYYY-MM-DD).
+Examples:
+- Correct: "Admitted 10/20/13 for acute decompensated HFrEF"
+- Incorrect: "Admitted 2013-10-20 for acute decompensated HFrEF"
+- Correct: "Last A1c on 3/15/24 was 7.2%"
+- Incorrect: "Last A1c on 2024-03-15 was 7.2%"
 
 ABSOLUTELY FORBIDDEN VISIT ENTRIES:
 - "No current symptoms"
@@ -452,7 +460,7 @@ When building visit histories, you now have access to comprehensive patient char
 FOR DIABETES-RELATED PROBLEMS:
 - Cross-reference current medications (metformin, insulin, etc.) to enrich visit histories
 - Include medication start dates and dosing in visit notes
-- Example: "Started on metformin 500mg BID (2023-01-15), baseline A1c pending"
+- Example: "Started on metformin 500mg BID (1/15/23), baseline A1c pending"
 
 FOR HYPERTENSION-RELATED PROBLEMS:
 - Include current vital signs in visit notes when clinically relevant

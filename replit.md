@@ -563,6 +563,14 @@ Preferred communication style: Simple, everyday language.
 - **VISIT HISTORY PRESERVATION**: All historical visit entries properly transferred during consolidation, maintaining complete audit trail
 - **DUPLICATE PREVENTION**: Prevents creation of duplicate "chest XR showing cardiomegaly" entries from multiple document sources
 
+### Medical Problems Visit History Date Format Fix COMPLETED (July 13, 2025)
+- **DATE FORMAT CONSISTENCY ACHIEVED**: Fixed issue where GPT was generating visit notes with YYYY-MM-DD dates instead of MM/DD/YY format
+- **ROOT CAUSE**: GPT prompt lacked explicit instructions for date formatting within visit notes text
+- **SOLUTION**: Added DATE FORMATTING IN VISIT NOTES section to unified-medical-problems-parser.ts GPT prompt with clear examples
+- **EXAMPLES PROVIDED**: "Admitted 10/20/13 for acute decompensated HFrEF" (correct) vs "Admitted 2013-10-20 for acute decompensated HFrEF" (incorrect)
+- **PROMPT ENHANCEMENT**: Updated existing examples in prompt to show consistent MM/DD/YY format throughout
+- **PRODUCTION IMPACT**: All future medical problem visit history entries will display dates in consistent MM/DD/YY format matching rest of EMR system
+
 ### Critical Medication Safety System Implementation COMPLETED (July 5, 2025)
 - **CRITICAL SAFETY BUG FIXED**: Insulin was being classified as "tablet" form when imported from medical documents, creating dangerous patient safety risk
 - **MULTI-LAYERED SAFETY SYSTEM IMPLEMENTED**: Built comprehensive medication safety system comparable to Athena/Epic EMR standards
