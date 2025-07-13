@@ -59,16 +59,29 @@ export class ClinicAdminVerificationService {
    */
   static async initiateAdminVerification(request: ClinicAdminVerificationRequest) {
     console.log('🏥 [AdminVerification] Starting automated clinic admin verification');
+    console.log('📊 [AdminVerification] Request details:', {
+      organizationName: request.organizationName,
+      organizationType: request.organizationType,
+      taxId: request.taxId,
+      email: request.email,
+      expectedProviders: request.expectedProviderCount,
+      expectedPatientVolume: request.expectedMonthlyPatientVolume
+    });
     
     // Step 1: GPT-powered automated verification
+    console.log('🤖 [AdminVerification] Calling GPT-4 for automated verification...');
     const automatedResult = await this.performAutomatedVerification(request);
-    console.log(`🤖 [AdminVerification] Automated verification complete - Risk Score: ${automatedResult.riskScore}`);
+    console.log(`✅ [AdminVerification] Automated verification complete - Risk Score: ${automatedResult.riskScore}`);
+    console.log('📋 [AdminVerification] Verification details:', automatedResult);
     
     // Step 2: Basic format validation
+    console.log('🔐 [AdminVerification] Validating organization credentials...');
     const orgValidation = await this.validateOrganization(request);
     if (!orgValidation.valid) {
+      console.error('❌ [AdminVerification] Organization validation failed:', orgValidation.reason);
       throw new Error(`Organization validation failed: ${orgValidation.reason}`);
     }
+    console.log('✅ [AdminVerification] Organization credentials validated');
     
     // Step 3: Check for duplicate requests
     const existingVerification = await db.select()
@@ -145,6 +158,8 @@ export class ClinicAdminVerificationService {
    * Analyzes organization data and returns risk assessment
    */
   static async performAutomatedVerification(request: ClinicAdminVerificationRequest): Promise<AutomatedVerificationResult> {
+    console.log('🤖 [GPT Verification] Starting GPT-4 automated verification...');
+    
     try {
       const prompt = `
 You are an EMR system administrator verification AI. Analyze this clinic administrator application and provide a risk assessment.

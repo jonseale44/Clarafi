@@ -51,24 +51,27 @@ export default function AdminVerification() {
   });
 
   const onSubmit = async (data: AdminVerificationFormData) => {
+    console.log('🚀 [AdminVerification] Starting submission with data:', data);
     setIsSubmitting(true);
     setError(null);
     
     try {
-      const response = await apiRequest('/api/admin-verification/start', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      console.log('📡 [AdminVerification] Calling API endpoint: /api/admin-verification/start');
+      const response = await apiRequest('POST', '/api/admin-verification/start', data);
+      const responseData = await response.json();
       
-      setVerificationResult(response);
+      console.log('✅ [AdminVerification] Received response:', responseData);
+      setVerificationResult(responseData);
       
       // If auto-approved, redirect to login after a delay
-      if (response.autoApproved) {
+      if (responseData.autoApproved) {
+        console.log('🎉 [AdminVerification] Auto-approved! Redirecting in 5 seconds...');
         setTimeout(() => {
           window.location.href = '/auth?adminCreated=true';
         }, 5000);
       }
     } catch (err: any) {
+      console.error('❌ [AdminVerification] Error submitting verification:', err);
       setError(err.message || 'Failed to submit verification request');
     } finally {
       setIsSubmitting(false);

@@ -23,17 +23,26 @@ const adminVerificationSchema = z.object({
 });
 
 export function registerAdminVerificationRoutes(app: Express) {
+  console.log('✅ [AdminVerificationRoutes] Registering admin verification routes...');
+  
   /**
    * Start admin verification process
    * This endpoint is PUBLIC - anyone can request to become an admin
    */
   app.post('/api/admin-verification/start', async (req, res) => {
+    console.log('🎯 [AdminVerification] POST /api/admin-verification/start endpoint hit');
+    console.log('📥 [AdminVerification] Request body:', JSON.stringify(req.body, null, 2));
+    console.log('🔐 [AdminVerification] Request headers:', req.headers);
+    
     try {
       // Validate request data
+      console.log('🔍 [AdminVerification] Validating request data with Zod schema...');
       const validatedData = adminVerificationSchema.parse(req.body);
+      console.log('✅ [AdminVerification] Request data validated successfully');
       
       // Ensure legal agreements are accepted
       if (!validatedData.baaAccepted || !validatedData.termsAccepted) {
+        console.log('⚠️ [AdminVerification] Legal agreements not accepted');
         return res.status(400).json({
           message: 'You must accept the Business Associate Agreement and Terms of Service'
         });
@@ -44,8 +53,9 @@ export function registerAdminVerificationRoutes(app: Express) {
         ...validatedData,
       };
       
-      // Start verification process
+      console.log('🚀 [AdminVerification] Starting verification process...');
       const result = await ClinicAdminVerificationService.initiateAdminVerification(request);
+      console.log('✅ [AdminVerification] Verification result:', result);
       
       res.json({
         success: true,
@@ -53,8 +63,10 @@ export function registerAdminVerificationRoutes(app: Express) {
       });
     } catch (error: any) {
       console.error('❌ [AdminVerification] Error starting verification:', error);
+      console.error('❌ [AdminVerification] Error stack:', error.stack);
       
       if (error instanceof z.ZodError) {
+        console.error('❌ [AdminVerification] Zod validation errors:', error.errors);
         return res.status(400).json({
           message: 'Invalid request data',
           errors: error.errors
