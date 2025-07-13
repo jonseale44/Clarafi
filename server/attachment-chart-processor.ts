@@ -369,7 +369,7 @@ export class AttachmentChartProcessor {
             safeEncounterId,
             vitalSet,
             safeAttachmentId,
-            vitalsResult.confidence,
+            vitalSet.confidence || vitalsResult.confidence, // Use individual vital set confidence if available
             extractedContent.documentType,
             i + 1,
             vitalsResult.data.length

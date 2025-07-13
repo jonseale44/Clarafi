@@ -302,24 +302,16 @@ Input: "${vitalsText}"`;
         };
       }
 
-      // Calculate overall confidence based on how many vitals were extracted
-      let totalExtracted = 0;
-      let totalPossible = 0;
+      // Calculate overall confidence - use average of individual confidences if available
+      let overallConfidence = 0;
+      let hasIndividualConfidences = false;
 
       parsedData.forEach((vitalSet, index) => {
-        const vitalFields = [
-          vitalSet.systolicBp,
-          vitalSet.diastolicBp,
-          vitalSet.heartRate,
-          vitalSet.temperature,
-          vitalSet.respiratoryRate,
-          vitalSet.oxygenSaturation,
-        ];
-        const setExtracted = vitalFields.filter(
-          (field) => field !== null && field !== undefined,
-        ).length;
-        totalExtracted += setExtracted;
-        totalPossible += vitalFields.length;
+        // Check if GPT provided individual confidence scores
+        if (vitalSet.confidence !== undefined && vitalSet.confidence !== null) {
+          hasIndividualConfidences = true;
+          overallConfidence += parseFloat(vitalSet.confidence);
+        }
 
         // Add default parsedText if not present
         if (!vitalSet.parsedText) {
@@ -327,10 +319,16 @@ Input: "${vitalsText}"`;
         }
       });
 
-      const confidence =
-        totalPossible > 0
-          ? totalExtracted / totalPossible
-          : 0;
+      // If GPT provided individual confidences, use their average
+      if (hasIndividualConfidences && parsedData.length > 0) {
+        overallConfidence = overallConfidence / parsedData.length;
+      } else {
+        // Fallback: Use a reasonable default confidence based on successful parsing
+        // If we successfully parsed vitals data, assume at least 80% confidence
+        overallConfidence = parsedData.length > 0 ? 0.8 : 0;
+      }
+
+      const confidence = overallConfidence;
 
       console.log(
         `🔥 [VITALS PARSING] ============= VITALS PARSING COMPLETE =============`,
