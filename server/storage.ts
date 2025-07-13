@@ -1028,8 +1028,36 @@ export class DatabaseStorage implements IStorage {
       
     console.log(`✅ [STORAGE] Order created with ID: ${order.id} at ${timestamp}`);
     
-    // REMOVED: Medication processing is now triggered from routes.ts to avoid duplicate processing
-    // The POST /api/orders endpoint already calls processOrderDelta after creating the order
+    // For medication orders, trigger medication processing
+    if (order.orderType === "medication" && order.encounterId) {
+      console.log(
+        `💊 [STORAGE] Triggering medication processing for new medication order ${order.id}`,
+      );
+      try {
+        const { medicationDelta } = await import(
+          "./medication-delta-service.js"
+        );
+        
+        // Get the providerId from the encounter
+        const encounter = await this.getEncounterById(order.encounterId);
+        const providerId = encounter?.providerId;
+        
+        await medicationDelta.processOrderDelta(
+          order.patientId,
+          order.encounterId,
+          providerId,
+        );
+        console.log(
+          `✅ [STORAGE] Medication processing completed for order ${order.id}`,
+        );
+      } catch (medicationError) {
+        console.error(
+          `❌ [STORAGE] Medication processing failed for order ${order.id}:`,
+          medicationError,
+        );
+        // Don't fail the order creation if medication processing fails
+      }
+    }
     
     // Trigger lab order processing automatically for signed lab orders
     if (insertOrder.orderType === 'lab' && insertOrder.orderStatus === 'approved') {
