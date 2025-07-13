@@ -349,25 +349,52 @@ export class StripeService {
       // Handle object parameter (new registration)
       if (typeof paramsOrCustomerId === 'object' && paramsOrCustomerId.email) {
         const params = paramsOrCustomerId;
-        const pricing = subscriptionConfig.getPricing(params.tier);
-        const priceAmount = params.billingPeriod === 'annual' ? 
-          (typeof pricing.annual === 'number' ? pricing.annual : 0) : 
-          (typeof pricing.monthly === 'number' ? pricing.monthly : 0);
-
-        // Use fixed pricing for Enterprise tier to avoid configuration issues
-        const fixedPricing = params.tier === 3 ? 299 : priceAmount; // $299/month for Enterprise
         
+        // Simple tier-based pricing in test mode
+        let priceAmount: number;
+        let productName: string;
+        let productDescription: string;
+        
+        switch (params.tier) {
+          case 1:
+            priceAmount = 99; // $99/month for Individual
+            productName = 'Clarafi Individual';
+            productDescription = 'EMR access for individual providers';
+            break;
+          case 2:
+            priceAmount = 299; // $299/month for Practice
+            productName = 'Clarafi Practice';
+            productDescription = 'EMR access for small to medium practices';
+            break;
+          case 3:
+            priceAmount = 299; // $299/month starting price for Enterprise
+            productName = 'Clarafi Enterprise';
+            productDescription = 'EMR system with admin features and subscription key generation';
+            break;
+          default:
+            console.error(`❌ [Stripe] Invalid tier: ${params.tier}`);
+            return {
+              success: false,
+              error: `Invalid subscription tier: ${params.tier}`
+            };
+        }
+        
+        console.log(`💰 [Stripe] Creating checkout session: ${productName} - $${priceAmount}/month`);
+        console.log(`📧 [Stripe] Customer email: ${params.email}`);
+        console.log(`🏥 [Stripe] Health System ID: ${params.healthSystemId}`);
+        console.log(`🏷️ [Stripe] Metadata:`, params.metadata);
+        
+        // Create simple checkout session with minimal configuration
         const session = await stripe.checkout.sessions.create({
           customer_email: params.email,
-          payment_method_types: ['card'],
           line_items: [{
             price_data: {
               currency: 'usd',
               product_data: {
-                name: `Clarafi Enterprise`,
-                description: 'Complete EMR system with admin features and subscription key generation',
+                name: productName,
+                description: productDescription,
               },
-              unit_amount: fixedPricing * 100,
+              unit_amount: priceAmount * 100, // Convert to cents
               recurring: {
                 interval: 'month',
               },
@@ -378,10 +405,11 @@ export class StripeService {
           metadata: {
             healthSystemId: params.healthSystemId.toString(),
             tier: params.tier.toString(),
-            upgradeType: 'tier3',
+            userId: params.metadata?.userId || '',
+            registrationType: params.metadata?.registrationType || 'unknown',
           },
-          success_url: params.successUrl || `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://your-app.replit.app'}/auth?payment=success`,
-          cancel_url: params.cancelUrl || `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://your-app.replit.app'}/auth?payment=cancelled`,
+          success_url: `https://${process.env.REPLIT_DEV_DOMAIN}/auth?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `https://${process.env.REPLIT_DEV_DOMAIN}/auth?payment=cancelled`,
         });
 
         return { 
