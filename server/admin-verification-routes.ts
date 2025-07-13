@@ -204,4 +204,29 @@ export function registerAdminVerificationRoutes(app: Express) {
       ]
     });
   });
+
+  // Development endpoints for testing
+  if (process.env.NODE_ENV === 'development') {
+    // Clear test data endpoint
+    app.delete('/api/admin-verification/clear-test-data', async (req, res) => {
+      try {
+        console.log('🧹 [AdminVerification] Clearing test verification data...');
+        
+        // Clear test health systems with test tax IDs
+        const deletedHealthSystems = await db.delete(healthSystems)
+          .where(eq(healthSystems.taxId, '12-3456789'))
+          .returning();
+        
+        console.log(`✅ [AdminVerification] Cleared ${deletedHealthSystems.length} health systems`);
+        
+        res.json({
+          success: true,
+          deletedHealthSystems: deletedHealthSystems.length
+        });
+      } catch (error) {
+        console.error('❌ [AdminVerification] Error clearing test data:', error);
+        res.status(500).json({ error: 'Failed to clear test data' });
+      }
+    });
+  }
 }

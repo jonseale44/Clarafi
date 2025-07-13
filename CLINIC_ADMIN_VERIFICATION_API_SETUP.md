@@ -53,6 +53,23 @@ This document outlines all the API keys and services required for the comprehens
 - **Cost**: FREE - Government public API
 - **Rate Limit**: 2 requests per second
 
+### 7. Tax1099 EIN Verification API (PRODUCTION-READY)
+- **Purpose**: Real-time IRS EIN/Tax ID verification with name matching
+- **Sign up**: https://www.tax1099.com
+- **Environment Variables**: 
+  - `TAX1099_API_KEY`
+  - `TAX1099_USER_TOKEN`
+- **Cost**: $1 per verification check
+- **Features**: 
+  - Real-time IRS database verification
+  - Name & EIN matching with match codes
+  - Production-ready with immediate results
+- **Match Codes**:
+  - Code 1: Name & EIN match IRS records
+  - Code 2: EIN matches, name mismatch
+  - Code 3: Name matches, EIN mismatch
+  - Code 4: No match
+
 ## Environment Variables Setup
 
 Add the following to your `.env` file:
@@ -78,6 +95,10 @@ TWILIO_PHONE_NUMBER=+1234567890  # Your Twilio phone number
 # SendGrid Email (already configured)
 SENDGRID_API_KEY=your_sendgrid_api_key_here
 SENDGRID_FROM_EMAIL=noreply@clarafi.ai
+
+# Tax1099 EIN Verification (PRODUCTION-READY)
+TAX1099_API_KEY=your_tax1099_api_key_here
+TAX1099_USER_TOKEN=your_tax1099_user_token_here
 ```
 
 ## API Integration Features
@@ -85,10 +106,11 @@ SENDGRID_FROM_EMAIL=noreply@clarafi.ai
 ### Comprehensive Verification Process
 1. **Google Places**: Verifies business exists at claimed address
 2. **NPI Registry**: Confirms healthcare provider credentials
-3. **Email Verification**: Validates organizational email domain
-4. **Address Verification**: Ensures deliverable physical address
-5. **Company Enrichment**: Gets additional business data
-6. **SMS Verification**: Sends 6-digit code for MFA
+3. **Tax1099 EIN**: Real-time IRS verification of Tax ID
+4. **Email Verification**: Validates organizational email domain
+5. **Address Verification**: Ensures deliverable physical address
+6. **Company Enrichment**: Gets additional business data
+7. **SMS Verification**: Sends 6-digit code for MFA
 
 ### Risk Scoring Algorithm
 - Each successful verification adds to trust score
@@ -118,7 +140,9 @@ For development/testing, the system will:
 - Clearbit: $99 (250 enrichments, use selectively)
 - Melissa Data: ~$10
 - Twilio SMS: ~$7.50
-- **Total**: ~$182.50/month for 1000 verifications
+- Tax1099 EIN: ~$1000 ($1 per verification)
+- **Total**: ~$1,182.50/month for 1000 verifications with EIN checks
+- **Without EIN**: ~$182.50/month (if EIN verification used selectively)
 
 ### Cost Saving Tips
 1. Cache verification results for 30 days

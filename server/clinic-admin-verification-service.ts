@@ -212,7 +212,8 @@ export class ClinicAdminVerificationService {
         npi: request.npiNumber,
         email: request.email,
         phone: request.phone,
-        website: request.website
+        website: request.website,
+        taxId: request.taxId
       });
       
       console.log('📊 [Verification] API verification results:', {
@@ -232,7 +233,7 @@ export class ClinicAdminVerificationService {
       // Step 4: Generate detailed verification report
       const verificationDetails = {
         organizationValid: apiResults.googleVerification?.verified || false,
-        taxIdValid: true, // Would integrate with IRS API in production
+        taxIdValid: apiResults.einVerification?.verified || false,
         npiValid: apiResults.npiVerification?.verified || false,
         personnelValid: apiResults.emailVerification?.verified || false,
         businessSizeAppropriate: this.validateBusinessSize(request),
@@ -274,6 +275,7 @@ export class ClinicAdminVerificationService {
     if (apiResults.npiVerification?.verified) successfulVerifications++;
     if (apiResults.emailVerification?.verified) successfulVerifications++;
     if (apiResults.addressVerification?.verified) successfulVerifications++;
+    if (apiResults.einVerification?.verified) successfulVerifications++;
     
     // Small practices (1-5 providers) need fewer verifications
     if (request.organizationType === 'private_practice' && request.expectedProviderCount <= 5) {
@@ -322,6 +324,12 @@ export class ClinicAdminVerificationService {
       verifiedSources.push('Organizational email verified');
     } else {
       failedSources.push('Email domain verification');
+    }
+    
+    if (apiResults.einVerification?.verified) {
+      verifiedSources.push(`EIN/Tax ID verified with IRS (${apiResults.einVerification.matchDescription})`);
+    } else if (apiResults.einVerification) {
+      failedSources.push('EIN/Tax ID verification');
     }
     
     if (apiResults.addressVerification?.verified) {
