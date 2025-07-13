@@ -72,7 +72,22 @@ export default function AdminVerification() {
       }
     } catch (err: any) {
       console.error('❌ [AdminVerification] Error submitting verification:', err);
-      setError(err.message || 'Failed to submit verification request');
+      console.error('❌ [AdminVerification] Error details:', {
+        message: err.message,
+        response: err.response,
+        status: err.status,
+        stack: err.stack
+      });
+      
+      // Extract error message from various possible formats
+      let errorMessage = 'Failed to submit verification request';
+      if (err.response && err.response.data && err.response.data.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

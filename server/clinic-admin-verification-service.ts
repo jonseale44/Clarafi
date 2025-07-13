@@ -84,12 +84,21 @@ export class ClinicAdminVerificationService {
     console.log('✅ [AdminVerification] Organization credentials validated');
     
     // Step 3: Check for duplicate requests
-    const existingVerification = await db.select()
-      .from(clinicAdminVerifications)
-      .where(eq(clinicAdminVerifications.email, request.email))
-      .limit(1);
-      
+    console.log('🔍 [AdminVerification] Checking for existing verification requests...');
+    let existingVerification;
+    try {
+      existingVerification = await db.select()
+        .from(clinicAdminVerifications)
+        .where(eq(clinicAdminVerifications.email, request.email))
+        .limit(1);
+      console.log('✅ [AdminVerification] Database query successful, found', existingVerification.length, 'existing verifications');
+    } catch (dbError: any) {
+      console.error('❌ [AdminVerification] Database error checking existing verifications:', dbError.message);
+      throw new Error(`Database error: ${dbError.message}`);
+    }
+    
     if (existingVerification.length > 0 && existingVerification[0].status === 'pending') {
+      console.log('⚠️ [AdminVerification] Duplicate request detected for email:', request.email);
       throw new Error('A verification request is already pending for this email');
     }
     
@@ -99,7 +108,8 @@ export class ClinicAdminVerificationService {
     expires.setDate(expires.getDate() + 7); // 7 days to complete verification
     
     // Step 5: Create verification record
-    const [verification] = await db.insert(clinicAdminVerifications).values({
+    console.log('💾 [AdminVerification] Creating verification record in database...');
+    const verificationData = {
       email: request.email,
       organizationName: request.organizationName,
       verificationCode,
@@ -110,7 +120,26 @@ export class ClinicAdminVerificationService {
       status: automatedResult.approved && automatedResult.riskScore < 20 ? 'auto-approved' : 'pending',
       expiresAt: expires,
       submittedAt: new Date()
-    }).returning();
+    };
+    
+    console.log('📋 [AdminVerification] Verification record data:', {
+      email: verificationData.email,
+      organizationName: verificationData.organizationName,
+      status: verificationData.status,
+      riskScore: automatedResult.riskScore,
+      approved: automatedResult.approved
+    });
+    
+    let verification;
+    try {
+      const result = await db.insert(clinicAdminVerifications).values(verificationData).returning();
+      verification = result[0];
+      console.log('✅ [AdminVerification] Verification record created successfully with ID:', verification.id);
+    } catch (insertError: any) {
+      console.error('❌ [AdminVerification] Database error inserting verification record:', insertError.message);
+      console.error('❌ [AdminVerification] Full error:', insertError);
+      throw new Error(`Failed to create verification record: ${insertError.message}`);
+    }
     
     // Step 6: Handle automated approval for low-risk organizations
     if (automatedResult.approved && automatedResult.riskScore < 20) {
