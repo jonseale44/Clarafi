@@ -180,7 +180,7 @@ export class RegistrationService {
         console.log(`🔒 [RegistrationService] Health system has patients: ${hasPatients} (count: ${patientCount[0]?.count})`);
         
         // SECURITY RULE: If health system has patients, subscription key is ALWAYS required
-        const requiresSubscriptionKey = healthSystemTier === 3 || hasPatients;
+        const requiresSubscriptionKey = healthSystemTier === 2 || hasPatients;
         
         if (requiresSubscriptionKey) {
           if (!data.subscriptionKey) {
@@ -190,7 +190,7 @@ export class RegistrationService {
             throw new Error(errorMsg);
           }
           
-          console.log(`🔑 [RegistrationService] Validating subscription key (Tier 3: ${healthSystemTier === 3}, Has Patients: ${hasPatients})`);
+          console.log(`🔑 [RegistrationService] Validating subscription key (Tier 2: ${healthSystemTier === 2}, Has Patients: ${hasPatients})`);
           
           // Validate the subscription key
           const keyResult = await tx
@@ -226,30 +226,30 @@ export class RegistrationService {
           console.log(`✅ [RegistrationService] Subscription key validated`);
         }
         
-        // Set payment requirement flag for Tier 1/2 systems without patients
-        requiresPayment = !hasPatients && healthSystemTier !== 3;
+        // Set payment requirement flag for Tier 1 systems and Tier 2 systems without patients
+        requiresPayment = healthSystemTier === 1 || (!hasPatients && healthSystemTier === 2);
       }
 
       // Validate role based on health system tier
       let allowedRoles = ['provider', 'nurse', 'ma', 'front_desk', 'billing', 'lab_tech', 'referral_coordinator', 'practice_manager', 'read_only'];
       
-      // Check if this health system is Tier 3 (enterprise)
+      // Check if this health system is Tier 2 (enterprise)
       const [healthSystem] = await tx
         .select({ subscriptionTier: healthSystems.subscriptionTier })
         .from(healthSystems)
         .where(eq(healthSystems.id, healthSystemId));
       
-      const isTier3 = healthSystem?.subscriptionTier === 3;
+      const isTier2 = healthSystem?.subscriptionTier === 2;
       
-      // Only allow admin role for Tier 3 health systems
-      if (isTier3) {
+      // Only allow admin role for Tier 2 health systems
+      if (isTier2) {
         allowedRoles.push('admin');
       }
       
       const userRole = allowedRoles.includes(data.role) ? data.role : 'provider';
       
-      if (data.role === 'admin' && !isTier3) {
-        console.warn(`⚠️  [RegistrationService] Attempted to register admin role for ${data.username} in non-Tier 3 health system - defaulting to provider`);
+      if (data.role === 'admin' && !isTier2) {
+        console.warn(`⚠️  [RegistrationService] Attempted to register admin role for ${data.username} in non-Tier 2 health system - defaulting to provider`);
       }
 
       // Create the user with the determined health system
@@ -295,7 +295,7 @@ export class RegistrationService {
         // Don't fail registration if email sending fails
       }
       
-      // Mark subscription key as used if this was a tier 3 registration
+      // Mark subscription key as used if this was an enterprise registration
       if (validatedKeyId) {
         await tx.update(subscriptionKeys)
           .set({

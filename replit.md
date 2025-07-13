@@ -173,6 +173,22 @@ Preferred communication style: Simple, everyday language.
 - **HIPAA COMPLIANCE**: Prevents unauthorized access to existing patient data through registration vulnerability
 - **BACKWARD COMPATIBLE**: Tier 3 enterprise systems continue to work as before with subscription keys
 
+### Subscription Model Refactoring to 2-Tier System COMPLETED (January 16, 2025)
+- **BUSINESS MODEL PIVOT**: Migrated from 3-tier to 2-tier subscription model to enable bottom-up adoption strategy
+- **TIER STRUCTURE CHANGES**:
+  - **Tier 1 - Personal EMR** ($99/month): Full documentation features for individual providers, no external integrations
+  - **Tier 2 - Enterprise EMR** (custom pricing): Complete EMR with all integrations, admin features, and subscription key management
+  - **Tier 3 REMOVED**: Previous enterprise tier functionality merged into Tier 2
+- **ARCHITECTURAL UPDATES**:
+  - Updated feature-gates.ts to remove tier 3 references
+  - Modified subscription-config.ts to handle 2-tier pricing and remove tier 3 checks
+  - Updated stripe-service.ts product names: "Clarafi Personal EMR" and "Clarafi Enterprise EMR"
+  - Refactored registration-service.ts: Only Tier 2 systems can have admin users
+  - Updated auth-page.tsx registration form labels
+- **BOTTOM-UP ADOPTION STRATEGY**: Individual providers start with Tier 1 personal EMR, then advocate for enterprise adoption
+- **PAYMENT LOGIC CHANGES**: Tier 1 always requires payment, Tier 2 requires payment unless patients already exist
+- **ADMIN ROLE RESTRICTION**: Admin role now only available in Tier 2 (enterprise) systems
+
 ### Comprehensive Confidence Scoring Standardization COMPLETED (January 13, 2025)
 - **MAJOR ARCHITECTURAL UPDATE**: Standardized confidence scoring methodology across ALL 9 unified parsers in the EMR system
 - **CRITICAL CLARIFICATION**: Confidence scores represent GPT's self-assessment of extraction/inference accuracy from source documents, NOT clinical validity of diagnoses

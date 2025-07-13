@@ -357,19 +357,14 @@ export class StripeService {
         
         switch (params.tier) {
           case 1:
-            priceAmount = 99; // $99/month for Individual
-            productName = 'Clarafi Individual';
-            productDescription = 'EMR access for individual providers';
+            priceAmount = 99; // $99/month for Personal EMR
+            productName = 'Clarafi Personal EMR';
+            productDescription = 'Full documentation features for individual providers';
             break;
           case 2:
-            priceAmount = 299; // $299/month for Practice
-            productName = 'Clarafi Practice';
-            productDescription = 'EMR access for small to medium practices';
-            break;
-          case 3:
             priceAmount = 299; // $299/month starting price for Enterprise
-            productName = 'Clarafi Enterprise';
-            productDescription = 'EMR system with admin features and subscription key generation';
+            productName = 'Clarafi Enterprise EMR';
+            productDescription = 'Complete EMR with all integrations and admin features';
             break;
           default:
             console.error(`❌ [Stripe] Invalid tier: ${params.tier}`);

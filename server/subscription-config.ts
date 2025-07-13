@@ -11,14 +11,12 @@ interface DynamicPricing {
   tier2Annual?: number;
   tier1TrialDays?: number;
   tier2TrialDays?: number;
-  tier3TrialDays?: number;
 }
 
 interface DynamicFeatures {
   [key: string]: {
     tier1?: boolean;
     tier2?: boolean;
-    tier3?: boolean;
   };
 }
 
@@ -61,9 +59,6 @@ export class SubscriptionConfig {
     if (process.env.TIER2_TRIAL_DAYS) {
       this.dynamicPricing.tier2TrialDays = parseInt(process.env.TIER2_TRIAL_DAYS);
     }
-    if (process.env.TIER3_TRIAL_DAYS) {
-      this.dynamicPricing.tier3TrialDays = parseInt(process.env.TIER3_TRIAL_DAYS);
-    }
     
     // Feature overrides from environment
     // Example: FEATURE_MEDICATIONS_TIER1=true
@@ -77,10 +72,6 @@ export class SubscriptionConfig {
       if (process.env[`${envKey}TIER2`] !== undefined) {
         if (!this.dynamicFeatures[feature]) this.dynamicFeatures[feature] = {};
         this.dynamicFeatures[feature].tier2 = process.env[`${envKey}TIER2`] === 'true';
-      }
-      if (process.env[`${envKey}TIER3`] !== undefined) {
-        if (!this.dynamicFeatures[feature]) this.dynamicFeatures[feature] = {};
-        this.dynamicFeatures[feature].tier3 = process.env[`${envKey}TIER3`] === 'true';
       }
     });
   }
@@ -104,19 +95,14 @@ export class SubscriptionConfig {
     } else if (tier === 2) {
       return {
         ...basePricing,
-        monthly: this.dynamicPricing.tier2Monthly ?? basePricing.monthly,
-        annual: this.dynamicPricing.tier2Annual ?? basePricing.annual,
+        // Tier 2 has 'custom' pricing, return 299 as default for now
+        monthly: this.dynamicPricing.tier2Monthly ?? 299,
+        annual: this.dynamicPricing.tier2Annual ?? 2990,
         trialDays: this.dynamicPricing.tier2TrialDays ?? basePricing.trialDays,
       };
     }
     
-    // Tier 3 has 'custom' pricing, so we need to handle it differently
-    return {
-      ...basePricing,
-      monthly: typeof basePricing.monthly === 'string' ? 0 : basePricing.monthly,
-      annual: typeof basePricing.annual === 'string' ? 0 : basePricing.annual,
-      trialDays: this.dynamicPricing.tier3TrialDays ?? basePricing.trialDays,
-    };
+    throw new Error(`Invalid tier: ${tier}`);
   }
   
   // Check if a feature is available for a tier
@@ -165,7 +151,6 @@ export class SubscriptionConfig {
       pricing: {
         tier1: this.getPricing(1),
         tier2: this.getPricing(2),
-        tier3: this.getPricing(3),
       },
       features: Object.entries(FEATURE_GATES).reduce((acc, [name, config]) => {
         acc[name] = {
@@ -173,7 +158,6 @@ export class SubscriptionConfig {
           category: config.category,
           tier1: this.hasFeature(1, name as FeatureName),
           tier2: this.hasFeature(2, name as FeatureName),
-          tier3: this.hasFeature(3, name as FeatureName),
         };
         return acc;
       }, {} as Record<string, any>),

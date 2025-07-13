@@ -470,7 +470,7 @@ export default function AuthPage() {
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="create_new" id="create_new" />
                           <Label htmlFor="create_new" className="font-normal cursor-pointer">
-                            Create my own individual practice (Tier 1)
+                            Create my own individual practice
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -497,7 +497,7 @@ export default function AuthPage() {
                           </p>
                         </div>
                         
-                        {/* Subscription Key for Tier 3 Health Systems */}
+                        {/* Subscription Key for Enterprise Health Systems */}
                         {selectedHealthSystemId && (
                           <div className="space-y-2">
                             <Label htmlFor="subscriptionKey" className="flex items-center gap-2">
