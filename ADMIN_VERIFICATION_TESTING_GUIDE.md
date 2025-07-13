@@ -18,7 +18,7 @@
    - YOUR Email (for verification)
    - YOUR Phone (for SMS)
    - Title: Practice Administrator
-   - Tax ID: 12-3456789 (test format)
+   - Tax ID: 12-3456789 (test format - NOT verified against IRS)
    - Expected Providers: 3
    - Type: private_practice
 
