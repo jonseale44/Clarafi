@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -986,6 +986,15 @@ export default function AuthPage() {
                         "Create Account"
                       )}
                     </Button>
+                    
+                    <div className="mt-4 text-center">
+                      <p className="text-sm text-gray-600">
+                        Need an enterprise admin account?{' '}
+                        <Link href="/admin-verification" className="text-primary hover:text-primary/80 underline">
+                          Create Enterprise Admin
+                        </Link>
+                      </p>
+                    </div>
                   </form>
                 </CardContent>
               </Card>

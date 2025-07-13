@@ -27,6 +27,7 @@ import AdminClinicImport from "@/pages/admin-clinic-import";
 import { AdminSubscriptionKeysPage } from "@/pages/admin-subscription-keys-page";
 import { HealthSystemUpgradePage } from "@/pages/health-system-upgrade-page";
 import StripeTest from "@/pages/stripe-test";
+import AdminVerification from "@/pages/admin-verification";
 
 import NotFound from "@/pages/not-found";
 
@@ -58,6 +59,7 @@ function Router() {
       <ProtectedRoute path="/practice-migration" component={PracticeMigration} />
 
       <Route path="/auth" component={AuthPage} />
+      <Route path="/admin-verification" component={AdminVerification} />
       <Route path="/payment" component={PaymentPage} />
       <Route component={NotFound} />
     </Switch>

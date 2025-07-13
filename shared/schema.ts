@@ -2914,6 +2914,40 @@ export const emailNotifications = pgTable("email_notifications", {
   }>().default({}),
 });
 
+// Clinic administrator verification requests
+export const clinicAdminVerifications = pgTable("clinic_admin_verifications", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  organizationName: text("organization_name").notNull(),
+  verificationCode: text("verification_code").notNull(),
+  verificationData: jsonb("verification_data").notNull(), // Full request data
+  status: text("status").default('pending'), // 'pending', 'approved', 'rejected', 'expired'
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  approvedAt: timestamp("approved_at"),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  expiresAt: timestamp("expires_at").notNull(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent")
+});
+
+// Organization verification documents
+export const organizationDocuments = pgTable("organization_documents", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id).notNull(),
+  documentType: text("document_type").notNull(), // 'baa', 'business_license', 'medical_license', 'insurance', 'tax_exempt'
+  documentUrl: text("document_url").notNull(),
+  documentName: text("document_name"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  verifiedAt: timestamp("verified_at"),
+  verifiedBy: integer("verified_by").references(() => users.id),
+  expiresAt: timestamp("expires_at"), // For licenses that expire
+  metadata: jsonb("metadata")
+});
+
 // Insert schemas for new tables
 export const insertSubscriptionKeySchema = createInsertSchema(subscriptionKeys).pick({
   key: true,
@@ -2951,6 +2985,33 @@ export type InsertSubscriptionHistory = z.infer<typeof insertSubscriptionHistory
 export type EmailNotification = typeof emailNotifications.$inferSelect;
 export type InsertEmailNotification = z.infer<typeof insertEmailNotificationSchema>;
 
+// Insert schemas for verification tables
+export const insertClinicAdminVerificationSchema = createInsertSchema(clinicAdminVerifications).pick({
+  email: true,
+  organizationName: true,
+  verificationCode: true,
+  verificationData: true,
+  expiresAt: true,
+  ipAddress: true,
+  userAgent: true
+});
+
+export const insertOrganizationDocumentSchema = createInsertSchema(organizationDocuments).pick({
+  healthSystemId: true,
+  documentType: true,
+  documentUrl: true,
+  documentName: true,
+  uploadedBy: true,
+  expiresAt: true,
+  metadata: true
+});
+
+// Export types for verification tables
+export type ClinicAdminVerification = typeof clinicAdminVerifications.$inferSelect;
+export type InsertClinicAdminVerification = z.infer<typeof insertClinicAdminVerificationSchema>;
+export type OrganizationDocument = typeof organizationDocuments.$inferSelect;
+export type InsertOrganizationDocument = z.infer<typeof insertOrganizationDocumentSchema>;
+
 // Subscription keys relations
 export const subscriptionKeysRelations = relations(subscriptionKeys, ({ one }) => ({
   healthSystem: one(healthSystems, {
@@ -2984,6 +3045,34 @@ export const emailNotificationsRelations = relations(emailNotifications, ({ one 
   healthSystem: one(healthSystems, {
     fields: [emailNotifications.healthSystemId],
     references: [healthSystems.id],
+  }),
+}));
+
+// Clinic admin verifications relations
+export const clinicAdminVerificationsRelations = relations(clinicAdminVerifications, ({ one }) => ({
+  healthSystem: one(healthSystems, {
+    fields: [clinicAdminVerifications.healthSystemId],
+    references: [healthSystems.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [clinicAdminVerifications.approvedBy],
+    references: [users.id],
+  }),
+}));
+
+// Organization documents relations
+export const organizationDocumentsRelations = relations(organizationDocuments, ({ one }) => ({
+  healthSystem: one(healthSystems, {
+    fields: [organizationDocuments.healthSystemId],
+    references: [healthSystems.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [organizationDocuments.uploadedBy],
+    references: [users.id],
+  }),
+  verifiedByUser: one(users, {
+    fields: [organizationDocuments.verifiedBy],
+    references: [users.id],
   }),
 }));
 
