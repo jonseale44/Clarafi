@@ -23,6 +23,12 @@ const adminVerificationSchema = z.object({
   organizationType: z.enum(['private_practice', 'clinic', 'hospital', 'health_system']),
   taxId: z.string().regex(/^\d{2}-\d{7}$/, 'Tax ID must be in format XX-XXXXXXX'),
   npiNumber: z.string().regex(/^\d{10}$/, 'NPI must be 10 digits').optional().or(z.literal('')),
+  // Organization Address
+  address: z.string().min(1, 'Street address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().length(2, 'State must be 2 letters'),
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
+  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
   businessLicense: z.string().optional(),
   medicalLicense: z.string().optional(),
   baaAccepted: z.boolean().refine(val => val === true, 'You must accept the BAA'),
@@ -356,6 +362,86 @@ export default function AdminVerification() {
                           <Input {...field} placeholder="1234567890" />
                         </FormControl>
                         <FormDescription>10-digit number</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Organization Address */}
+                <div className="space-y-4 pt-4 border-t">
+                  <h4 className="font-medium">Organization Address</h4>
+                  
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Street Address</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="123 Main Street, Suite 100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Austin" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>State</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="TX" maxLength={2} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="zip"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ZIP Code</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="78701" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Website (Optional)</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://www.example.com" />
+                        </FormControl>
+                        <FormDescription>
+                          Having a website improves verification score
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
