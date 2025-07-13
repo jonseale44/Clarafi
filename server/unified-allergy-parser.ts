@@ -297,11 +297,25 @@ CORE ALLERGY PROCESSING INSTRUCTIONS:
    - Include source attribution and confidence
    - Document temporal conflict resolution reasoning
 
-9. CONFIDENCE SCORING:
-   - 0.95+ = Explicit allergy documentation in medical records
-   - 0.85-0.94 = Patient directly reports allergy with details
-   - 0.70-0.84 = Inferred from context or partial information
-   - 0.50-0.69 = Uncertain or conflicting information
+9. CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+   Confidence represents YOUR self-assessment of extraction/inference accuracy from the source document.
+   This is NOT about clinical validity of the allergy diagnosis itself.
+   Purpose: Helps users decide whether to review source documents for verification.
+   
+   CONFIDENCE SCORING FRAMEWORK:
+   - 0.95-1.00 = Explicit statements ("known allergy to penicillin", "documented PCN allergy")
+   - 0.85-0.94 = Clear clinical documentation ("patient reports hives with amoxicillin")
+   - 0.70-0.84 = Strong implications ("avoids penicillin", "no PCN per patient preference")
+   - 0.50-0.69 = Reasonable inferences ("possible sulfa reaction", "questionable shellfish intolerance")
+   - 0.30-0.49 = Weak evidence ("thinks might be allergic to aspirin", "mother says possible egg allergy")
+   - 0.10-0.29 = Minimal/vague references ("some antibiotic caused issues years ago")
+   - 0.01-0.09 = Contradictory or parsing errors
+   
+   KEY PRINCIPLES:
+   - Words like "thinks", "might", "possible", "questionable" significantly lower confidence
+   - Patient uncertainty or family reports without confirmation = lower confidence
+   - Clear medical documentation = high confidence
+   - Vague descriptions or distant history = lower confidence
 
 RESPONSE FORMAT (JSON Array):
 [
