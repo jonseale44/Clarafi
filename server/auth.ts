@@ -347,21 +347,26 @@ export function setupAuth(app: Express) {
       };
 
       console.log("✅ [Registration] Creating new user:", registrationData.username);
-      const user = await RegistrationService.registerUser(registrationData);
+      const registrationResult = await RegistrationService.registerUser(registrationData);
+      const { user, requiresPayment, healthSystemId } = registrationResult;
 
-      // For individual providers, create Stripe checkout session
-      if (req.body.registrationType === 'create_new' && user.role === 'provider') {
+      // Handle payment requirement for systems without patients
+      if (requiresPayment) {
         console.log("💳 [Registration] Creating Stripe checkout for individual provider");
+        
+        // Determine subscription tier based on registration type
+        const tier = req.body.registrationType === 'create_new' ? 1 : 2;
+        const registrationType = req.body.registrationType === 'create_new' ? 'individual' : 'group_practice';
         
         const checkoutResult = await StripeService.createCheckoutSession({
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
-          tier: 1,
+          tier: tier,
           billingPeriod: 'monthly',
-          healthSystemId: user.healthSystemId,
+          healthSystemId: healthSystemId, // Use the healthSystemId from registration result
           metadata: {
             userId: user.id.toString(),
-            registrationType: 'individual'
+            registrationType: registrationType
           }
         });
 

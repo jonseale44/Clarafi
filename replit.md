@@ -159,6 +159,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical Security Enhancement - Patient Data Protection COMPLETED (January 16, 2025)
+- **SECURITY VULNERABILITIES FIXED**: Addressed two critical security issues in the multi-tenant EMR system
+  - **Issue 1**: Anyone could join Tier 1/2 health systems without payment, getting free EMR access
+  - **Issue 2**: Users could access existing patient PHI by simply registering for the same health system
+- **NEW SECURITY RULE**: Health systems with existing patients now ALWAYS require subscription keys, regardless of tier
+- **IMPLEMENTATION DETAILS**:
+  - RegistrationService now checks patient count for each health system during registration
+  - If patients exist (count > 0), subscription key is mandatory with clear error message
+  - If no patients exist, registration allowed but payment required for Tier 1/2 systems
+- **USER-FRIENDLY MESSAGING**: Error message for patient data protection: "Subscription key is required. This health system contains protected patient data. Please contact your administrator for access."
+- **PAYMENT FLOW UPDATE**: Systems without patients require Stripe payment for Tier 1 ($99/month) or Tier 2 ($299/user)
+- **HIPAA COMPLIANCE**: Prevents unauthorized access to existing patient data through registration vulnerability
+- **BACKWARD COMPATIBLE**: Tier 3 enterprise systems continue to work as before with subscription keys
+
 ### Comprehensive Confidence Scoring Standardization COMPLETED (January 13, 2025)
 - **MAJOR ARCHITECTURAL UPDATE**: Standardized confidence scoring methodology across ALL 9 unified parsers in the EMR system
 - **CRITICAL CLARIFICATION**: Confidence scores represent GPT's self-assessment of extraction/inference accuracy from source documents, NOT clinical validity of diagnoses

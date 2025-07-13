@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys, patients } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 import { EmailVerificationService } from "./email-verification-service";
 import { StripeService } from "./stripe-service";
 import { SubscriptionKeyService } from "./subscription-key-service";
@@ -40,6 +40,7 @@ export class RegistrationService {
       let healthSystemId: number;
       let primaryLocationId: number | null = null;
       let validatedKeyId: number | null = null;
+      let requiresPayment = false;
 
       // Determine registration type (default to join_existing for backward compatibility)
       const registrationType = data.registrationType || 'join_existing';
@@ -150,9 +151,12 @@ export class RegistrationService {
           throw new Error('Health system or clinic selection is required when joining an existing system');
         }
         
-        // Check if joining a tier 3 health system that requires subscription key
+        // Check health system details and patient data protection requirements
         const healthSystemResult = await tx
-          .select({ subscriptionTier: healthSystems.subscriptionTier })
+          .select({ 
+            subscriptionTier: healthSystems.subscriptionTier,
+            name: healthSystems.name 
+          })
           .from(healthSystems)
           .where(eq(healthSystems.id, healthSystemId))
           .limit(1);
@@ -162,20 +166,33 @@ export class RegistrationService {
         }
         
         const healthSystemTier = healthSystemResult[0].subscriptionTier;
-        console.log(`🔑 [RegistrationService] Health system tier: ${healthSystemTier}`);
+        const healthSystemName = healthSystemResult[0].name;
+        console.log(`🔑 [RegistrationService] Health system tier: ${healthSystemTier}, name: ${healthSystemName}`);
         
-        // If tier 3, validate subscription key
-        if (healthSystemTier === 3) {
+        // CRITICAL SECURITY CHECK: Check if this health system has any patients
+        const patientCount = await tx
+          .select({ count: sql<number>`count(*)::int` })
+          .from(patients)
+          .where(eq(patients.healthSystemId, healthSystemId))
+          .limit(1);
+          
+        const hasPatients = patientCount[0]?.count > 0;
+        console.log(`🔒 [RegistrationService] Health system has patients: ${hasPatients} (count: ${patientCount[0]?.count})`);
+        
+        // SECURITY RULE: If health system has patients, subscription key is ALWAYS required
+        const requiresSubscriptionKey = healthSystemTier === 3 || hasPatients;
+        
+        if (requiresSubscriptionKey) {
           if (!data.subscriptionKey) {
-            throw new Error('Subscription key is required for enterprise health systems');
+            const errorMsg = hasPatients 
+              ? `Subscription key is required. This health system contains protected patient data. Please contact your administrator for access.`
+              : `Subscription key is required for enterprise health systems`;
+            throw new Error(errorMsg);
           }
           
-          console.log(`🔑 [RegistrationService] Validating subscription key for tier 3 health system`);
-          // Note: validateAndUseKey needs to be called AFTER user creation
-          // For now, just validate the key exists and is valid
-          const { SubscriptionKeyService } = await import('./subscription-key-service');
+          console.log(`🔑 [RegistrationService] Validating subscription key (Tier 3: ${healthSystemTier === 3}, Has Patients: ${hasPatients})`);
           
-          // First check if key exists and is valid (without using it yet)
+          // Validate the subscription key
           const keyResult = await tx
             .select()
             .from(subscriptionKeys)
@@ -208,6 +225,9 @@ export class RegistrationService {
           validatedKeyId = key.id;
           console.log(`✅ [RegistrationService] Subscription key validated`);
         }
+        
+        // Set payment requirement flag for Tier 1/2 systems without patients
+        requiresPayment = !hasPatients && healthSystemTier !== 3;
       }
 
       // Validate role based on health system tier
@@ -331,8 +351,12 @@ export class RegistrationService {
         console.log(`⚠️  [RegistrationService] User ${newUser.username} joined health system ${healthSystemId} without specific location assignment`);
       }
 
-      // Return the complete user object
-      return newUser;
+      // Return the complete user object with payment requirement flag
+      return {
+        user: newUser,
+        requiresPayment,
+        healthSystemId
+      };
     });
   }
 
