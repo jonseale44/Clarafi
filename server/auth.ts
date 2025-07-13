@@ -582,4 +582,47 @@ export function setupAuth(app: Express) {
       res.status(500).json({ error: "Failed to update profile" });
     }
   });
+
+  // Password change endpoint
+  app.put("/api/user/change-password", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body;
+      
+      // Validate request
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ 
+          message: "Both current and new passwords are required" 
+        });
+      }
+      
+      // Get user to verify current password
+      const user = await storage.getUserByUsername(req.user.username);
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+      
+      // Verify current password
+      const isValidPassword = await comparePasswords(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ 
+          message: "Current password is incorrect",
+          field: "currentPassword"
+        });
+      }
+      
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Update password in database
+      await storage.updateUserPassword(userId, hashedPassword);
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ error: "Failed to change password" });
+    }
+  });
 }

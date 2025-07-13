@@ -32,6 +32,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   deleteUser(id: number): Promise<void>;
+  updateUserPassword(userId: number, hashedPassword: string): Promise<void>;
   
   // Location management
   getUserLocations(userId: number): Promise<any[]>;
@@ -216,6 +217,13 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(users.username);
+  }
+
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId));
   }
 
   // Location management

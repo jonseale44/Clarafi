@@ -37,6 +37,14 @@ export function EditProfileDialog({ open, onOpenChange, user }: EditProfileDialo
     npi: user.npi || "",
   });
 
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       return apiRequest("PUT", `/api/user/profile`, data);
@@ -47,7 +55,9 @@ export function EditProfileDialog({ open, onOpenChange, user }: EditProfileDialo
         description: "Your profile has been updated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      onOpenChange(false);
+      if (!showPasswordSection) {
+        onOpenChange(false);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -58,15 +68,70 @@ export function EditProfileDialog({ open, onOpenChange, user }: EditProfileDialo
     },
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      return apiRequest("PUT", `/api/user/change-password`, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password Changed",
+        description: "Your password has been changed successfully.",
+      });
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setShowPasswordSection(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Password Change Failed",
+        description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfileMutation.mutate(formData);
+    
+    if (showPasswordSection) {
+      // Handle password change
+      if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+        toast({
+          title: "Missing Fields",
+          description: "Please fill in all password fields.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        toast({
+          title: "Passwords Don't Match",
+          description: "New password and confirmation password must match.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      changePasswordMutation.mutate({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+    } else {
+      // Handle profile update
+      updateProfileMutation.mutate(formData);
+    }
   };
 
   const handleInputChange = (field: keyof typeof formData) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handlePasswordChange = (field: keyof typeof passwordData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setPasswordData(prev => ({ ...prev, [field]: e.target.value }));
   };
 
   return (
@@ -78,17 +143,39 @@ export function EditProfileDialog({ open, onOpenChange, user }: EditProfileDialo
         
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* Health System - Read Only */}
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Health System:</strong> {user.healthSystemName || "Not assigned"}
-                <br />
-                <span className="text-sm text-muted-foreground">
-                  Health system assignment can only be changed by an administrator.
-                </span>
-              </AlertDescription>
-            </Alert>
+            {/* Toggle between profile and password */}
+            <div className="flex gap-2 mb-4">
+              <Button
+                type="button"
+                variant={!showPasswordSection ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowPasswordSection(false)}
+              >
+                Profile Information
+              </Button>
+              <Button
+                type="button"
+                variant={showPasswordSection ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowPasswordSection(true)}
+              >
+                Change Password
+              </Button>
+            </div>
+
+            {!showPasswordSection ? (
+              <>
+                {/* Health System - Read Only */}
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Health System:</strong> {user.healthSystemName || "Not assigned"}
+                    <br />
+                    <span className="text-sm text-muted-foreground">
+                      Health system assignment can only be changed by an administrator.
+                    </span>
+                  </AlertDescription>
+                </Alert>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -157,28 +244,82 @@ export function EditProfileDialog({ open, onOpenChange, user }: EditProfileDialo
                 Role changes must be requested through your administrator.
               </p>
             </div>
+              </>
+            ) : (
+              <>
+                {/* Password Change Section */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange("currentPassword")}
+                      required
+                      placeholder="Enter your current password"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange("newPassword")}
+                      required
+                      placeholder="Enter your new password"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange("confirmPassword")}
+                      required
+                      placeholder="Confirm your new password"
+                    />
+                  </div>
+                  
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Password must be at least 8 characters long and contain a mix of letters, numbers, and special characters.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </>
+            )}
           </div>
 
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={updateProfileMutation.isPending}
+              onClick={() => {
+                onOpenChange(false);
+                setShowPasswordSection(false);
+                setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+              }}
+              disabled={updateProfileMutation.isPending || changePasswordMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={updateProfileMutation.isPending}
+              disabled={updateProfileMutation.isPending || changePasswordMutation.isPending}
             >
-              {updateProfileMutation.isPending ? (
+              {(updateProfileMutation.isPending || changePasswordMutation.isPending) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {showPasswordSection ? "Changing Password..." : "Saving..."}
                 </>
               ) : (
-                "Save Changes"
+                showPasswordSection ? "Change Password" : "Save Changes"
               )}
             </Button>
           </DialogFooter>

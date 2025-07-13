@@ -166,7 +166,7 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
             Edit Profile
           </DropdownMenuItem>
           
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem className="cursor-pointer" onClick={() => setEditProfileOpen(true)}>
             <Settings className="w-4 h-4 mr-2" />
             Account Settings
           </DropdownMenuItem>
