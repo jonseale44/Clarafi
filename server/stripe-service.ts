@@ -383,9 +383,9 @@ export class StripeService {
         console.log(`📧 [Stripe] Customer email: ${params.email}`);
         console.log(`🏥 [Stripe] Health System ID: ${params.healthSystemId}`);
         console.log(`🏷️ [Stripe] Metadata:`, params.metadata);
+        console.log(`🌐 [Stripe] Domain: ${process.env.REPLIT_DEV_DOMAIN}`);
         
-        // Create simple checkout session with minimal configuration
-        const session = await stripe.checkout.sessions.create({
+        const sessionParams = {
           customer_email: params.email,
           line_items: [{
             price_data: {
@@ -401,7 +401,7 @@ export class StripeService {
             },
             quantity: 1,
           }],
-          mode: 'subscription',
+          mode: 'subscription' as const,
           metadata: {
             healthSystemId: params.healthSystemId.toString(),
             tier: params.tier.toString(),
@@ -410,7 +410,38 @@ export class StripeService {
           },
           success_url: `https://${process.env.REPLIT_DEV_DOMAIN}/auth?payment=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `https://${process.env.REPLIT_DEV_DOMAIN}/auth?payment=cancelled`,
-        });
+        };
+        
+        console.log(`📝 [Stripe] Session params:`, JSON.stringify(sessionParams, null, 2));
+        
+        // Create simple checkout session with minimal configuration
+        const session = await stripe.checkout.sessions.create(sessionParams);
+        
+        console.log(`✅ [Stripe] Session created successfully`);
+        console.log(`🆔 [Stripe] Session ID: ${session.id}`);
+        console.log(`🔗 [Stripe] Session URL: ${session.url}`);
+        console.log(`📊 [Stripe] Session status: ${session.status}`);
+        console.log(`💳 [Stripe] Payment status: ${session.payment_status}`);
+        console.log(`🔍 [Stripe] Full session object:`, JSON.stringify({
+          id: session.id,
+          url: session.url,
+          status: session.status,
+          payment_status: session.payment_status,
+          mode: session.mode,
+          customer_email: session.customer_email,
+          metadata: session.metadata,
+          created: session.created,
+          expires_at: session.expires_at,
+        }, null, 2));
+
+        if (!session.url) {
+          console.error(`❌ [Stripe] No URL returned in session!`);
+          console.error(`❌ [Stripe] Full session response:`, session);
+          return {
+            success: false,
+            error: 'Stripe session created but no checkout URL returned'
+          };
+        }
 
         return { 
           success: true, 
@@ -448,14 +479,38 @@ export class StripeService {
       });
 
       return session.url;
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
+    } catch (error: any) {
+      console.error('❌ [Stripe] Error creating checkout session:', error);
+      console.error('❌ [Stripe] Error type:', error.type);
+      console.error('❌ [Stripe] Error message:', error.message);
+      console.error('❌ [Stripe] Error code:', error.code);
+      console.error('❌ [Stripe] Error status:', error.statusCode);
+      console.error('❌ [Stripe] Request ID:', error.requestId);
+      
+      if (error.raw) {
+        console.error('❌ [Stripe] Raw error response:', JSON.stringify(error.raw, null, 2));
+      }
+      
+      // Log Stripe-specific error details
+      if (error.type === 'StripeAPIError') {
+        console.error('❌ [Stripe] API Error Details:', {
+          type: error.type,
+          rawType: error.rawType,
+          code: error.code,
+          docUrl: error.doc_url,
+          requestId: error.requestId,
+          statusCode: error.statusCode,
+          charge: error.charge,
+          decline_code: error.decline_code,
+          param: error.param,
+        });
+      }
       
       // Return appropriate response based on call type
       if (typeof paramsOrCustomerId === 'object' && paramsOrCustomerId.email) {
         return { 
           success: false, 
-          error: error instanceof Error ? error.message : 'Failed to create checkout session' 
+          error: error.message || 'Failed to create checkout session' 
         };
       }
       return null;
