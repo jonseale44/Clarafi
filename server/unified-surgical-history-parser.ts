@@ -362,7 +362,7 @@ Response format (JSON array):
     "date_change": {"from": "2020-01-01", "to": "2020-01-15"}, // only for CORRECT_DATE
     "surgeon_change": {"from": "Dr. Smith", "to": "Dr. Johnson"}, // only for UPDATE_DETAILS
     "facility_change": {"from": "Hospital A", "to": "Hospital B"}, // only for UPDATE_DETAILS
-    "confidence": 85,
+    "confidence": 0.85,
     "source_type": "${attachmentId ? "attachment" : "encounter"}",
     "transfer_visit_history_from": 456, // surgery_id to transfer history from (EVOLVE_SURGERY only)
     "extracted_date": "2020-01-15", // ISO date from document content
@@ -374,10 +374,30 @@ CRITICAL RULES:
 1. Only return surgical procedures explicitly mentioned in the document
 2. DO NOT create entries for procedures only mentioned in existing surgical history
 3. If no surgical procedures are mentioned, return empty array: []
-4. Always include confidence score (0-100)
+4. Always include confidence score (0.0-1.0 decimal format)
 5. Include consolidation_reasoning for any consolidation decisions
 6. Use specific medical terminology for procedure names
 7. Extract accurate dates, facilities, and surgeon names when available
+
+CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+Confidence represents YOUR self-assessment of extraction/inference accuracy from the source document.
+This is NOT about clinical validity of the surgical procedure itself.
+Purpose: Helps users decide whether to review source documents for verification.
+
+CONFIDENCE SCORING FRAMEWORK:
+- 0.95-1.00 = Explicit statements ("appendectomy on 3/15/2020", "had gallbladder removed")
+- 0.85-0.94 = Clear clinical documentation ("post-op from knee replacement", "surgical scar from C-section")
+- 0.70-0.84 = Strong implications ("recovering from surgery", "had operation last year")
+- 0.50-0.69 = Reasonable inferences ("possible hernia repair", "thinks had tonsils out as child")
+- 0.30-0.49 = Weak evidence ("some surgery years ago", "family mentions operation")
+- 0.10-0.29 = Minimal/vague references ("surgical history")
+- 0.01-0.09 = Contradictory or parsing errors
+
+KEY PRINCIPLES:
+- Words like "thinks", "might", "possible", "maybe" significantly lower confidence
+- Vague timeframes ("years ago", "as a child") = lower confidence
+- Specific procedure names + dates = high confidence
+- Patient uncertainty or family reports without confirmation = lower confidence
 
 EXAMPLES:
 
@@ -388,7 +408,7 @@ Response: [
     "surgery_id": null,
     "action": "NEW_SURGERY", 
     "procedure_name": "Bilateral total knee replacement",
-    "confidence": 90,
+    "confidence": 0.90,
     "source_type": "${attachmentId ? "attachment" : "encounter"}",
     "extracted_date": "2010-01-01",
     "consolidation_reasoning": "Different procedure (bilateral vs unilateral right) and different year (2010 vs 2015)"
@@ -402,7 +422,7 @@ Response: [
     "surgery_id": 8,
     "action": "ADD_VISIT",
     "visit_notes": "Follow-up visit - healing well, no complications noted",
-    "confidence": 95,
+    "confidence": 0.95,
     "source_type": "${attachmentId ? "attachment" : "encounter"}"
   }
 ]
@@ -414,7 +434,7 @@ Response: [
     "surgery_id": null,
     "action": "EVOLVE_SURGERY",
     "procedure_name": "Complicated appendectomy with abscess drainage", 
-    "confidence": 88,
+    "confidence": 0.88,
     "source_type": "${attachmentId ? "attachment" : "encounter"}",
     "transfer_visit_history_from": 3,
     "consolidation_reasoning": "Surgery evolved from simple appendectomy to complicated procedure with abscess - preserving original visit history"

@@ -334,11 +334,25 @@ FAMILY HISTORY EXTRACTION RULES:
    - Include source attribution and confidence
    - Format: "Added father's heart disease history from medical records"
 
-6. CONFIDENCE SCORING:
-   - 0.95+ = Document/medical record explicitly states family history
-   - 0.85-0.94 = Patient directly reports family history
-   - 0.70-0.84 = Inferred from context or partial information
-   - 0.50-0.69 = Uncertain or conflicting information
+6. CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+   Confidence represents YOUR self-assessment of extraction/inference accuracy from the source document.
+   This is NOT about clinical validity of the family history itself.
+   Purpose: Helps users decide whether to review source documents for verification.
+   
+   CONFIDENCE SCORING FRAMEWORK:
+   - 0.95-1.00 = Explicit statements ("mother has breast cancer", "father died of MI at 65")
+   - 0.85-0.94 = Clear clinical documentation ("family history significant for DM in multiple members")
+   - 0.70-0.84 = Strong implications ("runs in the family", "multiple relatives with heart disease")
+   - 0.50-0.69 = Reasonable inferences ("thinks grandmother had diabetes", "possibly hereditary")
+   - 0.30-0.49 = Weak evidence ("some relative had cancer", "family member with health issues")
+   - 0.10-0.29 = Minimal/vague references ("bad family history")
+   - 0.01-0.09 = Contradictory or parsing errors
+   
+   KEY PRINCIPLES:
+   - Words like "thinks", "might", "possibly", "maybe" significantly lower confidence
+   - Vague relationships ("some relative", "family member") = lower confidence
+   - Clear relationships + specific conditions = high confidence
+   - Patient uncertainty or secondhand reports = lower confidence
 
 RESPONSE FORMAT (JSON Array):
 [

@@ -136,9 +136,30 @@ Return ONLY a valid JSON array with this structure:
     "extractedDate": "YYYY-MM-DD or null if no date found",
     "timeContext": "admission/day1/day2/discharge/0800hrs/etc or null",
     "parsedText": "brief description of this vitals set",
-    "warnings": ["array of critical value warnings for this set"]
+    "warnings": ["array of critical value warnings for this set"],
+    "confidence": 0.0-1.0
   }
 ]
+
+CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+Confidence represents YOUR self-assessment of extraction/inference accuracy from the source document.
+This is NOT about clinical validity of the vital signs themselves.
+Purpose: Helps users decide whether to review source documents for verification.
+
+CONFIDENCE SCORING FRAMEWORK:
+- 0.95-1.00 = Explicit vital signs with all values ("BP 120/80, HR 72, Temp 98.6°F, O2 94%")
+- 0.85-0.94 = Clear vital signs with most values ("vital signs stable: BP 120/80, HR 72")
+- 0.70-0.84 = Partial vital signs ("blood pressure 120/80", "afebrile")
+- 0.50-0.69 = Inferred from context ("vitals normal", "hemodynamically stable")
+- 0.30-0.49 = Weak evidence ("vitals taken", "monitored")
+- 0.10-0.29 = Minimal references ("vitals checked")
+- 0.01-0.09 = Contradictory or parsing errors
+
+KEY PRINCIPLES:
+- Complete vital sign sets = highest confidence
+- Specific numeric values = high confidence
+- Qualitative descriptions ("normal", "stable") = medium confidence
+- General references without values = lower confidence
 
 CRITICAL INTELLIGENCE RULES:
 - Convert Celsius to Fahrenheit (°F = °C × 9/5 + 32)
@@ -308,14 +329,14 @@ Input: "${vitalsText}"`;
 
       const confidence =
         totalPossible > 0
-          ? Math.round((totalExtracted / totalPossible) * 100)
+          ? totalExtracted / totalPossible
           : 0;
 
       console.log(
         `🔥 [VITALS PARSING] ============= VITALS PARSING COMPLETE =============`,
       );
       console.log(
-        `✅ [VitalsParser] Successfully parsed ${parsedData.length} vitals sets with ${confidence}% confidence`,
+        `✅ [VitalsParser] Successfully parsed ${parsedData.length} vitals sets with ${confidence.toFixed(2)} confidence`,
       );
 
       parsedData.forEach((vitalSet, index) => {

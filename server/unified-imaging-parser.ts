@@ -302,6 +302,26 @@ CRITICAL INSTRUCTIONS:
    - Addendums or corrections
    - New findings on repeat studies
 
+CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+Confidence represents YOUR self-assessment of extraction/inference accuracy from the source document.
+This is NOT about clinical validity of the imaging findings themselves.
+Purpose: Helps users decide whether to review source documents for verification.
+
+CONFIDENCE SCORING FRAMEWORK:
+- 0.95-1.00 = Explicit imaging reports ("Chest X-ray showed cardiomegaly", "CT scan normal")
+- 0.85-0.94 = Clear imaging documentation with specific findings/details
+- 0.70-0.84 = Strong implications ("recent imaging", "X-ray last week")
+- 0.50-0.69 = Reasonable inferences ("imaging scheduled", "pending CT results")
+- 0.30-0.49 = Weak evidence ("possible X-ray mentioned", vague references)
+- 0.10-0.29 = Minimal references ("imaging discussed")
+- 0.01-0.09 = Contradictory or parsing errors
+
+KEY PRINCIPLES:
+- Formal radiology reports = highest confidence
+- Specific modality + body part + findings = high confidence
+- Vague references ("some imaging") = lower confidence
+- Physical exam findings mistaken as imaging = very low confidence
+
 CONTENT TO ANALYZE:
 ${content}
 

@@ -363,6 +363,26 @@ Extract accurate dates from document content for proper timeline tracking:
 - CRITICAL: Use the SAME document date for ALL social history entries from this document
 - If multiple dates exist, use the most recent that represents when the social history was documented
 
+CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+Confidence represents YOUR self-assessment of extraction/inference accuracy from the source document.
+This is NOT about clinical validity of the social history itself.
+Purpose: Helps users decide whether to review source documents for verification.
+
+CONFIDENCE SCORING FRAMEWORK:
+- 0.95-1.00 = Explicit statements ("smokes 1 PPD", "ETOH: 2 beers daily", "married with 2 children")
+- 0.85-0.94 = Clear documentation ("non-smoker", "denies alcohol use", "works as teacher")
+- 0.70-0.84 = Strong implications ("tobacco cessation counseling", "lives alone", "sedentary lifestyle")
+- 0.50-0.69 = Reasonable inferences ("social drinker", "former smoker", "active")
+- 0.30-0.49 = Weak evidence ("possible drug use", "unclear living situation")
+- 0.10-0.29 = Minimal references ("social history reviewed")
+- 0.01-0.09 = Contradictory or parsing errors
+
+KEY PRINCIPLES:
+- Specific quantities/frequencies = highest confidence
+- Clear yes/no statements = high confidence
+- Vague terms ("social", "occasional", "moderate") = medium confidence
+- Patient uncertainty or conflicting reports = lower confidence
+
 RESPONSE FORMAT - Return ONLY valid JSON:
 {
   "changes": [
@@ -373,7 +393,7 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "currentStatus": "Specific current status with details",
       "visit_notes": "What was discussed or found in this encounter/document",
       "consolidation_reasoning": "Why this action was taken",
-      "confidence": 0.90,
+      "confidence": 0.0-1.0,
       "source_type": "encounter" | "attachment",
       "extracted_date": "YYYY-MM-DD" | null
     }

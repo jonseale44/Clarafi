@@ -110,7 +110,7 @@ Return ONLY a valid JSON array with this structure:
     "resultAvailableAt": "YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss if available",
     "resultStatus": "preliminary/final/corrected or final if not specified",
     "consolidationReasoning": "why this result should/shouldn't be consolidated with existing",
-    "confidence": number (0-100, confidence in extraction accuracy),
+    "confidence": number (0.0-1.0 decimal format, confidence in extraction accuracy),
     "warnings": ["array of critical value or interpretation warnings"],
     "extractedDate": "YYYY-MM-DD primary date for this result",
     "timeContext": "admission/day1/outpatient/followup/etc or null"
@@ -132,6 +132,26 @@ CRITICAL LABORATORY INTELLIGENCE RULES:
 - Use consolidation reasoning to explain merge/separate decisions
 - Return empty array if no lab results found
 - No explanatory text, ONLY the JSON array
+
+CONFIDENCE SCORING METHODOLOGY - CRITICAL:
+Confidence represents YOUR self-assessment of extraction/inference accuracy from the source document.
+This is NOT about clinical validity of the lab results themselves.
+Purpose: Helps users decide whether to review source documents for verification.
+
+CONFIDENCE SCORING FRAMEWORK:
+- 0.95-1.00 = Explicit lab reports with all components ("CBC: WBC 5.4, RBC 4.2, Hgb 14.0")
+- 0.85-0.94 = Clear lab results with values/units ("glucose 95 mg/dL", "creatinine 1.0")
+- 0.70-0.84 = Lab results without units or partial data ("cholesterol 200", "normal CBC")
+- 0.50-0.69 = Inferred results ("labs normal", "chemistry panel pending")
+- 0.30-0.49 = Weak evidence ("blood work done", "labs reviewed")
+- 0.10-0.29 = Minimal references ("pending results")
+- 0.01-0.09 = Contradictory or parsing errors
+
+KEY PRINCIPLES:
+- Formal lab reports with reference ranges = highest confidence
+- Specific values with units = high confidence
+- Values without units or vague descriptions = medium confidence
+- General references to labs = lower confidence
 
 CONSOLIDATION LOGIC:
 - Same test + same date = consolidate (choose most complete/recent entry)
@@ -221,7 +241,7 @@ Input: "${labText}"`;
 
       console.log(
         "⚗️ [LabParser] ✅ PARSING COMPLETE - Average confidence:",
-        avgConfidence.toFixed(1) + "%",
+        avgConfidence.toFixed(2),
       );
       console.log(
         "⚗️ [LabParser] ✅ Total results extracted:",
@@ -231,7 +251,7 @@ Input: "${labText}"`;
       return {
         success: true,
         data: validatedResults,
-        confidence: Math.round(avgConfidence),
+        confidence: avgConfidence,
         originalText: labText,
         totalResultsFound: validatedResults.length,
         consolidatedCount: validatedResults.filter((r) =>
@@ -326,7 +346,7 @@ Input: "${labText}"`;
       })
       .map((result) => ({
         ...result,
-        confidence: Math.min(100, Math.max(0, result.confidence || 75)), // Ensure 0-100 range
+        confidence: Math.min(1.0, Math.max(0, result.confidence || 0.75)), // Ensure 0.0-1.0 range
         criticalFlag: result.criticalFlag || false,
         resultStatus: result.resultStatus || "final",
         testCategory: result.testCategory || "chemistry",

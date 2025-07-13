@@ -159,6 +159,31 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Comprehensive Confidence Scoring Standardization COMPLETED (January 13, 2025)
+- **MAJOR ARCHITECTURAL UPDATE**: Standardized confidence scoring methodology across ALL 9 unified parsers in the EMR system
+- **CRITICAL CLARIFICATION**: Confidence scores represent GPT's self-assessment of extraction/inference accuracy from source documents, NOT clinical validity of diagnoses
+- **FORMAT STANDARDIZATION**: All parsers now use decimal format (0.0-1.0) instead of percentage (0-100) for consistency
+- **PARSERS UPDATED**:
+  - Medical Problems Parser: Already had comprehensive methodology + UI tooltips
+  - Allergy Parser: Already had comprehensive methodology  
+  - Family History Parser: Already had comprehensive methodology
+  - Surgical History Parser: Converted from percentage to decimal + added methodology
+  - Social History Parser: Added comprehensive methodology + decimal format
+  - Imaging Parser: Added explicit methodology section (already used decimal)
+  - Lab Parser: Converted from percentage to decimal + added methodology
+  - Vitals Parser: Added confidence field + methodology + converted to decimal
+- **STANDARDIZED SCORING BANDS**:
+  - 0.95-1.00: Explicit statements with complete data
+  - 0.85-0.94: Clear documentation with specific details
+  - 0.70-0.84: Strong implications or partial data
+  - 0.50-0.69: Reasonable inferences with some uncertainty
+  - 0.30-0.49: Weak evidence or vague references
+  - 0.10-0.29: Minimal mentions
+  - 0.01-0.09: Contradictory or parsing errors
+- **KEY PRINCIPLES ESTABLISHED**: Words like "thinks", "might", "possible" significantly lower confidence scores across all parsers
+- **USER BENEFIT**: Intuitive confidence levels help users decide when to review source documents for verification
+- **PRODUCTION IMPACT**: System now provides consistent confidence scoring across all clinical data extraction workflows
+
 ### Medication Status Database Constraint Fix COMPLETED (January 13, 2025)
 - **CRITICAL BUG FIXED**: Medications were failing to create with "pending" status due to database constraint mismatch
 - **ROOT CAUSE**: Database constraint `medications_status_check` only allowed ['active', 'discontinued', 'completed', 'on-hold'] but code was trying to create medications with 'pending' status

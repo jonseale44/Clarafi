@@ -633,16 +633,21 @@ export function EnhancedMedicalProblemsList({
         };
         
         const getConfidenceTooltip = (confidencePercent: number) => {
-          if (confidencePercent >= 90) {
-            return "High Confidence: Document contains specific medical data (exact values, medications, dosages) with clear diagnostic terminology.";
+          // Confidence represents GPT's self-assessment of extraction accuracy, NOT clinical validity
+          if (confidencePercent >= 95) {
+            return "Extraction Confidence 95-100%: Explicit statement found in document (e.g., 'Known AFib', 'HTN diagnosed 2010'). High confidence GPT extracted this correctly.";
+          } else if (confidencePercent >= 85) {
+            return "Extraction Confidence 85-94%: Clear clinical documentation found (e.g., specific test results, provider notes). GPT confident in accurate extraction.";
           } else if (confidencePercent >= 70) {
-            return "Good Confidence: Document has moderate clinical specificity with some specific medical details.";
-          } else if (confidencePercent >= 40) {
-            return "Medium Confidence: Document contains general medical information but lacks specific clinical details.";
+            return "Extraction Confidence 70-84%: Strong implications but not explicit (e.g., patient on metoprolol implies HTN). Moderate extraction confidence.";
+          } else if (confidencePercent >= 50) {
+            return "Extraction Confidence 50-69%: Reasonable inference with uncertainty (e.g., 'possible AFib', 'irregular pulse'). Review source recommended.";
+          } else if (confidencePercent >= 30) {
+            return "Extraction Confidence 30-49%: Weak evidence (e.g., 'thinks might have diabetes', family reports). Low extraction confidence - verify source.";
           } else if (confidencePercent >= 10) {
-            return "Low Confidence: Document has vague or minimal medical information with limited clinical specificity.";
+            return "Extraction Confidence 10-29%: Minimal/vague reference found. Very uncertain extraction - source review strongly recommended.";
           } else {
-            return "Very Low Confidence: Document contains minimal or very general medical information without specific clinical details.";
+            return "Extraction Confidence <10%: Contradictory info or parsing error. Extraction highly uncertain - manual review required.";
           }
         };
         
@@ -661,7 +666,7 @@ export function EnhancedMedicalProblemsList({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
-                <p className="text-sm font-medium mb-1">Confidence: {confidencePercent}%</p>
+                <p className="text-sm font-medium mb-1">Extraction Confidence: {confidencePercent}%</p>
                 <p className="text-xs">{getConfidenceTooltip(confidencePercent)}</p>
                 <p className="text-xs mt-2 opacity-75">Click to view source document</p>
               </TooltipContent>
