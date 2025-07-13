@@ -629,7 +629,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                       {(() => {
                         const mostRecentVisit = surgery.visitHistory?.[0];
                         if (mostRecentVisit) {
-                          const confidence = mostRecentVisit.confidence ? Math.round(mostRecentVisit.confidence) : 0;
+                          const confidence = mostRecentVisit.confidence ? Math.round(mostRecentVisit.confidence * 100) : 0;
                           switch (mostRecentVisit.source) {
                             case "attachment":
                               return (
@@ -732,8 +732,8 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
                                   const mostRecentVisit = surgery.visitHistory?.[0]; // Assuming sorted by date desc
                                   
                                   if (mostRecentVisit) {
-                                    // Confidence is already stored as a percentage (0-100), not decimal (0-1)
-                                    const confidence = mostRecentVisit.confidence ? Math.round(mostRecentVisit.confidence) : 0;
+                                    // Confidence is stored as a decimal (0-1), so multiply by 100 for display
+                                    const confidence = mostRecentVisit.confidence ? Math.round(mostRecentVisit.confidence * 100) : 0;
                                     
                                     switch (mostRecentVisit.source) {
                                       case "attachment":
