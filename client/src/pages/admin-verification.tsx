@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, Loader2, Sparkles, Building2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Building2, AlertCircle, Navigation, MapPin } from 'lucide-react';
 import { Link } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const adminVerificationSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -40,10 +42,24 @@ const adminVerificationSchema = z.object({
 
 type AdminVerificationFormData = z.infer<typeof adminVerificationSchema>;
 
+interface NearbyClinic {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone?: string;
+  website?: string;
+  distance?: number;
+}
+
 export default function AdminVerification() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [nearbyClinics, setNearbyClinics] = useState<NearbyClinic[]>([]);
+  const [gettingLocation, setGettingLocation] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const form = useForm<AdminVerificationFormData>({
     resolver: zodResolver(adminVerificationSchema),
@@ -55,6 +71,83 @@ export default function AdminVerification() {
       termsAccepted: false
     }
   });
+
+  // Mock nearby clinics data - in production this would come from an API
+  const mockNearbyClinics: NearbyClinic[] = [
+    {
+      name: "Waco Family Medicine - Hillsboro",
+      address: "1323 East Franklin St #105",
+      city: "Hillsboro",
+      state: "TX",
+      zip: "76645",
+      phone: "(254) 582-7481",
+      website: "https://wacofamilymedicine.org",
+      distance: 0.8
+    },
+    {
+      name: "Mission Hillsboro Medical Clinic",
+      address: "120 East Franklin St, Unit B",
+      city: "Hillsboro",
+      state: "TX",
+      zip: "76645",
+      phone: "(254) 479-1489",
+      distance: 1.2
+    },
+    {
+      name: "Specialty Care Clinics",
+      address: "117 Jane Lane",
+      city: "Hillsboro",
+      state: "TX",
+      zip: "76645",
+      phone: "(254) 582-8007",
+      distance: 1.5
+    },
+    {
+      name: "Hill County Medical Center",
+      address: "1313 E Franklin St",
+      city: "Hillsboro",
+      state: "TX",
+      zip: "76645",
+      phone: "(254) 582-8475",
+      distance: 2.1
+    }
+  ];
+
+  const getUserLocation = useCallback(() => {
+    setGettingLocation(true);
+    
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      setGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // In production, you would send lat/lng to an API to get nearby clinics
+        // For now, we'll just use mock data
+        setNearbyClinics(mockNearbyClinics);
+        setGettingLocation(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Unable to get your location. Please search manually.");
+        setGettingLocation(false);
+      }
+    );
+  }, []);
+
+  const selectClinic = (clinic: NearbyClinic) => {
+    form.setValue('organizationName', clinic.name);
+    form.setValue('address', clinic.address);
+    form.setValue('city', clinic.city);
+    form.setValue('state', clinic.state);
+    form.setValue('zip', clinic.zip);
+    if (clinic.website) {
+      form.setValue('website', clinic.website);
+    }
+    setSearchOpen(false);
+  };
 
   const onSubmit = async (data: AdminVerificationFormData) => {
     console.log('🚀 [AdminVerification] Starting submission with data:', data);
@@ -295,6 +388,83 @@ export default function AdminVerification() {
                 <CardDescription>Details about your healthcare organization</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Location-based search */}
+                <div className="mb-4">
+                  <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                        onClick={() => setSearchOpen(true)}
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Search for clinics near you
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0" align="start">
+                      <Command>
+                        <div className="flex items-center border-b px-3">
+                          <input
+                            placeholder="Search clinics..."
+                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                          />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={getUserLocation}
+                            disabled={gettingLocation}
+                            className="ml-2"
+                            title="Use my location"
+                          >
+                            {gettingLocation ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Navigation className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        
+                        <CommandList className="max-h-[300px] overflow-y-auto">
+                          {nearbyClinics.length === 0 ? (
+                            <CommandEmpty>
+                              Click the location button to find nearby clinics
+                            </CommandEmpty>
+                          ) : (
+                            <CommandGroup heading="Nearby Clinics">
+                              {nearbyClinics.map((clinic, index) => (
+                                <CommandItem
+                                  key={index}
+                                  onSelect={() => selectClinic(clinic)}
+                                  className="flex items-start gap-2 py-3 cursor-pointer"
+                                >
+                                  <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                                  <div className="flex-1 space-y-1">
+                                    <div className="font-medium">{clinic.name}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {clinic.address}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {clinic.city}, {clinic.state} {clinic.zip}
+                                    </div>
+                                    {clinic.distance && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {clinic.distance} miles away
+                                      </div>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Select a real clinic to auto-fill the form (use YOUR email/phone for verification)
+                  </p>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="organizationName"
