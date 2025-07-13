@@ -259,11 +259,19 @@ PROCESSING CONTEXT:
 
 CRITICAL INSTRUCTIONS:
 
-1. **PDF-CENTRIC WORKFLOW**: Focus on extracting clean, clinical summaries from radiology reports. Generate concise 1-2 sentence summaries like "Normal heart and lungs" or "Small RUL nodule, stable from prior".
+1. **IMAGING DATA ONLY - VITAL SIGNS EXCLUSION**: 
+   - **NEVER EXTRACT VITAL SIGNS AS IMAGING**: Temperature, blood pressure, heart rate, respiratory rate, oxygen saturation are NOT imaging data
+   - **IMAGING REQUIRES MODALITY**: Only extract data that explicitly mentions imaging modalities (X-ray, CT, MRI, Ultrasound, Echo, PET)
+   - **IMAGING REQUIRES INTERPRETATION**: Must have radiological findings, impressions, or formal reports
+   - **PHYSICAL EXAM ≠ IMAGING**: "Normal heart and lungs" from physical exam is NOT an imaging finding
+   - **LAB VALUES ≠ IMAGING**: Laboratory results, blood tests, cultures are NOT imaging
+   - **VITAL SIGNS DOCUMENTS**: If content primarily contains vital signs (temp, HR, BP, RR, O2 sat), return empty changes array
 
-2. **HISTORICAL IMAGING ONLY**: Extract only completed imaging studies with results. Do NOT extract future recommendations, planned studies, or "patient should get MRI" type content.
+2. **PDF-CENTRIC WORKFLOW**: Focus on extracting clean, clinical summaries from radiology reports. Generate concise 1-2 sentence summaries ONLY for actual imaging studies.
 
-3. **PRODUCTION-LEVEL PRE-INSERT VALIDATION**: 
+3. **HISTORICAL IMAGING ONLY**: Extract only completed imaging studies with results. Do NOT extract future recommendations, planned studies, or "patient should get MRI" type content.
+
+4. **PRODUCTION-LEVEL PRE-INSERT VALIDATION**: 
    - **EPIC/ATHENA STANDARDS**: Use commercial EMR-grade deduplication logic
    - **MANDATORY CONSOLIDATION**: BEFORE creating any new imaging study, systematically check ALL existing studies
    - **INTELLIGENT MATCHING**: Apply clinical intelligence - "CXR" = "Chest X-ray" = "chest radiograph" = "PA/lateral chest"
@@ -276,19 +284,19 @@ CRITICAL INSTRUCTIONS:
    - **SYNONYM MATCHING**: Chest/thoracic, abdomen/abdominal, brain/head, spine/lumbar/cervical
    - **DEFAULT TO CONSOLIDATION**: When in doubt, consolidate rather than duplicate
 
-4. **COMMERCIAL EMR STATUS WORKFLOW**:
+5. **COMMERCIAL EMR STATUS WORKFLOW**:
    - "preliminary" = preliminary read by resident/AI
    - "final" = attending radiologist final read  
    - "addendum" = additional findings or corrections
    - "corrected" = error corrections
 
-5. **CLEAN CLINICAL SUMMARIES**: Generate professional, concise summaries:
-   - "Normal heart and lungs"
-   - "Small pleural effusion, improved"
-   - "Mild degenerative changes L4-L5"
-   - "No acute intracranial abnormality"
+6. **CLEAN CLINICAL SUMMARIES**: Generate professional, concise summaries ONLY for actual imaging:
+   - "Normal chest X-ray" (NOT "normal heart and lungs" from physical exam)
+   - "Small pleural effusion on CT chest, improved"
+   - "MRI lumbar spine: Mild degenerative changes L4-L5"
+   - "Head CT: No acute intracranial abnormality"
 
-6. **VISIT HISTORY TRACKING**: For consolidations, create visit entries documenting:
+7. **VISIT HISTORY TRACKING**: For consolidations, create visit entries documenting:
    - Interpretation changes
    - Status updates (preliminary → final)
    - Addendums or corrections
@@ -296,6 +304,42 @@ CRITICAL INSTRUCTIONS:
 
 CONTENT TO ANALYZE:
 ${content}
+
+CRITICAL EXCLUSION EXAMPLES - NEVER EXTRACT THESE AS IMAGING:
+
+1. **VITAL SIGNS DOCUMENT**:
+   Content: "Temperature: 98.6°F, HR: 72, BP: 120/80, RR: 16, O2 sat: 98%"
+   Action: Return empty changes array - These are vital signs, NOT imaging
+
+2. **PHYSICAL EXAM FINDINGS**:
+   Content: "Physical exam reveals normal heart and lungs, no murmurs, clear lung fields"
+   Action: Return empty changes array - This is physical exam, NOT imaging
+
+3. **LAB RESULTS**:
+   Content: "CBC normal, BMP shows glucose 95, creatinine 0.9"
+   Action: Return empty changes array - These are lab values, NOT imaging
+
+4. **NURSING NOTES WITH VITALS**:
+   Content: "Patient stable, vitals within normal limits. Temp 98.2, HR 84, BP 140/86"
+   Action: Return empty changes array - These are clinical observations, NOT imaging
+
+5. **MIXED CONTENT - EXTRACT ONLY IMAGING**:
+   Content: "Vitals: BP 130/85, HR 78. Chest X-ray showed mild cardiomegaly. Labs normal."
+   Action: Extract ONLY the chest X-ray, ignore vitals and labs
+
+VALID IMAGING EXAMPLES - ONLY EXTRACT THESE:
+
+1. **RADIOLOGY REPORT**:
+   Content: "Chest X-ray 3/3/2023: Normal heart size, clear lungs, no effusion"
+   Action: Extract as imaging with modality "XR", body part "chest"
+
+2. **CT SCAN RESULTS**:
+   Content: "CT abdomen/pelvis with contrast: No acute abnormality, normal bowel"
+   Action: Extract as imaging with modality "CT", body part "abdomen/pelvis"
+
+3. **MRI FINDINGS**:
+   Content: "MRI brain: Small vessel ischemic changes, no mass or hemorrhage"
+   Action: Extract as imaging with modality "MR", body part "brain"
 
 PRODUCTION-LEVEL CONSOLIDATION EXAMPLES (EPIC/ATHENA STANDARDS):
 
@@ -430,8 +474,10 @@ Return a JSON object with this exact structure:
       console.log(`🤖 [IMAGING WORKFLOW] Extraction confidence: ${result.extraction_confidence || 0}%`);
       console.log(`🤖 [IMAGING WORKFLOW] Processing notes: "${result.processing_notes || 'None'}"`);
       
+      // Filter out any changes that might be vital signs misidentified as imaging
       if (result.changes?.length > 0) {
-        result.changes.forEach((change, index) => {
+        const vitalSignKeywords = ['vital signs', 'temperature', 'blood pressure', 'heart rate', 'respiratory rate', 'oxygen saturation', 'temp:', 'hr:', 'bp:', 'rr:', 'o2 sat:', 'vitals'];
+        const filteredChanges = result.changes.filter((change, index) => {
           console.log(`🤖 [IMAGING WORKFLOW] Change #${index + 1}:`);
           console.log(`🤖 [IMAGING WORKFLOW] - Action: ${change.action}`);
           console.log(`🤖 [IMAGING WORKFLOW] - Modality: ${change.modality}`);
@@ -440,7 +486,33 @@ Return a JSON object with this exact structure:
           console.log(`🤖 [IMAGING WORKFLOW] - Study Date: ${change.study_date}`);
           console.log(`🤖 [IMAGING WORKFLOW] - Confidence: ${change.confidence}`);
           console.log(`🤖 [IMAGING WORKFLOW] - Source Type: ${change.source_type}`);
+          console.log(`🤖 [IMAGING WORKFLOW] - Findings: ${change.findings}`);
+          
+          // Check if this might be vital signs misidentified as imaging
+          const combinedText = `${change.clinical_summary || ''} ${change.findings || ''} ${change.impression || ''}`.toLowerCase();
+          const hasVitalSignKeywords = vitalSignKeywords.some(keyword => combinedText.includes(keyword));
+          const hasNoImagingModality = !change.modality || change.modality === '';
+          
+          if (hasVitalSignKeywords) {
+            console.log(`⚠️ [IMAGING WORKFLOW] WARNING: Change #${index + 1} contains vital sign keywords - EXCLUDING from results`);
+            console.log(`⚠️ [IMAGING WORKFLOW] Excluded text: "${combinedText}"`);
+            return false;
+          }
+          
+          if (hasNoImagingModality) {
+            console.log(`⚠️ [IMAGING WORKFLOW] WARNING: Change #${index + 1} has no imaging modality - EXCLUDING from results`);
+            return false;
+          }
+          
+          return true;
         });
+        
+        result.changes = filteredChanges;
+        result.total_imaging_affected = filteredChanges.length;
+        
+        if (filteredChanges.length < result.changes.length) {
+          console.log(`🤖 [IMAGING WORKFLOW] Filtered out ${result.changes.length - filteredChanges.length} potential vital sign misidentifications`);
+        }
       } else {
         console.log(`🤖 [IMAGING WORKFLOW] No changes detected by GPT`);
       }

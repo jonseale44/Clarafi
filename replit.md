@@ -720,6 +720,18 @@ Preferred communication style: Simple, everyday language.
 - **MAINTAINED SEPARATE ROUTES**: Per requirements, kept separate processing routes while upgrading intelligence of each independently
 - **PRODUCTION IMPACT**: Medication system now has date extraction intelligence matching medical problems' superior capability
 
+### Imaging Parser Vital Signs Exclusion Fix COMPLETED (January 13, 2025)
+- **CRITICAL BUG FIXED**: Imaging parser was incorrectly extracting vital signs data as chest X-rays
+- **ROOT CAUSE**: Overly aggressive GPT prompt in unified-imaging-parser.ts was interpreting any medical document as potentially containing imaging
+- **SYMPTOMS**: Documents with vital signs (Temp, HR, BP, RR, O2 sat) were being saved as "Normal heart and lungs" chest X-rays
+- **SOLUTION IMPLEMENTED**: 
+  - Enhanced GPT prompt with explicit exclusion examples for vital signs, physical exam findings, and lab results
+  - Added validation filter to check for vital sign keywords and exclude them from imaging results
+  - Added clear examples of what NOT to extract (vital signs) vs what TO extract (actual imaging studies)
+- **VALIDATION KEYWORDS**: Added filter for 'vital signs', 'temperature', 'blood pressure', 'heart rate', 'respiratory rate', 'oxygen saturation', 'temp:', 'hr:', 'bp:', 'rr:', 'o2 sat:', 'vitals'
+- **PRODUCTION IMPACT**: Imaging parser now correctly distinguishes between actual imaging studies (X-ray, CT, MRI) and other medical data
+- **DATA CLEANUP**: Removed incorrectly extracted imaging records from database where vital signs were misidentified as chest X-rays
+
 ### Complete Medication System Intelligence with Visit History Implementation COMPLETED (July 4, 2025)
 - **MEDICATION-MEDICAL PROBLEMS PARITY ACHIEVED**: Successfully implemented complete medication intelligence system matching medical problems functionality exactly
 - **VISIT HISTORY DISPLAY**: Added comprehensive visit history section to medication UI with ultra-concise format showing dose changes over time
