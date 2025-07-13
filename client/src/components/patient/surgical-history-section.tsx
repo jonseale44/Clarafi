@@ -311,7 +311,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
   const getSourceBadge = (source: string, confidence?: number, attachmentId?: number, encounterId?: number) => {
     switch (source) {
       case "encounter": {
-        const confidencePercent = confidence ? Math.round(confidence) : 0;
+        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleEncounterClick = () => {
           if (encounterId) {
             navigateWithContext(`/patients/${patientId}/encounters/${encounterId}`, "surgical-history", mode);
@@ -329,7 +329,7 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
         );
       }
       case "attachment": {
-        const confidencePercent = confidence ? Math.round(confidence) : 0;
+        const confidencePercent = confidence ? Math.round(confidence * 100) : 0;
         const handleDocumentClick = () => {
           if (attachmentId) {
             navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "surgical-history", mode);
