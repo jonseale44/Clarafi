@@ -354,9 +354,9 @@ export function setupAuth(app: Express) {
       if (requiresPayment) {
         console.log("💳 [Registration] Creating Stripe checkout for individual provider");
         
-        // Determine subscription tier based on registration type
-        const tier = req.body.registrationType === 'create_new' ? 1 : 2;
-        const registrationType = req.body.registrationType === 'create_new' ? 'individual' : 'group_practice';
+        // Always tier 1 for individual providers - they pay $99/month
+        const tier = 1;
+        const registrationType = req.body.registrationType === 'create_new' ? 'individual' : 'join_existing';
         
         const checkoutResult = await StripeService.createCheckoutSession({
           email: user.email,

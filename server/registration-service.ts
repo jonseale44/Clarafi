@@ -237,9 +237,9 @@ export class RegistrationService {
           console.log(`✅ [RegistrationService] Subscription key validated`);
         }
         
-        // Set payment requirement flag only for new tier 1 individual practices
-        // Unpaid tier 2 systems allow free registration (they haven't paid yet)
-        requiresPayment = false; // We'll set this later based on registration type
+        // Payment is always required for tier 1 access when joining a system without patients
+        // (unless they have a subscription key for a paid tier 2 system)
+        requiresPayment = !requiresSubscriptionKey;
       }
 
       // Validate role based on health system tier
