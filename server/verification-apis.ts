@@ -68,6 +68,29 @@ const NPPESProviderSchema = z.object({
   }))
 });
 
+// Test mode configuration
+const TEST_MODE = process.env.VERIFICATION_TEST_MODE === 'true';
+const TEST_ORGANIZATIONS = {
+  'Test Medical Clinic': {
+    google: { verified: true, trustScore: 85, reviews: 42 },
+    npi: { verified: true, providerCount: 5, specialty: 'Family Medicine' },
+    email: { verified: true, deliverable: true },
+    address: { verified: true }
+  },
+  'Demo Healthcare Center': {
+    google: { verified: true, trustScore: 92, reviews: 156 },
+    npi: { verified: true, providerCount: 12, specialty: 'Internal Medicine' },
+    email: { verified: true, deliverable: true },
+    address: { verified: true }
+  },
+  'Suspicious Clinic': {
+    google: { verified: false },
+    npi: { verified: false },
+    email: { verified: false, deliverable: false },
+    address: { verified: false }
+  }
+};
+
 export class VerificationAPIs {
   /**
    * Google Places API - Verify business location and details
