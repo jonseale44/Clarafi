@@ -624,10 +624,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Medication standardization routes
   app.use("/api/medications", medicationStandardizationRoutes);
-  
+
   // Migration routes for provider practice transitions
   app.use(migrationRoutes);
-  
+
   // Admin clinic import routes
   app.use("/api/admin/clinic-import", adminClinicImportRoutes);
 
@@ -833,7 +833,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!q) return res.json([]);
 
       const healthSystemId = req.userHealthSystemId!;
-      const patients = await storage.searchPatients(q as string, healthSystemId);
+      const patients = await storage.searchPatients(
+        q as string,
+        healthSystemId,
+      );
       res.json(patients);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -845,7 +848,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
       const healthSystemId = req.userHealthSystemId!;
-      const patient = await storage.getPatient(parseInt(req.params.id), healthSystemId);
+      const patient = await storage.getPatient(
+        parseInt(req.params.id),
+        healthSystemId,
+      );
       if (!patient)
         return res.status(404).json({ message: "Patient not found" });
 
@@ -885,34 +891,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the healthSystemId from the user's context to the request body
       const healthSystemId = req.userHealthSystemId!;
       const userId = (req.user as any).id;
-      
+
       // Get user session location to determine creation context
       const sessionLocation = await storage.getUserSessionLocation(userId);
-      const locationData = sessionLocation?.locationId 
+      const locationData = sessionLocation?.locationId
         ? await storage.getLocation(sessionLocation.locationId)
         : null;
-      
+
       // Determine creation context based on location type
-      let creationContext = 'private_practice';
+      let creationContext = "private_practice";
       if (locationData) {
-        if (locationData.locationType === 'hospital') {
-          creationContext = 'hospital_rounds';
-        } else if (locationData.locationType === 'clinic' || locationData.locationType === 'outpatient') {
-          creationContext = 'clinic_hours';
+        if (locationData.locationType === "hospital") {
+          creationContext = "hospital_rounds";
+        } else if (
+          locationData.locationType === "clinic" ||
+          locationData.locationType === "outpatient"
+        ) {
+          creationContext = "clinic_hours";
         }
       }
-      
+
       const patientDataWithHealthSystem = {
         ...req.body,
         healthSystemId,
         createdByProviderId: userId,
-        dataOriginType: 'emr_direct',
+        dataOriginType: "emr_direct",
         creationContext,
         originalFacilityId: healthSystemId, // Current facility where patient was created
       };
 
       // Parse with the complete data including healthSystemId
-      const validatedData = insertPatientSchema.parse(patientDataWithHealthSystem);
+      const validatedData = insertPatientSchema.parse(
+        patientDataWithHealthSystem,
+      );
 
       // Normalize name capitalization if firstName and lastName are provided
       if (validatedData.firstName) {
@@ -943,7 +954,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const healthSystemId = req.userHealthSystemId!;
-      
+
       // Check if patient exists before deletion
       const patient = await storage.getPatient(patientId, healthSystemId);
       if (!patient) {
@@ -1394,7 +1405,10 @@ RESPONSE STYLE
 Insights must be brief, phrase-based; never full sentences.
 Each line is its own bullet ("•") and self-contained insight.
 No pleasantries, explanations, or generic knowledge a physician already knows.
-Never exceed 5 insights/lines per response. 
+Return only the relevant insight(s). Maximum of 5. Never pad with less-relevant information. 
+DO NOT fill extra lines if fewer than 5 insights are present. 
+If only 1-2 insights are relevant, return only those. 
+Conciseness is ideal. Only include an insight if it is evidence-based, non-redundant, and relevant to the transcription. 
 No repeats during a session.
 If no new info, reply: • No new insights
 CONTENT FOCUS AND PRIORITIZATION
@@ -1801,60 +1815,64 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
 
   // ⚠️ LEGACY ROUTE - Get assistant thread messages for a patient (DEPRECATED)
   // This route uses the legacy Assistants API - current AI suggestions use Enhanced Realtime Service
-  app.get("/api/patients/:id/assistant/messages", tenantIsolation, async (req, res) => {
-    try {
-      const patientId = parseInt(req.params.id);
-      const healthSystemId = req.userHealthSystemId!;
-      const patient = await storage.getPatient(patientId, healthSystemId);
-
-      if (!patient) {
-        return res.status(404).json({ message: "Patient not found" });
-      }
-
-      if (!patient.assistantThreadId) {
-        return res
-          .status(404)
-          .json({ message: "No conversation thread found for this patient" });
-      }
-
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
+  app.get(
+    "/api/patients/:id/assistant/messages",
+    tenantIsolation,
+    async (req, res) => {
       try {
-        // Retrieve the thread messages from OpenAI
-        const messages = await openai.beta.threads.messages.list(
-          patient.assistantThreadId,
-          {
-            limit: 20,
-            order: "desc",
-          },
-        );
+        const patientId = parseInt(req.params.id);
+        const healthSystemId = req.userHealthSystemId!;
+        const patient = await storage.getPatient(patientId, healthSystemId);
 
-        const formattedMessages = messages.data.map((msg) => ({
-          id: msg.id,
-          role: msg.role,
-          content:
-            msg.content[0] && msg.content[0].type === "text"
-              ? msg.content[0].text.value
-              : "No text content",
-          created_at: msg.created_at,
-        }));
+        if (!patient) {
+          return res.status(404).json({ message: "Patient not found" });
+        }
 
-        res.json(formattedMessages);
-      } catch (openaiError: any) {
-        console.error(
-          "❌ Failed to retrieve thread messages from OpenAI:",
-          openaiError,
-        );
-        res.status(500).json({
-          message: "Failed to retrieve conversation history",
-          error: openaiError.message,
-        });
+        if (!patient.assistantThreadId) {
+          return res
+            .status(404)
+            .json({ message: "No conversation thread found for this patient" });
+        }
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        try {
+          // Retrieve the thread messages from OpenAI
+          const messages = await openai.beta.threads.messages.list(
+            patient.assistantThreadId,
+            {
+              limit: 20,
+              order: "desc",
+            },
+          );
+
+          const formattedMessages = messages.data.map((msg) => ({
+            id: msg.id,
+            role: msg.role,
+            content:
+              msg.content[0] && msg.content[0].type === "text"
+                ? msg.content[0].text.value
+                : "No text content",
+            created_at: msg.created_at,
+          }));
+
+          res.json(formattedMessages);
+        } catch (openaiError: any) {
+          console.error(
+            "❌ Failed to retrieve thread messages from OpenAI:",
+            openaiError,
+          );
+          res.status(500).json({
+            message: "Failed to retrieve conversation history",
+            error: openaiError.message,
+          });
+        }
+      } catch (error: any) {
+        console.error("❌ Error in thread messages retrieval:", error);
+        res.status(500).json({ message: error.message });
       }
-    } catch (error: any) {
-      console.error("❌ Error in thread messages retrieval:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
+    },
+  );
 
   // Legacy endpoints removed - now using new custom template system
 
@@ -2737,22 +2755,24 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
   app.post("/api/test/process-medications/:encounterId", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
-      
+
       const encounterId = parseInt(req.params.encounterId);
       const { patientId } = req.body;
-      
-      console.log(`🧪 [TEST] Manually triggering medication processing for encounter ${encounterId}, patient ${patientId}`);
-      
+
+      console.log(
+        `🧪 [TEST] Manually triggering medication processing for encounter ${encounterId}, patient ${patientId}`,
+      );
+
       const { medicationDelta } = await import("./medication-delta-service.js");
       const result = await medicationDelta.processOrderDelta(
         patientId,
         encounterId,
-        req.user!.id
+        req.user!.id,
       );
-      
+
       res.json({
         message: "Medication processing triggered",
-        result
+        result,
       });
     } catch (error: any) {
       console.error("❌ [TEST] Error in test medication processing:", error);
@@ -4303,8 +4323,6 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
-
-
   // Get unsigned orders for encounter
   app.get("/api/encounters/:encounterId/unsigned-orders", async (req, res) => {
     try {
@@ -4362,12 +4380,12 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.get("/api/health-systems/public-with-locations", async (req, res) => {
     try {
       console.log("📍 [Public Health Systems] Accessing public endpoint");
-      const search = (req.query.search as string)?.toLowerCase() || '';
-      
+      const search = (req.query.search as string)?.toLowerCase() || "";
+
       const { db } = await import("./db");
       const { healthSystems, locations } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
-      
+
       // Get health systems with their locations
       const healthSystemsWithLocations = await db
         .select({
@@ -4387,76 +4405,91 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         })
         .from(healthSystems)
         .leftJoin(locations, eq(locations.healthSystemId, healthSystems.id))
-        .where(eq(healthSystems.subscriptionStatus, 'active'))
+        .where(eq(healthSystems.subscriptionStatus, "active"))
         .orderBy(healthSystems.name, locations.name);
 
       // Group by health system
-      const groupedSystems = healthSystemsWithLocations.reduce((acc: any[], row) => {
-        const existing = acc.find(hs => hs.id === row.healthSystemId);
-        if (existing) {
-          if (row.locationId) {
-            existing.locations.push({
-              id: row.locationId,
-              name: row.locationName,
-              address: row.locationAddress,
-              city: row.locationCity,
-              state: row.locationState,
-              zipCode: row.locationZipCode,
-              phone: row.locationPhone,
-              npi: row.locationNpi,
-              locationType: row.locationType,
+      const groupedSystems = healthSystemsWithLocations.reduce(
+        (acc: any[], row) => {
+          const existing = acc.find((hs) => hs.id === row.healthSystemId);
+          if (existing) {
+            if (row.locationId) {
+              existing.locations.push({
+                id: row.locationId,
+                name: row.locationName,
+                address: row.locationAddress,
+                city: row.locationCity,
+                state: row.locationState,
+                zipCode: row.locationZipCode,
+                phone: row.locationPhone,
+                npi: row.locationNpi,
+                locationType: row.locationType,
+              });
+            }
+          } else {
+            acc.push({
+              id: row.healthSystemId,
+              name: row.healthSystemName,
+              systemType: row.healthSystemType,
+              subscriptionTier: row.subscriptionTier,
+              locations: row.locationId
+                ? [
+                    {
+                      id: row.locationId,
+                      name: row.locationName,
+                      address: row.locationAddress,
+                      city: row.locationCity,
+                      state: row.locationState,
+                      zipCode: row.locationZipCode,
+                      phone: row.locationPhone,
+                      npi: row.locationNpi,
+                      locationType: row.locationType,
+                    },
+                  ]
+                : [],
             });
           }
-        } else {
-          acc.push({
-            id: row.healthSystemId,
-            name: row.healthSystemName,
-            systemType: row.healthSystemType,
-            subscriptionTier: row.subscriptionTier,
-            locations: row.locationId ? [{
-              id: row.locationId,
-              name: row.locationName,
-              address: row.locationAddress,
-              city: row.locationCity,
-              state: row.locationState,
-              zipCode: row.locationZipCode,
-              phone: row.locationPhone,
-              npi: row.locationNpi,
-              locationType: row.locationType,
-            }] : []
-          });
-        }
-        return acc;
-      }, []);
+          return acc;
+        },
+        [],
+      );
 
       // Filter by search term
       let filtered = groupedSystems;
       if (search) {
-        filtered = groupedSystems.filter(hs => {
+        filtered = groupedSystems.filter((hs) => {
           // Check health system name
           if (hs.name.toLowerCase().includes(search)) return true;
-          
+
           // Check location names, cities, addresses
-          return hs.locations.some((loc: any) => 
-            loc.name.toLowerCase().includes(search) ||
-            loc.city.toLowerCase().includes(search) ||
-            loc.address.toLowerCase().includes(search) ||
-            loc.state.toLowerCase().includes(search) ||
-            loc.npi?.includes(search)
+          return hs.locations.some(
+            (loc: any) =>
+              loc.name.toLowerCase().includes(search) ||
+              loc.city.toLowerCase().includes(search) ||
+              loc.address.toLowerCase().includes(search) ||
+              loc.state.toLowerCase().includes(search) ||
+              loc.npi?.includes(search),
           );
         });
       }
 
-      console.log(`✅ [Public Health Systems] Found ${filtered.length} health systems`);
+      console.log(
+        `✅ [Public Health Systems] Found ${filtered.length} health systems`,
+      );
 
       res.json({
         healthSystems: filtered,
-        totalLocations: filtered.reduce((sum, hs) => sum + hs.locations.length, 0),
-        userLocation: null
+        totalLocations: filtered.reduce(
+          (sum, hs) => sum + hs.locations.length,
+          0,
+        ),
+        userLocation: null,
       });
     } catch (error) {
       console.error("❌ [Public Health Systems] Error:", error);
-      res.status(500).json({ message: "Failed to fetch health systems with locations" });
+      res
+        .status(500)
+        .json({ message: "Failed to fetch health systems with locations" });
     }
   });
 
@@ -4553,17 +4586,21 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     try {
       // Try to get token from path parameter first, then query parameter
       const token = req.params.token || req.query.token;
-      
-      if (!token || typeof token !== 'string') {
+
+      if (!token || typeof token !== "string") {
         return res.status(400).json({ message: "Invalid verification token" });
       }
 
-      const { EmailVerificationService } = await import("./email-verification-service");
+      const { EmailVerificationService } = await import(
+        "./email-verification-service"
+      );
       const result = await EmailVerificationService.verifyEmail(token);
-      
+
       if (result.success) {
         // Redirect to login page with success message
-        res.redirect(`/auth?verified=true&email=${encodeURIComponent(result.email || '')}`);
+        res.redirect(
+          `/auth?verified=true&email=${encodeURIComponent(result.email || "")}`,
+        );
       } else {
         res.status(400).json({ message: result.message });
       }
@@ -4576,14 +4613,17 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.post("/api/resend-verification", async (req, res) => {
     try {
       const { email } = req.body;
-      
+
       if (!email) {
         return res.status(400).json({ message: "Email required" });
       }
 
-      const { EmailVerificationService } = await import("./email-verification-service");
-      const result = await EmailVerificationService.resendVerificationEmail(email);
-      
+      const { EmailVerificationService } = await import(
+        "./email-verification-service"
+      );
+      const result =
+        await EmailVerificationService.resendVerificationEmail(email);
+
       res.json(result);
     } catch (error: any) {
       console.error("Error resending verification:", error);
@@ -4597,10 +4637,12 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       try {
         const email = decodeURIComponent(req.params.email);
         console.log(`🧹 [Dev] Request to delete test user: ${email}`);
-        
-        const { EmailVerificationService } = await import("./email-verification-service");
+
+        const { EmailVerificationService } = await import(
+          "./email-verification-service"
+        );
         const result = await EmailVerificationService.deleteTestUser(email);
-        
+
         if (result.success) {
           res.json(result);
         } else {
@@ -4615,39 +4657,41 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     // Development endpoint: Clear all users - Simple GET endpoint
     app.get("/api/dev/clear-users", async (req, res) => {
       if (process.env.NODE_ENV !== "development") {
-        return res.status(403).json({ message: "This endpoint is only available in development mode" });
+        return res.status(403).json({
+          message: "This endpoint is only available in development mode",
+        });
       }
-      
+
       try {
         console.log("🧹 [Dev] Clearing all users except admin");
-        
+
         // Simple direct query to get non-admin users
         const result = await db.execute(sql`
           SELECT id, username FROM users WHERE username != 'admin'
         `);
-        
+
         const userCount = result.rows.length;
         console.log(`📊 [Dev] Found ${userCount} users to delete`);
-        
+
         if (userCount === 0) {
-          return res.json({ 
-            success: true, 
+          return res.json({
+            success: true,
             message: "No users to delete (only admin exists)",
-            deletedCount: 0
+            deletedCount: 0,
           });
         }
-        
+
         // Delete all related data and users in proper order to handle foreign key constraints
-        
+
         // First clear all references to users in other tables
         await db.execute(sql`
           UPDATE health_systems SET original_provider_id = NULL WHERE original_provider_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
-        
+
         await db.execute(sql`
           UPDATE users SET verified_with_key_id = NULL WHERE username != 'admin';
         `);
-        
+
         // Delete all clinical data for patients created by non-admin users
         // Using direct SQL queries with subqueries
         await db.execute(sql`
@@ -4657,7 +4701,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM social_history WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4665,7 +4709,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM surgical_history WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4673,7 +4717,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM medical_problems WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4681,7 +4725,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM medications WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4689,7 +4733,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM allergies WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4697,7 +4741,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM vitals WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4705,7 +4749,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM lab_orders WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4713,7 +4757,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM lab_results WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4721,7 +4765,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM imaging_orders WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4729,7 +4773,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM imaging_results WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4737,7 +4781,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM orders WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4745,7 +4789,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         // Delete document processing queue entries first
         await db.execute(sql`
           DELETE FROM document_processing_queue WHERE attachment_id IN (
@@ -4756,7 +4800,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             )
           )
         `);
-        
+
         // Delete attachment extracted content
         await db.execute(sql`
           DELETE FROM attachment_extracted_content WHERE attachment_id IN (
@@ -4767,7 +4811,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             )
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM patient_attachments WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4775,7 +4819,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         await db.execute(sql`
           DELETE FROM patient_order_preferences WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4783,9 +4827,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
 
-        
         await db.execute(sql`
           DELETE FROM diagnoses WHERE patient_id IN (
             SELECT id FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
@@ -4793,7 +4835,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         // Delete encounters
         await db.execute(sql`
           DELETE FROM encounters WHERE patient_id IN (
@@ -4802,52 +4844,54 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           )
         `);
-        
+
         // Delete encounters created by non-admin providers
         await db.execute(sql`
           DELETE FROM encounters WHERE provider_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
-        
+
         // Now delete patients
         await db.execute(sql`
           DELETE FROM patients WHERE created_by_provider_id IN (SELECT id FROM users WHERE username != 'admin')
           OR created_by_user_id IN (SELECT id FROM users WHERE username != 'admin')
           OR primary_provider_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
-        
+
         // Delete subscription keys
         await db.execute(sql`
           DELETE FROM subscription_keys WHERE used_by IN (SELECT id FROM users WHERE username != 'admin');
         `);
-        
+
         // Delete user related tables
         await db.execute(sql`
           DELETE FROM user_locations WHERE user_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
-        
+
         await db.execute(sql`
           DELETE FROM user_note_preferences WHERE user_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
-        
+
         await db.execute(sql`
           DELETE FROM user_session_locations WHERE user_id IN (SELECT id FROM users WHERE username != 'admin');
         `);
-        
+
         // Finally delete the users
         const deleteResult = await db.execute(sql`
           DELETE FROM users WHERE username != 'admin';
         `);
-        
+
         console.log(`✅ [Dev] Successfully cleared users`);
-        
-        res.json({ 
-          success: true, 
+
+        res.json({
+          success: true,
           message: `Deleted ${userCount} users successfully`,
-          deletedCount: userCount
+          deletedCount: userCount,
         });
       } catch (error: any) {
         console.error("❌ [Dev] Error clearing users:", error);
-        res.status(500).json({ message: "Error clearing users: " + error.message });
+        res
+          .status(500)
+          .json({ message: "Error clearing users: " + error.message });
       }
     });
   }
@@ -4860,21 +4904,27 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       res.json(result);
     } catch (error: any) {
       console.error("Error creating subscription:", error);
-      res.status(500).json({ success: false, error: "Failed to create subscription" });
+      res
+        .status(500)
+        .json({ success: false, error: "Failed to create subscription" });
     }
   });
 
   app.post("/api/stripe/webhook", async (req, res) => {
     try {
-      const sig = req.headers['stripe-signature'] as string;
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
-      
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-      const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      
+      const sig = req.headers["stripe-signature"] as string;
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+
+      const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        webhookSecret,
+      );
+
       const { StripeService } = await import("./stripe-service");
       await StripeService.handleWebhook(event);
-      
+
       res.json({ received: true });
     } catch (error: any) {
       console.error("Webhook error:", error);
@@ -4885,10 +4935,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.get("/api/stripe/subscription/:id", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
-      
+
       const { StripeService } = await import("./stripe-service");
       const subscription = await StripeService.getSubscription(req.params.id);
-      
+
       if (subscription) {
         res.json(subscription);
       } else {
@@ -4903,20 +4953,20 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.post("/api/stripe/create-checkout-session", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
-      
+
       const { customerId, tier, billingPeriod } = req.body;
-      const successUrl = `${process.env.APP_URL || 'http://localhost:5000'}/dashboard?payment=success`;
-      const cancelUrl = `${process.env.APP_URL || 'http://localhost:5000'}/settings/billing?payment=cancelled`;
-      
+      const successUrl = `${process.env.APP_URL || "http://localhost:5000"}/dashboard?payment=success`;
+      const cancelUrl = `${process.env.APP_URL || "http://localhost:5000"}/settings/billing?payment=cancelled`;
+
       const { StripeService } = await import("./stripe-service");
       const sessionUrl = await StripeService.createCheckoutSession(
         customerId,
         tier,
         billingPeriod,
         successUrl,
-        cancelUrl
+        cancelUrl,
       );
-      
+
       if (sessionUrl) {
         res.json({ url: sessionUrl });
       } else {
@@ -4937,7 +4987,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
       const healthSystemId = parseInt(req.params.id);
       const healthSystem = await storage.getHealthSystem(healthSystemId);
-      
+
       if (!healthSystem) {
         return res.status(404).json({ error: "Health system not found" });
       }
@@ -4953,16 +5003,20 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.use("/api/subscription-keys", subscriptionKeyRoutes);
 
   // Health System Upgrade Routes
-  const { healthSystemUpgradeRoutes } = await import('./health-system-upgrade-routes');
-  app.use('/api/health-system-upgrade', healthSystemUpgradeRoutes);
+  const { healthSystemUpgradeRoutes } = await import(
+    "./health-system-upgrade-routes"
+  );
+  app.use("/api/health-system-upgrade", healthSystemUpgradeRoutes);
 
   // Stripe tier upgrade endpoint
   app.post("/api/stripe/upgrade-to-tier3", async (req, res) => {
     try {
-      console.log('[Tier3Upgrade] Request received:', { 
-        authenticated: req.isAuthenticated(), 
+      console.log("[Tier3Upgrade] Request received:", {
+        authenticated: req.isAuthenticated(),
         body: req.body,
-        user: req.user ? { id: req.user.id, role: req.user.role, email: req.user.email } : null
+        user: req.user
+          ? { id: req.user.id, role: req.user.role, email: req.user.email }
+          : null,
       });
 
       if (!req.isAuthenticated()) {
@@ -4972,38 +5026,40 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       const { healthSystemId } = req.body;
       const user = req.user as AuthenticatedUser;
 
-      console.log('[Tier3Upgrade] User details:', {
+      console.log("[Tier3Upgrade] User details:", {
         userId: user.id,
         userRole: user.role,
         userHealthSystemId: user.healthSystemId,
-        requestedHealthSystemId: healthSystemId
+        requestedHealthSystemId: healthSystemId,
       });
 
       // Verify user is admin of the health system
-      if (user.role !== 'admin' || user.healthSystemId !== healthSystemId) {
-        console.log('[Tier3Upgrade] Authorization failed:', {
-          roleCheck: user.role !== 'admin',
-          healthSystemCheck: user.healthSystemId !== healthSystemId
+      if (user.role !== "admin" || user.healthSystemId !== healthSystemId) {
+        console.log("[Tier3Upgrade] Authorization failed:", {
+          roleCheck: user.role !== "admin",
+          healthSystemCheck: user.healthSystemId !== healthSystemId,
         });
-        return res.status(403).json({ error: "Unauthorized to upgrade this health system" });
+        return res
+          .status(403)
+          .json({ error: "Unauthorized to upgrade this health system" });
       }
 
       // Get health system details
       const healthSystem = await storage.getHealthSystem(healthSystemId);
       if (!healthSystem) {
-        console.log('[Tier3Upgrade] Health system not found:', healthSystemId);
+        console.log("[Tier3Upgrade] Health system not found:", healthSystemId);
         return res.status(404).json({ error: "Health system not found" });
       }
 
-      console.log('[Tier3Upgrade] Current health system:', {
+      console.log("[Tier3Upgrade] Current health system:", {
         id: healthSystem.id,
         name: healthSystem.name,
-        currentTier: healthSystem.subscriptionTier
+        currentTier: healthSystem.subscriptionTier,
       });
 
       // Check current tier
       if (healthSystem.subscriptionTier === 3) {
-        console.log('[Tier3Upgrade] Already on tier 3');
+        console.log("[Tier3Upgrade] Already on tier 3");
         return res.status(400).json({ error: "Already on Enterprise tier" });
       }
 
@@ -5011,31 +5067,40 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       const { StripeService } = await import("./stripe-service.js");
 
       // Get the base URL from environment or use request origin
-      const protocol = req.get('x-forwarded-proto') || req.protocol;
-      const host = req.get('host');
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      const protocol = req.get("x-forwarded-proto") || req.protocol;
+      const host = req.get("host");
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
         : `${protocol}://${host}`;
 
-      console.log('[Tier3Upgrade] Creating Stripe session for tier 3 upgrade with base URL:', baseUrl);
+      console.log(
+        "[Tier3Upgrade] Creating Stripe session for tier 3 upgrade with base URL:",
+        baseUrl,
+      );
 
       // Create minimal Stripe checkout session to avoid loading issues
-      const stripe = (await import('stripe')).default;
-      
-      console.log('[Tier3Upgrade] Stripe API Key present:', !!process.env.STRIPE_SECRET_KEY);
-      console.log('[Tier3Upgrade] Stripe API Key starts with:', process.env.STRIPE_SECRET_KEY?.substring(0, 7));
-      
-      const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || '', {
-        apiVersion: '2024-11-20.acacia',
+      const stripe = (await import("stripe")).default;
+
+      console.log(
+        "[Tier3Upgrade] Stripe API Key present:",
+        !!process.env.STRIPE_SECRET_KEY,
+      );
+      console.log(
+        "[Tier3Upgrade] Stripe API Key starts with:",
+        process.env.STRIPE_SECRET_KEY?.substring(0, 7),
+      );
+
+      const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || "", {
+        apiVersion: "2024-11-20.acacia",
       });
 
-      console.log('[Tier3Upgrade] Creating session with params:', {
-        payment_method_types: ['card'],
-        mode: 'subscription',
+      console.log("[Tier3Upgrade] Creating session with params:", {
+        payment_method_types: ["card"],
+        mode: "subscription",
         customer_email: user.email,
         unit_amount: 29900,
-        currency: 'usd',
-        product_name: 'Clarafi Enterprise',
+        currency: "usd",
+        product_name: "Clarafi Enterprise",
         success_url: `${baseUrl}/dashboard?upgrade=success`,
         cancel_url: `${baseUrl}/dashboard?upgrade=cancelled`,
       });
@@ -5043,44 +5108,52 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       let session;
       try {
         // Test if Stripe instance is working
-        console.log('[Tier3Upgrade] Testing Stripe instance...');
+        console.log("[Tier3Upgrade] Testing Stripe instance...");
         try {
           const testProduct = await stripeInstance.products.list({ limit: 1 });
-          console.log('[Tier3Upgrade] Stripe instance test successful, products access:', !!testProduct);
+          console.log(
+            "[Tier3Upgrade] Stripe instance test successful, products access:",
+            !!testProduct,
+          );
         } catch (testError: any) {
-          console.error('[Tier3Upgrade] Stripe instance test failed:', testError.message);
+          console.error(
+            "[Tier3Upgrade] Stripe instance test failed:",
+            testError.message,
+          );
         }
 
         session = await stripeInstance.checkout.sessions.create({
-          payment_method_types: ['card'],
-          line_items: [{
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: 'Clarafi Enterprise',
-                description: 'Complete EMR system with admin features',
+          payment_method_types: ["card"],
+          line_items: [
+            {
+              price_data: {
+                currency: "usd",
+                product_data: {
+                  name: "Clarafi Enterprise",
+                  description: "Complete EMR system with admin features",
+                },
+                unit_amount: 29900, // $299.00
+                recurring: {
+                  interval: "month",
+                },
               },
-              unit_amount: 29900, // $299.00
-              recurring: {
-                interval: 'month',
-              },
+              quantity: 1,
             },
-            quantity: 1,
-          }],
-          mode: 'subscription',
+          ],
+          mode: "subscription",
           customer_email: user.email,
           success_url: `${baseUrl}/dashboard?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/dashboard?upgrade=cancelled`,
           metadata: {
             healthSystemId: healthSystemId.toString(),
-            action: 'upgrade-to-tier3'
+            action: "upgrade-to-tier3",
           },
           // Simplified configuration for better compatibility
-          billing_address_collection: 'auto',
-          expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Expire after 30 minutes
+          billing_address_collection: "auto",
+          expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // Expire after 30 minutes
         });
 
-        console.log('[Tier3Upgrade] Session created successfully:', {
+        console.log("[Tier3Upgrade] Session created successfully:", {
           sessionId: session.id,
           sessionUrl: session.url,
           sessionUrlLength: session.url?.length,
@@ -5088,37 +5161,37 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           sessionMode: session.mode,
         });
       } catch (stripeError: any) {
-        console.error('[Tier3Upgrade] Stripe session creation error:', {
+        console.error("[Tier3Upgrade] Stripe session creation error:", {
           message: stripeError.message,
           type: stripeError.type,
           code: stripeError.code,
           statusCode: stripeError.statusCode,
-          raw: stripeError
+          raw: stripeError,
         });
         throw stripeError;
       }
 
       if (!session.url) {
-        console.error('[Tier3Upgrade] Session created but no URL returned:', {
+        console.error("[Tier3Upgrade] Session created but no URL returned:", {
           sessionId: session.id,
-          sessionObject: JSON.stringify(session, null, 2)
+          sessionObject: JSON.stringify(session, null, 2),
         });
         return res.status(500).json({
           error: "Stripe session created but no checkout URL returned",
-          sessionId: session.id
+          sessionId: session.id,
         });
       }
 
       const checkoutResult = {
         success: true,
-        sessionUrl: session.url
+        sessionUrl: session.url,
       };
 
-      console.log('[Tier3Upgrade] Stripe session result:', {
+      console.log("[Tier3Upgrade] Stripe session result:", {
         success: checkoutResult.success,
         sessionUrl: checkoutResult.sessionUrl,
         urlValid: !!checkoutResult.sessionUrl,
-        urlStartsWith: checkoutResult.sessionUrl?.substring(0, 50)
+        urlStartsWith: checkoutResult.sessionUrl?.substring(0, 50),
       });
 
       if (checkoutResult.success && checkoutResult.sessionUrl) {
@@ -5126,23 +5199,29 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           success: true,
           checkoutUrl: checkoutResult.sessionUrl,
           stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
-          sessionId: session.id
+          sessionId: session.id,
         };
-        console.log('[Tier3Upgrade] Sending response:', {
+        console.log("[Tier3Upgrade] Sending response:", {
           success: responseData.success,
           hasCheckoutUrl: !!responseData.checkoutUrl,
           checkoutUrlStart: responseData.checkoutUrl.substring(0, 50),
-          hasPublishableKey: !!responseData.stripePublishableKey
+          hasPublishableKey: !!responseData.stripePublishableKey,
         });
         return res.json(responseData);
       } else {
-        console.error('[Tier3Upgrade] Failed to create checkout session:', checkoutResult);
+        console.error(
+          "[Tier3Upgrade] Failed to create checkout session:",
+          checkoutResult,
+        );
         return res.status(500).json({
-          error: checkoutResult.error || "Failed to create checkout session"
+          error: checkoutResult.error || "Failed to create checkout session",
         });
       }
     } catch (error) {
-      console.error("[Tier3Upgrade] Error creating tier 3 upgrade session:", error);
+      console.error(
+        "[Tier3Upgrade] Error creating tier 3 upgrade session:",
+        error,
+      );
       res.status(500).json({ error: "Failed to initiate upgrade" });
     }
   });
@@ -5151,23 +5230,28 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.get("/api/stripe/debug-session/:sessionId", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
-      
-      const stripe = (await import('stripe')).default;
-      const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || '', {
-        apiVersion: '2024-11-20.acacia',
+
+      const stripe = (await import("stripe")).default;
+      const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || "", {
+        apiVersion: "2024-11-20.acacia",
       });
-      
-      console.log('[StripeDebug] Fetching session:', req.params.sessionId);
-      
+
+      console.log("[StripeDebug] Fetching session:", req.params.sessionId);
+
       try {
         const session = await stripeInstance.checkout.sessions.retrieve(
           req.params.sessionId,
           {
-            expand: ['line_items', 'customer', 'subscription', 'payment_intent']
-          }
+            expand: [
+              "line_items",
+              "customer",
+              "subscription",
+              "payment_intent",
+            ],
+          },
         );
-        
-        console.log('[StripeDebug] Session details:', {
+
+        console.log("[StripeDebug] Session details:", {
           id: session.id,
           status: session.status,
           payment_status: session.payment_status,
@@ -5180,7 +5264,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           currency: session.currency,
           line_items_count: session.line_items?.data?.length,
         });
-        
+
         res.json({
           session: {
             id: session.id,
@@ -5197,10 +5281,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             line_items: session.line_items?.data,
             payment_intent: session.payment_intent,
             subscription: session.subscription,
-          }
+          },
         });
       } catch (stripeError: any) {
-        console.error('[StripeDebug] Error fetching session:', stripeError);
+        console.error("[StripeDebug] Error fetching session:", stripeError);
         res.status(400).json({
           error: stripeError.message,
           type: stripeError.type,
@@ -5208,7 +5292,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         });
       }
     } catch (error: any) {
-      console.error('[StripeDebug] Unexpected error:', error);
+      console.error("[StripeDebug] Unexpected error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -5227,18 +5311,18 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
   app.put("/api/subscription/config", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+      if (!req.isAuthenticated() || req.user.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
-      
+
       const { subscriptionConfig } = await import("./subscription-config");
       const { pricing, features } = req.body;
-      
+
       // Update pricing if provided
       if (pricing) {
         subscriptionConfig.updatePricing(pricing);
       }
-      
+
       // Update features if provided
       if (features) {
         Object.entries(features).forEach(([feature, config]: [string, any]) => {
@@ -5253,8 +5337,11 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           }
         });
       }
-      
-      res.json({ success: true, config: subscriptionConfig.exportConfiguration() });
+
+      res.json({
+        success: true,
+        config: subscriptionConfig.exportConfiguration(),
+      });
     } catch (error: any) {
       console.error("Error updating subscription config:", error);
       res.status(500).json({ error: "Failed to update configuration" });
