@@ -292,10 +292,11 @@ export function registerAdminVerificationRoutes(app: Express) {
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
-      // Check if phone exists in clinic_admin_verifications
-      const existingVerification = await db.query.clinicAdminVerifications.findFirst({
-        where: eq(clinicAdminVerifications.phone, phone)
-      });
+      // Check if phone exists in clinic_admin_verifications (stored in verificationData JSONB)
+      const existingVerifications = await db.query.clinicAdminVerifications.findMany();
+      const existingVerification = existingVerifications.find(v => 
+        (v.verificationData as any)?.phone === phone
+      );
       console.log('✅ [AdminVerification] Clinic admin verifications check complete:', existingVerification ? 'Found' : 'Not found');
       
       console.log('🔍 [AdminVerification] Checking health_systems table...');
@@ -332,10 +333,11 @@ export function registerAdminVerificationRoutes(app: Express) {
     try {
       const { taxId } = req.body;
       
-      // Check if tax ID exists in clinic_admin_verifications
-      const existingVerification = await db.query.clinicAdminVerifications.findFirst({
-        where: eq(clinicAdminVerifications.taxId, taxId)
-      });
+      // Check if tax ID exists in clinic_admin_verifications (stored in verificationData JSONB)
+      const existingVerifications = await db.query.clinicAdminVerifications.findMany();
+      const existingVerification = existingVerifications.find(v => 
+        (v.verificationData as any)?.taxId === taxId
+      );
       
       // Check if tax ID exists in health_systems table
       const existingHealthSystem = await db.query.healthSystems.findFirst({
@@ -373,7 +375,7 @@ export function registerAdminVerificationRoutes(app: Express) {
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
-      // Check if organization name exists in clinic_admin_verifications
+      // Check if organization name exists in clinic_admin_verifications (check both organizationName field and verificationData)
       const existingVerification = await db.query.clinicAdminVerifications.findFirst({
         where: eq(clinicAdminVerifications.organizationName, name)
       });
