@@ -159,6 +159,42 @@ export class EmailVerificationService {
   }
 
   /**
+   * Send generic email using SendGrid
+   */
+  static async sendEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    text?: string;
+  }): Promise<void> {
+    if (!process.env.SENDGRID_API_KEY) {
+      console.error('❌ [Email] SENDGRID_API_KEY not configured');
+      throw new Error('Email service not configured');
+    }
+
+    const mailService = new MailService();
+    mailService.setApiKey(process.env.SENDGRID_API_KEY);
+    
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com';
+    
+    const emailContent = {
+      to: options.to,
+      from: fromEmail,
+      subject: options.subject,
+      html: options.html,
+      text: options.text || options.html.replace(/<[^>]*>/g, ''), // Strip HTML tags for text version
+    };
+
+    try {
+      await mailService.send(emailContent);
+      console.log('✅ [Email] Email sent successfully to:', options.to);
+    } catch (error) {
+      console.error('❌ [Email] Failed to send email:', error);
+      throw new Error('Failed to send email');
+    }
+  }
+
+  /**
    * Development utility: Reset user for testing
    * This allows you to delete a user by email for testing purposes
    */
