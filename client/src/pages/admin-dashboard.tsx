@@ -16,7 +16,8 @@ import {
   BarChart,
   ArrowLeft,
   Home,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -40,8 +41,8 @@ interface AdminSection {
 }
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
-  const [location] = useLocation();
+  const { user, logoutMutation } = useAuth();
+  const [location, setLocation] = useLocation();
   
   // Fetch admin statistics
   const { data: stats } = useQuery({
@@ -107,7 +108,7 @@ export default function AdminDashboard() {
       icon: <Settings className="h-6 w-6" />,
       actions: [
         { label: 'Admin Prompts', href: '/admin/prompts', variant: 'default' },
-        { label: 'System Settings', href: '/admin/settings', variant: 'secondary' }
+        { label: 'Prompt Configuration', href: '/admin/prompts', variant: 'secondary' }
       ]
     },
     {
@@ -122,20 +123,6 @@ export default function AdminDashboard() {
       stats: [
         { label: 'Total Clinics', value: stats?.totalClinics || 0 },
         { label: 'Pending Migrations', value: stats?.pendingMigrations || 0 }
-      ]
-    },
-    {
-      id: 'analytics',
-      title: 'Analytics & Reports',
-      description: 'View system usage, performance metrics, and generate reports',
-      icon: <BarChart className="h-6 w-6" />,
-      actions: [
-        { label: 'View Analytics', href: '/admin/analytics', variant: 'default' },
-        { label: 'Generate Reports', href: '/admin/reports', variant: 'secondary' }
-      ],
-      stats: [
-        { label: 'Daily Active Users', value: stats?.dailyActiveUsers || 0 },
-        { label: 'Encounters Today', value: stats?.encountersToday || 0 }
       ]
     }
   ];
@@ -183,6 +170,18 @@ export default function AdminDashboard() {
               <span className="text-sm text-gray-500">
                 {user?.firstName} {user?.lastName} • Admin
               </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  logoutMutation.mutate();
+                  setLocation("/login");
+                }}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>

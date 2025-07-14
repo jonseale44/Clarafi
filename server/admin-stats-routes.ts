@@ -23,7 +23,7 @@ router.get("/stats", requireAuth, async (req, res) => {
 
     // Get total users count
     const totalUsersResult = await pool.query(
-      `SELECT COUNT(*) as count FROM users WHERE healthSystemId = $1`,
+      `SELECT COUNT(*) as count FROM users WHERE health_system_id = $1`,
       [user.healthSystemId]
     );
     const totalUsers = parseInt(totalUsersResult.rows[0].count) || 0;
@@ -31,9 +31,9 @@ router.get("/stats", requireAuth, async (req, res) => {
     // Get active providers count
     const activeProvidersResult = await pool.query(
       `SELECT COUNT(*) as count FROM users 
-       WHERE healthSystemId = $1 
+       WHERE health_system_id = $1 
        AND role = 'provider' 
-       AND isActive = true`,
+       AND active = true`,
       [user.healthSystemId]
     );
     const activeProviders = parseInt(activeProvidersResult.rows[0].count) || 0;
@@ -41,9 +41,9 @@ router.get("/stats", requireAuth, async (req, res) => {
     // Get pending invites count
     const pendingInvitesResult = await pool.query(
       `SELECT COUNT(*) as count FROM migration_invitations 
-       WHERE targetHealthSystemId = $1 
+       WHERE to_health_system_id = $1 
        AND status = 'pending' 
-       AND expiresAt > NOW()`,
+       AND expires_at > NOW()`,
       [user.healthSystemId]
     );
     const pendingInvites = parseInt(pendingInvitesResult.rows[0].count) || 0;
@@ -59,14 +59,14 @@ router.get("/stats", requireAuth, async (req, res) => {
     const approvedTodayResult = await pool.query(
       `SELECT COUNT(*) as count FROM clinic_admin_verifications 
        WHERE status = 'approved' 
-       AND DATE(reviewedAt) = CURRENT_DATE`
+       AND DATE(reviewed_at) = CURRENT_DATE`
     );
     const approvedToday = parseInt(approvedTodayResult.rows[0].count) || 0;
 
     // Get total clinics count
     const totalClinicsResult = await pool.query(
       `SELECT COUNT(*) as count FROM locations 
-       WHERE healthSystemId = $1`,
+       WHERE health_system_id = $1`,
       [user.healthSystemId]
     );
     const totalClinics = parseInt(totalClinicsResult.rows[0].count) || 0;

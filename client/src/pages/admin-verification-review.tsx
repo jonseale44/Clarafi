@@ -185,7 +185,7 @@ export default function AdminVerificationReview() {
                         {request.organizationName}
                       </CardTitle>
                       <CardDescription>
-                        {request.firstName} {request.lastName} • {request.organizationType.replace('_', ' ').toUpperCase()}
+                        {request.firstName} {request.lastName} • {request.organizationType?.replace('_', ' ').toUpperCase() || 'N/A'}
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
@@ -307,7 +307,7 @@ export default function AdminVerificationReview() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Type</Label>
-                    <p>{selectedRequest.organizationType.replace('_', ' ')}</p>
+                    <p>{selectedRequest.organizationType?.replace('_', ' ') || 'N/A'}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Tax ID</Label>
