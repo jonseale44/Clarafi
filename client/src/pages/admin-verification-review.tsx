@@ -158,10 +158,10 @@ export default function AdminVerificationReview() {
     try {
       await apiRequest('POST', '/api/logout');
       queryClient.clear();
-      setLocation('/');
+      setLocation('/auth');
     } catch (error) {
       console.error('Logout failed:', error);
-      setLocation('/');
+      setLocation('/auth');
     }
   };
 

@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { DollarSign, Package, Settings, Save, RefreshCw } from 'lucide-react';
+import { DollarSign, Package, Settings, Save, RefreshCw, ArrowLeft, LogOut } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 interface FeatureConfig {
   tier1: boolean;
@@ -37,6 +38,7 @@ interface SubscriptionConfig {
 }
 
 export default function SubscriptionConfigPage() {
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('pricing');
   const [editedConfig, setEditedConfig] = useState<SubscriptionConfig | null>(null);
 
@@ -142,8 +144,40 @@ export default function SubscriptionConfigPage() {
     admin: 'Administrative',
   };
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/logout');
+      queryClient.clear();
+      setLocation('/auth');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setLocation('/auth');
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {/* Navigation header */}
+      <div className="flex justify-between items-center mb-6">
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={() => setLocation('/admin')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="flex items-center gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Subscription Configuration</h1>

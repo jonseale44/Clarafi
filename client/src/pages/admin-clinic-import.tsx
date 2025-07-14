@@ -9,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Loader2, Upload, Building2, CheckCircle, AlertCircle, Download, Search } from 'lucide-react';
+import { Loader2, Upload, Building2, CheckCircle, AlertCircle, Download, Search, ArrowLeft, LogOut } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 export default function AdminClinicImport() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -108,8 +110,40 @@ export default function AdminClinicImport() {
     }
   };
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/logout');
+      queryClient.clear();
+      setLocation('/auth');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setLocation('/auth');
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      {/* Navigation header */}
+      <div className="flex justify-between items-center mb-6">
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={() => setLocation('/admin')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="flex items-center gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Clinic Data Import</h1>
         <p className="text-gray-600">

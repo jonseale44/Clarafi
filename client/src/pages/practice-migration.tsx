@@ -17,7 +17,9 @@ import {
   Users,
   ArrowRight,
   Mail,
-  Loader2
+  Loader2,
+  LogOut,
+  ArrowLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -186,8 +188,40 @@ export default function PracticeMigration() {
     }
   };
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/logout');
+      queryClient.clear();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      navigate('/auth');
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 max-w-6xl">
+      {/* Navigation header */}
+      <div className="flex justify-between items-center mb-6">
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="flex items-center gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Practice Migration Portal</h1>
         <p className="text-muted-foreground">
