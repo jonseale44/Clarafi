@@ -1,6 +1,9 @@
 import { Express } from 'express';
 import { ClinicAdminVerificationService, ClinicAdminVerificationRequest } from './clinic-admin-verification-service';
 import { z } from 'zod';
+import { db } from './db';
+import { eq } from 'drizzle-orm';
+import { clinicAdminVerifications, users, healthSystems } from '@shared/schema';
 
 // Middleware functions
 const requireAuth = (req: any, res: any, next: any) => {
@@ -233,31 +236,44 @@ export function registerAdminVerificationRoutes(app: Express) {
    */
   app.post('/api/admin-verification/check-email', async (req, res) => {
     try {
+      console.log('📧 [AdminVerification] Checking email availability:', req.body.email);
       const { email } = req.body;
       
+      if (!email) {
+        console.log('❌ [AdminVerification] No email provided');
+        return res.status(400).json({ error: 'Email is required' });
+      }
+      
+      console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
       // Check if email exists in clinic_admin_verifications
       const existingVerification = await db.query.clinicAdminVerifications.findFirst({
         where: eq(clinicAdminVerifications.email, email.toLowerCase())
       });
+      console.log('✅ [AdminVerification] Clinic admin verifications check complete:', existingVerification ? 'Found' : 'Not found');
       
+      console.log('🔍 [AdminVerification] Checking users table...');
       // Check if email exists in users table
       const existingUser = await db.query.users.findFirst({
         where: eq(users.email, email.toLowerCase())
       });
+      console.log('✅ [AdminVerification] Users table check complete:', existingUser ? 'Found' : 'Not found');
       
       if (existingVerification || existingUser) {
+        console.log('⚠️ [AdminVerification] Email already in use');
         return res.json({
           available: false,
           message: 'Email is already in use'
         });
       }
       
+      console.log('✅ [AdminVerification] Email is available');
       res.json({
         available: true,
         message: 'Email is available'
       });
     } catch (error) {
-      console.error('Error checking email:', error);
+      console.error('❌ [AdminVerification] Error checking email:', error);
+      console.error('Stack trace:', (error as any).stack);
       res.status(500).json({ error: 'Failed to check email' });
     }
   });
@@ -267,31 +283,44 @@ export function registerAdminVerificationRoutes(app: Express) {
    */
   app.post('/api/admin-verification/check-phone', async (req, res) => {
     try {
+      console.log('📱 [AdminVerification] Checking phone availability:', req.body.phone);
       const { phone } = req.body;
       
+      if (!phone) {
+        console.log('❌ [AdminVerification] No phone provided');
+        return res.status(400).json({ error: 'Phone is required' });
+      }
+      
+      console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
       // Check if phone exists in clinic_admin_verifications
       const existingVerification = await db.query.clinicAdminVerifications.findFirst({
         where: eq(clinicAdminVerifications.phone, phone)
       });
+      console.log('✅ [AdminVerification] Clinic admin verifications check complete:', existingVerification ? 'Found' : 'Not found');
       
+      console.log('🔍 [AdminVerification] Checking health_systems table...');
       // Check if phone exists in health_systems table
       const existingHealthSystem = await db.query.healthSystems.findFirst({
         where: eq(healthSystems.phone, phone)
       });
+      console.log('✅ [AdminVerification] Health systems table check complete:', existingHealthSystem ? 'Found' : 'Not found');
       
       if (existingVerification || existingHealthSystem) {
+        console.log('⚠️ [AdminVerification] Phone already in use');
         return res.json({
           available: false,
           message: 'Phone number is already registered'
         });
       }
       
+      console.log('✅ [AdminVerification] Phone is available');
       res.json({
         available: true,
         message: 'Phone number is available'
       });
     } catch (error) {
-      console.error('Error checking phone:', error);
+      console.error('❌ [AdminVerification] Error checking phone:', error);
+      console.error('Stack trace:', (error as any).stack);
       res.status(500).json({ error: 'Failed to check phone' });
     }
   });
@@ -335,31 +364,44 @@ export function registerAdminVerificationRoutes(app: Express) {
    */
   app.post('/api/admin-verification/check-organization', async (req, res) => {
     try {
+      console.log('🏢 [AdminVerification] Checking organization availability:', req.body.name);
       const { name } = req.body;
       
+      if (!name) {
+        console.log('❌ [AdminVerification] No organization name provided');
+        return res.status(400).json({ error: 'Organization name is required' });
+      }
+      
+      console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
       // Check if organization name exists in clinic_admin_verifications
       const existingVerification = await db.query.clinicAdminVerifications.findFirst({
         where: eq(clinicAdminVerifications.organizationName, name)
       });
+      console.log('✅ [AdminVerification] Clinic admin verifications check complete:', existingVerification ? 'Found' : 'Not found');
       
+      console.log('🔍 [AdminVerification] Checking health_systems table...');
       // Check if organization name exists in health_systems table
       const existingHealthSystem = await db.query.healthSystems.findFirst({
         where: eq(healthSystems.name, name)
       });
+      console.log('✅ [AdminVerification] Health systems table check complete:', existingHealthSystem ? 'Found' : 'Not found');
       
       if (existingVerification || existingHealthSystem) {
+        console.log('⚠️ [AdminVerification] Organization name already in use');
         return res.json({
           available: false,
           message: 'Organization name is already registered'
         });
       }
       
+      console.log('✅ [AdminVerification] Organization name is available');
       res.json({
         available: true,
         message: 'Organization name is available'
       });
     } catch (error) {
-      console.error('Error checking organization name:', error);
+      console.error('❌ [AdminVerification] Error checking organization name:', error);
+      console.error('Stack trace:', (error as any).stack);
       res.status(500).json({ error: 'Failed to check organization name' });
     }
   });
