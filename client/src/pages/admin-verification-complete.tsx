@@ -101,17 +101,17 @@ export default function AdminVerificationComplete() {
           <div className="mx-auto mb-4 w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
             <Shield className="h-8 w-8 text-indigo-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Complete Admin Verification</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Complete Email Verification</h1>
           <p className="mt-2 text-gray-600">
-            Enter the verification code sent to your email
+            Your application has been approved! Enter the code sent to your email to activate your account.
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Verification Code</CardTitle>
+            <CardTitle>Email Verification</CardTitle>
             <CardDescription>
-              Please check your email for the 6-digit verification code
+              Your application has been approved! Enter the 6-digit code from your email to confirm your email address and create your admin account.
             </CardDescription>
           </CardHeader>
           <CardContent>

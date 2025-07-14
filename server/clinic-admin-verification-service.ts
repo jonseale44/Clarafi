@@ -177,17 +177,14 @@ export class ClinicAdminVerificationService {
       };
     }
     
-    // Step 7: Send verification for higher-risk organizations
-    await this.sendVerificationNotifications(request, verificationCode);
-    
-    // Step 8: Log for compliance
+    // Step 7: Log for compliance (NO email sent yet - waiting for admin approval)
     console.log(`📋 [AdminVerification] Manual verification required for ${request.organizationName} - Risk Score: ${automatedResult.riskScore}`);
     
     return {
       verificationId: verification.id,
       message: automatedResult.riskScore < 50 
-        ? 'Your application looks good! Complete the quick verification process in your email.'
-        : 'Verification required. Please check your email for next steps.',
+        ? 'Your application has been submitted for review. We will notify you once approved.'
+        : 'Your application requires manual review. We will contact you within 1-2 business days.',
       expiresAt: expires,
       riskScore: automatedResult.riskScore,
       recommendations: automatedResult.recommendations,
@@ -485,18 +482,40 @@ Keep recommendations concise and specific.
   /**
    * Send verification through multiple channels for security
    */
-  static async sendVerificationNotifications(
-    request: ClinicAdminVerificationRequest, 
-    code: string
+  /**
+   * Send verification code email AFTER admin approval
+   */
+  static async sendVerificationCodeEmail(
+    email: string,
+    verificationCode: string,
+    details: {
+      organizationName: string;
+      firstName: string;
+      lastName: string;
+    }
   ) {
-    // Email verification with detailed instructions
-    await this.sendAdminVerificationEmail(request, code);
+    console.log(`📧 [AdminVerification] Sending verification code to ${email} after admin approval`);
     
-    // In production: Also send SMS verification
-    // await this.sendAdminVerificationSMS(request.phone, code);
-    
-    // In production: Create a verification dashboard entry
-    // await this.createVerificationDashboardEntry(request);
+    await EmailVerificationService.sendEmail({
+      to: email,
+      subject: 'Your Clarafi EMR Application Has Been Approved - Verify Your Email',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #003366;">Congratulations! Your Application Has Been Approved</h2>
+          <p>Dear ${details.firstName} ${details.lastName},</p>
+          <p>Great news! Your application for ${details.organizationName} has been approved by our team.</p>
+          <p><strong>Final Step:</strong> Please verify your email address to activate your administrator account.</p>
+          <p>Your verification code is:</p>
+          <div style="background-color: #f0f7ff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h1 style="text-align: center; color: #003366; letter-spacing: 5px;">${verificationCode}</h1>
+          </div>
+          <p>This code confirms that you control this email address, ensuring secure access to your EMR system.</p>
+          <p>Please visit <a href="https://clarafi.ai/admin-verification/complete">https://clarafi.ai/admin-verification/complete</a> to enter your code and complete setup.</p>
+          <p>This code will expire in 7 days.</p>
+          <p>Best regards,<br>The Clarafi Team</p>
+        </div>
+      `
+    });
   }
   
   /**
@@ -629,16 +648,16 @@ Keep recommendations concise and specific.
       throw new Error('Verification request not found');
     }
     
-    // Allow processing for both pending and auto-approved statuses
-    if (verification.status !== 'pending' && verification.status !== 'auto-approved') {
-      throw new Error('Verification already processed');
+    // Allow processing for auto-approved and admin-approved statuses
+    if (verification.status !== 'auto-approved' && verification.status !== 'admin_approved_awaiting_verification') {
+      throw new Error('Verification not approved or already processed');
     }
     
     if (new Date() > verification.expiresAt) {
       throw new Error('Verification code expired');
     }
     
-    // Skip code validation for auto-approved cases
+    // Validate code (skip for auto-approved cases)
     if (verification.status !== 'auto-approved' && verification.verificationCode !== code) {
       // Log failed attempt for security
       await this.logFailedVerification(verificationId);
@@ -843,35 +862,37 @@ Keep recommendations concise and specific.
       })
       .where(eq(clinicAdminVerifications.id, verificationId));
     
-    // If approved, create the admin account and health system
+    // If approved, send verification code email
     if (decision === 'approve') {
       try {
-        // Create the health system and admin user
-        const result = await this.createApprovedAdminAccount(request);
+        // Extract the verification code from the request
+        const verificationCode = request.verificationCode;
+        const requestData = request.verificationData as any;
         
-        // Send approval email
-        await this.sendDecisionEmail(request.email, 'approved', {
+        // Send verification code email for the user to complete setup
+        await this.sendVerificationCodeEmail(request.email, verificationCode, {
           organizationName: request.organizationName,
-          loginUrl: 'https://clarafi.ai/login'
+          firstName: requestData?.firstName || 'Admin',
+          lastName: requestData?.lastName || 'User'
         });
+        
+        // Update status to show admin approved but awaiting email verification
+        await db.update(clinicAdminVerifications)
+          .set({
+            status: 'admin_approved_awaiting_verification',
+            approvedAt: new Date(),
+            reviewedBy: reviewerId,
+            reviewerNotes: notes
+          })
+          .where(eq(clinicAdminVerifications.id, verificationId));
         
         return {
           success: true,
           decision: 'approved',
-          healthSystemId: result.healthSystemId,
-          adminUserId: result.adminUserId
+          message: 'Approval successful. Verification code sent to applicant\'s email.'
         };
       } catch (error: any) {
-        // If account creation fails, revert the approval
-        await db.update(clinicAdminVerifications)
-          .set({
-            status: 'pending',
-            approvedAt: null,
-            reviewerNotes: `Approval failed: ${error.message}`
-          })
-          .where(eq(clinicAdminVerifications.id, verificationId));
-          
-        throw new Error(`Failed to create admin account: ${error.message}`);
+        throw new Error(`Failed to send verification email: ${error.message}`);
       }
     } else {
       // Send rejection email

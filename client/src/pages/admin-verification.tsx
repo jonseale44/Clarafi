@@ -386,7 +386,7 @@ export default function AdminVerification() {
               
               {!verificationResult.autoApproved && (
                 <p className="text-center text-sm text-gray-500 mt-4">
-                  You'll receive an email with a verification code after manual approval.
+                  We'll notify you via email once your application is approved. After approval, you'll receive a verification code to confirm your email address.
                 </p>
               )}
             </div>
