@@ -21,10 +21,13 @@ import {
   Send,
   Clock,
   User,
-  Hash
+  Hash,
+  ArrowLeft,
+  LogOut
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 interface VerificationRequest {
   id: number;
@@ -54,6 +57,7 @@ interface VerificationRequest {
 
 export default function AdminVerificationReview() {
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [selectedRequest, setSelectedRequest] = useState<VerificationRequest | null>(null);
   const [reviewDialog, setReviewDialog] = useState(false);
   const [decision, setDecision] = useState<'approve' | 'reject' | null>(null);
@@ -149,8 +153,42 @@ export default function AdminVerificationReview() {
   const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'manual-review');
   const processedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected');
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/logout');
+      queryClient.clear();
+      setLocation('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setLocation('/');
+    }
+  };
+
   return (
     <div className="container mx-auto p-6">
+      {/* Navigation Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setLocation('/admin')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </Button>
+      </div>
+
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Clinic Admin Verification Review</h1>
         <p className="text-muted-foreground">Review and approve clinic administrator registration requests</p>
