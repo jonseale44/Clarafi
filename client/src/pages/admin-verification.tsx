@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, Loader2, Sparkles, Building2, AlertCircle, Navigation, MapPin, Mail, Check, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Building2, AlertCircle, Navigation, MapPin, Mail, Check, X, Clock } from 'lucide-react';
 import { Link } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -366,15 +366,12 @@ export default function AdminVerification() {
                   </Alert>
                 )}
                 
-                <Alert className="border-blue-200 bg-blue-50">
-                  <Mail className="h-4 w-4 text-blue-600" />
-                  <AlertTitle>Check Your Email</AlertTitle>
+                <Alert className="border-amber-200 bg-amber-50">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                  <AlertTitle>Manual Review Required</AlertTitle>
                   <AlertDescription>
-                    <p className="mb-2">We've sent a verification code to your email address.</p>
-                    <Link href="/admin-verification-complete" className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
-                      <CheckCircle2 className="h-4 w-4 mr-1" />
-                      Click here to complete your verification
-                    </Link>
+                    <p className="mb-2">Your application requires manual review by our team due to the risk assessment score.</p>
+                    <p className="text-sm">We'll notify you via email once your verification is approved (typically within 24-48 hours).</p>
                   </AlertDescription>
                 </Alert>
               </>
@@ -388,12 +385,9 @@ export default function AdminVerification() {
               </Link>
               
               {!verificationResult.autoApproved && (
-                <Link href="/admin-verification-complete">
-                  <Button className="w-full mt-2">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Enter Verification Code
-                  </Button>
-                </Link>
+                <p className="text-center text-sm text-gray-500 mt-4">
+                  You'll receive an email with a verification code after manual approval.
+                </p>
               )}
             </div>
           </CardContent>
