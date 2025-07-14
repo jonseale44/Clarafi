@@ -409,6 +409,20 @@ export default function AdminVerification() {
           </p>
         </div>
 
+        <Alert className="mb-6 border-blue-200 bg-blue-50">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertTitle>How the Verification Process Works</AlertTitle>
+          <AlertDescription>
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>Submit your organization details below</li>
+              <li>Our AI system performs instant verification checks</li>
+              <li>If approved, you'll receive an email with a verification code</li>
+              <li>Enter the code to activate your account</li>
+              <li>You'll receive login credentials (username & temporary password) via email</li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>{error}</AlertDescription>

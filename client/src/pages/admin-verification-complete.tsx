@@ -79,10 +79,19 @@ export default function AdminVerificationComplete() {
                 <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                   <CheckCircle2 className="h-8 w-8 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Complete!</h2>
-                <p className="text-gray-600 mb-4">
-                  Your admin account has been successfully created.
-                </p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Account Created Successfully!</h2>
+                <Alert className="mb-4 border-blue-200 bg-blue-50">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  <AlertTitle>Check Your Email</AlertTitle>
+                  <AlertDescription>
+                    We've sent your login credentials to your email address. Look for an email with:
+                    <ul className="list-disc list-inside mt-2">
+                      <li>Your username</li>
+                      <li>A temporary password</li>
+                      <li>Instructions for your first login</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
                 <p className="text-sm text-gray-500">
                   Redirecting to login page...
                 </p>

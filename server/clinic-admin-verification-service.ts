@@ -763,14 +763,81 @@ Keep recommendations concise and specific.
   }
   
   /**
-   * Send welcome email to new admin
+   * Send welcome email to new admin with login credentials
    */
   static async sendAdminWelcomeEmail(
     admin: ClinicAdminVerificationRequest,
     tempPassword: string
   ) {
-    // Implementation would send professional onboarding email
     console.log(`📧 [AdminVerification] Sending welcome email to ${admin.email}`);
+    
+    const username = admin.email.split('@')[0];
+    
+    await EmailVerificationService.sendEmail({
+      to: admin.email,
+      subject: 'Welcome to Clarafi EMR - Your Login Credentials',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #003366; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">Welcome to Clarafi EMR</h1>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f5f5f5;">
+            <h2 style="color: #003366;">Hello ${admin.firstName} ${admin.lastName},</h2>
+            
+            <p>Congratulations! Your administrator account for <strong>${admin.organizationName}</strong> has been created.</p>
+            
+            <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+              <h3 style="color: #003366; margin-top: 0;">Your Login Credentials:</h3>
+              <p><strong>Username:</strong> ${username}</p>
+              <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+              <p style="color: #666; font-size: 14px;">Note: You will be required to change this password on your first login.</p>
+            </div>
+            
+            <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h4 style="color: #003366; margin-top: 0;">Next Steps:</h4>
+              <ol>
+                <li>Go to <a href="https://clarafi.ai/auth">https://clarafi.ai/auth</a></li>
+                <li>Enter your username and temporary password</li>
+                <li>You'll be prompted to create a new password</li>
+                <li>Set up two-factor authentication (required for admin accounts)</li>
+                <li>Start configuring your EMR system</li>
+              </ol>
+            </div>
+            
+            <div style="background-color: #fff3e0; padding: 15px; border-radius: 5px;">
+              <h4 style="color: #003366; margin-top: 0;">Trial Period Information:</h4>
+              <p>Your Enterprise EMR trial includes:</p>
+              <ul>
+                <li>30-day free trial period</li>
+                <li>Full access to all Enterprise features</li>
+                <li>Unlimited providers and patients</li>
+                <li>Email and phone support</li>
+              </ul>
+              <p>Your trial expires on: <strong>${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</strong></p>
+            </div>
+            
+            <p style="margin-top: 30px;">
+              If you have any questions or need assistance, please contact our implementation team at:
+              <br>Email: implementation@clarafi.com
+              <br>Phone: 1-800-CLARAFI
+            </p>
+            
+            <p>
+              Best regards,<br>
+              The Clarafi Team
+            </p>
+          </div>
+          
+          <div style="background-color: #333; color: #999; padding: 20px; text-align: center; font-size: 12px;">
+            <p>
+              This email contains confidential login credentials. Please do not share this information.
+              <br>If you did not request this account, please contact us immediately.
+            </p>
+          </div>
+        </div>
+      `
+    });
   }
   
   /**
