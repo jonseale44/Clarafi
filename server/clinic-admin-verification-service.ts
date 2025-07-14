@@ -981,29 +981,108 @@ Keep recommendations concise and specific.
    * Create approved admin account (internal helper)
    */
   private static async createApprovedAdminAccount(verification: any) {
-    const { RegistrationService } = await import('./registration-service');
+    const { db } = await import('./db');
+    const { healthSystems, organizations, locations, users } = await import('../shared/schema');
+    const bcrypt = await import('bcryptjs');
     
-    // Use the registration service to create the health system and admin user
-    const result = await RegistrationService.createNewPractice({
-      email: verification.email,
-      password: 'ChangeMe123!', // Temporary password
-      firstName: verification.firstName,
-      lastName: verification.lastName,
-      healthSystemInfo: {
-        name: verification.organizationName,
-        type: verification.organizationType,
-        address: verification.address,
-        city: verification.city,
-        state: verification.state,
-        zip: verification.zip,
-        phone: verification.phone,
-        taxId: verification.taxId,
-        website: verification.website || null,
-        npiNumber: verification.npiNumber || null,
-        tier: 3 // Enterprise tier for admin-created systems
-      },
-      role: 'admin',
-      isNewPractice: true
+    // Generate a temporary password
+    const tempPassword = 'ChangeMe123!';
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    
+    // Create health system, organization, location, and admin user
+    const result = await db.transaction(async (tx) => {
+      // Create health system
+      const [healthSystem] = await tx
+        .insert(healthSystems)
+        .values({
+          name: verification.organizationName,
+          shortName: verification.organizationName.substring(0, 20),
+          systemType: verification.organizationType,
+          subscriptionTier: 2, // Enterprise tier for admin-created systems
+          subscriptionStatus: 'active',
+          subscriptionStartDate: new Date(),
+          primaryContact: `${verification.firstName} ${verification.lastName}`,
+          email: verification.email,
+          phone: verification.phone || null,
+          npi: verification.npiNumber || null,
+          taxId: verification.taxId || null,
+          website: verification.website || null,
+        })
+        .returning();
+        
+      // Create default organization
+      const [organization] = await tx
+        .insert(organizations)
+        .values({
+          name: verification.organizationName,
+          healthSystemId: healthSystem.id,
+          primaryContact: `${verification.firstName} ${verification.lastName}`,
+          email: verification.email,
+          phone: verification.phone || null,
+        })
+        .returning();
+        
+      // Create default location
+      const [location] = await tx
+        .insert(locations)
+        .values({
+          name: `${verification.organizationName} - Main`,
+          organizationId: organization.id,
+          healthSystemId: healthSystem.id,
+          address: verification.address,
+          city: verification.city,
+          state: verification.state,
+          zip: verification.zip,
+          phone: verification.phone || null,
+          isActive: true,
+          locationType: 'primary',
+        })
+        .returning();
+        
+      // Create admin user
+      const [adminUser] = await tx
+        .insert(users)
+        .values({
+          username: verification.email.split('@')[0], // Use email prefix as username
+          email: verification.email,
+          password: hashedPassword,
+          healthSystemId: healthSystem.id,
+          firstName: verification.firstName,
+          lastName: verification.lastName,
+          role: 'admin',
+          npi: verification.npiNumber || '0000000000',
+          credentials: verification.title || 'Admin',
+          emailVerified: true, // Pre-verified since admin approved
+          active: true,
+        })
+        .returning();
+        
+      return {
+        healthSystemId: healthSystem.id,
+        adminUserId: adminUser.id,
+        tempPassword,
+      };
+    });
+    
+    // Send welcome email with temporary password
+    const { EmailVerificationService } = await import('./email-verification-service');
+    await EmailVerificationService.sendEmail({
+      to: verification.email,
+      subject: 'Welcome to Clarafi EMR - Your Admin Account is Ready',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #003366;">Your Clarafi EMR Admin Account</h2>
+          <p>Dear ${verification.firstName} ${verification.lastName},</p>
+          <p>Your admin account has been created. Here are your login credentials:</p>
+          <div style="background-color: #f0f7ff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>Username:</strong> ${verification.email.split('@')[0]}</p>
+            <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+          </div>
+          <p style="color: #d9534f;"><strong>Important:</strong> Please change your password immediately after logging in.</p>
+          <p>You can log in at: <a href="https://clarafi.ai/auth">https://clarafi.ai/auth</a></p>
+          <p>Best regards,<br>The Clarafi Team</p>
+        </div>
+      `
     });
     
     return result;
