@@ -59,7 +59,7 @@ router.get("/stats", requireAuth, async (req, res) => {
     const approvedTodayResult = await pool.query(
       `SELECT COUNT(*) as count FROM clinic_admin_verifications 
        WHERE status = 'approved' 
-       AND DATE(reviewed_at) = CURRENT_DATE`
+       AND DATE(approved_at) = CURRENT_DATE`
     );
     const approvedToday = parseInt(approvedTodayResult.rows[0].count) || 0;
 
@@ -75,13 +75,13 @@ router.get("/stats", requireAuth, async (req, res) => {
     const pendingMigrationsResult = await pool.query(
       `SELECT COUNT(*) as count FROM migration_invitations 
        WHERE status = 'pending' 
-       AND expiresAt > NOW()`
+       AND expires_at > NOW()`
     );
     const pendingMigrations = parseInt(pendingMigrationsResult.rows[0].count) || 0;
 
     // Get total health systems count
     const totalHealthSystemsResult = await pool.query(
-      `SELECT COUNT(*) as count FROM healthSystems`
+      `SELECT COUNT(*) as count FROM health_systems`
     );
     const totalHealthSystems = parseInt(totalHealthSystemsResult.rows[0].count) || 0;
 
@@ -89,9 +89,9 @@ router.get("/stats", requireAuth, async (req, res) => {
     const dailyActiveUsersResult = await pool.query(
       `SELECT COUNT(DISTINCT u.id) as count 
        FROM users u
-       JOIN user_session_locations usl ON u.id = usl.userId
-       WHERE u.healthSystemId = $1 
-       AND DATE(usl.loginTime) = CURRENT_DATE`,
+       JOIN user_session_locations usl ON u.id = usl.user_id
+       WHERE u.health_system_id = $1 
+       AND DATE(usl.login_time) = CURRENT_DATE`,
       [user.healthSystemId]
     );
     const dailyActiveUsers = parseInt(dailyActiveUsersResult.rows[0].count) || 0;
@@ -99,9 +99,9 @@ router.get("/stats", requireAuth, async (req, res) => {
     // Get encounters today count
     const encountersTodayResult = await pool.query(
       `SELECT COUNT(*) as count FROM encounters e
-       JOIN patients p ON e.patientId = p.id
-       WHERE p.healthSystemId = $1 
-       AND DATE(e.createdAt) = CURRENT_DATE`,
+       JOIN patients p ON e.patient_id = p.id
+       WHERE p.health_system_id = $1 
+       AND DATE(e.created_at) = CURRENT_DATE`,
       [user.healthSystemId]
     );
     const encountersToday = parseInt(encountersTodayResult.rows[0].count) || 0;
@@ -110,7 +110,7 @@ router.get("/stats", requireAuth, async (req, res) => {
     let monthlyRevenue = 0;
     if (user.healthSystemId) {
       const healthSystemResult = await pool.query(
-        `SELECT subscriptionTier FROM healthSystems WHERE id = $1`,
+        `SELECT subscription_tier FROM health_systems WHERE id = $1`,
         [user.healthSystemId]
       );
       if (healthSystemResult.rows.length > 0) {

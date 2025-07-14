@@ -174,8 +174,11 @@ export default function AdminDashboard() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  logoutMutation.mutate();
-                  setLocation("/login");
+                  logoutMutation.mutate(undefined, {
+                    onSuccess: () => {
+                      setLocation("/login");
+                    }
+                  });
                 }}
                 className="flex items-center gap-2"
               >
