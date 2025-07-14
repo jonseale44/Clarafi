@@ -228,5 +228,27 @@ export function registerAdminVerificationRoutes(app: Express) {
         res.status(500).json({ error: 'Failed to clear test data' });
       }
     });
+    
+    // Clear verification by email
+    app.delete('/api/admin-verification/clear-by-email/:email', async (req, res) => {
+      try {
+        const { email } = req.params;
+        console.log('🧹 [AdminVerification] Clearing verification for email:', email);
+        
+        const deletedVerifications = await db.delete(clinicAdminVerifications)
+          .where(eq(clinicAdminVerifications.email, email))
+          .returning();
+        
+        console.log(`✅ [AdminVerification] Cleared ${deletedVerifications.length} verifications`);
+        
+        res.json({
+          success: true,
+          deletedVerifications: deletedVerifications.length
+        });
+      } catch (error) {
+        console.error('❌ [AdminVerification] Error clearing verification by email:', error);
+        res.status(500).json({ error: 'Failed to clear verification' });
+      }
+    });
   }
 }

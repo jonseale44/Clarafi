@@ -190,7 +190,9 @@ export class ClinicAdminVerificationService {
         : 'Verification required. Please check your email for next steps.',
       expiresAt: expires,
       riskScore: automatedResult.riskScore,
-      recommendations: automatedResult.recommendations
+      recommendations: automatedResult.recommendations,
+      // Reviewer recommendations are stored in database for internal use only
+      // They are not sent to the applicant
     };
   }
   
@@ -245,14 +247,18 @@ export class ClinicAdminVerificationService {
       // Step 5: Use GPT for final risk assessment and recommendations
       const gptAssessment = await this.getGPTRiskAssessment(request, apiResults);
       
+      // Only include applicant-facing recommendations from both sources
+      const applicantRecommendations = [
+        ...apiResults.recommendations, // These are already applicant-focused from API verifications
+        ...gptAssessment.applicantRecommendations // These are explicitly for the applicant from GPT
+      ];
+      
       return {
         approved,
         riskScore,
         verificationDetails,
-        recommendations: [
-          ...apiResults.recommendations,
-          ...gptAssessment.recommendations
-        ],
+        recommendations: applicantRecommendations, // Only applicant-facing recommendations
+        reviewerRecommendations: gptAssessment.reviewerRecommendations, // Stored for internal use
         requiresManualReview: riskScore > 30 || apiResults.riskFactors.length > 2,
         automatedDecisionReason: this.generateDecisionReason(apiResults, approved, riskScore),
         apiVerificationData: apiResults
@@ -381,13 +387,16 @@ Additional Context to Consider:
 4. Are there any red flags or inconsistencies in the application?
 5. Should we recommend any additional verification steps?
 
-Return a JSON object with ONLY:
+Return a JSON object with:
 {
-  "recommendations": string[]  // Additional recommendations based on your analysis
+  "applicantRecommendations": string[],  // Things the APPLICANT can do to improve their verification (e.g., "Register with Google My Business", "Use organizational email")
+  "reviewerRecommendations": string[]    // Things the SYSTEM REVIEWER should check manually (e.g., "Verify NPI in database", "Request documentation")
 }
 
-Focus on practical recommendations that would help verify the legitimacy of this healthcare organization.
-Consider both the API results and the application details holistically.
+IMPORTANT: 
+- applicantRecommendations should be actionable steps the clinic admin can take themselves
+- reviewerRecommendations should be verification steps for Clarafi staff reviewing the application
+Keep recommendations concise and specific.
 `;
 
       const response = await openai.chat.completions.create({
@@ -400,7 +409,8 @@ Consider both the API results and the application details holistically.
       const result = JSON.parse(response.choices[0].message.content || '{}');
       
       return {
-        recommendations: result.recommendations || []
+        applicantRecommendations: result.applicantRecommendations || [],
+        reviewerRecommendations: result.reviewerRecommendations || []
       };
     } catch (error) {
       console.error('❌ [AdminVerification] GPT verification failed:', error);
@@ -415,7 +425,8 @@ Consider both the API results and the application details holistically.
           personnelValid: false,
           businessSizeAppropriate: false
         },
-        recommendations: ['Manual review required due to automated verification failure'],
+        applicantRecommendations: ['Contact support if verification continues to fail'],
+        reviewerRecommendations: ['Manual review required due to automated verification failure'],
         requiresManualReview: true,
         automatedDecisionReason: 'Automated verification unavailable'
       };

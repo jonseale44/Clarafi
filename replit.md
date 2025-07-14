@@ -334,6 +334,15 @@ Preferred communication style: Simple, everyday language.
 - **DOCUMENTATION UPDATED**: Enhanced CLINIC_ADMIN_VERIFICATION_API_SETUP.md with Tax1099 setup instructions and cost analysis
 - **PRODUCTION IMPACT**: System now performs real IRS verification instead of mock validation, meeting enterprise EMR security standards
 
+### Admin Verification Recommendation Separation Fix COMPLETED (January 14, 2025)
+- **UX ISSUE FIXED**: Admin verification recommendations were mixing applicant-facing and reviewer-facing recommendations in same list
+- **ROOT CAUSE**: GPT generates separate applicantRecommendations and reviewerRecommendations but they were being combined for display
+- **SOLUTION IMPLEMENTED**: Modified performAutomatedVerification to only include applicant-facing recommendations in response
+- **APPLICANT RECOMMENDATIONS**: Now only shows actionable steps clinic admins can take (e.g., "Register with Google My Business", "Use organizational email")
+- **REVIEWER RECOMMENDATIONS**: Internal recommendations (e.g., "Request documentation", "Perform background check") stored separately for staff use only
+- **GPT PROMPT CLARITY**: GPT already correctly separates recommendations with clear instructions for each audience
+- **PRODUCTION IMPACT**: Applicants no longer confused by seeing internal review recommendations meant for Clarafi staff
+
 ### Production-Ready Automated Clinic Admin Verification System COMPLETED (July 13, 2025)
 - **MAJOR ARCHITECTURAL ENHANCEMENT**: Replaced basic GPT-only verification with comprehensive multi-API verification system meeting/exceeding Athena and Epic EMR security standards
 - **VERIFICATION APIs MODULE**: Created verification-apis.ts with real-world API integrations:
