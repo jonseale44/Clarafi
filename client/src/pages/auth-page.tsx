@@ -987,11 +987,17 @@ export default function AuthPage() {
                       )}
                     </Button>
                     
-                    <div className="mt-4 text-center">
+                    <div className="mt-4 text-center space-y-2">
                       <p className="text-sm text-gray-600">
                         Need an enterprise admin account?{' '}
                         <Link href="/admin-verification" className="text-primary hover:text-primary/80 underline">
                           Create Enterprise Admin
+                        </Link>
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Have a verification code?{' '}
+                        <Link href="/admin-verification-complete" className="text-primary hover:text-primary/80 underline">
+                          Complete Verification
                         </Link>
                       </p>
                     </div>

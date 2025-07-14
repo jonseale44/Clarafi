@@ -527,11 +527,24 @@ Keep recommendations concise and specific.
                           padding: 20px; background-color: #003366; border-radius: 5px;">
                 ${code}
               </div>
+              
+              <div style="text-align: center; margin: 20px 0;">
+                <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/admin-verification-complete" 
+                   style="background-color: #FFD700; color: #003366; padding: 15px 30px; text-decoration: none; 
+                          border-radius: 5px; font-weight: bold; display: inline-block;">
+                  Complete Verification
+                </a>
+              </div>
             </div>
             
             <h3 style="color: #003366;">Next Steps:</h3>
             <ol>
-              <li>Complete identity verification using the code above</li>
+              <li>
+                <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/admin-verification-complete" 
+                   style="color: #003366; font-weight: bold;">
+                  Click here to complete identity verification
+                </a> using the code above
+              </li>
               <li>Upload required documentation:
                 <ul>
                   <li>Business license or incorporation documents</li>
