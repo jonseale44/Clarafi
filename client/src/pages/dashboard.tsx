@@ -43,7 +43,15 @@ export default function Dashboard() {
 
   // Redirect admin users to the admin dashboard
   useEffect(() => {
-    if (currentUser?.role === 'admin' && location === '/dashboard') {
+    console.log('Dashboard redirect check:', {
+      currentUser,
+      role: currentUser?.role,
+      location,
+      shouldRedirect: currentUser?.role === 'admin' && (location === '/dashboard' || location === '/')
+    });
+    
+    if (currentUser?.role === 'admin' && (location === '/dashboard' || location === '/')) {
+      console.log('Redirecting admin to /admin');
       setLocation('/admin');
     }
   }, [currentUser, location, setLocation]);
