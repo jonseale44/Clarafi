@@ -1,0 +1,56 @@
+1. They should be redirected to a "please verify your email"
+2. Don't worry about any existing unverified users. Those are test cases and can be deleted.
+3. I'm referring to the "create enterprise admin" button on the registration page. It pulls up a new page that allows
+the user to "create enterprise admin account". This is essentially "proving" that the user is actually an
+administrator at a particular existing clinic, allowing that person "admin" privileges for that particular clinic. Once
+they get these privileges, they can purchase authorization keys which can be distributed to their providers and
+staff. For each authorization key they must pay a monthly fee ($399 per provider per month). Individual users
+should still be able to sign up for tier 2 which would allow them all of the data connections/endpoints to
+pharmacies, etc. They would, essentially, become their own enterprise admin. I suppose it does make sense to
+have them go through the admin approval process, since this will officially create an established "Clarafi
+presence" for that particular clinic. The whole purpose of the admin approve process (the "create enterprise
+admin account" is to protect patient privacy. Suppose user A is a solo practitioner and owns his own clinic. He
+chooses to purchase the tier 2 from the start. If he someday hires another physician, he can simply obtain a new
+key and give it to that physician who can thereafter access the EMR (assuming user A/admin makes monthly
+payments. In another scenario, user C has been using tier 1 for a few months and now has some patients in the
+system that he has created at the clinic he works at, clinic C. Admin at clinic C decides to purchase the entire
+EMR (tier 2), which allows user C to no longer have to pay for their own subscription, because the admin at clinic
+C has provided user C with a key. All the patient data with user C gets uploaded into the new combined clinic C
+patient list. Other providers who work at the same clinic will now have access to the combined clinic C patient
+list (thanks to the prior work done by user C), plus they can add their own patients. I don't think there are any
+HIPPA violations here because all the other users work in the same clinic anyway. The only concern that we
+should consider is if user C had ALSO been using the program (prior to the clinic C adoption of the program) in
+other settings such as in the hospital or moonlighting somewhere that the clinic C does not own. I believe we
+have made attempts to eliminate this risk but I'm not sure what all we did towards accomplishing it. If not, we
+may need to somehow enforce users to clearly specify where the patient was seen either at the time of service
+(repetitive and not ideal) or during the patient migration process. In other words, we could force them, at the time
+clinic C chooses to adopt the entire system, to migrate any patients into the new combined EMR if they want to
+continue using that data. This should probably be individualized PER PATIENT. I don't know, just brainstorming
+here. I'm also not sure how much of this is a security issue vs an "ownership" issue, i.e. the clinic owns the
+patient data, right?
+4. No, any user should be able to submit verification requests because the verification process often (maybe
+always) happens before the user even has a log in. Although I hadn't considered about the email verification.
+maybe that should happen before they are allowed to attempt the verification process. It might cut down on
+false requests.
+5. Tier 1 users should still have access to the orders section and the billing section just like they currently do. So it
+won't really be blank or hidden. IT's just that they won't actually function (just like now they don't actually
+function). Since this is so complex, let's brainstorm more. It almost seems easier to finish setting up all these real
+endpoints (tier 2) and THEN scale back/cut them off for tier 1 users. Admittedly, this will need more work. Maybe
+we should hold off on this for now until I can really get those endpoints/connections made.
+6. If the system has patients, they must have a subscription key. I'm trying to think of a scenario when the system
+would have no patients and yet still be "existing". Maybe we need to clarify this. My original intention was for our
+EMR to hold all the clinic data information somewhere in our database or AT LEAST, make all that information
+easily accessible (maybe through the google places API?), so that users could easily locate and choose their
+"existing" clinic. But does that mean that the clinic "exists" in our EMR? I'm not sure. I think what you mean by
+"exist" is that the clinic has a user associated with it. If that's what you mean, then yes the new user would need
+a key. Basically, whichever user gets to it first becomes the admin and there after has the ability to assign keys (if
+he pays for them). He should still be able to hand off this admin privilege if he wants. Suppose you have clinic A.
+User A decides to sign up for our program on tier 2, thereby making him an admin. User B decides he wants to
+use our program as well. If he wants to "join" in with the other patients in a fully connected EMR, he will need to
+get a security key from user A. If user A decides he doesn't want to be admin anymore and he hires an
+administrator to take over this role, he could be able to transfer this to that admin. Yes, subscription keys should
+have different types with different permissions but I am almost certain we have already established this.
+7. System administrator is the only one with god-like powers. They can do everything and anything. Yes, it's the
+Clarafi staff who manage the entire platform. Clinic admin is the lesser role that manages the specific health
+system/clinic.
+What other questions do you have?
