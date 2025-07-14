@@ -982,12 +982,30 @@ Keep recommendations concise and specific.
    */
   private static async createApprovedAdminAccount(verification: any) {
     console.log('🔧 [AdminVerification] Starting createApprovedAdminAccount for:', verification.organizationName);
+    console.log('📋 [AdminVerification] Full verification data:', JSON.stringify(verification, null, 2));
     
     const { db } = await import('./db');
     const { healthSystems, organizations, locations, users } = await import('../shared/schema');
     const { hashPassword } = await import('./auth');
     
     console.log('📦 [AdminVerification] Imports successful, generating temporary password...');
+    
+    // Extract the full request data from verificationData JSONB field
+    const requestData = verification.verificationData as any;
+    console.log('📋 [AdminVerification] Extracted request data:', {
+      organizationType: requestData?.organizationType,
+      firstName: requestData?.firstName,
+      lastName: requestData?.lastName,
+      title: requestData?.title,
+      npiNumber: requestData?.npiNumber,
+      address: requestData?.address,
+      city: requestData?.city,
+      state: requestData?.state,
+      zip: requestData?.zip,
+      phone: requestData?.phone,
+      website: requestData?.website,
+      taxId: requestData?.taxId
+    });
     
     // Generate a temporary password
     const tempPassword = 'ChangeMe123!';
@@ -1002,7 +1020,7 @@ Keep recommendations concise and specific.
       // Create health system
       console.log('🏥 [AdminVerification] Creating health system:', {
         name: verification.organizationName,
-        type: verification.organizationType,
+        type: requestData?.organizationType,
         tier: 2
       });
       
@@ -1011,16 +1029,16 @@ Keep recommendations concise and specific.
         .values({
           name: verification.organizationName,
           shortName: verification.organizationName.substring(0, 20),
-          systemType: verification.organizationType,
+          systemType: requestData?.organizationType || 'clinic_group',
           subscriptionTier: 2, // Enterprise tier for admin-created systems
           subscriptionStatus: 'active',
           subscriptionStartDate: new Date(),
-          primaryContact: `${verification.firstName} ${verification.lastName}`,
+          primaryContact: `${requestData?.firstName || 'Admin'} ${requestData?.lastName || 'User'}`,
           email: verification.email,
-          phone: verification.phone || null,
-          npi: verification.npiNumber || null,
-          taxId: verification.taxId || null,
-          website: verification.website || null,
+          phone: requestData?.phone || null,
+          npi: requestData?.npiNumber || null,
+          taxId: requestData?.taxId || null,
+          website: requestData?.website || null,
         })
         .returning();
         
@@ -1028,14 +1046,17 @@ Keep recommendations concise and specific.
         
       // Create default organization
       console.log('🏢 [AdminVerification] Creating organization...');
+      console.log('🏢 [AdminVerification] Organization type from verification:', requestData?.organizationType);
+      
       const [organization] = await tx
         .insert(organizations)
         .values({
           name: verification.organizationName,
           healthSystemId: healthSystem.id,
-          primaryContact: `${verification.firstName} ${verification.lastName}`,
+          organizationType: requestData?.organizationType || 'clinic_group', // Default to clinic_group if not specified
+          primaryContact: `${requestData?.firstName || 'Admin'} ${requestData?.lastName || 'User'}`,
           email: verification.email,
-          phone: verification.phone || null,
+          phone: requestData?.phone || null,
         })
         .returning();
         
@@ -1049,11 +1070,11 @@ Keep recommendations concise and specific.
           name: `${verification.organizationName} - Main`,
           organizationId: organization.id,
           healthSystemId: healthSystem.id,
-          address: verification.address,
-          city: verification.city,
-          state: verification.state,
-          zip: verification.zip,
-          phone: verification.phone || null,
+          address: requestData?.address || 'Address Not Provided',
+          city: requestData?.city || 'City Not Provided',
+          state: requestData?.state || 'TX',
+          zip: requestData?.zip || '00000',
+          phone: requestData?.phone || null,
           isActive: true,
           locationType: 'primary',
         })
@@ -1073,11 +1094,11 @@ Keep recommendations concise and specific.
           email: verification.email,
           password: hashedPassword,
           healthSystemId: healthSystem.id,
-          firstName: verification.firstName,
-          lastName: verification.lastName,
+          firstName: requestData?.firstName || 'Admin',
+          lastName: requestData?.lastName || 'User',
           role: 'admin',
-          npi: verification.npiNumber || '0000000000',
-          credentials: verification.title || 'Admin',
+          npi: requestData?.npiNumber || '0000000000',
+          credentials: requestData?.title || 'Admin',
           emailVerified: true, // Pre-verified since admin approved
           active: true,
         })
@@ -1104,7 +1125,7 @@ Keep recommendations concise and specific.
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #003366;">Your Clarafi EMR Admin Account</h2>
-          <p>Dear ${verification.firstName} ${verification.lastName},</p>
+          <p>Dear ${requestData?.firstName || 'Admin'} ${requestData?.lastName || 'User'},</p>
           <p>Your admin account has been created. Here are your login credentials:</p>
           <div style="background-color: #f0f7ff; padding: 20px; border-radius: 5px; margin: 20px 0;">
             <p><strong>Username:</strong> ${verification.email.split('@')[0]}</p>
