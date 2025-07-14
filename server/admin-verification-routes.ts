@@ -245,9 +245,13 @@ export function registerAdminVerificationRoutes(app: Express) {
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
-      // Check if email exists in clinic_admin_verifications
+      // Check if email exists in clinic_admin_verifications (excluding rejected)
+      const { and, ne } = await import('drizzle-orm');
       const existingVerification = await db.query.clinicAdminVerifications.findFirst({
-        where: eq(clinicAdminVerifications.email, email.toLowerCase())
+        where: and(
+          eq(clinicAdminVerifications.email, email.toLowerCase()),
+          ne(clinicAdminVerifications.status, 'rejected')
+        )
       });
       console.log('✅ [AdminVerification] Clinic admin verifications check complete:', existingVerification ? 'Found' : 'Not found');
       
@@ -292,8 +296,11 @@ export function registerAdminVerificationRoutes(app: Express) {
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
-      // Check if phone exists in clinic_admin_verifications (stored in verificationData JSONB)
-      const existingVerifications = await db.query.clinicAdminVerifications.findMany();
+      // Check if phone exists in clinic_admin_verifications (stored in verificationData JSONB, excluding rejected)
+      const { ne } = await import('drizzle-orm');
+      const existingVerifications = await db.query.clinicAdminVerifications.findMany({
+        where: ne(clinicAdminVerifications.status, 'rejected')
+      });
       const existingVerification = existingVerifications.find(v => 
         (v.verificationData as any)?.phone === phone
       );
@@ -333,8 +340,11 @@ export function registerAdminVerificationRoutes(app: Express) {
     try {
       const { taxId } = req.body;
       
-      // Check if tax ID exists in clinic_admin_verifications (stored in verificationData JSONB)
-      const existingVerifications = await db.query.clinicAdminVerifications.findMany();
+      // Check if tax ID exists in clinic_admin_verifications (stored in verificationData JSONB, excluding rejected)
+      const { ne } = await import('drizzle-orm');
+      const existingVerifications = await db.query.clinicAdminVerifications.findMany({
+        where: ne(clinicAdminVerifications.status, 'rejected')
+      });
       const existingVerification = existingVerifications.find(v => 
         (v.verificationData as any)?.taxId === taxId
       );
@@ -375,9 +385,13 @@ export function registerAdminVerificationRoutes(app: Express) {
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
-      // Check if organization name exists in clinic_admin_verifications (check both organizationName field and verificationData)
+      // Check if organization name exists in clinic_admin_verifications (excluding rejected)
+      const { and, ne } = await import('drizzle-orm');
       const existingVerification = await db.query.clinicAdminVerifications.findFirst({
-        where: eq(clinicAdminVerifications.organizationName, name)
+        where: and(
+          eq(clinicAdminVerifications.organizationName, name),
+          ne(clinicAdminVerifications.status, 'rejected')
+        )
       });
       console.log('✅ [AdminVerification] Clinic admin verifications check complete:', existingVerification ? 'Found' : 'Not found');
       
