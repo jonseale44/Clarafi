@@ -29,6 +29,7 @@ import { HealthSystemUpgradePage } from "@/pages/health-system-upgrade-page";
 import StripeTest from "@/pages/stripe-test";
 import AdminVerification from "@/pages/admin-verification";
 import AdminVerificationReview from "@/pages/admin-verification-review";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 import NotFound from "@/pages/not-found";
 
@@ -37,6 +38,7 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <ProtectedRoute path="/patients/:id/chart" component={PatientView} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />

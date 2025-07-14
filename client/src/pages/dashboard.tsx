@@ -31,7 +31,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -40,6 +40,13 @@ export default function Dashboard() {
   const { data: currentUser } = useQuery({
     queryKey: ["/api/user"],
   });
+
+  // Redirect admin users to the admin dashboard
+  useEffect(() => {
+    if (currentUser?.role === 'admin' && location === '/dashboard') {
+      setLocation('/admin');
+    }
+  }, [currentUser, location, setLocation]);
 
   // Fetch all patients to select the first one
   const { data: allPatients = [] } = useQuery({

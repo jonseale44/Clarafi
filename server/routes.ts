@@ -32,6 +32,7 @@ import { setupUnifiedImagingRoutes } from "./unified-imaging-api";
 import { createRxNormRoutes } from "./rxnorm-routes";
 import { registerAdminUserRoutes } from "./admin-user-routes";
 import { registerAdminVerificationRoutes } from "./admin-verification-routes";
+import adminStatsRoutes from "./admin-stats-routes";
 import { setupRealtimeProxy } from "./realtime-proxy";
 import migrationRoutes from "./migration-routes";
 import { adminClinicImportRoutes } from "./admin-clinic-import-routes";
@@ -631,6 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin clinic import routes
   app.use("/api/admin/clinic-import", adminClinicImportRoutes);
+  app.use("/api/admin", adminStatsRoutes);
   
   // Admin verification routes (PUBLIC - for creating new admin accounts)
   registerAdminVerificationRoutes(app);

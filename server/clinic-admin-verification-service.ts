@@ -1,6 +1,6 @@
 import { db } from './db';
 import { healthSystems, users, clinicAdminVerifications, organizationDocuments } from '../shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
 import { EmailVerificationService } from './email-verification-service';
 import { OpenAI } from 'openai';
@@ -784,8 +784,6 @@ Keep recommendations concise and specific.
    * Get all verification requests for Clarafi staff review
    */
   static async getAllVerificationRequests() {
-    const db = await getDb();
-    
     const requests = await db.select()
       .from(clinicAdminVerifications)
       .orderBy(desc(clinicAdminVerifications.submittedAt));
