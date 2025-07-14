@@ -40,7 +40,7 @@ interface AdminSection {
 }
 
 export default function AdminDashboard() {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const [location] = useLocation();
   
   // Fetch admin statistics
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
       const response = await apiRequest('/api/admin/stats');
       return response;
     },
-    enabled: currentUser?.role === 'admin'
+    enabled: user?.role === 'admin'
   });
 
   const adminSections: AdminSection[] = [
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
     }
   ];
 
-  if (currentUser?.role !== 'admin') {
+  if (user?.role !== 'admin') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="p-8 max-w-md">
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">
-                {currentUser.firstName} {currentUser.lastName} • Admin
+                {user?.firstName} {user?.lastName} • Admin
               </span>
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {currentUser.firstName}
+            Welcome back, {user?.firstName}
           </h2>
           <p className="text-gray-600">
             Manage your health system settings, users, and configurations from one central location.
