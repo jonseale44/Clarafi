@@ -62,11 +62,11 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Health system not found' });
     }
     
-    // Only allow key generation for Tier 3 health systems
-    if (healthSystem.subscriptionTier !== 3) {
-      console.error(`❌ [SubscriptionKeys] Non-Tier 3 health system attempted key generation - Health system tier: ${healthSystem.subscriptionTier}`);
+    // Only allow key generation for Tier 2 health systems
+    if (healthSystem.subscriptionTier !== 2) {
+      console.error(`❌ [SubscriptionKeys] Non-Tier 2 health system attempted key generation - Health system tier: ${healthSystem.subscriptionTier}`);
       return res.status(403).json({ 
-        error: `Subscription keys are only available for Enterprise (Tier 3) health systems. ${healthSystem.name} is currently on Tier ${healthSystem.subscriptionTier}.` 
+        error: `Subscription keys are only available for Enterprise (Tier 2) health systems. ${healthSystem.name} is currently on Tier ${healthSystem.subscriptionTier}.` 
       });
     }
     

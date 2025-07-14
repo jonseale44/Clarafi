@@ -35,7 +35,7 @@ async function setupAdmin() {
     if (healthSystem.length === 0) {
       const [newHealthSystem] = await db.insert(healthSystems).values({
         name: "Clarafi System Admin",
-        subscriptionTier: 3, // Enterprise tier for admin
+        subscriptionTier: 2, // Enterprise tier for admin
         subscriptionStatus: 'active',
         systemType: 'admin'
       }).returning();

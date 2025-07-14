@@ -202,7 +202,7 @@ async function createTexasMajorHealthSystems() {
         shortName: 'BSW',
         systemType: 'multi_location_practice' as const,
         active: true,
-        subscriptionTier: 3,
+        subscriptionTier: 2,
         subscriptionStatus: 'active' as const,
       },
       clinics: [
@@ -219,7 +219,7 @@ async function createTexasMajorHealthSystems() {
         shortName: 'ARC',
         systemType: 'multi_location_practice' as const,
         active: true,
-        subscriptionTier: 3,
+        subscriptionTier: 2,
         subscriptionStatus: 'active' as const,
       },
       clinics: [
@@ -237,7 +237,7 @@ async function createTexasMajorHealthSystems() {
         shortName: 'MHMG',
         systemType: 'multi_location_practice' as const,
         active: true,
-        subscriptionTier: 3,
+        subscriptionTier: 2,
         subscriptionStatus: 'active' as const,
       },
       clinics: [
@@ -398,19 +398,19 @@ async function importMajorHealthSystems() {
       name: 'Kaiser Permanente',
       shortName: 'Kaiser',
       systemType: 'integrated_delivery_network' as const,
-      subscriptionTier: 3,
+      subscriptionTier: 2,
     },
     {
       name: 'HCA Healthcare',
       shortName: 'HCA',
       systemType: 'hospital_system' as const,
-      subscriptionTier: 3,
+      subscriptionTier: 2,
     },
     {
       name: 'CommonSpirit Health',
       shortName: 'CommonSpirit',
       systemType: 'integrated_delivery_network' as const,
-      subscriptionTier: 3,
+      subscriptionTier: 2,
     },
   ];
 

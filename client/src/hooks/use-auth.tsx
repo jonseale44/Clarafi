@@ -34,17 +34,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const data = await res.json();
+      
+      // Check if login failed due to email verification
+      if (!res.ok && data.message === "Please verify your email before logging in.") {
+        throw new Error("EMAIL_NOT_VERIFIED");
+      }
+      
+      if (!res.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+      
+      return data;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
     },
     onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message === "EMAIL_NOT_VERIFIED") {
+        toast({
+          title: "Email Verification Required",
+          description: "Please check your email and click the verification link before logging in. Check your spam folder if you don't see it.",
+          variant: "default",
+          duration: 10000, // Show for 10 seconds
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -83,13 +103,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => {
           window.location.href = data.paymentUrl;
         }, 2000);
-      } else {
-        // For join_existing, show email verification message
+      } else if (data.emailVerificationRequired) {
+        // For users who need to verify email
         toast({
           title: "Registration successful", 
-          description: "Please check your email to verify your account. You'll need to verify your email before you can log in.",
+          description: data.message || "Please check your email to verify your account. You'll need to verify your email before you can log in.",
           variant: "default",
           duration: 7000,
+        });
+      } else {
+        // Legacy case - should not happen with new code
+        toast({
+          title: "Registration successful", 
+          description: "Your account has been created.",
+          variant: "default",
+          duration: 5000,
         });
       }
     },

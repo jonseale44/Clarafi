@@ -173,11 +173,35 @@ Preferred communication style: Simple, everyday language.
 - **HIPAA COMPLIANCE**: Prevents unauthorized access to existing patient data through registration vulnerability
 - **BACKWARD COMPATIBLE**: Tier 3 enterprise systems continue to work as before with subscription keys
 
+### Critical Tenant Isolation Security Fix COMPLETED (January 16, 2025)
+- **MAJOR SECURITY VULNERABILITY FIXED**: Added tenant isolation middleware to ALL patient data routes preventing cross-health-system data access
+- **ROUTES SECURED**: 
+  - Patient encounter routes: GET/POST/PATCH /api/encounters/*, GET /api/patients/:id/encounters
+  - Vitals routes: GET /api/patients/:id/vitals, GET /api/patients/:id/vitals/latest
+  - Order parsing route: POST /api/orders/parse-ai-text
+  - SOAP note route: GET /api/patients/:id/encounters/:encounterId/soap-note
+  - Encounter status route: PUT /api/encounters/:encounterId/status
+- **TENANT ISOLATION PATTERN**: Every route that accesses patient data now requires `tenantIsolation` middleware which sets `req.userHealthSystemId` from authenticated user
+- **HIPAA COMPLIANCE**: Prevents users from one health system accessing patient data from another health system
+- **ALREADY SECURED**: Confirmed that main patient routes, voice routes, assistant routes, billing routes, and parse-and-create-patient already had tenant isolation
+- **PRODUCTION IMPACT**: Critical security vulnerability closed - multi-tenant data isolation now enforced across entire API surface
+
+### Admin Verification Endpoints Security Fix COMPLETED (January 16, 2025)
+- **SECURITY VULNERABILITY FIXED**: Admin verification endpoints were publicly accessible without authentication
+- **ROUTES SECURED**:
+  - `/api/admin-verification/start` - Now requires authentication
+  - `/api/admin-verification/complete` - Now requires authentication  
+  - `/api/admin-verification/status/:email` - Now requires authentication
+  - `/api/admin-verification/organization-types` - Remains public (static data only)
+- **AUTHENTICATION REQUIREMENT**: All sensitive admin verification endpoints now require `requireAuth` middleware
+- **AUDIT TRAIL**: All verification requests now properly tied to authenticated users for compliance tracking
+- **PRODUCTION IMPACT**: Prevents unauthorized users from submitting fake verification requests or checking verification status
+
 ### Subscription Model Refactoring to 2-Tier System COMPLETED (January 16, 2025)
 - **BUSINESS MODEL PIVOT**: Migrated from 3-tier to 2-tier subscription model to enable bottom-up adoption strategy
 - **TIER STRUCTURE CHANGES**:
-  - **Tier 1 - Personal EMR** ($99/month): Full documentation features for individual providers, no external integrations
-  - **Tier 2 - Enterprise EMR** (custom pricing): Complete EMR with all integrations, admin features, and subscription key management
+  - **Tier 1 - Personal EMR** ($149/month): Full documentation features for individual providers, no external integrations
+  - **Tier 2 - Enterprise EMR** ($399/month): Complete EMR with all integrations, admin features, and subscription key management
   - **Tier 3 REMOVED**: Previous enterprise tier functionality merged into Tier 2
 - **ARCHITECTURAL UPDATES**:
   - Updated feature-gates.ts to remove tier 3 references
@@ -185,6 +209,10 @@ Preferred communication style: Simple, everyday language.
   - Updated stripe-service.ts product names: "Clarafi Personal EMR" and "Clarafi Enterprise EMR"
   - Refactored registration-service.ts: Only Tier 2 systems can have admin users
   - Updated auth-page.tsx registration form labels
+  - Removed all tier 3 references from health-system-upgrade-routes.ts, subscription-key-routes.ts
+  - Updated admin-clinic-import-routes.ts to use tier 2 for all health systems
+  - Refactored health-system-upgrade.tsx component with new pricing ($149/$399)
+  - Cleaned subscription-config-page.tsx to remove tier 3 UI elements and feature toggles
 - **BOTTOM-UP ADOPTION STRATEGY**: Individual providers start with Tier 1 personal EMR, then advocate for enterprise adoption
 - **PAYMENT LOGIC CHANGES**: Tier 1 always requires payment, Tier 2 requires payment unless patients already exist
 - **ADMIN ROLE RESTRICTION**: Admin role now only available in Tier 2 (enterprise) systems

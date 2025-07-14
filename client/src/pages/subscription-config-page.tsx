@@ -15,7 +15,6 @@ import { DollarSign, Package, Settings, Save, RefreshCw } from 'lucide-react';
 interface FeatureConfig {
   tier1: boolean;
   tier2: boolean;
-  tier3: boolean;
   description: string;
   category: string;
 }
@@ -33,7 +32,6 @@ interface SubscriptionConfig {
   pricing: {
     tier1: TierPricing;
     tier2: TierPricing;
-    tier3: TierPricing;
   };
   features: Record<string, FeatureConfig>;
 }
@@ -77,7 +75,7 @@ export default function SubscriptionConfigPage() {
     }
   }, [config]);
 
-  const handlePricingChange = (tier: 'tier1' | 'tier2' | 'tier3', field: keyof TierPricing, value: any) => {
+  const handlePricingChange = (tier: 'tier1' | 'tier2', field: keyof TierPricing, value: any) => {
     if (!editedConfig) return;
     
     setEditedConfig({
@@ -92,7 +90,7 @@ export default function SubscriptionConfigPage() {
     });
   };
 
-  const handleFeatureToggle = (feature: string, tier: 'tier1' | 'tier2' | 'tier3', enabled: boolean) => {
+  const handleFeatureToggle = (feature: string, tier: 'tier1' | 'tier2', enabled: boolean) => {
     if (!editedConfig) return;
     
     setEditedConfig({
@@ -286,42 +284,7 @@ export default function SubscriptionConfigPage() {
             </Card>
 
             {/* Tier 3 Pricing */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Tier 3 - {editedConfig.pricing.tier3.name}
-                  <Badge variant="secondary">Enterprise</Badge>
-                </CardTitle>
-                <CardDescription>{editedConfig.pricing.tier3.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Pricing</Label>
-                  <p className="text-2xl font-bold">Custom</p>
-                  <p className="text-sm text-muted-foreground">Contact sales for pricing</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tier3-trial">Trial Days</Label>
-                  <Input
-                    id="tier3-trial"
-                    type="number"
-                    value={editedConfig.pricing.tier3.trialDays}
-                    onChange={(e) => handlePricingChange('tier3', 'trialDays', parseInt(e.target.value))}
-                  />
-                </div>
-                {editedConfig.pricing.tier3.minUsers && (
-                  <div className="space-y-2">
-                    <Label htmlFor="tier3-min">Minimum Users</Label>
-                    <Input
-                      id="tier3-min"
-                      type="number"
-                      value={editedConfig.pricing.tier3.minUsers}
-                      onChange={(e) => handlePricingChange('tier3', 'minUsers', parseInt(e.target.value))}
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
           </div>
         </TabsContent>
 
@@ -361,16 +324,7 @@ export default function SubscriptionConfigPage() {
                           Tier 2
                         </Label>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id={`${feature.name}-tier3`}
-                          checked={feature.tier3}
-                          onCheckedChange={(checked) => handleFeatureToggle(feature.name, 'tier3', checked)}
-                        />
-                        <Label htmlFor={`${feature.name}-tier3`} className="text-sm">
-                          Tier 3
-                        </Label>
-                      </div>
+
                     </div>
                     <Separator className="mt-4" />
                   </div>

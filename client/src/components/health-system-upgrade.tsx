@@ -25,36 +25,27 @@ import {
 
 const tierFeatures = {
   1: {
-    name: 'Professional',
-    price: '$99/month',
+    name: 'Personal EMR',
+    price: '$149/month',
     features: [
-      'Basic EMR features',
+      'Full EMR features',
       'Voice transcription',
       'AI SOAP notes',
-      'Limited patient records',
+      'Unlimited patient records',
+      'Individual provider use',
     ],
   },
   2: {
-    name: 'Practice',
-    price: '$299/user/month',
+    name: 'Enterprise EMR',
+    price: '$399/month',
     features: [
-      'Full EMR features',
+      'Everything in Personal tier',
       'Multi-location support',
-      'Advanced AI features',
-      'Lab integrations',
-      'Unlimited patients',
-    ],
-  },
-  3: {
-    name: 'Enterprise',
-    price: 'Custom pricing',
-    features: [
-      'Everything in Practice tier',
       'Subscription key distribution',
-      'Advanced analytics',
-      'Custom integrations',
+      'Lab integrations',
+      'Admin dashboard',
+      'Team collaboration',
       'Priority support',
-      'HIPAA compliance reports',
     ],
   },
 };

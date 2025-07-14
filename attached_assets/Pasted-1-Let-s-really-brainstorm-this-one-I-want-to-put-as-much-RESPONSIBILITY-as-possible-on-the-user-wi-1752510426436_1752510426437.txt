@@ -1,0 +1,35 @@
+1. Let's really brainstorm this one. I want to put as much RESPONSIBILITY as possible on the user without as
+much LABOR. Let me explain. I do not like the idea of the user having to always record where the patient was
+seen at each encounter (too much labor). However, I also don't want to automatically transfer all their patients
+into the tier 2 system since some might be from a different setting. Is there some degree of automated
+responsibility we can "hand over" to the user that mitigates our liability somewhat? Suppose at the time of
+migration we showed the user a prompt that made them certify that all the patients were seen at clinic C and
+make them accept either liability for any patients seen elsewhere OR remove those patients from the list
+individually OR just cancel the migration (which would mean their data expires after 30 days unless they keep
+paying an individual subscription). From a legal or "clinic ownership" perspective, I'm not sure if this is
+appropriate but it might be. Maybe we could take it a step further and allow users to migrate individual patients
+which would also force them to accept liability/responsibility that they belong to the clinic.
+2. Allow them to see the button and then get redirected to "verify email first" when clicked.
+3. I'm not sure what you mean by a limit. If they pay for them, they can have them. If they wanna pay us a million
+dollars a month and get thousands of keys, that's fine. If they only pay for one key then only get one key. The
+important thing is that the key must be subscription based. If they don't pay, they have 30 days or their data is
+lost and the subscription is canceled. I don't know that we have implemented this "stop working" measure yet,
+or how that works. "unused" keys probably should not expire but l'm not sure. I'd rather them continue (more
+money, after all), even if they aren't used. I figure if the admin paid for them (and keep paying for them) they can
+keep them perpetually. What is the downside to this? Security issue?
+4. When tier 1 provider wants to upgrade to tier 2 they have to go through the admin verification process so that we
+can ensure they are an established, legitimate clinic AND are admin at that clinic. They should also be
+automatically the clinic admin for that practice, but we must have a way to transfer this clinic admin status (in
+case they quit the job or if they don't want the role anymore, etc). The existing patients should be migrated into
+the tier 2 (see number 1 about this).
+5. As mentioned in number 2 above, an important step in security for "create enterprise admin" is verifying email.
+The next step after that should probably be a captcha and/or limiting rate per IP address and/or tracking failed
+verification attempts. Personally I hate captchas so I would prefer to avoid that if possible, especially since the
+users have already passed the "verifying email" step, although I realize that can probably be spammed, too.
+Doesn't verifying email count as a 2-step authenticator? Is it easy for spammers to get past that? How effective
+are the rate limiting per IP address and tracking failed verification attempts?
+6. We should absolutely preopulate clinics from google places/public data and make sure this is location based.
+Most users will register for the system within a few miles of the place they work, and possibly within that place
+physically. Let's make it very easy for them to identify the clinic they work in and choose it without having to fill in
+a bunch of information or search for it (although that should remain an option). Admins can only claim pre-
+existing clinics if they go through the verification process.

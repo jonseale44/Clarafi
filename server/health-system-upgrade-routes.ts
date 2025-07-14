@@ -47,8 +47,8 @@ router.get('/status', ensureHealthSystemAdmin, async (req, res) => {
       tierName: tierConfig.name,
       subscriptionStatus: user.subscriptionStatus || 'trial',
       features: tierConfig.features,
-      canUpgrade: user.subscriptionTier !== 3, // Can upgrade if not already tier 3
-      availableUpgrades: user.subscriptionTier === 1 ? [2, 3] : user.subscriptionTier === 2 ? [3] : []
+      canUpgrade: user.subscriptionTier !== 2, // Can upgrade if not already tier 2
+      availableUpgrades: user.subscriptionTier === 1 ? [2] : []
     });
   } catch (error) {
     console.error('Error fetching subscription status:', error);
@@ -63,7 +63,7 @@ router.post('/upgrade-checkout', ensureHealthSystemAdmin, async (req, res) => {
     const userId = req.user.id;
     
     // Validate input
-    if (!targetTier || ![1, 2, 3].includes(targetTier)) {
+    if (!targetTier || ![1, 2].includes(targetTier)) {
       return res.status(400).json({ error: 'Invalid target tier' });
     }
     

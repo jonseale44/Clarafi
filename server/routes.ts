@@ -980,7 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // REMOVED DUPLICATE - main lab-orders endpoint below
 
   // Encounter routes
-  app.get("/api/patients/:patientId/encounters", async (req, res) => {
+  app.get("/api/patients/:patientId/encounters", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -992,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/encounters/:id", async (req, res) => {
+  app.get("/api/encounters/:id", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -1006,7 +1006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/encounters", async (req, res) => {
+  app.post("/api/encounters", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -1045,6 +1045,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/patients/:patientId/encounters/:encounterId",
+    tenantIsolation,
     async (req, res) => {
       try {
         if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -1126,7 +1127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/encounters/:id", async (req, res) => {
+  app.patch("/api/encounters/:id", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -1144,7 +1145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Vitals routes
-  app.get("/api/patients/:patientId/vitals", async (req, res) => {
+  app.get("/api/patients/:patientId/vitals", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -1156,7 +1157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/patients/:patientId/vitals/latest", async (req, res) => {
+  app.get("/api/patients/:patientId/vitals/latest", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -2316,7 +2317,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
   );
 
   // Get encounter by ID (for frontend encounter view)
-  app.get("/api/encounters/:encounterId", async (req, res) => {
+  app.get("/api/encounters/:encounterId", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -2340,6 +2341,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
   // Get SOAP note for an encounter
   app.get(
     "/api/patients/:id/encounters/:encounterId/soap-note",
+    tenantIsolation,
     async (req, res) => {
       try {
         if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -3211,7 +3213,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
   });
 
   // Parse natural language text into structured order data (mixed types)
-  app.post("/api/orders/parse-ai-text", async (req, res) => {
+  app.post("/api/orders/parse-ai-text", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -3481,7 +3483,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   // Single-type parser endpoint removed - all manual orders now use multi-type AI parser at /api/orders/parse-ai-text
 
   // Update encounter status
-  app.put("/api/encounters/:encounterId/status", async (req, res) => {
+  app.put("/api/encounters/:encounterId/status", tenantIsolation, async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);
 

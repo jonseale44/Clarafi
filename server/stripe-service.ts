@@ -139,7 +139,7 @@ export class StripeService {
     healthSystemId: number,
     subscriptionId: string,
     customerId: string,
-    tier: 1 | 2 | 3
+    tier: 1 | 2
   ): Promise<void> {
     await db.update(healthSystems)
       .set({
@@ -167,7 +167,7 @@ export class StripeService {
   // Update subscription (upgrade/downgrade)
   static async updateSubscription(
     subscriptionId: string,
-    newTier: 1 | 2 | 3,
+    newTier: 1 | 2,
     newBillingPeriod: 'monthly' | 'annual'
   ): Promise<SubscriptionResult> {
     try {
@@ -236,20 +236,20 @@ export class StripeService {
         if (session.metadata?.healthSystemId) {
           const healthSystemId = parseInt(session.metadata.healthSystemId);
           
-          // Check if this is a tier 3 upgrade
-          if (session.metadata?.upgradeType === 'tier3') {
-            console.log(`🚀 [Stripe] Processing tier 3 upgrade for health system ${healthSystemId}`);
+          // Check if this is a tier 2 upgrade
+          if (session.metadata?.upgradeType === 'tier2') {
+            console.log(`🚀 [Stripe] Processing tier 2 upgrade for health system ${healthSystemId}`);
             
-            // Update health system to tier 3
+            // Update health system to tier 2
             await db.update(healthSystems)
               .set({
-                subscriptionTier: 3,
+                subscriptionTier: 2,
                 subscriptionStatus: 'active',
                 subscriptionStartDate: new Date(),
               })
               .where(eq(healthSystems.id, healthSystemId));
             
-            console.log(`✅ [Stripe] Upgraded health system ${healthSystemId} to tier 3`);
+            console.log(`✅ [Stripe] Upgraded health system ${healthSystemId} to tier 2`);
           } else if (session.metadata?.userId) {
             // Regular user subscription
             const userId = parseInt(session.metadata.userId);

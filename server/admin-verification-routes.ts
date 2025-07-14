@@ -48,9 +48,9 @@ export function registerAdminVerificationRoutes(app: Express) {
   
   /**
    * Start admin verification process
-   * This endpoint is PUBLIC - anyone can request to become an admin
+   * REQUIRES AUTHENTICATION - User must be logged in to request admin verification
    */
-  app.post('/api/admin-verification/start', async (req, res) => {
+  app.post('/api/admin-verification/start', requireAuth, async (req, res) => {
     console.log('🎯 [AdminVerification] POST /api/admin-verification/start endpoint hit');
     console.log('📥 [AdminVerification] Request body:', JSON.stringify(req.body, null, 2));
     console.log('🔐 [AdminVerification] Request headers:', req.headers);
@@ -102,8 +102,9 @@ export function registerAdminVerificationRoutes(app: Express) {
   
   /**
    * Complete manual verification (for higher-risk organizations)
+   * REQUIRES AUTHENTICATION - User must be logged in to complete verification
    */
-  app.post('/api/admin-verification/complete', async (req, res) => {
+  app.post('/api/admin-verification/complete', requireAuth, async (req, res) => {
     try {
       const { verificationId, code, documents } = req.body;
       
@@ -133,8 +134,9 @@ export function registerAdminVerificationRoutes(app: Express) {
   
   /**
    * Check verification status
+   * REQUIRES AUTHENTICATION - User must be logged in to check status
    */
-  app.get('/api/admin-verification/status/:email', async (req, res) => {
+  app.get('/api/admin-verification/status/:email', requireAuth, async (req, res) => {
     try {
       const { email } = req.params;
       

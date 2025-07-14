@@ -400,21 +400,34 @@ export function setupAuth(app: Express) {
         }
       }
 
-      // For users joining existing systems, log them in normally
-      req.login(user, (err) => {
-        if (err) {
-          console.error("❌ [Registration] Login error after creation:", err);
-          return next(err);
-        }
-        console.log("✅ [Registration] User created and logged in successfully:", user.username);
+      // For users joining existing systems, send verification email
+      try {
+        // Send verification email
+        const { EmailVerificationService } = await import("./email-verification-service.js");
+        const token = await EmailVerificationService.createVerificationToken(user.id);
+        await EmailVerificationService.sendVerificationEmail(user.email, token);
         
+        console.log("✅ [Registration] User created successfully, verification email sent:", user.username);
+        
+        // Don't log them in - they need to verify email first
         res.status(201).json({
           success: true,
-          user,
+          message: "Registration successful! Please check your email to verify your account before logging in.",
           registrationType: req.body.registrationType || 'join_existing',
-          requiresPayment: false
+          requiresPayment: false,
+          emailVerificationRequired: true
         });
-      });
+      } catch (emailError) {
+        console.error("❌ [Registration] Failed to send verification email:", emailError);
+        // Still return success but warn about email
+        res.status(201).json({
+          success: true,
+          message: "Registration successful but we couldn't send the verification email. Please contact support.",
+          registrationType: req.body.registrationType || 'join_existing',
+          requiresPayment: false,
+          emailVerificationRequired: true
+        });
+      }
 
     } catch (error: any) {
       console.error("❌ [Registration] Registration failed:", error);
