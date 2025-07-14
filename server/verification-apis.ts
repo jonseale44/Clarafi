@@ -15,8 +15,7 @@ const API_KEYS = {
   HUNTER_IO: process.env.HUNTER_IO_API_KEY || '', // Email verification
   CLEARBIT: process.env.CLEARBIT_API_KEY || '', // Company enrichment
   MELISSA_DATA: process.env.MELISSA_DATA_API_KEY || '', // Address verification
-  TAX1099_API_KEY: process.env.TAX1099_API_KEY || '', // EIN/TIN verification
-  TAX1099_USER_TOKEN: process.env.TAX1099_USER_TOKEN || '' // Tax1099 user token
+  TAX1099_API_KEY: process.env.TAX1099_API_KEY || '' // EIN/TIN verification (single key authentication)
 };
 
 // Response schemas for type safety
@@ -404,29 +403,32 @@ export class VerificationAPIs {
   /**
    * Verify EIN/Tax ID using Tax1099 API
    * PRODUCTION-READY - Real-time IRS authorization check
-   * Cost: $1 per check
+   * Cost: $1 per check (production), free in sandbox
    */
   static async verifyEIN(taxId: string, organizationName: string): Promise<any> {
-    if (!API_KEYS.TAX1099_API_KEY || !API_KEYS.TAX1099_USER_TOKEN) {
-      console.log('⚠️ [Tax1099] Missing API credentials - using mock response');
+    if (!API_KEYS.TAX1099_API_KEY) {
+      console.log('⚠️ [Tax1099] Missing API key - using mock response');
       return {
         verified: true,
         irsAuthorized: true,
         confidence: 50,
-        reason: 'Mock response - Tax1099 credentials not configured'
+        reason: 'Mock response - Tax1099 API key not configured'
       };
     }
 
     try {
       console.log('💼 [Tax1099] Verifying EIN:', taxId);
       
+      // Determine if we're in sandbox or production mode
+      const isSandbox = API_KEYS.TAX1099_API_KEY.startsWith('S9'); // Sandbox keys typically start with S
+      const baseUrl = isSandbox ? 'https://apideveloper.tax1099.com' : 'https://api.tax1099.com';
+      
       // Tax1099 API endpoint for EIN verification
-      const response = await fetch('https://api.tax1099.com/v2/tin', {
+      const response = await fetch(`${baseUrl}/v2/tin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-KEY': API_KEYS.TAX1099_API_KEY,
-          'X-USER-TOKEN': API_KEYS.TAX1099_USER_TOKEN
+          'Authorization': `Bearer ${API_KEYS.TAX1099_API_KEY}`
         },
         body: JSON.stringify({
           tin: taxId.replace(/-/g, ''), // Remove hyphens for API

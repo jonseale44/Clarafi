@@ -28,6 +28,7 @@ import { AdminSubscriptionKeysPage } from "@/pages/admin-subscription-keys-page"
 import { HealthSystemUpgradePage } from "@/pages/health-system-upgrade-page";
 import StripeTest from "@/pages/stripe-test";
 import AdminVerification from "@/pages/admin-verification";
+import AdminVerificationReview from "@/pages/admin-verification-review";
 
 import NotFound from "@/pages/not-found";
 
@@ -53,6 +54,7 @@ function Router() {
       <ProtectedRoute path="/admin/subscription-keys" component={AdminSubscriptionKeysPage} />
       <ProtectedRoute path="/admin/health-system-upgrade" component={HealthSystemUpgradePage} />
       <ProtectedRoute path="/admin/clinic-import" component={AdminClinicImport} />
+      <ProtectedRoute path="/admin/verification-review" component={AdminVerificationReview} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />

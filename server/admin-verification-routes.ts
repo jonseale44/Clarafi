@@ -2,6 +2,27 @@ import { Express } from 'express';
 import { ClinicAdminVerificationService, ClinicAdminVerificationRequest } from './clinic-admin-verification-service';
 import { z } from 'zod';
 
+// Middleware functions
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+};
+
+const requireAdmin = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const userRole = (req.user as any).role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  next();
+};
+
 // Validation schema for admin verification request
 const adminVerificationSchema = z.object({
   firstName: z.string().min(1),
@@ -251,4 +272,74 @@ export function registerAdminVerificationRoutes(app: Express) {
       }
     });
   }
+
+  // CLARAFI STAFF REVIEW ENDPOINTS (not in dev-only block)
+  
+  // Get all verification requests for review (requires admin)
+  app.get('/api/admin-verification/review/list', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const requests = await ClinicAdminVerificationService.getAllVerificationRequests();
+      res.json(requests);
+    } catch (error: any) {
+      console.error('❌ [AdminVerification] Error fetching review list:', error);
+      res.status(500).json({
+        message: error.message || 'Failed to fetch verification requests'
+      });
+    }
+  });
+
+  // Manual review decision (approve/reject)
+  app.post('/api/admin-verification/review/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { decision, notes } = req.body;
+      
+      if (!['approve', 'reject'].includes(decision)) {
+        return res.status(400).json({
+          message: 'Invalid decision. Must be "approve" or "reject"'
+        });
+      }
+
+      const result = await ClinicAdminVerificationService.manualReview(
+        parseInt(id),
+        decision,
+        notes,
+        req.user!.id // Reviewer ID
+      );
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ [AdminVerification] Error processing manual review:', error);
+      res.status(400).json({
+        message: error.message || 'Failed to process review'
+      });
+    }
+  });
+
+  // Send communication to applicant
+  app.post('/api/admin-verification/communicate/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { message } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({
+          message: 'Message is required'
+        });
+      }
+
+      const result = await ClinicAdminVerificationService.sendCommunication(
+        parseInt(id),
+        message,
+        req.user!.id
+      );
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ [AdminVerification] Error sending communication:', error);
+      res.status(400).json({
+        message: error.message || 'Failed to send message'
+      });
+    }
+  });
 }

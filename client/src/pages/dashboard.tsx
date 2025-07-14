@@ -316,6 +316,15 @@ export default function Dashboard() {
                       Clinic Import
                     </button>
                   </Link>
+                  <Link href="/admin/verification-review">
+                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      false // Admin pages don't have active state in dashboard
+                        ? "bg-primary text-white" 
+                        : "text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                    }`}>
+                      🔍 Verification Review
+                    </button>
+                  </Link>
                   <Link href="/practice-migration">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard

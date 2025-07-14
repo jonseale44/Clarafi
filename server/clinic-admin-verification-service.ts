@@ -751,4 +751,256 @@ Keep recommendations concise and specific.
     // In production: Integrate with calendar system
     console.log(`📅 [AdminVerification] Scheduling implementation call for ${admin.organizationName}`);
   }
+
+  /**
+   * Get verification status by email
+   */
+  static async getVerificationStatus(email: string) {
+    const db = await getDb();
+    
+    const verification = await db.select()
+      .from(clinicAdminVerifications)
+      .where(eq(clinicAdminVerifications.email, email))
+      .orderBy(desc(clinicAdminVerifications.submittedAt))
+      .limit(1);
+      
+    if (verification.length === 0) {
+      return {
+        exists: false,
+        status: null
+      };
+    }
+    
+    return {
+      exists: true,
+      status: verification[0].status,
+      organizationName: verification[0].organizationName,
+      submittedAt: verification[0].submittedAt,
+      approvedAt: verification[0].approvedAt
+    };
+  }
+
+  /**
+   * Get all verification requests for Clarafi staff review
+   */
+  static async getAllVerificationRequests() {
+    const db = await getDb();
+    
+    const requests = await db.select()
+      .from(clinicAdminVerifications)
+      .orderBy(desc(clinicAdminVerifications.submittedAt));
+      
+    // Parse JSON fields and format for frontend
+    return requests.map(req => ({
+      ...req,
+      apiVerificationData: req.apiVerificationData as any,
+      applicantRecommendations: req.applicantRecommendations as string[],
+      reviewerRecommendations: req.reviewerRecommendations as string[],
+      automatedDecisionReason: req.automatedDecisionReason || '',
+      reviewerNotes: req.reviewerNotes || ''
+    }));
+  }
+
+  /**
+   * Process manual review decision by Clarafi staff
+   */
+  static async manualReview(
+    verificationId: number, 
+    decision: 'approve' | 'reject', 
+    notes: string,
+    reviewerId: number
+  ) {
+    const db = await getDb();
+    
+    // Get the verification request
+    const verification = await db.select()
+      .from(clinicAdminVerifications)
+      .where(eq(clinicAdminVerifications.id, verificationId))
+      .limit(1);
+      
+    if (verification.length === 0) {
+      throw new Error('Verification request not found');
+    }
+    
+    const request = verification[0];
+    
+    // Update verification status
+    await db.update(clinicAdminVerifications)
+      .set({
+        status: decision === 'approve' ? 'approved' : 'rejected',
+        approvedAt: decision === 'approve' ? new Date() : null,
+        reviewedBy: reviewerId,
+        reviewerNotes: notes,
+        updatedAt: new Date()
+      })
+      .where(eq(clinicAdminVerifications.id, verificationId));
+    
+    // If approved, create the admin account and health system
+    if (decision === 'approve') {
+      try {
+        // Create the health system and admin user
+        const result = await this.createApprovedAdminAccount(request);
+        
+        // Send approval email
+        await this.sendDecisionEmail(request.email, 'approved', {
+          organizationName: request.organizationName,
+          loginUrl: 'https://clarafi.ai/login'
+        });
+        
+        return {
+          success: true,
+          decision: 'approved',
+          healthSystemId: result.healthSystemId,
+          adminUserId: result.adminUserId
+        };
+      } catch (error: any) {
+        // If account creation fails, revert the approval
+        await db.update(clinicAdminVerifications)
+          .set({
+            status: 'pending',
+            approvedAt: null,
+            reviewerNotes: `Approval failed: ${error.message}`
+          })
+          .where(eq(clinicAdminVerifications.id, verificationId));
+          
+        throw new Error(`Failed to create admin account: ${error.message}`);
+      }
+    } else {
+      // Send rejection email
+      await this.sendDecisionEmail(request.email, 'rejected', {
+        organizationName: request.organizationName,
+        reason: notes
+      });
+      
+      return {
+        success: true,
+        decision: 'rejected'
+      };
+    }
+  }
+
+  /**
+   * Send communication to applicant
+   */
+  static async sendCommunication(
+    verificationId: number,
+    message: string,
+    senderId: number
+  ) {
+    const db = await getDb();
+    
+    // Get the verification request
+    const verification = await db.select()
+      .from(clinicAdminVerifications)
+      .where(eq(clinicAdminVerifications.id, verificationId))
+      .limit(1);
+      
+    if (verification.length === 0) {
+      throw new Error('Verification request not found');
+    }
+    
+    const request = verification[0];
+    
+    // Send email to applicant
+    await sendEmail({
+      to: request.email,
+      subject: `Update on your Clarafi EMR admin verification`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #003366;">Update on Your Verification Request</h2>
+          <p>Dear ${request.firstName} ${request.lastName},</p>
+          <p>We have an update regarding your admin verification request for ${request.organizationName}:</p>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <p style="margin: 0;">${message}</p>
+          </div>
+          <p>If you have any questions, please don't hesitate to contact us.</p>
+          <p>Best regards,<br>The Clarafi Team</p>
+        </div>
+      `
+    });
+    
+    // Log the communication
+    console.log(`📧 [AdminVerification] Sent communication to ${request.email} for verification ${verificationId}`);
+    
+    return {
+      success: true,
+      message: 'Communication sent successfully'
+    };
+  }
+
+  /**
+   * Send decision email (internal helper)
+   */
+  private static async sendDecisionEmail(
+    email: string, 
+    decision: 'approved' | 'rejected',
+    details: any
+  ) {
+    const subject = decision === 'approved' 
+      ? `Welcome to Clarafi EMR - Your admin account is ready!`
+      : `Update on your Clarafi EMR admin verification`;
+      
+    const html = decision === 'approved' ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #003366;">Welcome to Clarafi EMR!</h2>
+        <p>Congratulations! Your admin account for ${details.organizationName} has been approved.</p>
+        <p>You can now log in at: <a href="${details.loginUrl}">${details.loginUrl}</a></p>
+        <p>As an administrator, you can:</p>
+        <ul>
+          <li>Add providers and staff members</li>
+          <li>Configure your organization settings</li>
+          <li>Generate subscription keys for your team</li>
+          <li>Manage user permissions and access</li>
+        </ul>
+        <p>If you need any assistance, our support team is here to help.</p>
+        <p>Best regards,<br>The Clarafi Team</p>
+      </div>
+    ` : `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #003366;">Verification Request Update</h2>
+        <p>Thank you for your interest in Clarafi EMR.</p>
+        <p>After reviewing your admin verification request for ${details.organizationName}, 
+           we were unable to approve it at this time.</p>
+        ${details.reason ? `<p><strong>Reason:</strong> ${details.reason}</p>` : ''}
+        <p>If you believe this decision was made in error or if you have additional 
+           documentation to provide, please contact our support team.</p>
+        <p>Best regards,<br>The Clarafi Team</p>
+      </div>
+    `;
+    
+    await sendEmail({ to: email, subject, html });
+  }
+
+  /**
+   * Create approved admin account (internal helper)
+   */
+  private static async createApprovedAdminAccount(verification: any) {
+    const db = await getDb();
+    const { RegistrationService } = await import('./registration-service');
+    
+    // Use the registration service to create the health system and admin user
+    const result = await RegistrationService.createNewPractice({
+      email: verification.email,
+      password: 'ChangeMe123!', // Temporary password
+      firstName: verification.firstName,
+      lastName: verification.lastName,
+      healthSystemInfo: {
+        name: verification.organizationName,
+        type: verification.organizationType,
+        address: verification.address,
+        city: verification.city,
+        state: verification.state,
+        zip: verification.zip,
+        phone: verification.phone,
+        taxId: verification.taxId,
+        website: verification.website || null,
+        npiNumber: verification.npiNumber || null,
+        tier: 3 // Enterprise tier for admin-created systems
+      },
+      role: 'admin',
+      isNewPractice: true
+    });
+    
+    return result;
+  }
 }
