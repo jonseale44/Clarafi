@@ -11,11 +11,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Loader2, Upload, Building2, CheckCircle, AlertCircle, Download, Search, ArrowLeft, LogOut } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminClinicImport() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { logoutMutation } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,15 +113,8 @@ export default function AdminClinicImport() {
   };
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      await apiRequest('POST', '/api/logout');
-      queryClient.clear();
-      setLocation('/auth');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      setLocation('/auth');
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   return (

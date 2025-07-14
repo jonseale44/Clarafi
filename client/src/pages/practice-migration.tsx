@@ -51,7 +51,7 @@ interface MigrationAnalysis {
 
 export default function PracticeMigration() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState('invitations');
   const [invitations, setInvitations] = useState<MigrationInvitation[]>([]);
@@ -189,15 +189,8 @@ export default function PracticeMigration() {
   };
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      await apiRequest('POST', '/api/logout');
-      queryClient.clear();
-      navigate('/auth');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      navigate('/auth');
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   return (

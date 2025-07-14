@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { DollarSign, Package, Settings, Save, RefreshCw, ArrowLeft, LogOut } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 
 interface FeatureConfig {
   tier1: boolean;
@@ -39,6 +40,7 @@ interface SubscriptionConfig {
 
 export default function SubscriptionConfigPage() {
   const [, setLocation] = useLocation();
+  const { logoutMutation } = useAuth();
   const [activeTab, setActiveTab] = useState('pricing');
   const [editedConfig, setEditedConfig] = useState<SubscriptionConfig | null>(null);
 
@@ -145,15 +147,8 @@ export default function SubscriptionConfigPage() {
   };
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      await apiRequest('POST', '/api/logout');
-      queryClient.clear();
-      setLocation('/auth');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      setLocation('/auth');
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   return (

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Search, Users, Building2, MapPin, Shield, UserPlus, Edit, Trash2, AlertCircle, ArrowLeft, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 interface User {
   id: number;
@@ -86,6 +87,7 @@ export function AdminUserManagement() {
   const [checkingTimer, setCheckingTimer] = useState<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { logoutMutation } = useAuth();
 
   // Fetch all users
   const { data: users = [], isLoading: loadingUsers } = useQuery<User[]>({
@@ -476,15 +478,8 @@ export function AdminUserManagement() {
   }
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      await apiRequest('POST', '/api/logout');
-      queryClient.clear();
-      setLocation('/auth');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      setLocation('/auth');
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   return (

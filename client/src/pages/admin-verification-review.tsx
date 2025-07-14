@@ -28,6 +28,7 @@ import {
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 
 interface VerificationRequest {
   id: number;
@@ -58,6 +59,7 @@ interface VerificationRequest {
 export default function AdminVerificationReview() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { logoutMutation } = useAuth();
   const [selectedRequest, setSelectedRequest] = useState<VerificationRequest | null>(null);
   const [reviewDialog, setReviewDialog] = useState(false);
   const [decision, setDecision] = useState<'approve' | 'reject' | null>(null);
@@ -154,15 +156,8 @@ export default function AdminVerificationReview() {
   const processedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected');
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      await apiRequest('POST', '/api/logout');
-      queryClient.clear();
-      setLocation('/auth');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      setLocation('/auth');
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   return (

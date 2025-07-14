@@ -176,7 +176,7 @@ export default function AdminDashboard() {
                 onClick={() => {
                   logoutMutation.mutate(undefined, {
                     onSuccess: () => {
-                      setLocation("/login");
+                      setLocation("/auth");
                     }
                   });
                 }}
