@@ -267,15 +267,36 @@ export default function AdminVerification() {
                     </AlertDescription>
                   </Alert>
                 )}
+                
+                <Alert className="border-blue-200 bg-blue-50">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  <AlertTitle>Check Your Email</AlertTitle>
+                  <AlertDescription>
+                    <p className="mb-2">We've sent a verification code to your email address.</p>
+                    <Link href="/admin-verification-complete" className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Click here to complete your verification
+                    </Link>
+                  </AlertDescription>
+                </Alert>
               </>
             )}
             
             <div className="pt-4">
               <Link href="/auth">
-                <Button className="w-full">
+                <Button className="w-full" variant={verificationResult.autoApproved ? 'default' : 'outline'}>
                   {verificationResult.autoApproved ? 'Go to Login Now' : 'Return to Login'}
                 </Button>
               </Link>
+              
+              {!verificationResult.autoApproved && (
+                <Link href="/admin-verification-complete">
+                  <Button className="w-full mt-2">
+                    <Mail className="mr-2 h-4 w-4" />
+                    Enter Verification Code
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

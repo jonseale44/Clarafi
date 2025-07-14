@@ -102,9 +102,9 @@ export function registerAdminVerificationRoutes(app: Express) {
   
   /**
    * Complete manual verification (for higher-risk organizations)
-   * REQUIRES AUTHENTICATION - User must be logged in to complete verification
+   * PUBLIC ENDPOINT - Anyone with a valid code can complete verification
    */
-  app.post('/api/admin-verification/complete', requireAuth, async (req, res) => {
+  app.post('/api/admin-verification/complete', async (req, res) => {
     try {
       const { verificationId, code, documents } = req.body;
       

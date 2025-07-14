@@ -28,6 +28,7 @@ import { AdminSubscriptionKeysPage } from "@/pages/admin-subscription-keys-page"
 import { HealthSystemUpgradePage } from "@/pages/health-system-upgrade-page";
 import StripeTest from "@/pages/stripe-test";
 import AdminVerification from "@/pages/admin-verification";
+import AdminVerificationComplete from "@/pages/admin-verification-complete";
 import AdminVerificationReview from "@/pages/admin-verification-review";
 import AdminDashboard from "@/pages/admin-dashboard";
 
@@ -64,6 +65,7 @@ function Router() {
 
       <Route path="/auth" component={AuthPage} />
       <Route path="/admin-verification" component={AdminVerification} />
+      <Route path="/admin-verification-complete" component={AdminVerificationComplete} />
       <Route path="/payment" component={PaymentPage} />
       <Route component={NotFound} />
     </Switch>
