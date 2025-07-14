@@ -756,7 +756,6 @@ Keep recommendations concise and specific.
    * Get verification status by email
    */
   static async getVerificationStatus(email: string) {
-    const db = await getDb();
     
     const verification = await db.select()
       .from(clinicAdminVerifications)
@@ -808,8 +807,6 @@ Keep recommendations concise and specific.
     notes: string,
     reviewerId: number
   ) {
-    const db = await getDb();
-    
     // Get the verification request
     const verification = await db.select()
       .from(clinicAdminVerifications)
@@ -885,8 +882,6 @@ Keep recommendations concise and specific.
     message: string,
     senderId: number
   ) {
-    const db = await getDb();
-    
     // Get the verification request
     const verification = await db.select()
       .from(clinicAdminVerifications)
@@ -900,7 +895,7 @@ Keep recommendations concise and specific.
     const request = verification[0];
     
     // Send email to applicant
-    await sendEmail({
+    await EmailVerificationService.sendEmail({
       to: request.email,
       subject: `Update on your Clarafi EMR admin verification`,
       html: `
@@ -966,14 +961,13 @@ Keep recommendations concise and specific.
       </div>
     `;
     
-    await sendEmail({ to: email, subject, html });
+    await EmailVerificationService.sendEmail({ to: email, subject, html });
   }
 
   /**
    * Create approved admin account (internal helper)
    */
   private static async createApprovedAdminAccount(verification: any) {
-    const db = await getDb();
     const { RegistrationService } = await import('./registration-service');
     
     // Use the registration service to create the health system and admin user
