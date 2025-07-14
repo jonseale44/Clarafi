@@ -1,0 +1,56 @@
+Location Based Services
+Global Address Web API
+Verifies and standardizes U.S. and international addresses in over 200 countries and 46 territories with Postal Authority certified coding and premise level Geocoding.
+
+Learn More
+Global IP Web API
+Return a geolocation of an input IP address with latitude and longitude, proxy info, city, region and country.
+
+Learn More
+ 
+Property Web API (US/CAN)
+Return comprehensive property and mortgage info for over 140 million U.S. properties based on supplied Assessor Parcel Number or input address.
+
+Learn More
+Reverse GeoCoder Web API
+Return a set of complete addresses in a radius from an input latitude and longitude coordinates, or pass in a list of locations and get the nearest location to your input coordinates.
+
+Learn More
+Business & Identification Services
+Personator Web API (USA/CAN)
+USPS CASS/DPV certified address checking, name parsing and genderizing, phone and email verification are easily performed with API.
+
+
+Learn More
+ 
+Global Email Web API
+Verify email mailboxes, syntax, and domains in real-time to confirm they are deliverable. Takes an input email address and returns a status of deliverability to the box level, as well as returns domain information.
+
+Learn More
+ 
+Global Business Web API
+Return detailed firmographic data on 25+ million U.S. companies including contact title, address, phone and email by supplying an input Business name, Stock Ticker or Business Address
+
+Learn More
+ 
+Global Name Web API
+Verify, standardize and parse person and business names while identifying suspicious or vulgar names by sending in a full name. Now input a country name for culture-appropriate parsing!
+
+Learn More
+ 
+Global Phone Web API
+Verify phone as active, output Caller ID info, as well identifies line type, and returns geographic details, dominant language and carrier for over 200 countries. Now includes Caller ID information!
+
+Learn More
+ 
+New
+SSN-Name Verify Web API
+Verify a United States social security number matches the name.
+
+This API is not to be used for Fair Credit Reporting Act regulated purposes.
+
+
+
+
+
+Learn More
