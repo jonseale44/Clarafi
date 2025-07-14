@@ -1073,7 +1073,7 @@ Keep recommendations concise and specific.
           address: requestData?.address || 'Address Not Provided',
           city: requestData?.city || 'City Not Provided',
           state: requestData?.state || 'TX',
-          zip: requestData?.zip || '00000',
+          zipCode: requestData?.zip || '00000',  // Changed from 'zip' to 'zipCode'
           phone: requestData?.phone || null,
           isActive: true,
           locationType: 'primary',
