@@ -981,17 +981,31 @@ Keep recommendations concise and specific.
    * Create approved admin account (internal helper)
    */
   private static async createApprovedAdminAccount(verification: any) {
+    console.log('🔧 [AdminVerification] Starting createApprovedAdminAccount for:', verification.organizationName);
+    
     const { db } = await import('./db');
     const { healthSystems, organizations, locations, users } = await import('../shared/schema');
-    const bcrypt = await import('bcryptjs');
+    const { hashPassword } = await import('./auth');
+    
+    console.log('📦 [AdminVerification] Imports successful, generating temporary password...');
     
     // Generate a temporary password
     const tempPassword = 'ChangeMe123!';
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    const hashedPassword = await hashPassword(tempPassword);
+    
+    console.log('🔐 [AdminVerification] Password hashed successfully');
     
     // Create health system, organization, location, and admin user
     const result = await db.transaction(async (tx) => {
+      console.log('💾 [AdminVerification] Starting database transaction...');
+      
       // Create health system
+      console.log('🏥 [AdminVerification] Creating health system:', {
+        name: verification.organizationName,
+        type: verification.organizationType,
+        tier: 2
+      });
+      
       const [healthSystem] = await tx
         .insert(healthSystems)
         .values({
@@ -1010,7 +1024,10 @@ Keep recommendations concise and specific.
         })
         .returning();
         
+      console.log('✅ [AdminVerification] Health system created with ID:', healthSystem.id);
+        
       // Create default organization
+      console.log('🏢 [AdminVerification] Creating organization...');
       const [organization] = await tx
         .insert(organizations)
         .values({
@@ -1022,7 +1039,10 @@ Keep recommendations concise and specific.
         })
         .returning();
         
+      console.log('✅ [AdminVerification] Organization created with ID:', organization.id);
+        
       // Create default location
+      console.log('📍 [AdminVerification] Creating location...');
       const [location] = await tx
         .insert(locations)
         .values({
@@ -1039,7 +1059,13 @@ Keep recommendations concise and specific.
         })
         .returning();
         
+      console.log('✅ [AdminVerification] Location created with ID:', location.id);
+        
       // Create admin user
+      console.log('👤 [AdminVerification] Creating admin user...');
+      const username = verification.email.split('@')[0];
+      console.log('👤 [AdminVerification] Username will be:', username);
+      
       const [adminUser] = await tx
         .insert(users)
         .values({
@@ -1057,6 +1083,9 @@ Keep recommendations concise and specific.
         })
         .returning();
         
+      console.log('✅ [AdminVerification] Admin user created with ID:', adminUser.id);
+      console.log('✅ [AdminVerification] Transaction completed successfully');
+        
       return {
         healthSystemId: healthSystem.id,
         adminUserId: adminUser.id,
@@ -1065,8 +1094,11 @@ Keep recommendations concise and specific.
     });
     
     // Send welcome email with temporary password
+    console.log('📧 [AdminVerification] Sending welcome email to:', verification.email);
     const { EmailVerificationService } = await import('./email-verification-service');
-    await EmailVerificationService.sendEmail({
+    
+    try {
+      await EmailVerificationService.sendEmail({
       to: verification.email,
       subject: 'Welcome to Clarafi EMR - Your Admin Account is Ready',
       html: `
@@ -1083,8 +1115,14 @@ Keep recommendations concise and specific.
           <p>Best regards,<br>The Clarafi Team</p>
         </div>
       `
-    });
+      });
+      console.log('✅ [AdminVerification] Welcome email sent successfully');
+    } catch (emailError) {
+      console.error('⚠️  [AdminVerification] Failed to send welcome email:', emailError);
+      // Don't fail the whole process if email fails
+    }
     
+    console.log('🎉 [AdminVerification] Admin account creation completed successfully');
     return result;
   }
 }
