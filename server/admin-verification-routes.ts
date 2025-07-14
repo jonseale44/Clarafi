@@ -228,6 +228,142 @@ export function registerAdminVerificationRoutes(app: Express) {
     });
   });
 
+  /**
+   * Check if email is already in use
+   */
+  app.post('/api/admin-verification/check-email', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      // Check if email exists in clinic_admin_verifications
+      const existingVerification = await db.query.clinicAdminVerifications.findFirst({
+        where: eq(clinicAdminVerifications.email, email.toLowerCase())
+      });
+      
+      // Check if email exists in users table
+      const existingUser = await db.query.users.findFirst({
+        where: eq(users.email, email.toLowerCase())
+      });
+      
+      if (existingVerification || existingUser) {
+        return res.json({
+          available: false,
+          message: 'Email is already in use'
+        });
+      }
+      
+      res.json({
+        available: true,
+        message: 'Email is available'
+      });
+    } catch (error) {
+      console.error('Error checking email:', error);
+      res.status(500).json({ error: 'Failed to check email' });
+    }
+  });
+
+  /**
+   * Check if phone number is already in use
+   */
+  app.post('/api/admin-verification/check-phone', async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      // Check if phone exists in clinic_admin_verifications
+      const existingVerification = await db.query.clinicAdminVerifications.findFirst({
+        where: eq(clinicAdminVerifications.phone, phone)
+      });
+      
+      // Check if phone exists in health_systems table
+      const existingHealthSystem = await db.query.healthSystems.findFirst({
+        where: eq(healthSystems.phone, phone)
+      });
+      
+      if (existingVerification || existingHealthSystem) {
+        return res.json({
+          available: false,
+          message: 'Phone number is already registered'
+        });
+      }
+      
+      res.json({
+        available: true,
+        message: 'Phone number is available'
+      });
+    } catch (error) {
+      console.error('Error checking phone:', error);
+      res.status(500).json({ error: 'Failed to check phone' });
+    }
+  });
+
+  /**
+   * Check if tax ID is already in use
+   */
+  app.post('/api/admin-verification/check-tax-id', async (req, res) => {
+    try {
+      const { taxId } = req.body;
+      
+      // Check if tax ID exists in clinic_admin_verifications
+      const existingVerification = await db.query.clinicAdminVerifications.findFirst({
+        where: eq(clinicAdminVerifications.taxId, taxId)
+      });
+      
+      // Check if tax ID exists in health_systems table
+      const existingHealthSystem = await db.query.healthSystems.findFirst({
+        where: eq(healthSystems.taxId, taxId)
+      });
+      
+      if (existingVerification || existingHealthSystem) {
+        return res.json({
+          available: false,
+          message: 'Tax ID is already registered'
+        });
+      }
+      
+      res.json({
+        available: true,
+        message: 'Tax ID is available'
+      });
+    } catch (error) {
+      console.error('Error checking tax ID:', error);
+      res.status(500).json({ error: 'Failed to check tax ID' });
+    }
+  });
+
+  /**
+   * Check if organization name is already in use
+   */
+  app.post('/api/admin-verification/check-organization', async (req, res) => {
+    try {
+      const { name } = req.body;
+      
+      // Check if organization name exists in clinic_admin_verifications
+      const existingVerification = await db.query.clinicAdminVerifications.findFirst({
+        where: eq(clinicAdminVerifications.organizationName, name)
+      });
+      
+      // Check if organization name exists in health_systems table
+      const existingHealthSystem = await db.query.healthSystems.findFirst({
+        where: eq(healthSystems.name, name)
+      });
+      
+      if (existingVerification || existingHealthSystem) {
+        return res.json({
+          available: false,
+          message: 'Organization name is already registered'
+        });
+      }
+      
+      res.json({
+        available: true,
+        message: 'Organization name is available'
+      });
+    } catch (error) {
+      console.error('Error checking organization name:', error);
+      res.status(500).json({ error: 'Failed to check organization name' });
+    }
+  });
+
   // Development endpoints for testing
   if (process.env.NODE_ENV === 'development') {
     // Clear test data endpoint

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, Loader2, Sparkles, Building2, AlertCircle, Navigation, MapPin } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Building2, AlertCircle, Navigation, MapPin, Mail, Check, X } from 'lucide-react';
 import { Link } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -53,6 +53,26 @@ interface NearbyClinic {
   distance?: number;
 }
 
+// Custom hook for debounced validation
+function useDebouncedValidation(value: string, delay: number = 500) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [isValidating, setIsValidating] = useState(false);
+
+  useEffect(() => {
+    setIsValidating(true);
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+      setIsValidating(false);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return { debouncedValue, isValidating };
+}
+
 export default function AdminVerification() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
@@ -71,6 +91,84 @@ export default function AdminVerification() {
       termsAccepted: false
     }
   });
+
+  // Validation states for unique fields
+  const [emailValidation, setEmailValidation] = useState<{available?: boolean; message?: string}>({});
+  const [phoneValidation, setPhoneValidation] = useState<{available?: boolean; message?: string}>({});
+  const [taxIdValidation, setTaxIdValidation] = useState<{available?: boolean; message?: string}>({});
+  const [orgNameValidation, setOrgNameValidation] = useState<{available?: boolean; message?: string}>({});
+
+  // Watch form fields for real-time validation
+  const watchedEmail = form.watch("email");
+  const watchedPhone = form.watch("phone");
+  const watchedTaxId = form.watch("taxId");
+  const watchedOrgName = form.watch("organizationName");
+
+  // Debounced values for API calls
+  const { debouncedValue: debouncedEmail, isValidating: isValidatingEmail } = useDebouncedValidation(watchedEmail || "");
+  const { debouncedValue: debouncedPhone, isValidating: isValidatingPhone } = useDebouncedValidation(watchedPhone || "");
+  const { debouncedValue: debouncedTaxId, isValidating: isValidatingTaxId } = useDebouncedValidation(watchedTaxId || "");
+  const { debouncedValue: debouncedOrgName, isValidating: isValidatingOrgName } = useDebouncedValidation(watchedOrgName || "");
+
+  // Real-time email validation
+  useEffect(() => {
+    if (debouncedEmail && debouncedEmail.includes("@")) {
+      apiRequest("POST", "/api/admin-verification/check-email", { email: debouncedEmail })
+        .then((response) => response.json())
+        .then((data) => {
+          setEmailValidation(data);
+        }).catch(() => {
+          setEmailValidation({ available: false, message: "Error checking email" });
+        });
+    } else {
+      setEmailValidation({});
+    }
+  }, [debouncedEmail]);
+
+  // Real-time phone validation
+  useEffect(() => {
+    if (debouncedPhone && debouncedPhone.length >= 10) {
+      apiRequest("POST", "/api/admin-verification/check-phone", { phone: debouncedPhone })
+        .then((response) => response.json())
+        .then((data) => {
+          setPhoneValidation(data);
+        }).catch(() => {
+          setPhoneValidation({ available: false, message: "Error checking phone" });
+        });
+    } else {
+      setPhoneValidation({});
+    }
+  }, [debouncedPhone]);
+
+  // Real-time tax ID validation
+  useEffect(() => {
+    if (debouncedTaxId && /^\d{2}-\d{7}$/.test(debouncedTaxId)) {
+      apiRequest("POST", "/api/admin-verification/check-tax-id", { taxId: debouncedTaxId })
+        .then((response) => response.json())
+        .then((data) => {
+          setTaxIdValidation(data);
+        }).catch(() => {
+          setTaxIdValidation({ available: false, message: "Error checking tax ID" });
+        });
+    } else {
+      setTaxIdValidation({});
+    }
+  }, [debouncedTaxId]);
+
+  // Real-time organization name validation
+  useEffect(() => {
+    if (debouncedOrgName && debouncedOrgName.length >= 3) {
+      apiRequest("POST", "/api/admin-verification/check-organization", { name: debouncedOrgName })
+        .then((response) => response.json())
+        .then((data) => {
+          setOrgNameValidation(data);
+        }).catch(() => {
+          setOrgNameValidation({ available: false, message: "Error checking organization name" });
+        });
+    } else {
+      setOrgNameValidation({});
+    }
+  }, [debouncedOrgName]);
 
   // Mock nearby clinics data - in production this would come from an API
   const mockNearbyClinics: NearbyClinic[] = [
@@ -366,8 +464,24 @@ export default function AdminVerification() {
                     <FormItem>
                       <FormLabel>Email Address</FormLabel>
                       <FormControl>
-                        <Input type="email" {...field} />
+                        <div className="relative">
+                          <Input type="email" {...field} className="pr-10" />
+                          {isValidatingEmail && (
+                            <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-gray-400" />
+                          )}
+                          {!isValidatingEmail && emailValidation.available === true && (
+                            <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />
+                          )}
+                          {!isValidatingEmail && emailValidation.available === false && (
+                            <X className="absolute right-3 top-3 h-4 w-4 text-red-500" />
+                          )}
+                        </div>
                       </FormControl>
+                      {emailValidation.message && (
+                        <p className={`text-sm mt-1 ${emailValidation.available ? 'text-green-600' : 'text-red-600'}`}>
+                          {emailValidation.message}
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -380,8 +494,24 @@ export default function AdminVerification() {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input type="tel" {...field} />
+                        <div className="relative">
+                          <Input type="tel" {...field} className="pr-10" />
+                          {isValidatingPhone && (
+                            <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-gray-400" />
+                          )}
+                          {!isValidatingPhone && phoneValidation.available === true && (
+                            <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />
+                          )}
+                          {!isValidatingPhone && phoneValidation.available === false && (
+                            <X className="absolute right-3 top-3 h-4 w-4 text-red-500" />
+                          )}
+                        </div>
                       </FormControl>
+                      {phoneValidation.message && (
+                        <p className={`text-sm mt-1 ${phoneValidation.available ? 'text-green-600' : 'text-red-600'}`}>
+                          {phoneValidation.message}
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -493,8 +623,24 @@ export default function AdminVerification() {
                     <FormItem>
                       <FormLabel>Organization Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Smith Family Medicine" />
+                        <div className="relative">
+                          <Input {...field} placeholder="e.g., Smith Family Medicine" className="pr-10" />
+                          {isValidatingOrgName && (
+                            <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-gray-400" />
+                          )}
+                          {!isValidatingOrgName && orgNameValidation.available === true && (
+                            <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />
+                          )}
+                          {!isValidatingOrgName && orgNameValidation.available === false && (
+                            <X className="absolute right-3 top-3 h-4 w-4 text-red-500" />
+                          )}
+                        </div>
                       </FormControl>
+                      {orgNameValidation.message && (
+                        <p className={`text-sm mt-1 ${orgNameValidation.available ? 'text-green-600' : 'text-red-600'}`}>
+                          {orgNameValidation.message}
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -535,9 +681,25 @@ export default function AdminVerification() {
                       <FormItem>
                         <FormLabel>Tax ID (EIN)</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="XX-XXXXXXX" />
+                          <div className="relative">
+                            <Input {...field} placeholder="XX-XXXXXXX" className="pr-10" />
+                            {isValidatingTaxId && (
+                              <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-gray-400" />
+                            )}
+                            {!isValidatingTaxId && taxIdValidation.available === true && (
+                              <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />
+                            )}
+                            {!isValidatingTaxId && taxIdValidation.available === false && (
+                              <X className="absolute right-3 top-3 h-4 w-4 text-red-500" />
+                            )}
+                          </div>
                         </FormControl>
                         <FormDescription>Format: XX-XXXXXXX</FormDescription>
+                        {taxIdValidation.message && (
+                          <p className={`text-sm mt-1 ${taxIdValidation.available ? 'text-green-600' : 'text-red-600'}`}>
+                            {taxIdValidation.message}
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
