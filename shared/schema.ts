@@ -3091,3 +3091,180 @@ export const migrationInvitationsRelations = relations(migrationInvitations, ({ 
     references: [users.id],
   }),
 }));
+
+// ============================================
+// HIPAA AUDIT LOGGING TABLES
+// ============================================
+// Comprehensive audit logging for HIPAA compliance
+// Must track all PHI access, modifications, and authentication events
+
+/**
+ * PHI Access Audit Log
+ * Tracks every access to patient health information
+ * Required for HIPAA compliance - minimum 6 year retention
+ */
+export const phiAccessLogs = pgTable("phi_access_logs", {
+  id: serial("id").primaryKey(),
+  
+  // Who accessed the data
+  userId: integer("user_id").references(() => users.id).notNull(),
+  userName: text("user_name").notNull(), // Denormalized for immutability
+  userRole: text("user_role").notNull(), // Denormalized for immutability
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id).notNull(),
+  locationId: integer("location_id").references(() => locations.id),
+  
+  // What was accessed
+  patientId: integer("patient_id").references(() => patients.id),
+  patientName: text("patient_name"), // Denormalized for immutability (encrypted)
+  resourceType: text("resource_type").notNull(), // 'patient', 'encounter', 'medication', 'lab_result', etc.
+  resourceId: integer("resource_id").notNull(),
+  
+  // How it was accessed
+  action: text("action").notNull(), // 'view', 'create', 'update', 'delete', 'print', 'export'
+  accessMethod: text("access_method").notNull(), // 'web', 'api', 'mobile', 'report'
+  httpMethod: text("http_method"), // GET, POST, PUT, DELETE
+  apiEndpoint: text("api_endpoint"), // /api/patients/:id
+  
+  // Context
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  sessionId: text("session_id"),
+  
+  // Result
+  success: boolean("success").notNull(),
+  errorMessage: text("error_message"),
+  responseTime: integer("response_time"), // milliseconds
+  
+  // Additional compliance data
+  accessReason: text("access_reason"), // 'treatment', 'payment', 'operations', 'patient_request'
+  emergencyAccess: boolean("emergency_access").default(false),
+  breakGlassReason: text("break_glass_reason"), // For emergency override access
+  
+  // Immutable timestamp
+  accessedAt: timestamp("accessed_at").defaultNow().notNull(),
+});
+
+/**
+ * Authentication Audit Log
+ * Tracks all authentication attempts and session events
+ */
+export const authenticationLogs = pgTable("authentication_logs", {
+  id: serial("id").primaryKey(),
+  
+  // User info (may be null for failed login attempts)
+  userId: integer("user_id").references(() => users.id),
+  username: text("username").notNull(),
+  email: text("email"),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Event details
+  eventType: text("event_type").notNull(), // 'login_attempt', 'login_success', 'login_failure', 'logout', 'session_timeout', 'password_change', 'mfa_challenge', 'account_locked'
+  success: boolean("success").notNull(),
+  failureReason: text("failure_reason"), // 'invalid_password', 'account_locked', 'mfa_failed', etc.
+  
+  // Security info
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  deviceFingerprint: text("device_fingerprint"),
+  geolocation: jsonb("geolocation").$type<{
+    country?: string;
+    region?: string;
+    city?: string;
+    latitude?: number;
+    longitude?: number;
+  }>(),
+  
+  // Session info
+  sessionId: text("session_id"),
+  sessionDuration: integer("session_duration"), // seconds
+  
+  // MFA info
+  mfaType: text("mfa_type"), // 'totp', 'sms', 'email'
+  mfaSuccess: boolean("mfa_success"),
+  
+  // Risk assessment
+  riskScore: integer("risk_score"), // 0-100
+  riskFactors: text("risk_factors").array(), // ['new_device', 'unusual_location', 'multiple_failures']
+  
+  // Immutable timestamp
+  eventTime: timestamp("event_time").defaultNow().notNull(),
+});
+
+/**
+ * Data Modification Audit Log
+ * Tracks all changes to clinical data
+ */
+export const dataModificationLogs = pgTable("data_modification_logs", {
+  id: serial("id").primaryKey(),
+  
+  // Who made the change
+  userId: integer("user_id").references(() => users.id).notNull(),
+  userName: text("user_name").notNull(), // Denormalized
+  userRole: text("user_role").notNull(), // Denormalized
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id).notNull(),
+  
+  // What was changed
+  tableName: text("table_name").notNull(),
+  recordId: integer("record_id").notNull(),
+  patientId: integer("patient_id").references(() => patients.id), // If applicable
+  
+  // Change details
+  operation: text("operation").notNull(), // 'insert', 'update', 'delete'
+  fieldName: text("field_name"), // For updates, which field changed
+  oldValue: jsonb("old_value"), // Previous value (encrypted if PHI)
+  newValue: jsonb("new_value"), // New value (encrypted if PHI)
+  
+  // Context
+  changeReason: text("change_reason"), // User-provided reason for change
+  encounterId: integer("encounter_id").references(() => encounters.id),
+  orderAuthority: text("order_authority"), // For order-related changes
+  
+  // Validation
+  validated: boolean("validated").default(false),
+  validatedBy: integer("validated_by").references(() => users.id),
+  validatedAt: timestamp("validated_at"),
+  
+  // Immutable timestamp
+  modifiedAt: timestamp("modified_at").defaultNow().notNull(),
+});
+
+/**
+ * Emergency Access Log
+ * Special logging for break-glass emergency access scenarios
+ */
+export const emergencyAccessLogs = pgTable("emergency_access_logs", {
+  id: serial("id").primaryKey(),
+  
+  // Who accessed
+  userId: integer("user_id").references(() => users.id).notNull(),
+  userName: text("user_name").notNull(),
+  userRole: text("user_role").notNull(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id).notNull(),
+  
+  // What was accessed
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  patientName: text("patient_name").notNull(), // Encrypted
+  
+  // Emergency details
+  emergencyType: text("emergency_type").notNull(), // 'life_threatening', 'urgent_care', 'disaster_response'
+  justification: text("justification").notNull(), // Required detailed explanation
+  authorizingPhysician: text("authorizing_physician"),
+  
+  // Access scope
+  accessStartTime: timestamp("access_start_time").defaultNow().notNull(),
+  accessEndTime: timestamp("access_end_time"),
+  accessedResources: jsonb("accessed_resources").$type<Array<{
+    resourceType: string;
+    resourceId: number;
+    accessTime: string;
+  }>>().default([]),
+  
+  // Review process
+  reviewRequired: boolean("review_required").default(true),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewOutcome: text("review_outcome"), // 'approved', 'violation_found', 'additional_training_required'
+  reviewNotes: text("review_notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});

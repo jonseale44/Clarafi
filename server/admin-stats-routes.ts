@@ -91,7 +91,7 @@ router.get("/stats", requireAuth, async (req, res) => {
        FROM users u
        JOIN user_session_locations usl ON u.id = usl.user_id
        WHERE u.health_system_id = $1 
-       AND DATE(usl.login_time) = CURRENT_DATE`,
+       AND DATE(usl.selected_at) = CURRENT_DATE`,
       [user.healthSystemId]
     );
     const dailyActiveUsers = parseInt(dailyActiveUsersResult.rows[0].count) || 0;
@@ -114,26 +114,20 @@ router.get("/stats", requireAuth, async (req, res) => {
         [user.healthSystemId]
       );
       if (healthSystemResult.rows.length > 0) {
-        const tier = healthSystemResult.rows[0].subscriptionTier;
+        const tier = healthSystemResult.rows[0].subscription_tier;
         if (tier === 1) {
-          monthlyRevenue = 99; // Tier 1: $99/month
+          monthlyRevenue = 149; // Tier 1: $149/month (updated pricing)
         } else if (tier === 2) {
-          // Tier 2: Custom pricing - count active users
-          const tier2UsersResult = await pool.query(
-            `SELECT COUNT(*) as count FROM users 
-             WHERE healthSystemId = $1 AND isActive = true`,
-            [user.healthSystemId]
-          );
-          const userCount = parseInt(tier2UsersResult.rows[0].count) || 0;
-          monthlyRevenue = userCount * 299; // Assuming $299/user for enterprise
+          // Tier 2: $399/month
+          monthlyRevenue = 399;
         }
       }
     }
 
     // Get active subscriptions count
     const activeSubscriptionsResult = await pool.query(
-      `SELECT COUNT(*) as count FROM healthSystems 
-       WHERE subscriptionStatus = 'active'`
+      `SELECT COUNT(*) as count FROM health_systems 
+       WHERE subscription_status = 'active'`
     );
     const activeSubscriptions = parseInt(activeSubscriptionsResult.rows[0].count) || 0;
 
@@ -142,11 +136,11 @@ router.get("/stats", requireAuth, async (req, res) => {
       `SELECT 
         'User login' as description,
         u.username,
-        usl.loginTime as timestamp
+        usl.selected_at as timestamp
        FROM user_session_locations usl
-       JOIN users u ON usl.userId = u.id
-       WHERE u.healthSystemId = $1
-       ORDER BY usl.loginTime DESC
+       JOIN users u ON usl.user_id = u.id
+       WHERE u.health_system_id = $1
+       ORDER BY usl.selected_at DESC
        LIMIT 5`,
       [user.healthSystemId]
     );

@@ -473,12 +473,37 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+  app.post("/api/login", async (req, res, next) => {
+    const { logAuthenticationEvent } = await import("./audit-logging.js");
+    const ipAddress = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || '';
+    
+    // Log login attempt
+    await logAuthenticationEvent({
+      username: req.body.username,
+      eventType: 'login_attempt',
+      success: false, // Will update if successful
+      ipAddress,
+      userAgent,
+      sessionId: req.sessionID
+    });
+    
+    passport.authenticate("local", async (err, user, info) => {
       if (err) {
         return next(err);
       }
       if (!user) {
+        // Log failed login
+        await logAuthenticationEvent({
+          username: req.body.username,
+          eventType: 'login_failure',
+          success: false,
+          failureReason: info?.message || 'Invalid username or password',
+          ipAddress,
+          userAgent,
+          sessionId: req.sessionID
+        });
+        
         // Check if there's a specific error message (like email not verified)
         if (info?.message) {
           return res.status(401).json({ message: info.message });
@@ -496,6 +521,19 @@ export function setupAuth(app: Express) {
             .update(users)
             .set({ lastLogin: new Date() })
             .where(eq(users.id, user.id));
+
+          // Log successful login
+          await logAuthenticationEvent({
+            userId: user.id,
+            username: user.username,
+            email: user.email,
+            healthSystemId: user.healthSystemId,
+            eventType: 'login_success',
+            success: true,
+            ipAddress,
+            userAgent,
+            sessionId: req.sessionID
+          });
 
           // After successful login, check if user has a remembered location
           if (user.role !== 'admin') {
@@ -519,7 +557,26 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/logout", async (req, res, next) => {
+    if (req.user) {
+      const { logAuthenticationEvent } = await import("./audit-logging.js");
+      const ipAddress = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'] || '';
+      
+      // Log logout event
+      await logAuthenticationEvent({
+        userId: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        healthSystemId: req.user.healthSystemId,
+        eventType: 'logout',
+        success: true,
+        ipAddress,
+        userAgent,
+        sessionId: req.sessionID
+      });
+    }
+    
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);

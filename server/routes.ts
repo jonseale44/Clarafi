@@ -537,6 +537,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
+  
+  // Set up HIPAA audit logging middleware for all routes
+  const { auditPHIAccess } = await import("./audit-logging.js");
+  app.use(auditPHIAccess);
 
   // Location management routes
   const { setupLocationRoutes } = await import("./location-routes.js");
