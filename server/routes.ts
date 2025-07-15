@@ -641,6 +641,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin verification routes (PUBLIC - for creating new admin accounts)
   registerAdminVerificationRoutes(app);
 
+  // Clinic admin routes (for health system administrators)
+  const { registerClinicAdminRoutes } = await import('./clinic-admin-routes');
+  registerClinicAdminRoutes(app);
+
   // Intelligent diagnosis routes (GPT-powered autocompletion)
   app.use("/api/intelligent-diagnosis", intelligentDiagnosisRoutes);
 

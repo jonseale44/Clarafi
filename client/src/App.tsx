@@ -31,6 +31,7 @@ import AdminVerification from "@/pages/admin-verification";
 import AdminVerificationComplete from "@/pages/admin-verification-complete";
 import AdminVerificationReview from "@/pages/admin-verification-review";
 import AdminDashboard from "@/pages/admin-dashboard";
+import ClinicAdminDashboard from "@/pages/clinic-admin-dashboard";
 
 import NotFound from "@/pages/not-found";
 
@@ -40,6 +41,7 @@ function Router() {
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
+      <ProtectedRoute path="/clinic-admin" component={ClinicAdminDashboard} />
       <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <ProtectedRoute path="/patients/:id/chart" component={PatientView} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />

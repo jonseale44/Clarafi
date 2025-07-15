@@ -41,18 +41,26 @@ export default function Dashboard() {
     queryKey: ["/api/user"],
   });
 
-  // Redirect admin users to the admin dashboard
+  // Redirect admin users to the appropriate admin dashboard
   useEffect(() => {
     console.log('Dashboard redirect check:', {
       currentUser,
       role: currentUser?.role,
+      healthSystemId: currentUser?.healthSystemId,
       location,
       shouldRedirect: currentUser?.role === 'admin' && (location === '/dashboard' || location === '/')
     });
     
     if (currentUser?.role === 'admin' && (location === '/dashboard' || location === '/')) {
-      console.log('Redirecting admin to /admin');
-      setLocation('/admin');
+      // System admins (Clarafi staff) don't have a health system ID or have ID 1
+      // Clinic admins have a real health system ID (2 or higher)
+      if (!currentUser.healthSystemId || currentUser.healthSystemId === 1) {
+        console.log('Redirecting system admin to /admin');
+        setLocation('/admin');
+      } else {
+        console.log('Redirecting clinic admin to /clinic-admin');
+        setLocation('/clinic-admin');
+      }
     }
   }, [currentUser, location, setLocation]);
 
