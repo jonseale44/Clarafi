@@ -36,6 +36,7 @@ import ClinicAdminDashboard from "@/pages/clinic-admin-dashboard";
 import PasswordChangeRequired from "@/pages/password-change-required";
 import MagicLinkPage from "@/pages/magic-link-page";
 import SchedulingPage from "@/pages/scheduling";
+import SystemAdminTestPatients from "@/pages/system-admin-test-patients";
 
 import NotFound from "@/pages/not-found";
 
@@ -66,6 +67,7 @@ function Router() {
       <ProtectedRoute path="/admin/health-system-upgrade" component={HealthSystemUpgradePage} />
       <ProtectedRoute path="/admin/clinic-import" component={AdminClinicImport} />
       <ProtectedRoute path="/admin/verification-review" component={AdminVerificationReview} />
+      <ProtectedRoute path="/admin/test-patients" component={SystemAdminTestPatients} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />

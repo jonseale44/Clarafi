@@ -37,6 +37,7 @@ import { setupRealtimeProxy } from "./realtime-proxy";
 import migrationRoutes from "./migration-routes";
 import { adminClinicImportRoutes } from "./admin-clinic-import-routes";
 import schedulingRoutes from "./scheduling-routes";
+import { testPatientRoutes } from "./test-patient-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -694,6 +695,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clinic admin routes (for health system administrators)
   const { registerClinicAdminRoutes } = await import('./clinic-admin-routes');
   registerClinicAdminRoutes(app);
+
+  // Test patient generation routes (system admins only)
+  app.use(testPatientRoutes);
 
   // Intelligent diagnosis routes (GPT-powered autocompletion)
   app.use("/api/intelligent-diagnosis", intelligentDiagnosisRoutes);

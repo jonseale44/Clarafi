@@ -2251,6 +2251,94 @@ export class DatabaseStorage implements IStorage {
       return result[0];
     }
   }
+
+  // Test patient management methods
+  async getAllHealthSystems(): Promise<any[]> {
+    return await db.select().from(healthSystems).orderBy(healthSystems.name);
+  }
+
+  async getHealthSystem(id: number): Promise<any> {
+    const [healthSystem] = await db.select().from(healthSystems).where(eq(healthSystems.id, id));
+    return healthSystem;
+  }
+
+  async getProvidersByHealthSystem(healthSystemId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        credentials: users.credentials,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.healthSystemId, healthSystemId),
+          eq(users.role, 'provider')
+        )
+      )
+      .orderBy(users.lastName);
+  }
+
+  async getLocationsByHealthSystem(healthSystemId: number): Promise<any[]> {
+    return await db
+      .select()
+      .from(locations)
+      .where(eq(locations.healthSystemId, healthSystemId))
+      .orderBy(locations.name);
+  }
+
+  async getTestPatients(healthSystemId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: patients.id,
+        mrn: patients.mrn,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        dateOfBirth: patients.dateOfBirth,
+        createdAt: patients.createdAt,
+      })
+      .from(patients)
+      .where(
+        and(
+          eq(patients.healthSystemId, healthSystemId),
+          sql`${patients.mrn} LIKE 'ZTEST%'`
+        )
+      )
+      .orderBy(desc(patients.createdAt));
+  }
+
+  async deletePatientAndAllData(patientId: number): Promise<void> {
+    // Delete in order to respect foreign key constraints
+    // First delete all data that references the patient
+    
+    // Delete appointments
+    await db.delete(appointments).where(eq(appointments.patientId, patientId));
+    
+    // Delete scheduling patterns
+    await db.delete(patientSchedulingPatterns).where(eq(patientSchedulingPatterns.patientId, patientId));
+    
+    // Delete medical data
+    await db.delete(medicalProblems).where(eq(medicalProblems.patientId, patientId));
+    await db.delete(medications).where(eq(medications.patientId, patientId));
+    await db.delete(allergies).where(eq(allergies.patientId, patientId));
+    await db.delete(vitals).where(eq(vitals.patientId, patientId));
+    await db.delete(labResults).where(eq(labResults.patientId, patientId));
+    await db.delete(imagingResults).where(eq(imagingResults.patientId, patientId));
+    await db.delete(familyHistory).where(eq(familyHistory.patientId, patientId));
+    await db.delete(socialHistory).where(eq(socialHistory.patientId, patientId));
+    await db.delete(surgicalHistory).where(eq(surgicalHistory.patientId, patientId));
+    
+    // Delete encounters (this will also cascade delete orders, etc.)
+    await db.delete(encounters).where(eq(encounters.patientId, patientId));
+    
+    // Delete diagnoses
+    await db.delete(diagnoses).where(eq(diagnoses.patientId, patientId));
+    
+    // Finally, delete the patient
+    await db.delete(patients).where(eq(patients.id, patientId));
+  }
 }
 
 export const storage = new DatabaseStorage();

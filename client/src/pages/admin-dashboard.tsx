@@ -118,6 +118,7 @@ export default function AdminDashboard() {
       icon: <Database className="h-6 w-6" />,
       actions: [
         { label: 'Clinic Import', href: '/admin/clinic-import', variant: 'default' },
+        { label: 'Test Patients', href: '/admin/test-patients', variant: 'default' },
         { label: 'Practice Migration', href: '/practice-migration', variant: 'secondary' }
       ],
       stats: [
