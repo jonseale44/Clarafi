@@ -746,6 +746,19 @@ Preferred communication style: Simple, everyday language.
   - AI scheduling parameter configuration (no-show rate, average arrival time)
   - Toggle switches for including various data types (vitals, labs, imaging, histories)
   - Test patient management table with deletion capability
+- **NAVIGATION HEADER ADDED**: Test patient generator page now includes navigation header with "Back to Admin Dashboard" and "Logout" buttons for better UX
+
+### Clinic Data Consistency Clarification (January 16, 2025)
+- **CURRENT DATABASE STATE**: Only contains Waco-area health systems - no Ascension or other large systems imported
+  - Waco Family Medicine (5 locations including Hillcrest Medical)
+  - Waco Family Medicine - Hillsboro
+  - Mission Hillsboro Medical Clinic
+- **DATA SOURCES IDENTIFIED**:
+  - Real NPPES data (government provider database) for accuracy
+  - Test data templates in admin-clinic-import-routes.ts (not imported)
+  - Documentation examples using hypothetical relationships
+- **AUSTIN REGIONAL CLINIC CLARIFICATION**: Correctly identified as independent physician-owned practice, not part of Ascension
+- **DATA CONSISTENCY PRINCIPLE**: System should use real NPPES data or clearly mark test data as fictional to avoid confusion about organizational relationships
 - **NAVIGATION**: Added "Test Patients" link to Admin Dashboard under Data Management section
 - **USE CASE**: Essential for EMR testing, training, and demonstrations without using real patient data
 
