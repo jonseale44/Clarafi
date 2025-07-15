@@ -633,11 +633,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createVitalsEntry(data: any) {
-    const [result] = await db.insert(vitals).values({
+    console.log("[Storage.createVitalsEntry] Input data:", JSON.stringify(data, null, 2));
+    
+    const insertData = {
       ...data,
       recordedAt: data.recordedAt || new Date()
-    }).returning();
-    return result;
+    };
+    
+    console.log("[Storage.createVitalsEntry] Data to insert:", JSON.stringify(insertData, null, 2));
+    console.log("[Storage.createVitalsEntry] Data types:", {
+      patientId: typeof insertData.patientId,
+      encounterId: typeof insertData.encounterId,
+      recordedAt: typeof insertData.recordedAt,
+      recordedBy: typeof insertData.recordedBy,
+      enteredBy: typeof insertData.enteredBy,
+      entryType: typeof insertData.entryType
+    });
+    
+    try {
+      const [result] = await db.insert(vitals).values(insertData).returning();
+      console.log("[Storage.createVitalsEntry] Insert successful, result ID:", result.id);
+      return result;
+    } catch (error) {
+      console.error("[Storage.createVitalsEntry] Insert failed:", error);
+      console.error("[Storage.createVitalsEntry] SQL parameter details:", {
+        param1: insertData.patientId,
+        param2: insertData.encounterId,
+        param3: insertData.recordedAt,
+        param4: insertData.recordedBy,
+        param5: insertData.entryType
+      });
+      throw error;
+    }
   }
 
   async updateVitalsEntry(id: number, data: any) {
