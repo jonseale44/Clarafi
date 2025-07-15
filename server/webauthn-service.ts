@@ -48,6 +48,19 @@ export class WebAuthnService {
     // Get existing credentials to exclude
     console.log('🔍 [WebAuthn] Fetching existing credentials for user:', userId);
     
+    // First check table structure
+    try {
+      const columnInfo = await db.execute(sql`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'webauthn_credentials'
+        ORDER BY ordinal_position
+      `);
+      console.log('📋 [WebAuthn] webauthn_credentials columns:', JSON.stringify(columnInfo.rows, null, 2));
+    } catch (colError) {
+      console.error('❌ [WebAuthn] Error fetching column info:', colError);
+    }
+    
     let existingCredentials: any[] = [];
     try {
       existingCredentials = await db.select()
@@ -69,11 +82,15 @@ export class WebAuthnService {
     }));
 
     const challenge = randomBytes(32).toString('base64url');
+    
+    // Convert userId to Uint8Array as required by SimpleWebAuthn v10+
+    const userIdBuffer = new TextEncoder().encode(userId.toString());
+    console.log('🔍 [WebAuthn] Converting userID:', userId, 'to Uint8Array:', userIdBuffer);
 
     const options = await generateRegistrationOptions({
       rpName: this.RP_NAME,
       rpID: this.RP_ID,
-      userID: userId.toString(),
+      userID: userIdBuffer,
       userName: user.email,
       userDisplayName: user.displayName || user.email,
       attestationType: 'none',
