@@ -150,7 +150,8 @@ export function calculatePasswordStrength(password: string): PasswordStrength {
 
 // Generate cryptographically secure random password
 export function generateSecurePassword(length: number = 16): string {
-  const crypto = require('crypto');
+  // Use crypto.randomInt which is available in Node.js
+  const crypto = eval('require')('crypto');
   
   // Use a character set that's easy to read and type
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
