@@ -4,13 +4,14 @@ import { db } from "./db";
 import { users, healthSystems, locations, userLocations } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { eq } from "drizzle-orm";
+import { generateSecurePassword } from "./password-validation";
 
 // This script creates an initial admin account
 // Run with: npm run setup-admin
 
 async function setupAdmin() {
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+  const adminPassword = process.env.ADMIN_PASSWORD || generateSecurePassword(16);
   const adminEmail = process.env.ADMIN_EMAIL || "admin@clarafi.com";
   
   try {
@@ -56,14 +57,17 @@ async function setupAdmin() {
       role: "admin",
       healthSystemId: healthSystemId,
       emailVerified: true, // Admin doesn't need email verification
-      isActive: true
+      isActive: true,
+      requirePasswordChange: !process.env.ADMIN_PASSWORD // Only force change if using generated password
     }).returning();
     
     console.log("✅ Admin user created successfully!");
     console.log(`   Username: ${adminUsername}`);
     console.log(`   Password: ${adminPassword}`);
     console.log(`   Email: ${adminEmail}`);
-    console.log("\n⚠️  Please change the admin password after first login!");
+    if (!process.env.ADMIN_PASSWORD) {
+      console.log("\n⚠️  You will be required to change this password on first login.");
+    }
     
   } catch (error) {
     console.error("❌ Error creating admin user:", error);

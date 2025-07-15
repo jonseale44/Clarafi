@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, decimal, numeric, jsonb, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, decimal, numeric, jsonb, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -3300,3 +3300,32 @@ export const emergencyAccessLogs = pgTable("emergency_access_logs", {
   
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+/**
+ * Magic Links for passwordless authentication
+ * Stores temporary tokens for email-based authentication
+ */
+export const magicLinks = pgTable("magic_links", {
+  id: serial("id").primaryKey(),
+  
+  // User association (null for registration links)
+  userId: integer("user_id").references(() => users.id),
+  email: text("email").notNull(),
+  
+  // Token details
+  token: text("token").notNull().unique(),
+  purpose: text("purpose").notNull(), // 'login', 'registration', 'password_reset'
+  
+  // Expiration and usage
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  
+  // Security tracking
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Indexes will be created via SQL migration

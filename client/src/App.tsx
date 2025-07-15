@@ -33,6 +33,7 @@ import AdminVerificationReview from "@/pages/admin-verification-review";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ClinicAdminDashboard from "@/pages/clinic-admin-dashboard";
 import PasswordChangeRequired from "@/pages/password-change-required";
+import MagicLinkPage from "@/pages/magic-link-page";
 
 import NotFound from "@/pages/not-found";
 
@@ -68,6 +69,7 @@ function Router() {
       <ProtectedRoute path="/password-change-required" component={PasswordChangeRequired} />
 
       <Route path="/auth" component={AuthPage} />
+      <Route path="/auth/magic-link/:token" component={MagicLinkPage} />
       <Route path="/admin-verification" component={AdminVerification} />
       <Route path="/admin-verification-complete" component={AdminVerificationComplete} />
       <Route path="/payment" component={PaymentPage} />

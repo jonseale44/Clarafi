@@ -184,30 +184,17 @@ export function setupAuth(app: Express) {
     try {
       const { password } = req.body;
       
-      const checks = {
-        length: password.length >= 8,
-        uppercase: /[A-Z]/.test(password),
-        lowercase: /[a-z]/.test(password),
-        number: /\d/.test(password),
-        special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-      };
-      
-      const strength = Object.values(checks).filter(Boolean).length;
-      const isValid = strength >= 4; // At least 4 out of 5 criteria
-      
-      let message = "";
-      if (!checks.length) message = "Password must be at least 8 characters";
-      else if (!checks.uppercase) message = "Add an uppercase letter";
-      else if (!checks.lowercase) message = "Add a lowercase letter";
-      else if (!checks.number) message = "Add a number";
-      else if (!checks.special) message = "Add a special character (!@#$%^&*)";
-      else message = "Strong password!";
+      // Use evidence-based password strength calculation
+      const { calculatePasswordStrength } = await import("./password-validation");
+      const strength = calculatePasswordStrength(password);
       
       return res.json({
-        valid: isValid,
-        strength: strength === 5 ? "strong" : strength >= 4 ? "good" : strength >= 3 ? "fair" : "weak",
-        checks,
-        message
+        valid: strength.isAcceptable,
+        strength: strength.strength,
+        score: strength.score,
+        entropy: strength.entropy,
+        message: strength.feedback,
+        suggestions: strength.suggestions
       });
     } catch (error) {
       console.error("❌ [ValidatePassword] Error:", error);

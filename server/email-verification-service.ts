@@ -182,7 +182,7 @@ export class EmailVerificationService {
       from: fromEmail,
       subject: options.subject,
       html: options.html,
-      text: options.text || options.html.replace(/<[^>]*>/g, ''), // Strip HTML tags for text version
+      text: options.text || (options.html ? options.html.replace(/<[^>]*>/g, '') : ''), // Strip HTML tags for text version
     };
 
     try {

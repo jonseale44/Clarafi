@@ -743,15 +743,9 @@ Keep recommendations concise and specific.
    * Generate secure temporary password
    */
   static generateTemporaryPassword(): string {
-    const length = 16;
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    let password = '';
-    
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(crypto.randomInt(0, charset.length));
-    }
-    
-    return password;
+    // Import secure password generation from our new module
+    const { generateSecurePassword } = require('./password-validation');
+    return generateSecurePassword(16);
   }
   
   /**
@@ -1095,8 +1089,8 @@ Keep recommendations concise and specific.
       taxId: requestData?.taxId
     });
     
-    // Generate a temporary password
-    const tempPassword = 'ChangeMe123!';
+    // Generate a secure temporary password
+    const tempPassword = this.generateTemporaryPassword();
     const hashedPassword = await hashPassword(tempPassword);
     
     console.log('🔐 [AdminVerification] Password hashed successfully');

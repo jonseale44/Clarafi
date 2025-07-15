@@ -546,6 +546,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { setupLocationRoutes } = await import("./location-routes.js");
   setupLocationRoutes(app);
 
+  // WebAuthn/Passkey routes
+  const webauthnRoutes = (await import("./webauthn-routes.js")).default;
+  app.use("/api/auth", webauthnRoutes);
+
   // Dashboard routes
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/patients", patientOrderPreferencesRoutes);
@@ -586,6 +590,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to download PDF" });
     }
   });
+
+  // Magic link routes for modern authentication
+  const magicLinkRoutes = (await import("./magic-link-routes.js")).default;
+  app.use(magicLinkRoutes);
 
   // Unified medical problems routes (handles both SOAP and attachment processing)
   // NOTE: Must be registered BEFORE enhanced routes to avoid route conflicts

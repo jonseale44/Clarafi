@@ -23,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Mail } from "lucide-react";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -41,9 +42,12 @@ const registerSchema = insertUserSchema.extend({
     .email("Please enter a valid email address")
     .toLowerCase(),
   password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
-      "Password must include uppercase, lowercase, number, and special character"),
+    .min(12, "Password must be at least 12 characters")
+    .refine((password) => {
+      // Simple check - detailed validation happens server-side
+      const uniqueChars = new Set(password).size;
+      return uniqueChars >= 4;
+    }, "Password needs more character variety"),
   confirmPassword: z.string(),
   npi: z.string()
     .optional()
@@ -92,6 +96,109 @@ function useDebouncedValidation(value: string, delay: number = 500) {
   }, [value, delay]);
 
   return { debouncedValue, isValidating };
+}
+
+// Magic Link Form Component
+function MagicLinkForm() {
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+  const { toast } = useToast();
+
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, purpose: 'login' })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsSent(true);
+        toast({
+          title: "Check your email",
+          description: "We've sent you a login link. It will expire in 15 minutes.",
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to send login link",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send login link. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isSent) {
+    return (
+      <div className="text-center space-y-2">
+        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+        <p className="text-sm text-muted-foreground">
+          Check your email for a login link. It will expire in 15 minutes.
+        </p>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setIsSent(false);
+            setEmail('');
+          }}
+          className="text-xs"
+        >
+          Send another link
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleMagicLink} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="magic-email">Email Address</Label>
+        <Input
+          id="magic-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          required
+        />
+      </div>
+      
+      <Button 
+        type="submit" 
+        variant="outline" 
+        className="w-full" 
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Sending Link...
+          </>
+        ) : (
+          <>
+            <Mail className="mr-2 h-4 w-4" />
+            Login with Email
+          </>
+        )}
+      </Button>
+    </form>
+  );
 }
 
 export default function AuthPage() {
@@ -440,6 +547,17 @@ export default function AuthPage() {
                       )}
                     </Button>
                   </form>
+                  
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or</span>
+                    </div>
+                  </div>
+                  
+                  <MagicLinkForm />
                 </CardContent>
               </Card>
             </TabsContent>
