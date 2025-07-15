@@ -6,6 +6,7 @@ import { subscriptionConfig } from './subscription-config';
 import { db } from './db';
 import { healthSystems, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { PER_USER_PRICING } from '@shared/feature-gates';
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -28,6 +29,25 @@ export interface SubscriptionResult {
   clientSecret?: string;
   error?: string;
   requiresAction?: boolean;
+}
+
+export interface PerUserBillingCheckoutParams {
+  healthSystemId: number;
+  healthSystemName: string;
+  email: string;
+  monthlyAmount: number;
+  userCounts: {
+    providers: number;
+    clinicalStaff: number;
+    adminStaff: number;
+    readOnly: number;
+  };
+  billingDetails: {
+    providers: { count: number; rate: number; total: number };
+    clinicalStaff: { count: number; rate: number; total: number };
+    adminStaff: { count: number; rate: number; total: number };
+    readOnly: { count: number; rate: number; total: number };
+  };
 }
 
 export class StripeService {
@@ -509,6 +529,138 @@ export class StripeService {
         };
       }
       return null;
+    }
+  }
+
+  // Create a checkout session for per-user billing (Enterprise Tier 2)
+  static async createPerUserBillingCheckout(params: PerUserBillingCheckoutParams): Promise<string> {
+    try {
+      console.log('💰 [Stripe] Creating per-user billing checkout:', {
+        healthSystemName: params.healthSystemName,
+        monthlyAmount: params.monthlyAmount,
+        userCounts: params.userCounts
+      });
+
+      // Create line items for each user type with active users
+      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+      
+      if (params.userCounts.providers > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Provider Users',
+              description: `${params.userCounts.providers} active provider(s) at $${PER_USER_PRICING.provider.monthly}/month each`,
+            },
+            unit_amount: PER_USER_PRICING.provider.monthly * 100, // Convert to cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: params.userCounts.providers,
+        });
+      }
+
+      if (params.userCounts.clinicalStaff > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Clinical Staff Users',
+              description: `${params.userCounts.clinicalStaff} active clinical staff at $${PER_USER_PRICING.clinicalStaff.monthly}/month each`,
+            },
+            unit_amount: PER_USER_PRICING.clinicalStaff.monthly * 100,
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: params.userCounts.clinicalStaff,
+        });
+      }
+
+      if (params.userCounts.adminStaff > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Administrative Staff Users',
+              description: `${params.userCounts.adminStaff} active admin staff at $${PER_USER_PRICING.adminStaff.monthly}/month each`,
+            },
+            unit_amount: PER_USER_PRICING.adminStaff.monthly * 100,
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: params.userCounts.adminStaff,
+        });
+      }
+
+      if (params.userCounts.readOnly > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Read-Only Users',
+              description: `${params.userCounts.readOnly} read-only user(s) at $${PER_USER_PRICING.readOnly.monthly}/month each`,
+            },
+            unit_amount: PER_USER_PRICING.readOnly.monthly * 100,
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: params.userCounts.readOnly,
+        });
+      }
+
+      // If no active users, add a placeholder item
+      if (lineItems.length === 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Clarafi Enterprise EMR - Base Subscription',
+              description: 'No active users currently. You will be billed as users are added.',
+            },
+            unit_amount: 100, // $1 placeholder
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer_email: params.email,
+        line_items: lineItems,
+        mode: 'subscription',
+        success_url: `https://${process.env.REPLIT_DEV_DOMAIN}/dashboard?billing=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `https://${process.env.REPLIT_DEV_DOMAIN}/dashboard?billing=cancelled`,
+        metadata: {
+          healthSystemId: params.healthSystemId.toString(),
+          healthSystemName: params.healthSystemName,
+          billingType: 'per_user',
+          totalUsers: Object.values(params.userCounts).reduce((a, b) => a + b, 0).toString(),
+          monthlyTotal: params.monthlyAmount.toString(),
+        },
+        subscription_data: {
+          metadata: {
+            healthSystemId: params.healthSystemId.toString(),
+            billingType: 'per_user',
+          },
+        },
+        allow_promotion_codes: true,
+      });
+
+      if (!session.url) {
+        throw new Error('Stripe session created but no checkout URL returned');
+      }
+
+      console.log('✅ [Stripe] Per-user billing checkout session created:', session.id);
+      return session.url;
+    } catch (error: any) {
+      console.error('❌ [Stripe] Error creating per-user billing checkout:', error);
+      throw new Error(`Failed to create billing checkout: ${error.message}`);
     }
   }
 }

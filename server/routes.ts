@@ -5534,5 +5534,9 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Import and register billing management routes
+  const { registerBillingRoutes } = await import("./billing-management-routes");
+  registerBillingRoutes(app);
+
   return httpServer;
 }

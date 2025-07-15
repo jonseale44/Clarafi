@@ -29,6 +29,45 @@ export const TIER_PRICING = {
   }
 } as const;
 
+// PER-USER PRICING for Tier 2 Enterprise
+export const PER_USER_PRICING = {
+  provider: {
+    monthly: 399,
+    annual: 3990, // 2 months free
+    description: 'Licensed providers (MD, DO, NP, PA)',
+    roles: ['provider']
+  },
+  clinicalStaff: {
+    monthly: 99,
+    annual: 990, // 2 months free  
+    description: 'Clinical staff (RN, MA, LPN)',
+    roles: ['nurse', 'ma']
+  },
+  adminStaff: {
+    monthly: 49,
+    annual: 490, // 2 months free
+    description: 'Administrative staff',
+    roles: ['admin', 'front_desk', 'billing', 'practice_manager', 'referral_coordinator']
+  },
+  readOnly: {
+    monthly: 25,
+    annual: 250, // 2 months free
+    description: 'Read-only access',
+    roles: ['read_only', 'lab_tech']
+  }
+} as const;
+
+// Helper function to get pricing tier for a user role
+export function getUserPricingTier(role: string): keyof typeof PER_USER_PRICING {
+  for (const [tier, config] of Object.entries(PER_USER_PRICING)) {
+    if (config.roles.includes(role)) {
+      return tier as keyof typeof PER_USER_PRICING;
+    }
+  }
+  // Default to admin staff pricing if role not found
+  return 'adminStaff';
+}
+
 // FEATURE GATES - Modify these booleans to change tier access
 export const FEATURE_GATES = {
   // Core EMR Features - Available to all tiers

@@ -2,6 +2,7 @@ import { db } from './db';
 import { subscriptionKeys, users, subscriptionHistory, emailNotifications, healthSystems } from '../shared/schema';
 import { eq, and, lt, gte, or } from 'drizzle-orm';
 import crypto from 'crypto';
+import { PER_USER_PRICING, getUserPricingTier } from '../shared/feature-gates';
 
 export class SubscriptionKeyService {
   /**
@@ -46,6 +47,7 @@ export class SubscriptionKeyService {
         healthSystemId,
         keyType: 'provider',
         subscriptionTier: tier,
+        monthlyPrice: PER_USER_PRICING.provider.monthly.toString(),
         expiresAt,
         metadata: {
           generationBatch: new Date().toISOString(),
@@ -59,11 +61,13 @@ export class SubscriptionKeyService {
     // Generate staff keys
     for (let i = 0; i < staffCount; i++) {
       const key = this.generateKey(shortName, 'staff');
+      // Staff keys can be for clinical or admin staff - default to clinical pricing
       const [insertedKey] = await db.insert(subscriptionKeys).values({
         key,
         healthSystemId,
         keyType: 'staff',
         subscriptionTier: tier,
+        monthlyPrice: PER_USER_PRICING.clinicalStaff.monthly.toString(),
         expiresAt,
         metadata: {
           generationBatch: new Date().toISOString(),
@@ -284,6 +288,7 @@ export class SubscriptionKeyService {
       healthSystemId: oldKey.healthSystemId,
       keyType: oldKey.keyType,
       subscriptionTier: oldKey.subscriptionTier,
+      monthlyPrice: oldKey.monthlyPrice,
       expiresAt,
       metadata: {
         regeneratedFrom: oldKeyId,

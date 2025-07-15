@@ -55,6 +55,36 @@ export const healthSystems = pgTable("health_systems", {
     totalUsers: 0
   }),
   
+  // Per-User Billing Tracking
+  activeUserCount: jsonb("active_user_count").$type<{
+    providers: number;
+    clinicalStaff: number;
+    adminStaff: number;
+    lastUpdated: string;
+  }>().default({
+    providers: 0,
+    clinicalStaff: 0,
+    adminStaff: 0,
+    lastUpdated: new Date().toISOString()
+  }),
+  
+  billingDetails: jsonb("billing_details").$type<{
+    monthlyTotal: number;
+    providerRate: number;
+    clinicalStaffRate: number;
+    adminStaffRate: number;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    paymentMethodId?: string;
+    lastBillingDate?: string;
+    nextBillingDate?: string;
+  }>().default({
+    monthlyTotal: 0,
+    providerRate: 399, // Default provider rate
+    clinicalStaffRate: 99, // Default clinical staff rate
+    adminStaffRate: 49, // Default admin staff rate
+  }),
+  
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -2868,6 +2898,7 @@ export const subscriptionKeys = pgTable("subscription_keys", {
   keyType: text("key_type").notNull(), // 'provider', 'staff', 'admin'
   subscriptionTier: integer("subscription_tier").notNull(), // 1, 2, 3
   status: text("status").default("active"), // 'active', 'used', 'expired', 'deactivated'
+  monthlyPrice: decimal("monthly_price", { precision: 10, scale: 2 }), // Per-user monthly price
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at").notNull(), // 72 hours from creation for unused keys
   usedBy: integer("used_by").references(() => users.id),

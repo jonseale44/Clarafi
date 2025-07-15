@@ -907,6 +907,16 @@ Preferred communication style: Simple, everyday language.
 - **SWITCH CASE INTEGRATION**: Added "soapNarrative" case in template selection logic for proper routing to new prompt method
 - **PRODUCTION READY**: Template available immediately in all note generation interfaces alongside existing SOAP, APSO, Progress, H&P, Discharge, and Procedure templates
 
+### Per-User Billing System Implementation COMPLETED (July 15, 2025)
+- **COMPREHENSIVE BILLING ARCHITECTURE**: Built complete per-user billing system with Stripe integration to prevent subscription abuse and ensure proper revenue tracking
+- **BILLING CALCULATION SERVICE**: Created BillingCalculationService that automatically calculates monthly costs based on active user counts across health systems
+- **USER PRICING TIERS**: Implemented role-based pricing from shared/feature-gates.ts - Providers ($399), Clinical Staff ($99), Admin Staff ($49), Read-Only ($9)
+- **BILLING MANAGEMENT API**: Added comprehensive billing management routes for viewing current billing, generating reports, and handling Stripe checkout sessions
+- **STRIPE INTEGRATION ENHANCEMENT**: Enhanced StripeService with createPerUserBillingCheckout method for automated monthly billing based on user counts
+- **DATABASE SCHEMA UPDATES**: Added billing columns to health_systems table (activeUserCount, lastBillingCalculation, billingHistory) and monthly_price to subscription_keys
+- **AUTHENTICATION MIDDLEWARE**: Implemented proper requireAuth middleware for all billing routes to ensure secure access control
+- **PRODUCTION READY**: Full end-to-end per-user billing system operational with automatic Stripe checkout session creation for health system billing
+
 ### Critical Lab Test Name Matching Safety Fix COMPLETED (January 9, 2025)
 - **CRITICAL CLINICAL SAFETY BUG FIXED**: Lab results matrix was incorrectly matching test names using dangerous substring logic
 - **DANGEROUS BUG**: Hemoglobin A1c (HbA1c) was incorrectly appearing as regular Hemoglobin due to substring matching
