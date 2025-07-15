@@ -84,6 +84,7 @@ export function PasskeyAuth() {
       }
       
       // 3. Convert credential to JSON-serializable format
+      console.log('Raw credential:', credential);
       const publicKeyCredential = credential as PublicKeyCredential;
       const response = publicKeyCredential.response as AuthenticatorAttestationResponse;
       
@@ -98,6 +99,16 @@ export function PasskeyAuth() {
         transports: (response as any).getTransports?.() || []
       };
       
+      console.log('Credential data to send:', credentialData);
+      
+      const requestBody = JSON.stringify({
+        response: credentialData,
+        displayName: passkeyName
+      });
+      
+      console.log('Request body:', requestBody);
+      console.log('Request URL:', '/api/auth/webauthn/register/verify');
+      
       // 4. Send credential to server for verification
       const verifyResponse = await fetch('/api/auth/webauthn/register/verify', {
         method: 'POST',
@@ -105,15 +116,29 @@ export function PasskeyAuth() {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({
-          response: credentialData,
-          displayName: passkeyName
-        })
+        body: requestBody
       });
       
+      console.log('Verify response status:', verifyResponse.status);
+      console.log('Verify response headers:', verifyResponse.headers);
+      
+      const responseText = await verifyResponse.text();
+      console.log('Raw response text:', responseText);
+      
+      // Try to parse as JSON, but handle HTML responses
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response as JSON. Response was:', responseText);
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+          throw new Error('Server returned HTML instead of JSON - possibly a 404 error');
+        }
+        throw new Error('Invalid server response');
+      }
+      
       if (!verifyResponse.ok) {
-        const error = await verifyResponse.json();
-        throw new Error(error.error || 'Failed to verify credential');
+        throw new Error(responseData.error || 'Failed to verify credential');
       }
       
       toast({
