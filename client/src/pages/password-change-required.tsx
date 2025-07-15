@@ -241,6 +241,17 @@ export default function PasswordChangeRequired() {
               >
                 {changePasswordMutation.isPending ? "Changing Password..." : "Change Password"}
               </Button>
+              
+              <div className="mt-4 text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setLocation('/dashboard')}
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  Skip for now and go to Dashboard
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
