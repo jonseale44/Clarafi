@@ -75,6 +75,7 @@ export function PasskeyAuth() {
       const options = await optionsResponse.json();
       
       // 2. Create credential using WebAuthn API
+      console.log('Creating credential with options:', options);
       const credential = await navigator.credentials.create({
         publicKey: options
       });
@@ -85,8 +86,15 @@ export function PasskeyAuth() {
       
       // 3. Convert credential to JSON-serializable format
       console.log('Raw credential:', credential);
+      console.log('Credential type:', credential.type);
+      console.log('Credential id:', credential.id);
+      
       const publicKeyCredential = credential as PublicKeyCredential;
       const response = publicKeyCredential.response as AuthenticatorAttestationResponse;
+      
+      console.log('Response type:', response.constructor.name);
+      console.log('Has clientDataJSON:', !!response.clientDataJSON);
+      console.log('Has attestationObject:', !!response.attestationObject);
       
       const credentialData = {
         id: credential.id,
@@ -107,10 +115,15 @@ export function PasskeyAuth() {
       });
       
       console.log('Request body:', requestBody);
-      console.log('Request URL:', '/api/auth/webauthn/register/verify');
+      console.log('Request body length:', requestBody.length);
+      
+      const verifyUrl = '/api/auth/webauthn/register/verify';
+      console.log('Request URL:', verifyUrl);
+      console.log('Full URL:', window.location.origin + verifyUrl);
       
       // 4. Send credential to server for verification
-      const verifyResponse = await fetch('/api/auth/webauthn/register/verify', {
+      console.log('Making fetch request...');
+      const verifyResponse = await fetch(verifyUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -119,8 +132,12 @@ export function PasskeyAuth() {
         body: requestBody
       });
       
+      console.log('Verify response received');
       console.log('Verify response status:', verifyResponse.status);
-      console.log('Verify response headers:', verifyResponse.headers);
+      console.log('Verify response status text:', verifyResponse.statusText);
+      console.log('Verify response URL:', verifyResponse.url);
+      console.log('Verify response type:', verifyResponse.type);
+      console.log('Verify response headers:', Array.from(verifyResponse.headers.entries()));
       
       const responseText = await verifyResponse.text();
       console.log('Raw response text:', responseText);

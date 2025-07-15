@@ -10,7 +10,7 @@ const router = Router();
  * Generate registration options for a new passkey
  * Requires authenticated user
  */
-router.post('/webauthn/register/options', async (req: any, res) => {
+router.get('/webauthn/register/options', async (req: any, res) => {
   try {
     console.log('📝 [WebAuthn] Registration options request:', {
       isAuthenticated: req.isAuthenticated(),
