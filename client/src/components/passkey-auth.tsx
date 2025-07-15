@@ -122,26 +122,28 @@ export function PasskeyAuth() {
   };
 
   const handleRegisterPasskey = async () => {
-    console.log('🚀 [Frontend] handleRegisterPasskey called');
-    console.log('🚀 [Frontend] Current state:', {
-      passkeyName,
-      isRegistering,
-      passkeysCount: passkeys.length
-    });
-    
-    if (!passkeyName.trim()) {
-      toast({
-        title: "Name Required",
-        description: "Please enter a name for your passkey",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsRegistering(true);
-    console.log('🚀 [Frontend] Registration started');
-    
+    // Wrap EVERYTHING in a try-catch to catch any early errors
     try {
+      console.log('🚀🚀🚀 [Frontend] handleRegisterPasskey called - ABSOLUTE FIRST LINE');
+      console.log('🚀 [Frontend] Current state:', {
+        passkeyName,
+        isRegistering,
+        passkeysCount: passkeys.length
+      });
+      
+      if (!passkeyName.trim()) {
+        toast({
+          title: "Name Required",
+          description: "Please enter a name for your passkey",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setIsRegistering(true);
+      console.log('🚀 [Frontend] Registration started');
+      
+      try {
       // 1. Get registration options from server
       console.log('🔵 [Frontend] Requesting registration options...');
       const optionsResponse = await fetch('/api/auth/webauthn/register/options', {
@@ -424,6 +426,20 @@ export function PasskeyAuth() {
         variant: "destructive"
       });
     } finally {
+      setIsRegistering(false);
+    }
+    } catch (outerError: any) {
+      console.error('🔴🔴🔴 [Frontend] OUTER ERROR CAUGHT:', {
+        error: outerError,
+        message: outerError.message,
+        stack: outerError.stack,
+        name: outerError.name
+      });
+      toast({
+        title: "Registration Failed",
+        description: outerError.message || "An unexpected error occurred",
+        variant: "destructive"
+      });
       setIsRegistering(false);
     }
   };
