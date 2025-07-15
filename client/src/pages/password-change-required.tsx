@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, AlertCircle, Eye, EyeOff, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { calculatePasswordStrength, getStrengthColor, getStrengthLabel } from "@/lib/password-strength";
 import { Progress } from "@/components/ui/progress";
@@ -33,7 +33,7 @@ const passwordSchema = z.object({
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function PasswordChangeRequired() {
-  const { user, refetchUser } = useAuth();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -73,8 +73,8 @@ export default function PasswordChangeRequired() {
         description: "Your password has been successfully updated. Redirecting to dashboard...",
       });
       
-      // Refetch user to update the requirePasswordChange flag
-      refetchUser().then(() => {
+      // Invalidate user query to update the requirePasswordChange flag
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] }).then(() => {
         setTimeout(() => {
           setLocation('/dashboard');
         }, 1500);
