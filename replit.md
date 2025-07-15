@@ -320,8 +320,12 @@ Preferred communication style: Simple, everyday language.
   - Added webauthnCredentials table to schema with proper indexes for performance
   - Proper session management with challenge storage and verification
   - Device information tracking (type, transports, registered device)
+  - **IMPORTANT LIMITATION**: WebAuthn/passkeys are not available in some embedded browser environments (Replit preview browser shows "publickey-credentials-create feature not enabled")
+  - Fixed base64url to base64 conversion issues between server and client
+  - Added browser compatibility detection and graceful fallback messaging
 - **DATABASE MIGRATION**: Created and applied add-modern-auth-tables.sql with webauthn_credentials, magic_links, totp_secrets tables
-- **USER EXPERIENCE**: Users can now choose between password, passwordless email login, or passkey authentication
+- **USER EXPERIENCE**: Users can now choose between password, passwordless email login, or passkey authentication (when supported by browser)
+- **RECOMMENDED AUTHENTICATION**: Magic links provide the best passwordless experience across all browser environments
 - **NEXT PHASES**: Phase 4 (TOTP/2FA), Phase 5 (Security Hardening)
 
 ### Mobile Web App Implementation COMPLETED (January 15, 2025)

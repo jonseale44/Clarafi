@@ -50,7 +50,19 @@ export function PasskeyAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPasskeys();
+    // Check WebAuthn support
+    const checkWebAuthnSupport = () => {
+      if (!window.PublicKeyCredential) {
+        console.log('WebAuthn not supported - PublicKeyCredential not available');
+        return false;
+      }
+      return true;
+    };
+    
+    const isSupported = checkWebAuthnSupport();
+    if (isSupported) {
+      fetchPasskeys();
+    }
   }, []);
 
   const fetchPasskeys = async () => {
@@ -302,13 +314,33 @@ export function PasskeyAuth() {
         </CardHeader>
         <CardContent className="space-y-4">
           {!window.PublicKeyCredential ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Not Supported</AlertTitle>
-              <AlertDescription>
-                Your browser doesn't support passkeys. Please use a modern browser.
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-4">
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertTitle className="text-yellow-800">WebAuthn/Passkeys Not Available</AlertTitle>
+                <AlertDescription className="text-yellow-700">
+                  Passkeys are not supported in this browser environment. This is a known limitation in some embedded browsers.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-3 text-sm">
+                <p className="font-medium">Alternative secure authentication options:</p>
+                <ul className="space-y-2 ml-6 list-disc">
+                  <li>
+                    <strong>Magic Links:</strong> Use passwordless email login (available on the login page)
+                  </li>
+                  <li>
+                    <strong>Strong Password:</strong> Continue using your current 12+ character password
+                  </li>
+                  <li>
+                    <strong>Different Browser:</strong> Try Chrome, Safari, Firefox, or Edge directly (not embedded)
+                  </li>
+                </ul>
+                <p className="text-muted-foreground mt-4">
+                  For the best experience, we recommend using magic link authentication which provides secure, passwordless access via email.
+                </p>
+              </div>
+            </div>
           ) : (
             <>
               <Button
