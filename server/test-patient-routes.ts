@@ -146,7 +146,9 @@ testPatientRoutes.delete('/api/test-patients/:patientId', requireSystemAdmin, as
     const patientId = parseInt(req.params.patientId);
     
     // Verify this is actually a test patient (starts with ZTEST)
-    const patient = await storage.getPatient(patientId);
+    // Note: getPatient requires healthSystemId for tenant isolation
+    const patients = await storage.getAllPatients(req.user.healthSystemId);
+    const patient = patients.find(p => p.id === patientId);
     if (!patient || !patient.mrn.startsWith('ZTEST')) {
       return res.status(400).json({ error: 'Can only delete test patients (MRN must start with ZTEST)' });
     }
