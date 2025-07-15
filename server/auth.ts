@@ -603,7 +603,7 @@ export function setupAuth(app: Express) {
       }
 
       // Verify current password
-      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      const isValidPassword = await comparePasswords(currentPassword, user.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
