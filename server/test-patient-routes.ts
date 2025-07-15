@@ -121,10 +121,19 @@ testPatientRoutes.post('/api/test-patients/generate', requireSystemAdmin, async 
     });
   } catch (error) {
     console.error('Error generating test patient:', error);
+    console.error('Error stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    res.status(500).json({ error: 'Failed to generate test patient' });
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ 
+      error: 'Failed to generate test patient',
+      details: errorMessage,
+      debugInfo: process.env.NODE_ENV === 'development' ? error : undefined
+    });
   }
 });
 
