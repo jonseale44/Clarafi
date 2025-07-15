@@ -546,6 +546,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { setupLocationRoutes } = await import("./location-routes.js");
   setupLocationRoutes(app);
 
+  // Add logging middleware for WebAuthn routes
+  app.use("/api/auth/webauthn", (req, res, next) => {
+    console.log('🔍 [WebAuthn Middleware] Request intercepted:', {
+      method: req.method,
+      path: req.path,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      headers: req.headers,
+      contentType: req.get('content-type'),
+      hasBody: !!req.body,
+      bodyKeys: req.body ? Object.keys(req.body) : 'no body',
+      isAuthenticated: (req as any).isAuthenticated ? (req as any).isAuthenticated() : 'no auth method',
+      user: (req as any).user?.id
+    });
+    next();
+  });
+
   // WebAuthn/Passkey routes
   const webauthnRoutes = (await import("./webauthn-routes.js")).default;
   app.use("/api/auth", webauthnRoutes);

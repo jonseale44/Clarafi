@@ -100,6 +100,17 @@ export class WebAuthnService {
     response: RegistrationResponseJSON,
     expectedChallenge: string
   ): Promise<{ verified: boolean; credentialId?: string }> {
+    console.log('📝 [WebAuthn] verifyRegistrationResponse called with:', {
+      userId,
+      responseId: response?.id,
+      responseType: response?.type,
+      hasAttestationObject: !!response?.response?.attestationObject,
+      hasClientDataJSON: !!response?.response?.clientDataJSON,
+      expectedChallenge: expectedChallenge?.substring(0, 10) + '...',
+      rpOrigin: this.ORIGIN,
+      rpId: this.RP_ID
+    });
+
     try {
       const verification = await verifyRegistrationResponse({
         response,
