@@ -37,6 +37,12 @@ export default function PasswordChangeRequired() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    entropy: 0,
+    feedback: [] as string[],
+    isAcceptable: false,
+  });
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -96,20 +102,19 @@ export default function PasswordChangeRequired() {
             <CardTitle className="text-2xl">Password Change Required</CardTitle>
           </div>
           <CardDescription>
-            For your security, you must change your temporary password before continuing.
+            Your temporary password will expire soon. You must create a new password to continue using the system.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Alert className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Your new password must:
-              <ul className="list-disc list-inside mt-1 text-sm">
-                <li>Be at least 8 characters long</li>
-                <li>Contain at least one uppercase letter</li>
-                <li>Contain at least one lowercase letter</li>
-                <li>Contain at least one number</li>
-                <li>Contain at least one special character (!@#$%^&*)</li>
+              <strong>Evidence-based password requirements:</strong>
+              <ul className="list-disc list-inside mt-1 text-sm space-y-1">
+                <li>Minimum 12 characters (longer is stronger)</li>
+                <li>No specific character requirements - use what's memorable</li>
+                <li>Consider using a passphrase like "my coffee needs 3 sugars daily"</li>
+                <li>Avoid common passwords and repeated characters</li>
               </ul>
             </AlertDescription>
           </Alert>
@@ -142,13 +147,67 @@ export default function PasswordChangeRequired() {
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your new password"
-                        autoComplete="new-password"
-                      />
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your new password"
+                          autoComplete="new-password"
+                          onChange={(e) => {
+                            field.onChange(e);
+                            const strength = calculatePasswordStrength(e.target.value);
+                            setPasswordStrength(strength);
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-gray-400" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-gray-400" />
+                          )}
+                        </Button>
+                      </div>
                     </FormControl>
+                    
+                    {field.value && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Progress value={passwordStrength.score} className="h-2" />
+                          <span className={`text-sm font-medium ${getStrengthColor(passwordStrength.score)}`}>
+                            {getStrengthLabel(passwordStrength.score)}
+                          </span>
+                        </div>
+                        
+                        {passwordStrength.feedback.length > 0 && (
+                          <ul className="space-y-1">
+                            {passwordStrength.feedback.map((item, index) => (
+                              <li key={index} className="text-sm text-gray-600 flex items-start gap-1">
+                                <X className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        
+                        {passwordStrength.isAcceptable && (
+                          <div className="text-sm text-green-600 flex items-center gap-1">
+                            <Check className="h-3 w-3" />
+                            Password meets security requirements
+                          </div>
+                        )}
+                        
+                        <div className="text-xs text-gray-500">
+                          Entropy: {passwordStrength.entropy} bits
+                        </div>
+                      </div>
+                    )}
+                    
                     <FormMessage />
                   </FormItem>
                 )}
@@ -173,18 +232,7 @@ export default function PasswordChangeRequired() {
                 )}
               />
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="showPassword"
-                  checked={showPassword}
-                  onChange={(e) => setShowPassword(e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <label htmlFor="showPassword" className="text-sm text-gray-600">
-                  Show password
-                </label>
-              </div>
+
 
               <Button
                 type="submit"

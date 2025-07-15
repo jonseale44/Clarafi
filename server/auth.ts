@@ -592,9 +592,21 @@ export function setupAuth(app: Express) {
       const { currentPassword, newPassword } = req.body;
       const userId = req.user.id;
 
-      // Validate new password
-      if (!newPassword || newPassword.length < 8) {
-        return res.status(400).json({ message: "New password must be at least 8 characters" });
+      // Validate new password with evidence-based requirements
+      if (!newPassword || newPassword.length < 12) {
+        return res.status(400).json({ message: "New password must be at least 12 characters" });
+      }
+
+      // Check for common weak patterns
+      const uniqueChars = new Set(newPassword).size;
+      if (uniqueChars < 4) {
+        return res.status(400).json({ message: "Password has too few unique characters. Please use more variety." });
+      }
+
+      // Check for common passwords (in production, use a larger list)
+      const commonPasswords = ['password123', 'admin123', 'letmein123', 'welcome123', 'password12345'];
+      if (commonPasswords.includes(newPassword.toLowerCase())) {
+        return res.status(400).json({ message: "This password is too common. Please choose something unique." });
       }
 
       // Get user to verify current password
