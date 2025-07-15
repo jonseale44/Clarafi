@@ -6,6 +6,7 @@ import { PatientChartView } from "@/components/patient/patient-chart-view";
 import { ProviderDashboard } from "@/components/dashboard/provider-dashboard";
 import { UserProfileMenu } from "@/components/user-profile-menu";
 import { PatientTable } from "@/components/dashboard/patient-table";
+import { PasskeySetupPrompt } from "@/components/passkey-setup-prompt";
 // Legacy PDFViewer import removed - PDFs are now in patient charts only
 
 import { Card } from "@/components/ui/card";
@@ -393,6 +394,9 @@ export default function Dashboard() {
       <main className="flex-1 overflow-auto p-6">
         {renderTabContent()}
       </main>
+      
+      {/* Passkey Setup Prompt - shown automatically for users without passkeys */}
+      {currentUser?.id && <PasskeySetupPrompt userId={currentUser.id} />}
     </div>
   );
 }
