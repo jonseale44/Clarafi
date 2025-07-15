@@ -729,6 +729,9 @@ Preferred communication style: Simple, everyday language.
   - Created TestPatientGenerator service class with realistic data generation for all clinical aspects
   - Generates medical problems, medications, allergies, vitals, lab results, imaging results, and comprehensive histories
   - Creates prior encounters with full SOAP notes including subjective, objective, assessment, and plan sections
+- **BUG FIXES**: 
+  - Fixed allergy_type missing field error by adding allergyType to all ALLERGIES_POOL entries
+  - Fixed "Provider 61" integer error by adding enteredBy field to vitals insertion
   - Generates future appointments with AI scheduling parameters (no-show rates, arrival patterns)
   - Supports 4 complexity levels: low (young/healthy), medium (middle-aged), high (elderly), extreme (multiple comorbidities)
 - **API ENDPOINTS IMPLEMENTED**: 

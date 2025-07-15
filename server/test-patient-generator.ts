@@ -419,6 +419,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
           recordedAt: encounterDate,
           recordedBy: `Provider ${config.providerId}`,
           entryType: "routine",
+          enteredBy: config.providerId, // Add the integer user ID
           ...this.generateVitals(hasHypertension, hasDiabetes),
         };
         
