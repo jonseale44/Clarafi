@@ -36,6 +36,7 @@ import adminStatsRoutes from "./admin-stats-routes";
 import { setupRealtimeProxy } from "./realtime-proxy";
 import migrationRoutes from "./migration-routes";
 import { adminClinicImportRoutes } from "./admin-clinic-import-routes";
+import schedulingRoutes from "./scheduling-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -709,6 +710,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Encounter validation and signing routes
   app.use("/api", validationRoutes);
+
+  // Scheduling routes
+  app.use(schedulingRoutes);
 
   // Unified vitals processing (handles both immediate parsing and attachment extraction)
   const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;

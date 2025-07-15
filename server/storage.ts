@@ -7,6 +7,10 @@ import {
   userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews,
   healthSystems, organizations, locations, userLocations, userSessionLocations,
   phiAccessLogs, authenticationLogs,
+  appointments, schedulingAiFactors, schedulingAiWeights, patientSchedulingPatterns,
+  providerSchedulingPatterns, appointmentDurationHistory, schedulingTemplates,
+  appointmentTypes, schedulePreferences, asymmetricSchedulingConfig,
+  realtimeScheduleStatus, schedulingResources, resourceBookings,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
@@ -15,10 +19,11 @@ import {
   type SelectTemplateShare, type InsertTemplateShare,
   type SelectUserNotePreferences, type InsertUserNotePreferences,
   type AdminPromptReview, type InsertAdminPromptReview,
+  type Appointment, type InsertAppointment,
   // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -1922,6 +1927,328 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .where(eq(socialHistory.id, socialHistoryId));
+    }
+  }
+
+  // ===== SCHEDULING METHODS =====
+
+  // Get providers by health system
+  async getProvidersByHealthSystem(healthSystemId: number, locationId?: number) {
+    let query = db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        credentials: users.credentials,
+        npi: users.npi
+      })
+      .from(users)
+      .where(and(
+        eq(users.healthSystemId, healthSystemId),
+        eq(users.role, 'provider'),
+        eq(users.active, true)
+      ));
+      
+    if (locationId) {
+      // Filter by providers who work at this location
+      query = query
+        .innerJoin(userLocations, eq(users.id, userLocations.userId))
+        .where(eq(userLocations.locationId, locationId));
+    }
+    
+    return await query.execute();
+  }
+
+  // Get appointments
+  async getAppointments(params: {
+    healthSystemId: number;
+    startDate: Date;
+    endDate: Date;
+    providerId?: number;
+    locationId?: number;
+  }) {
+    let conditions = [
+      gte(appointments.appointmentDate, params.startDate.toISOString().split('T')[0]),
+      lte(appointments.appointmentDate, params.endDate.toISOString().split('T')[0])
+    ];
+    
+    if (params.providerId) {
+      conditions.push(eq(appointments.providerId, params.providerId));
+    }
+    
+    if (params.locationId) {
+      conditions.push(eq(appointments.locationId, params.locationId));
+    }
+    
+    const results = await db
+      .select({
+        id: appointments.id,
+        patientId: appointments.patientId,
+        patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
+        providerId: appointments.providerId,
+        providerName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        locationId: appointments.locationId,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        duration: appointments.duration,
+        patientVisibleDuration: appointments.patientVisibleDuration,
+        providerScheduledDuration: appointments.providerScheduledDuration,
+        appointmentType: appointments.appointmentType,
+        status: appointments.status,
+        notes: appointments.notes,
+        aiPredictedDuration: sql<number>`NULL` // TODO: Get from prediction history
+      })
+      .from(appointments)
+      .innerJoin(patients, and(
+        eq(appointments.patientId, patients.id),
+        eq(patients.healthSystemId, params.healthSystemId)
+      ))
+      .innerJoin(users, eq(appointments.providerId, users.id))
+      .where(and(...conditions))
+      .orderBy(appointments.appointmentDate, appointments.appointmentTime)
+      .execute();
+      
+    return results;
+  }
+
+  // Get real-time schedule status
+  async getRealtimeScheduleStatus(providerId: number, date: Date) {
+    const dateStr = date.toISOString().split('T')[0];
+    
+    const status = await db
+      .select()
+      .from(realtimeScheduleStatus)
+      .where(and(
+        eq(realtimeScheduleStatus.providerId, providerId),
+        eq(realtimeScheduleStatus.scheduleDate, dateStr)
+      ))
+      .execute();
+      
+    return status[0] || null;
+  }
+
+  // Predict appointment duration using AI
+  async predictAppointmentDuration(params: {
+    patientId: number;
+    providerId: number;
+    appointmentType: string;
+    appointmentDate: Date;
+    appointmentTime: string;
+  }) {
+    // TODO: Implement AI prediction logic
+    // For now, return standard durations
+    const standardDurations: Record<string, number> = {
+      'new_patient': 45,
+      'follow_up': 20,
+      'annual_physical': 30,
+      'acute_visit': 15,
+      'procedure': 60
+    };
+    
+    const baseDuration = standardDurations[params.appointmentType] || 20;
+    
+    return {
+      aiPredictedDuration: baseDuration,
+      patientVisibleDuration: Math.max(baseDuration, 20),
+      providerScheduledDuration: baseDuration + 5 // Add buffer
+    };
+  }
+
+  // Create appointment
+  async createAppointment(data: any) {
+    const result = await db
+      .insert(appointments)
+      .values({
+        patientId: data.patientId,
+        providerId: data.providerId,
+        locationId: data.locationId,
+        appointmentDate: data.appointmentDate,
+        appointmentTime: data.appointmentTime,
+        duration: data.duration,
+        patientVisibleDuration: data.patientVisibleDuration,
+        providerScheduledDuration: data.providerScheduledDuration,
+        appointmentType: data.appointmentType,
+        status: data.status,
+        notes: data.notes,
+        createdAt: new Date().toISOString()
+      })
+      .returning()
+      .execute();
+      
+    return result[0];
+  }
+
+  // Update appointment
+  async updateAppointment(appointmentId: number, data: any, healthSystemId: number) {
+    // Verify appointment belongs to health system
+    const existing = await db
+      .select()
+      .from(appointments)
+      .innerJoin(patients, eq(appointments.patientId, patients.id))
+      .where(and(
+        eq(appointments.id, appointmentId),
+        eq(patients.healthSystemId, healthSystemId)
+      ))
+      .execute();
+      
+    if (!existing.length) return null;
+    
+    const result = await db
+      .update(appointments)
+      .set(data)
+      .where(eq(appointments.id, appointmentId))
+      .returning()
+      .execute();
+      
+    return result[0];
+  }
+
+  // Delete appointment
+  async deleteAppointment(appointmentId: number, healthSystemId: number) {
+    // Verify appointment belongs to health system
+    const existing = await db
+      .select()
+      .from(appointments)
+      .innerJoin(patients, eq(appointments.patientId, patients.id))
+      .where(and(
+        eq(appointments.id, appointmentId),
+        eq(patients.healthSystemId, healthSystemId)
+      ))
+      .execute();
+      
+    if (!existing.length) throw new Error('Appointment not found');
+    
+    await db
+      .delete(appointments)
+      .where(eq(appointments.id, appointmentId))
+      .execute();
+  }
+
+  // Get schedule preferences
+  async getSchedulePreferences(providerId: number) {
+    const prefs = await db
+      .select()
+      .from(schedulePreferences)
+      .where(eq(schedulePreferences.providerId, providerId))
+      .execute();
+      
+    return prefs[0];
+  }
+
+  // Update schedule preferences
+  async updateSchedulePreferences(providerId: number, data: any) {
+    const existing = await this.getSchedulePreferences(providerId);
+    
+    if (existing) {
+      const result = await db
+        .update(schedulePreferences)
+        .set({ ...data, updatedAt: new Date().toISOString() })
+        .where(eq(schedulePreferences.providerId, providerId))
+        .returning()
+        .execute();
+        
+      return result[0];
+    } else {
+      const result = await db
+        .insert(schedulePreferences)
+        .values({
+          providerId,
+          ...data,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        })
+        .returning()
+        .execute();
+        
+      return result[0];
+    }
+  }
+
+  // Get appointment types
+  async getAppointmentTypes(healthSystemId: number, locationId?: number) {
+    let conditions = [eq(appointmentTypes.healthSystemId, healthSystemId)];
+    
+    if (locationId) {
+      conditions.push(eq(appointmentTypes.locationId, locationId));
+    }
+    
+    return await db
+      .select()
+      .from(appointmentTypes)
+      .where(and(...conditions))
+      .orderBy(appointmentTypes.typeName)
+      .execute();
+  }
+
+  // Get scheduling AI factors
+  async getSchedulingAiFactors() {
+    return await db
+      .select()
+      .from(schedulingAiFactors)
+      .where(eq(schedulingAiFactors.active, true))
+      .orderBy(schedulingAiFactors.factorCategory, schedulingAiFactors.factorName)
+      .execute();
+  }
+
+  // Update AI factor weight
+  async updateAiFactorWeight(params: {
+    factorId: number;
+    weight: number;
+    providerId?: number;
+    locationId?: number;
+    healthSystemId: number;
+    updatedBy: number;
+  }) {
+    // Check if weight already exists
+    let conditions = [
+      eq(schedulingAiWeights.factorId, params.factorId),
+      eq(schedulingAiWeights.healthSystemId, params.healthSystemId)
+    ];
+    
+    if (params.providerId) {
+      conditions.push(eq(schedulingAiWeights.providerId, params.providerId));
+    }
+    if (params.locationId) {
+      conditions.push(eq(schedulingAiWeights.locationId, params.locationId));
+    }
+    
+    const existing = await db
+      .select()
+      .from(schedulingAiWeights)
+      .where(and(...conditions))
+      .execute();
+      
+    if (existing.length) {
+      // Update existing
+      const result = await db
+        .update(schedulingAiWeights)
+        .set({
+          weight: params.weight,
+          enabled: params.weight > 0
+        })
+        .where(eq(schedulingAiWeights.id, existing[0].id))
+        .returning()
+        .execute();
+        
+      return result[0];
+    } else {
+      // Create new
+      const result = await db
+        .insert(schedulingAiWeights)
+        .values({
+          factorId: params.factorId,
+          weight: params.weight,
+          enabled: params.weight > 0,
+          providerId: params.providerId,
+          locationId: params.locationId,
+          healthSystemId: params.healthSystemId,
+          createdBy: params.updatedBy,
+          createdAt: new Date().toISOString()
+        })
+        .returning()
+        .execute();
+        
+      return result[0];
     }
   }
 }

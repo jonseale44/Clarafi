@@ -35,6 +35,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import ClinicAdminDashboard from "@/pages/clinic-admin-dashboard";
 import PasswordChangeRequired from "@/pages/password-change-required";
 import MagicLinkPage from "@/pages/magic-link-page";
+import SchedulingPage from "@/pages/scheduling";
 
 import NotFound from "@/pages/not-found";
 
@@ -52,6 +53,7 @@ function Router() {
       <ProtectedRoute path="/patients/:patientId/encounters/:id" component={EncounterView} />
       <ProtectedRoute path="/lab-simulator" component={LabSimulator} />
       <ProtectedRoute path="/encounters/:id" component={EncounterView} />
+      <ProtectedRoute path="/scheduling" component={SchedulingPage} />
       <ProtectedRoute path="/settings" component={UserSettingsPage} />
       <ProtectedRoute path="/account-settings" component={AccountSettingsPage} />
 
