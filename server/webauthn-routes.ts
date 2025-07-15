@@ -10,21 +10,32 @@ const router = Router();
  * Generate registration options for a new passkey
  * Requires authenticated user
  */
-router.get('/webauthn/register/options', async (req: any, res) => {
+router.post('/webauthn/register/options', async (req: any, res) => {
   try {
+    console.log('📝 [WebAuthn] Registration options request:', {
+      isAuthenticated: req.isAuthenticated(),
+      userId: req.user?.id,
+      sessionId: req.sessionID,
+      headers: req.headers
+    });
+
     if (!req.isAuthenticated()) {
+      console.error('❌ [WebAuthn] User not authenticated for registration');
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    console.log('🔍 [WebAuthn] Generating registration options for user:', req.user!.id);
     const { options, challenge } = await WebAuthnService.generateRegistrationOptions((req as any).user!.id);
     
     // Store challenge in session
     req.session.webauthnChallenge = challenge;
+    console.log('✅ [WebAuthn] Challenge stored in session:', challenge);
     
     res.json(options);
   } catch (error) {
     console.error('❌ [WebAuthn] Registration options error:', error);
-    res.status(500).json({ error: 'Failed to generate registration options' });
+    console.error('Stack trace:', (error as any).stack);
+    res.status(500).json({ error: 'Failed to generate registration options', details: (error as any).message });
   }
 });
 
@@ -154,15 +165,25 @@ router.post('/webauthn/authenticate/verify', async (req, res) => {
  */
 router.get('/webauthn/passkeys', async (req: any, res) => {
   try {
+    console.log('📝 [WebAuthn] Get passkeys request:', {
+      isAuthenticated: req.isAuthenticated(),
+      userId: req.user?.id,
+      sessionId: req.sessionID
+    });
+
     if (!req.isAuthenticated()) {
+      console.error('❌ [WebAuthn] User not authenticated for getting passkeys');
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    console.log('🔍 [WebAuthn] Fetching passkeys for user:', req.user!.id);
     const passkeys = await WebAuthnService.getUserPasskeys((req as any).user!.id);
+    console.log(`✅ [WebAuthn] Returning ${passkeys.length} passkeys`);
     res.json(passkeys);
   } catch (error) {
     console.error('❌ [WebAuthn] Get passkeys error:', error);
-    res.status(500).json({ error: 'Failed to retrieve passkeys' });
+    console.error('Stack trace:', (error as any).stack);
+    res.status(500).json({ error: 'Failed to retrieve passkeys', details: (error as any).message });
   }
 });
 

@@ -32,6 +32,8 @@ export class WebAuthnService {
     options: PublicKeyCredentialCreationOptionsJSON;
     challenge: string;
   }> {
+    console.log('🔍 [WebAuthn] Looking up user with ID:', userId);
+    
     const [user] = await db.select()
       .from(users)
       .where(eq(users.id, userId))
@@ -40,11 +42,25 @@ export class WebAuthnService {
     if (!user) {
       throw new Error('User not found');
     }
+    
+    console.log('✅ [WebAuthn] Found user:', { id: user.id, email: user.email });
 
     // Get existing credentials to exclude
-    const existingCredentials = await db.select()
-      .from(webauthnCredentials)
-      .where(eq(webauthnCredentials.userId, userId));
+    console.log('🔍 [WebAuthn] Fetching existing credentials for user:', userId);
+    
+    let existingCredentials: any[] = [];
+    try {
+      existingCredentials = await db.select()
+        .from(webauthnCredentials)
+        .where(eq(webauthnCredentials.userId, userId));
+      
+      console.log('✅ [WebAuthn] Found existing credentials:', existingCredentials.length);
+    } catch (error) {
+      console.error('❌ [WebAuthn] Error fetching existing credentials:', error);
+      console.error('Stack trace:', (error as any).stack);
+      // Continue with empty credentials array
+      existingCredentials = [];
+    }
 
     const excludeCredentials = existingCredentials.map(cred => ({
       id: cred.credentialId,
@@ -100,14 +116,24 @@ export class WebAuthnService {
       const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
 
       // Store the credential
+      console.log('📝 [WebAuthn] Storing credential with columns:', {
+        userId,
+        credentialId: Buffer.from(credentialID).toString('base64url'),
+        credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64'),
+        counter: Number(counter),
+        deviceType: credentialDeviceType || 'unknown',
+        transports: response.response.transports || []
+      });
+      
       await db.insert(webauthnCredentials).values({
         userId,
         credentialId: Buffer.from(credentialID).toString('base64url'),
-        publicKey: Buffer.from(credentialPublicKey).toString('base64'),
+        credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64'), // Fixed column name
         counter: Number(counter),
         deviceType: credentialDeviceType || 'unknown',
-        backedUp: credentialBackedUp || false,
         transports: response.response.transports || [],
+        registeredDevice: navigator.userAgent || 'Unknown device',
+        displayName: response.response.authenticatorAttachment || 'Security Key',
         createdAt: new Date()
       });
 
@@ -183,6 +209,12 @@ export class WebAuthnService {
         return { verified: false };
       }
 
+      console.log('🔍 [WebAuthn] Verifying with credential:', {
+        credentialId: credential.credentialId,
+        hasPublicKey: !!credential.credentialPublicKey,
+        counter: credential.counter
+      });
+
       const verification = await verifyAuthenticationResponse({
         response,
         expectedChallenge,
@@ -190,7 +222,7 @@ export class WebAuthnService {
         expectedRPID: this.RP_ID,
         authenticator: {
           credentialID: Buffer.from(credential.credentialId, 'base64url'),
-          credentialPublicKey: Buffer.from(credential.publicKey, 'base64'),
+          credentialPublicKey: Buffer.from(credential.credentialPublicKey, 'base64'), // Fixed column name
           counter: credential.counter
         },
         requireUserVerification: false
@@ -220,21 +252,31 @@ export class WebAuthnService {
    * Get all passkeys for a user
    */
   static async getUserPasskeys(userId: number) {
-    const credentials = await db.select({
-      id: webauthnCredentials.id,
-      credentialId: webauthnCredentials.credentialId,
-      createdAt: webauthnCredentials.createdAt,
-      lastUsedAt: webauthnCredentials.lastUsedAt,
-      deviceType: webauthnCredentials.deviceType,
-      backedUp: webauthnCredentials.backedUp
-    })
-    .from(webauthnCredentials)
-    .where(eq(webauthnCredentials.userId, userId));
+    console.log(`📝 [WebAuthn] Fetching passkeys for user ${userId}`);
+    
+    try {
+      const credentials = await db.select({
+        id: webauthnCredentials.id,
+        credentialId: webauthnCredentials.credentialId,
+        createdAt: webauthnCredentials.createdAt,
+        lastUsedAt: webauthnCredentials.lastUsedAt,
+        deviceType: webauthnCredentials.deviceType,
+        displayName: webauthnCredentials.displayName,
+        registeredDevice: webauthnCredentials.registeredDevice
+      })
+      .from(webauthnCredentials)
+      .where(eq(webauthnCredentials.userId, userId));
 
-    return credentials.map(cred => ({
-      ...cred,
-      displayName: this.getPasskeyDisplayName(cred.deviceType, cred.backedUp)
-    }));
+      console.log(`✅ [WebAuthn] Found ${credentials.length} passkeys for user ${userId}`);
+
+      return credentials.map(cred => ({
+        ...cred,
+        displayName: cred.displayName || this.getPasskeyDisplayName(cred.deviceType || 'unknown', false)
+      }));
+    } catch (error) {
+      console.error(`❌ [WebAuthn] Error fetching passkeys for user ${userId}:`, error);
+      throw error;
+    }
   }
 
   /**
