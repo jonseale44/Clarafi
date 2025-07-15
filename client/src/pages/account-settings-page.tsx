@@ -84,7 +84,7 @@ export default function AccountSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/password-change">
+              <Link href="/password-change-required">
                 <Button variant="outline">
                   <Key className="h-4 w-4 mr-2" />
                   Change Password

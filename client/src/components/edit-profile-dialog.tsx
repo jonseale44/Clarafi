@@ -70,7 +70,7 @@ export function EditProfileDialog({ open, onOpenChange, user }: EditProfileDialo
 
   const changePasswordMutation = useMutation({
     mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-      return apiRequest("PUT", `/api/user/change-password`, data);
+      return apiRequest("POST", `/api/change-password`, data);
     },
     onSuccess: () => {
       toast({
