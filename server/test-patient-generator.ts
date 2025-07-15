@@ -262,6 +262,9 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
     patientId: number; 
     summary: string;
   }> {
+    console.log("[TestPatientGenerator] Starting generation with config:", config);
+    console.log("[TestPatientGenerator] Config providerId:", config.providerId, "type:", typeof config.providerId);
+    
     // Generate basic patient data
     const { firstName, lastName } = this.generateTestName(config);
     const mrn = this.generateTestMRN();
@@ -371,6 +374,9 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
     for (const [index, encounterDate] of encounterDates.entries()) {
       const chiefComplaint = CHIEF_COMPLAINTS_POOL[Math.floor(Math.random() * CHIEF_COMPLAINTS_POOL.length)];
       
+      console.log(`[TestPatientGenerator] Creating encounter ${index + 1} of ${config.numberOfPriorEncounters}`);
+      console.log("[TestPatientGenerator] providerId:", config.providerId, "type:", typeof config.providerId);
+      
       // Create encounter
       const encounterData: InsertEncounter = {
         patientId,
@@ -384,10 +390,29 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
         location: "Test Location",
       };
       
-      const [encounter] = await db.insert(encounters).values(encounterData).returning();
+      console.log("[TestPatientGenerator] Encounter data to insert:", encounterData);
+      
+      let encounter;
+      try {
+        const result = await db.insert(encounters).values(encounterData).returning();
+        encounter = result[0];
+        console.log("[TestPatientGenerator] Encounter created successfully with ID:", encounter.id);
+      } catch (error) {
+        console.error("[TestPatientGenerator] Error creating encounter:", error);
+        throw error;
+      }
       
       // Add vitals for encounter
       if (config.includeVitals) {
+        console.log("[TestPatientGenerator] Generating vitals for encounter", encounter.id);
+        console.log("[TestPatientGenerator] Vital data fields:", {
+          patientId,
+          encounterId: encounter.id,
+          recordedAt: encounterDate,
+          recordedBy: `Provider ${config.providerId}`,
+          entryType: "routine"
+        });
+        
         const vitalData: InsertVital = {
           patientId,
           encounterId: encounter.id,
@@ -396,7 +421,16 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
           entryType: "routine",
           ...this.generateVitals(hasHypertension, hasDiabetes),
         };
-        await db.insert(vitals).values(vitalData);
+        
+        console.log("[TestPatientGenerator] Full vital data to insert:", vitalData);
+        
+        try {
+          await db.insert(vitals).values(vitalData);
+          console.log("[TestPatientGenerator] Vitals inserted successfully");
+        } catch (error) {
+          console.error("[TestPatientGenerator] Error inserting vitals:", error);
+          throw error;
+        }
       }
 
       // Add diagnoses for encounter
