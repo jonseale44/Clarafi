@@ -1,0 +1,43 @@
+• Pattern recognition/seasonal intelligence
+• You definitely have some good thoughts here but keep in mind that all of this needs to be adjustable
+by the system administrator. I will need to be able to dial up or down how influential each factor is. It's
+NOT a "set and forget" type of thing.
+• It's not a bad thought but I can tell you (I'm a physician), flu visits are very short. I would not advise
+extending those visits at all, in fact maybe make them shorter. Long visits are for things like
+establishing care, discussing chronic issues like diabetes, hypertension, patients on multiple
+medications, psychiatric patients who are unstable.
+Seasonal intelligence is helpful for opening more acute-care slots. Maybe there are slightly fewer
+chronic visits/routine follow-ups during the high flu seasons. This needs to be very flexible though.
+Each clinic may be a little different.
+• I think provider fatigue/performance modeling is fine but just make sure it's provider-dependent. What sort of
+parameters are you thinking to use when crediting provider burnout?
+• If nurse is doing the medicare screening (and the physician doesn't have to see the patient), then yes you're
+right. ONE THING I REALLY WANT TO EMPHASIZE IS THAT ALL OF THESE PATTERN RECOGNITION/AI
+RULES CAN BE MODIFIED. I want to make sure we build a really solid architectural schema to go all of this, but
+I don't necessarily want to hammer out every tiny detail for every possible parameter. I want to be able to
+change that after experimenting a bit. Emphasize making sure that any conceivable variables are being
+measured. Then, if we want to use those variables we can or we can ignore them, or something in between.
+My concern about the clinic/provider/admin structure was just about our architecture and how traditional
+scheduling works. I don't know that we have really clarified that. For example, does a particular schedule
+belong to the provider, or the clinic? Or the provider within the clinic? What if the provider goes to another
+clinic? Would he see the same schedule? What if he works an urgent care within the same clinic system, what
+schedule would he see? This sort of layered architecture can be very confusing for you and me and I would hate
+to see you mess it up. So I just wanted to make sure we hammered those details out (we may already have).
+Resource management scope: the system should manage as many resources as it can measure. Staff
+scheduling should occur alongside provider schedules if the data is available.
+Patient scheduling should be very intelligent. patients should be able to chat with a GPT agent who can walk
+them through how to schedule based on their complaints. The GPT agent should know all about the patient and
+the provider and help direct them appropriately to the right slot.
+Al predictions should be VERY transparent to staff but not at all to patients. In fact, l'd rather them hardly even
+know that it's scheduling them based on their own medical history/problems.
+• Learning mechanisms: I'm not sure how Al should learn about it, that's up to you. But the learning should be
+provider and patient specific. YOu mentioned how to handle if the patient always runs long but refuses longer
+slots. A more likely and worse scenario is when a patient WANTS to schedule a 30 minute appointment, but
+they've only ever required 5 minute appointments. I'm not sure how best to handle this except to allow
+overrides. These are suggestions, after all. Not mandates.
+• Appointment type should not influence SOAP templates (at least not yet). And yes, we absolutely need to be
+able to handle walk ins and same day urgent adds.
+• ONE THING I REALLY WANT TO EMPHASIZE IS THAT ALL OF THESE PATTERN RECOGNITION/AI RULES
+CAN BE MODIFIED. I want to make sure we build a really solid architectural schema to go all of this, but I don't
+necessarily want to hammer out every tiny detail for every possible parameter. I want to be able to change that
+after experimenting a bit. |
