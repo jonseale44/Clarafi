@@ -9,19 +9,21 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Lock, AlertCircle } from "lucide-react";
+import { Lock, AlertCircle, Eye, EyeOff, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { calculatePasswordStrength, getStrengthColor, getStrengthLabel } from "@/lib/password-strength";
+import { Progress } from "@/components/ui/progress";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
   newPassword: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[!@#$%^&*]/, "Password must contain at least one special character"),
+    .min(12, "Password must be at least 12 characters")
+    .refine((password) => {
+      const strength = calculatePasswordStrength(password);
+      return strength.isAcceptable;
+    }, "Password is too weak. Try a longer passphrase or more unique characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
