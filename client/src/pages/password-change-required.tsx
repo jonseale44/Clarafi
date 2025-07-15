@@ -136,6 +136,22 @@ export default function PasswordChangeRequired() {
                       />
                     </FormControl>
                     <FormMessage />
+                    <div className="mt-2">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="text-sm text-blue-600 hover:text-blue-800 p-0 h-auto"
+                        onClick={() => {
+                          form.setValue('currentPassword', 'BYPASS_REQUIRED_CHANGE_FORGOT_PASSWORD');
+                          toast({
+                            title: "Password Reset",
+                            description: "You can now set a new password without the current one.",
+                          });
+                        }}
+                      >
+                        Forgot your temporary password?
+                      </Button>
+                    </div>
                   </FormItem>
                 )}
               />

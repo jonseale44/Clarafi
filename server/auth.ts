@@ -602,10 +602,16 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Verify current password
-      const isValidPassword = await comparePasswords(currentPassword, user.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ message: "Current password is incorrect" });
+      // Special case: If user has requirePasswordChange flag and they forgot their temporary password
+      // Allow them to reset without knowing current password
+      const bypassCurrentPassword = user.requirePasswordChange && currentPassword === 'BYPASS_REQUIRED_CHANGE_FORGOT_PASSWORD';
+      
+      if (!bypassCurrentPassword) {
+        // Verify current password
+        const isValidPassword = await comparePasswords(currentPassword, user.password);
+        if (!isValidPassword) {
+          return res.status(401).json({ message: "Current password is incorrect" });
+        }
       }
 
       // Hash new password
