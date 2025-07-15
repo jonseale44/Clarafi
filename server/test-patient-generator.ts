@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { storage } from "./storage";
 import { 
   patients, 
   medicalProblems, 
@@ -413,7 +414,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
           entryType: "routine"
         });
         
-        const vitalData: InsertVital = {
+        const vitalData = {
           patientId,
           encounterId: encounter.id,
           recordedAt: encounterDate,
@@ -426,7 +427,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
         console.log("[TestPatientGenerator] Full vital data to insert:", vitalData);
         
         try {
-          await db.insert(vitals).values(vitalData);
+          await storage.createVitalsEntry(vitalData);
           console.log("[TestPatientGenerator] Vitals inserted successfully");
         } catch (error) {
           console.error("[TestPatientGenerator] Error inserting vitals:", error);
