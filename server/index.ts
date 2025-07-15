@@ -8,20 +8,33 @@ import { initializeSystemData } from "./system-initialization";
 
 const app = express();
 
-// Add very early logging middleware before body parsing
+// Add VERY FIRST middleware to catch ALL requests
 app.use((req, res, next) => {
-  if (req.url.includes('webauthn')) {
-    console.log('🚀 [Very Early Middleware] WebAuthn request:', {
+  console.log(`📍 [FIRST] ${req.method} ${req.url}`);
+  if (req.url.includes('webauthn') || req.method === 'POST') {
+    console.log('🚨 [CRITICAL WebAuthn/POST Request]:', {
       method: req.method,
       url: req.url,
       originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
+      path: req.path,
       contentType: req.get('content-type'),
       contentLength: req.get('content-length'),
-      headers: {
-        'content-type': req.get('content-type'),
-        'content-length': req.get('content-length')
-      }
+      headers: req.headers,
+      rawHeaders: req.rawHeaders
     });
+    
+    // Log raw body for POST requests
+    if (req.method === 'POST') {
+      let rawBody = '';
+      req.on('data', chunk => {
+        rawBody += chunk.toString();
+        console.log('📦 [POST Body Chunk]:', chunk.toString().substring(0, 100));
+      });
+      req.on('end', () => {
+        console.log('📦 [POST Body Complete]:', rawBody.substring(0, 200));
+      });
+    }
   }
   next();
 });

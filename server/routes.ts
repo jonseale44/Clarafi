@@ -575,6 +575,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(500).json({ error: err.message || 'Internal server error' });
   });
 
+  // Add specific POST handler to debug the exact failing route
+  app.post("/api/auth/webauthn/register/verify", (req, res, next) => {
+    console.log('🎯 [DIRECT HIT] POST /api/auth/webauthn/register/verify intercepted!');
+    console.log('Request details:', {
+      body: req.body,
+      headers: req.headers,
+      isAuthenticated: (req as any).isAuthenticated(),
+      user: (req as any).user
+    });
+    next(); // Pass to actual handler
+  });
+
   // WebAuthn/Passkey routes
   const webauthnRoutes = (await import("./webauthn-routes.js")).default;
   app.use("/api/auth", webauthnRoutes);
