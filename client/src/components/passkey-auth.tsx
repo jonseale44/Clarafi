@@ -122,6 +122,13 @@ export function PasskeyAuth() {
   };
 
   const handleRegisterPasskey = async () => {
+    console.log('🚀 [Frontend] handleRegisterPasskey called');
+    console.log('🚀 [Frontend] Current state:', {
+      passkeyName,
+      isRegistering,
+      passkeysCount: passkeys.length
+    });
+    
     if (!passkeyName.trim()) {
       toast({
         title: "Name Required",
@@ -132,6 +139,7 @@ export function PasskeyAuth() {
     }
 
     setIsRegistering(true);
+    console.log('🚀 [Frontend] Registration started');
     
     try {
       // 1. Get registration options from server
@@ -494,7 +502,10 @@ export function PasskeyAuth() {
           ) : (
             <>
               <Button
-                onClick={() => setShowRegisterDialog(true)}
+                onClick={() => {
+                  console.log('🚀 [Frontend] Add New Passkey button clicked');
+                  setShowRegisterDialog(true);
+                }}
                 disabled={loading}
                 className="w-full"
               >
@@ -546,7 +557,10 @@ export function PasskeyAuth() {
         </CardContent>
       </Card>
 
-      <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
+      <Dialog open={showRegisterDialog} onOpenChange={(open) => {
+        console.log('🚀 [Frontend] Dialog open state changed to:', open);
+        setShowRegisterDialog(open);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Register New Passkey</DialogTitle>
@@ -579,7 +593,12 @@ export function PasskeyAuth() {
               Cancel
             </Button>
             <Button
-              onClick={handleRegisterPasskey}
+              onClick={() => {
+                console.log('🚀 [Frontend] Register Passkey button clicked in dialog');
+                console.log('🚀 [Frontend] Current passkey name:', passkeyName);
+                console.log('🚀 [Frontend] isRegistering:', isRegistering);
+                handleRegisterPasskey();
+              }}
               disabled={isRegistering || !passkeyName.trim()}
             >
               {isRegistering ? 'Registering...' : 'Register Passkey'}
