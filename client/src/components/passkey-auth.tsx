@@ -83,7 +83,22 @@ export function PasskeyAuth() {
         throw new Error('Failed to create credential');
       }
       
-      // 3. Send credential to server for verification
+      // 3. Convert credential to JSON-serializable format
+      const publicKeyCredential = credential as PublicKeyCredential;
+      const response = publicKeyCredential.response as AuthenticatorAttestationResponse;
+      
+      const credentialData = {
+        id: credential.id,
+        rawId: btoa(String.fromCharCode(...new Uint8Array(publicKeyCredential.rawId))),
+        type: credential.type,
+        response: {
+          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(response.clientDataJSON))),
+          attestationObject: btoa(String.fromCharCode(...new Uint8Array(response.attestationObject)))
+        },
+        transports: (response as any).getTransports?.() || []
+      };
+      
+      // 4. Send credential to server for verification
       const verifyResponse = await fetch('/api/auth/webauthn/register/verify', {
         method: 'POST',
         headers: {
@@ -91,7 +106,7 @@ export function PasskeyAuth() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          response: credential,
+          response: credentialData,
           displayName: passkeyName
         })
       });
