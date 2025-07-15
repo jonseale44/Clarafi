@@ -83,16 +83,31 @@ export function PasskeyAuth() {
       }
       
       const options = await optionsResponse.json();
+      console.log('Raw options from server:', options);
       
       // Convert base64 strings to ArrayBuffer as required by WebAuthn API
-      const publicKeyOptions = {
-        ...options,
-        challenge: base64ToArrayBuffer(options.challenge),
-        user: {
-          ...options.user,
-          id: base64ToArrayBuffer(options.user.id)
-        }
-      };
+      let publicKeyOptions;
+      try {
+        const challenge = base64ToArrayBuffer(options.challenge);
+        console.log('Challenge converted successfully');
+        
+        const userId = base64ToArrayBuffer(options.user.id);
+        console.log('User ID converted successfully');
+        
+        publicKeyOptions = {
+          ...options,
+          challenge,
+          user: {
+            ...options.user,
+            id: userId
+          }
+        };
+        
+        console.log('Public key options prepared:', publicKeyOptions);
+      } catch (conversionError: any) {
+        console.error('Base64 conversion error:', conversionError);
+        throw new Error(`Failed to convert base64 data: ${conversionError.message}`);
+      }
       
       // 2. Create credential using WebAuthn API
       console.log('Creating credential with options:', {
@@ -197,9 +212,25 @@ export function PasskeyAuth() {
       
     } catch (error: any) {
       console.error('Registration error:', error);
+      console.error('Error stack:', error.stack);
+      
+      let errorMessage = "Failed to register passkey";
+      
+      if (error.message?.includes('atob')) {
+        errorMessage = "Server sent invalid data format. Please try again.";
+      } else if (error.message?.includes('publickey-credentials-create')) {
+        errorMessage = "WebAuthn is not available. Please ensure you're using a supported browser and not in private/incognito mode.";
+      } else if (error.name === 'NotAllowedError') {
+        errorMessage = "Registration was cancelled or not allowed.";
+      } else if (error.name === 'SecurityError') {
+        errorMessage = "Security error. Ensure you're accessing the site over HTTPS.";
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
       toast({
         title: "Registration Failed",
-        description: error.message || "Failed to register passkey",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
