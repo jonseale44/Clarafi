@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Plus, Eye, Settings2, Brain, FileText } from "lucide-react";
+import { Save, Plus, Eye, Settings2, FileText } from "lucide-react";
 
 // Form validation schema
 const templateFormSchema = z.object({
@@ -427,7 +427,7 @@ export default function UserSettingsPage() {
 
                 <TabsContent value="ai" className="space-y-4">
                   <div className="flex items-start space-x-2">
-                    <Brain className="h-5 w-5 mt-1 text-navy-blue-600" />
+                    <span className="text-xl text-blue-600">✨</span>
                     <div>
                       <h3 className="font-medium">AI Learning System</h3>
                       <p className="text-sm text-gray-600 mt-1">

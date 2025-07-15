@@ -387,7 +387,7 @@ export function EnhancedMedicalProblemsDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-navy-blue-500" />
+                        <span className="text-lg text-blue-600">✨</span>
                         Diagnosis * 
                         <Badge variant="secondary" className="text-xs">AI-Powered</Badge>
                       </FormLabel>
