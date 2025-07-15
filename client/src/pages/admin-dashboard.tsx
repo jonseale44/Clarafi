@@ -170,6 +170,16 @@ export default function AdminDashboard() {
               <span className="text-sm text-gray-500">
                 {user?.firstName} {user?.lastName} • Admin
               </span>
+              <Link href="/account-settings">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Account Settings
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
