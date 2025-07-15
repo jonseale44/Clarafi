@@ -161,6 +161,30 @@ export function PasskeyAuth() {
       };
       window.addEventListener('error', errorHandler);
       
+      // Override fetch temporarily to log all calls
+      const originalFetch = window.fetch;
+      window.fetch = function(...args) {
+        console.log('🔍🔍🔍 [Frontend] Fetch intercepted:', {
+          url: args[0],
+          options: args[1]
+        });
+        return originalFetch.apply(this, args).then(response => {
+          console.log('🔍 [Frontend] Fetch response received:', {
+            url: args[0],
+            status: response.status,
+            ok: response.ok
+          });
+          return response;
+        }).catch(error => {
+          console.error('🔴🔴🔴 [Frontend] Fetch failed:', {
+            url: args[0],
+            error: error,
+            message: error.message
+          });
+          throw error;
+        });
+      };
+      
       const optionsResponse = await fetch('/api/auth/webauthn/register/options', {
         method: 'POST',
         credentials: 'include',
@@ -171,8 +195,12 @@ export function PasskeyAuth() {
       }).catch(fetchError => {
         console.error('🔴 [Frontend] Fetch error:', fetchError);
         window.removeEventListener('error', errorHandler);
+        window.fetch = originalFetch; // Restore original fetch
         throw fetchError;
       });
+      
+      // Restore original fetch
+      window.fetch = originalFetch;
       
       // Remove error handler after fetch completes
       window.removeEventListener('error', errorHandler);
