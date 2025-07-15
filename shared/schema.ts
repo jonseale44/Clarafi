@@ -245,6 +245,7 @@ export const users = pgTable("users", {
   lastLogin: timestamp("last_login"),
   failedLoginAttempts: integer("failed_login_attempts").default(0),
   accountLockedUntil: timestamp("account_locked_until"),
+  requirePasswordChange: boolean("require_password_change").default(false),
   
   // Subscription Key Verification
   verificationStatus: text("verification_status").default("unverified"), // 'unverified', 'verified', 'tier3_verified'

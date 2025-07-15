@@ -26,6 +26,11 @@ export function ProtectedRoute({
           return <Redirect to="/auth" />;
         }
 
+        // Check if user needs to change password (except on password change page itself)
+        if (user.requirePasswordChange && path !== "/password-change-required") {
+          return <Redirect to="/password-change-required" />;
+        }
+
         return <Component />;
       }}
     </Route>

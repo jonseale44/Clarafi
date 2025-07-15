@@ -583,6 +583,68 @@ export function setupAuth(app: Express) {
     });
   });
 
+  app.post("/api/change-password", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.user.id;
+
+      // Validate new password
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: "New password must be at least 8 characters" });
+      }
+
+      // Get user to verify current password
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update password and clear requirePasswordChange flag
+      await db
+        .update(users)
+        .set({ 
+          password: hashedPassword,
+          requirePasswordChange: false
+        })
+        .where(eq(users.id, userId));
+
+      // Log password change event
+      const { logAuthenticationEvent } = await import("./audit-logging.js");
+      const ipAddress = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'] || '';
+      
+      await logAuthenticationEvent({
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        healthSystemId: user.healthSystemId,
+        eventType: 'password_change',
+        success: true,
+        ipAddress,
+        userAgent,
+        sessionId: req.sessionID
+      });
+
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);

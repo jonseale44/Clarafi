@@ -32,6 +32,7 @@ import AdminVerificationComplete from "@/pages/admin-verification-complete";
 import AdminVerificationReview from "@/pages/admin-verification-review";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ClinicAdminDashboard from "@/pages/clinic-admin-dashboard";
+import PasswordChangeRequired from "@/pages/password-change-required";
 
 import NotFound from "@/pages/not-found";
 
@@ -64,6 +65,7 @@ function Router() {
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />
       <ProtectedRoute path="/practice-migration" component={PracticeMigration} />
+      <ProtectedRoute path="/password-change-required" component={PasswordChangeRequired} />
 
       <Route path="/auth" component={AuthPage} />
       <Route path="/admin-verification" component={AdminVerification} />

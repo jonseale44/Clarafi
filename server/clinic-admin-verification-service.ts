@@ -1188,6 +1188,7 @@ Keep recommendations concise and specific.
           npi: requestData?.npiNumber || '0000000000',
           credentials: requestData?.title || 'Admin',
           emailVerified: true, // Pre-verified since admin approved
+          requirePasswordChange: true, // Force password change on first login
           active: true,
         })
         .returning();
