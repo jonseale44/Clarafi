@@ -418,9 +418,9 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
           patientId,
           encounterId: encounter.id,
           recordedAt: encounterDate,
-          recordedBy: `Provider ${config.providerId}`,
+          recordedBy: config.providerId, // Use integer ID, not string
           entryType: "routine",
-          enteredBy: config.providerId, // Add the integer user ID
+          enteredBy: config.providerId,
           ...this.generateVitals(hasHypertension, hasDiabetes),
         };
         
