@@ -546,21 +546,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { setupLocationRoutes } = await import("./location-routes.js");
   setupLocationRoutes(app);
 
-  // Add logging middleware for WebAuthn routes
-  app.use("/api/auth/webauthn", (req, res, next) => {
-    console.log('🔍 [WebAuthn Middleware] Request intercepted:', {
-      method: req.method,
-      path: req.path,
-      url: req.url,
-      originalUrl: req.originalUrl,
-      headers: req.headers,
-      contentType: req.get('content-type'),
-      hasBody: !!req.body,
-      bodyKeys: req.body ? Object.keys(req.body) : 'no body',
-      isAuthenticated: (req as any).isAuthenticated ? (req as any).isAuthenticated() : 'no auth method',
-      user: (req as any).user?.id
-    });
+  // Add logging middleware for ALL requests to debug
+  app.use((req, res, next) => {
+    if (req.url.includes('/api/auth/webauthn')) {
+      console.log('🔍 [WebAuthn Global Middleware] Request:', {
+        method: req.method,
+        url: req.url,
+        originalUrl: req.originalUrl,
+        baseUrl: req.baseUrl,
+        path: req.path,
+        contentType: req.get('content-type'),
+        bodySize: req.body ? JSON.stringify(req.body).length : 0,
+        hasSession: !!(req as any).session,
+        isAuthenticated: (req as any).isAuthenticated ? (req as any).isAuthenticated() : 'no auth method'
+      });
+    }
     next();
+  });
+
+  // Add error catching middleware for WebAuthn
+  app.use("/api/auth/webauthn", (err: any, req: Request, res: Response, next: any) => {
+    console.error('❌ [WebAuthn Error Middleware] Error caught:', {
+      error: err.message,
+      stack: err.stack,
+      url: req.url,
+      method: req.method
+    });
+    res.status(500).json({ error: err.message || 'Internal server error' });
   });
 
   // WebAuthn/Passkey routes

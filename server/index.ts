@@ -7,6 +7,25 @@ import "./lab-order-background-processor.js"; // Auto-start background processor
 import { initializeSystemData } from "./system-initialization";
 
 const app = express();
+
+// Add very early logging middleware before body parsing
+app.use((req, res, next) => {
+  if (req.url.includes('webauthn')) {
+    console.log('🚀 [Very Early Middleware] WebAuthn request:', {
+      method: req.method,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      contentType: req.get('content-type'),
+      contentLength: req.get('content-length'),
+      headers: {
+        'content-type': req.get('content-type'),
+        'content-length': req.get('content-length')
+      }
+    });
+  }
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
