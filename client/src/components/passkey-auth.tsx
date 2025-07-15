@@ -129,6 +129,16 @@ export function PasskeyAuth() {
         }
       });
       
+      // Check if WebAuthn is available
+      if (!window.PublicKeyCredential) {
+        throw new Error('WebAuthn is not supported in this browser. Please use Chrome, Safari, Firefox, or Edge.');
+      }
+      
+      // Check if we can create credentials
+      if (!navigator.credentials || !navigator.credentials.create) {
+        throw new Error('Credential Management API is not available.');
+      }
+      
       const credential = await navigator.credentials.create({
         publicKey: publicKeyOptions
       });
