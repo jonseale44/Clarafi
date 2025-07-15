@@ -23,9 +23,17 @@ interface Passkey {
   registeredDevice?: string;
 }
 
-// Helper function to convert base64 to ArrayBuffer
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64);
+// Helper function to convert base64url to ArrayBuffer
+function base64ToArrayBuffer(base64url: string): ArrayBuffer {
+  // Convert base64url to base64
+  const base64 = base64url
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  
+  // Add padding if necessary
+  const padded = base64 + '=='.substring(0, (4 - base64.length % 4) % 4);
+  
+  const binaryString = atob(padded);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
@@ -88,9 +96,11 @@ export function PasskeyAuth() {
       // Convert base64 strings to ArrayBuffer as required by WebAuthn API
       let publicKeyOptions;
       try {
+        console.log('Converting challenge:', options.challenge);
         const challenge = base64ToArrayBuffer(options.challenge);
         console.log('Challenge converted successfully');
         
+        console.log('Converting user ID:', options.user.id);
         const userId = base64ToArrayBuffer(options.user.id);
         console.log('User ID converted successfully');
         
