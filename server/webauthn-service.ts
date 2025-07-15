@@ -1,6 +1,6 @@
 import { db } from './db';
 import { webauthnCredentials, users } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 import { 
   generateRegistrationOptions,
@@ -125,17 +125,28 @@ export class WebAuthnService {
         transports: response.response.transports || []
       });
       
-      await db.insert(webauthnCredentials).values({
-        userId,
-        credentialId: Buffer.from(credentialID).toString('base64url'),
-        credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64'), // Fixed column name
-        counter: Number(counter),
-        deviceType: credentialDeviceType || 'unknown',
-        transports: response.response.transports || [],
-        registeredDevice: navigator.userAgent || 'Unknown device',
-        displayName: response.response.authenticatorAttachment || 'Security Key',
-        createdAt: new Date()
-      });
+      // Use raw SQL with actual column names from database
+      const insertQuery = sql`
+        INSERT INTO webauthn_credentials (
+          user_id,
+          credential_id,
+          public_key,
+          counter,
+          device_name,
+          transports,
+          created_at
+        ) VALUES (
+          ${userId},
+          ${Buffer.from(credentialID).toString('base64url')},
+          ${Buffer.from(credentialPublicKey).toString('base64')},
+          ${Number(counter)},
+          ${credentialDeviceType || response.response.authenticatorAttachment || 'Security Key'},
+          ${JSON.stringify(response.response.transports || [])}::jsonb,
+          NOW()
+        )
+      `;
+      
+      await db.execute(insertQuery);
 
       console.log(`✅ [WebAuthn] Passkey registered for user ${userId}`);
       return { verified: true, credentialId: Buffer.from(credentialID).toString('base64url') };
@@ -162,14 +173,19 @@ export class WebAuthnService {
         .limit(1);
 
       if (user) {
-        const credentials = await db.select()
-          .from(webauthnCredentials)
-          .where(eq(webauthnCredentials.userId, user.id));
-
-        allowCredentials = credentials.map(cred => ({
-          id: cred.credentialId,
+        // Use raw SQL with correct column names
+        const credQuery = sql`
+          SELECT credential_id, transports
+          FROM webauthn_credentials
+          WHERE user_id = ${user.id}
+        `;
+        
+        const credResult = await db.execute(credQuery);
+        
+        allowCredentials = credResult.rows.map((cred: any) => ({
+          id: cred.credential_id,
           type: 'public-key' as const,
-          transports: cred.transports as AuthenticatorTransport[] || []
+          transports: JSON.parse(cred.transports || '[]') as AuthenticatorTransport[]
         }));
       }
     }
@@ -197,12 +213,17 @@ export class WebAuthnService {
     expectedChallenge: string
   ): Promise<{ verified: boolean; userId?: number }> {
     try {
-      // Find the credential
+      // Find the credential using raw SQL
       const credentialId = response.id;
-      const [credential] = await db.select()
-        .from(webauthnCredentials)
-        .where(eq(webauthnCredentials.credentialId, credentialId))
-        .limit(1);
+      const credQuery = sql`
+        SELECT *
+        FROM webauthn_credentials
+        WHERE credential_id = ${credentialId}
+        LIMIT 1
+      `;
+      
+      const credResult = await db.execute(credQuery);
+      const credential = credResult.rows[0];
 
       if (!credential) {
         console.error('❌ [WebAuthn] Credential not found:', credentialId);
@@ -210,8 +231,8 @@ export class WebAuthnService {
       }
 
       console.log('🔍 [WebAuthn] Verifying with credential:', {
-        credentialId: credential.credentialId,
-        hasPublicKey: !!credential.credentialPublicKey,
+        credentialId: credential.credential_id,
+        hasPublicKey: !!credential.public_key,
         counter: credential.counter
       });
 
@@ -221,24 +242,26 @@ export class WebAuthnService {
         expectedOrigin: this.ORIGIN,
         expectedRPID: this.RP_ID,
         authenticator: {
-          credentialID: Buffer.from(credential.credentialId, 'base64url'),
-          credentialPublicKey: Buffer.from(credential.credentialPublicKey, 'base64'), // Fixed column name
+          credentialID: Buffer.from(credential.credential_id, 'base64url'),
+          credentialPublicKey: Buffer.from(credential.public_key, 'base64'),
           counter: credential.counter
         },
         requireUserVerification: false
       });
 
       if (verification.verified) {
-        // Update counter
-        await db.update(webauthnCredentials)
-          .set({ 
-            counter: verification.authenticationInfo.newCounter,
-            lastUsedAt: new Date()
-          })
-          .where(eq(webauthnCredentials.id, credential.id));
+        // Update counter using raw SQL
+        const updateQuery = sql`
+          UPDATE webauthn_credentials
+          SET counter = ${verification.authenticationInfo.newCounter},
+              last_used_at = NOW()
+          WHERE id = ${credential.id}
+        `;
+        
+        await db.execute(updateQuery);
 
-        console.log(`✅ [WebAuthn] Authentication successful for user ${credential.userId}`);
-        return { verified: true, userId: credential.userId };
+        console.log(`✅ [WebAuthn] Authentication successful for user ${credential.user_id}`);
+        return { verified: true, userId: credential.user_id };
       }
 
       return { verified: false };
@@ -255,23 +278,32 @@ export class WebAuthnService {
     console.log(`📝 [WebAuthn] Fetching passkeys for user ${userId}`);
     
     try {
-      const credentials = await db.select({
-        id: webauthnCredentials.id,
-        credentialId: webauthnCredentials.credentialId,
-        createdAt: webauthnCredentials.createdAt,
-        lastUsedAt: webauthnCredentials.lastUsedAt,
-        deviceType: webauthnCredentials.deviceType,
-        displayName: webauthnCredentials.displayName,
-        registeredDevice: webauthnCredentials.registeredDevice
-      })
-      .from(webauthnCredentials)
-      .where(eq(webauthnCredentials.userId, userId));
+      // Use the actual column names from the database
+      const query = sql`
+        SELECT 
+          id,
+          credential_id,
+          created_at,
+          last_used_at,
+          device_name,
+          transports
+        FROM webauthn_credentials
+        WHERE user_id = ${userId}
+      `;
+      
+      const credentials = await db.execute(query);
+      
+      console.log(`✅ [WebAuthn] Found ${credentials.rows.length} passkeys for user ${userId}`);
+      console.log('📝 [WebAuthn] Raw query result:', credentials.rows);
 
-      console.log(`✅ [WebAuthn] Found ${credentials.length} passkeys for user ${userId}`);
-
-      return credentials.map(cred => ({
-        ...cred,
-        displayName: cred.displayName || this.getPasskeyDisplayName(cred.deviceType || 'unknown', false)
+      return credentials.rows.map((cred: any) => ({
+        id: cred.id,
+        credentialId: cred.credential_id,
+        createdAt: cred.created_at,
+        lastUsedAt: cred.last_used_at,
+        deviceType: cred.device_name || 'unknown',
+        displayName: this.getPasskeyDisplayName(cred.device_name || 'unknown', false),
+        registeredDevice: cred.device_name // Use device_name as registeredDevice
       }));
     } catch (error) {
       console.error(`❌ [WebAuthn] Error fetching passkeys for user ${userId}:`, error);
@@ -283,13 +315,21 @@ export class WebAuthnService {
    * Delete a passkey
    */
   static async deletePasskey(userId: number, passkeyId: number): Promise<boolean> {
-    const result = await db.delete(webauthnCredentials)
-      .where(and(
-        eq(webauthnCredentials.id, passkeyId),
-        eq(webauthnCredentials.userId, userId)
-      ));
+    try {
+      // Use raw SQL with actual column names
+      const deleteQuery = sql`
+        DELETE FROM webauthn_credentials
+        WHERE id = ${passkeyId} AND user_id = ${userId}
+      `;
+      
+      const result = await db.execute(deleteQuery);
 
-    return result.rowCount > 0;
+      console.log(`✅ [WebAuthn] Passkey ${passkeyId} deleted for user ${userId}`);
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error(`❌ [WebAuthn] Error deleting passkey ${passkeyId}:`, error);
+      return false;
+    }
   }
 
   /**
