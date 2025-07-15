@@ -4988,6 +4988,94 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           .json({ message: "Error clearing users: " + error.message });
       }
     });
+
+    // Development endpoint: Clear all test data (phone numbers, emails, clinics, etc)
+    app.delete("/api/dev/clear-all-test-data", async (req, res) => {
+      if (process.env.NODE_ENV !== "development") {
+        return res.status(403).json({
+          message: "This endpoint is only available in development mode",
+        });
+      }
+
+      try {
+        console.log("🧹 [Dev] Starting complete test data cleanup...");
+        
+        // Clear all clinic admin verifications
+        const verificationResult = await db.execute(sql`
+          DELETE FROM clinic_admin_verifications
+        `);
+        console.log(`✅ Deleted ${verificationResult.rowCount} clinic admin verifications`);
+        
+        // Clear all locations except admin's health system locations (must be before health_systems)
+        const locationResult = await db.execute(sql`
+          DELETE FROM locations WHERE health_system_id != 2
+        `);
+        console.log(`✅ Deleted ${locationResult.rowCount} locations`);
+        
+        // Clear all organizations except the admin's (must be before health_systems)
+        const orgResult = await db.execute(sql`
+          DELETE FROM organizations WHERE health_system_id != 2
+        `);
+        console.log(`✅ Deleted ${orgResult.rowCount} organizations`);
+        
+        // Clear subscription keys for non-admin health systems (must be before health_systems)
+        const subscriptionKeyResult = await db.execute(sql`
+          DELETE FROM subscription_keys WHERE health_system_id != 2
+        `);
+        console.log(`✅ Deleted ${subscriptionKeyResult.rowCount} subscription keys`);
+        
+        // Clear subscription history for non-admin health systems (must be before health_systems)
+        const subscriptionHistoryResult = await db.execute(sql`
+          DELETE FROM subscription_history WHERE health_system_id != 2
+        `);
+        console.log(`✅ Deleted ${subscriptionHistoryResult.rowCount} subscription history entries`);
+        
+        // Clear organization documents for non-admin health systems (must be before health_systems)
+        const orgDocumentsResult = await db.execute(sql`
+          DELETE FROM organization_documents WHERE health_system_id != 2
+        `);
+        console.log(`✅ Deleted ${orgDocumentsResult.rowCount} organization documents`);
+        
+        // Clear all non-admin health systems (keep admin's health system)
+        const healthSystemResult = await db.execute(sql`
+          DELETE FROM health_systems WHERE id != 2
+        `);
+        console.log(`✅ Deleted ${healthSystemResult.rowCount} health systems`);
+        
+        // Clear PHI access logs and authentication logs for non-admin users
+        await db.execute(sql`
+          DELETE FROM phi_access_logs WHERE user_id IN (SELECT id FROM users WHERE role != 'admin')
+        `);
+        
+        await db.execute(sql`
+          DELETE FROM authentication_logs WHERE user_id IN (SELECT id FROM users WHERE role != 'admin')
+        `);
+        
+        // Clear all non-admin users
+        const userResult = await db.execute(sql`
+          DELETE FROM users WHERE role != 'admin'
+        `);
+        console.log(`✅ Deleted ${userResult.rowCount} non-admin users`);
+        
+        res.json({
+          success: true,
+          message: "All test data cleared successfully",
+          deletedCounts: {
+            clinicAdminVerifications: verificationResult.rowCount,
+            healthSystems: healthSystemResult.rowCount,
+            organizations: orgResult.rowCount,
+            locations: locationResult.rowCount,
+            users: userResult.rowCount
+          }
+        });
+      } catch (error: any) {
+        console.error("❌ [Dev] Error clearing test data:", error);
+        res.status(500).json({
+          error: "Failed to clear test data",
+          details: error.message,
+        });
+      }
+    });
   }
 
   // Stripe Payment Routes

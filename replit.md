@@ -269,6 +269,19 @@ Preferred communication style: Simple, everyday language.
 - **STRATEGY**: Chose additive approach (extra columns) over destructive approach to preserve all features
 - **PRODUCTION READY**: System now has complete schema alignment between database and code
 
+### Development Test Data Cleanup Endpoint COMPLETED (January 15, 2025)
+- **COMPREHENSIVE DATA CLEANUP**: Created /api/dev/clear-all-test-data endpoint that removes all test data while preserving admin accounts
+- **FOREIGN KEY CASCADE HANDLING**: Systematically deletes data in correct order respecting all foreign key constraints:
+  - clinic_admin_verifications → locations → organizations → subscription_keys → subscription_history → organization_documents → health_systems
+  - PHI access logs and authentication logs for non-admin users
+  - All non-admin users
+- **ADMIN PRESERVATION**: Keeps health system ID 2 (Waco Family Medicine) and admin user intact for system continuity
+- **DEVELOPMENT ONLY**: Endpoint only works in development environment (NODE_ENV=development) for safety
+- **COMPLETE CLEANUP**: Successfully removes test phone numbers, emails, clinic names, and addresses from all tables
+- **USE CASE**: Essential for clearing test data after registration testing cycles without manual database cleanup
+- **FOREIGN KEY DISCOVERY**: Through iterative testing, mapped all dependent tables and their constraint relationships
+- **PRODUCTION SAFETY**: Cannot be accidentally called in production environment
+
 ### SendGrid Email Verification Integration COMPLETED (January 15, 2025)
 - **PRODUCTION EMAIL SYSTEM**: Successfully implemented SendGrid email verification with professional email templates
 - **COMPLETE INTEGRATION**: EmailVerificationService now sends real verification emails instead of console logging
