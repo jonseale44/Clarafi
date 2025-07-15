@@ -506,6 +506,412 @@ export const patients = pgTable("patients", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// ==========================================
+// ADVANCED AI SCHEDULING SYSTEM
+// ==========================================
+
+// Scheduling AI Configuration - Global factors that can be measured
+export const schedulingAiFactors = pgTable("scheduling_ai_factors", {
+  id: serial("id").primaryKey(),
+  factorCategory: text("factor_category").notNull(), // 'patient', 'provider', 'visit', 'environmental', 'operational', 'dynamic'
+  factorName: text("factor_name").notNull().unique(), // 'problem_count', 'medication_count', 'no_show_risk', etc.
+  factorDescription: text("factor_description").notNull(),
+  dataType: text("data_type").notNull(), // 'number', 'boolean', 'percentage', 'time_series'
+  
+  // Default configuration
+  defaultEnabled: boolean("default_enabled").default(true),
+  defaultWeight: decimal("default_weight", { precision: 5, scale: 2 }).default("50.00"), // 0-100
+  
+  // Calculation method
+  calculationMethod: text("calculation_method"), // SQL query or function name
+  sourceTable: text("source_table"), // Where data comes from
+  updateFrequency: text("update_frequency"), // 'realtime', 'hourly', 'daily', 'weekly'
+  
+  // Impact on duration
+  impactDirection: text("impact_direction"), // 'increase', 'decrease', 'both'
+  maxImpactMinutes: integer("max_impact_minutes"), // Maximum minutes this factor can add/subtract
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// AI Factor Weights - Per provider/location customization
+export const schedulingAiWeights = pgTable("scheduling_ai_weights", {
+  id: serial("id").primaryKey(),
+  factorId: integer("factor_id").notNull().references(() => schedulingAiFactors.id),
+  
+  // Scope (can be provider-specific, location-specific, or health system wide)
+  providerId: integer("provider_id").references(() => users.id),
+  locationId: integer("location_id").references(() => locations.id),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Customized settings
+  enabled: boolean("enabled").notNull(),
+  weight: decimal("weight", { precision: 5, scale: 2 }).notNull(), // 0-100
+  
+  // Override calculation parameters
+  customParameters: jsonb("custom_parameters").$type<{
+    threshold?: number;
+    multiplier?: number;
+    minValue?: number;
+    maxValue?: number;
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+});
+
+// Patient Scheduling Patterns - AI learning data per patient
+export const patientSchedulingPatterns = pgTable("patient_scheduling_patterns", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").notNull().references(() => patients.id),
+  
+  // Historical patterns
+  avgVisitDuration: decimal("avg_visit_duration", { precision: 5, scale: 2 }), // minutes
+  avgDurationByType: jsonb("avg_duration_by_type").$type<Record<string, number>>(), // {annual: 45, follow_up: 22}
+  visitDurationStdDev: decimal("visit_duration_std_dev", { precision: 5, scale: 2 }),
+  
+  // Arrival patterns
+  avgArrivalDelta: decimal("avg_arrival_delta", { precision: 5, scale: 2 }), // minutes early/late (negative = early)
+  arrivalConsistency: decimal("arrival_consistency", { precision: 5, scale: 2 }), // 0-100 score
+  
+  // No-show patterns
+  noShowRate: decimal("no_show_rate", { precision: 5, scale: 2 }), // percentage
+  noShowByDayOfWeek: jsonb("no_show_by_day_of_week").$type<Record<string, number>>(),
+  noShowByTimeOfDay: jsonb("no_show_by_time_of_day").$type<Record<string, number>>(),
+  lastNoShowDate: date("last_no_show_date"),
+  
+  // Communication patterns
+  preferredReminderTime: integer("preferred_reminder_time"), // hours before appointment
+  responseRate: decimal("response_rate", { precision: 5, scale: 2 }), // percentage
+  preferredContactMethod: text("preferred_contact_method"), // 'sms', 'email', 'phone', 'portal'
+  
+  // Complexity indicators
+  avgQuestionCount: decimal("avg_question_count", { precision: 5, scale: 2 }), // from transcripts
+  portalMessageFrequency: decimal("portal_message_frequency", { precision: 5, scale: 2 }), // messages per month
+  
+  // Special considerations
+  requiresInterpreter: boolean("requires_interpreter").default(false),
+  mobilityIssues: boolean("mobility_issues").default(false),
+  cognitiveConsiderations: boolean("cognitive_considerations").default(false),
+  
+  lastCalculated: timestamp("last_calculated").defaultNow(),
+});
+
+// Provider Scheduling Patterns - AI learning data per provider
+export const providerSchedulingPatterns = pgTable("provider_scheduling_patterns", {
+  id: serial("id").primaryKey(),
+  providerId: integer("provider_id").notNull().references(() => users.id),
+  locationId: integer("location_id").references(() => locations.id), // Can be location-specific
+  
+  // Performance metrics
+  avgVisitDuration: decimal("avg_visit_duration", { precision: 5, scale: 2 }),
+  avgDurationByType: jsonb("avg_duration_by_type").$type<Record<string, number>>(),
+  avgDurationByHour: jsonb("avg_duration_by_hour").$type<Record<string, number>>(), // Performance by hour of day
+  
+  // Efficiency patterns
+  avgTransitionTime: decimal("avg_transition_time", { precision: 5, scale: 2 }), // Time between patients
+  documentationLag: decimal("documentation_lag", { precision: 5, scale: 2 }), // Minutes to complete notes
+  
+  // Schedule adherence
+  onTimePercentage: decimal("on_time_percentage", { precision: 5, scale: 2 }),
+  avgRunningBehind: decimal("avg_running_behind", { precision: 5, scale: 2 }), // minutes
+  catchUpPatterns: jsonb("catch_up_patterns").$type<{
+    morningCatchUp?: boolean;
+    lunchCatchUp?: boolean;
+    afternoonSlowdown?: boolean;
+  }>(),
+  
+  // Workload preferences
+  preferredPatientLoad: integer("preferred_patient_load"), // per day
+  maxComplexVisits: integer("max_complex_visits"), // per day
+  bufferPreferences: jsonb("buffer_preferences").$type<{
+    afterComplexVisit?: number;
+    beforeLunch?: number;
+    endOfDay?: number;
+  }>(),
+  
+  lastCalculated: timestamp("last_calculated").defaultNow(),
+});
+
+// Appointment Duration History - Actual vs predicted for AI learning
+export const appointmentDurationHistory = pgTable("appointment_duration_history", {
+  id: serial("id").primaryKey(),
+  appointmentId: integer("appointment_id").notNull().references(() => appointments.id),
+  
+  // Predictions
+  aiPredictedDuration: integer("ai_predicted_duration").notNull(), // minutes
+  providerScheduledDuration: integer("provider_scheduled_duration").notNull(), // What provider actually scheduled
+  patientVisibleDuration: integer("patient_visible_duration").notNull(), // What patient saw
+  
+  // Actuals
+  actualDuration: integer("actual_duration"), // Actual visit duration
+  actualArrivalDelta: integer("actual_arrival_delta"), // Minutes early/late
+  
+  // Factors used in prediction
+  factorsUsed: jsonb("factors_used").$type<Array<{
+    factorId: number;
+    factorName: string;
+    value: number;
+    weight: number;
+    impact: number; // minutes added/subtracted
+  }>>(),
+  
+  // Feedback for learning
+  predictionAccuracy: decimal("prediction_accuracy", { precision: 5, scale: 2 }), // percentage
+  providerFeedback: text("provider_feedback"), // 'too_short', 'too_long', 'just_right'
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Scheduling Templates - For non-AI traditional scheduling
+export const schedulingTemplates = pgTable("scheduling_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  
+  // Scope
+  providerId: integer("provider_id").references(() => users.id),
+  locationId: integer("location_id").references(() => locations.id),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Template configuration
+  slotDuration: integer("slot_duration").notNull(), // 15, 20, 30 minutes
+  startTime: text("start_time").notNull(), // "08:00"
+  endTime: text("end_time").notNull(), // "17:00"
+  
+  // Breaks and buffers
+  lunchStart: text("lunch_start"),
+  lunchDuration: integer("lunch_duration"), // minutes
+  bufferBetweenAppts: integer("buffer_between_appts").default(0),
+  
+  // Rules
+  allowDoubleBooking: boolean("allow_double_booking").default(false),
+  maxPatientsPerDay: integer("max_patients_per_day"),
+  
+  // Days of week (stored as array of integers 0-6)
+  daysOfWeek: integer("days_of_week").array(),
+  
+  isDefault: boolean("is_default").default(false),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+});
+
+// Resource Requirements - What resources appointments need
+export const appointmentResourceRequirements = pgTable("appointment_resource_requirements", {
+  id: serial("id").primaryKey(),
+  appointmentTypeId: integer("appointment_type_id"), // Reference to appointment types table
+  
+  // Resources needed
+  requiresRoom: boolean("requires_room").default(true),
+  roomType: text("room_type"), // 'exam', 'procedure', 'consult'
+  requiresEquipment: text("requires_equipment").array(), // ['ekg', 'spirometer', 'ultrasound']
+  requiresStaff: jsonb("requires_staff").$type<Array<{
+    role: string;
+    duration: number; // minutes needed
+    timing: string; // 'before', 'during', 'after'
+  }>>(),
+  
+  // Time requirements
+  prepTime: integer("prep_time").default(0), // minutes before
+  cleanupTime: integer("cleanup_time").default(0), // minutes after
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Scheduling Rules - Business rules and constraints
+export const schedulingRules = pgTable("scheduling_rules", {
+  id: serial("id").primaryKey(),
+  ruleName: text("rule_name").notNull(),
+  ruleType: text("rule_type").notNull(), // 'constraint', 'preference', 'requirement'
+  
+  // Scope
+  providerId: integer("provider_id").references(() => users.id),
+  locationId: integer("location_id").references(() => locations.id),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Rule configuration
+  ruleConfig: jsonb("rule_config").$type<{
+    minDuration?: number;
+    maxDuration?: number;
+    allowedTypes?: string[];
+    restrictedTimes?: Array<{day: number; start: string; end: string}>;
+    maxPerDay?: number;
+    requiresApproval?: boolean;
+  }>(),
+  
+  priority: integer("priority").default(0), // Higher = more important
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+});
+
+// Appointment Types - Define visit types and their default durations
+export const appointmentTypes = pgTable("appointment_types", {
+  id: serial("id").primaryKey(),
+  
+  // Scope
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  locationId: integer("location_id").references(() => locations.id),
+  
+  // Type details
+  typeName: text("type_name").notNull(), // 'new_patient', 'follow_up', 'annual_physical', etc.
+  typeCode: text("type_code").notNull(), // Short code for scheduling
+  category: text("category").notNull(), // 'routine', 'acute', 'preventive', 'procedure'
+  
+  // Duration configuration
+  defaultDuration: integer("default_duration").notNull(), // minutes
+  minDuration: integer("min_duration").notNull(),
+  maxDuration: integer("max_duration").notNull(),
+  
+  // Scheduling rules
+  allowOnlineScheduling: boolean("allow_online_scheduling").default(true),
+  requiresPreAuth: boolean("requires_pre_auth").default(false),
+  requiresSpecialPrep: boolean("requires_special_prep").default(false),
+  prepInstructions: text("prep_instructions"),
+  
+  // Resource requirements
+  defaultResourceRequirements: jsonb("default_resource_requirements").$type<{
+    roomType?: string;
+    equipment?: string[];
+    staffSupport?: Array<{role: string; duration: number}>;
+  }>(),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Schedule Preferences - Provider preferences for their schedule
+export const schedulePreferences = pgTable("schedule_preferences", {
+  id: serial("id").primaryKey(),
+  providerId: integer("provider_id").notNull().references(() => users.id).unique(),
+  
+  // AI vs Template preference
+  useAiScheduling: boolean("use_ai_scheduling").default(true),
+  aiAggressiveness: decimal("ai_aggressiveness", { precision: 5, scale: 2 }).default("50.00"), // 0-100
+  
+  // Time preferences
+  preferredStartTime: text("preferred_start_time"), // "08:00"
+  preferredEndTime: text("preferred_end_time"), // "17:00"
+  preferredLunchTime: text("preferred_lunch_time"),
+  preferredLunchDuration: integer("preferred_lunch_duration"), // minutes
+  
+  // Patient load preferences
+  idealPatientsPerDay: integer("ideal_patients_per_day"),
+  maxPatientsPerDay: integer("max_patients_per_day"),
+  preferredBufferMinutes: integer("preferred_buffer_minutes").default(5),
+  
+  // Complex visit handling
+  maxComplexVisitsPerDay: integer("max_complex_visits_per_day"),
+  complexVisitSpacing: text("complex_visit_spacing"), // 'spread_out', 'morning', 'afternoon'
+  
+  // Double booking preferences
+  allowDoubleBooking: boolean("allow_double_booking").default(false),
+  doubleBookingRules: jsonb("double_booking_rules").$type<{
+    allowedTypes?: string[];
+    maxPerDay?: number;
+    requiresApproval?: boolean;
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Asymmetric Scheduling Configuration - Patient vs Provider view
+export const asymmetricSchedulingConfig = pgTable("asymmetric_scheduling_config", {
+  id: serial("id").primaryKey(),
+  
+  // Scope
+  providerId: integer("provider_id").references(() => users.id),
+  locationId: integer("location_id").references(() => locations.id),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Configuration
+  enabled: boolean("enabled").default(true),
+  patientMinDuration: integer("patient_min_duration").default(20), // What patient sees minimum
+  providerMinDuration: integer("provider_min_duration").default(10), // What provider sees minimum
+  roundingInterval: integer("rounding_interval").default(10), // Round to nearest X minutes
+  
+  // Buffer rules
+  defaultBufferMinutes: integer("default_buffer_minutes").default(0),
+  bufferForChronicPatients: integer("buffer_for_chronic_patients").default(10),
+  bufferThresholdProblemCount: integer("buffer_threshold_problem_count").default(5),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+});
+
+// Real-time Schedule Adjustments - Track running behind/ahead
+export const realtimeScheduleStatus = pgTable("realtime_schedule_status", {
+  id: serial("id").primaryKey(),
+  providerId: integer("provider_id").notNull().references(() => users.id),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  scheduleDate: date("schedule_date").notNull(),
+  
+  // Current status
+  currentPatientId: integer("current_patient_id").references(() => patients.id),
+  currentAppointmentId: integer("current_appointment_id").references(() => appointments.id),
+  runningBehindMinutes: integer("running_behind_minutes").default(0),
+  
+  // Tracking
+  lastUpdateTime: timestamp("last_update_time").defaultNow(),
+  dayStartedAt: timestamp("day_started_at"),
+  estimatedCatchUpTime: text("estimated_catch_up_time"),
+  
+  // AI recommendations
+  aiRecommendations: jsonb("ai_recommendations").$type<Array<{
+    type: string; // 'reschedule', 'double_book', 'extend_hours', 'delegate'
+    affectedAppointments: number[];
+    reasoning: string;
+    priority: number;
+  }>>(),
+});
+
+// Resource Management - Rooms and equipment
+export const schedulingResources = pgTable("scheduling_resources", {
+  id: serial("id").primaryKey(),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  
+  // Resource details
+  resourceType: text("resource_type").notNull(), // 'room', 'equipment', 'staff'
+  resourceName: text("resource_name").notNull(),
+  resourceCode: text("resource_code"),
+  
+  // Capabilities
+  capabilities: text("capabilities").array(), // ['exam', 'procedure', 'xray']
+  capacity: integer("capacity").default(1), // How many can use simultaneously
+  
+  // Scheduling rules
+  requiresCleaningMinutes: integer("requires_cleaning_minutes").default(0),
+  maintenanceSchedule: jsonb("maintenance_schedule").$type<{
+    frequency?: string;
+    lastMaintenance?: string;
+    nextMaintenance?: string;
+  }>(),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Resource Bookings - Track resource usage
+export const resourceBookings = pgTable("resource_bookings", {
+  id: serial("id").primaryKey(),
+  resourceId: integer("resource_id").notNull().references(() => schedulingResources.id),
+  appointmentId: integer("appointment_id").references(() => appointments.id),
+  
+  // Booking details
+  bookingDate: date("booking_date").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  
+  // Status
+  status: text("status").default("reserved"), // 'reserved', 'in_use', 'cleaning', 'available'
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+});
+
 // Intelligent Scheduling System with GPT Integration
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
@@ -518,6 +924,10 @@ export const appointments = pgTable("appointments", {
   startTime: text("start_time").notNull(), // "09:00"
   endTime: text("end_time").notNull(), // "09:30"
   duration: integer("duration").notNull(), // minutes
+  
+  // Asymmetric scheduling
+  patientVisibleDuration: integer("patient_visible_duration"), // What patient sees
+  providerScheduledDuration: integer("provider_scheduled_duration"), // What provider has blocked
   
   // Appointment details
   appointmentType: text("appointment_type").notNull(), // 'new_patient', 'follow_up', 'annual_physical', 'urgent', 'telehealth'

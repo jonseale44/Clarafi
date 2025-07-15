@@ -159,6 +159,33 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Advanced AI Scheduling System Architecture DESIGNED (January 16, 2025)
+- **MAJOR ARCHITECTURAL ENHANCEMENT**: Designed comprehensive data architecture for next-generation AI-driven scheduling system that surpasses Epic/Athena capabilities
+- **CORE SCHEDULING PHILOSOPHY**: 
+  - Provider-at-location based scheduling (schedules belong to provider+location combination)
+  - Dual mode support: AI-driven intelligent scheduling (default) and traditional template-based scheduling
+  - Asymmetric scheduling: Patients see standard durations (20 min minimum) while providers see actual predicted durations
+- **DATABASE SCHEMA ADDITIONS**: 
+  - **schedulingAiFactors**: Configurable AI factors across 6 categories (patient, provider, visit, environmental, operational, dynamic)
+  - **schedulingAiWeights**: Per-provider/location/health-system customization of factor weights (0-100% sliders)
+  - **patientSchedulingPatterns**: AI learning data including visit durations, arrival patterns, no-show risk, communication preferences
+  - **providerSchedulingPatterns**: Provider performance metrics, efficiency patterns, workload preferences
+  - **appointmentDurationHistory**: Tracks predicted vs actual durations for continuous AI learning
+  - **schedulingTemplates**: Traditional rigid scheduling templates (15/20/30 min slots) for non-AI mode
+  - **appointmentTypes**: Configurable visit types with durations, resource requirements, scheduling rules
+  - **schedulePreferences**: Provider-specific preferences for AI aggressiveness, patient load, complex visit handling
+  - **asymmetricSchedulingConfig**: Configuration for patient vs provider view durations
+  - **realtimeScheduleStatus**: Live tracking of providers running behind/ahead with AI recommendations
+  - **schedulingResources & resourceBookings**: Room, equipment, and staff resource management
+- **KEY INNOVATIONS**:
+  - Multi-factor AI prediction using dozens of measurable factors (all configurable/toggleable)
+  - Patient-blind scheduling buffers (patient sees 20 min, provider has 30 min blocked for chronic patients)
+  - Provider-specific learning that adapts to location contexts
+  - Real-time schedule adjustments with AI-powered recommendations
+  - Natural language scheduling via GPT integration for patient self-service
+- **FLEXIBILITY EMPHASIS**: Every AI rule/factor can be adjusted via admin interface - not "set and forget"
+- **PRODUCTION STANDARDS**: Architecture designed to exceed commercial EMR scheduling capabilities with unprecedented intelligence
+
 ### Critical Security Enhancement - Patient Data Protection COMPLETED (January 16, 2025)
 - **SECURITY VULNERABILITIES FIXED**: Addressed two critical security issues in the multi-tenant EMR system
   - **Issue 1**: Anyone could join Tier 1/2 health systems without payment, getting free EMR access
