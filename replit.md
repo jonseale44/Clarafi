@@ -295,6 +295,20 @@ Preferred communication style: Simple, everyday language.
 - **STRIPE INTEGRATION FIX**: Fixed createCheckoutSession method overloading for "create my own individual practice" workflow
 - **SUBSCRIPTION CONFIG FIX**: Fixed tier 3 pricing handling where 'custom' string values were causing undefined errors
 
+### WebAuthn/Passkey Limitations in Replit Environment (January 15, 2025)
+- **IMPORTANT LIMITATION DISCOVERED**: WebAuthn/passkeys do not work in the Replit preview browser environment
+- **SYMPTOMS**: "Failed to execute 'atob' on 'Window': The string to be decoded is not correctly encoded" error
+- **ROOT CAUSE**: Replit preview browser passes feature detection checks but fails when actually creating credentials
+- **WORKAROUNDS IMPLEMENTED**:
+  - Added environment detection to not show passkey setup prompts in Replit
+  - Enhanced error messages to guide users to alternatives
+  - Clear warnings displayed when accessing passkey settings in Replit environment
+- **RECOMMENDED ALTERNATIVES FOR REPLIT USERS**:
+  - Use Magic Links for passwordless authentication (fully functional)
+  - Access the site in a new browser tab/window outside of Replit
+  - Use strong passwords (12+ characters) as primary authentication
+- **PRODUCTION IMPACT**: WebAuthn works perfectly when the site is accessed directly (not through Replit preview)
+
 ### Modern Authentication Implementation Phase 1, 2 & 3 COMPLETED (January 15, 2025)
 - **PHASE 1 - PASSWORD CONSISTENCY COMPLETED**: 
   - Updated all password validation to 12+ character minimum following NIST guidelines

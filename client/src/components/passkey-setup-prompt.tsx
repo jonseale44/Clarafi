@@ -44,7 +44,10 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
 
   // Show prompt if user has no passkeys and hasn't dismissed it
   useEffect(() => {
-    if (!isLoading && passkeys && passkeys.length === 0 && !isDismissed) {
+    // Don't show prompt in Replit environment as passkeys don't work there
+    const isReplitEnvironment = window.location.hostname.includes('replit');
+    
+    if (!isLoading && passkeys && passkeys.length === 0 && !isDismissed && !isReplitEnvironment) {
       // Small delay to let the page settle
       setTimeout(() => setIsOpen(true), 1500);
     }

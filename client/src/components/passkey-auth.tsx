@@ -91,6 +91,9 @@ export function PasskeyAuth() {
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [passkeyName, setPasskeyName] = useState('');
   const { toast } = useToast();
+  
+  // Check if we're in Replit environment
+  const isReplitEnvironment = window.location.hostname.includes('replit');
 
   useEffect(() => {
     // Check WebAuthn support
