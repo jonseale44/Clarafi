@@ -166,7 +166,10 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
             Edit Profile
           </DropdownMenuItem>
           
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setEditProfileOpen(true)}>
+          <DropdownMenuItem 
+            className="cursor-pointer" 
+            onClick={() => window.location.href = '/account-settings'}
+          >
             <Settings className="w-4 h-4 mr-2" />
             Account Settings
           </DropdownMenuItem>

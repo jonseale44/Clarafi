@@ -3328,4 +3328,34 @@ export const magicLinks = pgTable("magic_links", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/**
+ * WebAuthn Credentials for Passkey Authentication
+ * Stores passkey credentials for users enabling passwordless authentication
+ */
+export const webauthnCredentials = pgTable("webauthn_credentials", {
+  id: serial("id").primaryKey(),
+  
+  // User association
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  // Credential details
+  credentialId: text("credential_id").unique().notNull(),
+  credentialPublicKey: text("credential_public_key").notNull(),
+  counter: integer("counter").default(0).notNull(),
+  
+  // Device information
+  deviceType: text("device_type"),
+  transports: jsonb("transports").$type<string[]>(),
+  registeredDevice: text("registered_device"),
+  
+  // Metadata
+  displayName: text("display_name"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at")
+}, (table) => ({
+  userIdx: index("webauthn_credentials_user_idx").on(table.userId),
+  credentialIdx: index("webauthn_credentials_credential_idx").on(table.credentialId),
+  createdIdx: index("webauthn_credentials_created_idx").on(table.createdAt)
+}));
+
 // Indexes will be created via SQL migration

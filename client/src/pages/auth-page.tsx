@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Mail } from "lucide-react";
+import { PasskeyLoginForm } from "@/components/passkey-login-form";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -558,6 +559,8 @@ export default function AuthPage() {
                   </div>
                   
                   <MagicLinkForm />
+                  
+                  <PasskeyLoginForm />
                 </CardContent>
               </Card>
             </TabsContent>

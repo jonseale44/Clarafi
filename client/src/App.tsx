@@ -10,6 +10,7 @@ import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
 import { PatientCreation } from "@/pages/PatientCreation";
 import UserSettingsPage from "@/pages/user-settings-page";
+import AccountSettingsPage from "@/pages/account-settings-page";
 import { PatientView } from "@/pages/patient-view";
 import { EncounterView } from "@/pages/encounter-view";
 import { PatientLabResults } from "@/pages/patient-lab-results";
@@ -52,6 +53,7 @@ function Router() {
       <ProtectedRoute path="/lab-simulator" component={LabSimulator} />
       <ProtectedRoute path="/encounters/:id" component={EncounterView} />
       <ProtectedRoute path="/settings" component={UserSettingsPage} />
+      <ProtectedRoute path="/account-settings" component={AccountSettingsPage} />
 
       <ProtectedRoute path="/encounters/:encounterId/vitals" component={VitalsFlowsheetPage} />
       <ProtectedRoute path="/vitals-flowsheet/:encounterId" component={VitalsFlowsheetPage} />
