@@ -102,16 +102,16 @@ const MEDICATIONS_POOL = [
 ];
 
 const ALLERGIES_POOL = [
-  { allergen: "Penicillin", reaction: "Rash", severity: "moderate" },
-  { allergen: "Sulfa drugs", reaction: "Hives", severity: "moderate" },
-  { allergen: "Aspirin", reaction: "GI upset", severity: "mild" },
-  { allergen: "Codeine", reaction: "Nausea/vomiting", severity: "moderate" },
-  { allergen: "Morphine", reaction: "Itching", severity: "mild" },
-  { allergen: "Latex", reaction: "Contact dermatitis", severity: "mild" },
-  { allergen: "Shellfish", reaction: "Anaphylaxis", severity: "severe" },
-  { allergen: "Peanuts", reaction: "Throat swelling", severity: "severe" },
-  { allergen: "Eggs", reaction: "Hives", severity: "moderate" },
-  { allergen: "Iodine contrast", reaction: "Anaphylactoid reaction", severity: "severe" }
+  { allergen: "Penicillin", reaction: "Rash", severity: "moderate", allergyType: "drug" },
+  { allergen: "Sulfa drugs", reaction: "Hives", severity: "moderate", allergyType: "drug" },
+  { allergen: "Aspirin", reaction: "GI upset", severity: "mild", allergyType: "drug" },
+  { allergen: "Codeine", reaction: "Nausea/vomiting", severity: "moderate", allergyType: "drug" },
+  { allergen: "Morphine", reaction: "Itching", severity: "mild", allergyType: "drug" },
+  { allergen: "Latex", reaction: "Contact dermatitis", severity: "mild", allergyType: "contact" },
+  { allergen: "Shellfish", reaction: "Anaphylaxis", severity: "severe", allergyType: "food" },
+  { allergen: "Peanuts", reaction: "Throat swelling", severity: "severe", allergyType: "food" },
+  { allergen: "Eggs", reaction: "Hives", severity: "moderate", allergyType: "food" },
+  { allergen: "Iodine contrast", reaction: "Anaphylactoid reaction", severity: "severe", allergyType: "drug" }
 ];
 
 const SURGICAL_HISTORY_POOL = [
@@ -347,6 +347,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
         allergen: allergy.allergen,
         reaction: allergy.reaction,
         severity: allergy.severity as any,
+        allergyType: allergy.allergyType,
         onsetDate: new Date(
           new Date().getFullYear() - Math.floor(Math.random() * 10) - 5,
           Math.floor(Math.random() * 12),
@@ -391,7 +392,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
           patientId,
           encounterId: encounter.id,
           recordedAt: encounterDate,
-          recordedBy: "Test Nurse",
+          recordedBy: `Provider ${config.providerId}`,
           entryType: "routine",
           ...this.generateVitals(hasHypertension, hasDiabetes),
         };
