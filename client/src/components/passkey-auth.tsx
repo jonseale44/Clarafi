@@ -23,6 +23,16 @@ interface Passkey {
   registeredDevice?: string;
 }
 
+// Helper function to convert base64 to ArrayBuffer
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 export function PasskeyAuth() {
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState(false);
@@ -74,10 +84,28 @@ export function PasskeyAuth() {
       
       const options = await optionsResponse.json();
       
+      // Convert base64 strings to ArrayBuffer as required by WebAuthn API
+      const publicKeyOptions = {
+        ...options,
+        challenge: base64ToArrayBuffer(options.challenge),
+        user: {
+          ...options.user,
+          id: base64ToArrayBuffer(options.user.id)
+        }
+      };
+      
       // 2. Create credential using WebAuthn API
-      console.log('Creating credential with options:', options);
+      console.log('Creating credential with options:', {
+        ...publicKeyOptions,
+        challenge: `ArrayBuffer(${publicKeyOptions.challenge.byteLength} bytes)`,
+        user: {
+          ...publicKeyOptions.user,
+          id: `ArrayBuffer(${publicKeyOptions.user.id.byteLength} bytes)`
+        }
+      });
+      
       const credential = await navigator.credentials.create({
-        publicKey: options
+        publicKey: publicKeyOptions
       });
       
       if (!credential) {

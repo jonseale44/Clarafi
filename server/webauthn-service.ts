@@ -63,10 +63,14 @@ export class WebAuthnService {
     
     let existingCredentials: any[] = [];
     try {
-      existingCredentials = await db.select()
-        .from(webauthnCredentials)
-        .where(eq(webauthnCredentials.userId, userId));
+      // Use raw SQL to avoid column name mismatch between schema and database
+      existingCredentials = await db.execute(sql`
+        SELECT id, user_id, credential_id, public_key, counter, device_name, transports
+        FROM webauthn_credentials
+        WHERE user_id = ${userId}
+      `);
       
+      existingCredentials = existingCredentials.rows || [];
       console.log('✅ [WebAuthn] Found existing credentials:', existingCredentials.length);
     } catch (error) {
       console.error('❌ [WebAuthn] Error fetching existing credentials:', error);
