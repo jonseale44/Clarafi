@@ -25,20 +25,61 @@ interface Passkey {
 
 // Helper function to convert base64url to ArrayBuffer
 function base64ToArrayBuffer(base64url: string): ArrayBuffer {
+  console.log('🔐 [Base64 Conversion] Input:', {
+    value: base64url,
+    length: base64url.length,
+    type: typeof base64url,
+    containsDash: base64url.includes('-'),
+    containsUnderscore: base64url.includes('_'),
+    containsEquals: base64url.includes('='),
+    containsWhitespace: /\s/.test(base64url),
+    firstChars: base64url.substring(0, 10),
+    lastChars: base64url.substring(base64url.length - 10)
+  });
+  
   // Convert base64url to base64
   const base64 = base64url
     .replace(/-/g, '+')
     .replace(/_/g, '/');
   
-  // Add padding if necessary
-  const padded = base64 + '=='.substring(0, (4 - base64.length % 4) % 4);
+  console.log('🔐 [Base64 Conversion] After URL replacements:', {
+    value: base64,
+    length: base64.length,
+    changed: base64 !== base64url
+  });
   
-  const binaryString = atob(padded);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  // Add padding if necessary
+  const paddingNeeded = (4 - base64.length % 4) % 4;
+  const padded = base64 + '=='.substring(0, paddingNeeded);
+  
+  console.log('🔐 [Base64 Conversion] After padding:', {
+    value: padded,
+    length: padded.length,
+    paddingAdded: paddingNeeded,
+    finalChars: padded.substring(padded.length - 4)
+  });
+  
+  try {
+    const binaryString = atob(padded);
+    console.log('🔐 [Base64 Conversion] Successfully decoded:', {
+      binaryLength: binaryString.length,
+      firstBytes: binaryString.charCodeAt(0) + ',' + binaryString.charCodeAt(1) + ',' + binaryString.charCodeAt(2)
+    });
+    
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  } catch (atobError) {
+    console.error('🔴 [Base64 Conversion] atob() failed:', {
+      error: atobError,
+      input: padded,
+      inputLength: padded.length,
+      inputChars: padded.split('').map((c, i) => `${i}:${c}(${c.charCodeAt(0)})`).slice(0, 20).join(' ')
+    });
+    throw atobError;
   }
-  return bytes.buffer;
 }
 
 export function PasskeyAuth() {
@@ -141,17 +182,69 @@ export function PasskeyAuth() {
       }
       
       console.log('🔵 [Frontend] Parsed options from server:', options);
+      console.log('🔵 [Frontend] Options structure:', {
+        hasChallenge: !!options.challenge,
+        challengeType: typeof options.challenge,
+        challengeValue: options.challenge,
+        hasUser: !!options.user,
+        userId: options.user?.id,
+        userIdType: typeof options.user?.id,
+        allKeys: Object.keys(options)
+      });
       
       // Convert base64 strings to ArrayBuffer as required by WebAuthn API
       let publicKeyOptions;
       try {
-        console.log('Converting challenge:', options.challenge);
-        const challenge = base64ToArrayBuffer(options.challenge);
-        console.log('Challenge converted successfully');
+        console.log('🔵 [Frontend] Starting base64 conversions...');
         
-        console.log('Converting user ID:', options.user.id);
+        // First check if challenge is actually a base64 string
+        if (typeof options.challenge !== 'string') {
+          console.error('🔴 [Frontend] Challenge is not a string:', {
+            type: typeof options.challenge,
+            value: options.challenge
+          });
+          throw new Error('Challenge must be a string');
+        }
+        
+        console.log('🔵 [Frontend] Converting challenge:', {
+          value: options.challenge,
+          length: options.challenge.length
+        });
+        const challenge = base64ToArrayBuffer(options.challenge);
+        console.log('✅ [Frontend] Challenge converted successfully:', {
+          byteLength: challenge.byteLength
+        });
+        
+        // Check if user ID is a string
+        if (typeof options.user?.id !== 'string') {
+          console.error('🔴 [Frontend] User ID is not a string:', {
+            type: typeof options.user?.id,
+            value: options.user?.id
+          });
+          throw new Error('User ID must be a string');
+        }
+        
+        console.log('🔵 [Frontend] Converting user ID:', {
+          value: options.user.id,
+          length: options.user.id.length
+        });
         const userId = base64ToArrayBuffer(options.user.id);
-        console.log('User ID converted successfully');
+        console.log('✅ [Frontend] User ID converted successfully:', {
+          byteLength: userId.byteLength
+        });
+        
+        // Handle excludeCredentials if present
+        let excludeCredentials = options.excludeCredentials;
+        if (excludeCredentials && Array.isArray(excludeCredentials)) {
+          console.log('🔵 [Frontend] Converting excludeCredentials:', excludeCredentials.length, 'items');
+          excludeCredentials = excludeCredentials.map((cred: any, index: number) => {
+            console.log(`🔵 [Frontend] Converting credential ${index}:`, cred.id);
+            return {
+              ...cred,
+              id: base64ToArrayBuffer(cred.id)
+            };
+          });
+        }
         
         publicKeyOptions = {
           ...options,
@@ -159,12 +252,32 @@ export function PasskeyAuth() {
           user: {
             ...options.user,
             id: userId
-          }
+          },
+          excludeCredentials
         };
         
-        console.log('Public key options prepared:', publicKeyOptions);
+        console.log('✅ [Frontend] Public key options prepared:', {
+          ...publicKeyOptions,
+          challenge: `ArrayBuffer(${publicKeyOptions.challenge.byteLength} bytes)`,
+          user: {
+            ...publicKeyOptions.user,
+            id: `ArrayBuffer(${publicKeyOptions.user.id.byteLength} bytes)`
+          }
+        });
       } catch (conversionError: any) {
-        console.error('Base64 conversion error:', conversionError);
+        console.error('🔴 [Frontend] Base64 conversion error:', {
+          error: conversionError,
+          message: conversionError.message,
+          stack: conversionError.stack,
+          name: conversionError.name,
+          lastAttemptedValue: options.user?.id || options.challenge
+        });
+        
+        // Log the exact error details
+        if (conversionError.message && conversionError.message.includes('atob')) {
+          console.error('🔴 [Frontend] atob error detected - invalid base64 encoding');
+        }
+        
         throw new Error(`Failed to convert base64 data: ${conversionError.message}`);
       }
       
