@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Trash2, RefreshCw } from "lucide-react";
+import { Loader2, UserPlus, Trash2, RefreshCw, ArrowLeft, LogOut } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TestPatientConfig {
   healthSystemId: number;
@@ -39,6 +41,8 @@ interface TestPatientConfig {
 
 export default function SystemAdminTestPatients() {
   const { toast } = useToast();
+  const { user, logoutMutation } = useAuth();
+  const [location, setLocation] = useLocation();
   const [selectedHealthSystem, setSelectedHealthSystem] = useState<number | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
@@ -174,13 +178,51 @@ export default function SystemAdminTestPatients() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Test Patient Generator</h1>
-        <p className="text-muted-foreground">
-          Generate comprehensive test patients with realistic medical data for system testing
-        </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation Header */}
+      <div className="bg-white border-b border-gray-200 mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/admin">
+                <Button variant="ghost" size="sm" className="mr-4">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Admin Dashboard
+                </Button>
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900">Test Patient Generator</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-500">
+                {user?.firstName} {user?.lastName} • {user?.role}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  logoutMutation.mutate(undefined, {
+                    onSuccess: () => {
+                      setLocation("/auth");
+                    }
+                  });
+                }}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="mb-8">
+          <p className="text-muted-foreground">
+            Generate comprehensive test patients with realistic medical data for system testing
+          </p>
+        </div>
 
       <Tabs defaultValue="generate" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
@@ -530,6 +572,7 @@ export default function SystemAdminTestPatients() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
