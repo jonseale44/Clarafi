@@ -6,7 +6,7 @@ import {
   signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
   userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews,
   healthSystems, organizations, locations, userLocations, userSessionLocations,
-  phiAccessLogs,
+  phiAccessLogs, authenticationLogs,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
