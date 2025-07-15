@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { db } from "./db";
-import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema } from "@shared/schema";
+import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs } from "@shared/schema";
 import { eq, sql, and, isNull, desc } from "drizzle-orm";
 import { z } from "zod";
 
@@ -655,6 +655,10 @@ export function registerAdminUserRoutes(app: Express) {
         await db.delete(userLocations).where(eq(userLocations.userId, userId));
       }
 
+      // Delete PHI access logs (HIPAA audit logs) before deleting user
+      console.log(`🗑️ [AdminUserRoutes] Deleting PHI access logs for user ${userId}`);
+      await db.delete(phiAccessLogs).where(eq(phiAccessLogs.userId, userId));
+
       // Now delete the user
       console.log(`🗑️ [AdminUserRoutes] Deleting user ${userId} (${user.username})`);
       await db.delete(users).where(eq(users.id, userId));
@@ -669,7 +673,8 @@ export function registerAdminUserRoutes(app: Express) {
         const constraintMessages: Record<string, string> = {
           'encounters_provider_id_users_id_fk': 'User has associated encounters',
           'patients_primary_provider_id_users_id_fk': 'User is a primary provider for patients',
-          'user_locations_user_id_users_id_fk': 'User has location assignments'
+          'user_locations_user_id_users_id_fk': 'User has location assignments',
+          'phi_access_logs_user_id_fkey': 'User has PHI access logs (HIPAA audit trail)'
         };
         
         const message = constraintMessages[error.constraint] || `Database constraint violation: ${error.constraint}`;

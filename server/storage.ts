@@ -6,6 +6,7 @@ import {
   signedOrders, gptLabReviewNotes, patientAttachments, attachmentExtractedContent, documentProcessingQueue,
   userNoteTemplates, templateShares, templateVersions, userNotePreferences, adminPromptReviews,
   healthSystems, organizations, locations, userLocations, userSessionLocations,
+  phiAccessLogs,
   type User, type InsertUser, type Patient, type InsertPatient,
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
@@ -548,6 +549,10 @@ export class DatabaseStorage implements IStorage {
       // Delete encounters (main foreign key constraint)
       await db.delete(encounters).where(eq(encounters.patientId, id));
       console.log(`🗑️ [Storage] Deleted encounters for patient ${id}`);
+      
+      // Delete PHI access logs before deleting patient (HIPAA audit logs)
+      await db.delete(phiAccessLogs).where(eq(phiAccessLogs.patientId, id));
+      console.log(`🗑️ [Storage] Deleted PHI access logs for patient ${id}`);
       
       // Finally, delete the patient
       await db.delete(patients).where(eq(patients.id, id));
