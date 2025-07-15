@@ -52,9 +52,9 @@ export default function Dashboard() {
     });
     
     if (currentUser?.role === 'admin' && (location === '/dashboard' || location === '/')) {
-      // System admins (Clarafi staff) don't have a health system ID or have ID 1
-      // Clinic admins have a real health system ID (2 or higher)
-      if (!currentUser.healthSystemId || currentUser.healthSystemId === 1) {
+      // System admin has username 'admin' - this is the Clarafi system administrator
+      // Clinic admins are regular admin users of specific health systems
+      if (currentUser.username === 'admin') {
         console.log('Redirecting system admin to /admin');
         setLocation('/admin');
       } else {
