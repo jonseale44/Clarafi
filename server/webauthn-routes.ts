@@ -44,12 +44,32 @@ router.post('/webauthn/register/options', async (req: any, res) => {
  * Requires authenticated user
  */
 router.post('/webauthn/register/verify', async (req: any, res) => {
+  console.log('📝 [WebAuthn] Registration verify request:', {
+    method: req.method,
+    url: req.url,
+    isAuthenticated: req.isAuthenticated(),
+    userId: req.user?.id,
+    sessionId: req.sessionID,
+    hasChallenge: !!req.session?.webauthnChallenge,
+    bodyKeys: Object.keys(req.body || {}),
+    contentType: req.headers['content-type']
+  });
+
   try {
     if (!req.isAuthenticated()) {
+      console.error('❌ [WebAuthn] User not authenticated for registration verify');
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const { response } = req.body;
+    const { response, displayName } = req.body;
+    console.log('📝 [WebAuthn] Registration response received:', {
+      hasResponse: !!response,
+      displayName: displayName,
+      responseType: response?.type,
+      responseId: response?.id,
+      responseKeys: response ? Object.keys(response) : []
+    });
+
     const expectedChallenge = req.session.webauthnChallenge;
 
     if (!expectedChallenge) {
@@ -76,7 +96,13 @@ router.post('/webauthn/register/verify', async (req: any, res) => {
     }
   } catch (error) {
     console.error('❌ [WebAuthn] Registration verification error:', error);
-    res.status(500).json({ error: 'Failed to verify registration' });
+    console.error('Stack trace:', (error as any).stack);
+    console.error('Error details:', {
+      name: (error as any).name,
+      message: (error as any).message,
+      code: (error as any).code
+    });
+    res.status(500).json({ error: 'Failed to verify registration', details: (error as any).message });
   }
 });
 
