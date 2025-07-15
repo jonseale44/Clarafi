@@ -21,20 +21,17 @@ router.get("/stats", requireAuth, async (req, res) => {
       return res.status(403).json({ message: "Access denied. Admin role required." });
     }
 
-    // Get total users count
+    // Get total users count across ALL health systems
     const totalUsersResult = await pool.query(
-      `SELECT COUNT(*) as count FROM users WHERE health_system_id = $1`,
-      [user.healthSystemId]
+      `SELECT COUNT(*) as count FROM users`
     );
     const totalUsers = parseInt(totalUsersResult.rows[0].count) || 0;
 
-    // Get active providers count
+    // Get active providers count across ALL health systems
     const activeProvidersResult = await pool.query(
       `SELECT COUNT(*) as count FROM users 
-       WHERE health_system_id = $1 
-       AND role = 'provider' 
-       AND active = true`,
-      [user.healthSystemId]
+       WHERE role = 'provider' 
+       AND active = true`
     );
     const activeProviders = parseInt(activeProvidersResult.rows[0].count) || 0;
 
