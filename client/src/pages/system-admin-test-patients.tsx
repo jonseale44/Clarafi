@@ -79,31 +79,27 @@ export default function SystemAdminTestPatients() {
   // Fetch providers for selected health system
   const { data: providers, isLoading: loadingProviders } = useQuery({
     queryKey: ["/api/test-patients/providers", selectedHealthSystem],
-    queryFn: () => apiRequest(`/api/test-patients/providers/${selectedHealthSystem}`),
     enabled: !!selectedHealthSystem,
   });
 
   // Fetch locations for selected health system
   const { data: locations, isLoading: loadingLocations } = useQuery({
     queryKey: ["/api/test-patients/locations", selectedHealthSystem],
-    queryFn: () => apiRequest(`/api/test-patients/locations/${selectedHealthSystem}`),
     enabled: !!selectedHealthSystem,
   });
 
   // Fetch test patients for selected health system
   const { data: testPatients, isLoading: loadingTestPatients, refetch: refetchTestPatients } = useQuery({
     queryKey: ["/api/test-patients", selectedHealthSystem],
-    queryFn: () => apiRequest(`/api/test-patients/${selectedHealthSystem}`),
     enabled: !!selectedHealthSystem,
   });
 
   // Generate test patient mutation
   const generatePatientMutation = useMutation({
-    mutationFn: (data: TestPatientConfig) => 
-      apiRequest("/api/test-patients/generate", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async (data: TestPatientConfig) => {
+      const response = await apiRequest("POST", "/api/test-patients/generate", data);
+      return response.json();
+    },
     onSuccess: (data) => {
       toast({
         title: "Test Patient Generated",
@@ -122,10 +118,10 @@ export default function SystemAdminTestPatients() {
 
   // Delete test patient mutation
   const deletePatientMutation = useMutation({
-    mutationFn: (patientId: number) => 
-      apiRequest(`/api/test-patients/${patientId}`, {
-        method: "DELETE",
-      }),
+    mutationFn: async (patientId: number) => {
+      const response = await apiRequest("DELETE", `/api/test-patients/${patientId}`);
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Test Patient Deleted",
