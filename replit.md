@@ -917,6 +917,15 @@ Preferred communication style: Simple, everyday language.
 - **AUTHENTICATION MIDDLEWARE**: Implemented proper requireAuth middleware for all billing routes to ensure secure access control
 - **PRODUCTION READY**: Full end-to-end per-user billing system operational with automatic Stripe checkout session creation for health system billing
 
+### Subscription Key Tier Restriction Fix COMPLETED (July 15, 2025)
+- **CRITICAL FIX**: Tier 1 (Personal EMR at $149/month) systems were incorrectly showing subscription key generation features
+- **FRONTEND RESTRICTION**: Added conditional rendering in clinic-admin-dashboard.tsx to only show subscription keys section for Tier 2 (Enterprise) systems
+- **API ENDPOINT FIX**: Corrected frontend to use proper `/api/subscription-keys/generate` endpoint instead of wrong `/api/subscription-keys` endpoint
+- **BACKEND VALIDATION**: Confirmed existing tier checking in subscription-key-routes.ts properly rejects non-Tier 2 attempts with clear error message
+- **BUSINESS MODEL ALIGNMENT**: Only Tier 2 (Enterprise at $399/month) systems can generate and distribute subscription keys to staff
+- **ERROR HANDLING**: Improved error messages to show actual backend rejection reasons when tier requirements not met
+- **PRODUCTION IMPACT**: Tier 1 individual providers no longer see confusing subscription key features they cannot use
+
 ### Critical Lab Test Name Matching Safety Fix COMPLETED (January 9, 2025)
 - **CRITICAL CLINICAL SAFETY BUG FIXED**: Lab results matrix was incorrectly matching test names using dangerous substring logic
 - **DANGEROUS BUG**: Hemoglobin A1c (HbA1c) was incorrectly appearing as regular Hemoglobin due to substring matching

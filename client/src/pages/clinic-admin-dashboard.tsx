@@ -87,9 +87,17 @@ export default function ClinicAdminDashboard() {
   // Generate new subscription key
   const generateKeyMutation = useMutation({
     mutationFn: async (data: { role: string; maxUses: number }) => {
-      const response = await apiRequest('POST', '/api/subscription-keys', data);
+      // Add required fields for key generation
+      const requestData = {
+        ...data,
+        providerCount: data.role === 'provider' ? 1 : 0,
+        staffCount: data.role === 'staff' ? 1 : 0,
+        tier: stats?.currentTier || 2
+      };
+      const response = await apiRequest('POST', '/api/subscription-keys/generate', requestData);
       if (!response.ok) {
-        throw new Error('Failed to generate subscription key');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate subscription key');
       }
       return response.json();
     },
@@ -343,88 +351,90 @@ export default function ClinicAdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Subscription Keys */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Key className="h-5 w-5" />
-                    Subscription Keys
-                  </CardTitle>
-                  <CardDescription>
-                    Generate access keys for your providers and staff
-                  </CardDescription>
-                </div>
-                <Button
-                  onClick={() => {
-                    generateKeyMutation.mutate({ role: 'provider', maxUses: 1 });
-                  }}
-                  disabled={generateKeyMutation.isPending}
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Generate New Key
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {subscriptionKeys && subscriptionKeys.length > 0 ? (
-                  subscriptionKeys.slice(0, 5).map((key) => (
-                    <div key={key.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                            {key.key}
-                          </code>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6"
-                            onClick={() => copyToClipboard(key.key, key.id)}
-                          >
-                            {copiedKeyId === key.id ? (
-                              <Check className="h-3 w-3 text-green-600" />
-                            ) : (
-                              <Copy className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
-                          <span>Role: {key.role}</span>
-                          <span>Uses: {key.currentUses}/{key.maxUses}</span>
-                          {key.usedAt ? (
-                            <span className="text-green-600">Used</span>
-                          ) : (
-                            <span className="text-blue-600">Available</span>
-                          )}
-                        </div>
-                      </div>
-                      {key.usedAt && (
-                        <Badge variant="outline" className="ml-2">
-                          <Check className="h-3 w-3 mr-1" />
-                          Used
-                        </Badge>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Key className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>No subscription keys generated yet</p>
-                    <p className="text-sm mt-1">Generate keys to invite providers and staff</p>
+          {/* Subscription Keys - Only show for Tier 2 (Enterprise) */}
+          {stats?.currentTier === 2 && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Key className="h-5 w-5" />
+                      Subscription Keys
+                    </CardTitle>
+                    <CardDescription>
+                      Generate access keys for your providers and staff
+                    </CardDescription>
                   </div>
-                )}
-                {subscriptionKeys && subscriptionKeys.length > 5 && (
-                  <Link href="/admin/subscription-keys">
-                    <Button variant="outline" className="w-full mt-2">
-                      View All Keys ({subscriptionKeys.length})
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  <Button
+                    onClick={() => {
+                      generateKeyMutation.mutate({ role: 'provider', maxUses: 1 });
+                    }}
+                    disabled={generateKeyMutation.isPending}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Generate New Key
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {subscriptionKeys && subscriptionKeys.length > 0 ? (
+                    subscriptionKeys.slice(0, 5).map((key) => (
+                      <div key={key.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                              {key.key}
+                            </code>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6"
+                              onClick={() => copyToClipboard(key.key, key.id)}
+                            >
+                              {copiedKeyId === key.id ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                            <span>Role: {key.role}</span>
+                            <span>Uses: {key.currentUses}/{key.maxUses}</span>
+                            {key.usedAt ? (
+                              <span className="text-green-600">Used</span>
+                            ) : (
+                              <span className="text-blue-600">Available</span>
+                            )}
+                          </div>
+                        </div>
+                        {key.usedAt && (
+                          <Badge variant="outline" className="ml-2">
+                            <Check className="h-3 w-3 mr-1" />
+                            Used
+                          </Badge>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Key className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>No subscription keys generated yet</p>
+                      <p className="text-sm mt-1">Generate keys to invite providers and staff</p>
+                    </div>
+                  )}
+                  {subscriptionKeys && subscriptionKeys.length > 5 && (
+                    <Link href="/admin/subscription-keys">
+                      <Button variant="outline" className="w-full mt-2">
+                        View All Keys ({subscriptionKeys.length})
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
           <Card>
