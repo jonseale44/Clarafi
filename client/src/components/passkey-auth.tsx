@@ -83,6 +83,8 @@ function base64ToArrayBuffer(base64url: string): ArrayBuffer {
 }
 
 export function PasskeyAuth() {
+  console.log('🎯🎯🎯 [Frontend] PasskeyAuth component rendering');
+  
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -146,6 +148,19 @@ export function PasskeyAuth() {
       try {
       // 1. Get registration options from server
       console.log('🔵 [Frontend] Requesting registration options...');
+      
+      // Add a global error event listener temporarily
+      const errorHandler = (event: ErrorEvent) => {
+        console.error('🔴🔴🔴 [Frontend] GLOBAL ERROR EVENT:', {
+          message: event.message,
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+          error: event.error
+        });
+      };
+      window.addEventListener('error', errorHandler);
+      
       const optionsResponse = await fetch('/api/auth/webauthn/register/options', {
         method: 'POST',
         credentials: 'include',
@@ -153,7 +168,14 @@ export function PasskeyAuth() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({})
+      }).catch(fetchError => {
+        console.error('🔴 [Frontend] Fetch error:', fetchError);
+        window.removeEventListener('error', errorHandler);
+        throw fetchError;
       });
+      
+      // Remove error handler after fetch completes
+      window.removeEventListener('error', errorHandler);
       
       console.log('🔵 [Frontend] Registration options response:', {
         status: optionsResponse.status,
@@ -610,10 +632,14 @@ export function PasskeyAuth() {
             </Button>
             <Button
               onClick={() => {
-                console.log('🚀 [Frontend] Register Passkey button clicked in dialog');
+                console.log('🚀🚀🚀 [Frontend] Register Passkey button clicked in dialog - IMMEDIATE');
                 console.log('🚀 [Frontend] Current passkey name:', passkeyName);
                 console.log('🚀 [Frontend] isRegistering:', isRegistering);
-                handleRegisterPasskey();
+                try {
+                  handleRegisterPasskey();
+                } catch (immediateError) {
+                  console.error('🔴🔴🔴 [Frontend] IMMEDIATE ERROR in button click:', immediateError);
+                }
               }}
               disabled={isRegistering || !passkeyName.trim()}
             >
