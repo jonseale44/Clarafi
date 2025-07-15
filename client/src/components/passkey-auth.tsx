@@ -94,16 +94,53 @@ export function PasskeyAuth() {
     
     try {
       // 1. Get registration options from server
+      console.log('🔵 [Frontend] Requesting registration options...');
       const optionsResponse = await fetch('/api/auth/webauthn/register/options', {
-        credentials: 'include'
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      
+      console.log('🔵 [Frontend] Registration options response:', {
+        status: optionsResponse.status,
+        statusText: optionsResponse.statusText,
+        headers: Object.fromEntries(optionsResponse.headers.entries()),
+        ok: optionsResponse.ok
       });
       
       if (!optionsResponse.ok) {
-        throw new Error('Failed to get registration options');
+        const errorText = await optionsResponse.text();
+        console.error('🔴 [Frontend] Error response body:', errorText);
+        
+        // Check if it's HTML (error page)
+        if (errorText.includes('<!DOCTYPE') || errorText.includes('<html')) {
+          console.error('🔴 [Frontend] Received HTML instead of JSON - server error');
+          throw new Error('Server returned an error page instead of JSON response');
+        }
+        
+        // Try to parse as JSON
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(errorJson.error || 'Failed to get registration options');
+        } catch {
+          throw new Error(`Failed to get registration options: ${optionsResponse.statusText}`);
+        }
       }
       
-      const options = await optionsResponse.json();
-      console.log('Raw options from server:', options);
+      let options;
+      try {
+        const responseText = await optionsResponse.text();
+        console.log('🔵 [Frontend] Raw response text:', responseText);
+        options = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('🔴 [Frontend] Failed to parse response as JSON:', parseError);
+        throw new Error('Server returned invalid JSON response');
+      }
+      
+      console.log('🔵 [Frontend] Parsed options from server:', options);
       
       // Convert base64 strings to ArrayBuffer as required by WebAuthn API
       let publicKeyOptions;

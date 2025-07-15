@@ -10,31 +10,68 @@ const router = Router();
  * Generate registration options for a new passkey
  * Requires authenticated user
  */
-router.get('/webauthn/register/options', async (req: any, res) => {
+router.post('/webauthn/register/options', async (req: any, res) => {
   try {
     console.log('📝 [WebAuthn] Registration options request:', {
+      method: req.method,
+      url: req.url,
       isAuthenticated: req.isAuthenticated(),
       userId: req.user?.id,
+      userName: req.user?.username,
+      userEmail: req.user?.email,
       sessionId: req.sessionID,
-      headers: req.headers
+      hasSession: !!req.session,
+      sessionKeys: req.session ? Object.keys(req.session) : [],
+      bodyKeys: Object.keys(req.body || {}),
+      contentType: req.headers['content-type']
     });
 
     if (!req.isAuthenticated()) {
       console.error('❌ [WebAuthn] User not authenticated for registration');
+      console.error('Session details:', {
+        sessionId: req.sessionID,
+        session: req.session,
+        user: req.user
+      });
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    console.log('🔍 [WebAuthn] Generating registration options for user:', req.user!.id);
+    console.log('🔍 [WebAuthn] Generating registration options for user:', {
+      userId: req.user!.id,
+      username: req.user!.username,
+      email: req.user!.email
+    });
+    
     const { options, challenge } = await WebAuthnService.generateRegistrationOptions((req as any).user!.id);
+    
+    console.log('📋 [WebAuthn] Generated options:', {
+      challenge: challenge,
+      rp: options.rp,
+      user: {
+        id: options.user.id,
+        name: options.user.name,
+        displayName: options.user.displayName
+      },
+      pubKeyCredParams: options.pubKeyCredParams,
+      timeout: options.timeout,
+      attestation: options.attestation,
+      authenticatorSelection: options.authenticatorSelection
+    });
     
     // Store challenge in session
     req.session.webauthnChallenge = challenge;
     console.log('✅ [WebAuthn] Challenge stored in session:', challenge);
     
+    console.log('📤 [WebAuthn] Sending registration options response');
     res.json(options);
   } catch (error) {
     console.error('❌ [WebAuthn] Registration options error:', error);
     console.error('Stack trace:', (error as any).stack);
+    console.error('Error details:', {
+      name: (error as any).name,
+      message: (error as any).message,
+      code: (error as any).code
+    });
     res.status(500).json({ error: 'Failed to generate registration options', details: (error as any).message });
   }
 });

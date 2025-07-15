@@ -36,6 +36,35 @@ app.use((req, res, next) => {
       });
     }
   }
+  
+  // Add response interceptor for WebAuthn routes
+  if (req.url.includes('webauthn')) {
+    const originalSend = res.send;
+    const originalJson = res.json;
+    
+    res.send = function(data: any) {
+      console.log('📤 [WebAuthn Response] send() called:', {
+        url: req.url,
+        statusCode: res.statusCode,
+        contentType: res.getHeader('content-type'),
+        dataType: typeof data,
+        dataLength: data?.length || JSON.stringify(data).length,
+        dataPreview: typeof data === 'string' ? data.substring(0, 200) : JSON.stringify(data).substring(0, 200)
+      });
+      return originalSend.call(this, data);
+    };
+    
+    res.json = function(data: any) {
+      console.log('📤 [WebAuthn Response] json() called:', {
+        url: req.url,
+        statusCode: res.statusCode,
+        dataKeys: data ? Object.keys(data) : null,
+        dataPreview: JSON.stringify(data).substring(0, 200)
+      });
+      return originalJson.call(this, data);
+    };
+  }
+  
   next();
 });
 
