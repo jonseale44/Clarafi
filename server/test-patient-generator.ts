@@ -458,6 +458,8 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
           orderDate: encounterDate.toISOString().split('T')[0],
           resultDate: new Date(encounterDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           testName: hasDiabetes ? "Hemoglobin A1C" : "Comprehensive Metabolic Panel",
+          loincCode: hasDiabetes ? "4548-4" : "24323-8", // LOINC codes for HbA1c and CMP
+          testCode: hasDiabetes ? "HBA1C" : "CMP", // Required field - internal test code
           resultValue: hasDiabetes ? String((Math.random() * 4 + 6).toFixed(1)) : "Normal",
           referenceRange: hasDiabetes ? "< 7.0%" : "See report",
           abnormalFlag: hasDiabetes && Math.random() > 0.5 ? "H" : undefined,
