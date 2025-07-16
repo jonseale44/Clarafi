@@ -2001,6 +2001,7 @@ export class DatabaseStorage implements IStorage {
     endDate: Date;
     providerId?: number;
     locationId?: number;
+    patientId?: number;
   }) {
     let conditions = [
       gte(appointments.appointmentDate, params.startDate.toISOString().split('T')[0]),
@@ -2015,6 +2016,10 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(appointments.locationId, params.locationId));
     }
     
+    if (params.patientId) {
+      conditions.push(eq(appointments.patientId, params.patientId));
+    }
+    
     const results = await db
       .select({
         id: appointments.id,
@@ -2024,13 +2029,16 @@ export class DatabaseStorage implements IStorage {
         providerName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
         locationId: appointments.locationId,
         appointmentDate: appointments.appointmentDate,
-        appointmentTime: appointments.appointmentTime,
+        appointmentTime: appointments.startTime,
+        startTime: appointments.startTime,
+        endTime: appointments.endTime,
         duration: appointments.duration,
         patientVisibleDuration: appointments.patientVisibleDuration,
         providerScheduledDuration: appointments.providerScheduledDuration,
         appointmentType: appointments.appointmentType,
         status: appointments.status,
-        notes: appointments.notes,
+        chiefComplaint: appointments.chiefComplaint,
+        notes: appointments.schedulingNotes,
         aiPredictedDuration: sql<number>`NULL` // TODO: Get from prediction history
       })
       .from(appointments)
@@ -2040,7 +2048,7 @@ export class DatabaseStorage implements IStorage {
       ))
       .innerJoin(users, eq(appointments.providerId, users.id))
       .where(and(...conditions))
-      .orderBy(appointments.appointmentDate, appointments.appointmentTime)
+      .orderBy(appointments.appointmentDate, appointments.startTime)
       .execute();
       
     return results;

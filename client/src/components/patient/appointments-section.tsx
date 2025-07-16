@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Calendar, Plus, Clock, MapPin, User, Phone, AlertCircle } from "lucide-react";
@@ -53,22 +53,30 @@ export function AppointmentsSection({ patientId }: AppointmentsSectionProps) {
   });
 
   // Fetch appointments for this patient (past year to next year)
-  const startDate = new Date();
-  startDate.setFullYear(startDate.getFullYear() - 1);
-  const endDate = new Date();
-  endDate.setFullYear(endDate.getFullYear() + 1);
+  const { startDate, endDate, startDateStr, endDateStr } = useMemo(() => {
+    const start = new Date();
+    start.setFullYear(start.getFullYear() - 1);
+    const end = new Date();
+    end.setFullYear(end.getFullYear() + 1);
+    return {
+      startDate: start,
+      endDate: end,
+      startDateStr: start.toISOString(),
+      endDateStr: end.toISOString()
+    };
+  }, []); // Empty dependency array ensures dates are calculated only once
 
   const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
     queryKey: ['/api/scheduling/appointments', { 
       patientId,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
+      startDate: startDateStr,
+      endDate: endDateStr
     }],
     queryFn: async () => {
       const params = new URLSearchParams({
         patientId: patientId.toString(),
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
+        startDate: startDateStr,
+        endDate: endDateStr
       });
       const response = await fetch(`/api/scheduling/appointments?${params}`);
       if (!response.ok) throw new Error('Failed to fetch appointments');

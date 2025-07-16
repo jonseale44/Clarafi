@@ -26,7 +26,7 @@ router.get('/api/scheduling/providers', tenantIsolation, async (req, res) => {
 router.get('/api/scheduling/appointments', tenantIsolation, async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const { startDate, endDate, providerId, locationId } = req.query;
+    const { startDate, endDate, providerId, locationId, patientId } = req.query;
     
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'Start date and end date are required' });
@@ -37,7 +37,8 @@ router.get('/api/scheduling/appointments', tenantIsolation, async (req, res) => 
       startDate: new Date(startDate as string),
       endDate: new Date(endDate as string),
       providerId: providerId ? parseInt(providerId as string) : undefined,
-      locationId: locationId ? parseInt(locationId as string) : undefined
+      locationId: locationId ? parseInt(locationId as string) : undefined,
+      patientId: patientId ? parseInt(patientId as string) : undefined
     });
     
     res.json(appointments);
