@@ -1,0 +1,60 @@
+
+📅 [STORAGE] Creating appointment with raw data: {
+  patientId: 67,
+  providerId: 61,
+  locationId: 2,
+  appointmentDate: '2025-07-18',
+  appointmentTime: '09:00',
+  appointmentType: 'physical',
+  duration: 20,
+  notes: 'asdf',
+  useAiScheduling: true,
+  status: 'scheduled',
+  aiPredictedDuration: 20,
+  patientVisibleDuration: 20,
+  providerScheduledDuration: 25,
+  createdBy: 61
+}
+📅 [STORAGE] Inserting appointment data: {
+  patientId: 67,
+  providerId: 61,
+  locationId: 2,
+  startTime: 2025-07-18T09:00:00.000Z,
+  endTime: 2025-07-18T09:25:00.000Z,
+  duration: 20,
+  patientVisibleDuration: 20,
+  providerScheduledDuration: 25,
+  aiPredictedDuration: 20,
+  appointmentType: 'physical',
+  appointmentTypeId: 1,
+  chiefComplaint: '',
+  status: 'scheduled',
+  notes: 'asdf',
+  createdBy: 61,
+  createdAt: 2025-07-16T00:39:59.853Z
+}
+Error creating appointment: error: null value in column "appointment_date" of relation "appointments" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.createAppointment (/home/runner/workspace/server/storage.ts:2133:20)
+    at async <anonymous> (/home/runner/workspace/server/scheduling-routes.ts:136:25) {
+  length: 499,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (13, 67, 61, 2, null, 2025-07-18T09:00:00.000+00:00, 2025-07-18T09:25:00.000+00:00, 20, physical, , null, scheduled, pending, null, null, null, routine, null, null, null, 0, null, null, null, null, f, null, null, 2025-07-16 00:39:59.853, 2025-07-16 00:39:59.875048, 61, 20, 25).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'appointments',
+  column: 'appointment_date',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+12:40:00 AM [express] POST /api/scheduling/appointments 500 in 333ms :: {"error":"Failed to create ap…
