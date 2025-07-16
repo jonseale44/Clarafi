@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfWeek, addDays, isSameDay } from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, startOfMonth, endOfMonth, startOfDay, addMonths, getDay } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface CalendarViewProps {
   providerId?: number;
@@ -41,15 +42,37 @@ interface Appointment {
 export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"week" | "day">("week");
+  const [viewMode, setViewMode] = useState<"week" | "day" | "month">("week");
   const [showNewAppointmentDialog, setShowNewAppointmentDialog] = useState(false);
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<{ id: number; name: string } | null>(null);
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
   
-  // Fetch appointments for the current week
-  const startDate = startOfWeek(currentDate);
-  const endDate = addDays(startDate, 6);
+  // Calculate date range based on view mode
+  const getDateRange = () => {
+    if (viewMode === 'month') {
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+      return {
+        start: startOfWeek(monthStart),
+        end: addDays(startOfWeek(monthEnd), 6)
+      };
+    } else if (viewMode === 'week') {
+      const weekStart = startOfWeek(currentDate);
+      return {
+        start: weekStart,
+        end: addDays(weekStart, 6)
+      };
+    } else {
+      // Day view
+      return {
+        start: startOfDay(currentDate),
+        end: startOfDay(currentDate)
+      };
+    }
+  };
+  
+  const { start: startDate, end: endDate } = getDateRange();
   
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
     queryKey: ['/api/scheduling/appointments', {
@@ -92,8 +115,14 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
     refetchInterval: 60000 // Refresh every minute
   });
   
-  const navigateWeek = (direction: number) => {
-    setCurrentDate(addDays(currentDate, direction * 7));
+  const navigate = (direction: number) => {
+    if (viewMode === 'week') {
+      setCurrentDate(addDays(currentDate, direction * 7));
+    } else if (viewMode === 'day') {
+      setCurrentDate(addDays(currentDate, direction));
+    } else if (viewMode === 'month') {
+      setCurrentDate(addMonths(currentDate, direction));
+    }
   };
   
   const getAppointmentsForDay = (date: Date) => {
@@ -210,6 +239,74 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
     );
   };
   
+  const renderMonthView = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const calendarStart = startOfWeek(monthStart);
+    const calendarEnd = addDays(startOfWeek(monthEnd), 6);
+    
+    const days = [];
+    let day = calendarStart;
+    
+    while (day <= calendarEnd) {
+      days.push(day);
+      day = addDays(day, 1);
+    }
+    
+    return (
+      <div className="h-full flex flex-col">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-2 mb-2">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(dayName => (
+            <div key={dayName} className="text-sm font-semibold text-center text-gray-600">
+              {dayName}
+            </div>
+          ))}
+        </div>
+        
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-2 flex-1">
+          {days.map((day, index) => {
+            const dayAppointments = getAppointmentsForDay(day);
+            const isSelected = isSameDay(day, selectedDate);
+            const isToday = isSameDay(day, new Date());
+            const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+            
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "border rounded-lg p-2 min-h-[100px] cursor-pointer hover:bg-gray-50",
+                  isSelected && "bg-blue-50 border-blue-500",
+                  !isSelected && "border-gray-200",
+                  isToday && "ring-2 ring-blue-300",
+                  !isCurrentMonth && "text-gray-400 bg-gray-50"
+                )}
+                onClick={() => setSelectedDate(day)}
+              >
+                <div className="text-sm font-medium mb-1">
+                  {format(day, 'd')}
+                </div>
+                <div className="space-y-1">
+                  {dayAppointments.slice(0, 3).map((apt) => (
+                    <div key={apt.id} className="text-xs bg-blue-100 rounded px-1 py-0.5 truncate">
+                      {apt.appointmentTime} - {apt.patientName}
+                    </div>
+                  ))}
+                  {dayAppointments.length > 3 && (
+                    <div className="text-xs text-gray-500">
+                      +{dayAppointments.length - 3} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -226,17 +323,19 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigateWeek(-1)}
+            onClick={() => navigate(-1)}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h3 className="text-lg font-semibold">
-            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
+            {viewMode === 'month' && format(currentDate, 'MMMM yyyy')}
+            {viewMode === 'week' && `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`}
+            {viewMode === 'day' && format(currentDate, 'EEEE, MMMM d, yyyy')}
           </h3>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigateWeek(1)}
+            onClick={() => navigate(1)}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -250,6 +349,13 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === 'month' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('month')}
+          >
+            Month
+          </Button>
           <Button
             variant={viewMode === 'week' ? 'default' : 'outline'}
             size="sm"
@@ -289,7 +395,9 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       
       {/* Calendar Content */}
       <div className="flex-1">
-        {viewMode === 'week' ? renderWeekView() : renderDayView()}
+        {viewMode === 'month' && renderMonthView()}
+        {viewMode === 'week' && renderWeekView()}
+        {viewMode === 'day' && renderDayView()}
       </div>
 
       {/* New Appointment Dialog */}
