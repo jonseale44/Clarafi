@@ -52,6 +52,7 @@ import labSimulatorRoutes from "./lab-simulator-routes";
 import labStatusDashboardRoutes from "./lab-status-dashboard-routes";
 import { externalLabMockRouter } from "./external-lab-mock-service";
 import subscriptionKeyRoutes from "./subscription-key-routes";
+import blogRoutes from "./blog-routes";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -717,6 +718,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Scheduling routes
   app.use(schedulingRoutes);
+  
+  // Blog routes (public and admin)
+  app.use(blogRoutes);
 
   // Unified vitals processing (handles both immediate parsing and attachment extraction)
   const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;

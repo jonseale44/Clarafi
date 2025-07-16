@@ -20,6 +20,11 @@ import {
   type SelectUserNotePreferences, type InsertUserNotePreferences,
   type AdminPromptReview, type InsertAdminPromptReview,
   type Appointment, type InsertAppointment,
+  // Blog/Article System
+  articles, articleRevisions, articleComments, articleGenerationQueue, newsletterSubscribers,
+  type Article, type InsertArticle, type ArticleRevision, type InsertArticleRevision,
+  type ArticleComment, type InsertArticleComment, type ArticleGenerationQueue, type InsertArticleGenerationQueue,
+  type NewsletterSubscriber, type InsertNewsletterSubscriber,
   // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db";
@@ -156,6 +161,42 @@ export interface IStorage {
     startTime: Date;
     endTime: Date;
   }): Promise<void>;
+  
+  // Blog/Article System
+  getArticles(params: {
+    status?: string;
+    category?: string;
+    targetAudience?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Article[]>;
+  getArticleById(id: number): Promise<Article | undefined>;
+  getArticleBySlug(slug: string): Promise<Article | undefined>;
+  createArticle(article: InsertArticle): Promise<Article>;
+  updateArticle(id: number, updates: Partial<Article>): Promise<Article>;
+  deleteArticle(id: number): Promise<void>;
+  incrementArticleViews(id: number): Promise<void>;
+  
+  // Article Revisions
+  getArticleRevisions(articleId: number): Promise<ArticleRevision[]>;
+  createArticleRevision(revision: InsertArticleRevision): Promise<ArticleRevision>;
+  
+  // Article Comments
+  getArticleComments(articleId: number, approved?: boolean): Promise<ArticleComment[]>;
+  createArticleComment(comment: InsertArticleComment): Promise<ArticleComment>;
+  updateArticleComment(id: number, updates: Partial<ArticleComment>): Promise<ArticleComment>;
+  deleteArticleComment(id: number): Promise<void>;
+  
+  // Article Generation Queue
+  getArticleGenerationQueue(status?: string): Promise<ArticleGenerationQueue[]>;
+  createArticleGenerationQueueItem(item: InsertArticleGenerationQueue): Promise<ArticleGenerationQueue>;
+  updateArticleGenerationQueueItem(id: number, updates: Partial<ArticleGenerationQueue>): Promise<ArticleGenerationQueue>;
+  
+  // Newsletter Subscribers
+  getNewsletterSubscribers(unsubscribed?: boolean): Promise<NewsletterSubscriber[]>;
+  createNewsletterSubscriber(subscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber>;
+  updateNewsletterSubscriber(id: number, updates: Partial<NewsletterSubscriber>): Promise<NewsletterSubscriber>;
+  unsubscribeNewsletter(email: string): Promise<void>;
   
   sessionStore: any;
 }
@@ -2966,6 +3007,230 @@ export class DatabaseStorage implements IStorage {
     
     // Finally, delete the patient
     await db.delete(patients).where(eq(patients.id, patientId));
+  }
+
+  // Blog/Article System Implementation
+  async getArticles(params: {
+    status?: string;
+    category?: string;
+    targetAudience?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Article[]> {
+    const conditions: any[] = [];
+    
+    if (params.status) {
+      conditions.push(eq(articles.status, params.status));
+    }
+    
+    if (params.category) {
+      conditions.push(eq(articles.category, params.category));
+    }
+    
+    if (params.targetAudience) {
+      conditions.push(eq(articles.targetAudience, params.targetAudience));
+    }
+    
+    let query = db.select().from(articles);
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    query = query.orderBy(desc(articles.publishedAt), desc(articles.createdAt)) as any;
+    
+    if (params.limit) {
+      query = query.limit(params.limit) as any;
+    }
+    
+    if (params.offset) {
+      query = query.offset(params.offset) as any;
+    }
+    
+    return await query;
+  }
+
+  async getArticleById(id: number): Promise<Article | undefined> {
+    const [article] = await db
+      .select()
+      .from(articles)
+      .where(eq(articles.id, id));
+    return article || undefined;
+  }
+
+  async getArticleBySlug(slug: string): Promise<Article | undefined> {
+    const [article] = await db
+      .select()
+      .from(articles)
+      .where(eq(articles.slug, slug));
+    return article || undefined;
+  }
+
+  async createArticle(article: InsertArticle): Promise<Article> {
+    const [newArticle] = await db
+      .insert(articles)
+      .values(article)
+      .returning();
+    return newArticle;
+  }
+
+  async updateArticle(id: number, updates: Partial<Article>): Promise<Article> {
+    const [updatedArticle] = await db
+      .update(articles)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(articles.id, id))
+      .returning();
+    return updatedArticle;
+  }
+
+  async deleteArticle(id: number): Promise<void> {
+    await db.delete(articles).where(eq(articles.id, id));
+  }
+
+  async incrementArticleViews(id: number): Promise<void> {
+    await db
+      .update(articles)
+      .set({
+        viewCount: sql`${articles.viewCount} + 1`,
+      })
+      .where(eq(articles.id, id));
+  }
+
+  // Article Revisions
+  async getArticleRevisions(articleId: number): Promise<ArticleRevision[]> {
+    return await db
+      .select()
+      .from(articleRevisions)
+      .where(eq(articleRevisions.articleId, articleId))
+      .orderBy(desc(articleRevisions.createdAt));
+  }
+
+  async createArticleRevision(revision: InsertArticleRevision): Promise<ArticleRevision> {
+    const [newRevision] = await db
+      .insert(articleRevisions)
+      .values(revision)
+      .returning();
+    return newRevision;
+  }
+
+  // Article Comments
+  async getArticleComments(articleId: number, approved?: boolean): Promise<ArticleComment[]> {
+    const conditions: any[] = [eq(articleComments.articleId, articleId)];
+    
+    if (approved !== undefined) {
+      conditions.push(eq(articleComments.isApproved, approved));
+    }
+    
+    return await db
+      .select()
+      .from(articleComments)
+      .where(and(...conditions))
+      .orderBy(desc(articleComments.createdAt));
+  }
+
+  async createArticleComment(comment: InsertArticleComment): Promise<ArticleComment> {
+    const [newComment] = await db
+      .insert(articleComments)
+      .values(comment)
+      .returning();
+    return newComment;
+  }
+
+  async updateArticleComment(id: number, updates: Partial<ArticleComment>): Promise<ArticleComment> {
+    const [updatedComment] = await db
+      .update(articleComments)
+      .set(updates)
+      .where(eq(articleComments.id, id))
+      .returning();
+    return updatedComment;
+  }
+
+  async deleteArticleComment(id: number): Promise<void> {
+    await db.delete(articleComments).where(eq(articleComments.id, id));
+  }
+
+  // Article Generation Queue
+  async getArticleGenerationQueue(status?: string): Promise<ArticleGenerationQueue[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(articleGenerationQueue)
+        .where(eq(articleGenerationQueue.status, status))
+        .orderBy(articleGenerationQueue.createdAt);
+    }
+    
+    return await db
+      .select()
+      .from(articleGenerationQueue)
+      .orderBy(articleGenerationQueue.createdAt);
+  }
+
+  async createArticleGenerationQueueItem(item: InsertArticleGenerationQueue): Promise<ArticleGenerationQueue> {
+    const [newItem] = await db
+      .insert(articleGenerationQueue)
+      .values(item)
+      .returning();
+    return newItem;
+  }
+
+  async updateArticleGenerationQueueItem(id: number, updates: Partial<ArticleGenerationQueue>): Promise<ArticleGenerationQueue> {
+    const [updatedItem] = await db
+      .update(articleGenerationQueue)
+      .set(updates)
+      .where(eq(articleGenerationQueue.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  // Newsletter Subscribers
+  async getNewsletterSubscribers(unsubscribed?: boolean): Promise<NewsletterSubscriber[]> {
+    if (unsubscribed === false) {
+      return await db
+        .select()
+        .from(newsletterSubscribers)
+        .where(sql`${newsletterSubscribers.unsubscribedAt} IS NULL`)
+        .orderBy(desc(newsletterSubscribers.subscribedAt));
+    } else if (unsubscribed === true) {
+      return await db
+        .select()
+        .from(newsletterSubscribers)
+        .where(sql`${newsletterSubscribers.unsubscribedAt} IS NOT NULL`)
+        .orderBy(desc(newsletterSubscribers.subscribedAt));
+    }
+    
+    return await db
+      .select()
+      .from(newsletterSubscribers)
+      .orderBy(desc(newsletterSubscribers.subscribedAt));
+  }
+
+  async createNewsletterSubscriber(subscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber> {
+    const [newSubscriber] = await db
+      .insert(newsletterSubscribers)
+      .values(subscriber)
+      .returning();
+    return newSubscriber;
+  }
+
+  async updateNewsletterSubscriber(id: number, updates: Partial<NewsletterSubscriber>): Promise<NewsletterSubscriber> {
+    const [updatedSubscriber] = await db
+      .update(newsletterSubscribers)
+      .set(updates)
+      .where(eq(newsletterSubscribers.id, id))
+      .returning();
+    return updatedSubscriber;
+  }
+
+  async unsubscribeNewsletter(email: string): Promise<void> {
+    await db
+      .update(newsletterSubscribers)
+      .set({
+        unsubscribedAt: new Date(),
+      })
+      .where(eq(newsletterSubscribers.email, email));
   }
 }
 

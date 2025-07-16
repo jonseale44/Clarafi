@@ -3769,4 +3769,139 @@ export const webauthnCredentials = pgTable("webauthn_credentials", {
   createdIdx: index("webauthn_credentials_created_idx").on(table.createdAt)
 }));
 
+// Blog/Article System Tables
+export const articles = pgTable("articles", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  content: text("content").notNull(),
+  excerpt: text("excerpt"),
+  category: text("category").notNull(),
+  status: text("status").notNull().default("draft"), // draft, review, published, archived
+  authorName: text("author_name").default("Clarafi Team"),
+  featuredImage: text("featured_image"),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  keywords: text("keywords").array(),
+  targetAudience: text("target_audience"), // physician, administrator, ceo
+  readingTime: integer("reading_time"), // in minutes
+  viewCount: integer("view_count").default(0),
+  publishedAt: timestamp("published_at"),
+  scheduledFor: timestamp("scheduled_for"),
+  generatedAt: timestamp("generated_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const articleRevisions = pgTable("article_revisions", {
+  id: serial("id").primaryKey(),
+  articleId: integer("article_id").notNull().references(() => articles.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  revisionNote: text("revision_note"),
+  revisionType: text("revision_type"), // ai_edit, manual_edit, ai_feedback
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const articleComments = pgTable("article_comments", {
+  id: serial("id").primaryKey(),
+  articleId: integer("article_id").notNull().references(() => articles.id, { onDelete: "cascade" }),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  content: text("content").notNull(),
+  isApproved: boolean("is_approved").default(false),
+  parentId: integer("parent_id").references(() => articleComments.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const articleGenerationQueue = pgTable("article_generation_queue", {
+  id: serial("id").primaryKey(),
+  topic: text("topic"),
+  category: text("category").notNull(),
+  targetAudience: text("target_audience").notNull(),
+  keywords: text("keywords").array(),
+  competitorMentions: text("competitor_mentions").array(),
+  researchSources: jsonb("research_sources"), // URLs and snippets from web search
+  status: text("status").notNull().default("pending"), // pending, generating, completed, failed
+  generatedArticleId: integer("generated_article_id").references(() => articles.id),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+});
+
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  subscribedAt: timestamp("subscribed_at").defaultNow(),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+  preferences: jsonb("preferences"), // categories they're interested in
+  source: text("source"), // blog, landing_page, etc
+});
+
+// Blog/Article System Types and Schemas
+export const insertArticleSchema = createInsertSchema(articles).pick({
+  title: true,
+  slug: true,
+  content: true,
+  excerpt: true,
+  category: true,
+  status: true,
+  authorName: true,
+  featuredImage: true,
+  metaTitle: true,
+  metaDescription: true,
+  keywords: true,
+  targetAudience: true,
+  readingTime: true,
+  scheduledFor: true,
+  reviewedBy: true,
+});
+
+export const insertArticleRevisionSchema = createInsertSchema(articleRevisions).pick({
+  articleId: true,
+  content: true,
+  revisionNote: true,
+  revisionType: true,
+  createdBy: true,
+});
+
+export const insertArticleCommentSchema = createInsertSchema(articleComments).pick({
+  articleId: true,
+  authorName: true,
+  authorEmail: true,
+  content: true,
+  isApproved: true,
+  parentId: true,
+});
+
+export const insertArticleGenerationQueueSchema = createInsertSchema(articleGenerationQueue).pick({
+  topic: true,
+  category: true,
+  targetAudience: true,
+  keywords: true,
+  competitorMentions: true,
+  researchSources: true,
+});
+
+export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).pick({
+  email: true,
+  name: true,
+  preferences: true,
+  source: true,
+});
+
+export type Article = typeof articles.$inferSelect;
+export type InsertArticle = z.infer<typeof insertArticleSchema>;
+export type ArticleRevision = typeof articleRevisions.$inferSelect;
+export type InsertArticleRevision = z.infer<typeof insertArticleRevisionSchema>;
+export type ArticleComment = typeof articleComments.$inferSelect;
+export type InsertArticleComment = z.infer<typeof insertArticleCommentSchema>;
+export type ArticleGenerationQueue = typeof articleGenerationQueue.$inferSelect;
+export type InsertArticleGenerationQueue = z.infer<typeof insertArticleGenerationQueueSchema>;
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
+
 // Indexes will be created via SQL migration

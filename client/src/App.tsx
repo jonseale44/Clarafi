@@ -37,6 +37,8 @@ import PasswordChangeRequired from "@/pages/password-change-required";
 import MagicLinkPage from "@/pages/magic-link-page";
 import SchedulingPage from "@/pages/scheduling";
 import SystemAdminTestPatients from "@/pages/system-admin-test-patients";
+import BlogPage from "@/pages/blog";
+import BlogArticlePage from "@/pages/blog-article";
 
 import NotFound from "@/pages/not-found";
 
@@ -79,6 +81,11 @@ function Router() {
       <Route path="/admin-verification" component={AdminVerification} />
       <Route path="/admin-verification-complete" component={AdminVerificationComplete} />
       <Route path="/payment" component={PaymentPage} />
+      
+      {/* Public Blog Routes */}
+      <Route path="/blog" component={BlogPage} />
+      <Route path="/blog/:slug" component={BlogArticlePage} />
+      
       <Route component={NotFound} />
     </Switch>
   );

@@ -288,6 +288,11 @@ export default function Dashboard() {
                   Scheduling
                 </button>
               </Link>
+              <Link href="/blog">
+                <button className="px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                  Blog
+                </button>
+              </Link>
               {/* Admin-only navigation items */}
               {currentUser?.role === 'admin' && (
                 <>
