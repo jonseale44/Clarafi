@@ -159,14 +159,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Comprehensive Database Schema Fix COMPLETED (July 16, 2025)
-- **FIXED ALL DATABASE ISSUES**: Successfully added 32 missing columns to orders table including dosage, quantity, sig, form, route_of_administration, days_supply, diagnosis_codes, requires_prior_auth, fasting_required, region, laterality, contrast_needed, specialty_type and many others
-- **CREATED MISSING TABLES**: Added complete diagnoses table with proper schema structure
-- **AUTHENTICATION FIXES**: Added missing email and health_system_id columns to authentication_logs table
-- **TYPESCRIPT FIXES**: Resolved all type errors in storage.ts with proper handling of Drizzle ORM query results
-- **PASSWORD RESET**: Reset admin password with proper hashing (admin/admin123)
-- **BACKGROUND PROCESSOR**: Lab order background processor now running without errors
-- **PRODUCTION READY**: All database schema issues resolved, application fully functional
+### Critical Database Schema Alignment Fix COMPLETED (January 16, 2025)
+- **SCHEMA DRIFT RESOLVED**: Fixed critical database schema misalignment where code expected columns that didn't exist in database
+- **ORDERS TABLE FIXES**: Added missing columns to orders table:
+  - provider_name (TEXT) - for referral provider names
+  - urgency (TEXT) - for referral urgency levels
+  - ordered_at (TIMESTAMP) - for order timestamp tracking
+  - approved_by (INTEGER) - for approval workflow tracking
+  - approved_at (TIMESTAMP) - for approval timestamp tracking
+- **HEALTH_SYSTEMS TABLE FIXES**: Added missing columns to health_systems table:
+  - short_name (TEXT) - for abbreviated system names
+  - system_type (TEXT) - for system type classification
+  - subscription_start_date, subscription_end_date (TIMESTAMP) - for subscription management
+  - merged_into_health_system_id, merged_date, original_provider_id (INTEGER/TIMESTAMP) - for merger tracking
+  - primary_contact, phone, email, website, npi, tax_id, logo_url (TEXT) - for contact and regulatory info
+  - brand_colors (JSONB) - for UI customization
+  - subscription_limits, active_user_count, billing_details (JSONB) - for subscription management
+  - active (BOOLEAN) - for soft deletion
+- **APPLICATION STARTUP SUCCESS**: Fixed startup failures caused by missing database columns
+- **BACKGROUND PROCESSOR FIXED**: Lab order background processor now runs without column errors
+- **AUTHENTICATION FIXED**: User authentication flow now works properly with correct health system joins
+- **PRODUCTION READY**: Application now starts successfully and all core systems functional
 
 ### Login Page Marketing Redesign - AI Ambient Scribe Focus COMPLETED (January 16, 2025)
 - **HEADLINE CHANGE**: Changed from "The EMR That Actually Thinks" to "Built by Doctors, for Doctors" to emphasize physician-created origin and avoid patronizing tone
