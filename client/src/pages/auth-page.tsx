@@ -16,6 +16,7 @@ import { z } from "zod";
 import { Loader2, Building2, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { LocationSelector } from "@/components/location-selector";
 import SearchableHealthSystemSelector from "@/components/searchable-health-system-selector";
+import { DynamicClinicSearch } from "@/components/dynamic-clinic-search";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -70,6 +71,7 @@ const registerSchema = insertUserSchema.extend({
     .optional()
     .refine((val) => !val || phoneRegex.test(val), "Phone must be format: 123-456-7890 or 1234567890"),
   subscriptionKey: z.string().optional(),
+  selectedFacility: z.any().optional(), // Google Places facility data
   termsAccepted: z.boolean().refine((val) => val === true, "You must accept the terms of service"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -424,12 +426,24 @@ export default function AuthPage() {
     // Force registration type to 'create_new' for individual practice
     const finalRegistrationType = registrationType === 'create_new' ? 'create_new' : 'join_existing';
     
-    // Parse the selected value - it could be a health system ID or "location-{id}"
+    // Parse the selected value - it could be a health system ID, "location-{id}", or "new-{placeId}"
     let existingHealthSystemId: number | undefined;
     let selectedLocationId: number | undefined;
+    let googlePlaceData: any = undefined;
     
     if (finalRegistrationType === 'join_existing' && selectedHealthSystemId) {
-      if (selectedHealthSystemId.startsWith('location-')) {
+      if (selectedHealthSystemId.startsWith('new-')) {
+        // User selected a new facility from Google Places
+        googlePlaceData = data.selectedFacility;
+        if (!googlePlaceData) {
+          toast({
+            title: "Error",
+            description: "Selected facility data is missing. Please select a clinic again.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (selectedHealthSystemId.startsWith('location-')) {
         // User selected a specific location
         selectedLocationId = parseInt(selectedHealthSystemId.replace('location-', ''));
         // We'll need to get the health system ID from the location on the backend
@@ -458,6 +472,7 @@ export default function AuthPage() {
       registrationType: finalRegistrationType,
       existingHealthSystemId,
       selectedLocationId,
+      googlePlaceData,
       practiceName: data.practiceName,
       practiceAddress: data.practiceAddress,
       practiceCity: data.practiceCity,
@@ -608,13 +623,22 @@ export default function AuthPage() {
                       <>
                         <div className="space-y-2">
                           <Label htmlFor="healthSystem">Select Health System or Clinic</Label>
-                          <SearchableHealthSystemSelector
-                            value={selectedHealthSystemId}
-                            onChange={setSelectedHealthSystemId}
-                            placeholder="Search for clinics near you..."
+                          <DynamicClinicSearch
+                            onSelectFacility={(facility, healthSystemId) => {
+                              // If healthSystemId is provided, the facility already exists in the system
+                              if (healthSystemId) {
+                                setSelectedHealthSystemId(healthSystemId.toString());
+                              } else {
+                                // New facility - will be created during registration
+                                setSelectedHealthSystemId(`new-${facility.place_id}`);
+                                // Store facility data for later use
+                                registerForm.setValue("selectedFacility", facility as any);
+                              }
+                            }}
+                            showCreateNew={false}
                           />
                           <p className="text-xs text-muted-foreground">
-                            Search by clinic name, city, address, or NPI number. Click the location icon to find clinics near you.
+                            Search for your clinic by name, location, or use your current location to find nearby medical facilities.
                           </p>
                         </div>
                         
