@@ -138,9 +138,12 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   
   const getAppointmentsForDay = (date: Date) => {
     if (!appointments) return [];
-    return appointments.filter(apt => 
-      isSameDay(new Date(apt.appointmentDate), date)
-    );
+    return appointments.filter(apt => {
+      // Parse the date string as local time, not UTC
+      const [year, month, day] = apt.appointmentDate.split('-').map(Number);
+      const appointmentDate = new Date(year, month - 1, day);
+      return isSameDay(appointmentDate, date);
+    });
   };
   
   const getStatusColor = (status: string) => {

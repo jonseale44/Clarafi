@@ -101,6 +101,10 @@ router.post('/api/scheduling/appointments', tenantIsolation, async (req, res) =>
       return res.status(403).json({ error: 'Providers can only schedule appointments for themselves' });
     }
     
+    // Parse the date as local time, not UTC
+    const [year, month, day] = validatedData.appointmentDate.split('-').map(Number);
+    const appointmentDateLocal = new Date(year, month - 1, day); // month is 0-indexed
+    
     // Get AI-predicted duration if enabled
     let aiPredictedDuration: number | undefined;
     let patientVisibleDuration: number | undefined;
@@ -111,7 +115,7 @@ router.post('/api/scheduling/appointments', tenantIsolation, async (req, res) =>
         patientId: validatedData.patientId,
         providerId: validatedData.providerId,
         appointmentType: validatedData.appointmentType,
-        appointmentDate: new Date(validatedData.appointmentDate),
+        appointmentDate: appointmentDateLocal,
         appointmentTime: validatedData.appointmentTime
       });
       
@@ -135,6 +139,7 @@ router.post('/api/scheduling/appointments', tenantIsolation, async (req, res) =>
     
     const appointment = await storage.createAppointment({
       ...validatedData,
+      appointmentDate: validatedData.appointmentDate, // Keep the original YYYY-MM-DD string
       status: 'scheduled',
       aiPredictedDuration,
       patientVisibleDuration,

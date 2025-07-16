@@ -140,13 +140,21 @@ export function AppointmentsSection({ patientId }: AppointmentsSectionProps) {
     setShowCancelDialog(true);
   };
 
-  const upcomingAppointments = appointments.filter(
-    apt => new Date(`${apt.appointmentDate} ${apt.appointmentTime}`) > new Date()
-  );
+  const upcomingAppointments = appointments.filter(apt => {
+    // Parse the date string as local time, not UTC
+    const [year, month, day] = apt.appointmentDate.split('-').map(Number);
+    const [hour, minute] = apt.appointmentTime.split(':').map(Number);
+    const appointmentDateTime = new Date(year, month - 1, day, hour, minute);
+    return appointmentDateTime > new Date();
+  });
 
-  const pastAppointments = appointments.filter(
-    apt => new Date(`${apt.appointmentDate} ${apt.appointmentTime}`) <= new Date()
-  );
+  const pastAppointments = appointments.filter(apt => {
+    // Parse the date string as local time, not UTC
+    const [year, month, day] = apt.appointmentDate.split('-').map(Number);
+    const [hour, minute] = apt.appointmentTime.split(':').map(Number);
+    const appointmentDateTime = new Date(year, month - 1, day, hour, minute);
+    return appointmentDateTime <= new Date();
+  });
 
   return (
     <div className="space-y-4">
@@ -199,7 +207,12 @@ export function AppointmentsSection({ patientId }: AppointmentsSectionProps) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-400" />
-                            <span>{format(new Date(appointment.appointmentDate), 'MMMM d, yyyy')}</span>
+                            <span>{(() => {
+                              // Parse the date string as local time, not UTC
+                              const [year, month, day] = appointment.appointmentDate.split('-').map(Number);
+                              const localDate = new Date(year, month - 1, day);
+                              return format(localDate, 'MMMM d, yyyy');
+                            })()}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-gray-400" />
@@ -267,7 +280,12 @@ export function AppointmentsSection({ patientId }: AppointmentsSectionProps) {
                         </div>
 
                         <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>{format(new Date(appointment.appointmentDate), 'MMM d, yyyy')}</span>
+                          <span>{(() => {
+                            // Parse the date string as local time, not UTC
+                            const [year, month, day] = appointment.appointmentDate.split('-').map(Number);
+                            const localDate = new Date(year, month - 1, day);
+                            return format(localDate, 'MMM d, yyyy');
+                          })()}</span>
                           <span>{appointment.appointmentTime}</span>
                           <span>{appointment.providerName}</span>
                         </div>
