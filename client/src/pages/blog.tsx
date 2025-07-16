@@ -117,24 +117,24 @@ export default function BlogPage() {
               </div>
             </div>
             
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}>
               <SelectTrigger>
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {metadata && Object.entries(metadata.categories).map(([key, value]) => (
                   <SelectItem key={key} value={key}>{value}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={selectedAudience} onValueChange={setSelectedAudience}>
+            <Select value={selectedAudience} onValueChange={(value) => setSelectedAudience(value === "all" ? "" : value)}>
               <SelectTrigger>
                 <SelectValue placeholder="All Audiences" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Audiences</SelectItem>
+                <SelectItem value="all">All Audiences</SelectItem>
                 {metadata && Object.entries(metadata.audiences).map(([key, value]) => (
                   <SelectItem key={key} value={key}>{value}</SelectItem>
                 ))}

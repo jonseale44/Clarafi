@@ -39,6 +39,7 @@ import SchedulingPage from "@/pages/scheduling";
 import SystemAdminTestPatients from "@/pages/system-admin-test-patients";
 import BlogPage from "@/pages/blog";
 import BlogArticlePage from "@/pages/blog-article";
+import AdminBlogManagement from "@/pages/admin-blog-management";
 
 import NotFound from "@/pages/not-found";
 
@@ -70,6 +71,7 @@ function Router() {
       <ProtectedRoute path="/admin/clinic-import" component={AdminClinicImport} />
       <ProtectedRoute path="/admin/verification-review" component={AdminVerificationReview} />
       <ProtectedRoute path="/admin/test-patients" component={SystemAdminTestPatients} />
+      <ProtectedRoute path="/admin/blog" component={AdminBlogManagement} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />

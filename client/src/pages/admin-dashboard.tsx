@@ -125,6 +125,21 @@ export default function AdminDashboard() {
         { label: 'Total Clinics', value: stats?.totalClinics || 0 },
         { label: 'Pending Migrations', value: stats?.pendingMigrations || 0 }
       ]
+    },
+    {
+      id: 'blog-management',
+      title: 'Blog & SEO Management',
+      description: 'Manage AI-generated blog content and SEO optimization',
+      icon: <FileText className="h-6 w-6" />,
+      actions: [
+        { label: 'Manage Blog', href: '/admin/blog', variant: 'default' },
+        { label: 'View Public Blog', href: '/blog', variant: 'secondary' }
+      ],
+      stats: [
+        { label: 'Articles Pending', value: stats?.pendingArticles || 0 },
+        { label: 'Published Articles', value: stats?.publishedArticles || 0 },
+        { label: 'Total Views', value: stats?.totalBlogViews || 0 }
+      ]
     }
   ];
 
