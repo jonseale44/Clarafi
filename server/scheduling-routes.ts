@@ -509,4 +509,44 @@ router.post('/api/scheduling/appointments/:id/complete', tenantIsolation, async 
   }
 });
 
+// Get provider-specific AI weight preferences
+router.get('/api/scheduling/ai-weights/:providerId', tenantIsolation, async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const providerId = parseInt(req.params.providerId);
+    
+    // Only providers can view their own weights, or admin can view any
+    if (req.user!.role !== 'admin' && req.user!.id !== providerId) {
+      return res.status(403).json({ error: 'You can only view your own AI weight preferences' });
+    }
+    
+    const weights = await storage.getProviderAiWeights(providerId, req.userHealthSystemId!);
+    
+    res.json(weights || {});
+  } catch (error) {
+    console.error('Error fetching AI weights:', error);
+    res.status(500).json({ error: 'Failed to fetch AI weight preferences' });
+  }
+});
+
+// Update provider-specific AI weight preferences
+router.put('/api/scheduling/ai-weights/:providerId', tenantIsolation, async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const providerId = parseInt(req.params.providerId);
+    
+    // Only providers can update their own weights, or admin can update any
+    if (req.user!.role !== 'admin' && req.user!.id !== providerId) {
+      return res.status(403).json({ error: 'You can only update your own AI weight preferences' });
+    }
+    
+    const weights = await storage.updateProviderAiWeights(providerId, req.userHealthSystemId!, req.body, req.user!.id);
+    
+    res.json(weights);
+  } catch (error) {
+    console.error('Error updating AI weights:', error);
+    res.status(500).json({ error: 'Failed to update AI weight preferences' });
+  }
+});
+
 export default router;

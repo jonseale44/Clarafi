@@ -243,6 +243,29 @@ Preferred communication style: Simple, everyday language.
 - **INTELLIGENT BUFFERS**: System adds appropriate buffers for complex patients, late arrivals, provider preferences
 - **PRODUCTION READY**: System now dynamically adjusts appointment slots based on actual data instead of fixed durations
 
+### AI Scheduling Weights Persistence Implementation COMPLETED (January 17, 2025)
+- **PROVIDER-SPECIFIC AI WEIGHTS**: Implemented complete persistence system for AI scheduling factor weights allowing each provider to customize their prediction algorithm
+- **BACKEND ENDPOINTS CREATED**: 
+  - GET /api/scheduling/provider-ai-weights - Retrieves saved weights for current provider
+  - PUT /api/scheduling/provider-ai-weights - Saves provider's custom weight preferences
+- **DATABASE STORAGE**: Created getProviderAiWeights and updateProviderAiWeights methods in DatabaseStorage class for provider-specific persistence
+- **FRONTEND INTEGRATION COMPLETED**:
+  - Added useEffect to automatically load saved weights when AI dialog opens
+  - Created mutation with proper error handling for saving weights
+  - Fixed all factor names to match backend exactly (15 factors total)
+  - Added loading state and success/error toast notifications
+- **RESET TO DEFAULT BUTTON**: Added button at bottom of AI dialog to restore all weights to default values (e.g., Historical Visit Average: 80%)
+- **15 AI FACTORS CONFIGURABLE**:
+  - Historical Visit Average (80% default - most prominent factor)
+  - Patient Complexity: Medical Problems (75%), Medications (60%), Age (40%), Comorbidity Index (50%)
+  - Visit Type: Appointment Type Weight (85%)
+  - Patient Behavior: No-Show Risk (70%), Average Arrival Time (35%)
+  - Temporal: Time of Day (30%), Day of Week (25%)
+  - Provider/Operational: Provider Efficiency (45%), Concurrent Appointments (20%), Clinic Volume (15%), Emergency Rate (55%)
+  - Buffer Time Preference (65%)
+- **USER EXPERIENCE**: Providers can now fine-tune how much each factor influences appointment duration predictions, with settings persisting between sessions
+- **PRODUCTION IMPACT**: Each provider can optimize their scheduling AI based on their practice patterns and patient population
+
 ### Scheduling System Enhancements - Manual Override & Conflict Prevention COMPLETED (January 16, 2025)
 - **MANUAL DURATION OVERRIDE**: Duration field now always editable, allowing providers to override AI predictions when needed
 - **SMART OVERRIDE TRACKING**: System tracks when user manually adjusts duration vs using AI predictions

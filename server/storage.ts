@@ -2688,6 +2688,159 @@ export class DatabaseStorage implements IStorage {
     console.log(`[saveRecordingMetadata] Saved recording metadata for encounter ${encounter.id}: ${data.duration}s`);
   }
 
+  // Get provider-specific AI weight preferences
+  async getProviderAiWeights(providerId: number, healthSystemId: number) {
+    // Define default weights matching the frontend defaults
+    const defaultWeights = {
+      historicalVisitWeight: 80,
+      medicalProblemsWeight: 75,
+      activeMedicationsWeight: 60,
+      patientAgeWeight: 40,
+      comorbidityIndexWeight: 50,
+      appointmentTypeWeight: 85,
+      timeOfDayWeight: 30,
+      dayOfWeekWeight: 25,
+      noShowRiskWeight: 70,
+      averageArrivalTimeWeight: 35,
+      providerEfficiencyWeight: 45,
+      concurrentAppointmentsWeight: 20,
+      bufferTimePreferenceWeight: 65,
+      clinicVolumeWeight: 15,
+      emergencyRateWeight: 55
+    };
+
+    // Define the factor name mapping
+    const factorNameMapping: Record<string, string> = {
+      historicalVisitWeight: 'historical_visit_average',
+      medicalProblemsWeight: 'medical_problems_count',
+      activeMedicationsWeight: 'active_medications_count',
+      patientAgeWeight: 'patient_age',
+      comorbidityIndexWeight: 'comorbidity_index',
+      appointmentTypeWeight: 'appointment_type',
+      timeOfDayWeight: 'time_of_day',
+      dayOfWeekWeight: 'day_of_week',
+      noShowRiskWeight: 'no_show_risk',
+      averageArrivalTimeWeight: 'average_arrival_time',
+      providerEfficiencyWeight: 'provider_efficiency',
+      concurrentAppointmentsWeight: 'concurrent_appointments',
+      bufferTimePreferenceWeight: 'buffer_time_preference',
+      clinicVolumeWeight: 'clinic_volume',
+      emergencyRateWeight: 'emergency_rate'
+    };
+
+    // Fetch all provider-specific weights
+    const weights = await db
+      .select({
+        factorName: schedulingAiFactors.factorName,
+        weight: schedulingAiWeights.weight
+      })
+      .from(schedulingAiWeights)
+      .innerJoin(schedulingAiFactors, eq(schedulingAiWeights.factorId, schedulingAiFactors.id))
+      .where(
+        and(
+          eq(schedulingAiWeights.providerId, providerId),
+          eq(schedulingAiWeights.healthSystemId, healthSystemId)
+        )
+      )
+      .execute();
+
+    // Start with default weights
+    const result = { ...defaultWeights };
+
+    // Override with saved weights
+    weights.forEach(w => {
+      // Find the frontend key for this factor name
+      const frontendKey = Object.entries(factorNameMapping).find(
+        ([key, value]) => value === w.factorName
+      )?.[0];
+      
+      if (frontendKey) {
+        result[frontendKey as keyof typeof result] = parseFloat(w.weight);
+      }
+    });
+
+    return result;
+  }
+
+  // Update provider-specific AI weight preferences
+  async updateProviderAiWeights(providerId: number, healthSystemId: number, weights: any, updatedBy: number) {
+    // Define the factor name mapping
+    const factorNameMapping: Record<string, string> = {
+      historicalVisitWeight: 'historical_visit_average',
+      medicalProblemsWeight: 'medical_problems_count',
+      activeMedicationsWeight: 'active_medications_count',
+      patientAgeWeight: 'patient_age',
+      comorbidityIndexWeight: 'comorbidity_index',
+      appointmentTypeWeight: 'appointment_type',
+      timeOfDayWeight: 'time_of_day',
+      dayOfWeekWeight: 'day_of_week',
+      noShowRiskWeight: 'no_show_risk',
+      averageArrivalTimeWeight: 'average_arrival_time',
+      providerEfficiencyWeight: 'provider_efficiency',
+      concurrentAppointmentsWeight: 'concurrent_appointments',
+      bufferTimePreferenceWeight: 'buffer_time_preference',
+      clinicVolumeWeight: 'clinic_volume',
+      emergencyRateWeight: 'emergency_rate'
+    };
+
+    // Get all AI factors to map names to IDs
+    const factors = await db
+      .select()
+      .from(schedulingAiFactors)
+      .execute();
+
+    const factorMap = new Map(factors.map(f => [f.factorName, f.id]));
+
+    // Update each weight
+    for (const [key, weight] of Object.entries(weights)) {
+      const factorName = factorNameMapping[key];
+      if (!factorName) continue;
+
+      const factorId = factorMap.get(factorName);
+      if (!factorId) continue;
+
+      // Check if weight exists
+      const existing = await db
+        .select()
+        .from(schedulingAiWeights)
+        .where(
+          and(
+            eq(schedulingAiWeights.factorId, factorId),
+            eq(schedulingAiWeights.providerId, providerId),
+            eq(schedulingAiWeights.healthSystemId, healthSystemId)
+          )
+        )
+        .execute();
+
+      if (existing.length) {
+        // Update existing
+        await db
+          .update(schedulingAiWeights)
+          .set({
+            weight: weight.toString(),
+            enabled: weight > 0
+          })
+          .where(eq(schedulingAiWeights.id, existing[0].id))
+          .execute();
+      } else {
+        // Create new
+        await db
+          .insert(schedulingAiWeights)
+          .values({
+            factorId,
+            weight: weight.toString(),
+            enabled: weight > 0,
+            providerId,
+            healthSystemId,
+            createdBy: updatedBy
+          })
+          .execute();
+      }
+    }
+
+    return { success: true };
+  }
+
   // Test patient management methods
   async getAllHealthSystems(): Promise<any[]> {
     return await db.select().from(healthSystems).orderBy(healthSystems.name);
