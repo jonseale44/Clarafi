@@ -159,6 +159,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Scheduling System Production Cleanup COMPLETED (January 16, 2025)
+- **PERMISSION FIXES**: Added 'provider' role to appointment creation, update, and deletion permissions - providers can now fully manage appointments
+- **CRITICAL BUG FIX**: Fixed ReferenceError where `getStorage` was called instead of using imported `storage` object in conflict checking endpoint
+- **CODE QUALITY**: Removed all debug console.log statements from scheduling routes for production readiness
+- **MALFORMED ROUTES FIXED**: Corrected authentication checks that were outside try blocks in appointment-types and ai-factors endpoints
+- **PRODUCTION READY**: Scheduling system now follows production best practices with proper error handling and no debug artifacts
+- **MISSING FEATURES DOCUMENTED**: Identified potential future enhancements: recurring appointments, SMS/email reminders, provider availability management, wait lists, patient self-scheduling, appointment templates
+
 ### AI Scheduling Tooltip Decimal Point Fix & Proactive Conflict Detection COMPLETED (January 16, 2025)
 - **DECIMAL POINT ERROR FIXED**: Fixed no-show rate display in AI scheduling tooltip showing 2000% instead of 20% due to double percentage conversion
 - **PROACTIVE CONFLICT DETECTION**: Added real-time appointment conflict checking before submission (not just after save attempts)
@@ -177,6 +185,13 @@ Preferred communication style: Simple, everyday language.
 - **USER FEEDBACK**: Toast notification explains that "Historical duration data has been recorded for future AI predictions"
 - **EDGE CASE HANDLING**: Only saves recordings >5 seconds to filter out accidental connections, handles providers who don't use voice
 - **TECHNICAL DEBT CLEANUP**: Removed legacy backup files and stub components per user requirements
+
+### Scheduling Drag-and-Drop Permission Fix COMPLETED (January 16, 2025)
+- **PERMISSION BUG FIXED**: Providers were unable to drag and drop appointments due to missing role in permission check
+- **ROOT CAUSE**: Update appointment endpoint only allowed ['admin', 'nurse', 'ma', 'front_desk'] roles but excluded 'provider'
+- **SOLUTION**: Added 'provider' to allowed roles list for updating appointments via PUT /api/scheduling/appointments/:id
+- **DRAG-DROP LOGGING**: Enhanced drag-and-drop functionality with comprehensive logging for debugging permission issues
+- **PRODUCTION IMPACT**: Providers can now reschedule appointments via drag-and-drop on calendar view as expected
 
 ### AI Scheduling System Real-Time Predictions COMPLETED (January 16, 2025)
 - **MAJOR ENHANCEMENT**: Implemented real-time AI duration predictions in appointment scheduling dialog

@@ -149,14 +149,7 @@ router.post('/api/scheduling/appointments', tenantIsolation, async (req, res) =>
       });
     }
     
-    console.log('📅 [CREATE_APPOINTMENT] Creating appointment with data:', {
-      ...validatedData,
-      status: 'scheduled',
-      aiPredictedDuration,
-      patientVisibleDuration,
-      providerScheduledDuration,
-      createdBy: req.user!.id
-    });
+
     
     const appointment = await storage.createAppointment({
       ...validatedData,
@@ -208,7 +201,6 @@ router.post('/api/scheduling/appointments/preview-duration', tenantIsolation, as
 router.post('/api/scheduling/appointments/check-conflicts', tenantIsolation, async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const storage = getStorage();
     const { providerId, appointmentDate, appointmentTime, duration, excludeAppointmentId } = req.body;
     
     if (!providerId || !appointmentDate || !appointmentTime || !duration) {
@@ -245,8 +237,8 @@ router.put('/api/scheduling/appointments/:id',  tenantIsolation, async (req, res
   try {
     const appointmentId = parseInt(req.params.id);
     
-    // Check permissions
-    const canSchedule = ['admin', 'nurse', 'ma', 'front_desk'].includes(req.user!.role);
+    // Check permissions - providers can update appointments too
+    const canSchedule = ['admin', 'provider', 'nurse', 'ma', 'front_desk'].includes(req.user!.role);
     if (!canSchedule) {
       return res.status(403).json({ error: 'You do not have permission to update appointments' });
     }
@@ -299,8 +291,8 @@ router.delete('/api/scheduling/appointments/:id', tenantIsolation, async (req, r
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const appointmentId = parseInt(req.params.id);
     
-    // Check permissions
-    const canSchedule = ['admin', 'nurse', 'ma', 'front_desk'].includes(req.user!.role);
+    // Check permissions - providers can delete appointments too
+    const canSchedule = ['admin', 'provider', 'nurse', 'ma', 'front_desk'].includes(req.user!.role);
     if (!canSchedule) {
       return res.status(403).json({ error: 'You do not have permission to delete appointments' });
     }
@@ -320,8 +312,6 @@ router.post('/api/scheduling/appointments/:id/check-in', tenantIsolation, async 
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const appointmentId = parseInt(req.params.id);
     const { roomAssignment } = req.body;
-    
-    console.log('🚪 [APPOINTMENT CHECK-IN] Starting check-in process for appointment:', appointmentId);
     
     // Check permissions
     const canCheckIn = ['admin', 'nurse', 'ma', 'front_desk'].includes(req.user!.role);
@@ -385,13 +375,9 @@ router.post('/api/scheduling/appointments/:id/check-in', tenantIsolation, async 
       createdBy: req.user!.id
     };
     
-    console.log('🚪 [APPOINTMENT CHECK-IN] Creating encounter with data:', encounterData);
-    
     const [newEncounter] = await db.insert(encounters)
       .values(encounterData)
       .returning();
-    
-    console.log('🚪 [APPOINTMENT CHECK-IN] Successfully created encounter:', newEncounter.id);
     
     res.json({
       success: true,
@@ -406,7 +392,6 @@ router.post('/api/scheduling/appointments/:id/check-in', tenantIsolation, async 
     });
     
   } catch (error) {
-    console.error('❌ [APPOINTMENT CHECK-IN] Error during check-in:', error);
     res.status(500).json({ error: 'Failed to check in appointment' });
   }
 });
@@ -449,12 +434,12 @@ router.put('/api/scheduling/preferences/:providerId', tenantIsolation, async (re
     console.error('Error updating schedule preferences:', error);
     res.status(500).json({ error: 'Failed to update schedule preferences' });
   }
-    if (!req.isAuthenticated()) return res.sendStatus(401);
 });
 
 // Get appointment types
 router.get('/api/scheduling/appointment-types',  tenantIsolation, async (req, res) => {
   try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
     const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : undefined;
     
     const types = await storage.getAppointmentTypes(req.userHealthSystemId!, locationId);
@@ -464,12 +449,12 @@ router.get('/api/scheduling/appointment-types',  tenantIsolation, async (req, re
     console.error('Error fetching appointment types:', error);
     res.status(500).json({ error: 'Failed to fetch appointment types' });
   }
-    if (!req.isAuthenticated()) return res.sendStatus(401);
 });
 
 // AI factor configuration endpoints (admin only)
 router.get('/api/scheduling/ai-factors',  tenantIsolation, async (req, res) => {
   try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
     if (req.user!.role !== 'admin') {
       return res.status(403).json({ error: 'Only administrators can view AI factor configuration' });
     }
@@ -480,7 +465,6 @@ router.get('/api/scheduling/ai-factors',  tenantIsolation, async (req, res) => {
   } catch (error) {
     console.error('Error fetching AI factors:', error);
     res.status(500).json({ error: 'Failed to fetch AI factors' });
-    if (!req.isAuthenticated()) return res.sendStatus(401);
   }
 });
 
@@ -515,15 +499,12 @@ router.post('/api/scheduling/appointments/:id/complete', tenantIsolation, async 
     const appointmentId = parseInt(req.params.id);
     const userId = req.user!.id;
     
-    console.log('✅ [APPOINTMENT COMPLETE] Completing appointment:', appointmentId);
-    
     // Use the appointment completion service
     const { AppointmentCompletionService } = await import('./appointment-completion-service.js');
     const result = await AppointmentCompletionService.completeAppointment(appointmentId, userId);
     
     res.json(result);
   } catch (error) {
-    console.error('❌ [APPOINTMENT COMPLETE] Error:', error);
     res.status(500).json({ error: 'Failed to complete appointment' });
   }
 });
