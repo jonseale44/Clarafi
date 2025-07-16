@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { Loader2, Building2, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LocationSelector } from "@/components/location-selector";
 import SearchableHealthSystemSelector from "@/components/searchable-health-system-selector";
 import { DynamicClinicSearch } from "@/components/dynamic-clinic-search";
@@ -592,83 +593,94 @@ export default function AuthPage() {
                     console.log("Form values:", registerForm.getValues());
                     registerForm.handleSubmit(onRegister)(e);
                   }} className="space-y-4">
-                    {/* Registration Type Selection */}
-                    <div className="space-y-2">
-                      <Label>Registration Type</Label>
-                      <RadioGroup 
-                        value={registrationType} 
-                        onValueChange={(value) => {
-                          setRegistrationType(value as 'create_new' | 'join_existing');
-                          registerForm.setValue('registrationType', value as 'create_new' | 'join_existing');
+                    {/* Health System Selection - Primary UI */}
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">Where do you primarily practice?</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Search for your clinic or health system below. Most providers should select their existing workplace.
+                      </p>
+                      
+                      <DynamicClinicSearch
+                        onSelectFacility={(facility, healthSystemId) => {
+                          // User selected an existing clinic
+                          setRegistrationType('join_existing');
+                          registerForm.setValue('registrationType', 'join_existing');
+                          
+                          // If healthSystemId is provided, the facility already exists in the system
+                          if (healthSystemId) {
+                            setSelectedHealthSystemId(healthSystemId.toString());
+                          } else {
+                            // New facility - will be created during registration
+                            setSelectedHealthSystemId(`new-${facility.place_id}`);
+                            // Store facility data for later use
+                            registerForm.setValue("selectedFacility", facility as any);
+                          }
                         }}
-                        className="space-y-2"
+                        showCreateNew={false}
+                      />
+                      
+                      {/* Alternative option - create individual practice */}
+                      <div className="relative mt-6">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">Or</span>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full text-sm"
+                        onClick={() => {
+                          setRegistrationType('create_new');
+                          registerForm.setValue('registrationType', 'create_new');
+                          setSelectedHealthSystemId('');
+                        }}
                       >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="create_new" id="create_new" />
-                          <Label htmlFor="create_new" className="font-normal cursor-pointer">
-                            Create my own individual practice
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="join_existing" id="join_existing" />
-                          <Label htmlFor="join_existing" className="font-normal cursor-pointer">
-                            Join an existing clinic/health system
-                          </Label>
-                        </div>
-                      </RadioGroup>
+                        <Building2 className="mr-2 h-4 w-4" />
+                        I want to create my own individual practice
+                        <span className="ml-auto text-xs text-muted-foreground">($149/month)</span>
+                      </Button>
+                      
+                      {registrationType === 'create_new' && (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Individual Practice Setup</AlertTitle>
+                          <AlertDescription>
+                            You'll be creating a new practice account. This is best for solo practitioners who don't work at an existing clinic.
+                            You'll need to provide payment information after registration.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
-
-                    {/* Health System Selection for joining existing */}
-                    {registrationType === 'join_existing' && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="healthSystem">Select Health System or Clinic</Label>
-                          <DynamicClinicSearch
-                            onSelectFacility={(facility, healthSystemId) => {
-                              // If healthSystemId is provided, the facility already exists in the system
-                              if (healthSystemId) {
-                                setSelectedHealthSystemId(healthSystemId.toString());
-                              } else {
-                                // New facility - will be created during registration
-                                setSelectedHealthSystemId(`new-${facility.place_id}`);
-                                // Store facility data for later use
-                                registerForm.setValue("selectedFacility", facility as any);
-                              }
-                            }}
-                            showCreateNew={false}
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Search for your clinic by name, location, or use your current location to find nearby medical facilities.
-                          </p>
-                        </div>
                         
-                        {/* Subscription Key for Enterprise Health Systems */}
-                        {selectedHealthSystemId && (
-                          <div className="space-y-2">
-                            <Label htmlFor="subscriptionKey" className="flex items-center gap-2">
-                              Subscription Key
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Info className="h-3 w-3 text-gray-400" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Enter the subscription key provided by your clinic administrator</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </Label>
-                            <Input
-                              id="subscriptionKey"
-                              {...registerForm.register("subscriptionKey")}
-                              placeholder="XXX-YYYY-XXXX-XXXX"
-                              className="font-mono"
-                              style={{ textTransform: 'uppercase' }}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              For enterprise health systems, enter the key provided by your administrator.
-                            </p>
-                          </div>
-                        )}
-                      </>
+                    {/* Subscription Key for Enterprise Health Systems */}
+                    {selectedHealthSystemId && (
+                      <div className="space-y-2">
+                        <Label htmlFor="subscriptionKey" className="flex items-center gap-2">
+                          Subscription Key
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Enter the subscription key provided by your clinic administrator</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                        <Input
+                          id="subscriptionKey"
+                          {...registerForm.register("subscriptionKey")}
+                          placeholder="XXX-YYYY-XXXX-XXXX"
+                          className="font-mono"
+                          style={{ textTransform: 'uppercase' }}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          For enterprise health systems, enter the key provided by your administrator.
+                        </p>
+                      </div>
                     )}
 
 
