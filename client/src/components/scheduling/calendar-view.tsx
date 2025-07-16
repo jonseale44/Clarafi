@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfWeek, addDays, isSameDay, startOfMonth, endOfMonth, startOfDay, addMonths, getDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin, Check, ChevronsUpDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin, Check, ChevronsUpDown, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,17 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       providerId,
       locationId
     }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        ...(providerId && { providerId: providerId.toString() }),
+        ...(locationId && { locationId: locationId.toString() })
+      });
+      const response = await fetch(`/api/scheduling/appointments?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch appointments');
+      return response.json();
+    },
     enabled: true
   });
 
@@ -151,90 +162,193 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
     }
     
     return (
-      <div className="grid grid-cols-7 gap-2 h-full">
-        {weekDays.map((date) => (
-          <div 
-            key={date.toISOString()} 
-            className={`border rounded-lg p-2 min-h-[400px] ${
-              isSameDay(date, selectedDate) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-            } hover:bg-gray-50 cursor-pointer`}
-            onClick={() => setSelectedDate(date)}
-          >
-            <div className="font-semibold text-sm mb-2">
-              {format(date, 'EEE')}
-              <br />
-              {format(date, 'MMM d')}
-            </div>
-            <div className="space-y-1">
-              {getAppointmentsForDay(date).map((apt) => (
-                <div 
-                  key={apt.id}
-                  className="bg-white border rounded p-1 text-xs hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{apt.appointmentTime}</span>
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(apt.status)}`} />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 h-full">
+        {weekDays.map((date) => {
+          const dayAppointments = getAppointmentsForDay(date);
+          const isSelected = isSameDay(date, selectedDate);
+          const isToday = isSameDay(date, new Date());
+          
+          return (
+            <div 
+              key={date.toISOString()} 
+              className={cn(
+                "border rounded-lg p-2 md:p-3 min-h-[200px] md:min-h-[300px] lg:min-h-[400px] hover:bg-gray-50 cursor-pointer transition-all relative overflow-hidden",
+                isSelected && "border-blue-500 bg-blue-50 shadow-md",
+                !isSelected && "border-gray-200",
+                isToday && "ring-2 ring-blue-400"
+              )}
+              onClick={() => setSelectedDate(date)}
+            >
+              <div className="sticky top-0 bg-inherit pb-2 border-b mb-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-sm md:text-base">{format(date, 'EEE')}</div>
+                    <div className="text-xs md:text-sm text-gray-600">{format(date, 'MMM d')}</div>
                   </div>
-                  <div className="truncate text-gray-600">{apt.patientName}</div>
-                  <div className="text-gray-500">{apt.appointmentType}</div>
+                  {dayAppointments.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {dayAppointments.length} appts
+                    </Badge>
+                  )}
                 </div>
-              ))}
+              </div>
+              
+              <div className="space-y-1.5 overflow-y-auto max-h-[350px]">
+                {dayAppointments.length === 0 ? (
+                  <div className="text-center text-gray-400 text-xs mt-8">
+                    No appointments
+                  </div>
+                ) : (
+                  dayAppointments.map((apt) => (
+                    <div 
+                      key={apt.id}
+                      className={cn(
+                        "bg-white border rounded-lg p-2 text-xs hover:shadow-md transition-all cursor-pointer",
+                        apt.status === 'confirmed' && "border-green-200 bg-green-50",
+                        apt.status === 'pending' && "border-yellow-200 bg-yellow-50",
+                        apt.status === 'cancelled' && "border-red-200 bg-red-50 opacity-60",
+                        apt.status === 'completed' && "border-gray-300 bg-gray-100",
+                        (!apt.status || apt.status === 'scheduled') && "border-blue-200 bg-blue-50"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: Show appointment details
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold">{apt.appointmentTime}</span>
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                          {apt.patientVisibleDuration || apt.duration} min
+                        </Badge>
+                      </div>
+                      <div className="font-medium text-gray-900 truncate">{apt.patientName}</div>
+                      <div className="text-gray-600 truncate">{apt.appointmentType}</div>
+                      {apt.chiefComplaint && (
+                        <div className="text-gray-500 italic truncate mt-1">
+                          "{apt.chiefComplaint}"
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
   
   const renderDayView = () => {
     const dayAppointments = getAppointmentsForDay(selectedDate);
+    const hours = Array.from({ length: 13 }, (_, i) => i + 7); // 7 AM to 7 PM
+    
+    // Create a map of appointments by hour
+    const appointmentsByHour = new Map();
+    dayAppointments.forEach(apt => {
+      const hour = parseInt(apt.appointmentTime.split(':')[0]);
+      if (!appointmentsByHour.has(hour)) {
+        appointmentsByHour.set(hour, []);
+      }
+      appointmentsByHour.get(hour).push(apt);
+    });
     
     return (
-      <div className="space-y-4">
-        <div className="text-lg font-semibold mb-4">
-          {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+      <div className="h-full flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg mb-4 shadow-sm">
+          <h3 className="font-semibold text-lg text-gray-800">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</h3>
+          <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              {dayAppointments.length} appointments
+            </span>
+            {realtimeStatus && (
+              <span className="flex items-center gap-1 text-orange-600">
+                <Clock className="h-4 w-4" />
+                Running {realtimeStatus.minutesBehind} min behind
+              </span>
+            )}
+          </div>
         </div>
-        {dayAppointments.length === 0 ? (
-          <Card className="p-8 text-center text-gray-500">
-            No appointments scheduled for this day
-          </Card>
-        ) : (
-          dayAppointments.map((apt) => (
-            <Card key={apt.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="font-semibold">{apt.appointmentTime}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {apt.patientVisibleDuration} min
-                    </Badge>
-                    {apt.predictedDuration !== apt.patientVisibleDuration && (
-                      <Badge variant="secondary" className="text-xs">
-                        Provider: {apt.predictedDuration} min
-                      </Badge>
+        
+        {/* Time grid */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-[auto,1fr] gap-0">
+            {hours.map(hour => {
+              const hourAppointments = appointmentsByHour.get(hour) || [];
+              const timeString = `${hour.toString().padStart(2, '0')}:00`;
+              
+              return (
+                <React.Fragment key={hour}>
+                  {/* Time column */}
+                  <div className="text-right pr-3 py-2 text-sm text-gray-500 font-medium">
+                    {format(new Date(2024, 0, 1, hour), 'h a')}
+                  </div>
+                  
+                  {/* Appointments column */}
+                  <div className="border-l-2 border-gray-200 pl-4 pr-2 py-2 min-h-[60px] relative">
+                    {hourAppointments.length === 0 ? (
+                      <div className="h-full flex items-center">
+                        <div className="h-0.5 bg-gray-100 w-full"></div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {hourAppointments.map((apt) => {
+                          const minutes = parseInt(apt.appointmentTime.split(':')[1]);
+                          const topOffset = (minutes / 60) * 60; // Convert minutes to pixels
+                          
+                          return (
+                            <div
+                              key={apt.id}
+                              className={cn(
+                                "rounded-lg p-3 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-all",
+                                "bg-gradient-to-r",
+                                apt.status === 'confirmed' && "from-green-50 to-green-100 border-green-500",
+                                apt.status === 'pending' && "from-yellow-50 to-yellow-100 border-yellow-500",
+                                apt.status === 'cancelled' && "from-red-50 to-red-100 border-red-500 opacity-60",
+                                apt.status === 'completed' && "from-gray-50 to-gray-100 border-gray-500",
+                                (!apt.status || apt.status === 'scheduled') && "from-blue-50 to-blue-100 border-blue-500"
+                              )}
+                              style={{ marginTop: minutes > 0 ? `${topOffset}px` : 0 }}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-3 w-3 text-gray-600" />
+                                  <span className="font-semibold text-sm">{apt.appointmentTime}</span>
+                                  <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                    {apt.patientVisibleDuration || apt.duration} min
+                                  </Badge>
+                                </div>
+                                <Badge className={cn(
+                                  "text-[10px]",
+                                  apt.status === 'confirmed' && "bg-green-500",
+                                  apt.status === 'pending' && "bg-yellow-500",
+                                  apt.status === 'cancelled' && "bg-red-500",
+                                  apt.status === 'completed' && "bg-gray-500",
+                                  (!apt.status || apt.status === 'scheduled') && "bg-blue-500"
+                                )}>
+                                  {apt.status || 'scheduled'}
+                                </Badge>
+                              </div>
+                              <div className="font-medium text-gray-900">{apt.patientName}</div>
+                              <div className="text-sm text-gray-600">{apt.appointmentType}</div>
+                              {apt.chiefComplaint && (
+                                <div className="text-xs text-gray-500 italic mt-1">
+                                  "{apt.chiefComplaint}"
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{apt.patientName}</span>
-                  </div>
-                  <div className="text-sm text-gray-600 mb-1">
-                    {apt.appointmentType}
-                  </div>
-                  {apt.chiefComplaint && (
-                    <div className="text-sm text-gray-500">
-                      Chief Complaint: {apt.chiefComplaint}
-                    </div>
-                  )}
-                </div>
-                <Badge className={getStatusColor(apt.status)}>
-                  {apt.status}
-                </Badge>
-              </div>
-            </Card>
-          ))
-        )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
   };
@@ -256,16 +370,16 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
     return (
       <div className="h-full flex flex-col">
         {/* Day headers */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
+        <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(dayName => (
-            <div key={dayName} className="text-sm font-semibold text-center text-gray-600">
+            <div key={dayName} className="text-xs md:text-sm font-semibold text-center text-gray-600">
               {dayName}
             </div>
           ))}
         </div>
         
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-2 flex-1">
+        {/* Calendar grid - responsive heights */}
+        <div className="grid grid-cols-7 gap-1 md:gap-2 flex-1">
           {days.map((day, index) => {
             const dayAppointments = getAppointmentsForDay(day);
             const isSelected = isSameDay(day, selectedDate);
@@ -276,28 +390,64 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
               <div
                 key={index}
                 className={cn(
-                  "border rounded-lg p-2 min-h-[100px] cursor-pointer hover:bg-gray-50",
+                  "border rounded-lg p-1 md:p-2 min-h-[60px] md:min-h-[100px] lg:min-h-[120px] cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden",
                   isSelected && "bg-blue-50 border-blue-500",
                   !isSelected && "border-gray-200",
-                  isToday && "ring-2 ring-blue-300",
+                  isToday && "ring-2 ring-blue-400",
                   !isCurrentMonth && "text-gray-400 bg-gray-50"
                 )}
                 onClick={() => setSelectedDate(day)}
               >
-                <div className="text-sm font-medium mb-1">
-                  {format(day, 'd')}
-                </div>
-                <div className="space-y-1">
-                  {dayAppointments.slice(0, 3).map((apt) => (
-                    <div key={apt.id} className="text-xs bg-blue-100 rounded px-1 py-0.5 truncate">
-                      {apt.appointmentTime} - {apt.patientName}
-                    </div>
-                  ))}
-                  {dayAppointments.length > 3 && (
-                    <div className="text-xs text-gray-500">
-                      +{dayAppointments.length - 3} more
-                    </div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs md:text-sm font-medium">
+                    {format(day, 'd')}
+                  </span>
+                  {dayAppointments.length > 0 && (
+                    <span className={cn(
+                      "text-xs font-medium px-1.5 py-0.5 rounded-full",
+                      dayAppointments.length > 5 ? "bg-red-100 text-red-700" : 
+                      dayAppointments.length > 3 ? "bg-orange-100 text-orange-700" : 
+                      "bg-blue-100 text-blue-700"
+                    )}>
+                      {dayAppointments.length}
+                    </span>
                   )}
+                </div>
+                
+                {/* Show appointments based on screen size */}
+                <div className="space-y-0.5 hidden md:block">
+                  {/* Medium screens: show 2 appointments */}
+                  <div className="md:block lg:hidden">
+                    {dayAppointments.slice(0, 2).map((apt) => (
+                      <div key={apt.id} className="text-xs bg-blue-50 border border-blue-200 rounded px-1 py-0.5 truncate">
+                        <span className="font-medium">{apt.appointmentTime}</span> {apt.patientName}
+                      </div>
+                    ))}
+                    {dayAppointments.length > 2 && (
+                      <div className="text-xs text-gray-500 font-medium">
+                        +{dayAppointments.length - 2} more
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Large screens: show 3 appointments */}
+                  <div className="hidden lg:block">
+                    {dayAppointments.slice(0, 3).map((apt) => (
+                      <div key={apt.id} className={cn(
+                        "text-xs rounded px-1 py-0.5 truncate border",
+                        apt.status === 'confirmed' ? "bg-green-50 border-green-200" :
+                        apt.status === 'pending' ? "bg-yellow-50 border-yellow-200" :
+                        "bg-blue-50 border-blue-200"
+                      )}>
+                        <span className="font-medium">{apt.appointmentTime}</span> {apt.patientName}
+                      </div>
+                    ))}
+                    {dayAppointments.length > 3 && (
+                      <div className="text-xs text-gray-500 font-medium">
+                        +{dayAppointments.length - 3} more
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
