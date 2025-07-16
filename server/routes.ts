@@ -4566,6 +4566,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Register Google Places routes for dynamic clinic search
+  const googlePlacesRoutes = await import("./google-places-routes.js");
+  app.use(googlePlacesRoutes.default);
+
   // Register admin user management routes
   registerAdminUserRoutes(app);
 
