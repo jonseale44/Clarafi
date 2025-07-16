@@ -1134,26 +1134,26 @@ export default function AuthPage() {
       <div className="flex-1 bg-gradient-to-br from-primary to-navy-blue-700 p-8 text-white flex items-center justify-center overflow-y-auto">
         <div className="max-w-2xl text-center py-4">
           <h2 className="text-4xl font-bold mb-4">
-            The EMR That Actually Thinks
+            Never Write Another Note
           </h2>
           <p className="text-xl mb-8 text-navy-blue-100">
-            Experience healthcare's most intelligent clinical platform. Built by doctors, powered by AI.
+            The AI ambient scribe that eliminates documentation burden. Just talk, and let Clarafi write perfect notes instantly.
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {/* AI Intelligence */}
+            {/* AI Ambient Scribe */}
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
                   <Activity className="h-5 w-5 text-navy-blue-900" />
                 </div>
-                <h3 className="font-semibold text-left">AI Clinical Intelligence</h3>
+                <h3 className="font-semibold text-left">AI Ambient Scribe</h3>
               </div>
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• Voice-to-SOAP in seconds</li>
-                <li>• GPT-4 document analysis</li>
-                <li>• Smart problem extraction</li>
-                <li>• Natural language orders</li>
+                <li>• Talk naturally, notes write themselves</li>
+                <li>• Real-time voice transcription</li>
+                <li>• Perfect SOAP notes instantly</li>
+                <li>• Zero typing required</li>
               </ul>
             </div>
             
@@ -1208,11 +1208,11 @@ export default function AuthPage() {
           
           {/* Key differentiators */}
           <div className="mb-6 space-y-2">
-            <p className="text-sm font-semibold text-gold">Why doctors switch to Clarafi:</p>
+            <p className="text-sm font-semibold text-gold">Finally, an EMR that writes itself:</p>
             <div className="flex flex-wrap justify-center gap-3 text-xs">
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ 75% less documentation time</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ No training required</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Works with your workflow</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Zero documentation time</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Just talk, we write</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Full EMR capabilities</span>
             </div>
           </div>
           
@@ -1235,7 +1235,7 @@ export default function AuthPage() {
           </div>
           
           <div className="mt-6 text-xs text-navy-blue-200">
-            <p>Trusted by 500+ providers across 50+ specialties</p>
+            <p className="font-semibold">The future of medical documentation is here</p>
             <p className="mt-1">From solo practices to enterprise health systems</p>
           </div>
         </div>

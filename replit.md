@@ -159,6 +159,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Login Page Marketing Redesign - AI Ambient Scribe Focus COMPLETED (January 16, 2025)
+- **HEADLINE CHANGE**: Changed from "The EMR That Actually Thinks" to "Never Write Another Note" to emphasize primary value proposition
+- **SUBTITLE UPDATE**: Now reads "The AI ambient scribe that eliminates documentation burden. Just talk, and let Clarafi write perfect notes instantly"
+- **AI AMBIENT SCRIBE BOX**: Renamed from "AI Clinical Intelligence" with updated features:
+  - Talk naturally, notes write themselves
+  - Real-time voice transcription
+  - Perfect SOAP notes instantly
+  - Zero typing required
+- **KEY DIFFERENTIATORS**: Updated from "75% less documentation time" to "Zero documentation time" and "Just talk, we write"
+- **REMOVED FALSE CLAIMS**: Deleted "Trusted by 500+ providers across 50+ specialties" as not yet accurate
+- **NEW TAGLINE**: "The future of medical documentation is here" to emphasize innovation
+- **PRIMARY FOCUS**: Marketing now correctly emphasizes AI ambient scribe as the core feature while maintaining that it's a full EMR
+
 ### Scheduling System Production Cleanup COMPLETED (January 16, 2025)
 - **PERMISSION FIXES**: Added 'provider' role to appointment creation, update, and deletion permissions - providers can now fully manage appointments
 - **CRITICAL BUG FIX**: Fixed ReferenceError where `getStorage` was called instead of using imported `storage` object in conflict checking endpoint
