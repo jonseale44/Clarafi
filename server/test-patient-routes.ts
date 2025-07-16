@@ -25,6 +25,7 @@ const generateTestPatientSchema = z.object({
   includeSurgicalHistory: z.boolean(),
   noShowRate: z.number().min(0).max(100),
   avgArrivalDelta: z.number().min(-30).max(60), // -30 (early) to +60 (late)
+  avgVisitDuration: z.number().min(10).max(60), // 10 to 60 minutes
   customFirstName: z.string().optional(),
   customLastName: z.string().optional(),
 });
