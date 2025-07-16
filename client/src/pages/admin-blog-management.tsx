@@ -110,27 +110,37 @@ export default function AdminBlogManagement() {
   // Generate new article mutation (two-step process)
   const generateArticleMutation = useMutation({
     mutationFn: async (params: { category: string; audience: string; topic?: string }) => {
+      console.log('📝 [Blog Generation] Starting generation with params:', params);
+      
       // Step 1: Add to generation queue
-      const queueResponse = await apiRequest({
-        url: "/api/admin/blog/generation-queue",
-        method: "POST",
-        body: {
+      console.log('📤 [Blog Generation] Step 1: Creating queue item...');
+      const queueResponse = await apiRequest(
+        "POST",
+        "/api/admin/blog/generation-queue",
+        {
           category: params.category,
           targetAudience: params.audience,
           topic: params.topic || null,
           keywords: [],
           competitorMentions: []
         }
-      });
+      );
+      
+      const queueData = await queueResponse.json();
+      console.log('✅ [Blog Generation] Queue item created:', queueData);
       
       // Step 2: Trigger generation for the queue item
-      const generateResponse = await apiRequest({
-        url: `/api/admin/blog/generate/${queueResponse.queueItem.id}`,
-        method: "POST",
-        body: {}
-      });
+      console.log('🚀 [Blog Generation] Step 2: Triggering generation for queue ID:', queueData.queueItem.id);
+      const generateResponse = await apiRequest(
+        "POST",
+        `/api/admin/blog/generate/${queueData.queueItem.id}`,
+        {}
+      );
       
-      return generateResponse;
+      const generateData = await generateResponse.json();
+      console.log('✅ [Blog Generation] Generation triggered successfully:', generateData);
+      
+      return generateData;
     },
     onSuccess: () => {
       toast({
@@ -268,7 +278,7 @@ export default function AdminBlogManagement() {
 
   // Logout handler
   const logoutMutation = useMutation({
-    mutationFn: async () => apiRequest({ url: "/api/logout", method: "POST" }),
+    mutationFn: async () => apiRequest("POST", "/api/logout"),
     onSuccess: () => {
       queryClient.clear();
       setLocation("/auth");
@@ -648,7 +658,14 @@ export default function AdminBlogManagement() {
                   <Button 
                     className="w-full" 
                     onClick={() => {
+                      console.log('🖱️ [Blog Generation] Generate button clicked');
+                      console.log('📊 [Blog Generation] Form data:', generateFormData);
+                      
                       if (!generateFormData.category || !generateFormData.audience) {
+                        console.warn('⚠️ [Blog Generation] Missing required fields:', {
+                          category: generateFormData.category,
+                          audience: generateFormData.audience
+                        });
                         toast({
                           title: "Missing Information",
                           description: "Please select both a category and target audience",
@@ -656,6 +673,8 @@ export default function AdminBlogManagement() {
                         });
                         return;
                       }
+                      
+                      console.log('🚀 [Blog Generation] Submitting generation request...');
                       generateArticleMutation.mutate({
                         category: generateFormData.category,
                         audience: generateFormData.audience,

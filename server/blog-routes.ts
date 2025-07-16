@@ -331,11 +331,20 @@ router.put("/api/admin/blog/comments/:id", requireAuth, async (req: Request, res
 // Add to generation queue
 router.post("/api/admin/blog/generation-queue", requireAuth, async (req: Request, res: Response) => {
   try {
+    console.log('📥 [Blog API] Received generation queue request:', req.body);
     const { topic, category, targetAudience, keywords, competitorMentions } = req.body;
     
     if (!category || !targetAudience) {
       return res.status(400).json({ error: "Category and target audience are required" });
     }
+    
+    console.log('💾 [Blog API] Creating queue item with data:', {
+      topic,
+      category,
+      targetAudience,
+      keywords: keywords || [],
+      competitorMentions: competitorMentions || []
+    });
     
     const queueItem = await storage.createArticleGenerationQueueItem({
       topic,
@@ -346,6 +355,7 @@ router.post("/api/admin/blog/generation-queue", requireAuth, async (req: Request
       researchSources: null
     });
     
+    console.log('✅ [Blog API] Queue item created successfully:', queueItem);
     res.json({ queueItem });
   } catch (error) {
     console.error("Error adding to queue:", error);
@@ -371,14 +381,19 @@ router.get("/api/admin/blog/generation-queue", requireAuth, async (req: Request,
 router.post("/api/admin/blog/generate/:queueId", requireAuth, async (req: Request, res: Response) => {
   try {
     const { queueId } = req.params;
+    console.log('🚀 [Blog API] Starting article generation for queue ID:', queueId);
     const queueItem = await storage.getArticleGenerationQueue();
     const item = queueItem.find(q => q.id === parseInt(queueId));
     
     if (!item || item.status !== "pending") {
+      console.log('⚠️ [Blog API] Queue item not found or already processed:', { item, status: item?.status });
       return res.status(404).json({ error: "Queue item not found or already processed" });
     }
     
+    console.log('📋 [Blog API] Found queue item:', item);
+    
     // Mark as generating
+    console.log('🔄 [Blog API] Updating status to generating...');
     await storage.updateArticleGenerationQueueItem(parseInt(queueId), {
       status: "generating"
     });
@@ -449,6 +464,7 @@ router.post("/api/admin/blog/generate/:queueId", requireAuth, async (req: Reques
     const generatedContent = JSON.parse(completion.choices[0].message.content || "{}");
     
     // Create the article
+    console.log('📝 [Blog API] Creating article with generated content...');
     const article = await storage.createArticle({
       title: generatedContent.title,
       slug: generatedContent.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
