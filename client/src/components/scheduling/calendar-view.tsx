@@ -64,6 +64,50 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
+  // Mutation for updating appointments (drag and drop)
+  const updateAppointmentMutation = useMutation({
+    mutationFn: async ({ appointmentId, date, time }: { appointmentId: number; date: string; time: string }) => {
+      const response = await fetch(`/api/scheduling/appointments/${appointmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentDate: date, appointmentTime: time })
+      });
+      if (!response.ok) throw new Error('Failed to update appointment');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Appointment Rescheduled",
+        description: "The appointment has been successfully moved.",
+      });
+      // Invalidate queries to refresh the calendar
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduling/appointments'] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reschedule appointment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleAppointmentDrop = (appointment: Appointment, newDate: Date, newTime: string) => {
+    // Format date as YYYY-MM-DD
+    const formattedDate = format(newDate, 'yyyy-MM-dd');
+    
+    // Don't update if dropped on same date and time
+    if (appointment.appointmentDate === formattedDate && appointment.appointmentTime === newTime) {
+      return;
+    }
+    
+    updateAppointmentMutation.mutate({
+      appointmentId: appointment.id,
+      date: formattedDate,
+      time: newTime
+    });
+  };
+  
   // Calculate date range based on view mode
   const getDateRange = () => {
     if (viewMode === 'month') {
@@ -223,15 +267,30 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                 "border rounded-lg p-2 md:p-3 min-h-[200px] md:min-h-[300px] lg:min-h-[400px] hover:bg-gray-50 cursor-pointer transition-all relative overflow-hidden",
                 isSelected && "border-blue-500 bg-blue-50 shadow-md",
                 !isSelected && "border-gray-200",
-                isToday && "ring-2 ring-blue-400"
+                isToday && "ring-2 ring-blue-400",
+                isDragging && "opacity-50"
               )}
               onClick={() => setSelectedDate(date)}
               onDoubleClick={(e) => {
                 // Only open new appointment if clicking on empty space, not on an appointment
-                if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('text-gray-400')) {
+                if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('text-gray-400') || (e.target as HTMLElement).classList.contains('no-appointments')) {
                   setAppointmentDetailsDate(date);
                   setAppointmentDetailsTime('09:00'); // Default time
                   setShowNewAppointmentDialog(true);
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.add('bg-blue-100');
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove('bg-blue-100');
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('bg-blue-100');
+                if (draggedAppointment) {
+                  handleAppointmentDrop(draggedAppointment, date, draggedAppointment.appointmentTime);
                 }
               }}
             >
@@ -251,7 +310,7 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
               
               <div className="space-y-1.5 overflow-y-auto max-h-[350px]">
                 {dayAppointments.length === 0 ? (
-                  <div className="text-center text-gray-400 text-xs mt-8">
+                  <div className="no-appointments text-center text-gray-400 text-xs mt-8">
                     No appointments
                   </div>
                 ) : (
@@ -259,13 +318,23 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                     <div 
                       key={apt.id}
                       className={cn(
-                        "bg-white border rounded-lg p-2 text-xs hover:shadow-md transition-all cursor-pointer",
+                        "bg-white border rounded-lg p-2 text-xs hover:shadow-md transition-all cursor-move",
                         apt.status === 'confirmed' && "border-green-200 bg-green-50",
                         apt.status === 'pending' && "border-yellow-200 bg-yellow-50",
                         apt.status === 'cancelled' && "border-red-200 bg-red-50 opacity-60",
                         apt.status === 'completed' && "border-gray-300 bg-gray-100",
                         (!apt.status || apt.status === 'scheduled') && "border-blue-200 bg-blue-50"
                       )}
+                      draggable
+                      onDragStart={(e) => {
+                        e.stopPropagation();
+                        setIsDragging(true);
+                        setDraggedAppointment(apt);
+                      }}
+                      onDragEnd={() => {
+                        setIsDragging(false);
+                        setDraggedAppointment(null);
+                      }}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         setSelectedAppointment(apt);
@@ -273,7 +342,6 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Show appointment details
                       }}
                     >
                       <div className="flex items-center justify-between mb-1">
@@ -348,10 +416,35 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                   </div>
                   
                   {/* Appointments column */}
-                  <div key={`slot-${hour}`} className="border-l-2 border-gray-200 pl-4 pr-2 py-2 min-h-[60px] relative">
+                  <div 
+                    key={`slot-${hour}`} 
+                    className="border-l-2 border-gray-200 pl-4 pr-2 py-2 min-h-[60px] relative hover:bg-gray-50 transition-colors"
+                    onDoubleClick={(e) => {
+                      // Create new appointment at this time slot
+                      if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('time-slot-line')) {
+                        setAppointmentDetailsDate(selectedDate);
+                        setAppointmentDetailsTime(timeString);
+                        setShowNewAppointmentDialog(true);
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.add('bg-blue-100');
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('bg-blue-100');
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove('bg-blue-100');
+                      if (draggedAppointment) {
+                        handleAppointmentDrop(draggedAppointment, selectedDate, timeString);
+                      }
+                    }}
+                  >
                     {hourAppointments.length === 0 ? (
                       <div className="h-full flex items-center">
-                        <div className="h-0.5 bg-gray-100 w-full"></div>
+                        <div className="time-slot-line h-0.5 bg-gray-100 w-full"></div>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -363,7 +456,7 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                             <div
                               key={apt.id}
                               className={cn(
-                                "rounded-lg p-3 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-all",
+                                "rounded-lg p-3 shadow-sm border-l-4 cursor-move hover:shadow-md transition-all",
                                 "bg-gradient-to-r",
                                 apt.status === 'confirmed' && "from-green-50 to-green-100 border-green-500",
                                 apt.status === 'pending' && "from-yellow-50 to-yellow-100 border-yellow-500",
@@ -372,6 +465,15 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                                 (!apt.status || apt.status === 'scheduled') && "from-blue-50 to-blue-100 border-blue-500"
                               )}
                               style={{ marginTop: minutes > 0 ? `${topOffset}px` : 0 }}
+                              draggable
+                              onDragStart={(e) => {
+                                setIsDragging(true);
+                                setDraggedAppointment(apt);
+                              }}
+                              onDragEnd={() => {
+                                setIsDragging(false);
+                                setDraggedAppointment(null);
+                              }}
                               onDoubleClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedAppointment(apt);
@@ -461,9 +563,32 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                   isSelected && "bg-blue-50 border-blue-500",
                   !isSelected && "border-gray-200",
                   isToday && "ring-2 ring-blue-400",
-                  !isCurrentMonth && "text-gray-400 bg-gray-50"
+                  !isCurrentMonth && "text-gray-400 bg-gray-50",
+                  isDragging && "opacity-50"
                 )}
                 onClick={() => setSelectedDate(day)}
+                onDoubleClick={(e) => {
+                  // Only open new appointment if clicking on empty space
+                  if (e.target === e.currentTarget || !(e.target as HTMLElement).closest('.appointment-item')) {
+                    setAppointmentDetailsDate(day);
+                    setAppointmentDetailsTime('09:00'); // Default time
+                    setShowNewAppointmentDialog(true);
+                  }
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add('bg-blue-100');
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.classList.remove('bg-blue-100');
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('bg-blue-100');
+                  if (draggedAppointment) {
+                    handleAppointmentDrop(draggedAppointment, day, draggedAppointment.appointmentTime);
+                  }
+                }}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs md:text-sm font-medium">
@@ -486,7 +611,24 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                   {/* Medium screens: show 2 appointments */}
                   <div className="md:block lg:hidden">
                     {dayAppointments.slice(0, 2).map((apt) => (
-                      <div key={apt.id} className="text-xs bg-blue-50 border border-blue-200 rounded px-1 py-0.5 truncate">
+                      <div 
+                        key={apt.id} 
+                        className="appointment-item text-xs bg-blue-50 border border-blue-200 rounded px-1 py-0.5 truncate cursor-move hover:shadow-md transition-shadow"
+                        draggable
+                        onDragStart={(e) => {
+                          setIsDragging(true);
+                          setDraggedAppointment(apt);
+                        }}
+                        onDragEnd={() => {
+                          setIsDragging(false);
+                          setDraggedAppointment(null);
+                        }}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedAppointment(apt);
+                          setShowAppointmentDetails(true);
+                        }}
+                      >
                         <span className="font-medium">{apt.appointmentTime}</span> {apt.patientName}
                       </div>
                     ))}
@@ -500,12 +642,29 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                   {/* Large screens: show 3 appointments */}
                   <div className="hidden lg:block">
                     {dayAppointments.slice(0, 3).map((apt) => (
-                      <div key={apt.id} className={cn(
-                        "text-xs rounded px-1 py-0.5 truncate border",
-                        apt.status === 'confirmed' ? "bg-green-50 border-green-200" :
-                        apt.status === 'pending' ? "bg-yellow-50 border-yellow-200" :
-                        "bg-blue-50 border-blue-200"
-                      )}>
+                      <div 
+                        key={apt.id} 
+                        className={cn(
+                          "appointment-item text-xs rounded px-1 py-0.5 truncate border cursor-move hover:shadow-md transition-shadow",
+                          apt.status === 'confirmed' ? "bg-green-50 border-green-200" :
+                          apt.status === 'pending' ? "bg-yellow-50 border-yellow-200" :
+                          "bg-blue-50 border-blue-200"
+                        )}
+                        draggable
+                        onDragStart={(e) => {
+                          setIsDragging(true);
+                          setDraggedAppointment(apt);
+                        }}
+                        onDragEnd={() => {
+                          setIsDragging(false);
+                          setDraggedAppointment(null);
+                        }}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedAppointment(apt);
+                          setShowAppointmentDetails(true);
+                        }}
+                      >
                         <span className="font-medium">{apt.appointmentTime}</span> {apt.patientName}
                       </div>
                     ))}
@@ -622,6 +781,7 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
         open={showNewAppointmentDialog}
         onOpenChange={setShowNewAppointmentDialog}
         selectedDate={appointmentDetailsDate || selectedDate}
+        selectedTime={appointmentDetailsTime}
         providerId={providerId}
         locationId={locationId}
       />

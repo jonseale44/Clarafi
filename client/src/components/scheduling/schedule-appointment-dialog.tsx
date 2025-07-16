@@ -33,6 +33,7 @@ interface ScheduleAppointmentDialogProps {
   providerId?: number;
   locationId?: number;
   selectedDate?: Date;
+  selectedTime?: string;
 }
 
 export function ScheduleAppointmentDialog({
@@ -41,7 +42,8 @@ export function ScheduleAppointmentDialog({
   preselectedPatient,
   providerId,
   locationId,
-  selectedDate = new Date()
+  selectedDate = new Date(),
+  selectedTime
 }: ScheduleAppointmentDialogProps) {
   const { toast } = useToast();
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
@@ -51,7 +53,7 @@ export function ScheduleAppointmentDialog({
   // Form fields
   const [appointmentType, setAppointmentType] = useState("follow-up");
   const [date, setDate] = useState(format(selectedDate, 'yyyy-MM-dd'));
-  const [time, setTime] = useState("09:00");
+  const [time, setTime] = useState(selectedTime || "09:00");
   const [duration, setDuration] = useState("20");
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [notes, setNotes] = useState("");
@@ -72,7 +74,7 @@ export function ScheduleAppointmentDialog({
   useEffect(() => {
     if (open) {
       setDate(format(selectedDate, 'yyyy-MM-dd'));
-      setTime("09:00");
+      setTime(selectedTime || "09:00");
       setDuration("20");
       setAppointmentType("follow-up");
       setChiefComplaint("");
