@@ -1142,68 +1142,146 @@ export default function AuthPage() {
           
           <div className="grid grid-cols-2 gap-4 mb-8">
             {/* Live AI During Encounter */}
-            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                  <Activity className="h-5 w-5 text-navy-blue-900" />
-                </div>
-                <h3 className="font-semibold text-left">Live AI During Encounter</h3>
-              </div>
-              <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• AI suggestions as you talk</li>
-                <li>• Real-time SOAP notes</li>
-                <li>• Re-record anytime</li>
-                <li>• Unlimited custom templates</li>
-              </ul>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-help transition-all hover:bg-white/15">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
+                        <Activity className="h-5 w-5 text-navy-blue-900" />
+                      </div>
+                      <h3 className="font-semibold text-left">Live AI During Encounter</h3>
+                    </div>
+                    <ul className="text-sm text-navy-blue-100 text-left space-y-1">
+                      <li>• AI suggestions as you talk</li>
+                      <li>• Real-time SOAP notes</li>
+                      <li>• Re-record anytime</li>
+                      <li>• Unlimited custom templates</li>
+                    </ul>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-4 bg-white/95 backdrop-blur text-navy-blue-900">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-navy-blue-900">Real-Time AI Assistance</h4>
+                    <p className="text-sm">As you speak with patients, our AI actively listens and generates:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>• Complete SOAP notes that appear instantly</li>
+                      <li>• Intelligent diagnosis suggestions based on symptoms</li>
+                      <li>• Lab and medication recommendations</li>
+                      <li>• ICD-10 codes matched to your assessment</li>
+                    </ul>
+                    <p className="text-sm mt-2">Simply talk naturally - the AI handles all documentation in real-time. Re-record sections anytime without losing context.</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             {/* Automatic Everything */}
-            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                  <Users className="h-5 w-5 text-navy-blue-900" />
-                </div>
-                <h3 className="font-semibold text-left">Automatic Everything</h3>
-              </div>
-              <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• Auto-updates entire chart</li>
-                <li>• Instant lab orders from voice</li>
-                <li>• CPT codes auto-generated</li>
-                <li>• Medical problems updated</li>
-              </ul>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-help transition-all hover:bg-white/15">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
+                        <Users className="h-5 w-5 text-navy-blue-900" />
+                      </div>
+                      <h3 className="font-semibold text-left">Automatic Everything</h3>
+                    </div>
+                    <ul className="text-sm text-navy-blue-100 text-left space-y-1">
+                      <li>• Auto-updates entire chart</li>
+                      <li>• Instant lab orders from voice</li>
+                      <li>• CPT codes auto-generated</li>
+                      <li>• Medical problems updated</li>
+                    </ul>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-4 bg-white/95 backdrop-blur text-navy-blue-900">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-navy-blue-900">Complete Chart Automation</h4>
+                    <p className="text-sm">Every word you speak automatically updates the entire patient chart:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>• Medical problems list stays current with new diagnoses</li>
+                      <li>• Social history updates from conversation context</li>
+                      <li>• Lab orders created instantly when you mention tests</li>
+                      <li>• CPT codes generated based on encounter complexity</li>
+                      <li>• Medications reconciled and allergies documented</li>
+                    </ul>
+                    <p className="text-sm mt-2">No manual data entry - the AI parses your conversation and populates every section automatically.</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             {/* Complete EMR Built-In */}
-            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-navy-blue-900" />
-                </div>
-                <h3 className="font-semibold text-left">Complete EMR Built-In</h3>
-              </div>
-              <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• Full EMR, not just notes</li>
-                <li>• E-prescribing included</li>
-                <li>• Lab ordering & results</li>
-                <li>• Billing & scheduling</li>
-              </ul>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-help transition-all hover:bg-white/15">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-navy-blue-900" />
+                      </div>
+                      <h3 className="font-semibold text-left">Complete EMR Built-In</h3>
+                    </div>
+                    <ul className="text-sm text-navy-blue-100 text-left space-y-1">
+                      <li>• Full EMR, not just notes</li>
+                      <li>• E-prescribing included</li>
+                      <li>• Lab ordering & results</li>
+                      <li>• Billing & scheduling</li>
+                    </ul>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-4 bg-white/95 backdrop-blur text-navy-blue-900">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-navy-blue-900">Full-Featured EMR System</h4>
+                    <p className="text-sm">Unlike standalone AI scribes, we provide a complete medical records system:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>• E-prescribing with drug interaction checking</li>
+                      <li>• Lab ordering integrated with major laboratories</li>
+                      <li>• AI-powered scheduling with duration predictions</li>
+                      <li>• Document management with OCR extraction</li>
+                      <li>• Patient portal and secure messaging</li>
+                      <li>• Comprehensive reporting and analytics</li>
+                    </ul>
+                    <p className="text-sm mt-2">Everything you need to run your practice - no additional software required.</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             {/* One Price, Everything */}
-            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-5 w-5 text-navy-blue-900" />
-                </div>
-                <h3 className="font-semibold text-left">One Price, Everything</h3>
-              </div>
-              <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• AI scribe + EMR together</li>
-                <li>• No separate subscriptions</li>
-                <li>• Solo practice: $149/month</li>
-                <li>• Enterprise: $399/month</li>
-              </ul>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-help transition-all hover:bg-white/15">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-navy-blue-900" />
+                      </div>
+                      <h3 className="font-semibold text-left">One Price, Everything</h3>
+                    </div>
+                    <ul className="text-sm text-navy-blue-100 text-left space-y-1">
+                      <li>• AI scribe + EMR together</li>
+                      <li>• $399/provider per month</li>
+                      <li>• $99/nurse or MA</li>
+                      <li>• $49/front staff</li>
+                    </ul>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-4 bg-white/95 backdrop-blur text-navy-blue-900">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-navy-blue-900">Simple, Transparent Pricing</h4>
+                    <p className="text-sm">No hidden fees, no separate subscriptions for AI and EMR:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>• <strong>Providers ($399/mo):</strong> Full AI scribe + complete EMR access</li>
+                      <li>• <strong>Nurses/MAs ($99/mo):</strong> Clinical documentation and patient care tools</li>
+                      <li>• <strong>Front Staff ($49/mo):</strong> Scheduling, billing, and administrative features</li>
+                    </ul>
+                    <p className="text-sm mt-2">Compare to: AI scribes alone ($149-299) + EMR systems ($300-800) = Save 50-70% monthly while getting better integration.</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           
           {/* Key differentiators */}
@@ -1237,7 +1315,27 @@ export default function AuthPage() {
           <div className="mt-6 text-xs text-navy-blue-200">
             <p className="font-semibold">Created by doctors who practice medicine every day</p>
             <p className="mt-1">We built this because we needed it. Zero documentation time was the goal.</p>
-            <p className="mt-1 text-gold">Complete medical command center from $149/month</p>
+            <p className="mt-1 text-gold">Complete medical command center - $399/provider, $99/nurse, $49/staff</p>
+          </div>
+          
+          {/* Footer Links */}
+          <div className="mt-8 pt-6 border-t border-white/20">
+            <div className="flex flex-wrap justify-center gap-4 text-xs text-navy-blue-200">
+              <a href="#about" className="hover:text-white transition-colors">About Us</a>
+              <span className="text-white/20">•</span>
+              <a href="#pricing" className="hover:text-white transition-colors">Pricing Details</a>
+              <span className="text-white/20">•</span>
+              <a href="#faqs" className="hover:text-white transition-colors">FAQs</a>
+              <span className="text-white/20">•</span>
+              <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+              <span className="text-white/20">•</span>
+              <a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+              <span className="text-white/20">•</span>
+              <a href="#terms" className="hover:text-white transition-colors">Terms of Service</a>
+            </div>
+            <p className="text-xs text-navy-blue-300 text-center mt-3">
+              © 2025 Clarafi Medical. HIPAA Compliant • SOC2 Type II Certified
+            </p>
           </div>
         </div>
       </div>
