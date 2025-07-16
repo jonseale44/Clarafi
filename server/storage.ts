@@ -2226,10 +2226,14 @@ export class DatabaseStorage implements IStorage {
       console.error('🤖 [AI SCHEDULING] Error calculating AI prediction:', error);
     }
     
-    // Calculate final durations
+    // Calculate final durations with 10-minute interval rounding
     const aiPredictedDuration = Math.max(baseDuration + durationAdjustment, 10); // Minimum 10 minutes
-    const patientVisibleDuration = Math.max(baseDuration, 20); // Patients always see standard time, minimum 20
-    const providerScheduledDuration = Math.max(aiPredictedDuration + 5, patientVisibleDuration); // Provider gets AI time + buffer
+    
+    // Patient sees: Round DOWN to nearest 10, minimum 20
+    const patientVisibleDuration = Math.max(20, Math.floor(aiPredictedDuration / 10) * 10);
+    
+    // Provider blocks: Round UP to nearest 10, minimum 10
+    const providerScheduledDuration = Math.max(10, Math.ceil(aiPredictedDuration / 10) * 10);
     
     console.log('🤖 [AI SCHEDULING] Final prediction:', {
       baseDuration,
