@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { format, startOfWeek, addDays, isSameDay, startOfMonth, endOfMonth, startOfDay, addMonths, getDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin, Check, ChevronsUpDown, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin, Check, ChevronsUpDown, Calendar, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 interface CalendarViewProps {
   providerId?: number;
@@ -48,6 +50,20 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   const [selectedPatient, setSelectedPatient] = useState<{ id: number; name: string } | null>(null);
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
   
+  // State for appointment details dialog
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [showAppointmentDetails, setShowAppointmentDetails] = useState(false);
+  const [appointmentDetailsDate, setAppointmentDetailsDate] = useState<Date | null>(null);
+  const [appointmentDetailsTime, setAppointmentDetailsTime] = useState<string | null>(null);
+  
+  // State for drag and drop
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedAppointment, setDraggedAppointment] = useState<Appointment | null>(null);
+  
+  // State for delete confirmation
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
   // Calculate date range based on view mode
   const getDateRange = () => {
     if (viewMode === 'month') {
@@ -73,6 +89,35 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   };
   
   const { start: startDate, end: endDate } = getDateRange();
+  
+  // Mutation for deleting appointments
+  const deleteAppointmentMutation = useMutation({
+    mutationFn: async (appointmentId: number) => {
+      const response = await fetch(`/api/scheduling/appointments/${appointmentId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete appointment');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Appointment Cancelled",
+        description: "The appointment has been successfully cancelled.",
+      });
+      setShowDeleteConfirm(false);
+      setAppointmentToDelete(null);
+      setShowAppointmentDetails(false);
+      // Invalidate queries to refresh the calendar
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduling/appointments'] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to cancel appointment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
   
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
     queryKey: ['/api/scheduling/appointments', {
@@ -181,6 +226,14 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                 isToday && "ring-2 ring-blue-400"
               )}
               onClick={() => setSelectedDate(date)}
+              onDoubleClick={(e) => {
+                // Only open new appointment if clicking on empty space, not on an appointment
+                if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('text-gray-400')) {
+                  setAppointmentDetailsDate(date);
+                  setAppointmentDetailsTime('09:00'); // Default time
+                  setShowNewAppointmentDialog(true);
+                }
+              }}
             >
               <div className="sticky top-0 bg-inherit pb-2 border-b mb-2">
                 <div className="flex items-center justify-between">
@@ -213,6 +266,11 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                         apt.status === 'completed' && "border-gray-300 bg-gray-100",
                         (!apt.status || apt.status === 'scheduled') && "border-blue-200 bg-blue-50"
                       )}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedAppointment(apt);
+                        setShowAppointmentDetails(true);
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         // TODO: Show appointment details
@@ -283,14 +341,14 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
               const timeString = `${hour.toString().padStart(2, '0')}:00`;
               
               return (
-                <React.Fragment key={hour}>
+                <> 
                   {/* Time column */}
-                  <div className="text-right pr-3 py-2 text-sm text-gray-500 font-medium">
+                  <div key={`time-${hour}`} className="text-right pr-3 py-2 text-sm text-gray-500 font-medium">
                     {format(new Date(2024, 0, 1, hour), 'h a')}
                   </div>
                   
                   {/* Appointments column */}
-                  <div className="border-l-2 border-gray-200 pl-4 pr-2 py-2 min-h-[60px] relative">
+                  <div key={`slot-${hour}`} className="border-l-2 border-gray-200 pl-4 pr-2 py-2 min-h-[60px] relative">
                     {hourAppointments.length === 0 ? (
                       <div className="h-full flex items-center">
                         <div className="h-0.5 bg-gray-100 w-full"></div>
@@ -314,6 +372,11 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                                 (!apt.status || apt.status === 'scheduled') && "from-blue-50 to-blue-100 border-blue-500"
                               )}
                               style={{ marginTop: minutes > 0 ? `${topOffset}px` : 0 }}
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedAppointment(apt);
+                                setShowAppointmentDetails(true);
+                              }}
                             >
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
@@ -329,6 +392,7 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                                   apt.status === 'pending' && "bg-yellow-500",
                                   apt.status === 'cancelled' && "bg-red-500",
                                   apt.status === 'completed' && "bg-gray-500",
+                                  apt.status === 'no-show' && "bg-orange-500",
                                   (!apt.status || apt.status === 'scheduled') && "bg-blue-500"
                                 )}>
                                   {apt.status || 'scheduled'}
@@ -347,7 +411,7 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                       </div>
                     )}
                   </div>
-                </React.Fragment>
+                </>
               );
             })}
           </div>
@@ -557,10 +621,135 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       <ScheduleAppointmentDialog
         open={showNewAppointmentDialog}
         onOpenChange={setShowNewAppointmentDialog}
-        selectedDate={selectedDate}
+        selectedDate={appointmentDetailsDate || selectedDate}
         providerId={providerId}
         locationId={locationId}
       />
+      
+      {/* Appointment Details Dialog */}
+      <Dialog open={showAppointmentDetails} onOpenChange={setShowAppointmentDetails}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Appointment Details</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Patient</Label>
+                  <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                    <div className="font-medium">{selectedAppointment.patientName}</div>
+                    <div className="text-sm text-gray-500">ID: {selectedAppointment.patientId}</div>
+                  </div>
+                </div>
+                <div>
+                  <Label>Provider</Label>
+                  <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                    <div className="font-medium">{selectedAppointment.providerName}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Date</Label>
+                  <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                    {format(new Date(selectedAppointment.appointmentDate), 'MMMM d, yyyy')}
+                  </div>
+                </div>
+                <div>
+                  <Label>Time</Label>
+                  <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                    {selectedAppointment.appointmentTime}
+                  </div>
+                </div>
+                <div>
+                  <Label>Duration</Label>
+                  <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                    {selectedAppointment.patientVisibleDuration} minutes
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label>Type</Label>
+                <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                  {selectedAppointment.appointmentType}
+                </div>
+              </div>
+              
+              {selectedAppointment.chiefComplaint && (
+                <div>
+                  <Label>Chief Complaint</Label>
+                  <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                    {selectedAppointment.chiefComplaint}
+                  </div>
+                </div>
+              )}
+              
+              {selectedAppointment.notes && (
+                <div>
+                  <Label>Notes</Label>
+                  <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                    {selectedAppointment.notes}
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <Label>Status</Label>
+                <div className="mt-1 p-3 border rounded-md bg-gray-50">
+                  <Badge className={cn(
+                    selectedAppointment.status === 'confirmed' && "bg-green-500",
+                    selectedAppointment.status === 'pending' && "bg-yellow-500",
+                    selectedAppointment.status === 'cancelled' && "bg-red-500",
+                    selectedAppointment.status === 'completed' && "bg-gray-500",
+                    selectedAppointment.status === 'no-show' && "bg-orange-500",
+                    (!selectedAppointment.status || selectedAppointment.status === 'scheduled') && "bg-blue-500"
+                  )}>
+                    {selectedAppointment.status || 'scheduled'}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAppointmentDetails(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAppointmentDetails(false);
+                    // TODO: Implement reschedule functionality
+                    toast({
+                      title: "Coming Soon",
+                      description: "Reschedule functionality will be available soon.",
+                    });
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Reschedule
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (selectedAppointment) {
+                      deleteAppointmentMutation.mutate(selectedAppointment.id);
+                    }
+                  }}
+                  disabled={deleteAppointmentMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Cancel Appointment
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

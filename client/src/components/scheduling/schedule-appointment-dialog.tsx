@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { Check, ChevronsUpDown, Calendar, User, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -194,6 +195,9 @@ export function ScheduleAppointmentDialog({
         title: "Appointment Scheduled",
         description: `Appointment scheduled for ${selectedPatient.firstName} ${selectedPatient.lastName} on ${format(new Date(date), 'MMMM d, yyyy')} at ${time}`,
       });
+      
+      // Invalidate all appointment queries to refresh the calendar
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduling/appointments'] });
 
       onOpenChange(false);
     } catch (error) {
