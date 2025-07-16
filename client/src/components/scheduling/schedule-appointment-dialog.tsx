@@ -221,8 +221,8 @@ export function ScheduleAppointmentDialog({
         appointmentType,
         chiefComplaint,
         notes,
-        duration: parseInt(duration), // Changed from patientVisibleDuration
-        patientVisibleDuration: parseInt(duration),
+        duration: aiPrediction ? aiPrediction.providerScheduledDuration : parseInt(duration),
+        patientVisibleDuration: aiPrediction ? aiPrediction.patientVisibleDuration : parseInt(duration),
         useAiScheduling: true, // Enable AI scheduling
       };
       
@@ -239,6 +239,18 @@ export function ScheduleAppointmentDialog({
       
       if (!response.ok) {
         console.error('📅 [ScheduleAppointment] Error response:', responseData);
+        
+        // Handle conflict errors specifically
+        if (response.status === 409) {
+          toast({
+            title: "Time Slot Unavailable",
+            description: responseData.message || "This time slot conflicts with an existing appointment",
+            variant: "destructive",
+          });
+          onOpenChange(false);
+          return;
+        }
+        
         throw new Error(responseData.error || 'Failed to schedule appointment');
       }
 
@@ -400,22 +412,34 @@ export function ScheduleAppointmentDialog({
 
           <div>
             <Label htmlFor="duration">Duration</Label>
-            <Select value={duration} onValueChange={setDuration}>
+            <Select 
+              value={aiPrediction ? aiPrediction.providerScheduledDuration.toString() : duration} 
+              onValueChange={setDuration}
+              disabled={!!aiPrediction}
+            >
               <SelectTrigger id="duration" className="mt-2">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="10">10 minutes</SelectItem>
                 <SelectItem value="20">20 minutes</SelectItem>
                 <SelectItem value="30">30 minutes</SelectItem>
-                <SelectItem value="45">45 minutes</SelectItem>
+                <SelectItem value="40">40 minutes</SelectItem>
+                <SelectItem value="50">50 minutes</SelectItem>
                 <SelectItem value="60">60 minutes</SelectItem>
+                <SelectItem value="70">70 minutes</SelectItem>
+                <SelectItem value="80">80 minutes</SelectItem>
                 <SelectItem value="90">90 minutes</SelectItem>
               </SelectContent>
             </Select>
             {!aiPrediction && (
               <p className="text-sm text-gray-500 mt-1">
                 ✨ AI will predict actual duration based on patient and visit type
+              </p>
+            )}
+            {aiPrediction && (
+              <p className="text-sm text-blue-600 mt-1">
+                🤖 AI-adjusted duration based on patient complexity
               </p>
             )}
           </div>

@@ -128,6 +128,27 @@ router.post('/api/scheduling/appointments', tenantIsolation, async (req, res) =>
       providerScheduledDuration = validatedData.duration;
     }
     
+    // Check for conflicts before creating appointment
+    const conflicts = await storage.checkAppointmentConflicts({
+      providerId: validatedData.providerId,
+      appointmentDate: validatedData.appointmentDate,
+      startTime: validatedData.appointmentTime,
+      duration: providerScheduledDuration || validatedData.duration
+    });
+    
+    if (conflicts.length > 0) {
+      // Build a user-friendly error message
+      const conflictDetails = conflicts.map(c => 
+        `${c.startTime} - ${c.endTime} (${c.patientName}, ${c.appointmentType})`
+      ).join(', ');
+      
+      return res.status(409).json({ 
+        error: 'Appointment time conflicts with existing appointments',
+        conflicts: conflicts,
+        message: `This time slot conflicts with: ${conflictDetails}`
+      });
+    }
+    
     console.log('📅 [CREATE_APPOINTMENT] Creating appointment with data:', {
       ...validatedData,
       status: 'scheduled',
@@ -192,6 +213,35 @@ router.put('/api/scheduling/appointments/:id',  tenantIsolation, async (req, res
     const canSchedule = ['admin', 'nurse', 'ma', 'front_desk'].includes(req.user!.role);
     if (!canSchedule) {
       return res.status(403).json({ error: 'You do not have permission to update appointments' });
+    }
+    
+    // If updating date, time, or duration, check for conflicts
+    if (req.body.appointmentDate || req.body.appointmentTime || req.body.duration) {
+      // Get existing appointment details
+      const existing = await storage.getAppointmentById(appointmentId, req.userHealthSystemId!);
+      if (!existing) {
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+      
+      const conflicts = await storage.checkAppointmentConflicts({
+        providerId: req.body.providerId || existing.providerId,
+        appointmentDate: req.body.appointmentDate || existing.appointmentDate,
+        startTime: req.body.appointmentTime || existing.startTime,
+        duration: req.body.duration || existing.duration,
+        excludeAppointmentId: appointmentId
+      });
+      
+      if (conflicts.length > 0) {
+        const conflictDetails = conflicts.map(c => 
+          `${c.startTime} - ${c.endTime} (${c.patientName}, ${c.appointmentType})`
+        ).join(', ');
+        
+        return res.status(409).json({ 
+          error: 'Appointment time conflicts with existing appointments',
+          conflicts: conflicts,
+          message: `This time slot conflicts with: ${conflictDetails}`
+        });
+      }
     }
     
     const updated = await storage.updateAppointment(appointmentId, req.body, req.userHealthSystemId!);

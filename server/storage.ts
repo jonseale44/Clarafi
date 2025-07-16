@@ -23,7 +23,7 @@ import {
   // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
+import { eq, desc, and, sql, gte, lte, or, inArray, notInArray, ne, lt, gt } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -2258,6 +2258,86 @@ export class DatabaseStorage implements IStorage {
         historicalAvg: patientPatterns ? parseFloat(patientPatterns.avgVisitDuration || '0') : 0
       }
     };
+  }
+
+  // Check for appointment conflicts
+  async checkAppointmentConflicts(params: {
+    providerId: number;
+    appointmentDate: string;
+    startTime: string;
+    duration: number;
+    excludeAppointmentId?: number;
+  }) {
+    const { providerId, appointmentDate, startTime, duration, excludeAppointmentId } = params;
+    
+    // Calculate end time
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + duration;
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMinutes = totalMinutes % 60;
+    const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+    
+    console.log('🔍 [CONFLICT CHECK] Checking for conflicts:', {
+      providerId,
+      date: appointmentDate,
+      requestedTime: `${startTime} - ${endTime}`,
+      duration
+    });
+    
+    // Query for overlapping appointments
+    const conflicts = await db
+      .select({
+        id: appointments.id,
+        patientId: appointments.patientId,
+        startTime: appointments.startTime,
+        endTime: appointments.endTime,
+        duration: appointments.duration,
+        appointmentType: appointments.appointmentType,
+        status: appointments.status,
+        patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`
+      })
+      .from(appointments)
+      .innerJoin(patients, eq(appointments.patientId, patients.id))
+      .where(and(
+        eq(appointments.providerId, providerId),
+        eq(appointments.appointmentDate, appointmentDate),
+        // Only check active appointments (not cancelled or no-show)
+        notInArray(appointments.status, ['cancelled', 'no_show']),
+        // Exclude the appointment being updated if provided
+        excludeAppointmentId ? ne(appointments.id, excludeAppointmentId) : sql`true`,
+        // Check for time overlap
+        or(
+          // New appointment starts during existing appointment
+          and(
+            lte(appointments.startTime, startTime),
+            gt(appointments.endTime, startTime)
+          ),
+          // New appointment ends during existing appointment
+          and(
+            lt(appointments.startTime, endTime),
+            gte(appointments.endTime, endTime)
+          ),
+          // New appointment completely encompasses existing appointment
+          and(
+            gte(appointments.startTime, startTime),
+            lte(appointments.endTime, endTime)
+          ),
+          // Existing appointment completely encompasses new appointment
+          and(
+            lte(appointments.startTime, startTime),
+            gte(appointments.endTime, endTime)
+          )
+        )
+      ))
+      .execute();
+    
+    if (conflicts.length > 0) {
+      console.log('❌ [CONFLICT CHECK] Found conflicts:', conflicts);
+    } else {
+      console.log('✅ [CONFLICT CHECK] No conflicts found');
+    }
+    
+    return conflicts;
   }
 
   // Create appointment
