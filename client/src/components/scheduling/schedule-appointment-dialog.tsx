@@ -62,6 +62,26 @@ export function ScheduleAppointmentDialog({
     }
   }, [preselectedPatient]);
 
+  // Update date when selectedDate prop changes
+  useEffect(() => {
+    setDate(format(selectedDate, 'yyyy-MM-dd'));
+  }, [selectedDate]);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setDate(format(selectedDate, 'yyyy-MM-dd'));
+      setTime("09:00");
+      setDuration("20");
+      setAppointmentType("follow-up");
+      setChiefComplaint("");
+      setNotes("");
+      if (!preselectedPatient) {
+        setSelectedPatient(null);
+      }
+    }
+  }, [open, selectedDate, preselectedPatient]);
+
   // Get current user data
   const { data: currentUser } = useQuery({
     queryKey: ['/api/user'],
