@@ -13,6 +13,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { AIDurationDisplay } from "./ai-duration-display";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Patient {
   id: number;
@@ -46,6 +48,7 @@ export function ScheduleAppointmentDialog({
   selectedTime
 }: ScheduleAppointmentDialogProps) {
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(preselectedPatient || null);
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
@@ -57,6 +60,15 @@ export function ScheduleAppointmentDialog({
   const [duration, setDuration] = useState("20");
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // AI predictions state
+  const [aiPrediction, setAiPrediction] = useState<{
+    aiPredictedDuration: number;
+    patientVisibleDuration: number;
+    providerScheduledDuration: number;
+    complexityFactors?: any;
+  } | null>(null);
+  const [fetchingPrediction, setFetchingPrediction] = useState(false);
 
   // Set preselected patient if provided
   useEffect(() => {
@@ -85,11 +97,47 @@ export function ScheduleAppointmentDialog({
     }
   }, [open, selectedDate, preselectedPatient]);
 
-  // Get current user data
-  const { data: currentUser } = useQuery({
-    queryKey: ['/api/user'],
-    enabled: open,
-  });
+  // Fetch AI prediction when relevant fields change
+  useEffect(() => {
+    if (!selectedPatient || !date || !time || !appointmentType) {
+      setAiPrediction(null);
+      return;
+    }
+
+    const fetchPrediction = async () => {
+      setFetchingPrediction(true);
+      try {
+        const effectiveProviderId = providerId || currentUser?.id;
+        if (!effectiveProviderId) {
+          return;
+        }
+
+        const response = await fetch('/api/scheduling/appointments/preview-duration', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patientId: selectedPatient.id,
+            providerId: effectiveProviderId,
+            appointmentType,
+            appointmentDate: date,
+            appointmentTime: time,
+          }),
+        });
+
+        if (response.ok) {
+          const prediction = await response.json();
+          setAiPrediction(prediction);
+        }
+      } catch (error) {
+        console.error('Error fetching AI prediction:', error);
+      } finally {
+        setFetchingPrediction(false);
+      }
+    };
+
+    fetchPrediction();
+  }, [selectedPatient, providerId, currentUser?.id, appointmentType, date, time]);
+
 
   // Get user's locations
   const { data: locations = [] } = useQuery({
@@ -175,6 +223,7 @@ export function ScheduleAppointmentDialog({
         notes,
         duration: parseInt(duration), // Changed from patientVisibleDuration
         patientVisibleDuration: parseInt(duration),
+        useAiScheduling: true, // Enable AI scheduling
       };
       
       console.log('📅 [ScheduleAppointment] Sending appointment data:', appointmentData);
@@ -364,10 +413,25 @@ export function ScheduleAppointmentDialog({
                 <SelectItem value="90">90 minutes</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-gray-500 mt-1">
-              ✨ AI will predict actual duration based on patient and visit type
-            </p>
+            {!aiPrediction && (
+              <p className="text-sm text-gray-500 mt-1">
+                ✨ AI will predict actual duration based on patient and visit type
+              </p>
+            )}
           </div>
+
+          {/* AI Duration Prediction Display */}
+          {aiPrediction && (
+            <div className="mt-4">
+              <AIDurationDisplay
+                baseDuration={parseInt(duration)}
+                patientVisibleDuration={aiPrediction.patientVisibleDuration}
+                providerScheduledDuration={aiPrediction.providerScheduledDuration}
+                aiPredictedDuration={aiPrediction.aiPredictedDuration}
+                complexityFactors={aiPrediction.complexityFactors}
+              />
+            </div>
+          )}
 
           <div>
             <Label htmlFor="chief-complaint">Chief Complaint</Label>

@@ -2100,8 +2100,9 @@ export class DatabaseStorage implements IStorage {
     appointmentDate: Date;
     appointmentTime: string;
   }) {
-    // TODO: Implement AI prediction logic
-    // For now, return standard durations
+    console.log('🤖 [AI SCHEDULING] Starting prediction for patient:', params.patientId);
+    
+    // Base durations
     const standardDurations: Record<string, number> = {
       'new_patient': 45,
       'follow_up': 20,
@@ -2110,12 +2111,144 @@ export class DatabaseStorage implements IStorage {
       'procedure': 60
     };
     
-    const baseDuration = standardDurations[params.appointmentType] || 20;
+    let baseDuration = standardDurations[params.appointmentType] || 20;
+    let durationAdjustment = 0;
+    
+    try {
+      // 1. Get patient complexity factors
+      const patientData = await db
+        .select({
+          problemCount: sql<number>`COUNT(DISTINCT ${medicalProblems.id})`,
+          medicationCount: sql<number>`COUNT(DISTINCT ${medications.id})`,
+          age: sql<number>`EXTRACT(YEAR FROM AGE(${patients.dateOfBirth}))`,
+          allergiesCount: sql<number>`COUNT(DISTINCT ${allergies.id})`
+        })
+        .from(patients)
+        .where(eq(patients.id, params.patientId))
+        .leftJoin(medicalProblems, eq(medicalProblems.patientId, patients.id))
+        .leftJoin(medications, and(
+          eq(medications.patientId, patients.id),
+          eq(medications.status, 'active')
+        ))
+        .leftJoin(allergies, eq(allergies.patientId, patients.id))
+        .groupBy(patients.id, patients.dateOfBirth)
+        .execute();
+        
+      const complexity = patientData[0] || { problemCount: 0, medicationCount: 0, age: 0, allergiesCount: 0 };
+      
+      console.log('🤖 [AI SCHEDULING] Patient complexity:', complexity);
+      
+      // 2. Get patient scheduling patterns
+      const [patientPatterns] = await db
+        .select()
+        .from(patientSchedulingPatterns)
+        .where(eq(patientSchedulingPatterns.patientId, params.patientId))
+        .execute();
+        
+      console.log('🤖 [AI SCHEDULING] Patient patterns:', patientPatterns);
+      
+      // 3. Get provider patterns
+      const [providerPatterns] = await db
+        .select()
+        .from(providerSchedulingPatterns)
+        .where(eq(providerSchedulingPatterns.providerId, params.providerId))
+        .execute();
+        
+      console.log('🤖 [AI SCHEDULING] Provider patterns:', providerPatterns);
+      
+      // 4. Calculate complexity-based adjustments
+      // Each active problem adds 1-2 minutes
+      if (complexity.problemCount > 0) {
+        durationAdjustment += Math.min(complexity.problemCount * 1.5, 15); // Cap at 15 minutes
+      }
+      
+      // Multiple medications add time for medication reconciliation
+      if (complexity.medicationCount > 5) {
+        durationAdjustment += 5;
+      } else if (complexity.medicationCount > 10) {
+        durationAdjustment += 10;
+      }
+      
+      // Elderly patients (>65) typically need more time
+      if (complexity.age > 65) {
+        durationAdjustment += 5;
+      } else if (complexity.age > 80) {
+        durationAdjustment += 10;
+      }
+      
+      // 5. Use historical patterns if available
+      if (patientPatterns) {
+        // Use patient's average visit duration if we have history
+        const historicalAvg = parseFloat(patientPatterns.avgVisitDuration || '0');
+        if (historicalAvg > 0) {
+          // Blend historical average with calculated duration
+          baseDuration = Math.round((baseDuration + historicalAvg) / 2);
+        }
+        
+        // High no-show rate might mean scheduling shorter slots
+        const noShowRate = parseFloat(patientPatterns.noShowRate || '0');
+        if (noShowRate > 0.3) { // >30% no-show rate
+          durationAdjustment -= 5;
+        }
+        
+        // Consistent late arrivals need buffer
+        const avgArrivalDelta = parseFloat(patientPatterns.avgArrivalDelta || '0');
+        if (avgArrivalDelta > 10) { // Consistently >10 minutes late
+          durationAdjustment += 5;
+        }
+      }
+      
+      // 6. Provider-specific adjustments
+      if (providerPatterns) {
+        const providerAvg = parseFloat(providerPatterns.avgVisitDuration || '0');
+        if (providerAvg > 0) {
+          // Some providers run longer/shorter than average
+          const providerFactor = providerAvg / baseDuration;
+          if (providerFactor > 1.2) { // Provider runs 20% longer
+            durationAdjustment += 5;
+          } else if (providerFactor < 0.8) { // Provider is efficient
+            durationAdjustment -= 5;
+          }
+        }
+      }
+      
+      // 7. Time of day adjustments (providers often run behind later in day)
+      const appointmentHour = parseInt(params.appointmentTime.split(':')[0]);
+      if (appointmentHour >= 15) { // After 3 PM
+        durationAdjustment += 5;
+      }
+      
+    } catch (error) {
+      console.error('🤖 [AI SCHEDULING] Error calculating AI prediction:', error);
+    }
+    
+    // Calculate final durations
+    const aiPredictedDuration = Math.max(baseDuration + durationAdjustment, 10); // Minimum 10 minutes
+    const patientVisibleDuration = Math.max(baseDuration, 20); // Patients always see standard time, minimum 20
+    const providerScheduledDuration = Math.max(aiPredictedDuration + 5, patientVisibleDuration); // Provider gets AI time + buffer
+    
+    console.log('🤖 [AI SCHEDULING] Final prediction:', {
+      baseDuration,
+      durationAdjustment,
+      aiPredictedDuration,
+      patientVisibleDuration,
+      providerScheduledDuration
+    });
     
     return {
-      aiPredictedDuration: baseDuration,
-      patientVisibleDuration: Math.max(baseDuration, 20),
-      providerScheduledDuration: baseDuration + 5 // Add buffer
+      aiPredictedDuration,
+      patientVisibleDuration,
+      providerScheduledDuration,
+      complexityFactors: {
+        baseDuration,
+        durationAdjustment,
+        problemCount: complexity.problemCount,
+        medicationCount: complexity.medicationCount,
+        age: complexity.age,
+        noShowRate: patientPatterns ? parseFloat(patientPatterns.noShowRate || '0') : 0,
+        avgArrivalDelta: patientPatterns ? parseFloat(patientPatterns.avgArrivalDelta || '0') : 0,
+        historicalAvg: patientPatterns ? parseFloat(patientPatterns.avgVisitDuration || '0') : 0
+      }
     };
   }
 

@@ -157,6 +157,32 @@ router.post('/api/scheduling/appointments', tenantIsolation, async (req, res) =>
   }
 });
 
+// Preview AI duration prediction
+router.post('/api/scheduling/appointments/preview-duration', tenantIsolation, async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { patientId, providerId, appointmentType, appointmentDate, appointmentTime } = req.body;
+    
+    // Parse the date as local time
+    const [year, month, day] = appointmentDate.split('-').map(Number);
+    const appointmentDateLocal = new Date(year, month - 1, day);
+    
+    const prediction = await storage.predictAppointmentDuration({
+      patientId,
+      providerId,
+      appointmentType,
+      appointmentDate: appointmentDateLocal,
+      appointmentTime
+    });
+    
+    res.json(prediction);
+  } catch (error) {
+    console.error('Error getting AI prediction:', error);
+    res.status(500).json({ error: 'Failed to get AI prediction' });
+  }
+});
+
 // Update appointment
 router.put('/api/scheduling/appointments/:id',  tenantIsolation, async (req, res) => {
   try {

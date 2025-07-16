@@ -159,6 +159,24 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### AI Scheduling System Real-Time Predictions COMPLETED (January 16, 2025)
+- **MAJOR ENHANCEMENT**: Implemented real-time AI duration predictions in appointment scheduling dialog
+- **AI PREDICTION ALGORITHM**: Created comprehensive multi-factor prediction system considering:
+  - Patient complexity (medical problems count, medications count, age)
+  - Visit history (average duration, no-show rate, arrival patterns)
+  - Provider performance metrics (efficiency factor, buffer preferences)
+  - Appointment type factors (new patient gets +10 min, physical gets +15 min)
+- **NEW API ENDPOINT**: Added /api/scheduling/appointments/preview-duration for real-time predictions
+- **UI COMPONENT**: Created AIDurationDisplay component showing:
+  - Standard duration vs AI predicted duration
+  - Patient visible duration (minimum 20 minutes)
+  - Provider scheduled duration (with buffers)
+  - Complexity factors breakdown with tooltips
+- **ASYMMETRIC SCHEDULING**: Patients see standard times while providers see AI-adjusted durations
+- **REAL-TIME UPDATES**: AI predictions update automatically when patient, appointment type, date, or time changes
+- **INTELLIGENT BUFFERS**: System adds appropriate buffers for complex patients, late arrivals, provider preferences
+- **PRODUCTION READY**: System now dynamically adjusts appointment slots based on actual data instead of fixed durations
+
 ### Appointment-to-Encounter Conversion Workflow COMPLETED (January 16, 2025)
 - **MAJOR PRODUCTION ENHANCEMENT**: Implemented automated appointment check-in workflow that creates encounters from scheduled appointments
 - **CHECK-IN ENDPOINT CREATED**: New POST `/api/scheduling/appointments/:id/check-in` endpoint with proper authentication and tenant isolation
