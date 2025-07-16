@@ -1262,9 +1262,9 @@ export default function AuthPage() {
                     </div>
                     <ul className="text-sm text-navy-blue-100 text-left space-y-1">
                       <li>• AI scribe + EMR together</li>
-                      <li>• $399/provider per month</li>
-                      <li>• $99/nurse or MA</li>
-                      <li>• $49/front staff</li>
+                      <li>• No separate subscriptions</li>
+                      <li>• Starting at $149/month</li>
+                      <li>• See pricing details →</li>
                     </ul>
                   </div>
                 </TooltipTrigger>
@@ -1315,7 +1315,7 @@ export default function AuthPage() {
           <div className="mt-6 text-xs text-navy-blue-200">
             <p className="font-semibold">Created by doctors who practice medicine every day</p>
             <p className="mt-1">We built this because we needed it. Zero documentation time was the goal.</p>
-            <p className="mt-1 text-gold">Complete medical command center - $399/provider, $99/nurse, $49/staff</p>
+            <p className="mt-1 text-gold">Complete medical command center from $149/month</p>
           </div>
           
           {/* Footer Links */}
