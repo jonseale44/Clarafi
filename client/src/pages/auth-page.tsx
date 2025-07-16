@@ -641,7 +641,6 @@ export default function AuthPage() {
                       >
                         <Building2 className="mr-2 h-4 w-4" />
                         I want to create my own individual practice
-                        <span className="ml-auto text-xs text-muted-foreground">($149/month)</span>
                       </Button>
                       
                       {registrationType === 'create_new' && (
