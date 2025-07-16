@@ -68,18 +68,81 @@ export function AIDurationDisplay({
               <TooltipTrigger>
                 <Info className="h-4 w-4 text-blue-500" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <div className="space-y-2">
-                  <p className="font-medium">AI Duration Adjustment</p>
-                  {reasons.length > 0 ? (
-                    <ul className="list-disc list-inside text-sm">
-                      {reasons.map((reason, idx) => (
-                        <li key={idx}>{reason}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm">Based on historical patterns and provider efficiency</p>
+              <TooltipContent className="max-w-md">
+                <div className="space-y-3">
+                  <p className="font-semibold text-lg">AI Scheduling Factors</p>
+                  
+                  {/* Primary Factor */}
+                  {complexityFactors?.historicalAvg && complexityFactors.historicalAvg > 0 && (
+                    <div className="border-b pb-2">
+                      <p className="font-medium text-green-600">Primary Factor (80% weight when available)</p>
+                      <div className="text-sm mt-1">
+                        <div className="flex justify-between">
+                          <span>Historical visit average:</span>
+                          <span className="font-semibold">{complexityFactors.historicalAvg} min</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Includes recording duration from voice sessions</p>
+                      </div>
+                    </div>
                   )}
+                  
+                  {/* Secondary Factors */}
+                  <div className="space-y-2">
+                    <p className="font-medium">Secondary Adjustments</p>
+                    
+                    {/* Patient Complexity */}
+                    <div className="text-sm space-y-1">
+                      <p className="font-medium text-gray-700">Patient Complexity:</p>
+                      <div className="ml-2 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>• Medical problems ({complexityFactors?.problemCount || 0}):</span>
+                          <span>+{Math.min((complexityFactors?.problemCount || 0) * 1.5, 15).toFixed(0)} min</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>• Medications ({complexityFactors?.medicationCount || 0}):</span>
+                          <span>+{(complexityFactors?.medicationCount || 0) > 10 ? 10 : (complexityFactors?.medicationCount || 0) > 5 ? 5 : 0} min</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>• Age ({complexityFactors?.age || 0} years):</span>
+                          <span>+{(complexityFactors?.age || 0) > 80 ? 10 : (complexityFactors?.age || 0) > 65 ? 5 : 0} min</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Patient Behavior */}
+                    <div className="text-sm space-y-1">
+                      <p className="font-medium text-gray-700">Patient Behavior:</p>
+                      <div className="ml-2 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>• No-show rate ({((complexityFactors?.noShowRate || 0) * 100).toFixed(0)}%):</span>
+                          <span>{(complexityFactors?.noShowRate || 0) > 0.3 ? '-5' : '0'} min</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>• Avg arrival ({(complexityFactors?.avgArrivalDelta || 0) > 0 ? '+' : ''}{complexityFactors?.avgArrivalDelta || 0} min):</span>
+                          <span>{(complexityFactors?.avgArrivalDelta || 0) > 10 ? '+5' : '0'} min</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Provider & Time Factors */}
+                    <div className="text-sm space-y-1">
+                      <p className="font-medium text-gray-700">Other Factors:</p>
+                      <div className="ml-2 space-y-0.5">
+                        <div>• Provider efficiency (±5 min based on history)</div>
+                        <div>• Time of day (after 3pm: +5 min)</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Summary */}
+                  <div className="border-t pt-2 text-sm">
+                    <div className="flex justify-between font-semibold">
+                      <span>Total adjustment:</span>
+                      <span className={complexityFactors?.durationAdjustment && complexityFactors.durationAdjustment > 0 ? 'text-red-600' : 'text-green-600'}>
+                        {complexityFactors?.durationAdjustment && complexityFactors.durationAdjustment > 0 ? '+' : ''}{complexityFactors?.durationAdjustment || 0} min
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </TooltipContent>
             </Tooltip>
