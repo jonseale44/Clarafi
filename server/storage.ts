@@ -722,7 +722,7 @@ export class DatabaseStorage implements IStorage {
   async createVitals(insertVitals: Partial<Vitals>): Promise<Vitals> {
     const [vital] = await db
       .insert(vitals)
-      .values(insertVitals)
+      .values(insertVitals as any)
       .returning();
     return vital;
   }
@@ -799,7 +799,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
     
-    return medication[0].medicationHistory || [];
+    return (medication[0].medicationHistory as any[]) || [];
   }
 
   async getMedicationById(id: number): Promise<Medication | undefined> {
@@ -864,13 +864,52 @@ export class DatabaseStorage implements IStorage {
     assignedBiller?: number;
     modifierApplied?: string;
   }): Promise<any> {
+    // Map to actual column names in database
+    const dbUpdates: any = {
+      ...updates,
+      updatedAt: new Date(),
+      billing_action_date: new Date()
+    };
+    
+    // Map to snake_case column names
+    if (updates.claimSubmissionStatus) dbUpdates.claim_submission_status = updates.claimSubmissionStatus;
+    if (updates.claimId) dbUpdates.claim_id = updates.claimId;
+    if (updates.clearinghouseId) dbUpdates.clearinghouse_id = updates.clearinghouseId;
+    if (updates.payerId) dbUpdates.payer_id = updates.payerId;
+    if (updates.allowedAmount) dbUpdates.allowed_amount = updates.allowedAmount;
+    if (updates.paidAmount) dbUpdates.paid_amount = updates.paidAmount;
+    if (updates.patientResponsibility) dbUpdates.patient_responsibility = updates.patientResponsibility;
+    if (updates.adjustmentAmount) dbUpdates.adjustment_amount = updates.adjustmentAmount;
+    if (updates.denialReason) dbUpdates.denial_reason = updates.denialReason;
+    if (updates.denialCode) dbUpdates.denial_code = updates.denialCode;
+    if (updates.appealStatus) dbUpdates.appeal_status = updates.appealStatus;
+    if (updates.appealDeadline) dbUpdates.appeal_deadline = updates.appealDeadline;
+    if (updates.billingNotes) dbUpdates.billing_notes = updates.billingNotes;
+    if (updates.lastBillingAction) dbUpdates.last_billing_action = updates.lastBillingAction;
+    if (updates.assignedBiller) dbUpdates.assigned_biller = updates.assignedBiller;
+    if (updates.modifierApplied) dbUpdates.modifier_applied = updates.modifierApplied;
+    
+    delete dbUpdates.claimSubmissionStatus;
+    delete dbUpdates.claimId;
+    delete dbUpdates.clearinghouseId;
+    delete dbUpdates.payerId;
+    delete dbUpdates.allowedAmount;
+    delete dbUpdates.paidAmount;
+    delete dbUpdates.patientResponsibility;
+    delete dbUpdates.adjustmentAmount;
+    delete dbUpdates.denialReason;
+    delete dbUpdates.denialCode;
+    delete dbUpdates.appealStatus;
+    delete dbUpdates.appealDeadline;
+    delete dbUpdates.billingNotes;
+    delete dbUpdates.lastBillingAction;
+    delete dbUpdates.assignedBiller;
+    delete dbUpdates.modifierApplied;
+    delete dbUpdates.billingActionDate;
+    
     const [updatedDiagnosis] = await db
       .update(diagnoses)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-        billingActionDate: new Date()
-      })
+      .set(dbUpdates)
       .where(eq(diagnoses.id, diagnosisId))
       .returning();
     return updatedDiagnosis;
@@ -880,16 +919,18 @@ export class DatabaseStorage implements IStorage {
     const query = db.select().from(diagnoses);
     
     if (status) {
-      query.where(eq(diagnoses.claimSubmissionStatus, status));
+      // Use raw SQL for now since column doesn't exist in schema
+      const result = await db.execute(sql`SELECT * FROM diagnoses WHERE claim_submission_status = ${status} ORDER BY updated_at DESC`);
+      return result.rows as any[];
     }
     
     return await query.orderBy(desc(diagnoses.updatedAt));
   }
 
   async getDiagnosesByPayer(payerId: string): Promise<any[]> {
-    return await db.select().from(diagnoses)
-      .where(eq(diagnoses.payerId, payerId))
-      .orderBy(desc(diagnoses.updatedAt));
+    // Use raw SQL for now since column doesn't exist in schema
+    const result = await db.execute(sql`SELECT * FROM diagnoses WHERE payer_id = ${payerId} ORDER BY updated_at DESC`);
+    return result.rows as any[];
   }
 
   async getPatientFamilyHistory(patientId: number): Promise<any[]> {
@@ -1128,13 +1169,13 @@ export class DatabaseStorage implements IStorage {
         );
         
         // Get the providerId from the encounter
-        const encounter = await this.getEncounterById(order.encounterId);
+        const encounter = await this.getEncounter(order.encounterId);
         const providerId = encounter?.providerId;
         
         await medicationDelta.processOrderDelta(
           order.patientId,
           order.encounterId,
-          providerId,
+          providerId || (order as any).providerId,
         );
         console.log(
           `✅ [STORAGE] Medication processing completed for order ${order.id}`,
@@ -1157,7 +1198,7 @@ export class DatabaseStorage implements IStorage {
         // Use setImmediate to run after current execution cycle completes
         setImmediate(async () => {
           try {
-            await LabOrderProcessor.processSignedLabOrders(insertOrder.patientId, insertOrder.encounterId);
+            await LabOrderProcessor.processSignedLabOrders(insertOrder.patientId, insertOrder.encounterId || undefined);
             console.log(`✅ [STORAGE] Lab order processing completed for order ${order.id}`);
           } catch (labError) {
             console.error(`❌ [STORAGE] Lab order processing failed for order ${order.id}:`, labError);
@@ -1385,7 +1426,7 @@ export class DatabaseStorage implements IStorage {
     if (current.length > 0) {
       await db.update(patientPhysicalFindings)
         .set({
-          confirmedCount: current[0].confirmedCount + 1,
+          confirmedCount: (current[0].confirmedCount || 0) + 1,
           lastConfirmedEncounter: encounterId,
           lastSeenEncounter: encounterId,
           updatedAt: new Date()
@@ -1402,7 +1443,7 @@ export class DatabaseStorage implements IStorage {
     if (current.length > 0) {
       await db.update(patientPhysicalFindings)
         .set({
-          contradictedCount: current[0].contradictedCount + 1,
+          contradictedCount: (current[0].contradictedCount || 0) + 1,
           lastSeenEncounter: encounterId,
           updatedAt: new Date()
         })
@@ -1553,10 +1594,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUserNoteTemplate(template: any): Promise<any> {
-    const [created] = await db.insert(userNoteTemplates)
+    const result = await db.insert(userNoteTemplates)
       .values(template)
       .returning();
-    return created;
+    return Array.isArray(result) ? result[0] : (result as any).rows[0];
   }
 
   async updateUserNoteTemplate(id: number, updates: any): Promise<any> {
@@ -1642,7 +1683,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async adoptSharedTemplate(userId: number, shareId: number): Promise<Selectany> {
+  async adoptSharedTemplate(userId: number, shareId: number): Promise<any> {
     // Get the share details
     const [share] = await db.select()
       .from(templateShares)
@@ -1662,7 +1703,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Create a new template for the user
-    const [adoptedTemplate] = await db.insert(userNoteTemplates)
+    const result = await db.insert(userNoteTemplates)
       .values({
         userId: userId,
         templateName: `${originalTemplate.templateName}-Copy`,
@@ -1679,6 +1720,7 @@ export class DatabaseStorage implements IStorage {
         parentTemplateId: originalTemplate.id
       })
       .returning();
+    const adoptedTemplate = Array.isArray(result) ? result[0] : (result as any).rows[0];
 
     // Update share status
     await this.updateTemplateShareStatus(shareId, "accepted");
@@ -2007,9 +2049,22 @@ export class DatabaseStorage implements IStorage {
       
     if (locationId) {
       // Filter by providers who work at this location
-      query = query
+      query = db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          credentials: users.credentials,
+          npi: users.npi
+        })
+        .from(users)
         .innerJoin(userLocations, eq(users.id, userLocations.userId))
-        .where(eq(userLocations.locationId, locationId));
+        .where(and(
+          eq(users.healthSystemId, healthSystemId),
+          eq(users.role, 'provider'),
+          eq(users.active, true),
+          eq(userLocations.locationId, locationId)
+        ));
     }
     
     return await query.execute();
@@ -2609,7 +2664,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db
         .update(schedulingAiWeights)
         .set({
-          weight: params.weight,
+          weight: params.weight.toString(),
           enabled: params.weight > 0
         })
         .where(eq(schedulingAiWeights.id, existing[0].id))
@@ -2621,16 +2676,16 @@ export class DatabaseStorage implements IStorage {
       // Create new
       const result = await db
         .insert(schedulingAiWeights)
-        .values([{
+        .values({
           factorId: params.factorId,
-          weight: params.weight,
+          weight: params.weight.toString(),
           enabled: params.weight > 0,
           providerId: params.providerId,
           locationId: params.locationId,
           healthSystemId: params.healthSystemId,
           createdBy: params.updatedBy,
-          createdAt: new Date().toISOString()
-        }])
+          createdAt: new Date()
+        })
         .returning()
         .execute();
         
@@ -2662,7 +2717,7 @@ export class DatabaseStorage implements IStorage {
     const encounter = recentEncounter[0];
     
     // Store recording metadata in the aiSuggestions JSONB field
-    const existingData = encounter.aiSuggestions || {};
+    const existingData = (encounter.aiSuggestions as any) || {};
     const recordingMetadata = {
       recordings: existingData.recordings || [],
       totalRecordingDuration: existingData.totalRecordingDuration || 0
@@ -2823,8 +2878,8 @@ export class DatabaseStorage implements IStorage {
         await db
           .update(schedulingAiWeights)
           .set({
-            weight: weight.toString(),
-            enabled: weight > 0
+            weight: String(weight),
+            enabled: Number(weight) > 0
           })
           .where(eq(schedulingAiWeights.id, existing[0].id))
           .execute();
@@ -2834,8 +2889,8 @@ export class DatabaseStorage implements IStorage {
           .insert(schedulingAiWeights)
           .values([{
             factorId,
-            weight: weight.toString(),
-            enabled: weight > 0,
+            weight: String(weight),
+            enabled: Number(weight) > 0,
             providerId,
             healthSystemId,
             createdBy: updatedBy
