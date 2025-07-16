@@ -162,6 +162,33 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       });
     }
   });
+
+  // Mutation for completing appointments
+  const completeAppointmentMutation = useMutation({
+    mutationFn: async (appointmentId: number) => {
+      const response = await fetch(`/api/scheduling/appointments/${appointmentId}/complete`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to complete appointment');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Appointment Completed",
+        description: "The appointment has been marked as completed. Historical duration data has been recorded for future AI predictions.",
+      });
+      setShowAppointmentDetails(false);
+      // Invalidate queries to refresh the calendar
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduling/appointments'] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to complete appointment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
   
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
     queryKey: ['/api/scheduling/appointments', {
@@ -893,6 +920,20 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                   <Edit className="h-4 w-4 mr-1" />
                   Reschedule
                 </Button>
+                {selectedAppointment.status !== 'completed' && selectedAppointment.status !== 'cancelled' && (
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      if (selectedAppointment) {
+                        completeAppointmentMutation.mutate(selectedAppointment.id);
+                      }
+                    }}
+                    disabled={completeAppointmentMutation.isPending}
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Complete Appointment
+                  </Button>
+                )}
                 <Button
                   variant="destructive"
                   onClick={() => {

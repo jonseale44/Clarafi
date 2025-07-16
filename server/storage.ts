@@ -148,6 +148,15 @@ export interface IStorage {
   getSchedulingAiFactors(): Promise<any[]>;
   updateAiFactorWeight(params: any): Promise<any>;
   
+  // Recording Metadata
+  saveRecordingMetadata(data: {
+    userId: number;
+    patientId: number;
+    duration: number;
+    startTime: Date;
+    endTime: Date;
+  }): Promise<void>;
+  
   sessionStore: session.SessionStore;
 }
 
@@ -2621,6 +2630,62 @@ export class DatabaseStorage implements IStorage {
         
       return result[0];
     }
+  }
+
+  async saveRecordingMetadata(data: {
+    userId: number;
+    patientId: number;
+    duration: number;
+    startTime: Date;
+    endTime: Date;
+  }) {
+    // Find the most recent encounter for this patient
+    const recentEncounter = await db
+      .select()
+      .from(encounters)
+      .where(eq(encounters.patientId, data.patientId))
+      .orderBy(desc(encounters.createdAt))
+      .limit(1)
+      .execute();
+
+    if (recentEncounter.length === 0) {
+      console.warn(`[saveRecordingMetadata] No encounter found for patient ${data.patientId}`);
+      return;
+    }
+
+    const encounter = recentEncounter[0];
+    
+    // Store recording metadata in the aiSuggestions JSONB field
+    const existingData = encounter.aiSuggestions || {};
+    const recordingMetadata = {
+      recordings: existingData.recordings || [],
+      totalRecordingDuration: existingData.totalRecordingDuration || 0
+    };
+
+    // Add this recording
+    recordingMetadata.recordings.push({
+      startTime: data.startTime.toISOString(),
+      endTime: data.endTime.toISOString(),
+      duration: data.duration,
+      userId: data.userId
+    });
+
+    // Update total duration
+    recordingMetadata.totalRecordingDuration += data.duration;
+
+    // Update the encounter with recording metadata
+    await db
+      .update(encounters)
+      .set({
+        aiSuggestions: {
+          ...existingData,
+          ...recordingMetadata
+        }
+      })
+      .where(eq(encounters.id, encounter.id))
+      .execute();
+
+    console.log(`[saveRecordingMetadata] Saved recording metadata for encounter ${encounter.id}: ${data.duration}s`);
   }
 
   // Test patient management methods

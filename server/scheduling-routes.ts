@@ -473,4 +473,23 @@ router.put('/api/scheduling/ai-factors/:id/weight',  tenantIsolation, async (req
   }
 });
 
+// Complete appointment and record actual duration
+router.post('/api/scheduling/appointments/:id/complete', tenantIsolation, async (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id);
+    const userId = req.user!.id;
+    
+    console.log('✅ [APPOINTMENT COMPLETE] Completing appointment:', appointmentId);
+    
+    // Use the appointment completion service
+    const { AppointmentCompletionService } = await import('./appointment-completion-service.js');
+    const result = await AppointmentCompletionService.completeAppointment(appointmentId, userId);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('❌ [APPOINTMENT COMPLETE] Error:', error);
+    res.status(500).json({ error: 'Failed to complete appointment' });
+  }
+});
+
 export default router;

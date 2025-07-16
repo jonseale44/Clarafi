@@ -159,6 +159,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Appointment Completion Tracking with Recording Duration Integration COMPLETED (January 17, 2025)
+- **RECORDING DURATION TRACKING**: Enhanced realtime proxy WebSocket to capture and save voice recording duration as key metric for appointment duration AI predictions
+- **STORAGE IMPLEMENTATION**: Added saveRecordingMetadata method to storage layer that saves recording metadata to encounter's aiSuggestions JSONB field
+- **MULTI-SOURCE DURATION**: System tracks multiple duration sources: voice recordings, active screen time, check-in to completion timestamps
+- **UI ENHANCEMENT**: Added "Complete Appointment" button to calendar view appointment details dialog
+- **COMPLETION MUTATION**: Created completeAppointmentMutation that calls POST /api/scheduling/appointments/:id/complete endpoint
+- **CONDITIONAL DISPLAY**: Button only appears for appointments not already completed or cancelled
+- **USER FEEDBACK**: Toast notification explains that "Historical duration data has been recorded for future AI predictions"
+- **EDGE CASE HANDLING**: Only saves recordings >5 seconds to filter out accidental connections, handles providers who don't use voice
+- **TECHNICAL DEBT CLEANUP**: Removed legacy backup files and stub components per user requirements
+
 ### AI Scheduling System Real-Time Predictions COMPLETED (January 16, 2025)
 - **MAJOR ENHANCEMENT**: Implemented real-time AI duration predictions in appointment scheduling dialog
 - **AI PREDICTION ALGORITHM**: Created comprehensive multi-factor prediction system considering:

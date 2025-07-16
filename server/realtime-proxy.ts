@@ -349,7 +349,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
       }
     });
 
-    clientWs.on('close', () => {
+    clientWs.on('close', async () => {
       console.log('👋 [RealtimeProxy] Client disconnected');
       
       // Close OpenAI connection
@@ -357,14 +357,33 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
         openAiWs.close();
       }
 
-      // Clean up session
+      // Clean up session and save recording metadata
       for (const [sessionId, session] of activeSessions.entries()) {
         if (session.clientWs === clientWs) {
           activeSessions.delete(sessionId);
           
-          // Log session duration for audit trail
+          // Calculate session duration
           const duration = Date.now() - session.startTime.getTime();
-          console.log(`📊 [RealtimeProxy] Session ended - User: ${session.userId}, Duration: ${duration}ms`);
+          const durationInSeconds = Math.round(duration / 1000);
+          console.log(`📊 [RealtimeProxy] Session ended - User: ${session.userId}, Duration: ${durationInSeconds}s`);
+          
+          // Save recording metadata to the encounter if we have encounter context
+          if (session.patientId && durationInSeconds > 5) { // Only save if recording was meaningful (>5 seconds)
+            try {
+              const { saveRecordingMetadata } = await import('./storage.js');
+              await saveRecordingMetadata({
+                userId: session.userId,
+                patientId: session.patientId,
+                duration: durationInSeconds,
+                startTime: session.startTime,
+                endTime: new Date()
+              });
+              console.log(`💾 [RealtimeProxy] Saved recording metadata - Duration: ${durationInSeconds}s`);
+            } catch (error) {
+              console.error('❌ [RealtimeProxy] Failed to save recording metadata:', error);
+            }
+          }
+          
           break;
         }
       }
