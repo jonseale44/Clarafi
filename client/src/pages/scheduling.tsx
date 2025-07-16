@@ -20,6 +20,42 @@ export default function SchedulingPage() {
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   
+  // AI Factor State Management
+  const [aiFactors, setAiFactors] = useState({
+    // Primary Factor
+    historicalVisitWeight: 80,
+    
+    // Patient Complexity
+    medicalProblemsWeight: 75,
+    activeMedicationsWeight: 60,
+    patientAgeWeight: 50,
+    allergiesReviewWeight: 40,
+    
+    // Patient Behavior
+    noShowRiskWeight: 70,
+    arrivalPatternsWeight: 45,
+    
+    // Visit Type
+    newPatientExtraWeight: 90,
+    physicalExamExtraWeight: 85,
+    
+    // Provider Efficiency
+    providerSpeedWeight: 80,
+    locationSpecificWeight: 55,
+    
+    // Temporal
+    timeOfDayWeight: 40,
+    dayOfWeekWeight: 35,
+    
+    // Buffers
+    complexPatientBufferWeight: 65,
+    providerPreferenceBufferWeight: 50
+  });
+  
+  const updateAiFactor = (factor: string, value: number) => {
+    setAiFactors(prev => ({ ...prev, [factor]: value }));
+  };
+  
   return (
     <div className="p-4 max-w-[1600px] mx-auto">
       <div className="mb-6">
@@ -152,44 +188,283 @@ export default function SchedulingPage() {
 
       {/* AI Configuration Dialog */}
       <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>AI Scheduling Configuration</DialogTitle>
+            <p className="text-sm text-gray-600 mt-2">
+              Adjust how different factors influence AI appointment duration predictions. Higher values mean greater impact on scheduling decisions.
+            </p>
           </DialogHeader>
+          
           <div className="space-y-6">
-            <div>
-              <h3 className="font-medium mb-2">Patient Complexity Factors</h3>
+            {/* Primary Factor - Visit History */}
+            <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+              <h3 className="font-semibold mb-4 text-blue-900">📊 Primary Factor - Historical Visit Average</h3>
               <div className="space-y-4">
                 <div>
-                  <Label>Chronic Conditions Weight</Label>
-                  <Slider defaultValue={[75]} max={100} step={5} className="mt-2" />
-                </div>
-                <div>
-                  <Label>Age Factor</Label>
-                  <Slider defaultValue={[50]} max={100} step={5} className="mt-2" />
-                </div>
-                <div>
-                  <Label>Visit History Impact</Label>
-                  <Slider defaultValue={[60]} max={100} step={5} className="mt-2" />
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">Provider Efficiency Factors</h3>
-              <div className="space-y-4">
-                <div>
-                  <Label>Historical Performance</Label>
-                  <Slider defaultValue={[80]} max={100} step={5} className="mt-2" />
-                </div>
-                <div>
-                  <Label>Time of Day Adjustment</Label>
-                  <Slider defaultValue={[40]} max={100} step={5} className="mt-2" />
+                  <div className="flex justify-between items-center mb-1">
+                    <Label className="text-base">Historical Visit Duration Weight</Label>
+                    <span className="text-sm font-medium text-blue-700">{aiFactors.historicalVisitWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">How much the patient's actual visit history influences predictions</p>
+                  <Slider 
+                    value={[aiFactors.historicalVisitWeight]} 
+                    onValueChange={(value) => updateAiFactor('historicalVisitWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
+            {/* Patient Complexity Factors */}
+            <div>
+              <h3 className="font-semibold mb-4">🏥 Patient Complexity Factors</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Medical Problems Count</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.medicalProblemsWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Each problem adds 1-2 minutes (capped at 15 min)</p>
+                  <Slider 
+                    value={[aiFactors.medicalProblemsWeight]} 
+                    onValueChange={(value) => updateAiFactor('medicalProblemsWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Active Medications</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.activeMedicationsWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Medication reconciliation time (5+ meds add 5 min)</p>
+                  <Slider 
+                    value={[aiFactors.activeMedicationsWeight]} 
+                    onValueChange={(value) => updateAiFactor('activeMedicationsWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Patient Age</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.patientAgeWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Elderly patients (65+) need extra time</p>
+                  <Slider 
+                    value={[aiFactors.patientAgeWeight]} 
+                    onValueChange={(value) => updateAiFactor('patientAgeWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Allergies Review</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.allergiesReviewWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Multiple allergies requiring review</p>
+                  <Slider 
+                    value={[aiFactors.allergiesReviewWeight]} 
+                    onValueChange={(value) => updateAiFactor('allergiesReviewWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Patient Behavior Patterns */}
+            <div>
+              <h3 className="font-semibold mb-4">📈 Patient Behavior Patterns</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>No-Show Risk</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.noShowRiskWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">High-risk patients may get shorter slots</p>
+                  <Slider 
+                    value={[aiFactors.noShowRiskWeight]} 
+                    onValueChange={(value) => updateAiFactor('noShowRiskWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Arrival Patterns</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.arrivalPatternsWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Consistently late arrivals get buffer time</p>
+                  <Slider 
+                    value={[aiFactors.arrivalPatternsWeight]} 
+                    onValueChange={(value) => updateAiFactor('arrivalPatternsWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Visit Type Adjustments */}
+            <div>
+              <h3 className="font-semibold mb-4">📋 Visit Type Adjustments</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>New Patient Extra Time</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.newPatientExtraWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">New patients get +10 minutes automatically</p>
+                  <Slider 
+                    value={[aiFactors.newPatientExtraWeight]} 
+                    onValueChange={(value) => updateAiFactor('newPatientExtraWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Physical Exam Extra Time</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.physicalExamExtraWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Annual physicals get +15 minutes</p>
+                  <Slider 
+                    value={[aiFactors.physicalExamExtraWeight]} 
+                    onValueChange={(value) => updateAiFactor('physicalExamExtraWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Provider Efficiency Factors */}
+            <div>
+              <h3 className="font-semibold mb-4">👨‍⚕️ Provider Efficiency Factors</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Provider Speed Patterns</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.providerSpeedWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Provider's historical pace vs average</p>
+                  <Slider 
+                    value={[aiFactors.providerSpeedWeight]} 
+                    onValueChange={(value) => updateAiFactor('providerSpeedWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Location-Specific Patterns</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.locationSpecificWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Provider efficiency at specific locations</p>
+                  <Slider 
+                    value={[aiFactors.locationSpecificWeight]} 
+                    onValueChange={(value) => updateAiFactor('locationSpecificWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Temporal Factors */}
+            <div>
+              <h3 className="font-semibold mb-4">🕐 Temporal Factors</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Time of Day Impact</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.timeOfDayWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Morning efficiency vs afternoon fatigue</p>
+                  <Slider 
+                    value={[aiFactors.timeOfDayWeight]} 
+                    onValueChange={(value) => updateAiFactor('timeOfDayWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Day of Week Patterns</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.dayOfWeekWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Monday/Friday vs mid-week efficiency</p>
+                  <Slider 
+                    value={[aiFactors.dayOfWeekWeight]} 
+                    onValueChange={(value) => updateAiFactor('dayOfWeekWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Buffer Settings */}
+            <div>
+              <h3 className="font-semibold mb-4">⏱️ Buffer & Safety Margins</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Complex Patient Buffer</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.complexPatientBufferWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Extra time for patients with 5+ conditions</p>
+                  <Slider 
+                    value={[aiFactors.complexPatientBufferWeight]} 
+                    onValueChange={(value) => updateAiFactor('complexPatientBufferWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>Provider Preference Buffer</Label>
+                    <span className="text-sm text-gray-600">{aiFactors.providerPreferenceBufferWeight}%</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">Provider-requested buffer between appointments</p>
+                  <Slider 
+                    value={[aiFactors.providerPreferenceBufferWeight]} 
+                    onValueChange={(value) => updateAiFactor('providerPreferenceBufferWeight', value[0])}
+                    max={100} 
+                    step={5} 
+                    className="mt-2" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowAIDialog(false)}>
                 Cancel
               </Button>
@@ -197,12 +472,12 @@ export default function SchedulingPage() {
                 onClick={() => {
                   toast({
                     title: "AI Configuration Updated",
-                    description: "Your scheduling AI factors have been saved.",
+                    description: "Your scheduling AI factors have been saved. The system will now use these weights for predictions.",
                   });
                   setShowAIDialog(false);
                 }}
               >
-                Save Changes
+                Save Configuration
               </Button>
             </div>
           </div>
