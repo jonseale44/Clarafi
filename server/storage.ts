@@ -2113,6 +2113,8 @@ export class DatabaseStorage implements IStorage {
     
     let baseDuration = standardDurations[params.appointmentType] || 20;
     let durationAdjustment = 0;
+    let complexity = { problemCount: 0, medicationCount: 0, age: 0, allergiesCount: 0 };
+    let patientPatterns: any = null;
     
     try {
       // 1. Get patient complexity factors
@@ -2134,16 +2136,18 @@ export class DatabaseStorage implements IStorage {
         .groupBy(patients.id, patients.dateOfBirth)
         .execute();
         
-      const complexity = patientData[0] || { problemCount: 0, medicationCount: 0, age: 0, allergiesCount: 0 };
+      complexity = patientData[0] || { problemCount: 0, medicationCount: 0, age: 0, allergiesCount: 0 };
       
       console.log('🤖 [AI SCHEDULING] Patient complexity:', complexity);
       
       // 2. Get patient scheduling patterns
-      const [patientPatterns] = await db
+      const patterns = await db
         .select()
         .from(patientSchedulingPatterns)
         .where(eq(patientSchedulingPatterns.patientId, params.patientId))
         .execute();
+      
+      patientPatterns = patterns[0] || null;
         
       console.log('🤖 [AI SCHEDULING] Patient patterns:', patientPatterns);
       
