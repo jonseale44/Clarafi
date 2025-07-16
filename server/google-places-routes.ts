@@ -5,6 +5,19 @@ config();
 
 const router = Router();
 
+// Calculate distance between two coordinates in miles
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 3959; // Radius of the Earth in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 // Mock Google Places API response for development
 const mockSearchPlaces = async (query: string, location?: { lat: number; lng: number }) => {
   // In production, this would call the actual Google Places API
@@ -171,49 +184,156 @@ router.get("/api/places/search-medical", async (req, res) => {
       });
     }
     
-    // If searching by text query
+    // If searching by text query - Enhanced multi-pass search
     if (query) {
-      const baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+      console.log("🔍 [Google Places] Enhanced search for:", query);
       
-      const params = new URLSearchParams({
-        key: apiKey,
-        query: `${query} medical clinic hospital doctor`,
-        type: "hospital|doctor|health|medical_center|clinic"
+      // First, try exact name search without additional keywords
+      let allResults = [];
+      const searchPasses = [
+        // Pass 1: Exact name search
+        { query: query, types: "" },
+        // Pass 2: Name + medical keywords
+        { query: `${query} medical clinic hospital doctor healthcare`, types: "hospital|doctor|health|medical_center|clinic|pharmacy|physiotherapist" },
+        // Pass 3: Name + location context if applicable
+        { query: `${query} family medicine primary care urgent care`, types: "" }
+      ];
+
+      for (const pass of searchPasses) {
+        const baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+        const params = new URLSearchParams({
+          key: apiKey,
+          query: pass.query
+        });
+        
+        if (pass.types) {
+          params.append("type", pass.types);
+        }
+
+        try {
+          const response = await fetch(`${baseUrl}?${params}`);
+          const data = await response.json();
+          
+          if (data.status === "OK" && data.results) {
+            // Filter for healthcare-related results
+            const healthcareResults = data.results.filter(place => {
+              const types = place.types || [];
+              const name = place.name?.toLowerCase() || "";
+              const isHealthcare = types.some(type => 
+                ['hospital', 'doctor', 'health', 'medical_center', 'clinic', 'pharmacy', 'physiotherapist'].includes(type)
+              ) || name.includes('medical') || name.includes('clinic') || name.includes('hospital') || 
+                name.includes('health') || name.includes('doctor') || name.includes('family medicine') ||
+                name.includes('urgent care') || name.includes('primary care');
+              return isHealthcare;
+            });
+            
+            allResults = [...allResults, ...healthcareResults];
+          }
+        } catch (error) {
+          console.error(`❌ [Google Places] Error in search pass:`, error);
+        }
+      }
+
+      // Remove duplicates based on place_id
+      const uniqueResults = Array.from(
+        new Map(allResults.map(item => [item.place_id, item])).values()
+      );
+
+      // Sort by relevance (exact name matches first)
+      const sortedResults = uniqueResults.sort((a, b) => {
+        const aNameMatch = a.name?.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+        const bNameMatch = b.name?.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+        return bNameMatch - aNameMatch;
       });
 
-      const response = await fetch(`${baseUrl}?${params}`);
-      const data = await response.json();
+      console.log(`✅ [Google Places] Found ${sortedResults.length} unique healthcare facilities`);
       
-      if (data.status !== "OK") {
-        console.error("❌ [Google Places] API error:", data.status, data.error_message);
-        console.error("Full error response:", JSON.stringify(data, null, 2));
-        console.error("API Key being used:", apiKey ? `${apiKey.substring(0, 8)}...` : "NO API KEY FOUND");
-      }
-      
-      res.json(data);
+      res.json({
+        status: "OK",
+        results: sortedResults
+      });
     } 
-    // If searching by location
+    // If searching by location - Enhanced nearby search
     else if (lat && lng) {
+      console.log("🔍 [Google Places] Enhanced nearby search at:", lat, lng);
+      
+      let allResults = [];
+      
+      // Multiple search passes with different keywords to catch all healthcare facilities
+      const searchKeywords = [
+        "medical clinic",
+        "family medicine", 
+        "hospital",
+        "urgent care",
+        "primary care",
+        "healthcare center",
+        "medical center",
+        "doctor office",
+        "physician",
+        "health clinic"
+      ];
+      
+      // First, do a comprehensive nearby search
       const baseUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
       
-      const params = new URLSearchParams({
-        key: apiKey,
-        location: `${lat},${lng}`,
-        radius: radius.toString(),
-        type: "hospital|doctor|health",
-        keyword: "medical clinic hospital doctor healthcare"
-      });
-
-      const response = await fetch(`${baseUrl}?${params}`);
-      const data = await response.json();
-      
-      if (data.status !== "OK") {
-        console.error("❌ [Google Places] API error:", data.status, data.error_message);
-        console.error("Full error response:", JSON.stringify(data, null, 2));
-        console.error("API Key being used:", apiKey ? `${apiKey.substring(0, 8)}...` : "NO API KEY FOUND");
+      for (const keyword of searchKeywords) {
+        const params = new URLSearchParams({
+          key: apiKey,
+          location: `${lat},${lng}`,
+          radius: radius.toString(),
+          keyword: keyword
+        });
+        
+        try {
+          const response = await fetch(`${baseUrl}?${params}`);
+          const data = await response.json();
+          
+          if (data.status === "OK" && data.results) {
+            // Filter for healthcare facilities
+            const healthcareResults = data.results.filter(place => {
+              const types = place.types || [];
+              const name = place.name?.toLowerCase() || "";
+              const isHealthcare = types.some(type => 
+                ['hospital', 'doctor', 'health', 'medical_center', 'clinic', 'pharmacy', 
+                 'physiotherapist', 'dentist'].includes(type)
+              ) || name.includes('medical') || name.includes('clinic') || name.includes('hospital') || 
+                name.includes('health') || name.includes('doctor') || name.includes('family medicine') ||
+                name.includes('urgent care') || name.includes('primary care') || name.includes('physician');
+              return isHealthcare;
+            });
+            
+            allResults = [...allResults, ...healthcareResults];
+          }
+        } catch (error) {
+          console.error(`❌ [Google Places] Error searching for "${keyword}":`, error);
+        }
       }
       
-      res.json(data);
+      // Remove duplicates based on place_id
+      const uniqueResults = Array.from(
+        new Map(allResults.map(item => [item.place_id, item])).values()
+      );
+      
+      // Calculate distances and sort by proximity
+      const resultsWithDistance = uniqueResults.map(place => {
+        if (place.geometry?.location) {
+          const distance = calculateDistance(
+            parseFloat(lat.toString()),
+            parseFloat(lng.toString()),
+            place.geometry.location.lat,
+            place.geometry.location.lng
+          );
+          return { ...place, distance };
+        }
+        return place;
+      }).sort((a, b) => (a.distance || 999) - (b.distance || 999));
+      
+      console.log(`✅ [Google Places] Found ${resultsWithDistance.length} unique healthcare facilities nearby`);
+      
+      res.json({
+        status: "OK",
+        results: resultsWithDistance.slice(0, 50) // Limit to 50 closest results
+      });
     } else {
       res.status(400).json({ 
         status: "ERROR",
@@ -347,6 +467,71 @@ router.post("/api/places/create-health-system", async (req, res) => {
   } catch (error) {
     console.error("❌ [Google Places] Create health system error:", error);
     res.status(500).json({ error: "Failed to create health system" });
+  }
+});
+
+// Autocomplete endpoint for clinic names
+router.get("/api/places/autocomplete", async (req, res) => {
+  try {
+    const { input } = req.query;
+    
+    if (!input || typeof input !== 'string' || input.length < 2) {
+      return res.json({ predictions: [] });
+    }
+    
+    console.log("🔍 [Google Places] Autocomplete for:", input);
+    
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+    
+    if (!apiKey) {
+      // Return common healthcare facility names as fallback
+      const fallbackSuggestions = [
+        "Family Medicine",
+        "Medical Center", 
+        "Urgent Care",
+        "Primary Care",
+        "Healthcare Center",
+        "Community Health",
+        "Medical Clinic"
+      ].filter(s => s.toLowerCase().includes(input.toLowerCase()))
+        .map(s => ({
+          description: s,
+          place_id: `fallback_${s.replace(/\s+/g, '_')}`,
+        }));
+      
+      return res.json({ predictions: fallbackSuggestions });
+    }
+    
+    // Use Google Places Autocomplete API
+    const baseUrl = "https://maps.googleapis.com/maps/api/place/autocomplete/json";
+    const params = new URLSearchParams({
+      key: apiKey,
+      input: input,
+      types: "establishment",
+      components: "country:us", // Limit to US for now
+    });
+    
+    const response = await fetch(`${baseUrl}?${params}`);
+    const data = await response.json();
+    
+    if (data.status === "OK") {
+      // Filter for healthcare-related predictions
+      const healthcarePredictions = data.predictions.filter((pred: any) => {
+        const desc = pred.description.toLowerCase();
+        return desc.includes('medical') || desc.includes('clinic') || 
+               desc.includes('hospital') || desc.includes('health') ||
+               desc.includes('doctor') || desc.includes('physician') ||
+               desc.includes('urgent care') || desc.includes('family medicine');
+      });
+      
+      res.json({ predictions: healthcarePredictions });
+    } else {
+      res.json({ predictions: [] });
+    }
+    
+  } catch (error) {
+    console.error("❌ [Google Places] Autocomplete error:", error);
+    res.json({ predictions: [] });
   }
 });
 

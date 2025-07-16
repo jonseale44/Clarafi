@@ -95,7 +95,17 @@ export function DynamicClinicSearch({ onSelectFacility, showCreateNew = true }: 
       const data = await response.json();
 
       if (data.status === "OK") {
-        setFacilities(data.results);
+        const results = data.results || [];
+        setFacilities(results);
+        
+        // If no results found, provide helpful guidance
+        if (results.length === 0 && query) {
+          toast({
+            title: "No Results Found",
+            description: `Try different search terms or use the location button to find nearby clinics.`,
+            variant: "default",
+          });
+        }
       } else {
         throw new Error(data.error || "Failed to search facilities");
       }
@@ -262,8 +272,40 @@ export function DynamicClinicSearch({ onSelectFacility, showCreateNew = true }: 
 
       {!loading && searchQuery && facilities.length === 0 && (
         <Alert>
-          <AlertDescription>
-            No medical facilities found. Try a different search term or use your location.
+          <AlertDescription className="space-y-2">
+            <div>No results found for "{searchQuery}"</div>
+            <div className="text-sm">
+              <p className="font-semibold">Try these search tips:</p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Use just the clinic name (e.g., "Waco Family Medicine")</li>
+                <li>Include the city (e.g., "Family Medicine Hillsboro")</li>
+                <li>Try the parent organization name</li>
+                <li>Use the location button to find nearby clinics</li>
+              </ul>
+            </div>
+            {showCreateNew && (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Still can't find your clinic? You can{" "}
+                  <button 
+                    className="text-primary underline hover:no-underline"
+                    onClick={() => {
+                      // Allow manual entry as last resort
+                      const manualFacility: MedicalFacility = {
+                        place_id: `manual_${Date.now()}`,
+                        name: searchQuery,
+                        formatted_address: "Address to be provided",
+                        geometry: { location: { lat: 0, lng: 0 } },
+                        types: ["health"],
+                      };
+                      handleSelectFacility(manualFacility);
+                    }}
+                  >
+                    add it manually
+                  </button>
+                </p>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
