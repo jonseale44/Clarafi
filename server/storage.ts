@@ -15,7 +15,7 @@ import {
   type Encounter, type InsertEncounter, type Vitals,
   type Order, type InsertOrder, type MedicalProblem, type InsertMedicalProblem,
   type Medication, type InsertMedication, type PatientOrderPreferences, type InsertPatientOrderPreferences,
-  type SelectUserNoteTemplate, type InsertUserNoteTemplate, 
+ 
   type SelectTemplateShare, type InsertTemplateShare,
   type SelectUserNotePreferences, type InsertUserNotePreferences,
   type AdminPromptReview, type InsertAdminPromptReview,
@@ -157,11 +157,11 @@ export interface IStorage {
     endTime: Date;
   }): Promise<void>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -354,13 +354,13 @@ export class DatabaseStorage implements IStorage {
     // Create new session location (no conflict handling needed since we cleared previous)
     await db
       .insert(userSessionLocations)
-      .values({
+      .values([{
         userId,
         locationId,
         selectedAt: new Date(),
         isActive: true,
         rememberSelection
-      });
+      }]);
   }
 
   async getUserSessionLocation(userId: number): Promise<any> {
@@ -836,11 +836,11 @@ export class DatabaseStorage implements IStorage {
   async createDiagnosis(insertDiagnosis: any): Promise<any> {
     const [diagnosis] = await db
       .insert(diagnoses)
-      .values({
+      .values([{
         ...insertDiagnosis,
         createdAt: new Date(),
         updatedAt: new Date()
-      })
+      }])
       .returning();
     return diagnosis;
   }
@@ -1108,11 +1108,11 @@ export class DatabaseStorage implements IStorage {
     
     const [order] = await db
       .insert(orders)
-      .values({
+      .values([{
         ...insertOrder,
         createdAt: new Date(),
         updatedAt: new Date()
-      })
+      }])
       .returning();
       
     console.log(`✅ [STORAGE] Order created with ID: ${order.id} at ${timestamp}`);
@@ -1475,21 +1475,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User Note Templates Implementation
-  async getUserNoteTemplates(userId: number): Promise<SelectUserNoteTemplate[]> {
+  async getanys(userId: number): Promise<Selectany[]> {
     return await db.select()
       .from(userNoteTemplates)
       .where(and(eq(userNoteTemplates.userId, userId), eq(userNoteTemplates.active, true)))
       .orderBy(userNoteTemplates.templateName);
   }
 
-  async getUserNoteTemplate(id: number): Promise<SelectUserNoteTemplate | undefined> {
+  async getany(id: number): Promise<Selectany | undefined> {
     const [template] = await db.select()
       .from(userNoteTemplates)
       .where(eq(userNoteTemplates.id, id));
     return template || undefined;
   }
 
-  async getUserTemplatesByType(userId: number, noteType: string): Promise<SelectUserNoteTemplate[]> {
+  async getUserTemplatesByType(userId: number, noteType: string): Promise<Selectany[]> {
     console.log(`🔍 [Storage] Getting user templates for userId: ${userId}, noteType: ${noteType}`);
     console.log(`🔍 [Storage] Query details:`, {
       table: 'user_note_templates',
@@ -1552,14 +1552,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createUserNoteTemplate(template: InsertUserNoteTemplate): Promise<SelectUserNoteTemplate> {
+  async createany(template: Insertany): Promise<Selectany> {
     const [created] = await db.insert(userNoteTemplates)
       .values(template)
       .returning();
     return created;
   }
 
-  async updateUserNoteTemplate(id: number, updates: Partial<SelectUserNoteTemplate>): Promise<SelectUserNoteTemplate> {
+  async updateany(id: number, updates: Partial<Selectany>): Promise<Selectany> {
     const [updated] = await db.update(userNoteTemplates)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(userNoteTemplates.id, id))
@@ -1567,13 +1567,13 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async deleteUserNoteTemplate(id: number): Promise<void> {
+  async deleteany(id: number): Promise<void> {
     await db.update(userNoteTemplates)
       .set({ active: false, updatedAt: new Date() })
       .where(eq(userNoteTemplates.id, id));
   }
 
-  async getUserNoteTemplate(id: number): Promise<SelectUserNoteTemplate | null> {
+  async getany(id: number): Promise<Selectany | null> {
     const results = await db.select()
       .from(userNoteTemplates)
       .where(and(
@@ -1652,7 +1652,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async adoptSharedTemplate(userId: number, shareId: number): Promise<SelectUserNoteTemplate> {
+  async adoptSharedTemplate(userId: number, shareId: number): Promise<Selectany> {
     // Get the share details
     const [share] = await db.select()
       .from(templateShares)
@@ -1721,12 +1721,12 @@ export class DatabaseStorage implements IStorage {
     // If no record was updated (user has no preferences yet), create new ones
     if (!updated) {
       const [created] = await db.insert(userNotePreferences)
-        .values({ 
+        .values([{ 
           userId, 
           ...updates,
           createdAt: new Date(),
           updatedAt: new Date()
-        })
+        }])
         .returning();
       return created;
     }
@@ -1747,7 +1747,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getAllPendingPromptReviews(): Promise<(AdminPromptReview & { template: UserNoteTemplate, user: User })[]> {
+  async getAllPendingPromptReviews(): Promise<(AdminPromptReview & { template: any, user: User })[]> {
     const reviews = await db.select({
       review: adminPromptReviews,
       template: userNoteTemplates,
@@ -1762,7 +1762,7 @@ export class DatabaseStorage implements IStorage {
     return reviews.map(r => ({ ...r.review, template: r.template!, user: r.user! }));
   }
 
-  async getAdminPromptReview(reviewId: number): Promise<(AdminPromptReview & { template: UserNoteTemplate, user: User }) | undefined> {
+  async getAdminPromptReview(reviewId: number): Promise<(AdminPromptReview & { template: any, user: User }) | undefined> {
     const [review] = await db.select({
       review: adminPromptReviews,
       template: userNoteTemplates,
@@ -1870,10 +1870,10 @@ export class DatabaseStorage implements IStorage {
       })
       .from(userNoteTemplates)
       .leftJoin(
-        alias(adminPromptReviews, 'active_reviews'),
+        adminPromptReviews,
         and(
-          eq(userNoteTemplates.id, sql`active_reviews.template_id`),
-          eq(sql`active_reviews.is_active`, true)
+          eq(userNoteTemplates.id, adminPromptReviews.templateId),
+          eq(adminPromptReviews.isActive, true)
         )
       )
       .orderBy(desc(userNoteTemplates.createdAt));
@@ -2547,12 +2547,12 @@ export class DatabaseStorage implements IStorage {
     } else {
       const result = await db
         .insert(schedulePreferences)
-        .values({
+        .values([{
           providerId,
           ...data,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        })
+        }])
         .returning()
         .execute();
         
@@ -2631,7 +2631,7 @@ export class DatabaseStorage implements IStorage {
       // Create new
       const result = await db
         .insert(schedulingAiWeights)
-        .values({
+        .values([{
           factorId: params.factorId,
           weight: params.weight,
           enabled: params.weight > 0,
@@ -2640,7 +2640,7 @@ export class DatabaseStorage implements IStorage {
           healthSystemId: params.healthSystemId,
           createdBy: params.updatedBy,
           createdAt: new Date().toISOString()
-        })
+        }])
         .returning()
         .execute();
         
@@ -2842,14 +2842,14 @@ export class DatabaseStorage implements IStorage {
         // Create new
         await db
           .insert(schedulingAiWeights)
-          .values({
+          .values([{
             factorId,
             weight: weight.toString(),
             enabled: weight > 0,
             providerId,
             healthSystemId,
             createdBy: updatedBy
-          })
+          }])
           .execute();
       }
     }
