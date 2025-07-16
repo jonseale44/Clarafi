@@ -177,6 +177,16 @@ Preferred communication style: Simple, everyday language.
 - **INTELLIGENT BUFFERS**: System adds appropriate buffers for complex patients, late arrivals, provider preferences
 - **PRODUCTION READY**: System now dynamically adjusts appointment slots based on actual data instead of fixed durations
 
+### Scheduling System Enhancements - Manual Override & Conflict Prevention COMPLETED (January 16, 2025)
+- **MANUAL DURATION OVERRIDE**: Duration field now always editable, allowing providers to override AI predictions when needed
+- **SMART OVERRIDE TRACKING**: System tracks when user manually adjusts duration vs using AI predictions
+- **APPOINTMENT TYPE BUG FIX**: Fixed issue where AI predictions stopped updating after changing appointment type multiple times
+- **CONFLICT PREVENTION**: Added comprehensive double-booking prevention with `checkAppointmentConflicts` method
+- **USER-FRIENDLY ERRORS**: Conflict errors show specific details: "This time slot conflicts with: 9:00 AM - 9:50 AM (Patient Name, Sick Visit)"
+- **OVERRIDE INDICATORS**: UI clearly shows when using AI predictions (🤖) vs manual override (✏️) with suggested duration
+- **RESCHEDULING PROTECTION**: Conflict checking also applies when updating/rescheduling existing appointments
+- **PRODUCTION IMPACT**: System now prevents scheduling errors while maintaining provider flexibility to adjust AI recommendations
+
 ### Appointment-to-Encounter Conversion Workflow COMPLETED (January 16, 2025)
 - **MAJOR PRODUCTION ENHANCEMENT**: Implemented automated appointment check-in workflow that creates encounters from scheduled appointments
 - **CHECK-IN ENDPOINT CREATED**: New POST `/api/scheduling/appointments/:id/check-in` endpoint with proper authentication and tenant isolation

@@ -69,6 +69,7 @@ export function ScheduleAppointmentDialog({
     complexityFactors?: any;
   } | null>(null);
   const [fetchingPrediction, setFetchingPrediction] = useState(false);
+  const [manualDurationOverride, setManualDurationOverride] = useState(false);
 
   // Set preselected patient if provided
   useEffect(() => {
@@ -91,11 +92,18 @@ export function ScheduleAppointmentDialog({
       setAppointmentType("follow-up");
       setChiefComplaint("");
       setNotes("");
+      setManualDurationOverride(false);
+      setAiPrediction(null);
       if (!preselectedPatient) {
         setSelectedPatient(null);
       }
     }
   }, [open, selectedDate, preselectedPatient]);
+
+  // Reset manual override when appointment type changes
+  useEffect(() => {
+    setManualDurationOverride(false);
+  }, [appointmentType]);
 
   // Fetch AI prediction when relevant fields change
   useEffect(() => {
@@ -127,6 +135,11 @@ export function ScheduleAppointmentDialog({
         if (response.ok) {
           const prediction = await response.json();
           setAiPrediction(prediction);
+          
+          // Update duration with AI prediction if user hasn't manually overridden
+          if (!manualDurationOverride && prediction.providerScheduledDuration) {
+            setDuration(prediction.providerScheduledDuration.toString());
+          }
         }
       } catch (error) {
         console.error('Error fetching AI prediction:', error);
@@ -221,9 +234,9 @@ export function ScheduleAppointmentDialog({
         appointmentType,
         chiefComplaint,
         notes,
-        duration: aiPrediction ? aiPrediction.providerScheduledDuration : parseInt(duration),
-        patientVisibleDuration: aiPrediction ? aiPrediction.patientVisibleDuration : parseInt(duration),
-        useAiScheduling: true, // Enable AI scheduling
+        duration: parseInt(duration), // Always use the current duration value (whether AI or manual)
+        patientVisibleDuration: aiPrediction && !manualDurationOverride ? aiPrediction.patientVisibleDuration : parseInt(duration),
+        useAiScheduling: !manualDurationOverride, // Use AI scheduling only if not manually overridden
       };
       
       console.log('📅 [ScheduleAppointment] Sending appointment data:', appointmentData);
@@ -413,9 +426,11 @@ export function ScheduleAppointmentDialog({
           <div>
             <Label htmlFor="duration">Duration</Label>
             <Select 
-              value={aiPrediction ? aiPrediction.providerScheduledDuration.toString() : duration} 
-              onValueChange={setDuration}
-              disabled={!!aiPrediction}
+              value={duration} 
+              onValueChange={(value) => {
+                setDuration(value);
+                setManualDurationOverride(true);
+              }}
             >
               <SelectTrigger id="duration" className="mt-2">
                 <SelectValue />
@@ -432,14 +447,19 @@ export function ScheduleAppointmentDialog({
                 <SelectItem value="90">90 minutes</SelectItem>
               </SelectContent>
             </Select>
+            {aiPrediction && !manualDurationOverride && (
+              <p className="text-sm text-blue-600 mt-1">
+                🤖 AI-adjusted duration based on patient complexity
+              </p>
+            )}
+            {aiPrediction && manualDurationOverride && (
+              <p className="text-sm text-amber-600 mt-1">
+                ✏️ Manually adjusted (AI suggested: {aiPrediction.providerScheduledDuration} min)
+              </p>
+            )}
             {!aiPrediction && (
               <p className="text-sm text-gray-500 mt-1">
                 ✨ AI will predict actual duration based on patient and visit type
-              </p>
-            )}
-            {aiPrediction && (
-              <p className="text-sm text-blue-600 mt-1">
-                🤖 AI-adjusted duration based on patient complexity
               </p>
             )}
           </div>
