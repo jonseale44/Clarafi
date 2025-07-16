@@ -1141,78 +1141,78 @@ export default function AuthPage() {
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {/* AI Ambient Scribe */}
+            {/* Real-Time AI Scribe */}
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
                   <Activity className="h-5 w-5 text-navy-blue-900" />
                 </div>
-                <h3 className="font-semibold text-left">AI Ambient Scribe</h3>
+                <h3 className="font-semibold text-left">Real-Time AI Scribe</h3>
               </div>
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• Talk naturally, notes write themselves</li>
-                <li>• Real-time voice transcription</li>
+                <li>• Notes update AS you talk</li>
+                <li>• Not 5 minutes after (like Freed)</li>
+                <li>• Custom templates</li>
                 <li>• Perfect SOAP notes instantly</li>
-                <li>• Zero typing required</li>
               </ul>
             </div>
             
-            {/* Smart Scheduling */}
+            {/* Complete EMR Built-In */}
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
                   <Users className="h-5 w-5 text-navy-blue-900" />
                 </div>
-                <h3 className="font-semibold text-left">Predictive Scheduling</h3>
+                <h3 className="font-semibold text-left">Complete EMR Built-In</h3>
               </div>
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• AI duration prediction</li>
-                <li>• No-show risk analysis</li>
-                <li>• Real-time optimization</li>
-                <li>• Drag-drop simplicity</li>
+                <li>• Full EMR, not just notes</li>
+                <li>• E-prescribing included</li>
+                <li>• Lab ordering & results</li>
+                <li>• Billing & coding built-in</li>
               </ul>
             </div>
             
-            {/* Lab Excellence */}
+            {/* Unbeatable Speed */}
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
                   <Shield className="h-5 w-5 text-navy-blue-900" />
                 </div>
-                <h3 className="font-semibold text-left">Lab Automation</h3>
+                <h3 className="font-semibold text-left">Unbeatable Speed</h3>
               </div>
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• LabCorp & Quest ready</li>
-                <li>• Critical alerts workflow</li>
-                <li>• Multi-source results</li>
-                <li>• Patient messaging</li>
+                <li>• Seconds, not minutes</li>
+                <li>• No waiting for notes</li>
+                <li>• Instant lab orders</li>
+                <li>• Real-time everything</li>
               </ul>
             </div>
             
-            {/* Document Magic */}
+            {/* One Price, Everything */}
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
                   <Building2 className="h-5 w-5 text-navy-blue-900" />
                 </div>
-                <h3 className="font-semibold text-left">Document Magic</h3>
+                <h3 className="font-semibold text-left">One Price, Everything</h3>
               </div>
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• OCR any medical record</li>
-                <li>• Auto-populate charts</li>
-                <li>• Confidence scoring</li>
-                <li>• Zero manual entry</li>
+                <li>• AI scribe + EMR together</li>
+                <li>• No separate subscriptions</li>
+                <li>• Solo: $149/month</li>
+                <li>• Enterprise: $399/month</li>
               </ul>
             </div>
           </div>
           
           {/* Key differentiators */}
           <div className="mb-6 space-y-2">
-            <p className="text-sm font-semibold text-gold">Finally, an EMR that writes itself:</p>
+            <p className="text-sm font-semibold text-gold">Why we're better than Freed + Epic combined:</p>
             <div className="flex flex-wrap justify-center gap-3 text-xs">
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Zero documentation time</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Just talk, we write</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Full EMR capabilities</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Real-time notes vs 5-min wait</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Full EMR included vs $500+/mo extra</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ One login vs multiple systems</span>
             </div>
           </div>
           
@@ -1235,8 +1235,9 @@ export default function AuthPage() {
           </div>
           
           <div className="mt-6 text-xs text-navy-blue-200">
-            <p className="font-semibold">The future of medical documentation is here</p>
-            <p className="mt-1">From solo practices to enterprise health systems</p>
+            <p className="font-semibold">The only AI scribe + EMR hybrid in the market</p>
+            <p className="mt-1">Save $300+/month vs buying scribe + EMR separately</p>
+            <p className="mt-1 text-gold">Freed ($99) + Epic ($500+) = $600+/mo vs Clarafi $149-$399</p>
           </div>
         </div>
       </div>
