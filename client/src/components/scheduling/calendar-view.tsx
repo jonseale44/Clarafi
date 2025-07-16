@@ -67,15 +67,39 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   // Mutation for updating appointments (drag and drop)
   const updateAppointmentMutation = useMutation({
     mutationFn: async ({ appointmentId, date, time }: { appointmentId: number; date: string; time: string }) => {
+      console.log('🎯 [UPDATE MUTATION] Starting update request:', {
+        appointmentId,
+        date,
+        time,
+        url: `/api/scheduling/appointments/${appointmentId}`
+      });
+      
       const response = await fetch(`/api/scheduling/appointments/${appointmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ appointmentDate: date, appointmentTime: time })
       });
-      if (!response.ok) throw new Error('Failed to update appointment');
-      return response.json();
+      
+      console.log('🎯 [UPDATE MUTATION] Response status:', response.status);
+      console.log('🎯 [UPDATE MUTATION] Response headers:', response.headers);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('🎯 [UPDATE MUTATION] Error response:', errorData);
+        console.error('🎯 [UPDATE MUTATION] Full error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.error || 'Failed to update appointment');
+      }
+      
+      const data = await response.json();
+      console.log('🎯 [UPDATE MUTATION] Success response:', data);
+      return data;
     },
     onSuccess: () => {
+      console.log('🎯 [UPDATE MUTATION] Success callback triggered');
       toast({
         title: "Appointment Rescheduled",
         description: "The appointment has been successfully moved.",
@@ -83,23 +107,41 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       // Invalidate queries to refresh the calendar
       queryClient.invalidateQueries({ queryKey: ['/api/scheduling/appointments'] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('🎯 [UPDATE MUTATION] Error callback triggered:', error);
       toast({
         title: "Error",
-        description: "Failed to reschedule appointment. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to reschedule appointment. Please try again.",
         variant: "destructive",
       });
     }
   });
   
   const handleAppointmentDrop = (appointment: Appointment, newDate: Date, newTime: string) => {
+    console.log('🎯 [DRAG-DROP] handleAppointmentDrop called:', {
+      appointmentId: appointment.id,
+      originalDate: appointment.appointmentDate,
+      originalTime: appointment.appointmentTime,
+      newDate: newDate.toISOString(),
+      newTime: newTime
+    });
+    
     // Format date as YYYY-MM-DD
     const formattedDate = format(newDate, 'yyyy-MM-dd');
     
+    console.log('🎯 [DRAG-DROP] Formatted date:', formattedDate);
+    
     // Don't update if dropped on same date and time
     if (appointment.appointmentDate === formattedDate && appointment.appointmentTime === newTime) {
+      console.log('🎯 [DRAG-DROP] Same date and time, skipping update');
       return;
     }
+    
+    console.log('🎯 [DRAG-DROP] Calling updateAppointmentMutation with:', {
+      appointmentId: appointment.id,
+      date: formattedDate,
+      time: newTime
+    });
     
     updateAppointmentMutation.mutate({
       appointmentId: appointment.id,
@@ -314,10 +356,15 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                 e.currentTarget.classList.remove('bg-blue-100');
               }}
               onDrop={(e) => {
+                console.log('🎯 [DROP] Drop event triggered on date:', format(date, 'yyyy-MM-dd'));
+                console.log('🎯 [DROP] Dragged appointment:', draggedAppointment);
                 e.preventDefault();
                 e.currentTarget.classList.remove('bg-blue-100');
                 if (draggedAppointment) {
+                  console.log('🎯 [DROP] Calling handleAppointmentDrop');
                   handleAppointmentDrop(draggedAppointment, date, draggedAppointment.appointmentTime);
+                } else {
+                  console.log('🎯 [DROP] No dragged appointment found');
                 }
               }}
             >
@@ -354,11 +401,13 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
                       )}
                       draggable
                       onDragStart={(e) => {
+                        console.log('🎯 [DRAG-START] Starting drag for appointment:', apt.id, apt.patientName);
                         e.stopPropagation();
                         setIsDragging(true);
                         setDraggedAppointment(apt);
                       }}
                       onDragEnd={() => {
+                        console.log('🎯 [DRAG-END] Ending drag');
                         setIsDragging(false);
                         setDraggedAppointment(null);
                       }}
