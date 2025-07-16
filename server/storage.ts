@@ -559,6 +559,14 @@ export class DatabaseStorage implements IStorage {
       await db.delete(phiAccessLogs).where(eq(phiAccessLogs.patientId, id));
       console.log(`🗑️ [Storage] Deleted PHI access logs for patient ${id}`);
       
+      // Delete patient scheduling patterns (appointments AI data)
+      await db.delete(patientSchedulingPatterns).where(eq(patientSchedulingPatterns.patientId, id));
+      console.log(`🗑️ [Storage] Deleted patient scheduling patterns for patient ${id}`);
+      
+      // Delete appointments
+      await db.delete(appointments).where(eq(appointments.patientId, id));
+      console.log(`🗑️ [Storage] Deleted appointments for patient ${id}`);
+      
       // Finally, delete the patient
       await db.delete(patients).where(eq(patients.id, id));
       console.log(`✅ [Storage] Successfully deleted patient ${id}`);
