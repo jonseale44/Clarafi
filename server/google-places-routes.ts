@@ -178,6 +178,8 @@ router.get("/api/places/search-medical", async (req, res) => {
       
       if (data.status !== "OK") {
         console.error("❌ [Google Places] API error:", data.status, data.error_message);
+        console.error("Full error response:", JSON.stringify(data, null, 2));
+        console.error("API Key being used:", apiKey ? `${apiKey.substring(0, 8)}...` : "NO API KEY FOUND");
       }
       
       res.json(data);
@@ -199,6 +201,8 @@ router.get("/api/places/search-medical", async (req, res) => {
       
       if (data.status !== "OK") {
         console.error("❌ [Google Places] API error:", data.status, data.error_message);
+        console.error("Full error response:", JSON.stringify(data, null, 2));
+        console.error("API Key being used:", apiKey ? `${apiKey.substring(0, 8)}...` : "NO API KEY FOUND");
       }
       
       res.json(data);
