@@ -54,6 +54,83 @@ const mockSearchPlaces = async (query: string, location?: { lat: number; lng: nu
         npi: "1122334455",
         hours: "Mon-Fri 9:00 AM - 5:00 PM"
       }
+    },
+    // Hillsboro, TX clinics
+    {
+      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxI",
+      name: "Mission Hillsboro Medical Clinic",
+      formatted_address: "101 Mission Dr, Hillsboro, TX 76645",
+      geometry: {
+        location: { lat: 32.0148, lng: -97.1300 }
+      },
+      types: ["doctor", "health", "establishment"],
+      formatted_phone_number: "(254) 582-8416",
+      website: "https://missionhillsboro.com",
+      place_details: {
+        npi: "1558301234",
+        hours: "Mon-Fri 8:00 AM - 5:00 PM"
+      }
+    },
+    {
+      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxJ",
+      name: "Hill Regional Hospital",
+      formatted_address: "101 Circle Dr, Hillsboro, TX 76645",
+      geometry: {
+        location: { lat: 32.0085, lng: -97.1136 }
+      },
+      types: ["hospital", "health", "point_of_interest"],
+      formatted_phone_number: "(254) 580-8500",
+      website: "https://hillregional.com",
+      place_details: {
+        npi: "1588604321",
+        hours: "24/7 Emergency Services"
+      }
+    },
+    {
+      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxK",
+      name: "Hillsboro Family Medicine",
+      formatted_address: "1323 E Franklin St, Hillsboro, TX 76645",
+      geometry: {
+        location: { lat: 32.0107, lng: -97.1129 }
+      },
+      types: ["doctor", "health", "establishment"],
+      formatted_phone_number: "(254) 582-2555",
+      website: "https://hillsborofamilymed.com",
+      place_details: {
+        npi: "1659387654",
+        hours: "Mon-Fri 8:00 AM - 5:00 PM, Sat 9:00 AM - 12:00 PM"
+      }
+    },
+    // Waco clinics
+    {
+      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxL",
+      name: "Waco Family Medicine",
+      formatted_address: "4800 W Waco Dr, Waco, TX 76710",
+      geometry: {
+        location: { lat: 31.5161, lng: -97.1886 }
+      },
+      types: ["doctor", "health", "establishment"],
+      formatted_phone_number: "(254) 776-5600",
+      website: "https://wacofamilymedicine.com",
+      place_details: {
+        npi: "1760412345",
+        hours: "Mon-Fri 8:00 AM - 5:00 PM"
+      }
+    },
+    {
+      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxM",
+      name: "Baylor Scott & White Medical Center - Hillcrest",
+      formatted_address: "100 Hillcrest Medical Blvd, Waco, TX 76712",
+      geometry: {
+        location: { lat: 31.5055, lng: -97.1935 }
+      },
+      types: ["hospital", "health", "point_of_interest"],
+      formatted_phone_number: "(254) 202-2000",
+      website: "https://bswhealth.com/locations/waco-hillcrest",
+      place_details: {
+        npi: "1861498765",
+        hours: "24/7 Emergency Services"
+      }
     }
   ];
 
@@ -83,32 +160,54 @@ router.get("/api/places/search-medical", async (req, res) => {
     
     console.log("🔍 [Google Places] Searching for medical facilities:", { query, lat, lng, radius });
 
-    // In production, you would use the actual Google Places API like this:
-    /*
+    // Use the actual Google Places API
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-    const baseUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
     
-    const params = new URLSearchParams({
-      key: apiKey,
-      location: `${lat},${lng}`,
-      radius: radius.toString(),
-      type: "hospital|doctor|health",
-      keyword: query || "medical clinic hospital"
-    });
+    // If searching by text query
+    if (query) {
+      const baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+      
+      const params = new URLSearchParams({
+        key: apiKey,
+        query: `${query} medical clinic hospital doctor`,
+        type: "hospital|doctor|health|medical_center|clinic"
+      });
 
-    const response = await fetch(`${baseUrl}?${params}`);
-    const data = await response.json();
-    */
+      const response = await fetch(`${baseUrl}?${params}`);
+      const data = await response.json();
+      
+      if (data.status !== "OK") {
+        console.error("❌ [Google Places] API error:", data.status, data.error_message);
+      }
+      
+      res.json(data);
+    } 
+    // If searching by location
+    else if (lat && lng) {
+      const baseUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+      
+      const params = new URLSearchParams({
+        key: apiKey,
+        location: `${lat},${lng}`,
+        radius: radius.toString(),
+        type: "hospital|doctor|health",
+        keyword: "medical clinic hospital doctor healthcare"
+      });
 
-    // For now, use mock data
-    const location = lat && lng ? { lat: parseFloat(lat as string), lng: parseFloat(lng as string) } : undefined;
-    const places = await mockSearchPlaces(query as string || "", location);
-
-    res.json({
-      status: "OK",
-      results: places,
-      html_attributions: []
-    });
+      const response = await fetch(`${baseUrl}?${params}`);
+      const data = await response.json();
+      
+      if (data.status !== "OK") {
+        console.error("❌ [Google Places] API error:", data.status, data.error_message);
+      }
+      
+      res.json(data);
+    } else {
+      res.status(400).json({ 
+        status: "ERROR",
+        error: "Either query or location (lat/lng) must be provided" 
+      });
+    }
 
   } catch (error) {
     console.error("❌ [Google Places] Search error:", error);

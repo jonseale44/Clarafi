@@ -22,7 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 interface MedicalFacility {
   place_id: string;
   name: string;
-  formatted_address: string;
+  formatted_address?: string; // From Details API
+  vicinity?: string; // From Nearby Search API
   geometry: {
     location: { lat: number; lng: number };
   };
@@ -235,7 +236,7 @@ export function DynamicClinicSearch({ onSelectFacility, showCreateNew = true }: 
                       <h4 className="font-medium">{facility.name}</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {facility.formatted_address}
+                      {facility.formatted_address || facility.vicinity}
                     </p>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       {facility.formatted_phone_number && (
@@ -275,7 +276,7 @@ export function DynamicClinicSearch({ onSelectFacility, showCreateNew = true }: 
             <DialogDescription>
               You've selected: <strong>{selectedFacility?.name}</strong>
               <br />
-              {selectedFacility?.formatted_address}
+              {selectedFacility?.formatted_address || selectedFacility?.vicinity}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
