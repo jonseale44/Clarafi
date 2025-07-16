@@ -1141,19 +1141,35 @@ export default function AuthPage() {
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {/* Real-Time AI Scribe */}
+            {/* Live AI During Encounter */}
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
                   <Activity className="h-5 w-5 text-navy-blue-900" />
                 </div>
-                <h3 className="font-semibold text-left">Real-Time AI Scribe</h3>
+                <h3 className="font-semibold text-left">Live AI During Encounter</h3>
               </div>
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• Notes update AS you talk</li>
-                <li>• Instant documentation, no delays</li>
-                <li>• Custom templates for your style</li>
-                <li>• Perfect SOAP notes in seconds</li>
+                <li>• AI suggestions as you talk</li>
+                <li>• Real-time SOAP notes</li>
+                <li>• Re-record anytime</li>
+                <li>• Unlimited custom templates</li>
+              </ul>
+            </div>
+            
+            {/* Automatic Everything */}
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
+                  <Users className="h-5 w-5 text-navy-blue-900" />
+                </div>
+                <h3 className="font-semibold text-left">Automatic Everything</h3>
+              </div>
+              <ul className="text-sm text-navy-blue-100 text-left space-y-1">
+                <li>• Auto-updates entire chart</li>
+                <li>• Instant lab orders from voice</li>
+                <li>• CPT codes auto-generated</li>
+                <li>• Medical problems updated</li>
               </ul>
             </div>
             
@@ -1161,7 +1177,7 @@ export default function AuthPage() {
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                  <Users className="h-5 w-5 text-navy-blue-900" />
+                  <Shield className="h-5 w-5 text-navy-blue-900" />
                 </div>
                 <h3 className="font-semibold text-left">Complete EMR Built-In</h3>
               </div>
@@ -1169,23 +1185,7 @@ export default function AuthPage() {
                 <li>• Full EMR, not just notes</li>
                 <li>• E-prescribing included</li>
                 <li>• Lab ordering & results</li>
-                <li>• Billing & coding built-in</li>
-              </ul>
-            </div>
-            
-            {/* Unbeatable Speed */}
-            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-navy-blue-900" />
-                </div>
-                <h3 className="font-semibold text-left">Unbeatable Speed</h3>
-              </div>
-              <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                <li>• Seconds, not minutes</li>
-                <li>• No waiting for notes</li>
-                <li>• Instant lab orders</li>
-                <li>• Real-time everything</li>
+                <li>• Billing & scheduling</li>
               </ul>
             </div>
             
@@ -1208,11 +1208,11 @@ export default function AuthPage() {
           
           {/* Key differentiators */}
           <div className="mb-6 space-y-2">
-            <p className="text-sm font-semibold text-gold">Experience the future of healthcare documentation:</p>
+            <p className="text-sm font-semibold text-gold">Others give you ambient AI. We give you a complete medical command center:</p>
             <div className="flex flex-wrap justify-center gap-3 text-xs">
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Real-time notes during conversation</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Complete EMR + AI scribe in one</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Single integrated solution</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Live AI suggestions during encounter</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Entire chart auto-updates</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Instant labs, billing, everything</span>
             </div>
           </div>
           
@@ -1235,9 +1235,9 @@ export default function AuthPage() {
           </div>
           
           <div className="mt-6 text-xs text-navy-blue-200">
-            <p className="font-semibold">The only AI scribe + EMR hybrid in the market</p>
-            <p className="mt-1">Save time and money with one integrated solution</p>
-            <p className="mt-1 text-gold">Everything you need starting at just $149/month</p>
+            <p className="font-semibold">It's like comparing apples to gigantic caramel apples</p>
+            <p className="mt-1">Other AI scribes just give you notes. We transform your entire practice.</p>
+            <p className="mt-1 text-gold">Complete medical command center from $149/month</p>
           </div>
         </div>
       </div>

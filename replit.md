@@ -162,34 +162,34 @@ Preferred communication style: Simple, everyday language.
 ### Login Page Marketing Redesign - AI Ambient Scribe Focus COMPLETED (January 16, 2025)
 - **HEADLINE CHANGE**: Changed from "The EMR That Actually Thinks" to "Transform Your Practice Today" to emphasize positive transformation
 - **SUBTITLE UPDATE**: Now reads "The revolutionary AI ambient scribe + EMR that lets you focus on patients, not paperwork. Experience healthcare as it should be"
-- **REAL-TIME AI SCRIBE BOX**: Emphasizes real-time capabilities with updated features:
-  - Notes update AS you talk
-  - Instant documentation, no delays
-  - Custom templates for your style
-  - Perfect SOAP notes in seconds
-- **COMPLETE EMR BUILT-IN**: Highlights integrated nature of solution:
+- **LIVE AI DURING ENCOUNTER BOX**: Emphasizes real-time AI capabilities during the visit:
+  - AI suggestions as you talk
+  - Real-time SOAP notes
+  - Re-record anytime
+  - Unlimited custom templates
+- **AUTOMATIC EVERYTHING BOX**: Highlights comprehensive automation features:
+  - Auto-updates entire chart
+  - Instant lab orders from voice
+  - CPT codes auto-generated
+  - Medical problems updated
+- **COMPLETE EMR BUILT-IN**: Full EMR capabilities integrated:
   - Full EMR, not just notes
   - E-prescribing included
   - Lab ordering & results
-  - Billing & coding built-in
-- **UNBEATABLE SPEED**: Focuses on speed advantage:
-  - Seconds, not minutes
-  - No waiting for notes
-  - Instant lab orders
-  - Real-time everything
+  - Billing & scheduling
 - **ONE PRICE, EVERYTHING**: Clear pricing message:
   - AI scribe + EMR together
   - No separate subscriptions
   - Solo practice: $149/month
   - Enterprise: $399/month
-- **KEY DIFFERENTIATORS**: "Experience the future of healthcare documentation" with focus on:
-  - Real-time notes during conversation
-  - Complete EMR + AI scribe in one
-  - Single integrated solution
+- **KEY DIFFERENTIATORS**: "Others give you ambient AI. We give you a complete medical command center" with focus on:
+  - Live AI suggestions during encounter
+  - Entire chart auto-updates
+  - Instant labs, billing, everything
 - **REMOVED FALSE CLAIMS**: Deleted "Trusted by 500+ providers across 50+ specialties" as not yet accurate
-- **NEW TAGLINE**: "The only AI scribe + EMR hybrid in the market" to emphasize unique positioning
+- **NEW TAGLINE**: "It's like comparing apples to gigantic caramel apples" to emphasize massive capability difference
 - **OPTIMISTIC TONE**: Removed competitor names and attack messaging, focusing on positive benefits and transformation
-- **PRIMARY FOCUS**: Marketing emphasizes dual positioning as both revolutionary AI scribe AND complete EMR solution
+- **PRIMARY FOCUS**: Marketing emphasizes that Clarafi is vastly superior to basic AI scribes by providing real-time AI assistance during encounters, automatic chart updating, instant lab ordering, and complete EMR functionality - not just note-taking after the visit
 
 ### Scheduling System Production Cleanup COMPLETED (January 16, 2025)
 - **PERMISSION FIXES**: Added 'provider' role to appointment creation, update, and deletion permissions - providers can now fully manage appointments
