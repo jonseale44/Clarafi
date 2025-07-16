@@ -1134,10 +1134,10 @@ export default function AuthPage() {
       <div className="flex-1 bg-gradient-to-br from-primary to-navy-blue-700 p-8 text-white flex items-center justify-center overflow-y-auto">
         <div className="max-w-2xl text-center py-4">
           <h2 className="text-4xl font-bold mb-4">
-            Never Write Another Note
+            Transform Your Practice Today
           </h2>
           <p className="text-xl mb-8 text-navy-blue-100">
-            The AI ambient scribe that eliminates documentation burden. Just talk, and let Clarafi write perfect notes instantly.
+            The revolutionary AI ambient scribe + EMR that lets you focus on patients, not paperwork. Experience healthcare as it should be.
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-8">
@@ -1151,9 +1151,9 @@ export default function AuthPage() {
               </div>
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
                 <li>• Notes update AS you talk</li>
-                <li>• Not 5 minutes after (like Freed)</li>
-                <li>• Custom templates</li>
-                <li>• Perfect SOAP notes instantly</li>
+                <li>• Instant documentation, no delays</li>
+                <li>• Custom templates for your style</li>
+                <li>• Perfect SOAP notes in seconds</li>
               </ul>
             </div>
             
@@ -1200,7 +1200,7 @@ export default function AuthPage() {
               <ul className="text-sm text-navy-blue-100 text-left space-y-1">
                 <li>• AI scribe + EMR together</li>
                 <li>• No separate subscriptions</li>
-                <li>• Solo: $149/month</li>
+                <li>• Solo practice: $149/month</li>
                 <li>• Enterprise: $399/month</li>
               </ul>
             </div>
@@ -1208,11 +1208,11 @@ export default function AuthPage() {
           
           {/* Key differentiators */}
           <div className="mb-6 space-y-2">
-            <p className="text-sm font-semibold text-gold">Why we're better than Freed + Epic combined:</p>
+            <p className="text-sm font-semibold text-gold">Experience the future of healthcare documentation:</p>
             <div className="flex flex-wrap justify-center gap-3 text-xs">
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Real-time notes vs 5-min wait</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Full EMR included vs $500+/mo extra</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ One login vs multiple systems</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Real-time notes during conversation</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Complete EMR + AI scribe in one</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Single integrated solution</span>
             </div>
           </div>
           
@@ -1236,8 +1236,8 @@ export default function AuthPage() {
           
           <div className="mt-6 text-xs text-navy-blue-200">
             <p className="font-semibold">The only AI scribe + EMR hybrid in the market</p>
-            <p className="mt-1">Save $300+/month vs buying scribe + EMR separately</p>
-            <p className="mt-1 text-gold">Freed ($99) + Epic ($500+) = $600+/mo vs Clarafi $149-$399</p>
+            <p className="mt-1">Save time and money with one integrated solution</p>
+            <p className="mt-1 text-gold">Everything you need starting at just $149/month</p>
           </div>
         </div>
       </div>

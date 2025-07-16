@@ -160,17 +160,36 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### Login Page Marketing Redesign - AI Ambient Scribe Focus COMPLETED (January 16, 2025)
-- **HEADLINE CHANGE**: Changed from "The EMR That Actually Thinks" to "Never Write Another Note" to emphasize primary value proposition
-- **SUBTITLE UPDATE**: Now reads "The AI ambient scribe that eliminates documentation burden. Just talk, and let Clarafi write perfect notes instantly"
-- **AI AMBIENT SCRIBE BOX**: Renamed from "AI Clinical Intelligence" with updated features:
-  - Talk naturally, notes write themselves
-  - Real-time voice transcription
-  - Perfect SOAP notes instantly
-  - Zero typing required
-- **KEY DIFFERENTIATORS**: Updated from "75% less documentation time" to "Zero documentation time" and "Just talk, we write"
+- **HEADLINE CHANGE**: Changed from "The EMR That Actually Thinks" to "Transform Your Practice Today" to emphasize positive transformation
+- **SUBTITLE UPDATE**: Now reads "The revolutionary AI ambient scribe + EMR that lets you focus on patients, not paperwork. Experience healthcare as it should be"
+- **REAL-TIME AI SCRIBE BOX**: Emphasizes real-time capabilities with updated features:
+  - Notes update AS you talk
+  - Instant documentation, no delays
+  - Custom templates for your style
+  - Perfect SOAP notes in seconds
+- **COMPLETE EMR BUILT-IN**: Highlights integrated nature of solution:
+  - Full EMR, not just notes
+  - E-prescribing included
+  - Lab ordering & results
+  - Billing & coding built-in
+- **UNBEATABLE SPEED**: Focuses on speed advantage:
+  - Seconds, not minutes
+  - No waiting for notes
+  - Instant lab orders
+  - Real-time everything
+- **ONE PRICE, EVERYTHING**: Clear pricing message:
+  - AI scribe + EMR together
+  - No separate subscriptions
+  - Solo practice: $149/month
+  - Enterprise: $399/month
+- **KEY DIFFERENTIATORS**: "Experience the future of healthcare documentation" with focus on:
+  - Real-time notes during conversation
+  - Complete EMR + AI scribe in one
+  - Single integrated solution
 - **REMOVED FALSE CLAIMS**: Deleted "Trusted by 500+ providers across 50+ specialties" as not yet accurate
-- **NEW TAGLINE**: "The future of medical documentation is here" to emphasize innovation
-- **PRIMARY FOCUS**: Marketing now correctly emphasizes AI ambient scribe as the core feature while maintaining that it's a full EMR
+- **NEW TAGLINE**: "The only AI scribe + EMR hybrid in the market" to emphasize unique positioning
+- **OPTIMISTIC TONE**: Removed competitor names and attack messaging, focusing on positive benefits and transformation
+- **PRIMARY FOCUS**: Marketing emphasizes dual positioning as both revolutionary AI scribe AND complete EMR solution
 
 ### Scheduling System Production Cleanup COMPLETED (January 16, 2025)
 - **PERMISSION FIXES**: Added 'provider' role to appointment creation, update, and deletion permissions - providers can now fully manage appointments
