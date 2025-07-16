@@ -2099,22 +2099,40 @@ export class DatabaseStorage implements IStorage {
 
   // Create appointment
   async createAppointment(data: any) {
+    console.log('📅 [STORAGE] Creating appointment with raw data:', data);
+    
+    // Convert date and time strings to proper Date objects
+    const appointmentDateTime = new Date(`${data.appointmentDate}T${data.appointmentTime}:00`);
+    const startTime = appointmentDateTime;
+    
+    // Calculate end time based on duration
+    const endTime = new Date(appointmentDateTime);
+    endTime.setMinutes(endTime.getMinutes() + (data.providerScheduledDuration || data.duration || 20));
+    
+    const appointmentData = {
+      patientId: data.patientId,
+      providerId: data.providerId,
+      locationId: data.locationId,
+      startTime: startTime,
+      endTime: endTime,
+      duration: data.duration || 20,
+      patientVisibleDuration: data.patientVisibleDuration || data.duration || 20,
+      providerScheduledDuration: data.providerScheduledDuration || data.duration || 20,
+      aiPredictedDuration: data.aiPredictedDuration,
+      appointmentType: data.appointmentType,
+      appointmentTypeId: data.appointmentTypeId || 1,
+      chiefComplaint: data.chiefComplaint || '',
+      status: data.status || 'scheduled',
+      notes: data.notes || '',
+      createdBy: data.createdBy,
+      createdAt: new Date()
+    };
+    
+    console.log('📅 [STORAGE] Inserting appointment data:', appointmentData);
+    
     const result = await db
       .insert(appointments)
-      .values({
-        patientId: data.patientId,
-        providerId: data.providerId,
-        locationId: data.locationId,
-        appointmentDate: data.appointmentDate,
-        appointmentTime: data.appointmentTime,
-        duration: data.duration,
-        patientVisibleDuration: data.patientVisibleDuration,
-        providerScheduledDuration: data.providerScheduledDuration,
-        appointmentType: data.appointmentType,
-        status: data.status,
-        notes: data.notes,
-        createdAt: new Date().toISOString()
-      })
+      .values(appointmentData)
       .returning()
       .execute();
       

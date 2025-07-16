@@ -62,6 +62,12 @@ export function ScheduleAppointmentDialog({
     }
   }, [preselectedPatient]);
 
+  // Get current user data
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/user'],
+    enabled: open,
+  });
+
   // Get user's locations
   const { data: locations = [] } = useQuery({
     queryKey: ['/api/locations'],
@@ -96,6 +102,19 @@ export function ScheduleAppointmentDialog({
   });
 
   const handleScheduleAppointment = async () => {
+    console.log('📅 [ScheduleAppointment] Starting appointment scheduling');
+    console.log('📅 [ScheduleAppointment] Selected patient:', selectedPatient);
+    console.log('📅 [ScheduleAppointment] Available providers:', providers);
+    console.log('📅 [ScheduleAppointment] Available locations:', locations);
+    console.log('📅 [ScheduleAppointment] Current state:', {
+      date,
+      time,
+      appointmentType,
+      duration,
+      chiefComplaint,
+      notes
+    });
+
     if (!selectedPatient) {
       toast({
         title: "Error",
@@ -106,24 +125,50 @@ export function ScheduleAppointmentDialog({
     }
 
     try {
+      console.log('📅 [ScheduleAppointment] Current user:', currentUser);
+      
+      // Get the current user's ID as provider - use either passed providerId or current user
+      const effectiveProviderId = providerId || currentUser?.id;
+      const selectedLocationId = locationId || locations[0]?.id;
+      
+      if (!effectiveProviderId) {
+        toast({
+          title: "Error",
+          description: "No provider selected. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const appointmentData = {
+        patientId: selectedPatient.id,
+        providerId: effectiveProviderId,
+        locationId: selectedLocationId,
+        appointmentDate: date,
+        appointmentTime: time,
+        appointmentTypeId: 1, // Default for now
+        appointmentType,
+        chiefComplaint,
+        notes,
+        duration: parseInt(duration), // Changed from patientVisibleDuration
+        patientVisibleDuration: parseInt(duration),
+      };
+      
+      console.log('📅 [ScheduleAppointment] Sending appointment data:', appointmentData);
+
       const response = await fetch('/api/scheduling/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientId: selectedPatient.id,
-          providerId: providerId || providers[0]?.id,
-          locationId: locationId || locations[0]?.id,
-          appointmentDate: date,
-          appointmentTime: time,
-          appointmentTypeId: 1, // Default for now
-          appointmentType,
-          chiefComplaint,
-          notes,
-          patientVisibleDuration: parseInt(duration),
-        }),
+        body: JSON.stringify(appointmentData),
       });
 
-      if (!response.ok) throw new Error('Failed to schedule appointment');
+      const responseData = await response.json();
+      console.log('📅 [ScheduleAppointment] Response:', response.status, responseData);
+      
+      if (!response.ok) {
+        console.error('📅 [ScheduleAppointment] Error response:', responseData);
+        throw new Error(responseData.error || 'Failed to schedule appointment');
+      }
 
       toast({
         title: "Appointment Scheduled",

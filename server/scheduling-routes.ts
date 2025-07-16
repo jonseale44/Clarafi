@@ -124,6 +124,15 @@ router.post('/api/scheduling/appointments', tenantIsolation, async (req, res) =>
       providerScheduledDuration = validatedData.duration;
     }
     
+    console.log('📅 [CREATE_APPOINTMENT] Creating appointment with data:', {
+      ...validatedData,
+      status: 'scheduled',
+      aiPredictedDuration,
+      patientVisibleDuration,
+      providerScheduledDuration,
+      createdBy: req.user!.id
+    });
+    
     const appointment = await storage.createAppointment({
       ...validatedData,
       status: 'scheduled',
