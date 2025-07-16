@@ -163,6 +163,14 @@ router.get("/api/places/search-medical", async (req, res) => {
     // Use the actual Google Places API
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     
+    if (!apiKey) {
+      console.error("❌ [Google Places] GOOGLE_PLACES_API_KEY environment variable not found!");
+      return res.status(500).json({
+        status: "ERROR",
+        error: "Google Places API key not configured"
+      });
+    }
+    
     // If searching by text query
     if (query) {
       const baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
